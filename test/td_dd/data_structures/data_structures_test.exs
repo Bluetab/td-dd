@@ -8,7 +8,6 @@ defmodule TdDd.DataStructuresTest do
   alias TdCache.Redix.Stream
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
@@ -1364,79 +1363,6 @@ defmodule TdDd.DataStructuresTest do
 
       assert [_, _] = DataStructures.get_siblings(child, with_confidential: false)
       assert [] = DataStructures.get_siblings(child, with_confidential: false, default: false)
-    end
-  end
-
-  describe "data_structure_tags" do
-    @valid_attrs %{name: "some name"}
-    @update_attrs %{name: "some updated name"}
-    @invalid_attrs %{name: nil}
-
-    def data_structure_tag_fixture(attrs \\ %{}) do
-      {:ok, data_structure_tag} =
-        attrs
-        |> Enum.into(@valid_attrs)
-        |> DataStructures.create_data_structure_tag()
-
-      data_structure_tag
-    end
-
-    test "list_data_structure_tags/0 returns all data_structure_tags" do
-      data_structure_tag = data_structure_tag_fixture()
-      assert DataStructures.list_data_structure_tags() == [data_structure_tag]
-    end
-
-    test "list_data_structure_tags/1 returns all data_structure_tags with structure count" do
-      %{data_structure_tag: %{id: id, name: name}} = insert(:data_structures_tags)
-
-      assert [%{id: ^id, name: ^name, structure_count: 1}] =
-               DataStructures.list_data_structure_tags(structure_count: true)
-    end
-
-    test "get_data_structure_tag/1 returns the data_structure_tag with given id" do
-      %{id: id} = data_structure_tag = data_structure_tag_fixture()
-      assert DataStructures.get_data_structure_tag(id: id) == data_structure_tag
-    end
-
-    test "create_data_structure_tag/1 with valid data creates a data_structure_tag" do
-      assert {:ok, %DataStructureTag{} = data_structure_tag} =
-               DataStructures.create_data_structure_tag(@valid_attrs)
-
-      assert data_structure_tag.name == "some name"
-    end
-
-    test "create_data_structure_tag/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} =
-               DataStructures.create_data_structure_tag(@invalid_attrs)
-    end
-
-    test "update_data_structure_tag/2 with valid data updates the data_structure_tag" do
-      data_structure_tag = data_structure_tag_fixture()
-
-      assert {:ok, %DataStructureTag{} = data_structure_tag} =
-               DataStructures.update_data_structure_tag(data_structure_tag, @update_attrs)
-
-      assert data_structure_tag.name == "some updated name"
-    end
-
-    test "update_data_structure_tag/2 with invalid data returns error changeset" do
-      %{id: id} = data_structure_tag = data_structure_tag_fixture()
-
-      assert {:error, %Ecto.Changeset{}} =
-               DataStructures.update_data_structure_tag(data_structure_tag, @invalid_attrs)
-
-      assert data_structure_tag == DataStructures.get_data_structure_tag!(id: id)
-    end
-
-    test "delete_data_structure_tag/1 deletes the data_structure_tag" do
-      %{id: id} = data_structure_tag = data_structure_tag_fixture()
-
-      assert {:ok, %DataStructureTag{}} =
-               DataStructures.delete_data_structure_tag(data_structure_tag)
-
-      assert_raise Ecto.NoResultsError, fn ->
-        DataStructures.get_data_structure_tag!(id: id)
-      end
     end
   end
 

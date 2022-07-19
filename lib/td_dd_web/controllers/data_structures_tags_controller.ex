@@ -5,6 +5,7 @@ defmodule TdDdWeb.DataStructuresTagsController do
   import Canada, only: [can?: 2]
 
   alias TdDd.DataStructures
+  alias TdDd.DataStructures.Tags
   alias TdDdWeb.SwaggerDefinitions
 
   action_fallback TdDdWeb.FallbackController
@@ -68,7 +69,7 @@ defmodule TdDdWeb.DataStructuresTagsController do
       }) do
     with claims <- conn.assigns[:current_resource],
          %{} = structure <- DataStructures.get_data_structure!(data_structure_id),
-         %{} = tag <- DataStructures.get_data_structure_tag!(id: tag_id),
+         %{} = tag <- Tags.get_data_structure_tag!(id: tag_id),
          {:can, true} <- {:can, can?(claims, link_data_structure_tag(structure))},
          {:ok, %{linked_tag: %{} = link}} <-
            DataStructures.link_tag(structure, tag, tag_params, claims) do
@@ -99,7 +100,7 @@ defmodule TdDdWeb.DataStructuresTagsController do
   def delete(conn, %{"data_structure_id" => data_structure_id, "id" => tag_id}) do
     with claims <- conn.assigns[:current_resource],
          %{} = structure <- DataStructures.get_data_structure!(data_structure_id),
-         %{} = tag <- DataStructures.get_data_structure_tag!(id: tag_id),
+         %{} = tag <- Tags.get_data_structure_tag!(id: tag_id),
          {:can, true} <- {:can, can?(claims, delete_link_data_structure_tag(structure))},
          {:ok, %{deleted_link_tag: %{id: id}}} <-
            DataStructures.delete_link_tag(structure, tag, claims) do

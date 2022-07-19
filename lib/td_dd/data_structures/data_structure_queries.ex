@@ -8,8 +8,8 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   alias TdDd.Classifiers
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
-  alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.DataStructuresTags
+  alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureMetadata

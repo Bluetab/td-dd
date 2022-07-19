@@ -8,9 +8,8 @@ defmodule TdDdWeb.DataStructureVersionController do
   alias Ecto
   alias TdCache.TemplateCache
   alias TdDd.DataStructures
+  alias TdDd.DataStructures.Tags
   alias TdDdWeb.SwaggerDefinitions
-
-  require Logger
 
   action_fallback(TdDdWeb.FallbackController)
 
@@ -119,7 +118,7 @@ defmodule TdDdWeb.DataStructureVersionController do
 
   defp actions(claims, data_structure) do
     if can?(claims, link_data_structure_tag(data_structure)) do
-      %{manage_tags: DataStructures.list_available_tags(data_structure)}
+      %{manage_tags: Tags.list_available_tags(data_structure)}
     else
       %{}
     end
