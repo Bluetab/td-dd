@@ -83,9 +83,10 @@ defmodule TdDd.DataStructures.TagsTest do
     end
   end
 
-  describe "get_links_tag/2" do
+  describe "tags/1" do
     test "gets a list of links between a structure and its tags" do
-      structure = %{id: data_structure_id} = insert(:data_structure)
+      [%{data_structure: structure, data_structure_id: data_structure_id}] =
+        create_hierarchy(["foo"])
 
       tag = %{id: data_structure_tag_id, name: name} = insert(:data_structure_tag)
 
@@ -99,7 +100,56 @@ defmodule TdDd.DataStructures.TagsTest do
                  data_structure_tag: %{id: ^data_structure_tag_id, name: ^name},
                  comment: ^comment
                }
-             ] = Tags.get_links_tag(structure)
+             ] = Tags.tags(structure)
+    end
+
+    test "includes inherited tags" do
+      %{id: tag_id} = insert(:data_structure_tag)
+
+      [foo, bar, baz, xyzzy] = create_hierarchy(["foo", "bar", "baz", "xyzzy"])
+
+      assert Tags.tags(xyzzy) == []
+
+      insert(:data_structures_tags, data_structure_id: foo.data_structure_id)
+
+      assert Tags.tags(xyzzy) == []
+
+      %{id: id1} =
+        insert(:data_structures_tags,
+          data_structure_id: foo.data_structure_id,
+          data_structure_tag_id: tag_id,
+          inherit: true
+        )
+
+      assert [%{id: ^id1}] = Tags.tags(xyzzy)
+
+      insert(:data_structures_tags,
+        data_structure_id: bar.data_structure_id,
+        data_structure_tag_id: tag_id
+      )
+
+      assert [%{id: ^id1}] = Tags.tags(xyzzy)
+
+      %{id: id2} =
+        insert(:data_structures_tags,
+          data_structure_id: baz.data_structure_id,
+          data_structure_tag_id: tag_id,
+          inherit: true
+        )
+
+      assert [%{id: ^id2}] = Tags.tags(xyzzy)
+
+      %{id: id3} =
+        insert(:data_structures_tags,
+          data_structure_id: xyzzy.data_structure_id,
+          data_structure_tag_id: tag_id
+        )
+
+      assert [%{id: ^id3}] = Tags.tags(xyzzy)
+
+      insert(:data_structures_tags, data_structure_id: baz.data_structure_id, inherit: true)
+
+      assert [_, _] = Tags.tags(xyzzy)
     end
   end
 

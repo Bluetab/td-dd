@@ -1,4 +1,5 @@
 defmodule TdDdWeb.DataStructuresTagsControllerTest do
+  use TdDd.DataStructureCase
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
@@ -21,13 +22,14 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
   describe "index" do
     @tag authentication: [role: "admin"]
     test "renderts links of a structure", %{conn: conn, swagger_schema: schema} do
-      structure = %{id: data_structure_id} = insert(:data_structure)
-      tag = %{id: tag_id, name: name, description: _description} = insert(:data_structure_tag)
+      [%{data_structure_id: data_structure_id}] = create_hierarchy(["foo"])
+
+      tag = %{id: tag_id, name: name} = insert(:data_structure_tag)
 
       %{id: id, comment: comment} =
         insert(:data_structures_tags,
           data_structure_tag: tag,
-          data_structure: structure
+          data_structure_id: data_structure_id
         )
 
       assert %{
@@ -68,13 +70,13 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
       domain: domain,
       swagger_schema: schema
     } do
-      structure = %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
+      [%{data_structure_id: data_structure_id}] = create_hierarchy(["foo"], domain_id: domain.id)
       tag = %{id: tag_id, name: name, description: description} = insert(:data_structure_tag)
 
       %{id: id, comment: comment} =
         insert(:data_structures_tags,
           data_structure_tag: tag,
-          data_structure: structure
+          data_structure_id: data_structure_id
         )
 
       assert %{

@@ -49,6 +49,10 @@ defmodule TdDd.DataStructureCase do
         end)
 
         dsvs
+        |> Enum.map(& &1.id)
+        |> TdDd.DataStructures.Hierarchy.update_hierarchy()
+
+        dsvs
       end
 
       defp maybe_alias("original_name"), do: "alias_name"

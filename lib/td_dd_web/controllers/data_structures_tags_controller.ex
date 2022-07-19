@@ -31,7 +31,7 @@ defmodule TdDdWeb.DataStructuresTagsController do
     with claims <- conn.assigns[:current_resource],
          %{} = structure <- DataStructures.get_data_structure!(data_structure_id),
          {:can, true} <- {:can, can?(claims, view_data_structure(structure))},
-         links <- Tags.get_links_tag(structure) do
+         links <- Tags.tags(structure) do
       render(conn, "index.json", links: links)
     end
   end

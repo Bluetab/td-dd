@@ -769,7 +769,6 @@ defmodule TdDd.DataStructuresTest do
 
       %{id: id} = Enum.at(dsvs, 4)
 
-      Hierarchy.update_hierarchy([id])
       assert %{path: path} = DataStructures.get_data_structure_version!(id)
       assert Enum.map(path, & &1["name"]) == ["foo", "alias_name", "baz", "xyzzy"]
     end

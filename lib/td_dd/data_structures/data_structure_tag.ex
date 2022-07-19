@@ -5,7 +5,6 @@ defmodule TdDd.DataStructures.DataStructureTag do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructuresTags
 
   schema "data_structure_tags" do
@@ -14,7 +13,7 @@ defmodule TdDd.DataStructures.DataStructureTag do
     field :domain_ids, {:array, :integer}, default: []
     field :structure_count, :integer, virtual: true
 
-    many_to_many(:tagged_structures, DataStructure, join_through: DataStructuresTags)
+    has_many(:structures_tags, DataStructuresTags)
 
     timestamps()
   end
