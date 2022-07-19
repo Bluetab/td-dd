@@ -92,6 +92,7 @@ defmodule TdDdWeb.DataStructureVersionController do
 
   defp render_with_permissions(conn, claims, %{data_structure: data_structure} = dsv) do
     if can?(claims, view_data_structure(data_structure)) do
+      tags = DataStructures.tags(dsv)
       dsv = DataStructures.profile_source(dsv)
 
       user_permissions = %{
@@ -106,6 +107,7 @@ defmodule TdDdWeb.DataStructureVersionController do
 
       render(conn, "show.json",
         data_structure_version: dsv,
+        tags: tags,
         user_permissions: user_permissions,
         actions: actions(claims, data_structure),
         hypermedia: hypermedia("data_structure_version", conn, dsv)

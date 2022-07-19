@@ -745,25 +745,6 @@ defmodule TdDd.DataStructuresTest do
              <~> r_child_confidential
     end
 
-    test "get_data_structure_version!/2 with options: tags" do
-      d = insert(:data_structure)
-
-      %{id: id1, comment: d1, data_structure_tag: %{name: n1, description: dt1}} =
-        insert(:data_structures_tags, data_structure: d, comment: "foo")
-
-      %{id: id2, comment: d2, data_structure_tag: %{name: n2, description: dt2}} =
-        insert(:data_structures_tags, data_structure: d, comment: "bar")
-
-      version = insert(:data_structure_version, data_structure: d)
-
-      assert %{
-               tags: [
-                 %{id: ^id1, comment: ^d1, data_structure_tag: %{name: ^n1, description: ^dt1}},
-                 %{id: ^id2, comment: ^d2, data_structure_tag: %{name: ^n2, description: ^dt2}}
-               ]
-             } = DataStructures.get_data_structure_version!(version.id, [:tags])
-    end
-
     test "get_data_structure_version!/1 returns the data_structure with given id", %{
       data_structure_version: data_structure_version
     } do

@@ -22,6 +22,7 @@ defmodule TdDd.DataStructures do
   alias TdDd.DataStructures.DataStructuresTags
   alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.DataStructures.StructureNote
   alias TdDd.Grants
@@ -198,7 +199,6 @@ defmodule TdDd.DataStructures do
     |> enrich(opts, :source, &get_source!/1)
     |> enrich(opts, :metadata_versions, &get_metadata_versions!/1)
     |> enrich(opts, :data_structure_type, &get_data_structure_type!/1)
-    |> enrich(opts, :tags, &get_tags!/1)
     |> enrich(opts, :grants, &get_grants/1)
     |> enrich(opts, :grant, &get_grant(&1, opts[:user_id]))
     |> enrich(opts, :implementations, &get_implementations!/1)
@@ -451,14 +451,6 @@ defmodule TdDd.DataStructures do
   defp get_implementations!(%DataStructureVersion{} = dsv) do
     case Repo.preload(dsv, data_structure: [implementations: [implementation: [:rule, :results]]]) do
       %{data_structure: %{implementations: implementations}} -> implementations
-    end
-  end
-
-  defp get_tags!(%DataStructureVersion{} = dsv) do
-    case Repo.preload(dsv,
-           data_structure: [data_structures_tags: [:data_structure_tag, :data_structure]]
-         ) do
-      %{data_structure: %{data_structures_tags: data_structures_tags}} -> data_structures_tags
     end
   end
 
@@ -947,6 +939,22 @@ defmodule TdDd.DataStructures do
   def get_links_tag(%DataStructure{} = data_structure) do
     data_structure
     |> Ecto.assoc(:data_structures_tags)
+    |> preload([:data_structure, :data_structure_tag])
+    |> Repo.all()
+  end
+
+  def tags(%DataStructureVersion{data_structure_id: id}), do: tags(id)
+
+  def tags(%DataStructure{id: id}), do: tags(id)
+
+  def tags(data_structure_id) when is_integer(data_structure_id) do
+    DataStructuresTags
+    |> join(:inner, [st], h in Hierarchy,
+      on:
+        st.data_structure_id == h.ds_id or
+          (st.inherit and st.data_structure_id == h.ancestor_ds_id)
+    )
+    |> where([_, h], h.ds_id == ^data_structure_id)
     |> preload([:data_structure, :data_structure_tag])
     |> Repo.all()
   end
