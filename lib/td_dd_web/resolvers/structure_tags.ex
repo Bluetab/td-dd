@@ -1,4 +1,4 @@
-defmodule TdDdWeb.Resolvers.StructureTags do
+defmodule TdDdWeb.Resolvers.StructureTag do
   @moduledoc """
   Absinthe resolvers for structure tags
   """
@@ -10,17 +10,17 @@ defmodule TdDdWeb.Resolvers.StructureTags do
 
   def structure_tags(_parent, args, _resolution) do
     args = Map.put_new(args, :structure_count, true)
-    {:ok, Tags.list_data_structure_tags(args)}
+    {:ok, Tags.list_tags(args)}
   end
 
   def structure_tag(_parent, %{id: id} = _args, _resolution) do
-    {:ok, Tags.get_data_structure_tag(id: id)}
+    {:ok, Tags.get_tag(id: id)}
   end
 
   def create_structure_tag(_parent, %{structure_tag: params} = _args, _resolution) do
-    case Tags.create_data_structure_tag(params) do
+    case Tags.create_tag(params) do
       {:ok, %{id: id} = _tag} ->
-        {:ok, Tags.get_data_structure_tag(id: id)}
+        {:ok, Tags.get_tag(id: id)}
 
       {:error, changeset} ->
         {:error, ChangesetUtils.error_message_list_on(changeset)}
@@ -29,9 +29,9 @@ defmodule TdDdWeb.Resolvers.StructureTags do
 
   def update_structure_tag(_parent, %{structure_tag: %{id: id} = params} = _args, resolution) do
     with {:claims, %{} = claims} <- {:claims, claims(resolution)},
-         {:tag, %{} = tag} <- {:tag, Tags.get_data_structure_tag(id: id)},
+         {:tag, %{} = tag} <- {:tag, Tags.get_tag(id: id)},
          {:can, true} <- {:can, can?(claims, update(tag))},
-         {:ok, _} = reply <- Tags.update_data_structure_tag(tag, params) do
+         {:ok, _} = reply <- Tags.update_tag(tag, params) do
       reply
     else
       {:claims, nil} ->
@@ -50,9 +50,9 @@ defmodule TdDdWeb.Resolvers.StructureTags do
 
   def delete_structure_tag(_parent, %{id: id} = _args, resolution) do
     with {:claims, %{} = claims} <- {:claims, claims(resolution)},
-         {:tag, %{} = tag} <- {:tag, Tags.get_data_structure_tag(id: id)},
+         {:tag, %{} = tag} <- {:tag, Tags.get_tag(id: id)},
          {:can, true} <- {:can, can?(claims, delete(tag))} do
-      Tags.delete_data_structure_tag(tag)
+      Tags.delete_tag(tag)
     else
       {:claims, nil} -> {:error, :unauthorized}
       {:tag, nil} -> {:error, :not_found}

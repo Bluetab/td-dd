@@ -13,7 +13,7 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
   """
 
   @structure_tags """
-  query StructureTags {
+  query StructureTag {
     structureTags {
       id
       name
@@ -56,7 +56,7 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
 
   defp create_structure_tag(%{} = context) do
     %{id: domain_id} = domain = context[:domain] || CacheHelpers.insert_domain()
-    [domain: domain, structure_tag: insert(:data_structure_tag, domain_ids: [domain_id])]
+    [domain: domain, structure_tag: insert(:tag, domain_ids: [domain_id])]
   end
 
   describe "structureTag query" do
@@ -147,7 +147,7 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
   describe "createStructureTag mutation" do
     @tag authentication: [role: "user"]
     test "returns forbidden when queried by user role", %{conn: conn} do
-      params = string_params_for(:data_structure_tag)
+      params = string_params_for(:tag)
 
       assert %{"data" => nil, "errors" => errors} =
                conn
@@ -165,7 +165,7 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
       %{
         "name" => name,
         "description" => description
-      } = params = string_params_for(:data_structure_tag, domain_ids: [123])
+      } = params = string_params_for(:tag, domain_ids: [123])
 
       assert %{"data" => data} =
                response =
@@ -193,9 +193,7 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
 
       %{
         "name" => _name
-      } =
-        params =
-        string_params_for(:data_structure_tag, domain_ids: [123], description: description)
+      } = params = string_params_for(:tag, domain_ids: [123], description: description)
 
       assert %{"data" => nil, "errors" => errors} =
                conn
@@ -213,7 +211,7 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
   describe "updateStructureTag mutation" do
     @tag authentication: [role: "user"]
     test "returns forbidden for a non-admin user", %{conn: conn} do
-      params = string_params_for(:data_structure_tag)
+      params = string_params_for(:tag)
 
       assert %{"data" => nil, "errors" => errors} =
                conn
@@ -228,7 +226,7 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
 
     @tag authentication: [role: "admin"]
     test "returns not_found for an admin user", %{conn: conn} do
-      params = string_params_for(:data_structure_tag) |> Map.put("id", 123)
+      params = string_params_for(:tag) |> Map.put("id", 123)
 
       assert %{"data" => nil, "errors" => errors} =
                conn
@@ -243,8 +241,8 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
 
     @tag authentication: [role: "admin"]
     test "updates the structure tag for an admin user", %{conn: conn} do
-      %{id: id} = insert(:data_structure_tag)
-      params = string_params_for(:data_structure_tag) |> Map.put("id", id)
+      %{id: id} = insert(:tag)
+      params = string_params_for(:tag) |> Map.put("id", id)
 
       assert %{"data" => data} =
                conn
@@ -259,12 +257,12 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
 
     @tag authentication: [role: "admin"]
     test "Update structure tag with large description return an error", %{conn: conn} do
-      %{id: id} = insert(:data_structure_tag)
+      %{id: id} = insert(:tag)
       description = String.duplicate("foo", 334)
 
       params =
         string_params_for(
-          :data_structure_tag,
+          :tag,
           domain_ids: [123],
           description: description
         )
@@ -312,7 +310,7 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
 
     @tag authentication: [role: "admin"]
     test "deletes the structure tag for an admin user", %{conn: conn} do
-      %{id: id} = insert(:data_structure_tag)
+      %{id: id} = insert(:tag)
 
       assert %{"data" => data} =
                conn

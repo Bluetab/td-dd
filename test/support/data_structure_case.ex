@@ -9,6 +9,7 @@ defmodule TdDd.DataStructureCase do
 
   use ExUnit.CaseTemplate
 
+  alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
 
   using do
@@ -50,7 +51,7 @@ defmodule TdDd.DataStructureCase do
 
         dsvs
         |> Enum.map(& &1.id)
-        |> TdDd.DataStructures.Hierarchy.update_hierarchy()
+        |> Hierarchy.update_hierarchy()
 
         dsvs
       end

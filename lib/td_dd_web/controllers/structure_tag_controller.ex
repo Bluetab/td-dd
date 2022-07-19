@@ -1,4 +1,4 @@
-defmodule TdDdWeb.DataStructuresTagsController do
+defmodule TdDdWeb.StructureTagController do
   use TdDdWeb, :controller
   use PhoenixSwagger
 
@@ -11,18 +11,18 @@ defmodule TdDdWeb.DataStructuresTagsController do
   action_fallback TdDdWeb.FallbackController
 
   def swagger_definitions do
-    SwaggerDefinitions.data_structure_tag_definitions()
+    SwaggerDefinitions.structure_tag_definitions()
   end
 
   swagger_path :index do
-    description("Gets relations between structure and tag")
+    description("Gets a data structure's tags")
     produces("application/json")
 
     parameters do
       data_structure_id(:path, :integer, "Data Structure ID", required: true)
     end
 
-    response(200, "OK", Schema.ref(:LinksDataStructureTagResponse))
+    response(200, "OK", Schema.ref(:StructureTagsResponse))
     response(403, "Forbidden")
     response(422, "Unprocessable Entity")
   end
@@ -37,21 +37,21 @@ defmodule TdDdWeb.DataStructuresTagsController do
   end
 
   swagger_path :update do
-    description("Updates Relation between a Data Structure and a Tag")
+    description("Updates a data structure tag")
     produces("application/json")
 
     parameters do
       data_structure_id(:path, :integer, "Data Structure ID", required: true)
-      id(:path, :integer, "Data Structure Tag ID", required: true)
+      id(:path, :integer, "Tag ID", required: true)
 
       tag(
         :body,
-        Schema.ref(:UpdateLinkDataStructureTag),
+        Schema.ref(:UpdateStructureTag),
         "link update attrs"
       )
     end
 
-    response(201, "OK", Schema.ref(:LinkDataStructureTagResponse))
+    response(201, "OK", Schema.ref(:UpdateStructureTagResponse))
     response(403, "Forbidden")
     response(422, "Unprocessable Entity")
   end
@@ -63,9 +63,10 @@ defmodule TdDdWeb.DataStructuresTagsController do
       }) do
     with claims <- conn.assigns[:current_resource],
          %{} = structure <- DataStructures.get_data_structure!(data_structure_id),
-         %{} = tag <- Tags.get_data_structure_tag!(id: tag_id),
+         %{} = tag <- Tags.get_tag!(id: tag_id),
          {:can, true} <- {:can, can?(claims, link_data_structure_tag(structure))},
-         {:ok, %{linked_tag: %{} = link}} <- Tags.link_tag(structure, tag, tag_params, claims) do
+         {:ok, %{structure_tag: %{} = link}} <-
+           Tags.tag_structure(structure, tag, tag_params, claims) do
       render(conn, "show.json", link: link)
     end
   end
@@ -87,10 +88,10 @@ defmodule TdDdWeb.DataStructuresTagsController do
   def delete(conn, %{"data_structure_id" => data_structure_id, "id" => tag_id}) do
     with claims <- conn.assigns[:current_resource],
          %{} = structure <- DataStructures.get_data_structure!(data_structure_id),
-         %{} = tag <- Tags.get_data_structure_tag!(id: tag_id),
+         %{} = tag <- Tags.get_tag!(id: tag_id),
          {:can, true} <- {:can, can?(claims, delete_link_data_structure_tag(structure))},
-         {:ok, %{deleted_link_tag: %{id: id}}} <-
-           Tags.delete_link_tag(structure, tag, claims) do
+         {:ok, %{structure_tag: %{id: id}}} <-
+           Tags.untag_structure(structure, tag, claims) do
       conn
       |> put_resp_content_type("application/json", "utf-8")
       |> send_resp(:accepted, Jason.encode!(%{data: %{id: id}}))

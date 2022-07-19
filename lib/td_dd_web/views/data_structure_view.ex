@@ -2,8 +2,8 @@ defmodule TdDdWeb.DataStructureView do
   use TdDdWeb, :view
 
   alias TdDd.DataStructures
-  alias TdDdWeb.DataStructuresTagsView
   alias TdDdWeb.DataStructureVersionView
+  alias TdDdWeb.StructureTagView
 
   def render("index.json", %{actions: %{} = actions} = assigns) when map_size(actions) > 0 do
     "index.json"
@@ -312,7 +312,7 @@ defmodule TdDdWeb.DataStructureView do
 
   # TODO: tags not consumed by front?
   defp add_tags(ds, %{tags: tags} = _assigns) do
-    Map.put(ds, :tags, render_many(tags, DataStructuresTagsView, "data_structures_tags.json"))
+    Map.put(ds, :tags, render_many(tags, StructureTagView, "structure_tag.json"))
   end
 
   defp add_tags(ds, _), do: ds

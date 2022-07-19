@@ -13,7 +13,6 @@ defmodule TdDd.Repo do
     "classifiers",
     "configurations",
     "data_structure_relations",
-    "data_structure_tags",
     "data_structure_types",
     "data_structure_versions",
     "data_structures",
@@ -36,6 +35,7 @@ defmodule TdDd.Repo do
     "structure_classifications",
     "structure_metadata",
     "systems",
+    "tags",
     "unit_events",
     "units",
     "user_search_filters"

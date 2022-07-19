@@ -56,7 +56,7 @@ defmodule TdDdWeb.Router do
       resources("/versions", DataStructureVersionController, only: [:show])
       resources("/profile_results", ProfileController, only: [:create])
 
-      resources("/tags", DataStructuresTagsController,
+      resources("/tags", StructureTagController,
         only: [:delete, :index, :update],
         name: :tags
       )

@@ -17,7 +17,7 @@ defmodule TdDdWeb.Schema do
   import_types(TdDdWeb.Schema.Sources)
   import_types(TdDdWeb.Schema.StructureNotes)
   import_types(TdDdWeb.Schema.Structures)
-  import_types(TdDdWeb.Schema.StructureTags)
+  import_types(TdDdWeb.Schema.StructureTag)
   import_types(TdDdWeb.Schema.Templates)
   import_types(TdDdWeb.Schema.Types.Custom.DataURL)
   import_types(TdDdWeb.Schema.Types.Custom.JSON)

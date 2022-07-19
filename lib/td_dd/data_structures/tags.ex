@@ -11,66 +11,66 @@ defmodule TdDd.DataStructures.Tags do
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.DataStructures.DataStructuresTags
-  alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Hierarchy
+  alias TdDd.DataStructures.Tags.StructureTag
+  alias TdDd.DataStructures.Tags.Tag
   alias TdDd.Repo
   alias TdDd.Search.IndexWorker
 
   def list_available_tags(%DataStructure{domain_ids: domain_ids}) do
     domain_ids = TaxonomyCache.reaching_domain_ids(domain_ids)
-    list_data_structure_tags(domain_ids: domain_ids)
+    list_tags(domain_ids: domain_ids)
   end
 
-  def list_data_structure_tags(params \\ %{}) do
+  def list_tags(params \\ %{}) do
     params
-    |> data_structure_tags_query()
+    |> tags_query()
     |> Repo.all()
   end
 
-  def get_data_structure_tag(params) do
+  def get_tag(params) do
     params
-    |> data_structure_tags_query()
+    |> tags_query()
     |> Repo.one()
   end
 
-  def get_data_structure_tag!(params) do
+  def get_tag!(params) do
     params
-    |> data_structure_tags_query()
+    |> tags_query()
     |> Repo.one!()
   end
 
-  def create_data_structure_tag(attrs \\ %{}) do
-    %DataStructureTag{}
-    |> DataStructureTag.changeset(attrs)
+  def create_tag(params \\ %{}) do
+    %Tag{}
+    |> Tag.changeset(params)
     |> Repo.insert()
   end
 
-  def update_data_structure_tag(%DataStructureTag{} = data_structure_tag, %{} = params) do
+  def update_tag(%Tag{} = tag, %{} = params) do
     %{changes: changes} =
       changeset =
-      data_structure_tag
+      tag
       |> Repo.preload(:structures_tags)
-      |> DataStructureTag.changeset(params)
+      |> Tag.changeset(params)
 
     reindex = Map.has_key?(changes, :name) or Map.has_key?(changes, :inherit)
 
     changeset
     |> Repo.update()
-    |> maybe_reindex_tagged_structures(reindex)
+    |> maybe_reindex(reindex)
   end
 
-  def delete_data_structure_tag(%DataStructureTag{} = data_structure_tag) do
-    data_structure_tag
+  def delete_tag(%Tag{} = tag) do
+    tag
     |> Repo.preload(:structures_tags)
     |> Repo.delete()
-    |> maybe_reindex_tagged_structures()
+    |> maybe_reindex(true)
   end
 
-  def data_structure_tags_query(params) do
+  def tags_query(params) do
     params
-    |> Enum.reduce(DataStructureTag, fn
+    |> Enum.reduce(Tag, fn
       {:id, id}, q ->
         where(q, [t], t.id == ^id)
 
@@ -82,10 +82,10 @@ defmodule TdDd.DataStructures.Tags do
 
       {:structure_count, true}, q ->
         sq =
-          DataStructuresTags
-          |> group_by(:data_structure_tag_id)
+          StructureTag
+          |> group_by(:tag_id)
           |> select([g], %{
-            id: g.data_structure_tag_id,
+            id: g.tag_id,
             count: count(g.data_structure_id)
           })
 
@@ -100,72 +100,72 @@ defmodule TdDd.DataStructures.Tags do
   def tags(%DataStructure{id: id}), do: tags(id)
 
   def tags(data_structure_id) when is_integer(data_structure_id) do
-    DataStructuresTags
+    StructureTag
     |> join(:inner, [st], h in Hierarchy,
       on:
         st.data_structure_id == h.ds_id or
           (st.inherit and st.data_structure_id == h.ancestor_ds_id)
     )
     |> where([_, h], h.ds_id == ^data_structure_id)
-    |> order_by([st, h], asc: st.data_structure_tag_id, asc: h.ds_id, asc: h.ancestor_level)
-    |> distinct([st, h], asc: st.data_structure_tag_id, asc: h.ds_id)
-    |> preload([:data_structure, :data_structure_tag])
+    |> order_by([st, h], asc: st.tag_id, asc: h.ds_id, asc: h.ancestor_level)
+    |> distinct([st, h], asc: st.tag_id, asc: h.ds_id)
+    |> preload([:data_structure, :tag])
     |> Repo.all()
   end
 
-  def link_tag(
+  def tag_structure(
         %DataStructure{id: data_structure_id} = data_structure,
-        %DataStructureTag{id: tag_id} = data_structure_tag,
+        %Tag{id: tag_id} = tag,
         params,
         claims
       ) do
-    case get_link_tag_by(data_structure_id, tag_id) do
-      nil -> create_link(data_structure, data_structure_tag, params, claims)
-      %DataStructuresTags{} = tag_link -> update_link(tag_link, params, claims)
+    case get_current_tag(data_structure_id, tag_id) do
+      nil -> create_structure_tag(data_structure, tag, params, claims)
+      %StructureTag{} = structure_tag -> update_structure_tag(structure_tag, params, claims)
     end
   end
 
-  def delete_link_tag(
+  def untag_structure(
         %DataStructure{id: data_structure_id} = structure,
-        %DataStructureTag{id: tag_id},
+        %Tag{id: tag_id},
         %{user_id: user_id} = _claims
       ) do
-    case get_link_tag_by(data_structure_id, tag_id) do
+    case get_current_tag(data_structure_id, tag_id) do
       nil ->
         {:error, :not_found}
 
-      %DataStructuresTags{} = tag_link ->
+      %StructureTag{} = structure_tag ->
         Multi.new()
         |> Multi.run(:latest, fn _, _ ->
           {:ok, DataStructures.get_latest_version(structure, [:path])}
         end)
-        |> Multi.delete(:deleted_link_tag, tag_link)
-        |> Multi.run(:audit, Audit, :tag_link_deleted, [user_id])
+        |> Multi.delete(:structure_tag, structure_tag)
+        |> Multi.run(:audit, Audit, :structure_tag_deleted, [user_id])
         |> Repo.transaction()
-        |> maybe_reindex_tagged_structures()
+        |> maybe_reindex()
     end
   end
 
-  defp get_link_tag_by(data_structure_id, tag_id) do
-    DataStructuresTags
+  defp get_current_tag(data_structure_id, tag_id) do
+    StructureTag
     |> Repo.get_by(
-      data_structure_tag_id: tag_id,
+      tag_id: tag_id,
       data_structure_id: data_structure_id
     )
-    |> Repo.preload([:data_structure, :data_structure_tag])
+    |> Repo.preload([:data_structure, :tag])
   end
 
-  defp create_link(
+  defp create_structure_tag(
          %DataStructure{id: data_structure_id} = data_structure,
-         %DataStructureTag{id: tag_id} = data_structure_tag,
+         %Tag{id: tag_id} = tag,
          params,
          %{user_id: user_id} = _claims
        ) do
     changeset =
-      DataStructuresTags.changeset(
-        %DataStructuresTags{
-          data_structure_tag: data_structure_tag,
-          data_structure_tag_id: tag_id,
+      StructureTag.changeset(
+        %StructureTag{
+          tag: tag,
+          tag_id: tag_id,
           data_structure_id: data_structure_id,
           data_structure: data_structure
         },
@@ -176,31 +176,35 @@ defmodule TdDd.DataStructures.Tags do
     |> Multi.run(:latest, fn _, _ ->
       {:ok, DataStructures.get_latest_version(data_structure, [:path])}
     end)
-    |> Multi.insert(:linked_tag, changeset)
-    |> Multi.run(:audit, Audit, :tag_linked, [user_id])
+    |> Multi.insert(:structure_tag, changeset)
+    |> Multi.run(:audit, Audit, :structure_tag_created, [user_id])
     |> Repo.transaction()
-    |> maybe_reindex_tagged_structures()
+    |> maybe_reindex()
   end
 
-  defp update_link(%DataStructuresTags{} = link, params, %{user_id: user_id} = _claims) do
-    link = Repo.preload(link, [:data_structure_tag, :data_structure])
-    %{changes: changes} = changeset = DataStructuresTags.changeset(link, params)
+  defp update_structure_tag(
+         %StructureTag{} = structure_tag,
+         params,
+         %{user_id: user_id} = _claims
+       ) do
+    structure_tag = Repo.preload(structure_tag, [:tag, :data_structure])
+    %{changes: changes} = changeset = StructureTag.changeset(structure_tag, params)
 
     reindex = Map.has_key?(changes, :name) or Map.has_key?(changes, :inherit)
 
     Multi.new()
     |> Multi.run(:latest, fn _, _ ->
-      {:ok, DataStructures.get_latest_version(link.data_structure, [:path])}
+      {:ok, DataStructures.get_latest_version(structure_tag.data_structure, [:path])}
     end)
-    |> Multi.update(:linked_tag, changeset)
-    |> Multi.run(:audit, Audit, :tag_link_updated, [changeset, user_id])
+    |> Multi.update(:structure_tag, changeset)
+    |> Multi.run(:audit, Audit, :structure_tag_updated, [changeset, user_id])
     |> Repo.transaction()
-    |> maybe_reindex_tagged_structures(reindex)
+    |> maybe_reindex(reindex)
   end
 
-  defp maybe_reindex_tagged_structures(res, reindex \\ true)
+  defp maybe_reindex(res, reindex \\ true)
 
-  defp maybe_reindex_tagged_structures(
+  defp maybe_reindex(
          {:ok, %{structures_tags: [_ | _] = structure_tags} = tag},
          true
        ) do
@@ -213,25 +217,17 @@ defmodule TdDd.DataStructures.Tags do
     {:ok, tag}
   end
 
-  defp maybe_reindex_tagged_structures({:ok, %{linked_tag: link} = multi}, true) do
-    link
+  defp maybe_reindex({:ok, %{structure_tag: structure_tag} = multi}, true) do
+    structure_tag
     |> tagged_structure_ids()
     |> IndexWorker.reindex()
 
     {:ok, multi}
   end
 
-  defp maybe_reindex_tagged_structures({:ok, %{deleted_link_tag: link} = multi}, _true) do
-    link
-    |> tagged_structure_ids()
-    |> IndexWorker.reindex()
+  defp maybe_reindex(res, _), do: res
 
-    {:ok, multi}
-  end
-
-  defp maybe_reindex_tagged_structures(res, _), do: res
-
-  defp tagged_structure_ids(%DataStructuresTags{data_structure_id: id, inherit: inherit}) do
+  defp tagged_structure_ids(%StructureTag{data_structure_id: id, inherit: inherit}) do
     tagged_structure_ids([id], inherit)
   end
 

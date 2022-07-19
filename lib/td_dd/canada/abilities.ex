@@ -6,7 +6,6 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Auth.Claims
   alias TdDd.Canada.AccessAbilities
   alias TdDd.Canada.DataStructureAbilities
-  alias TdDd.Canada.DataStructureTagAbilities
   alias TdDd.Canada.DataStructureTypeAbilities
   alias TdDd.Canada.DataStructureVersionAbilities
   alias TdDd.Canada.ExecutionAbilities
@@ -16,13 +15,14 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Canada.ReferenceDataAbilities
   alias TdDd.Canada.StructureNoteAbilities
   alias TdDd.Canada.SystemAbilities
+  alias TdDd.Canada.TagAbilities
   alias TdDd.Canada.UnitAbilities
   alias TdDd.Classifiers.Classifier
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.StructureNote
+  alias TdDd.DataStructures.Tags.Tag
   alias TdDd.Executions.ProfileEvent
   alias TdDd.Executions.ProfileExecution
   alias TdDd.Executions.ProfileGroup
@@ -63,7 +63,7 @@ defmodule TdDd.Canada.Abilities do
       do: SourceAbilities.can?(claims, :list, Source)
 
     def can?(%Claims{role: "user"} = claims, :query, :structure_tags),
-      do: DataStructureTagAbilities.can?(claims, :index, DataStructureTag)
+      do: TagAbilities.can?(claims, :index, Tag)
 
     def can?(%Claims{role: "user"} = claims, :query, :implementation),
       do: ImplementationAbilities.can?(claims, :list, Implementation)
@@ -210,12 +210,12 @@ defmodule TdDd.Canada.Abilities do
       StructureNoteAbilities.can?(claims, action, StructureNote)
     end
 
-    def can?(%Claims{} = claims, action, DataStructureTag) do
-      DataStructureTagAbilities.can?(claims, action, DataStructureTag)
+    def can?(%Claims{} = claims, action, Tag) do
+      TagAbilities.can?(claims, action, Tag)
     end
 
-    def can?(%Claims{} = claims, action, %DataStructureTag{} = data_structure_tag) do
-      DataStructureTagAbilities.can?(claims, action, data_structure_tag)
+    def can?(%Claims{} = claims, action, %Tag{} = tag) do
+      TagAbilities.can?(claims, action, tag)
     end
 
     def can?(%Claims{} = claims, action, %DataStructureType{} = data_structure_type) do

@@ -3,9 +3,9 @@ defmodule TdDdWeb.DataStructureVersionView do
   use TdHypermedia, :view
 
   alias TdDd.DataStructures
-  alias TdDdWeb.DataStructuresTagsView
-  alias TdDdWeb.DataStructureTagView
   alias TdDdWeb.GrantView
+  alias TdDdWeb.StructureTagView
+  alias TdDdWeb.TagView
   alias TdDqWeb.ImplementationStructureView
 
   def render("show.json", %{actions: actions} = assigns) do
@@ -365,7 +365,7 @@ defmodule TdDdWeb.DataStructureVersionView do
   defp add_note(dsv), do: dsv
 
   defp add_tags(ds, %{tags: tags}) when is_list(tags) do
-    Map.put(ds, :tags, render_many(tags, DataStructuresTagsView, "data_structures_tags.json"))
+    Map.put(ds, :tags, render_many(tags, StructureTagView, "structure_tag.json"))
   end
 
   defp add_tags(ds, _), do: ds
@@ -387,7 +387,7 @@ defmodule TdDdWeb.DataStructureVersionView do
   defp add_grants(ds), do: ds
 
   defp put_actions(ds, %{manage_tags: tags}) when is_list(tags) do
-    tags = render_many(tags, DataStructureTagView, "embedded.json")
+    tags = render_many(tags, TagView, "embedded.json")
     actions = %{manage_tags: %{data: tags}}
     Map.update(ds, "_actions", actions, &Map.merge(&1, actions))
   end

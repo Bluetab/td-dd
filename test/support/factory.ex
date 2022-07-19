@@ -12,7 +12,6 @@ defmodule TdDd.Factory do
   alias TdCx.Sources.Source
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
-  alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.MetadataField
@@ -20,6 +19,7 @@ defmodule TdDd.Factory do
   alias TdDd.DataStructures.RelationType
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.DataStructures.StructureNote
+  alias TdDd.DataStructures.Tags.Tag
   alias TdDd.Lineage.Units
   alias TdDd.Profiles.Profile
   alias TdDd.UserSearchFilters.UserSearchFilter
@@ -214,8 +214,8 @@ defmodule TdDd.Factory do
     |> merge_attributes(attrs)
   end
 
-  def data_structure_tag_factory do
-    %DataStructureTag{
+  def tag_factory do
+    %Tag{
       name: sequence("structure_tag_name"),
       description: sequence("structure_tag_description")
     }
@@ -501,13 +501,13 @@ defmodule TdDd.Factory do
     |> merge_attributes(attrs)
   end
 
-  def data_structures_tags_factory(attrs) do
+  def structure_tag_factory(attrs) do
     attrs =
       attrs
       |> default_assoc(:data_structure_id, :data_structure)
-      |> default_assoc(:data_structure_tag_id, :data_structure_tag)
+      |> default_assoc(:tag_id, :tag)
 
-    %TdDd.DataStructures.DataStructuresTags{
+    %TdDd.DataStructures.Tags.StructureTag{
       comment: sequence("foo")
     }
     |> merge_attributes(attrs)

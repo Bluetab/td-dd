@@ -2,165 +2,159 @@ defmodule TdDd.DataStructures.TagsTest do
   use TdDd.DataStructureCase
 
   alias TdCache.Redix.Stream
-  alias TdDd.DataStructures.DataStructuresTags
-  alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.Tags
+  alias TdDd.DataStructures.Tags.StructureTag
+  alias TdDd.DataStructures.Tags.Tag
   alias TdDd.Repo
 
   @moduletag sandbox: :shared
   @stream TdCache.Audit.stream()
 
-  describe "list_data_structure_tags/0" do
+  describe "Tags.list_tags/0" do
     test "returns all data structure tags" do
-      data_structure_tag = insert(:data_structure_tag)
-      assert Tags.list_data_structure_tags() == [data_structure_tag]
+      tag = insert(:tag)
+      assert Tags.list_tags() == [tag]
     end
   end
 
-  describe "list_data_structure_tags/1" do
+  describe "Tags.list_tags/1" do
     test "returns all data structure tags with structure count" do
-      %{data_structure_tag: %{id: id, name: name}} = insert(:data_structures_tags)
+      %{tag: %{id: id, name: name}} = insert(:structure_tag)
 
-      assert [%{id: ^id, name: ^name, structure_count: 1}] =
-               Tags.list_data_structure_tags(structure_count: true)
+      assert [%{id: ^id, name: ^name, structure_count: 1}] = Tags.list_tags(structure_count: true)
     end
   end
 
-  describe "get_data_structure_tag/1" do
-    test "returns the data_structure_tag with given id" do
-      %{id: id} = data_structure_tag = insert(:data_structure_tag)
-      assert Tags.get_data_structure_tag(id: id) == data_structure_tag
+  describe "Tags.get_tag/1" do
+    test "returns the tag with given id" do
+      %{id: id} = tag = insert(:tag)
+      assert Tags.get_tag(id: id) == tag
     end
   end
 
-  describe "create_data_structure_tag/1" do
+  describe "Tags.create_tag/1" do
     test "with valid data creates a data structure tag" do
-      %{name: name} = build(:data_structure_tag)
+      %{name: name} = build(:tag)
 
-      assert {:ok, %DataStructureTag{} = data_structure_tag} =
-               Tags.create_data_structure_tag(%{name: name})
+      assert {:ok, %Tag{} = tag} = Tags.create_tag(%{name: name})
 
-      assert %{name: ^name} = data_structure_tag
+      assert %{name: ^name} = tag
     end
 
     test "with invalid data returns error changeset" do
-      assert {:error, %{valid?: false, errors: errors}} =
-               Tags.create_data_structure_tag(%{name: nil})
+      assert {:error, %{valid?: false, errors: errors}} = Tags.create_tag(%{name: nil})
 
       assert {_, [validation: :required]} = errors[:name]
     end
   end
 
-  describe "update_data_structure_tag/2" do
-    test "with valid data updates the data_structure_tag" do
-      data_structure_tag = insert(:data_structure_tag)
-      %{name: name} = build(:data_structure_tag)
+  describe "Tags.update_tag/2" do
+    test "with valid data updates the tag" do
+      tag = insert(:tag)
+      %{name: name} = build(:tag)
 
-      assert {:ok, %DataStructureTag{} = data_structure_tag} =
-               Tags.update_data_structure_tag(data_structure_tag, %{name: name})
+      assert {:ok, %Tag{} = tag} = Tags.update_tag(tag, %{name: name})
 
-      assert %{name: ^name} = data_structure_tag
+      assert %{name: ^name} = tag
     end
 
     test "with invalid data returns error changeset" do
-      data_structure_tag = insert(:data_structure_tag)
+      tag = insert(:tag)
 
-      assert {:error, %{valid?: false, errors: errors}} =
-               Tags.update_data_structure_tag(data_structure_tag, %{name: nil})
+      assert {:error, %{valid?: false, errors: errors}} = Tags.update_tag(tag, %{name: nil})
 
       assert {_, [validation: :required]} = errors[:name]
     end
   end
 
-  describe "delete_data_structure_tag/1" do
+  describe "Tags.delete_tag/1" do
     test "deletes the data structure tag" do
-      %{id: id} = data_structure_tag = insert(:data_structure_tag)
+      %{id: id} = tag = insert(:tag)
 
-      assert {:ok, %DataStructureTag{__meta__: %{state: :deleted}}} =
-               Tags.delete_data_structure_tag(data_structure_tag)
+      assert {:ok, %Tag{__meta__: %{state: :deleted}}} = Tags.delete_tag(tag)
 
-      refute Repo.get(DataStructureTag, id)
+      refute Repo.get(Tag, id)
     end
   end
 
-  describe "tags/1" do
+  describe "Tags.tags/1" do
     test "gets a list of links between a structure and its tags" do
       [%{data_structure: structure, data_structure_id: data_structure_id}] =
         create_hierarchy(["foo"])
 
-      tag = %{id: data_structure_tag_id, name: name} = insert(:data_structure_tag)
+      tag = %{id: tag_id, name: name} = insert(:tag)
 
       %{id: link_id, comment: comment} =
-        insert(:data_structures_tags, data_structure: structure, data_structure_tag: tag)
+        insert(:structure_tag, data_structure: structure, tag: tag)
 
       assert [
                %{
                  id: ^link_id,
                  data_structure: %{id: ^data_structure_id},
-                 data_structure_tag: %{id: ^data_structure_tag_id, name: ^name},
+                 tag: %{id: ^tag_id, name: ^name},
                  comment: ^comment
                }
              ] = Tags.tags(structure)
     end
 
     test "includes inherited tags" do
-      %{id: tag_id} = insert(:data_structure_tag)
+      %{id: tag_id} = insert(:tag)
 
       [foo, bar, baz, xyzzy] = create_hierarchy(["foo", "bar", "baz", "xyzzy"])
 
       assert Tags.tags(xyzzy) == []
 
-      insert(:data_structures_tags, data_structure_id: foo.data_structure_id)
+      insert(:structure_tag, data_structure_id: foo.data_structure_id)
 
       assert Tags.tags(xyzzy) == []
 
       %{id: id1} =
-        insert(:data_structures_tags,
+        insert(:structure_tag,
           data_structure_id: foo.data_structure_id,
-          data_structure_tag_id: tag_id,
+          tag_id: tag_id,
           inherit: true
         )
 
       assert [%{id: ^id1}] = Tags.tags(xyzzy)
 
-      insert(:data_structures_tags,
+      insert(:structure_tag,
         data_structure_id: bar.data_structure_id,
-        data_structure_tag_id: tag_id
+        tag_id: tag_id
       )
 
       assert [%{id: ^id1}] = Tags.tags(xyzzy)
 
       %{id: id2} =
-        insert(:data_structures_tags,
+        insert(:structure_tag,
           data_structure_id: baz.data_structure_id,
-          data_structure_tag_id: tag_id,
+          tag_id: tag_id,
           inherit: true
         )
 
       assert [%{id: ^id2}] = Tags.tags(xyzzy)
 
       %{id: id3} =
-        insert(:data_structures_tags,
+        insert(:structure_tag,
           data_structure_id: xyzzy.data_structure_id,
-          data_structure_tag_id: tag_id
+          tag_id: tag_id
         )
 
       assert [%{id: ^id3}] = Tags.tags(xyzzy)
 
-      insert(:data_structures_tags, data_structure_id: baz.data_structure_id, inherit: true)
+      insert(:structure_tag, data_structure_id: baz.data_structure_id, inherit: true)
 
       assert [_, _] = Tags.tags(xyzzy)
     end
   end
 
-  describe "link_tag/3" do
+  describe "Tags.tag_structure/3" do
     setup do
       start_supervised!(TdDd.Search.StructureEnricher)
       [claims: build(:claims)]
     end
 
     test "links tag to a given structure", %{claims: claims} do
-      %{comment: comment} = build(:data_structures_tags)
+      %{comment: comment} = build(:structure_tag)
       structure = %{id: data_structure_id, external_id: external_id} = insert(:data_structure)
       %{name: version_name} = insert(:data_structure_version, data_structure: structure)
 
@@ -169,19 +163,19 @@ defmodule TdDd.DataStructures.TagsTest do
           id: tag_id,
           name: tag_name,
           description: _tag_description
-        } = insert(:data_structure_tag)
+        } = insert(:tag)
 
       params = %{comment: comment}
 
       {:ok,
        %{
          audit: event_id,
-         linked_tag: %{
+         structure_tag: %{
            comment: ^comment,
            data_structure: %{id: ^data_structure_id},
-           data_structure_tag: %{id: ^tag_id}
+           tag: %{id: ^tag_id}
          }
-       }} = Tags.link_tag(structure, tag, params, claims)
+       }} = Tags.tag_structure(structure, tag, params, claims)
 
       assert {:ok, [%{id: ^event_id, payload: payload}]} =
                Stream.range(:redix, @stream, event_id, event_id, transform: :range)
@@ -198,35 +192,26 @@ defmodule TdDd.DataStructures.TagsTest do
     end
 
     test "updates link information when it already exists", %{claims: claims} do
-      %{comment: comment} = build(:data_structures_tags)
+      %{comment: comment} = build(:structure_tag)
       structure = %{id: data_structure_id, external_id: external_id} = insert(:data_structure)
 
-      tag =
-        %{
-          id: tag_id,
-          name: tag_name,
-          description: _tag_description
-        } = insert(:data_structure_tag)
+      tag = %{id: tag_id, name: tag_name} = insert(:tag)
 
       %{name: version_name} = insert(:data_structure_version, data_structure: structure)
 
-      insert(:data_structures_tags,
-        data_structure_tag: tag,
-        data_structure: structure,
-        comment: "foo"
-      )
+      insert(:structure_tag, data_structure: structure, tag: tag, comment: "foo")
 
       params = %{comment: comment}
 
       {:ok,
        %{
          audit: event_id,
-         linked_tag: %{
+         structure_tag: %{
            comment: ^comment,
            data_structure: %{id: ^data_structure_id},
-           data_structure_tag: %{id: ^tag_id}
+           tag: %{id: ^tag_id}
          }
-       }} = Tags.link_tag(structure, tag, params, claims)
+       }} = Tags.tag_structure(structure, tag, params, claims)
 
       assert {:ok, [%{id: ^event_id, payload: payload}]} =
                Stream.range(:redix, @stream, event_id, event_id, transform: :range)
@@ -244,7 +229,7 @@ defmodule TdDd.DataStructures.TagsTest do
 
     test "gets error when comment is invalid", %{claims: claims} do
       structure = insert(:data_structure)
-      tag = insert(:data_structure_tag)
+      tag = insert(:tag)
 
       params = %{comment: String.duplicate("foo", 334)}
 
@@ -254,11 +239,11 @@ defmodule TdDd.DataStructures.TagsTest do
                   comment: {_, [count: 1000, validation: :length, kind: :max, type: :string]}
                 ],
                 valid?: false
-              }, _} = Tags.link_tag(structure, tag, params, claims)
+              }, _} = Tags.tag_structure(structure, tag, params, claims)
     end
   end
 
-  describe "delete_link_tag/2" do
+  describe "Tags.untag_structure/2" do
     setup do
       start_supervised!(TdDd.Search.StructureEnricher)
       [claims: build(:claims)]
@@ -267,21 +252,20 @@ defmodule TdDd.DataStructures.TagsTest do
     test "deletes link between tag and structure", %{claims: claims} do
       structure = %{id: data_structure_id, external_id: external_id} = insert(:data_structure)
 
-      tag = %{id: data_structure_tag_id, name: tag_name} = insert(:data_structure_tag)
+      tag = %{id: tag_id, name: tag_name} = insert(:tag)
 
       %{name: version_name} = insert(:data_structure_version, data_structure: structure)
 
-      %{comment: comment} =
-        insert(:data_structures_tags, data_structure: structure, data_structure_tag: tag)
+      %{comment: comment} = insert(:structure_tag, data_structure: structure, tag: tag)
 
       assert {:ok,
               %{
                 audit: event_id,
-                deleted_link_tag: %{
+                structure_tag: %{
                   data_structure_id: ^data_structure_id,
-                  data_structure_tag_id: ^data_structure_tag_id
+                  tag_id: ^tag_id
                 }
-              }} = Tags.delete_link_tag(structure, tag, claims)
+              }} = Tags.untag_structure(structure, tag, claims)
 
       assert {:ok, [%{id: ^event_id, payload: payload}]} =
                Stream.range(:redix, @stream, event_id, event_id, transform: :range)
@@ -296,20 +280,20 @@ defmodule TdDd.DataStructures.TagsTest do
                }
              } = Jason.decode!(payload)
 
-      refute Repo.get_by(DataStructuresTags,
-               data_structure_tag_id: data_structure_tag_id,
+      refute Repo.get_by(StructureTag,
+               tag_id: tag_id,
                data_structure_id: data_structure_id
              )
     end
 
     test "not_found if link does not exist", %{claims: claims} do
       structure = %{id: data_structure_id} = insert(:data_structure)
-      tag = %{id: data_structure_tag_id} = insert(:data_structure_tag)
+      tag = %{id: tag_id} = insert(:tag)
 
-      assert {:error, :not_found} = Tags.delete_link_tag(structure, tag, claims)
+      assert {:error, :not_found} = Tags.untag_structure(structure, tag, claims)
 
-      refute Repo.get_by(DataStructuresTags,
-               data_structure_tag_id: data_structure_tag_id,
+      refute Repo.get_by(StructureTag,
+               tag_id: tag_id,
                data_structure_id: data_structure_id
              )
     end

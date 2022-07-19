@@ -1,4 +1,4 @@
-defmodule TdDd.DataStructures.DataStructuresTags do
+defmodule TdDd.DataStructures.Tags.StructureTag do
   @moduledoc """
   Relation between a structure and tag
   """
@@ -7,17 +7,17 @@ defmodule TdDd.DataStructures.DataStructuresTags do
   import Ecto.Changeset
 
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.DataStructures.DataStructureTag
+  alias TdDd.DataStructures.Tags.Tag
 
-  schema "data_structures_tags" do
+  schema "structures_tags" do
     field :comment, :string
     field :resource, :map, virtual: true, default: %{}
-    field :tag, :string, virtual: true
+    field :tag_name, :string, virtual: true
     field :domain_ids, {:array, :integer}, virtual: true, default: []
     field :inherit, :boolean, default: false
 
     belongs_to :data_structure, DataStructure
-    belongs_to :data_structure_tag, DataStructureTag
+    belongs_to :tag, Tag
 
     timestamps type: :utc_datetime_usec
   end

@@ -1,4 +1,4 @@
-defmodule TdDdWeb.DataStructuresTagsControllerTest do
+defmodule TdDdWeb.StructureTagControllerTest do
   use TdDd.DataStructureCase
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
@@ -21,14 +21,14 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
 
   describe "index" do
     @tag authentication: [role: "admin"]
-    test "renderts links of a structure", %{conn: conn, swagger_schema: schema} do
+    test "renders a structure's tags", %{conn: conn, swagger_schema: schema} do
       [%{data_structure_id: data_structure_id}] = create_hierarchy(["foo"])
 
-      tag = %{id: tag_id, name: name} = insert(:data_structure_tag)
+      tag = %{id: tag_id, name: name} = insert(:tag)
 
       %{id: id, comment: comment} =
-        insert(:data_structures_tags,
-          data_structure_tag: tag,
+        insert(:structure_tag,
+          tag: tag,
           data_structure_id: data_structure_id
         )
 
@@ -39,7 +39,7 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
                    "comment" => ^comment,
                    "_embedded" => %{
                      "data_structure" => %{"id" => ^data_structure_id},
-                     "data_structure_tag" => %{
+                     "tag" => %{
                        "id" => ^tag_id,
                        "name" => ^name,
                        "description" => _description
@@ -50,7 +50,7 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
              } =
                conn
                |> get(Routes.data_structure_tags_path(conn, :index, data_structure_id))
-               |> validate_resp_schema(schema, "LinksDataStructureTagResponse")
+               |> validate_resp_schema(schema, "StructureTagsResponse")
                |> json_response(:ok)
     end
 
@@ -71,11 +71,11 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
       swagger_schema: schema
     } do
       [%{data_structure_id: data_structure_id}] = create_hierarchy(["foo"], domain_id: domain.id)
-      tag = %{id: tag_id, name: name, description: description} = insert(:data_structure_tag)
+      tag = %{id: tag_id, name: name, description: description} = insert(:tag)
 
       %{id: id, comment: comment} =
-        insert(:data_structures_tags,
-          data_structure_tag: tag,
+        insert(:structure_tag,
+          tag: tag,
           data_structure_id: data_structure_id
         )
 
@@ -86,7 +86,7 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
                    "comment" => ^comment,
                    "_embedded" => %{
                      "data_structure" => %{"id" => ^data_structure_id},
-                     "data_structure_tag" => %{
+                     "tag" => %{
                        "id" => ^tag_id,
                        "name" => ^name,
                        "description" => ^description
@@ -97,7 +97,7 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
              } =
                conn
                |> get(Routes.data_structure_tags_path(conn, :index, data_structure_id))
-               |> validate_resp_schema(schema, "LinksDataStructureTagResponse")
+               |> validate_resp_schema(schema, "StructureTagsResponse")
                |> json_response(:ok)
     end
 
@@ -107,10 +107,10 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
       domain: domain
     } do
       structure = %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
-      tag = insert(:data_structure_tag)
+      tag = insert(:tag)
 
-      insert(:data_structures_tags,
-        data_structure_tag: tag,
+      insert(:structure_tag,
+        tag: tag,
         data_structure: structure
       )
 
@@ -126,7 +126,7 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
     test "puts link between a tag and its structure", %{conn: conn, swagger_schema: schema} do
       comment = "new comment"
       %{id: data_structure_id} = insert(:data_structure)
-      %{id: tag_id, name: name, description: _description} = insert(:data_structure_tag)
+      %{id: tag_id, name: name, description: _description} = insert(:tag)
       data_structure_tag_partial = %{comment: comment}
 
       assert %{
@@ -134,7 +134,7 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
                  "comment" => ^comment,
                  "_embedded" => %{
                    "data_structure" => %{"id" => ^data_structure_id},
-                   "data_structure_tag" => %{"id" => ^tag_id, "name" => ^name}
+                   "tag" => %{"id" => ^tag_id, "name" => ^name}
                  }
                }
              } =
@@ -142,7 +142,7 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
                |> put(Routes.data_structure_tags_path(conn, :update, data_structure_id, tag_id),
                  tag: data_structure_tag_partial
                )
-               |> validate_resp_schema(schema, "LinkDataStructureTagResponse")
+               |> validate_resp_schema(schema, "UpdateStructureTagResponse")
                |> json_response(:ok)
     end
 
@@ -153,10 +153,10 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
     } do
       comment = "foo"
       structure = %{id: data_structure_id} = insert(:data_structure)
-      tag = %{id: tag_id, name: name, description: description} = insert(:data_structure_tag)
+      tag = %{id: tag_id, name: name, description: description} = insert(:tag)
 
-      insert(:data_structures_tags,
-        data_structure_tag: tag,
+      insert(:structure_tag,
+        tag: tag,
         data_structure: structure,
         comment: "foo"
       )
@@ -168,7 +168,7 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
                  "comment" => ^comment,
                  "_embedded" => %{
                    "data_structure" => %{"id" => ^data_structure_id},
-                   "data_structure_tag" => %{
+                   "tag" => %{
                      "id" => ^tag_id,
                      "name" => ^name,
                      "description" => ^description
@@ -180,7 +180,7 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
                |> put(Routes.data_structure_tags_path(conn, :update, data_structure_id, tag_id),
                  tag: tag
                )
-               |> validate_resp_schema(schema, "LinkDataStructureTagResponse")
+               |> validate_resp_schema(schema, "UpdateStructureTagResponse")
                |> json_response(:ok)
     end
 
@@ -188,7 +188,7 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
     test "responds not found if structure does not exist", %{conn: conn} do
       comment = "foo"
       data_structure_id = System.unique_integer([:positive])
-      %{id: tag_id} = insert(:data_structure_tag)
+      %{id: tag_id} = insert(:tag)
       tag = %{comment: comment}
 
       assert_error_sent :not_found, fn ->
@@ -221,7 +221,7 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
     } do
       comment = "foo"
       %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
-      %{id: tag_id, name: name, description: description} = insert(:data_structure_tag)
+      %{id: tag_id, name: name, description: description} = insert(:tag)
       tag = %{comment: comment}
 
       assert %{
@@ -229,7 +229,7 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
                  "comment" => ^comment,
                  "_embedded" => %{
                    "data_structure" => %{"id" => ^data_structure_id},
-                   "data_structure_tag" => %{
+                   "tag" => %{
                      "id" => ^tag_id,
                      "name" => ^name,
                      "description" => ^description
@@ -241,7 +241,7 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
                |> put(Routes.data_structure_tags_path(conn, :update, data_structure_id, tag_id),
                  tag: tag
                )
-               |> validate_resp_schema(schema, "LinkDataStructureTagResponse")
+               |> validate_resp_schema(schema, "UpdateStructureTagResponse")
                |> json_response(:ok)
     end
 
@@ -252,7 +252,7 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
     } do
       comment = "foo"
       %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
-      %{id: tag_id} = insert(:data_structure_tag)
+      %{id: tag_id} = insert(:tag)
       tag = %{comment: comment}
 
       assert %{"errors" => %{"detail" => "Invalid authorization"}} =
@@ -268,11 +268,11 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
     @tag authentication: [role: "admin"]
     test "deletes link between a tag and its structure", %{conn: conn} do
       structure = %{id: data_structure_id} = insert(:data_structure)
-      tag = %{id: tag_id} = insert(:data_structure_tag)
+      tag = %{id: tag_id} = insert(:tag)
 
       %{id: id} =
-        insert(:data_structures_tags,
-          data_structure_tag: tag,
+        insert(:structure_tag,
+          tag: tag,
           data_structure: structure
         )
 
@@ -307,11 +307,11 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
       domain: domain
     } do
       structure = %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
-      tag = %{id: tag_id} = insert(:data_structure_tag)
+      tag = %{id: tag_id} = insert(:tag)
 
       %{id: id} =
-        insert(:data_structures_tags,
-          data_structure_tag: tag,
+        insert(:structure_tag,
+          tag: tag,
           data_structure: structure
         )
 
@@ -333,10 +333,10 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
       domain: domain
     } do
       structure = %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
-      tag = %{id: tag_id} = insert(:data_structure_tag)
+      tag = %{id: tag_id} = insert(:tag)
 
-      insert(:data_structures_tags,
-        data_structure_tag: tag,
+      insert(:structure_tag,
+        tag: tag,
         data_structure: structure
       )
 

@@ -8,11 +8,11 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   alias TdDd.Classifiers
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
-  alias TdDd.DataStructures.DataStructuresTags
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureMetadata
+  alias TdDd.DataStructures.Tags.StructureTag
   alias TdDd.Profiles.Profile
 
   @paths_by_child_id """
@@ -117,12 +117,12 @@ defmodule TdDd.DataStructures.DataStructureQueries do
     DataStructureVersion
     |> where_ids(tags_params)
     |> join(:inner, [dsv], h in Hierarchy, on: h.ds_id == dsv.data_structure_id, as: :h)
-    |> join(:inner, [_, h], st in DataStructuresTags,
+    |> join(:inner, [_, h], st in StructureTag,
       on:
         st.data_structure_id == h.ds_id or
           (st.inherit and st.data_structure_id == h.ancestor_ds_id)
     )
-    |> join(:inner, [_, _, st], t in assoc(st, :data_structure_tag))
+    |> join(:inner, [_, _, st], t in assoc(st, :tag))
     |> group_by([dsv], dsv.data_structure_id)
     |> select([dsv, _, _, t], %{
       data_structure_id: dsv.data_structure_id,
