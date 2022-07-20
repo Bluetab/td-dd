@@ -1,9 +1,9 @@
-defmodule TdDdWeb.Schema.StructureTagsTest do
+defmodule TdDdWeb.Schema.TagsTest do
   use TdDdWeb.ConnCase
 
-  @structure_tag """
-  query StructureTag($id: ID!) {
-    structureTag(id: $id) {
+  @tag_query """
+  query Tag($id: ID!) {
+    tag(id: $id) {
       id
       name
       description
@@ -12,9 +12,9 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
   }
   """
 
-  @structure_tags """
-  query StructureTag {
-    structureTags {
+  @tags_query """
+  query Tag {
+    tags {
       id
       name
       description
@@ -24,9 +24,9 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
   }
   """
 
-  @create_structure_tag """
-  mutation CreateStructureTag($structureTag: StructureTagInput!) {
-    createStructureTag(structureTag: $structureTag) {
+  @create_tag """
+  mutation CreateTag($tag: TagInput!) {
+    createTag(tag: $tag) {
       id
       name
       description
@@ -35,9 +35,9 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
   }
   """
 
-  @update_structure_tag """
-  mutation UpdateStructureTag($structureTag: StructureTagInput!) {
-    updateStructureTag(structureTag: $structureTag) {
+  @update_tag """
+  mutation UpdateTag($tag: TagInput!) {
+    updateTag(tag: $tag) {
       id
       name
       description
@@ -46,28 +46,28 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
   }
   """
 
-  @delete_structure_tag """
-  mutation DeleteStructureTag($id: ID!) {
-    deleteStructureTag(id: $id) {
+  @delete_tag """
+  mutation DeleteTag($id: ID!) {
+    deleteTag(id: $id) {
       id
     }
   }
   """
 
-  defp create_structure_tag(%{} = context) do
+  defp create_tag(%{} = context) do
     %{id: domain_id} = domain = context[:domain] || CacheHelpers.insert_domain()
-    [domain: domain, structure_tag: insert(:tag, domain_ids: [domain_id])]
+    [domain: domain, tag: insert(:tag, domain_ids: [domain_id])]
   end
 
-  describe "structureTag query" do
-    setup :create_structure_tag
+  describe "tag query" do
+    setup :create_tag
 
     @tag authentication: [role: "user", permissions: [:foo]]
     test "returns forbidden when queried by user role", %{conn: conn} do
       assert %{"data" => nil, "errors" => errors} =
                conn
                |> post("/api/v2", %{
-                 "query" => @structure_tag,
+                 "query" => @tag_query,
                  "variables" => %{"id" => 123}
                })
                |> json_response(:ok)
@@ -78,55 +78,55 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
     @tag authentication: [role: "admin"]
     test "returns data when queried by admin role", %{
       conn: conn,
-      structure_tag: %{id: structure_tag_id}
+      tag: %{id: tag_id}
     } do
       assert %{"data" => data} =
                response =
                conn
                |> post("/api/v2", %{
-                 "query" => @structure_tag,
-                 "variables" => %{"id" => structure_tag_id}
+                 "query" => @tag_query,
+                 "variables" => %{"id" => tag_id}
                })
                |> json_response(:ok)
 
       assert response["errors"] == nil
-      assert %{"structureTag" => structure_tag} = data
+      assert %{"tag" => tag} = data
 
       assert %{
                "id" => id,
                "domainIds" => [_],
                "name" => _,
                "description" => _
-             } = structure_tag
+             } = tag
 
-      assert id == to_string(structure_tag_id)
+      assert id == to_string(tag_id)
     end
   end
 
-  describe "structureTags query" do
-    setup :create_structure_tag
+  describe "tags query" do
+    setup :create_tag
 
     @tag authentication: [role: "user"]
     test "returns forbidden when queried by user role", %{conn: conn} do
       assert %{"data" => data, "errors" => errors} =
                conn
-               |> post("/api/v2", %{"query" => @structure_tags})
+               |> post("/api/v2", %{"query" => @tags_query})
                |> json_response(:ok)
 
-      assert data == %{"structureTags" => nil}
+      assert data == %{"tags" => nil}
       assert [%{"message" => "forbidden"}] = errors
     end
 
     @tag authentication: [role: "admin"]
-    test "returns data when queried by admin role", %{conn: conn, structure_tag: structure_tag} do
+    test "returns data when queried by admin role", %{conn: conn, tag: tag} do
       assert %{"data" => data} =
                resp =
                conn
-               |> post("/api/v2", %{"query" => @structure_tags})
+               |> post("/api/v2", %{"query" => @tags_query})
                |> json_response(:ok)
 
       refute Map.has_key?(resp, "errors")
-      assert %{"structureTags" => structure_tags} = data
+      assert %{"tags" => tags} = data
 
       assert [
                %{
@@ -135,16 +135,16 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
                  "description" => description,
                  "domainIds" => domain_ids
                }
-             ] = structure_tags
+             ] = tags
 
-      assert id == to_string(structure_tag.id)
-      assert name == to_string(structure_tag.name)
-      assert description == to_string(structure_tag.description)
-      assert_lists_equal(domain_ids, structure_tag.domain_ids, &(to_string(&1) == to_string(&2)))
+      assert id == to_string(tag.id)
+      assert name == to_string(tag.name)
+      assert description == to_string(tag.description)
+      assert_lists_equal(domain_ids, tag.domain_ids, &(to_string(&1) == to_string(&2)))
     end
   end
 
-  describe "createStructureTag mutation" do
+  describe "createTag mutation" do
     @tag authentication: [role: "user"]
     test "returns forbidden when queried by user role", %{conn: conn} do
       params = string_params_for(:tag)
@@ -152,8 +152,8 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
       assert %{"data" => nil, "errors" => errors} =
                conn
                |> post("/api/v2", %{
-                 "query" => @create_structure_tag,
-                 "variables" => %{"structureTag" => params}
+                 "query" => @create_tag,
+                 "variables" => %{"tag" => params}
                })
                |> json_response(:ok)
 
@@ -161,7 +161,7 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "creates the structure tag when performed by admin role", %{conn: conn} do
+    test "creates the tag when performed by admin role", %{conn: conn} do
       %{
         "name" => name,
         "description" => description
@@ -171,24 +171,24 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
                response =
                conn
                |> post("/api/v2", %{
-                 "query" => @create_structure_tag,
-                 "variables" => %{"structureTag" => params}
+                 "query" => @create_tag,
+                 "variables" => %{"tag" => params}
                })
                |> json_response(:ok)
 
       assert response["errors"] == nil
-      assert %{"createStructureTag" => structure_tag} = data
+      assert %{"createTag" => tag} = data
 
       assert %{
                "id" => _,
                "name" => ^name,
                "description" => ^description,
                "domainIds" => ["123"]
-             } = structure_tag
+             } = tag
     end
 
     @tag authentication: [role: "admin"]
-    test "Create structure tag with large description return an error", %{conn: conn} do
+    test "Create tag with large description return an error", %{conn: conn} do
       description = String.duplicate("foo", 334)
 
       %{
@@ -198,8 +198,8 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
       assert %{"data" => nil, "errors" => errors} =
                conn
                |> post("/api/v2", %{
-                 "query" => @create_structure_tag,
-                 "variables" => %{"structureTag" => params}
+                 "query" => @create_tag,
+                 "variables" => %{"tag" => params}
                })
                |> json_response(:ok)
 
@@ -208,7 +208,7 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
     end
   end
 
-  describe "updateStructureTag mutation" do
+  describe "updateTag mutation" do
     @tag authentication: [role: "user"]
     test "returns forbidden for a non-admin user", %{conn: conn} do
       params = string_params_for(:tag)
@@ -216,8 +216,8 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
       assert %{"data" => nil, "errors" => errors} =
                conn
                |> post("/api/v2", %{
-                 "query" => @update_structure_tag,
-                 "variables" => %{"structureTag" => params}
+                 "query" => @update_tag,
+                 "variables" => %{"tag" => params}
                })
                |> json_response(:ok)
 
@@ -231,8 +231,8 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
       assert %{"data" => nil, "errors" => errors} =
                conn
                |> post("/api/v2", %{
-                 "query" => @update_structure_tag,
-                 "variables" => %{"structureTag" => params}
+                 "query" => @update_tag,
+                 "variables" => %{"tag" => params}
                })
                |> json_response(:ok)
 
@@ -240,23 +240,23 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "updates the structure tag for an admin user", %{conn: conn} do
+    test "updates the tag for an admin user", %{conn: conn} do
       %{id: id} = insert(:tag)
       params = string_params_for(:tag) |> Map.put("id", id)
 
       assert %{"data" => data} =
                conn
                |> post("/api/v2", %{
-                 "query" => @update_structure_tag,
-                 "variables" => %{"structureTag" => params}
+                 "query" => @update_tag,
+                 "variables" => %{"tag" => params}
                })
                |> json_response(:ok)
 
-      assert %{"updateStructureTag" => %{"id" => _}} = data
+      assert %{"updateTag" => %{"id" => _}} = data
     end
 
     @tag authentication: [role: "admin"]
-    test "Update structure tag with large description return an error", %{conn: conn} do
+    test "Update tag with large description return an error", %{conn: conn} do
       %{id: id} = insert(:tag)
       description = String.duplicate("foo", 334)
 
@@ -271,8 +271,8 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
       assert %{"data" => nil, "errors" => errors} =
                conn
                |> post("/api/v2", %{
-                 "query" => @update_structure_tag,
-                 "variables" => %{"structureTag" => params}
+                 "query" => @update_tag,
+                 "variables" => %{"tag" => params}
                })
                |> json_response(:ok)
 
@@ -281,13 +281,13 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
     end
   end
 
-  describe "deleteStructureTag mutation" do
+  describe "deleteTag mutation" do
     @tag authentication: [role: "user"]
     test "returns forbidden for a non-admin user", %{conn: conn} do
       assert %{"data" => nil, "errors" => errors} =
                conn
                |> post("/api/v2", %{
-                 "query" => @delete_structure_tag,
+                 "query" => @delete_tag,
                  "variables" => %{"id" => "123"}
                })
                |> json_response(:ok)
@@ -300,7 +300,7 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
       assert %{"data" => nil, "errors" => errors} =
                conn
                |> post("/api/v2", %{
-                 "query" => @delete_structure_tag,
+                 "query" => @delete_tag,
                  "variables" => %{"id" => "123"}
                })
                |> json_response(:ok)
@@ -309,18 +309,18 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "deletes the structure tag for an admin user", %{conn: conn} do
+    test "deletes the tag for an admin user", %{conn: conn} do
       %{id: id} = insert(:tag)
 
       assert %{"data" => data} =
                conn
                |> post("/api/v2", %{
-                 "query" => @delete_structure_tag,
+                 "query" => @delete_tag,
                  "variables" => %{"id" => id}
                })
                |> json_response(:ok)
 
-      assert %{"deleteStructureTag" => %{"id" => _}} = data
+      assert %{"deleteTag" => %{"id" => _}} = data
     end
   end
 end

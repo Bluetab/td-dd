@@ -62,7 +62,7 @@ defmodule TdDd.Canada.Abilities do
     def can?(%Claims{role: "user"} = claims, :query, :sources),
       do: SourceAbilities.can?(claims, :list, Source)
 
-    def can?(%Claims{role: "user"} = claims, :query, :structure_tags),
+    def can?(%Claims{role: "user"} = claims, :query, :tags),
       do: TagAbilities.can?(claims, :index, Tag)
 
     def can?(%Claims{role: "user"} = claims, :query, :implementation),

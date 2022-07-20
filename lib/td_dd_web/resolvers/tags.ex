@@ -1,6 +1,6 @@
-defmodule TdDdWeb.Resolvers.StructureTag do
+defmodule TdDdWeb.Resolvers.Tags do
   @moduledoc """
-  Absinthe resolvers for structure tags
+  Absinthe resolvers for tags
   """
 
   import Canada, only: [can?: 2]
@@ -8,16 +8,16 @@ defmodule TdDdWeb.Resolvers.StructureTag do
   alias TdDd.DataStructures.Tags
   alias TdDd.Utils.ChangesetUtils
 
-  def structure_tags(_parent, args, _resolution) do
+  def tags(_parent, args, _resolution) do
     args = Map.put_new(args, :structure_count, true)
     {:ok, Tags.list_tags(args)}
   end
 
-  def structure_tag(_parent, %{id: id} = _args, _resolution) do
+  def tag(_parent, %{id: id} = _args, _resolution) do
     {:ok, Tags.get_tag(id: id)}
   end
 
-  def create_structure_tag(_parent, %{structure_tag: params} = _args, _resolution) do
+  def create_tag(_parent, %{tag: params} = _args, _resolution) do
     case Tags.create_tag(params) do
       {:ok, %{id: id} = _tag} ->
         {:ok, Tags.get_tag(id: id)}
@@ -27,7 +27,7 @@ defmodule TdDdWeb.Resolvers.StructureTag do
     end
   end
 
-  def update_structure_tag(_parent, %{structure_tag: %{id: id} = params} = _args, resolution) do
+  def update_tag(_parent, %{tag: %{id: id} = params} = _args, resolution) do
     with {:claims, %{} = claims} <- {:claims, claims(resolution)},
          {:tag, %{} = tag} <- {:tag, Tags.get_tag(id: id)},
          {:can, true} <- {:can, can?(claims, update(tag))},
@@ -48,7 +48,7 @@ defmodule TdDdWeb.Resolvers.StructureTag do
     end
   end
 
-  def delete_structure_tag(_parent, %{id: id} = _args, resolution) do
+  def delete_tag(_parent, %{id: id} = _args, resolution) do
     with {:claims, %{} = claims} <- {:claims, claims(resolution)},
          {:tag, %{} = tag} <- {:tag, Tags.get_tag(id: id)},
          {:can, true} <- {:can, can?(claims, delete(tag))} do
