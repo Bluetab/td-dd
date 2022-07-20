@@ -129,27 +129,13 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
   end
 
   def update(structure_note, %{"status" => status}, _is_strict, user_id, _type) do
-    case String.to_atom(status) do
-      :pending_approval ->
-        send_for_approval(structure_note, user_id)
-
-      :published ->
-        publish(structure_note, user_id)
-
-      :rejected ->
-        reject(structure_note, user_id)
-
-      :draft ->
-        unreject(structure_note, user_id)
-
-      :deprecated ->
-        deprecate(
-          structure_note,
-          user_id
-        )
-
-      _ ->
-        {:error, :invalid_transition}
+    case status do
+      "pending_approval" -> send_for_approval(structure_note, user_id)
+      "published" -> publish(structure_note, user_id)
+      "rejected" -> reject(structure_note, user_id)
+      "draft" -> unreject(structure_note, user_id)
+      "deprecated" -> deprecate(structure_note, user_id)
+      _ -> {:error, :invalid_transition}
     end
   end
 
@@ -171,11 +157,15 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
 
   # Lifecycle actions for structure notes
   defp update_content(structure_note, new_df_content, user_id, true = _is_strict, type) do
-    StructureNotes.update_structure_note(
-      structure_note,
-      %{"df_content" => new_df_content, "type" => type},
-      user_id
-    )
+    case StructureNotes.update_structure_note(
+           structure_note,
+           %{"df_content" => new_df_content, "type" => type},
+           user_id
+         ) do
+      {:ok, %{structure_note: structure_note}} -> {:ok, structure_note}
+      {:error, :structure_note, err, _} -> {:error, err}
+      err -> err
+    end
   end
 
   defp update_content(structure_note, new_df_content, user_id, false = _is_strict, type) do
@@ -227,7 +217,16 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
   end
 
   defp transit_to(structure_note, status, user_id, opts \\ []) do
-    StructureNotes.update_structure_note(structure_note, %{"status" => status}, user_id, opts)
+    case StructureNotes.update_structure_note(
+           structure_note,
+           %{"status" => status},
+           user_id,
+           opts
+         ) do
+      {:ok, %{structure_note_update: structure_note_update}} -> {:ok, structure_note_update}
+      {:error, :structure_note_update, err, _} -> {:error, err}
+      err -> err
+    end
   end
 
   defp can_transit_to(structure_note, status) do
