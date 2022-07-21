@@ -4,7 +4,7 @@ defmodule TdDd.Canada.TagAbilities do
   alias TdDd.DataStructures.Tags.Tag
   alias TdDd.Permissions
 
-  # Admin accounts can do anything with data structure tags
+  # Admin accounts can do anything with tags
   def can?(%Claims{role: "admin"}, _action, _resource), do: true
 
   def can?(%Claims{} = claims, :index, Tag) do

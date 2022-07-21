@@ -23,7 +23,7 @@ defmodule TdDdWeb.Schema.DataStructureQueryTest do
   """
 
   describe "dataStructure query" do
-    setup [:put_domain, :put_permissions]
+    # setup [:put_domain, :put_permissions]
 
     @tag authentication: [role: "user"]
     test "returns forbidden if user has no permissions", %{conn: conn} do
@@ -36,8 +36,7 @@ defmodule TdDdWeb.Schema.DataStructureQueryTest do
       assert [%{"message" => "forbidden"}] = errors
     end
 
-    @tag authentication: [role: "user"]
-    @tag permissions: [:view_data_structure]
+    @tag authentication: [role: "user", permissions: [:view_data_structure]]
     test "returns not found when queried by permitted user", %{conn: conn} do
       assert %{"data" => data, "errors" => errors} =
                conn
@@ -48,8 +47,10 @@ defmodule TdDdWeb.Schema.DataStructureQueryTest do
       assert [%{"message" => "not_found"}] = errors
     end
 
-    @tag authentication: [role: "user"]
-    @tag permissions: [:view_data_structure, :link_data_structure_tag]
+    @tag authentication: [
+           role: "user",
+           permissions: [:view_data_structure, :link_data_structure_tag]
+         ]
     test "returns structure with tags and availableTags when queried by permitted user", %{
       conn: conn,
       domain: domain
@@ -86,21 +87,5 @@ defmodule TdDdWeb.Schema.DataStructureQueryTest do
                }
              }
     end
-  end
-
-  defp put_domain(_context) do
-    [domain: CacheHelpers.insert_domain()]
-  end
-
-  defp put_permissions(context) do
-    case context do
-      %{permissions: permissions, claims: claims, domain: %{id: domain_id}} ->
-        CacheHelpers.put_session_permissions(claims, domain_id, permissions)
-
-      _ ->
-        :ok
-    end
-
-    :ok
   end
 end
