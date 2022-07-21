@@ -191,7 +191,7 @@ defmodule TdDd.DataStructures.TagsTest do
              } = Jason.decode!(payload)
     end
 
-    test "updates link information when it already exists", %{claims: claims} do
+    test "updates structure tag when it already exists", %{claims: claims} do
       %{comment: comment} = build(:structure_tag)
       structure = %{id: data_structure_id, external_id: external_id} = insert(:data_structure)
 
@@ -249,7 +249,7 @@ defmodule TdDd.DataStructures.TagsTest do
       [claims: build(:claims)]
     end
 
-    test "deletes link between tag and structure", %{claims: claims} do
+    test "deletes structure tag", %{claims: claims} do
       structure = %{id: data_structure_id, external_id: external_id} = insert(:data_structure)
 
       tag = %{id: tag_id, name: tag_name} = insert(:tag)
@@ -286,7 +286,7 @@ defmodule TdDd.DataStructures.TagsTest do
              )
     end
 
-    test "not_found if link does not exist", %{claims: claims} do
+    test "not_found if structure tag does not exist", %{claims: claims} do
       structure = %{id: data_structure_id} = insert(:data_structure)
       tag = %{id: tag_id} = insert(:tag)
 

@@ -146,6 +146,12 @@ defmodule TdDd.DataStructures.Tags do
     end
   end
 
+  def get_structure_tag(id) do
+    StructureTag
+    |> Repo.get(id)
+    |> Repo.preload([:data_structure, :tag])
+  end
+
   defp get_current_tag(data_structure_id, tag_id) do
     StructureTag
     |> Repo.get_by(
@@ -200,6 +206,20 @@ defmodule TdDd.DataStructures.Tags do
     |> Multi.run(:audit, Audit, :structure_tag_updated, [changeset, user_id])
     |> Repo.transaction()
     |> maybe_reindex(reindex)
+  end
+
+  def delete_structure_tag(
+        %StructureTag{data_structure: structure} = structure_tag,
+        %{user_id: user_id} = _claims
+      ) do
+    Multi.new()
+    |> Multi.run(:latest, fn _, _ ->
+      {:ok, DataStructures.get_latest_version(structure, [:path])}
+    end)
+    |> Multi.delete(:structure_tag, structure_tag)
+    |> Multi.run(:audit, Audit, :structure_tag_deleted, [user_id])
+    |> Repo.transaction()
+    |> maybe_reindex()
   end
 
   defp maybe_reindex(res, reindex \\ true)

@@ -15,6 +15,7 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Canada.ReferenceDataAbilities
   alias TdDd.Canada.StructureNoteAbilities
   alias TdDd.Canada.SystemAbilities
+  alias TdDd.Canada.StructureTagAbilities
   alias TdDd.Canada.TagAbilities
   alias TdDd.Canada.UnitAbilities
   alias TdDd.Classifiers.Classifier
@@ -22,6 +23,7 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.StructureNote
+  alias TdDd.DataStructures.Tags.StructureTag
   alias TdDd.DataStructures.Tags.Tag
   alias TdDd.Executions.ProfileEvent
   alias TdDd.Executions.ProfileExecution
@@ -47,6 +49,8 @@ defmodule TdDd.Canada.Abilities do
       :reject_implementation,
       :submit_implementation
     ]
+
+    @structure_tag_mutations [:tag_structure, :delete_structure_tag]
 
     # service accounts can upload metadata and profiling
     def can?(%Claims{role: "service"}, :upload, _resource), do: true
@@ -84,6 +88,10 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%{} = claims, :mutation, mutation) when mutation in @implementation_mutations do
       ImplementationAbilities.can?(claims, :mutation, mutation)
+    end
+
+    def can?(%{} = claims, :mutation, mutation) when mutation in @structure_tag_mutations do
+      StructureTagAbilities.can?(claims, :mutation, mutation)
     end
 
     def can?(%{role: role}, :mutation, _mutation), do: role == "admin"
@@ -219,6 +227,10 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%Claims{} = claims, action, %Tag{} = tag) do
       TagAbilities.can?(claims, action, tag)
+    end
+
+    def can?(%Claims{} = claims, action, %StructureTag{} = structure_tag) do
+      StructureTagAbilities.can?(claims, action, structure_tag)
     end
 
     def can?(%Claims{} = claims, action, %DataStructureType{} = data_structure_type) do
