@@ -25,7 +25,7 @@ defmodule TdDdWeb.Resolvers.StructureTags do
       {:struct, nil} -> {:error, :not_found}
       {:tag, nil} -> {:error, :not_found}
       {:can, false} -> {:error, :forbidden}
-      {:error, multi} -> {:error, multi}
+      {:error, _, changeset, _} -> {:error, changeset}
     end
   end
 
@@ -40,7 +40,7 @@ defmodule TdDdWeb.Resolvers.StructureTags do
       {:claims, nil} -> {:error, :unauthorized}
       {:structure_tag, nil} -> {:error, :not_found}
       {:can, false} -> {:error, :forbidden}
-      {:error, multi} -> {:error, multi}
+      {:error, _, changeset, _} -> {:error, changeset}
     end
   end
 

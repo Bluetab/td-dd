@@ -86,7 +86,12 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
       %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
 
       variables = %{
-        "structureTag" => %{"tagId" => tag_id, "dataStructureId" => data_structure_id}
+        "structureTag" => %{
+          "tagId" => tag_id,
+          "dataStructureId" => data_structure_id,
+          "comment" => "foo",
+          "inherit" => false
+        }
       }
 
       assert %{"data" => data} =

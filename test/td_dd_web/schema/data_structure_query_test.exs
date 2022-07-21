@@ -1,6 +1,8 @@
 defmodule TdDdWeb.Schema.DataStructureQueryTest do
   use TdDdWeb.ConnCase
 
+  alias TdDd.DataStructures.Hierarchy
+
   @structure_query """
   query DataStructure($id: ID!) {
     dataStructure(id: $id) {
@@ -13,6 +15,7 @@ defmodule TdDdWeb.Schema.DataStructureQueryTest do
         id
         comment
         inherit
+        inherited
         tag {
           id
           name
@@ -56,10 +59,16 @@ defmodule TdDdWeb.Schema.DataStructureQueryTest do
       domain: domain
     } do
       %{id: tag_id, name: tag_name} = insert(:tag, domain_ids: [domain.id, 123])
-      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
+
+      %{data_structure_id: data_structure_id, id: data_structure_version_id} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, domain_ids: [domain.id])
+        )
 
       %{id: structure_tag_id, comment: comment} =
         insert(:structure_tag, tag_id: tag_id, data_structure_id: data_structure_id)
+
+      Hierarchy.update_hierarchy([data_structure_version_id])
 
       assert %{"data" => data} =
                response =
@@ -81,6 +90,7 @@ defmodule TdDdWeb.Schema.DataStructureQueryTest do
                      "id" => "#{structure_tag_id}",
                      "comment" => comment,
                      "inherit" => false,
+                     "inherited" => false,
                      "tag" => %{"id" => "#{tag_id}", "name" => tag_name}
                    }
                  ]

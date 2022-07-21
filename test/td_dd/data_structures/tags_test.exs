@@ -97,14 +97,16 @@ defmodule TdDd.DataStructures.TagsTest do
              ] = Tags.tags(structure)
     end
 
-    test "includes inherited tags" do
+    test "includes inherited tags from nearest ancestor" do
       %{id: tag_id} = insert(:tag)
 
       [foo, bar, baz, xyzzy] = create_hierarchy(["foo", "bar", "baz", "xyzzy"])
 
       assert Tags.tags(xyzzy) == []
 
-      insert(:structure_tag, data_structure_id: foo.data_structure_id)
+      %{id: id0} = insert(:structure_tag, data_structure_id: foo.data_structure_id)
+
+      assert [%{id: ^id0, inherited: false}] = Tags.tags(foo)
 
       assert Tags.tags(xyzzy) == []
 
@@ -115,14 +117,14 @@ defmodule TdDd.DataStructures.TagsTest do
           inherit: true
         )
 
-      assert [%{id: ^id1}] = Tags.tags(xyzzy)
+      assert [%{id: ^id1, inherited: true}] = Tags.tags(xyzzy)
 
       insert(:structure_tag,
         data_structure_id: bar.data_structure_id,
         tag_id: tag_id
       )
 
-      assert [%{id: ^id1}] = Tags.tags(xyzzy)
+      assert [%{id: ^id1, inherited: true}] = Tags.tags(xyzzy)
 
       %{id: id2} =
         insert(:structure_tag,
@@ -131,7 +133,7 @@ defmodule TdDd.DataStructures.TagsTest do
           inherit: true
         )
 
-      assert [%{id: ^id2}] = Tags.tags(xyzzy)
+      assert [%{id: ^id2, inherited: true}] = Tags.tags(xyzzy)
 
       %{id: id3} =
         insert(:structure_tag,
@@ -139,7 +141,7 @@ defmodule TdDd.DataStructures.TagsTest do
           tag_id: tag_id
         )
 
-      assert [%{id: ^id3}] = Tags.tags(xyzzy)
+      assert [%{id: ^id3, inherited: false}] = Tags.tags(xyzzy)
 
       insert(:structure_tag, data_structure_id: baz.data_structure_id, inherit: true)
 

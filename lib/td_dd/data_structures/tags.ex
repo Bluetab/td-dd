@@ -107,6 +107,7 @@ defmodule TdDd.DataStructures.Tags do
           (st.inherit and st.data_structure_id == h.ancestor_ds_id)
     )
     |> where([_, h], h.ds_id == ^data_structure_id)
+    |> select_merge([st, h], %{inherited: st.data_structure_id != h.ds_id})
     |> order_by([st, h], asc: st.tag_id, asc: h.ds_id, asc: h.ancestor_level)
     |> distinct([st, h], asc: st.tag_id, asc: h.ds_id)
     |> preload([:data_structure, :tag])

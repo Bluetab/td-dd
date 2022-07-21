@@ -15,6 +15,7 @@ defmodule TdDd.DataStructures.Tags.StructureTag do
     field :tag_name, :string, virtual: true
     field :domain_ids, {:array, :integer}, virtual: true, default: []
     field :inherit, :boolean, default: false
+    field :inherited, :boolean, virtual: true
 
     belongs_to :data_structure, DataStructure
     belongs_to :tag, Tag

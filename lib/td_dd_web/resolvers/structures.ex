@@ -75,6 +75,10 @@ defmodule TdDdWeb.Resolvers.Structures do
     end
   end
 
+  def structure_tags(%{} = data_structure, _args, _resolution) do
+    {:ok, Tags.tags(data_structure)}
+  end
+
   defp claims(%{context: %{claims: claims}}), do: claims
   defp claims(_), do: nil
 end

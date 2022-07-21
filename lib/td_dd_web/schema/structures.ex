@@ -60,7 +60,10 @@ defmodule TdDdWeb.Schema.Structures do
     field :system, :system, resolve: dataloader(TdDd.DataStructures)
     field :current_version, :data_structure_version, resolve: dataloader(TdDd.DataStructures)
     field :units, list_of(:unit), resolve: dataloader(TdDd.DataStructures)
-    field :structure_tags, list_of(:structure_tag), resolve: dataloader(TdDd.DataStructures)
+
+    field :structure_tags, list_of(:structure_tag),
+      resolve: &Resolvers.Structures.structure_tags/3
+
     field :available_tags, list_of(:tag), resolve: &Resolvers.Structures.available_tags/3
   end
 
