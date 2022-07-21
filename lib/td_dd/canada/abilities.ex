@@ -14,8 +14,8 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Canada.LinkAbilities
   alias TdDd.Canada.ReferenceDataAbilities
   alias TdDd.Canada.StructureNoteAbilities
-  alias TdDd.Canada.SystemAbilities
   alias TdDd.Canada.StructureTagAbilities
+  alias TdDd.Canada.SystemAbilities
   alias TdDd.Canada.TagAbilities
   alias TdDd.Canada.UnitAbilities
   alias TdDd.Classifiers.Classifier

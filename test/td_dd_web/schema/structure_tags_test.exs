@@ -1,7 +1,7 @@
 defmodule TdDdWeb.Schema.StructureTagsTest do
   use TdDdWeb.ConnCase
 
-  @tagStructure """
+  @tag_structure """
   mutation TagStructure($structureTag: StructureTagInput!) {
     tagStructure(structureTag: $structureTag) {
       id
@@ -15,7 +15,7 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
   }
   """
 
-  @deleteStructureTag """
+  @delete_structure_tag """
   mutation UntagStructure($id: ID!) {
     deleteStructureTag(id: $id) {
       id
@@ -30,7 +30,7 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
 
       assert %{"data" => nil, "errors" => errors} =
                conn
-               |> post("/api/v2", %{"query" => @tagStructure, "variables" => variables})
+               |> post("/api/v2", %{"query" => @tag_structure, "variables" => variables})
                |> json_response(:ok)
 
       assert [%{"message" => "forbidden", "path" => ["tagStructure"]}] = errors
@@ -47,7 +47,7 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
 
       assert %{"data" => nil, "errors" => errors} =
                conn
-               |> post("/api/v2", %{"query" => @tagStructure, "variables" => variables})
+               |> post("/api/v2", %{"query" => @tag_structure, "variables" => variables})
                |> json_response(:ok)
 
       assert [%{"message" => "forbidden", "path" => ["tagStructure"]}] = errors
@@ -60,7 +60,7 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
 
       assert %{"data" => nil, "errors" => errors} =
                conn
-               |> post("/api/v2", %{"query" => @tagStructure, "variables" => variables})
+               |> post("/api/v2", %{"query" => @tag_structure, "variables" => variables})
                |> json_response(:ok)
 
       assert [%{"message" => "not_found", "path" => ["tagStructure"]}] = errors
@@ -74,7 +74,7 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
 
       assert %{"data" => nil, "errors" => errors} =
                conn
-               |> post("/api/v2", %{"query" => @tagStructure, "variables" => variables})
+               |> post("/api/v2", %{"query" => @tag_structure, "variables" => variables})
                |> json_response(:ok)
 
       assert [%{"message" => "not_found", "path" => ["tagStructure"]}] = errors
@@ -97,7 +97,7 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
       assert %{"data" => data} =
                response =
                conn
-               |> post("/api/v2", %{"query" => @tagStructure, "variables" => variables})
+               |> post("/api/v2", %{"query" => @tag_structure, "variables" => variables})
                |> json_response(:ok)
 
       refute Map.has_key?(response, "errors")
@@ -112,7 +112,7 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
 
       assert %{"data" => nil, "errors" => errors} =
                conn
-               |> post("/api/v2", %{"query" => @deleteStructureTag, "variables" => variables})
+               |> post("/api/v2", %{"query" => @delete_structure_tag, "variables" => variables})
                |> json_response(:ok)
 
       assert [%{"message" => "forbidden", "path" => ["deleteStructureTag"]}] = errors
@@ -124,7 +124,7 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
 
       assert %{"data" => nil, "errors" => errors} =
                conn
-               |> post("/api/v2", %{"query" => @deleteStructureTag, "variables" => variables})
+               |> post("/api/v2", %{"query" => @delete_structure_tag, "variables" => variables})
                |> json_response(:ok)
 
       assert [%{"message" => "not_found", "path" => ["deleteStructureTag"]}] = errors
@@ -138,7 +138,7 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
 
       assert %{"data" => nil, "errors" => errors} =
                conn
-               |> post("/api/v2", %{"query" => @deleteStructureTag, "variables" => variables})
+               |> post("/api/v2", %{"query" => @delete_structure_tag, "variables" => variables})
                |> json_response(:ok)
 
       assert [%{"message" => "forbidden", "path" => ["deleteStructureTag"]}] = errors
@@ -154,7 +154,7 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
       assert %{"data" => data} =
                response =
                conn
-               |> post("/api/v2", %{"query" => @deleteStructureTag, "variables" => variables})
+               |> post("/api/v2", %{"query" => @delete_structure_tag, "variables" => variables})
                |> json_response(:ok)
 
       refute Map.has_key?(response, "errors")
