@@ -225,7 +225,7 @@ defmodule TdDd.Grants.Requests do
     Multi.new()
     |> Multi.insert(:approval, changeset)
     |> maybe_insert_status(grant_request, Changeset.fetch_field!(changeset, :is_rejection))
-    |> Multi.run(:audit, Audit, :grant_approvals, [])
+    |> Multi.run(:audit, Audit, :grant_request_approval_created, [])
     |> Repo.transaction()
     |> enrich()
   end

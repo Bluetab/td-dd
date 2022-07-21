@@ -3,14 +3,11 @@ defmodule TdDd.Grants.RequestsTest do
 
   import TdDd.TestOperators
 
-  alias TdCache.Redix.Stream
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestApproval
   alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Grants.GrantRequestStatus
   alias TdDd.Grants.Requests
-
-  @stream TdCache.Audit.stream()
 
   @template_name "grant_request_test_template"
   @valid_metadata %{"list" => "one", "string" => "bar"}
@@ -359,8 +356,6 @@ defmodule TdDd.Grants.RequestsTest do
       domain_id: domain_id,
       request: request
     } do
-      # CacheHelpers.put_session_permissions(claims, %{approve_grant_request: [d1, d2, d3]})
-
       CacheHelpers.put_grant_request_approvers([
         %{user_id: user_id, domain_id: domain_id, role: "approver"}
       ])
@@ -393,27 +388,9 @@ defmodule TdDd.Grants.RequestsTest do
 
     test "inserts a rejected status the approval is rejected", %{
       claims: %{user_id: user_id} = claims,
-      domain_id: domain_id
+      domain_id: domain_id,
+      request: request
     } do
-      %{id: system_id} = insert(:system)
-
-      %{id: data_structure_id} =
-        data_structure =
-        insert(:data_structure,
-          system_id: system_id,
-          domain_ids: [domain_id]
-        )
-
-      insert(:data_structure_version, data_structure_id: data_structure_id)
-
-      request =
-        insert(:grant_request,
-          data_structure: data_structure,
-          data_structure_id: data_structure_id,
-          current_status: "pending",
-          domain_ids: [domain_id]
-        )
-
       CacheHelpers.put_grant_request_approvers([
         %{user_id: user_id, domain_id: domain_id, role: "rejector"}
       ])
@@ -422,41 +399,6 @@ defmodule TdDd.Grants.RequestsTest do
 
       assert {:ok, %{status: status}} = Requests.create_approval(claims, request, params)
       assert %GrantRequestStatus{status: "rejected"} = status
-    end
-
-    test "inserts a rejected status publishes an audit event", %{
-      claims: %{user_id: user_id} = claims,
-      domain_id: domain_id
-    } do
-      %{id: system_id} = insert(:system)
-
-      %{id: data_structure_id} =
-        data_structure =
-        insert(:data_structure,
-          system_id: system_id,
-          domain_ids: [domain_id]
-        )
-
-      insert(:data_structure_version, data_structure_id: data_structure_id)
-
-      request =
-        insert(:grant_request,
-          data_structure: data_structure,
-          data_structure_id: data_structure_id,
-          current_status: "pending",
-          domain_ids: [domain_id]
-        )
-
-      CacheHelpers.put_grant_request_approvers([
-        %{user_id: user_id, domain_id: domain_id, role: "rejector"}
-      ])
-
-      params = %{role: "rejector", is_rejection: true, comment: "foo"}
-
-      assert {:ok, %{audit: event_id}} = Requests.create_approval(claims, request, params)
-
-      assert {:ok, [%{id: ^event_id}]} =
-               Stream.range(:redix, @stream, event_id, event_id, transform: :range)
     end
 
     test "inserts a approved status the approval is approved", %{
@@ -482,9 +424,22 @@ defmodule TdDd.Grants.RequestsTest do
     %{id: domain_id} = CacheHelpers.insert_domain()
     CacheHelpers.insert_user(user_id: user_id)
 
+    %{id: data_structure_id} =
+      data_structure =
+      insert(:data_structure,
+        domain_ids: [domain_id]
+      )
+
+    insert(:data_structure_version, data_structure_id: data_structure_id)
+
     [
       domain_id: domain_id,
-      request: insert(:grant_request, current_status: "pending", domain_ids: [domain_id])
+      request:
+        insert(:grant_request,
+          data_structure: data_structure,
+          current_status: "pending",
+          domain_ids: [domain_id]
+        )
     ]
   end
 end
