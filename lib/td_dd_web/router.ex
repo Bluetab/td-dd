@@ -55,12 +55,6 @@ defmodule TdDdWeb.Router do
     resources "/data_structures", DataStructureController, except: [:new, :edit, :show] do
       resources("/versions", DataStructureVersionController, only: [:show])
       resources("/profile_results", ProfileController, only: [:create])
-
-      resources("/tags", StructureTagController,
-        only: [:delete, :index, :update],
-        name: :tags
-      )
-
       resources("/notes", StructureNoteController, except: [:new, :edit], name: :note)
       resources("/grants", GrantController, only: [:create])
     end
