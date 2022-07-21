@@ -75,10 +75,17 @@ defmodule TdDdWeb.Schema.DomainTest do
            role: "user",
            permissions: [
              :manage_quality_rule_implementations,
-             :manage_raw_quality_rule_implementations
+             :publish_implementation,
+             :manage_segment
            ]
          ]
-    test "returns the actions for specific domain", %{conn: conn, domain: domain} do
+    test "returns the actions for specific domain for form implementation", %{
+      conn: conn,
+      domain: domain
+    } do
+      CacheHelpers.insert_domain(parent_id: domain.id)
+      CacheHelpers.insert_domain(parent_id: domain.id)
+
       assert %{"data" => data} =
                resp =
                conn
@@ -89,9 +96,57 @@ defmodule TdDdWeb.Schema.DomainTest do
                |> json_response(:ok)
 
       refute Map.has_key?(resp, "errors")
-      assert %{"domains" => %{"actions" => _actions}} = data
+      assert %{"domains" => [%{"actions" => _actions}]} = data
       # assert_lists_equal(domains, [domain], &(&1 == expected(&2)))
     end
+
+    # @tag authentication: [role: "user", permissions: [:manage_raw_quality_rule_implementations]]
+    # test "returns the actions for specific domain for form raw implementation", %{conn: conn, domain: domain} do
+    #   assert %{"data" => data} =
+    #            resp =
+    #            conn
+    #            |> post("/api/v2", %{
+    #              "query" => @domains_with_actions,
+    #              "variables" => %{"action" => "manage_raw_implementations"}
+    #            })
+    #            |> json_response(:ok)
+
+    #   refute Map.has_key?(resp, "errors")
+    #   assert %{"domains" => [%{"actions" => _actions}]} = data
+    #   # assert_lists_equal(domains, [domain], &(&1 == expected(&2)))
+    # end
+
+    # @tag authentication: [role: "user", permissions: [:manage_quality_rule_implementations, :manage_ruleless_implementations]]
+    # test "returns the actions for specific domain for form ruleless implementation", %{conn: conn, domain: domain} do
+    #   assert %{"data" => data} =
+    #            resp =
+    #            conn
+    #            |> post("/api/v2", %{
+    #              "query" => @domains_with_actions,
+    #              "variables" => %{"action" => "manage_ruleless_implementations"}
+    #            })
+    #            |> json_response(:ok)
+
+    #   refute Map.has_key?(resp, "errors")
+    #   assert %{"domains" => [%{"actions" => _actions}]} = data
+    #   # assert_lists_equal(domains, [domain], &(&1 == expected(&2)))
+    # end
+
+    # @tag authentication: [role: "user", permissions: [:manage_raw_quality_rule_implementations, :manage_ruleless_implementations]]
+    # test "returns the actions for specific domain for raw ruleless implementation", %{conn: conn, domain: domain} do
+    #   assert %{"data" => data} =
+    #            resp =
+    #            conn
+    #            |> post("/api/v2", %{
+    #              "query" => @domains_with_actions,
+    #              "variables" => %{"action" => "manage_raw_ruleless_implementations"}
+    #            })
+    #            |> json_response(:ok)
+
+    #   refute Map.has_key?(resp, "errors")
+    #   assert %{"domains" => [%{"actions" => _actions}]} = data
+    #   # assert_lists_equal(domains, [domain], &(&1 == expected(&2)))
+    # end
   end
 
   defp expected(%{} = d) do
