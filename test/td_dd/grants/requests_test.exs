@@ -356,8 +356,6 @@ defmodule TdDd.Grants.RequestsTest do
       domain_id: domain_id,
       request: request
     } do
-      # CacheHelpers.put_session_permissions(claims, %{approve_grant_request: [d1, d2, d3]})
-
       CacheHelpers.put_grant_request_approvers([
         %{user_id: user_id, domain_id: domain_id, role: "approver"}
       ])
@@ -426,9 +424,22 @@ defmodule TdDd.Grants.RequestsTest do
     %{id: domain_id} = CacheHelpers.insert_domain()
     CacheHelpers.insert_user(user_id: user_id)
 
+    %{id: data_structure_id} =
+      data_structure =
+      insert(:data_structure,
+        domain_ids: [domain_id]
+      )
+
+    insert(:data_structure_version, data_structure_id: data_structure_id)
+
     [
       domain_id: domain_id,
-      request: insert(:grant_request, current_status: "pending", domain_ids: [domain_id])
+      request:
+        insert(:grant_request,
+          data_structure: data_structure,
+          current_status: "pending",
+          domain_ids: [domain_id]
+        )
     ]
   end
 end
