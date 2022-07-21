@@ -65,6 +65,9 @@ defmodule TdDd.Canada.Abilities do
     def can?(%Claims{role: "user"} = claims, :query, :tags),
       do: TagAbilities.can?(claims, :index, Tag)
 
+    def can?(%Claims{role: "user"} = claims, :query, :data_structure),
+      do: DataStructureAbilities.can?(claims, :query, DataStructure)
+
     def can?(%Claims{role: "user"} = claims, :query, :implementation),
       do: ImplementationAbilities.can?(claims, :list, Implementation)
 

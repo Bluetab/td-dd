@@ -216,8 +216,8 @@ defmodule TdDd.Factory do
 
   def tag_factory do
     %Tag{
-      name: sequence("structure_tag_name"),
-      description: sequence("structure_tag_description")
+      name: sequence("tag_name"),
+      description: sequence("tag_description")
     }
   end
 

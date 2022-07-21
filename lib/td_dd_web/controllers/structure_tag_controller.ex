@@ -64,7 +64,7 @@ defmodule TdDdWeb.StructureTagController do
     with claims <- conn.assigns[:current_resource],
          %{} = structure <- DataStructures.get_data_structure!(data_structure_id),
          %{} = tag <- Tags.get_tag!(id: tag_id),
-         {:can, true} <- {:can, can?(claims, link_data_structure_tag(structure))},
+         {:can, true} <- {:can, can?(claims, tag(structure))},
          {:ok, %{structure_tag: %{} = link}} <-
            Tags.tag_structure(structure, tag, tag_params, claims) do
       render(conn, "show.json", link: link)
@@ -89,7 +89,7 @@ defmodule TdDdWeb.StructureTagController do
     with claims <- conn.assigns[:current_resource],
          %{} = structure <- DataStructures.get_data_structure!(data_structure_id),
          %{} = tag <- Tags.get_tag!(id: tag_id),
-         {:can, true} <- {:can, can?(claims, delete_link_data_structure_tag(structure))},
+         {:can, true} <- {:can, can?(claims, untag(structure))},
          {:ok, %{structure_tag: %{id: id}}} <-
            Tags.untag_structure(structure, tag, claims) do
       conn

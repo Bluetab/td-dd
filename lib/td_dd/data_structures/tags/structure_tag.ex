@@ -29,6 +29,7 @@ defmodule TdDd.DataStructures.Tags.StructureTag do
   def changeset(%__MODULE__{} = struct, params) do
     struct
     |> cast(params, [:comment, :inherit])
+    |> validate_required(:inherit)
     |> validate_length(:comment, max: 1_000)
   end
 end
