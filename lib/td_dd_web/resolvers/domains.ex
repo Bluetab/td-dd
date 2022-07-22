@@ -6,6 +6,9 @@ defmodule TdDdWeb.Resolvers.Domains do
   alias TdCache.Permissions
   alias TdCache.TaxonomyCache
 
+  @interesting_permissions %{
+    "manage_implementations" => [:publish_implementation, :manage_segments]
+  }
   @actions_to_permissions %{
     "manage_tags" => [:link_data_structure_tag],
     "manage_implementations" => [:manage_quality_rule_implementations],
@@ -20,8 +23,36 @@ defmodule TdDdWeb.Resolvers.Domains do
     ]
   }
 
+  # TODO CHECK!!!!!
+  # retrieved_permissions
+  # Map.values(@actions_to_permissions) |> Enum.map(fn(permissions) -> permissions -- retrieved_permissions == [] :ok :rejectend)
+
   def domains(_parent, %{action: action}, resolution) do
-    {:ok, permitted_domains(action, resolution)}
+    domains = resolution
+      |> claims()
+      |> permitted_domain_ids(Map.get(@actions_to_permissions, action))
+      |> intersect_domains()
+      |> Enum.map(&TaxonomyCache.get_domain/1)
+      |> Enum.reject(&is_nil/1)
+
+    optional_domain_ids_by_permissions = resolution
+      |> claims()
+      |> permitted_domain_ids(Map.get(@interesting_permissions, action))
+
+    domains = Enum.map(domains, fn(%{id: id} = domain) ->
+      {_, permissions} =
+      Enum.reduce(Map.get(@interesting_permissions, action, []),{0, []}, fn(permission, {index, permissions}) ->
+        if Enum.any?(Enum.at(optional_domain_ids_by_permissions, index), fn x -> x == id end) do
+          {index + 1, [permission | permissions]}
+        else
+          {index + 1, permissions}
+        end
+      end)
+
+      Map.put(domain, :actions, permissions)
+    end)
+
+    {:ok, domains}
   end
 
   def actions(_domain, _args, resolution) do
@@ -31,12 +62,13 @@ defmodule TdDdWeb.Resolvers.Domains do
     # jummm… cambio de idea… realmente tenemos la posibilidad de ejecutar un hasPermissions(action, domain) para el resolver por cada dominio…
     # Para ser eficiente deberíamos poder hacer la petición de todos los permisos/dominios que busquemos a caché una vez antes de empezar con los resolvers
     # y reutilizar la información para cada uno de los dominios sin tener que relanzar la llamada a cache…
-    actions = ["publish_implementation", "manage_segment"]
+    # actions = ["publish_implementation", "manage_segment"]
 
     resolution
     |> claims()
-    |> permitted_domain_ids(actions)
-    |> IO.inspect(label: " actions -->")
+    # |> permitted_domain_ids(actions)
+    # |> IO.inspect(label: " actions -->")
+    {:ok, []}
   end
 
   ## acciones de filtrado
@@ -45,21 +77,26 @@ defmodule TdDdWeb.Resolvers.Domains do
     resolution
     |> claims()
     |> permitted_domain_ids(action)
-    |> IO.inspect(label: " permitted ->")
     |> Enum.map(&TaxonomyCache.get_domain/1)
     |> Enum.reject(&is_nil/1)
   end
 
-  defp permitted_domain_ids(%{role: role}, _action) when role in ["admin", "service"] do
-    TaxonomyCache.reachable_domain_ids(0)
+
+
+  defp intersect_domains(domains_by_permission) do
+    IO.inspect(domains_by_permission, label: "DOMAINS_BY_PERMISSIONS")
+    Enum.reduce(domains_by_permission, fn domains_ids, acc -> domains_ids -- domains_ids -- acc end)
   end
 
-  defp permitted_domain_ids(%{role: "user", jti: jti}, action) do
-    Permissions.permitted_domain_ids(jti, Map.get(@actions_to_permissions, action))
-    |> IO.inspect(label: "permitted_domain_ids ->")
+  defp permitted_domain_ids(%{role: role}, _permissions) when role in ["admin", "service"] do
+    [TaxonomyCache.reachable_domain_ids(0)]
   end
 
-  defp permitted_domain_ids(_other, _action), do: []
+  defp permitted_domain_ids(%{role: "user", jti: jti}, permissions) do
+    Permissions.permitted_domain_ids(jti, permissions)
+  end
+
+  defp permitted_domain_ids(_other, _permissions), do: []
 
   defp claims(%{context: %{claims: claims}}), do: claims
   defp claims(_), do: nil

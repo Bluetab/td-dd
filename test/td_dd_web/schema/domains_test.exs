@@ -19,9 +19,7 @@ defmodule TdDdWeb.Schema.DomainTest do
       parentId
       externalId
       name
-      actions {
-        name
-      }
+      actions
     }
   }
   """
@@ -71,12 +69,40 @@ defmodule TdDdWeb.Schema.DomainTest do
       assert_lists_equal(domains, [domain], &(&1 == expected(&2)))
     end
 
+    @tag authentication: [role: "user", permissions: [:nothing]]
+    test "returns only the domains with all the requested permissions", %{
+      conn: conn,
+      claims: claims,
+      domain: domain
+    } do
+
+      one_permission_domain = CacheHelpers.insert_domain()
+      two_permission_domain = CacheHelpers.insert_domain()
+
+      CacheHelpers.put_session_permissions(claims, %{
+        manage_quality_rule_implementations: [domain.id, two_permission_domain.id, one_permission_domain.id],
+        manage_ruleless_implementations: [domain.id, two_permission_domain.id]
+      })
+
+      domain_child = CacheHelpers.insert_domain(parent_id: domain.id)
+
+      assert %{"data" => data} =
+               resp =
+               conn
+               |> post("/api/v2", %{"query" => @domains, "variables" => %{"action" => "manage_ruleless_implementations"}})
+               |> json_response(:ok)
+
+      refute Map.has_key?(resp, "errors")
+      assert %{"domains" => domains} = data
+      assert_lists_equal(domains, [domain, domain_child, two_permission_domain], &(&1 == expected(&2)))
+    end
+
     @tag authentication: [
            role: "user",
            permissions: [
              :manage_quality_rule_implementations,
              :publish_implementation,
-             :manage_segment
+             :manage_segments
            ]
          ]
     test "returns the actions for specific domain for form implementation", %{
@@ -102,50 +128,17 @@ defmodule TdDdWeb.Schema.DomainTest do
 
     # @tag authentication: [role: "user", permissions: [:manage_raw_quality_rule_implementations]]
     # test "returns the actions for specific domain for form raw implementation", %{conn: conn, domain: domain} do
-    #   assert %{"data" => data} =
-    #            resp =
-    #            conn
-    #            |> post("/api/v2", %{
-    #              "query" => @domains_with_actions,
-    #              "variables" => %{"action" => "manage_raw_implementations"}
-    #            })
-    #            |> json_response(:ok)
 
-    #   refute Map.has_key?(resp, "errors")
-    #   assert %{"domains" => [%{"actions" => _actions}]} = data
-    #   # assert_lists_equal(domains, [domain], &(&1 == expected(&2)))
     # end
 
     # @tag authentication: [role: "user", permissions: [:manage_quality_rule_implementations, :manage_ruleless_implementations]]
     # test "returns the actions for specific domain for form ruleless implementation", %{conn: conn, domain: domain} do
-    #   assert %{"data" => data} =
-    #            resp =
-    #            conn
-    #            |> post("/api/v2", %{
-    #              "query" => @domains_with_actions,
-    #              "variables" => %{"action" => "manage_ruleless_implementations"}
-    #            })
-    #            |> json_response(:ok)
 
-    #   refute Map.has_key?(resp, "errors")
-    #   assert %{"domains" => [%{"actions" => _actions}]} = data
-    #   # assert_lists_equal(domains, [domain], &(&1 == expected(&2)))
     # end
 
     # @tag authentication: [role: "user", permissions: [:manage_raw_quality_rule_implementations, :manage_ruleless_implementations]]
     # test "returns the actions for specific domain for raw ruleless implementation", %{conn: conn, domain: domain} do
-    #   assert %{"data" => data} =
-    #            resp =
-    #            conn
-    #            |> post("/api/v2", %{
-    #              "query" => @domains_with_actions,
-    #              "variables" => %{"action" => "manage_raw_ruleless_implementations"}
-    #            })
-    #            |> json_response(:ok)
 
-    #   refute Map.has_key?(resp, "errors")
-    #   assert %{"domains" => [%{"actions" => _actions}]} = data
-    #   # assert_lists_equal(domains, [domain], &(&1 == expected(&2)))
     # end
   end
 
