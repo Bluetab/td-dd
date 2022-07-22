@@ -17,7 +17,7 @@ defmodule TdDdWeb.Schema.ImplementationResults do
 
   object :implementation_result do
     field :id, non_null(:id)
-    field :date, :date
+    field :date, :datetime
     field :details, :json
     field :errors, :integer
     field :has_remediation, :boolean, resolve: &Resolvers.ImplementationResults.has_remediation?/3
