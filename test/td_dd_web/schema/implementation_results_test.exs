@@ -49,7 +49,8 @@ defmodule TdDdWeb.Schema.ImplementationResultsTest do
       domain: %{id: domain_id}
     } do
       %{id: implementation_id} = insert(:implementation, domain_id: domain_id)
-      %{id: result_id} = insert(:rule_result, implementation_id: implementation_id)
+
+      %{id: result_id, date: date} = insert(:rule_result, implementation_id: implementation_id)
 
       str_result_id = to_string(result_id)
 
@@ -64,9 +65,12 @@ defmodule TdDdWeb.Schema.ImplementationResultsTest do
       assert %{
                "has_remediation" => false,
                "has_segments" => false,
+               "date" => result_date,
                "id" => ^str_result_id,
                "result" => "50.00"
              } = implementation_result
+
+      assert result_date == DateTime.to_iso8601(date)
     end
 
     @tag authentication: [
