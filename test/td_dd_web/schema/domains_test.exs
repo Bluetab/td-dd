@@ -75,12 +75,15 @@ defmodule TdDdWeb.Schema.DomainTest do
       claims: claims,
       domain: domain
     } do
-
       one_permission_domain = CacheHelpers.insert_domain()
       two_permission_domain = CacheHelpers.insert_domain()
 
       CacheHelpers.put_session_permissions(claims, %{
-        manage_quality_rule_implementations: [domain.id, two_permission_domain.id, one_permission_domain.id],
+        manage_quality_rule_implementations: [
+          domain.id,
+          two_permission_domain.id,
+          one_permission_domain.id
+        ],
         manage_ruleless_implementations: [domain.id, two_permission_domain.id]
       })
 
@@ -89,12 +92,20 @@ defmodule TdDdWeb.Schema.DomainTest do
       assert %{"data" => data} =
                resp =
                conn
-               |> post("/api/v2", %{"query" => @domains, "variables" => %{"action" => "manage_ruleless_implementations"}})
+               |> post("/api/v2", %{
+                 "query" => @domains,
+                 "variables" => %{"action" => "manage_ruleless_implementations"}
+               })
                |> json_response(:ok)
 
       refute Map.has_key?(resp, "errors")
       assert %{"domains" => domains} = data
-      assert_lists_equal(domains, [domain, domain_child, two_permission_domain], &(&1 == expected(&2)))
+
+      assert_lists_equal(
+        domains,
+        [domain, domain_child, two_permission_domain],
+        &(&1 == expected(&2))
+      )
     end
 
     @tag authentication: [

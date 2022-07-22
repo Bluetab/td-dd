@@ -28,29 +28,34 @@ defmodule TdDdWeb.Resolvers.Domains do
   # Map.values(@actions_to_permissions) |> Enum.map(fn(permissions) -> permissions -- retrieved_permissions == [] :ok :rejectend)
 
   def domains(_parent, %{action: action}, resolution) do
-    domains = resolution
+    domains =
+      resolution
       |> claims()
       |> permitted_domain_ids(Map.get(@actions_to_permissions, action))
       |> intersect_domains()
       |> Enum.map(&TaxonomyCache.get_domain/1)
       |> Enum.reject(&is_nil/1)
 
-    optional_domain_ids_by_permissions = resolution
+    optional_domain_ids_by_permissions =
+      resolution
       |> claims()
       |> permitted_domain_ids(Map.get(@interesting_permissions, action))
 
-    domains = Enum.map(domains, fn(%{id: id} = domain) ->
-      {_, permissions} =
-      Enum.reduce(Map.get(@interesting_permissions, action, []),{0, []}, fn(permission, {index, permissions}) ->
-        if Enum.any?(Enum.at(optional_domain_ids_by_permissions, index), fn x -> x == id end) do
-          {index + 1, [permission | permissions]}
-        else
-          {index + 1, permissions}
-        end
-      end)
+    domains =
+      Enum.map(domains, fn %{id: id} = domain ->
+        {_, permissions} =
+          Enum.reduce(Map.get(@interesting_permissions, action, []), {0, []}, fn permission,
+                                                                                 {index,
+                                                                                  permissions} ->
+            if Enum.any?(Enum.at(optional_domain_ids_by_permissions, index), fn x -> x == id end) do
+              {index + 1, [permission | permissions]}
+            else
+              {index + 1, permissions}
+            end
+          end)
 
-      Map.put(domain, :actions, permissions)
-    end)
+        Map.put(domain, :actions, permissions)
+      end)
 
     {:ok, domains}
   end
@@ -66,6 +71,7 @@ defmodule TdDdWeb.Resolvers.Domains do
 
     resolution
     |> claims()
+
     # |> permitted_domain_ids(actions)
     # |> IO.inspect(label: " actions -->")
     {:ok, []}
@@ -81,11 +87,12 @@ defmodule TdDdWeb.Resolvers.Domains do
     |> Enum.reject(&is_nil/1)
   end
 
-
-
   defp intersect_domains(domains_by_permission) do
     IO.inspect(domains_by_permission, label: "DOMAINS_BY_PERMISSIONS")
-    Enum.reduce(domains_by_permission, fn domains_ids, acc -> domains_ids -- domains_ids -- acc end)
+
+    Enum.reduce(domains_by_permission, fn domains_ids, acc ->
+      domains_ids -- domains_ids -- acc
+    end)
   end
 
   defp permitted_domain_ids(%{role: role}, _permissions) when role in ["admin", "service"] do
