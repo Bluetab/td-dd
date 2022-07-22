@@ -4,7 +4,7 @@
 # This configuration file is loaded before any dependency and
 # is restricted to this project.
 
-use Mix.Config
+import Config
 
 config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
 config :td_dd, :time_zone, System.get_env("TZ", "Etc/UTC")
@@ -51,23 +51,23 @@ config :phoenix, :json_library, Jason
 config :phoenix_swagger, json_library: Jason
 
 config :td_dd, TdDd.Auth.Guardian,
-  # optional
   allowed_algos: ["HS512"],
   issuer: "tdauth",
+  aud: "truedat",
   ttl: {1, :hours},
   secret_key: "SuperSecretTruedat"
 
 config :td_dd, TdCx.Auth.Guardian,
-  # optional
   allowed_algos: ["HS512"],
   issuer: "tdauth",
+  aud: "truedat",
   ttl: {1, :hours},
   secret_key: "SuperSecretTruedat"
 
 config :td_dd, TdDq.Auth.Guardian,
-  # optional
   allowed_algos: ["HS512"],
   issuer: "tdauth",
+  aud: "truedat",
   ttl: {1, :hours},
   secret_key: "SuperSecretTruedat"
 
@@ -188,6 +188,11 @@ config :td_dd, TdDd.Scheduler,
     force_update_structures_cache: [
       schedule: "@reboot",
       task: {TdDd.Cache.StructuresForceUpdate, :migrate, []},
+      run_strategy: Quantum.RunStrategy.Local
+    ],
+    force_update_implementation_cache: [
+      schedule: "@reboot",
+      task: {TdDq.Cache.ImplementationsForceUpdate, :migrate, []},
       run_strategy: Quantum.RunStrategy.Local
     ],
     expand_profile_values: [

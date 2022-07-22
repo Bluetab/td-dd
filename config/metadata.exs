@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 config :td_dd, :metadata,
   structure_import_schema: %{

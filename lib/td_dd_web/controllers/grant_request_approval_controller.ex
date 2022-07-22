@@ -14,7 +14,6 @@ defmodule TdDdWeb.GrantRequestApprovalController do
          {:ok, %{approval: approval}} <- Requests.create_approval(claims, request, params) do
       conn
       |> put_status(:created)
-      # |> put_resp_header("location", Routes.grant_request_approval_path(conn, :show, approval))
       |> render("show.json", grant_request_approval: approval)
     end
   end

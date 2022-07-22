@@ -216,7 +216,8 @@ defmodule TdDd.Factory do
 
   def data_structure_tag_factory do
     %DataStructureTag{
-      name: sequence("structure_tag_name")
+      name: sequence("structure_tag_name"),
+      description: sequence("structure_tag_description")
     }
   end
 
@@ -493,10 +494,11 @@ defmodule TdDd.Factory do
     }
   end
 
-  def quality_event_factory do
+  def quality_event_factory(attrs) do
     %TdDq.Events.QualityEvent{
       type: "PENDING"
     }
+    |> merge_attributes(attrs)
   end
 
   def data_structures_tags_factory(attrs) do
@@ -506,7 +508,7 @@ defmodule TdDd.Factory do
       |> default_assoc(:data_structure_tag_id, :data_structure_tag)
 
     %TdDd.DataStructures.DataStructuresTags{
-      description: sequence("description")
+      comment: sequence("foo")
     }
     |> merge_attributes(attrs)
   end

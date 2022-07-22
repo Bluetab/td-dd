@@ -30,7 +30,8 @@ defmodule TdDd.DataStructureCase do
                 build(:data_structure,
                   external_id: &1,
                   system_id: system_id,
-                  domain_ids: [domain_id]
+                  domain_ids: [domain_id],
+                  alias: maybe_alias(&1)
                 )
             )
           )
@@ -49,6 +50,9 @@ defmodule TdDd.DataStructureCase do
 
         dsvs
       end
+
+      defp maybe_alias("original_name"), do: "alias_name"
+      defp maybe_alias(_name), do: nil
     end
   end
 end

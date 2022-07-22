@@ -13,7 +13,7 @@ defmodule TdDdWeb.DataStructuresTagsView do
 
   def render("data_structures_tags.json", %{data_structures_tags: %{} = data_structures_tags}) do
     data_structures_tags
-    |> Map.take([:id, :description, :inserted_at, :updated_at])
+    |> Map.take([:id, :comment, :inserted_at, :updated_at])
     |> put_embeddings(data_structures_tags)
   end
 
