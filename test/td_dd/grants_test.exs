@@ -54,7 +54,8 @@ defmodule TdDd.GrantsTest do
         detail: %{},
         end_date: "2010-04-17",
         start_date: "2010-04-17",
-        user_name: user_name
+        user_name: user_name,
+        source_user_name: user_name
       }
 
       assert {:ok, %{grant: %Grant{} = grant}} =
@@ -65,8 +66,23 @@ defmodule TdDd.GrantsTest do
                end_date: ~D[2010-04-17],
                start_date: ~D[2010-04-17],
                user_id: ^user_id,
-               data_structure_id: ^data_structure_id
+               data_structure_id: ^data_structure_id,
+               source_user_name: ^user_name
              } = grant
+    end
+
+    test "source_user_name is required", %{
+      claims: claims,
+      data_structure: data_structure,
+    } do
+      params = :grant
+      |> string_params_for(data_structure_id: data_structure.id, user_id: claims.user_id)
+      |> Map.drop(["source_user_name"])
+
+      assert {:error, :grant, %{errors: errors}, _} =
+        Grants.create_grant(params, data_structure, claims)
+
+      assert {"can't be blank", [validation: :required]} = errors[:source_user_name]
     end
 
     test "publishes an audit event", %{
@@ -78,7 +94,8 @@ defmodule TdDd.GrantsTest do
         detail: %{},
         end_date: "2010-04-17",
         start_date: "2010-04-17",
-        user_id: user_id
+        user_id: user_id,
+        source_user_name: "source_user_name"
       }
 
       assert {:ok, %{audit: event_id, grant: grant}} =
@@ -114,7 +131,8 @@ defmodule TdDd.GrantsTest do
       params = %{
         end_date: "2010-04-10",
         start_date: "2010-04-20",
-        user_id: user_id
+        user_id: user_id,
+        source_user_name: "source_user_name"
       }
 
       assert {:error, :grant, %{errors: errors}, _} =
@@ -128,14 +146,16 @@ defmodule TdDd.GrantsTest do
       params = %{
         end_date: "2010-04-20",
         start_date: "2010-04-16",
-        user_id: user_id
+        user_id: user_id,
+        source_user_name: "source_user_name"
       }
 
       assert {:ok, _} = Grants.create_grant(params, data_structure, claims)
 
       params = %{
         start_date: "2010-04-18",
-        user_id: user_id
+        user_id: user_id,
+        source_user_name: "source_user_name"
       }
 
       assert {:error, :grant, %{errors: errors}, _} =
@@ -146,7 +166,8 @@ defmodule TdDd.GrantsTest do
       params = %{
         start_date: "2010-04-15",
         end_date: "2010-04-19",
-        user_id: user_id
+        user_id: user_id,
+        source_user_name: "source_user_name"
       }
 
       assert {:error, :grant, %{errors: errors}, _} =
@@ -160,7 +181,8 @@ defmodule TdDd.GrantsTest do
       params = %{
         end_date: "2010-04-20",
         start_date: "2010-04-16",
-        user_id: user_id
+        user_id: user_id,
+        source_user_name: "source_user_name"
       }
 
       assert {:ok, _} = Grants.create_grant(params, data_structure, claims)
@@ -168,7 +190,8 @@ defmodule TdDd.GrantsTest do
       params = %{
         start_date: "2010-04-21",
         end_date: "2010-04-26",
-        user_id: user_id
+        user_id: user_id,
+        source_user_name: "source_user_name"
       }
 
       assert {:ok, _} = Grants.create_grant(params, data_structure, claims)
@@ -194,7 +217,8 @@ defmodule TdDd.GrantsTest do
       params = %{
         detail: %{},
         end_date: "2011-05-18",
-        start_date: "2011-05-18"
+        start_date: "2011-05-18",
+        source_user_name: "source_user_name"
       }
 
       assert {:ok, %{grant: grant}} = Grants.update_grant(grant, params, claims)
@@ -208,13 +232,8 @@ defmodule TdDd.GrantsTest do
       assert detail == %{}
     end
 
-    test "request_removal of a grant with user_id but not source_user_name", %{claims: claims} do
-      grant = insert(:grant)
-
-      # Just to test factory is really returning a grant with
-      # user_id and without source_user_name
-      assert %{user_id: user_id, source_user_name: nil} = grant
-      assert is_number(user_id)
+    test "request_removal of a grant with user_id", %{claims: claims} do
+      grant = insert(:grant, user_id: 123)
 
       params = %{
         pending_removal: true
@@ -227,13 +246,8 @@ defmodule TdDd.GrantsTest do
       } = grant
     end
 
-    # source_user_name without user_id is allowed in /api/grants_bulk
     test "request_removal of a grant with source_user_name but not user_id", %{claims: claims} do
       grant = insert(:grant, source_user_name: "test_source_user_name")
-
-      # Just to test factory is really returning a grant with
-      # source_user_name and without user_id
-      assert %{user_id: nil, source_user_name: "test_source_user_name"} = grant
 
       params = %{
         pending_removal: true
@@ -247,7 +261,7 @@ defmodule TdDd.GrantsTest do
     end
 
     test "does not change user_id", %{claims: claims, user_id: new_user_id} do
-      %{user_id: user_id} = grant = insert(:grant)
+      %{user_id: user_id} = grant = insert(:grant, user_id: 123)
       params = %{user_id: new_user_id}
       assert new_user_id != user_id
       assert {:ok, %{grant: grant}} = Grants.update_grant(grant, params, claims)
@@ -255,7 +269,7 @@ defmodule TdDd.GrantsTest do
     end
 
     test "publishes an audit event", %{claims: claims, user_id: user_id} do
-      %{id: id} = grant = insert(:grant)
+      %{id: id} = grant = insert(:grant, user_id: 123)
 
       params = %{
         detail: %{},

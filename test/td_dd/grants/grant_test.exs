@@ -27,7 +27,8 @@ defmodule TdDd.Grants.GrantTest do
     end
 
     test "maps user_name to user_id", %{user_name: user_name, user_id: user_id} do
-      assert Grant.common_changeset(%Grant{}, %{"user_name" => user_name})
+      assert %Grant{}
+             |> Grant.common_changeset(%{"user_name" => user_name})
              |> Changeset.fetch_change!(:user_id) == user_id
     end
 
@@ -35,7 +36,8 @@ defmodule TdDd.Grants.GrantTest do
       user_external_id: user_external_id,
       user_id: user_id
     } do
-      assert Grant.common_changeset(%Grant{}, %{"user_external_id" => user_external_id})
+      assert %Grant{}
+             |> Grant.common_changeset(%{"user_external_id" => user_external_id})
              |> Changeset.fetch_change!(:user_id) == user_id
     end
 
@@ -51,7 +53,11 @@ defmodule TdDd.Grants.GrantTest do
       user_id: user_id
     } do
       assert %{errors: errors} =
-               Grant.common_changeset(%Grant{}, %{"user_external_id" => user_external_id, "user_id" => user_id})
+               Grant.common_changeset(%Grant{}, %{
+                 "user_external_id" => user_external_id,
+                 "user_id" => user_id,
+                 "source_user_name" => "source_user_name"
+               })
 
       assert {"use either user_id or one of user_name, user_external_id", _} = errors[:user_id]
     end
@@ -61,7 +67,11 @@ defmodule TdDd.Grants.GrantTest do
       user_name: user_name
     } do
       assert %{errors: errors} =
-               Grant.common_changeset(%Grant{}, %{"user_external_id" => user_external_id, "user_name" => user_name})
+               Grant.common_changeset(%Grant{}, %{
+                 "user_external_id" => user_external_id,
+                 "user_name" => user_name,
+                 "source_user_name" => "source_user_name"
+               })
 
       assert {"use either user_name or user_external_id", _} = errors[:user_name_user_external_id]
     end
@@ -73,10 +83,11 @@ defmodule TdDd.Grants.GrantTest do
     } do
       assert %{errors: errors} =
                Grant.common_changeset(%Grant{}, %{
-                "user_name" => user_name,
-                "user_external_id" => user_external_id,
-                "user_id" => user_id
-              })
+                 "user_name" => user_name,
+                 "user_external_id" => user_external_id,
+                 "user_id" => user_id,
+                 "source_user_name" => "source_user_name"
+               })
 
       assert {"use either user_name or user_external_id", _} = errors[:user_name_user_external_id]
     end
@@ -85,7 +96,8 @@ defmodule TdDd.Grants.GrantTest do
       params = %{
         "user_id" => user_id,
         "start_date" => "2021-01-01",
-        "end_date" => "2022-01-01"
+        "end_date" => "2022-01-01",
+        "source_user_name" => "source_user_name"
       }
 
       assert {:error, %{errors: errors}} =
@@ -104,7 +116,8 @@ defmodule TdDd.Grants.GrantTest do
       params = %{
         "user_id" => user_id,
         "start_date" => "2022-01-01",
-        "end_date" => "2021-01-01"
+        "end_date" => "2021-01-01",
+        "source_user_name" => "source_user_name"
       }
 
       assert {:error, %{errors: errors}} =
@@ -122,7 +135,8 @@ defmodule TdDd.Grants.GrantTest do
       params = %{
         "user_id" => user_id,
         "start_date" => "2021-01-01",
-        "end_date" => "2021-01-01"
+        "end_date" => "2021-01-01",
+        "source_user_name" => "source_user_name"
       }
 
       assert {:ok, %Grant{} = grant} =
@@ -148,7 +162,8 @@ defmodule TdDd.Grants.GrantTest do
         "user_id" => user_id,
         "data_structure_id" => data_structure_id,
         "start_date" => "2020-01-02",
-        "end_date" => "2021-02-03"
+        "end_date" => "2021-02-03",
+        "source_user_name" => "source_user_name"
       }
 
       assert {:error, %{errors: errors}} =
@@ -168,7 +183,8 @@ defmodule TdDd.Grants.GrantTest do
         "user_name" => user_name,
         "data_structure_id" => data_structure_id,
         "start_date" => "2020-01-02",
-        "end_date" => "2021-02-03"
+        "end_date" => "2021-02-03",
+        "source_user_name" => "source_user_name"
       }
 
       assert {:ok, %Grant{} = grant} =
@@ -193,9 +209,10 @@ defmodule TdDd.Grants.GrantTest do
       assert {_, [validation: :required]} = errors[:source_user_name]
     end
 
-    test "CSV bulk: captures exclusion constraint on source_user_name, data structure and date range", %{
-      data_structure_id: data_structure_id
-    } do
+    test "CSV bulk: captures exclusion constraint on source_user_name, data structure and date range",
+         %{
+           data_structure_id: data_structure_id
+         } do
       source_user_name = "source_user_name"
 
       insert(:grant,
@@ -283,19 +300,6 @@ defmodule TdDd.Grants.GrantTest do
                |> Repo.update()
 
       assert %{detail: ^detail} = grant
-    end
-
-    test "Validates either user_id or source_user_name is present" do
-      grant = insert(:grant, source_user_name: "test_source_user_name")
-
-      params = %{
-        source_user_name: nil
-      }
-
-      assert %{errors: errors} =
-               Grant.update_changeset(grant, params)
-
-      assert {"Either one of these fields must be present: user_id, source_user_name", _} = errors[:required_either]
     end
   end
 end

@@ -8,7 +8,6 @@ defmodule TdDd.Grants.Grant do
 
   alias TdCache.UserCache
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.Utils.ChangesetUtils
   alias TdDfLib.Validation
 
   schema "grants" do
@@ -38,22 +37,19 @@ defmodule TdDd.Grants.Grant do
   end
 
   def create_changeset(%__MODULE__{} = struct, %{} = params, false = _is_bulk) do
-    common_changeset(struct, params)
+    struct
+    |> common_changeset(params)
     |> validate_required(:user_id)
   end
 
   def create_changeset(%__MODULE__{} = struct, %{} = params, true = _is_bulk) do
     struct
-    |> cast(params, [:source_user_name])
     |> common_changeset(params)
-    |> validate_required(:source_user_name)
   end
 
   def update_changeset(%__MODULE__{} = struct, %{} = params) do
     struct
-    |> cast(params, [:source_user_name])
     |> common_changeset(params)
-    |> ChangesetUtils.validate_required_either([:user_id, :source_user_name])
   end
 
   def common_changeset(struct_or_changeset, %{} = params) do
@@ -64,11 +60,12 @@ defmodule TdDd.Grants.Grant do
       :end_date,
       :user_name,
       :user_external_id,
-      :pending_removal
+      :pending_removal,
+      :source_user_name
     ])
     |> check_user_params(params)
     |> maybe_put_user_id(params)
-    |> validate_required([:start_date, :data_structure_id])
+    |> validate_required([:start_date, :data_structure_id, :source_user_name])
     |> validate_change(:user_id, &validate_user_id/2)
     |> validate_change(:detail, &Validation.validate_safe/2)
     |> foreign_key_constraint(:data_structure_id)
