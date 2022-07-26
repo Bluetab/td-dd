@@ -9,6 +9,7 @@ defmodule TdDd.DataStructures.Audit do
 
   alias Ecto.Changeset
   alias TdCache.TaxonomyCache
+  alias TdDd.Repo
 
   @doc """
   Publishes a `:structure_note_updated` event when modifying a StructureNote. Should be called using `Ecto.Multi.run/5`.
@@ -218,6 +219,34 @@ defmodule TdDd.DataStructures.Audit do
 
     publish("structure_tag_link_deleted", "data_structure", id, user_id, payload)
   end
+
+  @doc """
+  Publishes a `:grant_approvals` event when creating a Grant. Should be called using `Ecto.Multi.run/5`.
+  """
+
+  def grant_request_approval_created(_repo, %{
+        approval: %{grant_request_id: id, user_id: user_id, comment: comment} = approval,
+        status: %{status: "rejected" = status}
+      }) do
+    %{
+      grant_request: %{
+        group: %{user_id: recipient_id},
+        data_structure: %{current_version: %{name: data_structure_name}}
+      }
+    } = Repo.preload(approval, grant_request: [:group, data_structure: :current_version])
+
+    payload = %{
+      name: data_structure_name,
+      status: status,
+      recipient_ids: [recipient_id],
+      comment: comment,
+      user_id: user_id
+    }
+
+    publish("grant_approval", "grant_requests", id, user_id, payload)
+  end
+
+  def grant_request_approval_created(_repo, _), do: {:ok, nil}
 
   @doc """
   Publishes a `:grant_created` event when creating a Grant. Should be called using `Ecto.Multi.run/5`.

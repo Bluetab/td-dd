@@ -8,6 +8,7 @@
   - `api/rule_results/search` now include ruleless implementation results
   - Add pagination for updated_at
 - [TD-5053] Add implementation_ref on `api/implementations/search`
+- [TD-4441] Send grant_approval event when grant approval is created with rejection
 - [TD-4922] Force cache to add implementations workflow status
 
 ### Fixed
@@ -18,6 +19,8 @@
 
 ### Changed
 
+- [TD-5072] Remove deprecated `type_params` from `rules` table and corresponding
+  mappings
 - [TD-5001] Improved support for data structure alias:
   - Data structure alias is now persisted and returned in responses. The alias
     is obtained or removed when a structure note containing an `alias` field is

@@ -24,8 +24,7 @@ defmodule TdDq.Rules.BulkLoad do
     "active" => false,
     "activeSelection" => false,
     "business_concept_id" => nil,
-    "type" => "",
-    "type_params" => %{}
+    "type" => ""
   }
 
   require Logger
