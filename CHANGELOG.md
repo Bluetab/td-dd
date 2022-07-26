@@ -14,6 +14,8 @@
 ### Fixed
 
 - [TD-5011] `TemplateCache.list/0` was returning duplicate entries
+- [TD-5042] Removal request for grant created through /api/bulk_grants with
+  source_user_name and without user_id
 
 ### Changed
 
