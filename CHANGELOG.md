@@ -17,6 +17,8 @@
 
 ### Changed
 
+- [TD-5072] Remove deprecated `type_params` from `rules` table and corresponding
+  mappings
 - [TD-5001] Improved support for data structure alias:
   - Data structure alias is now persisted and returned in responses. The alias
     is obtained or removed when a structure note containing an `alias` field is
