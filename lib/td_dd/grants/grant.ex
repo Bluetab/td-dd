@@ -30,25 +30,29 @@ defmodule TdDd.Grants.Grant do
     timestamps(type: :utc_datetime_usec)
   end
 
-  def changeset(params, is_bulk \\ false)
+  def create_changeset(params, is_bulk \\ false)
 
-  def changeset(%{} = params, is_bulk) do
-    changeset(%__MODULE__{}, params, is_bulk)
+  def create_changeset(%{} = params, is_bulk) do
+    create_changeset(%__MODULE__{}, params, is_bulk)
   end
 
-  def changeset(%__MODULE__{} = struct, %{} = params, false) do
-    changeset_common(struct, params)
+  def create_changeset(%__MODULE__{} = struct, %{} = params, false = _is_bulk) do
+    struct
+    |> common_changeset(params)
     |> validate_required(:user_id)
   end
 
-  def changeset(%__MODULE__{} = struct, %{} = params, true) do
+  def create_changeset(%__MODULE__{} = struct, %{} = params, true = _is_bulk) do
     struct
-    |> cast(params, [:source_user_name])
-    |> changeset_common(params)
-    |> validate_required(:source_user_name)
+    |> common_changeset(params)
   end
 
-  def changeset_common(struct_or_changeset, %{} = params) do
+  def update_changeset(%__MODULE__{} = struct, %{} = params) do
+    struct
+    |> common_changeset(params)
+  end
+
+  def common_changeset(struct_or_changeset, %{} = params) do
     struct_or_changeset
     |> cast(params, [
       :detail,
@@ -56,11 +60,12 @@ defmodule TdDd.Grants.Grant do
       :end_date,
       :user_name,
       :user_external_id,
-      :pending_removal
+      :pending_removal,
+      :source_user_name
     ])
     |> check_user_params(params)
     |> maybe_put_user_id(params)
-    |> validate_required([:start_date, :data_structure_id])
+    |> validate_required([:start_date, :data_structure_id, :source_user_name])
     |> validate_change(:user_id, &validate_user_id/2)
     |> validate_change(:detail, &Validation.validate_safe/2)
     |> foreign_key_constraint(:data_structure_id)

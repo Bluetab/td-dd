@@ -11,12 +11,14 @@ defmodule TdDdWeb.GrantControllerTest do
     detail: %{},
     end_date: "2010-04-17",
     start_date: "2010-04-17",
-    user_id: @user_id
+    user_id: @user_id,
+    source_user_name: "some source_user_name"
   }
   @update_attrs %{
     detail: %{},
     end_date: "2011-05-18",
-    start_date: "2011-05-18"
+    start_date: "2011-05-18",
+    source_user_name: "other source_user_name"
   }
   @invalid_attrs %{detail: nil, end_date: nil, start_date: nil}
 
@@ -92,6 +94,7 @@ defmodule TdDdWeb.GrantControllerTest do
                "detail" => %{},
                "end_date" => "2010-04-17",
                "start_date" => "2010-04-17",
+               "source_user_name" => "some source_user_name",
                "user_id" => @user_id
              } = data
     end
