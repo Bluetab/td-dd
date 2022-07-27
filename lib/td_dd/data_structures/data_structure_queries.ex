@@ -9,8 +9,10 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureMetadata
+  alias TdDd.DataStructures.Tags.StructureTag
   alias TdDd.Profiles.Profile
 
   @paths_by_child_id """
@@ -107,6 +109,28 @@ defmodule TdDd.DataStructures.DataStructureQueries do
     |> select([dsv], %{id: dsv.id, with_profiling: true})
   end
 
+  @spec tags(map) :: Ecto.Query.t()
+  defp tags(%{} = params)
+       when is_map_key(params, :ids) or is_map_key(params, :data_structure_ids) do
+    tags_params = Map.take(params, [:ids, :data_structure_ids])
+
+    DataStructureVersion
+    |> where_ids(tags_params)
+    |> join(:inner, [dsv], h in Hierarchy, on: h.ds_id == dsv.data_structure_id, as: :h)
+    |> join(:inner, [_, h], st in StructureTag,
+      on:
+        st.data_structure_id == h.ds_id or
+          (st.inherit and st.data_structure_id == h.ancestor_ds_id)
+    )
+    |> join(:inner, [_, _, st], t in assoc(st, :tag))
+    |> group_by([dsv], dsv.data_structure_id)
+    |> select([dsv, _, _, t], %{
+      data_structure_id: dsv.data_structure_id,
+      tag_names: fragment("array_agg(distinct(?))", t.name)
+    })
+    |> subquery()
+  end
+
   @spec paths(map) :: Ecto.Query.t()
   def paths(%{} = params)
       when is_map_key(params, :ids) or is_map_key(params, :data_structure_ids) do
@@ -163,7 +187,7 @@ defmodule TdDd.DataStructures.DataStructureQueries do
       when is_map_key(params, :ids) or is_map_key(params, :data_structure_ids) do
     %{
       distinct: :data_structure_id,
-      preload: [data_structure: [:system, :tags, :published_note]]
+      preload: [data_structure: [:system, :published_note]]
     }
     |> Map.merge(params)
     |> Enum.reduce(DataStructureVersion, fn
@@ -202,6 +226,11 @@ defmodule TdDd.DataStructures.DataStructureQueries do
     |> select_merge([profiles: pv], %{
       with_profiling: fragment("COALESCE(?, false)", pv.with_profiling)
     })
+    |> join(:left, [dsv], t in subquery(tags(params)),
+      as: :tags,
+      on: dsv.data_structure_id == t.data_structure_id
+    )
+    |> select_merge([tags: t], %{tag_names: t.tag_names})
   end
 
   @spec distinct_by(Ecto.Query.t(), :id | :data_structure_id) :: Ecto.Query.t()

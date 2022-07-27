@@ -2,11 +2,8 @@ defmodule TdDdWeb.DataStructureView do
   use TdDdWeb, :view
 
   alias TdDd.DataStructures
-  alias TdDdWeb.DataStructuresTagsView
-  alias TdDdWeb.DataStructureTagView
   alias TdDdWeb.DataStructureVersionView
-
-  require Logger
+  alias TdDdWeb.StructureTagView
 
   def render("index.json", %{actions: %{} = actions} = assigns) when map_size(actions) > 0 do
     "index.json"
@@ -31,23 +28,18 @@ defmodule TdDdWeb.DataStructureView do
     %{data: render_many(data_structures, __MODULE__, "data_structure.json")}
   end
 
-  def render("show.json", %{actions: actions} = assigns) do
-    "show.json"
-    |> render(Map.delete(assigns, :actions))
-    |> put_actions(actions)
-  end
-
   def render("show.json", %{data_structure: data_structure, user_permissions: user_permissions}) do
     "show.json"
     |> render(%{data_structure: data_structure})
     |> Map.put(:user_permissions, user_permissions)
   end
 
-  def render("show.json", %{data_structure: data_structure}) do
+  def render("show.json", %{data_structure: data_structure} = assigns) do
     %{
       data:
         data_structure
         |> data_structure_json()
+        |> add_tags(assigns)
         |> add_metadata_versions(data_structure)
         |> add_system_with_keys(data_structure, [:external_id, :id, :name])
         |> add_data_fields(data_structure)
@@ -139,7 +131,6 @@ defmodule TdDdWeb.DataStructureView do
       :source_id,
       :source,
       :system_id,
-      :tags,
       :type,
       :updated_at,
       :mutable_metadata,
@@ -150,7 +141,6 @@ defmodule TdDdWeb.DataStructureView do
     |> Map.put_new(:metadata, %{})
     |> Map.put_new(:path, [])
     |> add_source()
-    |> add_tags()
   end
 
   defp add_system_with_keys(json, data_structure, keys) do
@@ -320,28 +310,10 @@ defmodule TdDdWeb.DataStructureView do
     Map.put(ds, :source, source)
   end
 
-  defp add_tags(ds) do
-    tags =
-      case Map.get(ds, :tags) do
-        [_ | _] = tags -> render_many(tags, DataStructuresTagsView, "data_structures_tags.json")
-        _ -> []
-      end
-
-    Map.put(ds, :tags, tags)
+  # TODO: tags not consumed by front?
+  defp add_tags(ds, %{tags: tags} = _assigns) do
+    Map.put(ds, :tags, render_many(tags, StructureTagView, "structure_tag.json"))
   end
 
-  defp put_actions(ds, actions) do
-    actions =
-      actions
-      |> Map.take([:manage_tags])
-      |> Enum.reduce(%{}, fn
-        {:manage_tags, %{tags: tags}}, acc when is_list(tags) ->
-          Map.put(acc, :manage_tags, render_many(tags, DataStructureTagView, "embedded.json"))
-
-        _, acc ->
-          acc
-      end)
-
-    Map.put(ds, :_actions, actions)
-  end
+  defp add_tags(ds, _), do: ds
 end
