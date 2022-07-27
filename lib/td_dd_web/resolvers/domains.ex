@@ -7,24 +7,68 @@ defmodule TdDdWeb.Resolvers.Domains do
   alias TdCache.TaxonomyCache
 
   @actions_to_permissions %{
-    "manage_tags" => {[:link_data_structure_tag], []},
-    "manage_implementations" =>
-      {[:manage_quality_rule_implementations], [:publish_implementation, :manage_segments]},
-    "manage_raw_implementations" =>
-      {[:manage_raw_quality_rule_implementations], [:publish_implementation, :manage_segments]},
-    "manage_ruleless_implementations" =>
-      {[
-         :manage_quality_rule_implementations,
-         :manage_ruleless_implementations
-       ], [:publish_implementation, :manage_segments]},
-    "manage_raw_ruleless_implementations" =>
-      {[
-         :manage_raw_quality_rule_implementations,
-         :manage_ruleless_implementations
-       ], [:publish_implementation, :manage_segments]},
-    "can_publish_implementation" => {[:publish_implementation], []},
-    "can_manage_segments" => {[:manage_segments], []}
+    "manage_tags" => [:link_data_structure_tag],
+    "manage_implementations" => [:manage_quality_rule_implementations],
+    "manage_raw_implementations" => [:manage_raw_quality_rule_implementations],
+    "manage_ruleless_implementations" => [
+      :manage_quality_rule_implementations,
+      :manage_ruleless_implementations
+    ],
+    "manage_raw_ruleless_implementations" => [
+      :manage_raw_quality_rule_implementations,
+      :manage_ruleless_implementations
+    ],
+    "publish_implementation" => [:publish_implementation],
+    "manage_segments" => [:manage_segments]
   }
+
+  def domains(_parent, %{action: action} = args, resolution) do
+    required_permissions = action_to_permissions(action)
+
+    {:ok,
+     resolution
+     |> claims()
+     |> permitted_domain_ids(required_permissions)
+     |> intersect_domains()
+     |> Enum.map(&TaxonomyCache.get_domain/1)
+     |> Enum.reject(&is_nil/1)}
+  end
+
+  def fetch_permission_domains({:actions, %{actions: actions}}, domains, claims) do
+    actions_permissions =
+      actions
+      |> Enum.map(fn action -> {action, action_to_permissions(action)} end)
+      |> Map.new()
+
+    permissions =
+      actions_permissions
+      |> Map.values()
+      |> List.flatten()
+      |> Enum.uniq()
+
+    domains_by_permission =
+      permissions
+      |> Enum.zip(permitted_domain_ids(claims, permissions))
+      |> Map.new()
+
+    domains_by_actions =
+      Enum.map(actions_permissions, fn {key, value} ->
+        domains =
+          value
+          |> Enum.map(fn permission -> domains_by_permission[permission] end)
+          |> intersect_domains()
+
+        {key, domains}
+      end)
+      |> Map.new()
+
+    domains
+    |> Map.new(&{&1, actions_by_domain(&1, domains_by_actions)})
+  end
+
+  defp action_to_permissions(action) do
+    Map.get(@actions_to_permissions, action, [])
+  end
 
   defp permissions_to_actions(permissions) do
     @actions_to_permissions
@@ -34,54 +78,14 @@ defmodule TdDdWeb.Resolvers.Domains do
     |> Enum.map(fn {key, _value} -> key end)
   end
 
-  defp with_interested_actions(
-         domains,
-         %{action: action, with_interested_actions: true},
-         resolution
-       ) do
-    {_, interested_permissions} = Map.get(@actions_to_permissions, action, {[], []})
-
-    interested_domain_ids_by_permissions =
-      resolution
-      |> claims()
-      |> permitted_domain_ids(interested_permissions)
-
-    {:ok,
-     Enum.map(domains, fn %{id: id} = domain ->
-       {_, permissions} =
-         Enum.reduce(interested_permissions, {0, []}, fn permission, {index, permissions} ->
-           if Enum.any?(Enum.at(interested_domain_ids_by_permissions, index), fn x -> x == id end) do
-             {index + 1, [permission | permissions]}
-           else
-             {index + 1, permissions}
-           end
-         end)
-
-       Map.put(domain, :actions, permissions_to_actions(permissions))
-     end)}
-  end
-
-  defp with_interested_actions(domains, _args, _resolutions) do
-    {:ok, domains}
-  end
-
-  def domains(_parent, %{action: action} = args, resolution) do
-    {required_permissions, _} = Map.get(@actions_to_permissions, action, {[], []})
-
-    resolution
-    |> claims()
-    |> permitted_domain_ids(required_permissions)
-    |> intersect_domains()
-    |> Enum.map(&TaxonomyCache.get_domain/1)
-    |> Enum.reject(&is_nil/1)
-    |> with_interested_actions(args, resolution)
-  end
-
-  def actions(_domain, _args, resolution) do
-    resolution
-    |> claims()
-
-    {:ok, []}
+  defp actions_by_domain(%{id: domain_id} = domain, domains_by_actions) do
+    Enum.reduce(domains_by_actions, [], fn {action, domain_ids}, acc ->
+      if Enum.any?(domain_ids, fn id -> id == domain_id end) do
+        [action | acc]
+      else
+        acc
+      end
+    end)
   end
 
   defp intersect_domains(domains_by_permission) do

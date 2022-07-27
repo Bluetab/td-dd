@@ -5,13 +5,14 @@ defmodule TdDdWeb.Schema.Domains do
 
   use Absinthe.Schema.Notation
 
+  import Absinthe.Resolution.Helpers, only: [dataloader: 1]
+
   alias TdDdWeb.Resolvers
 
   object :domain_queries do
     @desc "Get a list of domains"
     field :domains, list_of(:domain) do
       arg(:action, :string)
-      arg(:with_interested_actions, :boolean)
       resolve(&Resolvers.Domains.domains/3)
     end
   end
@@ -21,7 +22,11 @@ defmodule TdDdWeb.Schema.Domains do
     field :parent_id, :id
     field :external_id, :string
     field :name, :string
-    field :actions, list_of(:string)
+
+    field :actions, list_of(:string) do
+      arg(:actions, list_of(:string))
+      resolve(dataloader(:permission_domains))
+    end
   end
 
   object :action do
