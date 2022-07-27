@@ -8,9 +8,8 @@ defmodule TdDdWeb.DataStructureVersionController do
   alias Ecto
   alias TdCache.TemplateCache
   alias TdDd.DataStructures
+  alias TdDd.DataStructures.Tags
   alias TdDdWeb.SwaggerDefinitions
-
-  require Logger
 
   action_fallback(TdDdWeb.FallbackController)
 
@@ -92,6 +91,7 @@ defmodule TdDdWeb.DataStructureVersionController do
 
   defp render_with_permissions(conn, claims, %{data_structure: data_structure} = dsv) do
     if can?(claims, view_data_structure(data_structure)) do
+      tags = Tags.tags(dsv)
       dsv = DataStructures.profile_source(dsv)
 
       user_permissions = %{
@@ -106,6 +106,7 @@ defmodule TdDdWeb.DataStructureVersionController do
 
       render(conn, "show.json",
         data_structure_version: dsv,
+        tags: tags,
         user_permissions: user_permissions,
         actions: actions(claims, data_structure),
         hypermedia: hypermedia("data_structure_version", conn, dsv)
@@ -117,7 +118,7 @@ defmodule TdDdWeb.DataStructureVersionController do
 
   defp actions(claims, data_structure) do
     if can?(claims, link_data_structure_tag(data_structure)) do
-      %{manage_tags: DataStructures.list_available_tags(data_structure)}
+      %{manage_tags: Tags.list_available_tags(data_structure)}
     else
       %{}
     end

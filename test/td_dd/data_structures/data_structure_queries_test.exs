@@ -2,7 +2,6 @@ defmodule TdDd.DataStructures.DataStructureQueriesTest do
   use TdDd.DataStructureCase
 
   alias TdDd.DataStructures.DataStructureQueries
-  alias TdDd.DataStructures.Hierarchy
   alias TdDd.Repo
 
   describe "DataStructureQueries.data_structures_query/1" do
@@ -86,8 +85,6 @@ defmodule TdDd.DataStructures.DataStructureQueriesTest do
       dsvs = create_hierarchy(dsv_names)
       ids = Enum.map(dsvs, & &1.id)
 
-      Hierarchy.update_hierarchy(ids)
-
       paths =
         DataStructureQueries.enriched_structure_versions(%{ids: ids})
         |> Repo.all()
@@ -112,8 +109,6 @@ defmodule TdDd.DataStructures.DataStructureQueriesTest do
       ids_2 = Enum.map(dsvs_2, & &1.id)
 
       ids = ids_0 ++ ids_1 ++ ids_2
-
-      Hierarchy.update_hierarchy(ids)
 
       paths =
         DataStructureQueries.enriched_structure_versions(%{ids: ids})

@@ -472,7 +472,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   describe "GET /api/data_structures/:id/versions/latest with actions" do
     @tag authentication: [role: "admin"]
     test "includes actions in the response", %{conn: conn} do
-      %{id: tag_id, name: tag_name, description: tag_description} = insert(:data_structure_tag)
+      %{id: tag_id, name: tag_name, description: tag_description} = insert(:tag)
       %{data_structure_id: id, version: version} = insert(:data_structure_version)
 
       for v <- ["latest", version] do

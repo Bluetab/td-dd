@@ -29,6 +29,8 @@
 - [TD-4997] Change search executions API sources list filter from 'AND' to 'OR'
 - [TD-4987] `/api/rule_results/search` now include ruleless implementation
   results and supports pagination
+- [TD-4175] Data structure tags may now be inherited by descendents of the
+  tagged data structure
 
 ## [4.47.1] 2022-07-18
 
