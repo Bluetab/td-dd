@@ -13,8 +13,8 @@ defmodule TdDdWeb.Schema.DomainTest do
   """
 
   @domains_with_actions """
-  query Domains($action: String!) {
-    domains(action: $action) {
+  query Domains($action: String!, $with_interested_actions: Boolean) {
+    domains(action: $action, with_interested_actions: $with_interested_actions) {
       id
       parentId
       externalId
@@ -118,17 +118,33 @@ defmodule TdDdWeb.Schema.DomainTest do
          ]
     test "returns the actions for specific domain for form implementation", %{
       conn: conn,
-      domain: domain
+      domain: domain,
+      claims: claims
     } do
+      one_permission_domain = CacheHelpers.insert_domain()
+      two_permission_domain = CacheHelpers.insert_domain()
+
       CacheHelpers.insert_domain(parent_id: domain.id)
-      CacheHelpers.insert_domain(parent_id: domain.id)
+
+      CacheHelpers.put_session_permissions(claims, %{
+        manage_quality_rule_implementations: [
+          domain.id,
+          two_permission_domain.id,
+          one_permission_domain.id
+        ],
+        publish_implementation: [two_permission_domain.id, one_permission_domain.id],
+        manage_segments: [one_permission_domain.id]
+      })
 
       assert %{"data" => data} =
                resp =
                conn
                |> post("/api/v2", %{
                  "query" => @domains_with_actions,
-                 "variables" => %{"action" => "manage_implementations"}
+                 "variables" => %{
+                   "action" => "manage_implementations",
+                   "with_interested_actions" => true
+                 }
                })
                |> json_response(:ok)
 
@@ -142,12 +158,14 @@ defmodule TdDdWeb.Schema.DomainTest do
 
     # end
 
-    # @tag authentication: [role: "user", permissions: [:manage_quality_rule_implementations, :manage_ruleless_implementations]]
+    # @tag authentication: [role: "user", permissions:
+    # [:manage_quality_rule_implementations, :manage_ruleless_implementations]]
     # test "returns the actions for specific domain for form ruleless implementation", %{conn: conn, domain: domain} do
 
     # end
 
-    # @tag authentication: [role: "user", permissions: [:manage_raw_quality_rule_implementations, :manage_ruleless_implementations]]
+    # @tag authentication: [role: "user", permissions:
+    # [:manage_raw_quality_rule_implementations, :manage_ruleless_implementations]]
     # test "returns the actions for specific domain for raw ruleless implementation", %{conn: conn, domain: domain} do
 
     # end

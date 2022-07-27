@@ -6,90 +6,85 @@ defmodule TdDdWeb.Resolvers.Domains do
   alias TdCache.Permissions
   alias TdCache.TaxonomyCache
 
-  @interesting_permissions %{
-    "manage_implementations" => [:publish_implementation, :manage_segments]
-  }
   @actions_to_permissions %{
-    "manage_tags" => [:link_data_structure_tag],
-    "manage_implementations" => [:manage_quality_rule_implementations],
-    "manage_raw_implementations" => [:manage_raw_quality_rule_implementations],
-    "manage_ruleless_implementations" => [
-      :manage_quality_rule_implementations,
-      :manage_ruleless_implementations
-    ],
-    "manage_raw_ruleless_implementations" => [
-      :manage_raw_quality_rule_implementations,
-      :manage_ruleless_implementations
-    ]
+    "manage_tags" => {[:link_data_structure_tag], []},
+    "manage_implementations" =>
+      {[:manage_quality_rule_implementations], [:publish_implementation, :manage_segments]},
+    "manage_raw_implementations" =>
+      {[:manage_raw_quality_rule_implementations], [:publish_implementation, :manage_segments]},
+    "manage_ruleless_implementations" =>
+      {[
+         :manage_quality_rule_implementations,
+         :manage_ruleless_implementations
+       ], [:publish_implementation, :manage_segments]},
+    "manage_raw_ruleless_implementations" =>
+      {[
+         :manage_raw_quality_rule_implementations,
+         :manage_ruleless_implementations
+       ], [:publish_implementation, :manage_segments]},
+    "can_publish_implementation" => {[:publish_implementation], []},
+    "can_manage_segments" => {[:manage_segments], []}
   }
 
-  # TODO CHECK!!!!!
-  # retrieved_permissions
-  # Map.values(@actions_to_permissions) |> Enum.map(fn(permissions) -> permissions -- retrieved_permissions == [] :ok :rejectend)
+  defp permissions_to_actions(permissions) do
+    @actions_to_permissions
+    |> Enum.filter(fn {_key, {value, _}} ->
+      Enum.empty?(value -- permissions)
+    end)
+    |> Enum.map(fn {key, _value} -> key end)
+  end
 
-  def domains(_parent, %{action: action}, resolution) do
-    domains =
+  defp with_interested_actions(
+         domains,
+         %{action: action, with_interested_actions: true},
+         resolution
+       ) do
+    {_, interested_permissions} = Map.get(@actions_to_permissions, action, {[], []})
+
+    interested_domain_ids_by_permissions =
       resolution
       |> claims()
-      |> permitted_domain_ids(Map.get(@actions_to_permissions, action))
-      |> intersect_domains()
-      |> Enum.map(&TaxonomyCache.get_domain/1)
-      |> Enum.reject(&is_nil/1)
+      |> permitted_domain_ids(interested_permissions)
 
-    optional_domain_ids_by_permissions =
-      resolution
-      |> claims()
-      |> permitted_domain_ids(Map.get(@interesting_permissions, action))
+    {:ok,
+     Enum.map(domains, fn %{id: id} = domain ->
+       {_, permissions} =
+         Enum.reduce(interested_permissions, {0, []}, fn permission, {index, permissions} ->
+           if Enum.any?(Enum.at(interested_domain_ids_by_permissions, index), fn x -> x == id end) do
+             {index + 1, [permission | permissions]}
+           else
+             {index + 1, permissions}
+           end
+         end)
 
-    domains =
-      Enum.map(domains, fn %{id: id} = domain ->
-        {_, permissions} =
-          Enum.reduce(Map.get(@interesting_permissions, action, []), {0, []}, fn permission,
-                                                                                 {index,
-                                                                                  permissions} ->
-            if Enum.any?(Enum.at(optional_domain_ids_by_permissions, index), fn x -> x == id end) do
-              {index + 1, [permission | permissions]}
-            else
-              {index + 1, permissions}
-            end
-          end)
+       Map.put(domain, :actions, permissions_to_actions(permissions))
+     end)}
+  end
 
-        Map.put(domain, :actions, permissions)
-      end)
-
+  defp with_interested_actions(domains, _args, _resolutions) do
     {:ok, domains}
   end
 
-  def actions(_domain, _args, resolution) do
-    # debemos obtener la lista de dominios para los que se puede ejecutar cada una de las acciones (de manera independiente)
-    # el cabrón de guille tenía razón… mejor hacer la petición a cache, éste NO hace el AND, y así en DD se puede usar AND/OR, según se quiera
-    # en este caso queremos conocer de manera independiente si existe el dominio actual en la lista de dominios de publish_implementation y de manage_segments
-    # jummm… cambio de idea… realmente tenemos la posibilidad de ejecutar un hasPermissions(action, domain) para el resolver por cada dominio…
-    # Para ser eficiente deberíamos poder hacer la petición de todos los permisos/dominios que busquemos a caché una vez antes de empezar con los resolvers
-    # y reutilizar la información para cada uno de los dominios sin tener que relanzar la llamada a cache…
-    # actions = ["publish_implementation", "manage_segment"]
+  def domains(_parent, %{action: action} = args, resolution) do
+    {required_permissions, _} = Map.get(@actions_to_permissions, action, {[], []})
 
     resolution
     |> claims()
+    |> permitted_domain_ids(required_permissions)
+    |> intersect_domains()
+    |> Enum.map(&TaxonomyCache.get_domain/1)
+    |> Enum.reject(&is_nil/1)
+    |> with_interested_actions(args, resolution)
+  end
 
-    # |> permitted_domain_ids(actions)
-    # |> IO.inspect(label: " actions -->")
+  def actions(_domain, _args, resolution) do
+    resolution
+    |> claims()
+
     {:ok, []}
   end
 
-  ## acciones de filtrado
-  ## acciones de permisos
-  defp permitted_domains(action, resolution) do
-    resolution
-    |> claims()
-    |> permitted_domain_ids(action)
-    |> Enum.map(&TaxonomyCache.get_domain/1)
-    |> Enum.reject(&is_nil/1)
-  end
-
   defp intersect_domains(domains_by_permission) do
-    IO.inspect(domains_by_permission, label: "DOMAINS_BY_PERMISSIONS")
-
     Enum.reduce(domains_by_permission, fn domains_ids, acc ->
       domains_ids -- domains_ids -- acc
     end)
