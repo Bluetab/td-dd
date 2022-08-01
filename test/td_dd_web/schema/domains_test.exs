@@ -125,11 +125,12 @@ defmodule TdDdWeb.Schema.DomainTest do
 
       %{id: domain_two_id} = two_permission_domain = CacheHelpers.insert_domain()
 
-      %{id: domain_child_id} =CacheHelpers.insert_domain(parent_id: domain.id)
-
+      %{id: domain_child_id} = CacheHelpers.insert_domain(parent_id: domain.id)
 
       [parent_domain_id, domain_one_id, domain_two_id, domain_child] =
-        Enum.map([parent_domain_id, domain_one_id, domain_two_id, domain_child_id], fn id  -> to_string(id) end)
+        Enum.map([parent_domain_id, domain_one_id, domain_two_id, domain_child_id], fn id ->
+          to_string(id)
+        end)
 
       CacheHelpers.put_session_permissions(claims, %{
         manage_quality_rule_implementations: [
@@ -148,21 +149,31 @@ defmodule TdDdWeb.Schema.DomainTest do
                  "query" => @domains_with_actions,
                  "variables" => %{
                    "action" => "manage_implementations",
-                   "secondary_actions" => ["manage_segments", "publish_implementation", "manage_ruleless_implementations", "manage_implementations"]
+                   "secondary_actions" => [
+                     "manage_segments",
+                     "publish_implementation",
+                     "manage_ruleless_implementations",
+                     "manage_implementations"
+                   ]
                  }
                })
                |> json_response(:ok)
 
       refute Map.has_key?(resp, "errors")
-      domains_actions = Map.new(data["domains"], fn(%{"actions" => actions, "id" => id}) -> {id, actions} end)
+
+      domains_actions =
+        Map.new(data["domains"], fn %{"actions" => actions, "id" => id} -> {id, actions} end)
 
       assert %{
-        parent_domain_id => ["manage_implementations"],
-        domain_one_id => ["publish_implementation", "manage_segments", "manage_implementations"],
-        domain_two_id => ["publish_implementation", "manage_implementations"],
-        domain_child => ["manage_implementations"]
-      } == domains_actions
-
+               parent_domain_id => ["manage_implementations"],
+               domain_one_id => [
+                 "publish_implementation",
+                 "manage_segments",
+                 "manage_implementations"
+               ],
+               domain_two_id => ["publish_implementation", "manage_implementations"],
+               domain_child => ["manage_implementations"]
+             } == domains_actions
     end
   end
 

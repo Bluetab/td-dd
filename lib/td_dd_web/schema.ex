@@ -53,7 +53,7 @@ defmodule TdDdWeb.Schema do
   end
 
   defp fetch_permission_domains(ctx) do
-    fn(batch_key, ids) ->
+    fn batch_key, ids ->
       TdDdWeb.Resolvers.Domains.fetch_permission_domains(batch_key, ids, ctx)
     end
   end
