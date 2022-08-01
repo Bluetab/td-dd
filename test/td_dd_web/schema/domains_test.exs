@@ -118,13 +118,18 @@ defmodule TdDdWeb.Schema.DomainTest do
          ]
     test "returns the actions for specific domain for form implementation", %{
       conn: conn,
-      domain: domain,
+      domain: %{id: parent_domain_id} = domain,
       claims: claims
     } do
-      one_permission_domain = CacheHelpers.insert_domain()
-      two_permission_domain = CacheHelpers.insert_domain()
+      %{id: domain_one_id} = one_permission_domain = CacheHelpers.insert_domain()
 
-      CacheHelpers.insert_domain(parent_id: domain.id)
+      %{id: domain_two_id} = two_permission_domain = CacheHelpers.insert_domain()
+
+      %{id: domain_child_id} =CacheHelpers.insert_domain(parent_id: domain.id)
+
+
+      [parent_domain_id, domain_one_id, domain_two_id, domain_child] =
+        Enum.map([parent_domain_id, domain_one_id, domain_two_id, domain_child_id], fn id  -> to_string(id) end)
 
       CacheHelpers.put_session_permissions(claims, %{
         manage_quality_rule_implementations: [
@@ -149,26 +154,16 @@ defmodule TdDdWeb.Schema.DomainTest do
                |> json_response(:ok)
 
       refute Map.has_key?(resp, "errors")
-      assert %{"domains" => [%{"actions" => _actions}]} = data
-      # assert_lists_equal(domains, [domain], &(&1 == expected(&2)))
+      domains_actions = Map.new(data["domains"], fn(%{"actions" => actions, "id" => id}) -> {id, actions} end)
+
+      assert %{
+        parent_domain_id => ["manage_implementations"],
+        domain_one_id => ["publish_implementation", "manage_segments", "manage_implementations"],
+        domain_two_id => ["publish_implementation", "manage_implementations"],
+        domain_child => ["manage_implementations"]
+      } == domains_actions
+
     end
-
-    # @tag authentication: [role: "user", permissions: [:manage_raw_quality_rule_implementations]]
-    # test "returns the actions for specific domain for form raw implementation", %{conn: conn, domain: domain} do
-
-    # end
-
-    # @tag authentication: [role: "user", permissions:
-    # [:manage_quality_rule_implementations, :manage_ruleless_implementations]]
-    # test "returns the actions for specific domain for form ruleless implementation", %{conn: conn, domain: domain} do
-
-    # end
-
-    # @tag authentication: [role: "user", permissions:
-    # [:manage_raw_quality_rule_implementations, :manage_ruleless_implementations]]
-    # test "returns the actions for specific domain for raw ruleless implementation", %{conn: conn, domain: domain} do
-
-    # end
   end
 
   defp expected(%{} = d) do

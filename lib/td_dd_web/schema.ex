@@ -47,14 +47,14 @@ defmodule TdDdWeb.Schema do
       Dataloader.new()
       |> Dataloader.add_source(TdDd.DataStructures, TdDd.DataStructures.datasource())
       |> Dataloader.add_source(TdCx.Sources, TdCx.Sources.datasource())
-      |> Dataloader.add_source(:permission_domains, Dataloader.KV.new(fetch_permission_domains(ctx)))
+      |> Dataloader.add_source(:domain_actions, Dataloader.KV.new(fetch_permission_domains(ctx)))
 
     Map.put(ctx, :loader, loader)
   end
 
-  defp fetch_permission_domains(%{claims: claims}) do
+  defp fetch_permission_domains(ctx) do
     fn(batch_key, ids) ->
-      TdDdWeb.Resolvers.Domains.fetch_permission_domains(batch_key, ids, claims)
+      TdDdWeb.Resolvers.Domains.fetch_permission_domains(batch_key, ids, ctx)
     end
   end
 

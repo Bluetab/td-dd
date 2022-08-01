@@ -25,11 +25,7 @@ defmodule TdDdWeb.Schema.Domains do
 
     field :actions, list_of(:string) do
       arg(:actions, list_of(:string))
-      resolve(dataloader(:permission_domains))
+      resolve(dataloader(:domain_actions))
     end
-  end
-
-  object :action do
-    field :name, :string
   end
 end

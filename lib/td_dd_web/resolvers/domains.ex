@@ -22,8 +22,8 @@ defmodule TdDdWeb.Resolvers.Domains do
     "manage_segments" => [:manage_segments]
   }
 
-  def domains(_parent, %{action: action} = args, resolution) do
-    required_permissions = action_to_permissions(action)
+  def domains(_parent, %{action: action}, resolution) do
+    required_permissions =  Map.get(@actions_to_permissions, action, [])
 
     {:ok,
      resolution
@@ -34,22 +34,17 @@ defmodule TdDdWeb.Resolvers.Domains do
      |> Enum.reject(&is_nil/1)}
   end
 
-  def fetch_permission_domains({:actions, %{actions: actions}}, domains, claims) do
-    actions_permissions =
-      actions
-      |> Enum.map(fn action -> {action, action_to_permissions(action)} end)
-      |> Map.new()
+  def fetch_permission_domains({:actions, %{actions: actions}}, domains, %{claims: claims}) do
+    actions_permissions = Map.take(@actions_to_permissions, actions)
 
-    permissions =
+    domains_by_permission =
       actions_permissions
       |> Map.values()
       |> List.flatten()
       |> Enum.uniq()
-
-    domains_by_permission =
-      permissions
-      |> Enum.zip(permitted_domain_ids(claims, permissions))
+      |> then(&(Enum.zip(&1, permitted_domain_ids(claims, &1))))
       |> Map.new()
+
 
     domains_by_actions =
       Enum.map(actions_permissions, fn {key, value} ->
@@ -66,20 +61,9 @@ defmodule TdDdWeb.Resolvers.Domains do
     |> Map.new(&{&1, actions_by_domain(&1, domains_by_actions)})
   end
 
-  defp action_to_permissions(action) do
-    Map.get(@actions_to_permissions, action, [])
-  end
 
-  defp permissions_to_actions(permissions) do
-    @actions_to_permissions
-    |> Enum.filter(fn {_key, {value, _}} ->
-      Enum.empty?(value -- permissions)
-    end)
-    |> Enum.map(fn {key, _value} -> key end)
-  end
-
-  defp actions_by_domain(%{id: domain_id} = domain, domains_by_actions) do
-    Enum.reduce(domains_by_actions, [], fn {action, domain_ids}, acc ->
+  defp actions_by_domain(%{id: domain_id}, permitted_domains_by_actions) do
+    Enum.reduce(permitted_domains_by_actions, [], fn {action, domain_ids}, acc ->
       if Enum.any?(domain_ids, fn id -> id == domain_id end) do
         [action | acc]
       else
