@@ -54,7 +54,7 @@ defmodule TdDdWeb.Resolvers.Domains do
     end)
   end
 
-  defp permitted_domain_ids(%{role: "user", jti: jti}, action) when is_binary(action) do
+  defp permitted_domain_ids(%{role: "user", jti: jti}, action) do
     jti
     |> Permissions.permitted_domain_ids(Map.get(@actions_to_permissions, action, []))
     |> intersect_domains()

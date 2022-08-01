@@ -13,13 +13,13 @@ defmodule TdDdWeb.Schema.DomainTest do
   """
 
   @domains_with_actions """
-  query Domains($action: String!, $secondary_actions: [String!]!) {
+  query Domains($action: String!, $domain_actions: [String!]!) {
     domains(action: $action) {
       id
       parentId
       externalId
       name
-      actions(actions: $secondary_actions)
+      actions(actions: $domain_actions)
     }
   }
   """
@@ -149,11 +149,12 @@ defmodule TdDdWeb.Schema.DomainTest do
                  "query" => @domains_with_actions,
                  "variables" => %{
                    "action" => "manage_implementations",
-                   "secondary_actions" => [
+                   "domain_actions" => [
                      "manage_segments",
                      "publish_implementation",
                      "manage_ruleless_implementations",
-                     "manage_implementations"
+                     "manage_implementations",
+                     "unknown_actions"
                    ]
                  }
                })
