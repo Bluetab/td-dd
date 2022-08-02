@@ -37,14 +37,10 @@ defmodule TdDdWeb.Resolvers.Domains do
 
     Map.new(domains, &{&1, actions_by_domain(&1, domains_by_actions)})
   end
-
   defp actions_by_domain(%{id: domain_id}, permitted_domains_by_actions) do
     Enum.reduce(permitted_domains_by_actions, [], fn {action, domain_ids}, acc ->
-      if Enum.any?(domain_ids, fn id -> id == domain_id end) do
-        [action | acc]
-      else
-        acc
-      end
+      has_any = Enum.any?(domain_ids, fn id -> id == domain_id end)
+      if has_any, do: [action | acc], else: acc
     end)
   end
 
