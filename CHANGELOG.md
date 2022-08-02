@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-5106] An implementation's domain id couldn't be changed
+
 ## [4.48.0] 2022-07-26
 
 ### Added
