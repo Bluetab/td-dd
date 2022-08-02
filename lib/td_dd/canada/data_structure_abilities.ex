@@ -92,11 +92,11 @@ defmodule TdDd.Canada.DataStructureAbilities do
     Permissions.authorized?(claims, :link_data_structure, domain_ids)
   end
 
-  def can?(%Claims{} = claims, :link_data_structure_tag, %DataStructure{domain_ids: domain_ids}) do
+  def can?(%Claims{} = claims, :tag, %DataStructure{domain_ids: domain_ids}) do
     Permissions.authorized?(claims, :link_data_structure_tag, domain_ids)
   end
 
-  def can?(%Claims{} = claims, :delete_link_data_structure_tag, %DataStructure{
+  def can?(%Claims{} = claims, :untag, %DataStructure{
         domain_ids: domain_ids
       }) do
     Permissions.authorized?(claims, :link_data_structure_tag, domain_ids)
@@ -104,6 +104,10 @@ defmodule TdDd.Canada.DataStructureAbilities do
 
   def can?(%Claims{} = claims, :update_domain_ids, DataStructure) do
     Permissions.authorized?(claims, :manage_structures_domain)
+  end
+
+  def can?(%Claims{} = claims, :query, DataStructure) do
+    Permissions.authorized?(claims, :view_data_structure)
   end
 
   def can?(%Claims{}, _action, %DataStructure{}), do: false

@@ -13,18 +13,18 @@ defmodule TdDdWeb.Schema.DomainTest do
   """
 
   @domains_with_actions """
-  query Domains($action: String!, $domain_actions: [String!]!) {
+  query Domains($action: String!, $domainActions: [String!]!) {
     domains(action: $action) {
       id
       parentId
       externalId
       name
-      actions(actions: $domain_actions)
+      actions(actions: $domainActions)
     }
   }
   """
 
-  @variables %{"action" => "manage_tags"}
+  @variables %{"action" => "manageTags"}
 
   describe "domains query" do
     @tag authentication: [role: "user"]

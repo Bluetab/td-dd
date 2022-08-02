@@ -38,6 +38,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     field(:grant, :map, virtual: true)
     field(:with_profiling, :boolean, virtual: true)
     field(:_filters, :map, virtual: true)
+    field(:tag_names, {:array, :string}, virtual: true)
 
     belongs_to(:data_structure, DataStructure)
 
@@ -144,16 +145,16 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     def encode(
           %DataStructureVersion{
             data_structure:
-              %{alias: alias_name, search_content: content, tags: tags, domain_ids: _domain_ids} =
+              %{alias: alias_name, search_content: content, domain_ids: _domain_ids} =
                 data_structure,
-            path: path
+            path: path,
+            tag_names: tags
           } = dsv
         ) do
       # IMPORTANT: Avoid enriching structs one-by-one in this function.
       # Instead, enrichment should be performed as efficiently as possible on
       # chunked data using `TdDd.DataStructures.enriched_structure_versions/1`.
       name_path = Enum.map(path, & &1["name"])
-      tags = tags(tags)
 
       data_structure
       |> Map.take([
@@ -225,8 +226,5 @@ defmodule TdDd.DataStructures.DataStructureVersion do
 
     defp source_alias(%{metadata: %{"alias" => value}}), do: value
     defp source_alias(_), do: nil
-
-    defp tags([_ | _] = tags), do: Enum.map(tags, & &1.name)
-    defp tags(_tags), do: nil
   end
 end
