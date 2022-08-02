@@ -7,19 +7,19 @@ defmodule TdDdWeb.Resolvers.Domains do
   alias TdCache.TaxonomyCache
 
   @actions_to_permissions %{
-    "manage_tags" => [:link_data_structure_tag],
-    "manage_implementations" => [:manage_quality_rule_implementations],
-    "manage_raw_implementations" => [:manage_raw_quality_rule_implementations],
-    "manage_ruleless_implementations" => [
+    "manageTags" => [:link_data_structure_tag],
+    "manageImplementations" => [:manage_quality_rule_implementations],
+    "manageRawImplementations" => [:manage_raw_quality_rule_implementations],
+    "manageRulelessImplementations" => [
       :manage_quality_rule_implementations,
       :manage_ruleless_implementations
     ],
-    "manage_raw_ruleless_implementations" => [
+    "manageRawRulelessImplementations" => [
       :manage_raw_quality_rule_implementations,
       :manage_ruleless_implementations
     ],
-    "publish_implementation" => [:publish_implementation],
-    "manage_segments" => [:manage_segments]
+    "publishImplementation" => [:publish_implementation],
+    "manageSegments" => [:manage_segments]
   }
 
   def domains(_parent, %{action: action}, resolution) do

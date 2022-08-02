@@ -94,7 +94,7 @@ defmodule TdDdWeb.Schema.DomainTest do
                conn
                |> post("/api/v2", %{
                  "query" => @domains,
-                 "variables" => %{"action" => "manage_ruleless_implementations"}
+                 "variables" => %{"action" => "manageRulelessImplementations"}
                })
                |> json_response(:ok)
 
@@ -148,13 +148,13 @@ defmodule TdDdWeb.Schema.DomainTest do
                |> post("/api/v2", %{
                  "query" => @domains_with_actions,
                  "variables" => %{
-                   "action" => "manage_implementations",
-                   "domain_actions" => [
-                     "manage_segments",
-                     "publish_implementation",
-                     "manage_ruleless_implementations",
-                     "manage_implementations",
-                     "unknown_actions"
+                   "action" => "manageImplementations",
+                   "domainActions" => [
+                     "manageSegments",
+                     "publishImplementation",
+                     "manageRulelessImplementations",
+                     "manageImplementations",
+                     "unknownActions"
                    ]
                  }
                })
@@ -166,14 +166,14 @@ defmodule TdDdWeb.Schema.DomainTest do
         Map.new(data["domains"], fn %{"actions" => actions, "id" => id} -> {id, actions} end)
 
       assert %{
-               parent_domain_id => ["manage_implementations"],
+               parent_domain_id => ["manageImplementations"],
                domain_one_id => [
-                 "publish_implementation",
-                 "manage_segments",
-                 "manage_implementations"
+                 "publishImplementation",
+                 "manageSegments",
+                 "manageImplementations"
                ],
-               domain_two_id => ["publish_implementation", "manage_implementations"],
-               domain_child => ["manage_implementations"]
+               domain_two_id => ["publishImplementation", "manageImplementations"],
+               domain_child => ["manageImplementations"]
              } == domains_actions
     end
   end
