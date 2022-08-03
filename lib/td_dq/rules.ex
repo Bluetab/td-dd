@@ -286,11 +286,8 @@ defmodule TdDq.Rules do
 
   def get_cached_content(%{} = content, type) when is_binary(type) do
     case TemplateCache.get_by_name!(type) do
-      template = %{} ->
-        Format.enrich_content_values(content, template)
-
-      _ ->
-        content
+      template = %{} -> Format.enrich_content_values(content, template)
+      _ -> content
     end
   end
 

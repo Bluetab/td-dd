@@ -26,6 +26,10 @@ defmodule TdDdWeb.Resolvers.Domains do
     Permissions.permitted_domain_ids(jti, :link_data_structure_tag)
   end
 
+  defp permitted_domain_ids(%{role: "user", jti: jti}, "manageConcepts") do
+    Permissions.permitted_domain_ids(jti, :update_business_concept)
+  end
+
   defp permitted_domain_ids(_other, _action), do: []
 
   defp claims(%{context: %{claims: claims}}), do: claims

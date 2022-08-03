@@ -130,7 +130,11 @@ defmodule TdDd.Search.Mappings do
     {name, %{type: "keyword"}}
   end
 
-  defp field_mapping(%{"name" => name, "type" => type}) when type in ["domain", "system"] do
+  defp field_mapping(%{"name" => name, "type" => "domain"}) do
+    {name, %{type: "long"}}
+  end
+
+  defp field_mapping(%{"name" => name, "type" => "system"}) do
     {name,
      %{
        type: "nested",
