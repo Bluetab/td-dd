@@ -285,10 +285,11 @@ defmodule TdDq.Rules do
   def get_rule_or_nil(id), do: get_rule(id)
 
   def get_cached_content(%{} = content, type) when is_binary(type) do
-    case TemplateCache.get_by_name!(type) do
+    case TemplateCache.get_by_name!(type) |> IO.inspect(label: "TEMPLATE") do
       template = %{} -> Format.enrich_content_values(content, template)
       _ -> content
     end
+    |> IO.inspect(label: "CACHED ->")
   end
 
   def get_cached_content(content, _type), do: content

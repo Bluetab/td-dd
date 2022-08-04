@@ -39,7 +39,7 @@ defmodule TdDq.Jobs.UpdateDomainFields do
   defp domain_fields(_), do: []
 
   defp maybe_log({:ok, res}) when map_size(res) > 0 do
-    Logger.info("Updated domain fields in #{map_size(res)} concepts")
+    Logger.info("Updated domain fields in #{map_size(res)} rules")
   end
 
   defp maybe_log({:ok, _}), do: :ok
@@ -84,6 +84,6 @@ defmodule TdDq.Jobs.UpdateDomainFields do
     end)
   end
 
-  defp get_id(%{"id" => id}) when is_binary(id), do: id
-  defp get_id(%{"id" => id}) when is_integer(id), do: to_string(id)
+  defp get_id(%{"id" => id}) when is_integer(id), do: id
+  defp get_id(%{"id" => id}) when is_binary(id), do: String.to_integer(id)
 end
