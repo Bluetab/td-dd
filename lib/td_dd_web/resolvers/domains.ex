@@ -10,6 +10,15 @@ defmodule TdDdWeb.Resolvers.Domains do
     {:ok, permitted_domains(action, resolution)}
   end
 
+  def domains(_parent, %{ids: ids}, _resolution) do
+    domains =
+      ids
+      |> Enum.map(&TaxonomyCache.get_domain/1)
+      |> Enum.reject(&is_nil/1)
+
+    {:ok, domains}
+  end
+
   defp permitted_domains(action, resolution) do
     resolution
     |> claims()
