@@ -31,6 +31,10 @@ defmodule TdDdWeb.Resolvers.Domains do
      |> Enum.reject(&is_nil/1)}
   end
 
+  def domain(_parent, %{id: id}, _resolution) do
+    {:ok, TaxonomyCache.get_domain(id)}
+  end
+
   def fetch_permission_domains({:actions, %{actions: actions}}, domains, %{claims: claims}) do
     domains_by_actions =
       Map.new(actions, fn action -> {action, permitted_domain_ids(claims, action)} end)

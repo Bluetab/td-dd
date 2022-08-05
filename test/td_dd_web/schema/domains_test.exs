@@ -1,19 +1,17 @@
 defmodule TdDdWeb.Schema.DomainTest do
   use TdDdWeb.ConnCase
 
-  @domains """
-  query Domains($action: String!) {
-    domains(action: $action) {
+  @domain_with_actions """
+  query Domain($id: ID!, $actions: [String!]!) {
+    domain(id: $id) {
       id
-      parentId
-      externalId
-      name
+      actions(actions: $actions)
     }
   }
   """
 
-  @domains_with_actions """
-  query Domains($action: String!, $domainActions: [String!]!) {
+  @domains """
+  query Domains($action: String!, $domainActions: [String!]) {
     domains(action: $action) {
       id
       parentId
@@ -116,7 +114,7 @@ defmodule TdDdWeb.Schema.DomainTest do
              :manage_segments
            ]
          ]
-    test "returns the actions for specific domain for form implementation", %{
+    test "returns the actions for a list of domains", %{
       conn: conn,
       domain: %{id: parent_domain_id} = domain,
       claims: claims
@@ -146,7 +144,7 @@ defmodule TdDdWeb.Schema.DomainTest do
                resp =
                conn
                |> post("/api/v2", %{
-                 "query" => @domains_with_actions,
+                 "query" => @domains,
                  "variables" => %{
                    "action" => "manageImplementations",
                    "domainActions" => [
@@ -175,6 +173,35 @@ defmodule TdDdWeb.Schema.DomainTest do
                domain_two_id => ["publishImplementation", "manageImplementations"],
                domain_child => ["manageImplementations"]
              } == domains_actions
+    end
+
+    @tag authentication: [
+           role: "user",
+           permissions: [
+             :manage_quality_rule_implementations,
+             :publish_implementation,
+             :manage_segments
+           ]
+         ]
+    test "returns the actions for specific domain", %{
+      conn: conn,
+      domain: %{id: domain_id},
+    } do
+      assert %{"data" => %{"domain" => domain}} =
+               resp =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @domain_with_actions,
+                 "variables" => %{
+                   "actions" => ["manageImplementations"],
+                   "id" => to_string(domain_id)
+                 }
+               })
+               |> json_response(:ok)
+
+      refute Map.has_key?(resp, "errors")
+
+      assert %{"actions" => ["manageImplementations"], "id" => to_string(domain_id)} == domain
     end
   end
 
