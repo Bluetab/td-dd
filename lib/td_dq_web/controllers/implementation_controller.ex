@@ -84,7 +84,8 @@ defmodule TdDqWeb.ImplementationController do
     response(400, "Client Error")
   end
 
-  def create(conn, %{"rule_implementation" => %{"rule_id" => rule_id} = params}) when not is_nil(rule_id) do
+  def create(conn, %{"rule_implementation" => %{"rule_id" => rule_id} = params})
+      when not is_nil(rule_id) do
     claims = conn.assigns[:current_resource]
 
     rule = Rules.get_rule_or_nil(rule_id)

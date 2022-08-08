@@ -21,7 +21,6 @@ defmodule TdDdWeb.Schema.Domains do
       arg(:id, :id)
       resolve(&Resolvers.Domains.domain/3)
     end
-
   end
 
   object :domain do

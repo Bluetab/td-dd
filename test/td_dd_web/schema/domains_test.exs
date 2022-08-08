@@ -185,7 +185,7 @@ defmodule TdDdWeb.Schema.DomainTest do
          ]
     test "returns the actions for specific domain", %{
       conn: conn,
-      domain: %{id: domain_id},
+      domain: %{id: domain_id}
     } do
       assert %{"data" => %{"domain" => domain}} =
                resp =
@@ -207,10 +207,12 @@ defmodule TdDdWeb.Schema.DomainTest do
 
   defp expected(%{} = d) do
     d
+    |> Map.put_new(:actions, [])
     |> Map.put_new(:parent_id, nil)
-    |> Map.take([:id, :parent_id, :external_id, :name])
+    |> Map.take([:id, :parent_id, :external_id, :name, :actions])
     |> Map.new(fn
       {k, nil} -> {Inflex.camelize(k, :lower), nil}
+      {k, []} -> {Inflex.camelize(k, :lower), []}
       {k, v} -> {Inflex.camelize(k, :lower), to_string(v)}
     end)
   end
