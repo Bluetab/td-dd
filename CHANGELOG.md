@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-5113] Add data_structures_hierarchy ds_id index
+
 ## [4.48.1] 2022-08-02
 
 ### Fixed
