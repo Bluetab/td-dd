@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-4945] Allow to publish from creation and published implementations 
+
 ## [4.48.1] 2022-08-02
 
 ### Fixed
