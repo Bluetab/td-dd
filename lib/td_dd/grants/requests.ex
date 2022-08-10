@@ -30,15 +30,28 @@ defmodule TdDd.Grants.Requests do
   end
 
   def get_grant_request_group!(id, opts \\ []) do
-    preloads = Keyword.get(opts, :preload, requests: [data_structure: :current_version])
+    preloads =
+      Keyword.get(opts, :preload, [
+        :modification_grant,
+        requests: [data_structure: :current_version]
+      ])
 
     GrantRequestGroup
     |> preload(^preloads)
     |> Repo.get!(id)
   end
 
-  def create_grant_request_group(%{} = params, %Claims{user_id: user_id}) do
-    changeset = GrantRequestGroup.changeset(%GrantRequestGroup{user_id: user_id}, params)
+  def create_grant_request_group(
+        %{} = params,
+        %Claims{user_id: user_id},
+        modification_grant \\ nil
+      ) do
+    changeset =
+      GrantRequestGroup.changeset(
+        %GrantRequestGroup{user_id: user_id},
+        params,
+        modification_grant
+      )
 
     Multi.new()
     |> Multi.insert(:group, changeset)
@@ -173,6 +186,8 @@ defmodule TdDd.Grants.Requests do
       })
 
     clauses
+    # TODO TD-5078 when listing requests, preload group's modification_grant
+    # |> Map.put_new(:preload, [group: [:modification_grant], data_structure: :current_version])
     |> Map.put_new(:preload, [:group, data_structure: :current_version])
     |> Enum.reduce(query, fn
       {:preload, preloads}, q ->

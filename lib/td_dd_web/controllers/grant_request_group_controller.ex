@@ -5,6 +5,7 @@ defmodule TdDdWeb.GrantRequestGroupController do
 
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.Grants
   alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Grants.Requests
 
@@ -24,7 +25,9 @@ defmodule TdDdWeb.GrantRequestGroupController do
     with claims <- conn.assigns[:current_resource],
          {:ok, params} <- with_valid_requests(params),
          {:ok, _} <- can_create_on_structures(claims, params),
-         {:ok, %{group: %{id: id}}} <- Requests.create_grant_request_group(params, claims),
+         modification_grant <- with_modification_grant(params),
+         {:ok, %{group: %{id: id}}} <-
+           Requests.create_grant_request_group(params, claims, modification_grant),
          %{} = group <- Requests.get_grant_request_group!(id) do
       conn
       |> put_status(:created)
@@ -35,6 +38,11 @@ defmodule TdDdWeb.GrantRequestGroupController do
       |> render("show.json", grant_request_group: group)
     end
   end
+
+  defp with_modification_grant(%{"modification_grant_id" => grant_id}) when not is_nil(grant_id),
+    do: Grants.get_grant!(grant_id)
+
+  defp with_modification_grant(_), do: nil
 
   defp with_valid_requests(%{"requests" => [_ | _] = requests, "type" => type} = params)
        when is_list(requests) do

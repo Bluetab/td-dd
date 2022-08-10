@@ -104,6 +104,38 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
              } = data
     end
 
+    @tag authentication: [role: "admin"]
+    test "renders grant_request_group when data is valid with modification_grant", %{
+      conn: conn,
+      claims: %{user_id: user_id},
+      create_params: create_params
+    } do
+      %{id: grant_id} = insert(:grant)
+      params_with_grant = Map.put(create_params, "modification_grant_id", grant_id)
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.grant_request_group_path(conn, :create),
+                 grant_request_group: params_with_grant
+               )
+               |> json_response(:created)
+
+      assert %{"id" => id} = data
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.grant_request_group_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "id" => ^id,
+               "user_id" => ^user_id,
+               "_embedded" => %{
+                 "modification_grant" => %{"id" => ^grant_id}
+               }
+             } = data
+    end
+
     @tag authentication: [user: "non_admin"]
     test "user without permission on structure cannot create grant_request_group", %{
       conn: conn,
