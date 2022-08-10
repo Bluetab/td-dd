@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-5113] Add data_structures_hierarchy ds_id index
+- [TD-4945] Allow to publish from creation and published implementations 
 
 ## [4.48.1] 2022-08-02
 
