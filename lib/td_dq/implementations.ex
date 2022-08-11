@@ -198,16 +198,17 @@ defmodule TdDq.Implementations do
     |> Map.get(:changes) != %{}
   end
 
-  defp upsert(multi, changeset, :published, _) do
-    Multi.insert(multi, :implementation, changeset)
-  end
+  defp upsert(multi, %{data: implementation} = changeset, status, user_id) do
+    new_multi =
+      case Changeset.get_change(changeset, :status) do
+        :published -> Workflow.maybe_version_existing(multi, implementation, "published", user_id)
+        _ -> multi
+      end
 
-  defp upsert(multi, %{data: implementation} = changeset, _not_published, user_id) do
-    case Changeset.get_change(changeset, :status) do
-      :published -> Workflow.maybe_version_existing(multi, implementation, "published", user_id)
-      _ -> multi
+    case status do
+      :published -> Multi.insert(new_multi, :implementation, changeset)
+      _ -> Multi.update(new_multi, :implementation, changeset)
     end
-    |> Multi.update(:implementation, changeset)
   end
 
   defp upsert_changeset(
@@ -231,7 +232,7 @@ defmodule TdDq.Implementations do
         version: v + 1,
         implementation_ref: implementation_ref
       },
-      Map.put(params, "status", "draft")
+      params
     )
   end
 
@@ -677,8 +678,8 @@ defmodule TdDq.Implementations do
   end
 
   defp insert_implementation(changeset) do
-    with {:ok, %{id: id} = implementation} <- Repo.insert(changeset),
-         {:ok, _} <- can_create_implementation_key(changeset) do
+    with {:ok, _} <- can_create_implementation_key(changeset),
+         {:ok, %{id: id} = implementation} <- Repo.insert(changeset) do
       implementation
       |> Implementation.implementation_ref_changeset(%{implementation_ref: id})
       |> Repo.update()
