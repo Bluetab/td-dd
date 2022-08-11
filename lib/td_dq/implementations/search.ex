@@ -7,7 +7,15 @@ defmodule TdDq.Implementations.Search do
 
   def search_by_rule_id(%{} = params, claims, rule_id, page \\ 0, size \\ 1_000) do
     params
-    |> Map.put("filters", %{"rule_id" => rule_id})
+    |> case do
+      %{"filters" => filters} = params ->
+        params
+        |> Map.put("filters", Map.merge(%{ "rule_id" => rule_id }, filters))
+      %{} = params ->
+        params
+        |> Map.put("filters", %{
+          "rule_id" => rule_id })
+    end
     |> search(claims, page, size)
   end
 
