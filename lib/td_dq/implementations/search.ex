@@ -10,11 +10,13 @@ defmodule TdDq.Implementations.Search do
     |> case do
       %{"filters" => filters} = params ->
         params
-        |> Map.put("filters", Map.merge(%{ "rule_id" => rule_id }, filters))
+        |> Map.put("filters", Map.merge(%{"rule_id" => rule_id}, filters))
+
       %{} = params ->
         params
         |> Map.put("filters", %{
-          "rule_id" => rule_id })
+          "rule_id" => rule_id
+        })
     end
     |> search(claims, page, size)
   end
