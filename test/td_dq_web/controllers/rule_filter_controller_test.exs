@@ -41,9 +41,10 @@ defmodule TdDqWeb.RuleFilterControllerTest do
           assert %{
                    bool: %{
                      filter: [
-                       %{term: %{"domain_ids" => _}},
-                       %{term: %{"_confidential" => false}}
-                     ]
+                       %{term: %{"_confidential" => false}},
+                       %{term: %{"domain_ids" => _}}
+                     ],
+                     must_not: _must_not
                    }
                  } = query
 
@@ -75,7 +76,6 @@ defmodule TdDqWeb.RuleFilterControllerTest do
           assert %{
                    bool: %{
                      filter: [
-                       %{terms: %{"domain_ids" => [_, _]}},
                        %{
                          bool: %{
                            should: [
@@ -83,8 +83,10 @@ defmodule TdDqWeb.RuleFilterControllerTest do
                              %{term: %{"_confidential" => false}}
                            ]
                          }
-                       }
-                     ]
+                       },
+                       %{terms: %{"domain_ids" => [_, _]}}
+                     ],
+                     must_not: _must_not
                    }
                  } = query
 
