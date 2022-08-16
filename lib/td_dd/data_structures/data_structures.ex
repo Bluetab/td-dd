@@ -45,7 +45,9 @@ defmodule TdDd.DataStructures do
   def list_data_structure_versions(clauses \\ %{}) do
     clauses
     |> Enum.reduce(DataStructureVersion, fn
-      {:since, since}, q -> where(q, [dsv], dsv.updated_at >= ^since or dsv.deleted_at >= ^since)
+      {:since, since}, q ->
+        join(q, :inner, [dsv], ds in assoc(dsv, :data_structure))
+        |> where([dsv, ds], ds.updated_at >= ^since or dsv.updated_at >= ^since or dsv.deleted_at >= ^since)
       {:min_id, id}, q -> where(q, [dsv], dsv.id >= ^id)
       {:order_by, "id"}, q -> order_by(q, :id)
       {:limit, limit}, q -> limit(q, ^limit)
