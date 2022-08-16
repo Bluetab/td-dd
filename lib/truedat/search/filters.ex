@@ -48,6 +48,10 @@ defmodule Truedat.Search.Filters do
     {:filter, nested_query}
   end
 
+  defp build_filter("must_not", values) do
+    {:must_not, Enum.map(values, fn {key, term_values} -> term(key, term_values) end)}
+  end
+
   defp build_filter(field, value) when field in ["updated_at", "start_date", "end_date"] do
     {:filter, Query.range(field, value)}
   end

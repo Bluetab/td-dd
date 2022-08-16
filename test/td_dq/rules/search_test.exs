@@ -37,8 +37,8 @@ defmodule TdDq.Rules.SearchTest do
           assert %{
                    bool: %{
                      filter: [
-                       %{term: %{"domain_ids" => _}},
-                       %{term: %{"_confidential" => false}}
+                       %{term: %{"_confidential" => false}},
+                       %{term: %{"domain_ids" => _}}
                      ]
                    }
                  } = query
@@ -60,7 +60,6 @@ defmodule TdDq.Rules.SearchTest do
           assert %{
                    bool: %{
                      filter: [
-                       %{term: %{"domain_ids" => _}},
                        %{
                          bool: %{
                            should: [
@@ -68,7 +67,8 @@ defmodule TdDq.Rules.SearchTest do
                              %{term: %{"_confidential" => false}}
                            ]
                          }
-                       }
+                       },
+                       %{term: %{"domain_ids" => _}}
                      ]
                    }
                  } = query
@@ -97,8 +97,8 @@ defmodule TdDq.Rules.SearchTest do
           assert %{
                    bool: %{
                      filter: [
-                       %{terms: %{"domain_ids" => [_, _]}},
-                       %{term: %{"_confidential" => false}}
+                       %{term: %{"_confidential" => false}},
+                       %{terms: %{"domain_ids" => [_, _]}}
                      ]
                    }
                  } = query
@@ -110,10 +110,10 @@ defmodule TdDq.Rules.SearchTest do
           assert %{
                    bool: %{
                      filter: [
-                       %{terms: %{"domain_ids" => [_, _]}},
-                       %{term: %{"_confidential" => false}},
+                       %{term: %{"domain_ids" => ^executable_domain_id}},
                        %{term: %{"executable" => true}},
-                       %{term: %{"domain_ids" => ^executable_domain_id}}
+                       %{term: %{"_confidential" => false}},
+                       %{terms: %{"domain_ids" => [_, _]}}
                      ]
                    }
                  } = query
@@ -211,8 +211,8 @@ defmodule TdDq.Rules.SearchTest do
           assert %{
                    bool: %{
                      filter: [
-                       %{term: %{"domain_ids" => _}},
-                       %{term: %{"_confidential" => false}}
+                       %{term: %{"_confidential" => false}},
+                       %{term: %{"domain_ids" => _}}
                      ]
                    }
                  } = query
@@ -234,7 +234,6 @@ defmodule TdDq.Rules.SearchTest do
           assert %{
                    bool: %{
                      filter: [
-                       %{term: %{"domain_ids" => _}},
                        %{
                          bool: %{
                            should: [
@@ -242,7 +241,8 @@ defmodule TdDq.Rules.SearchTest do
                              %{term: %{"_confidential" => false}}
                            ]
                          }
-                       }
+                       },
+                       %{term: %{"domain_ids" => _}}
                      ]
                    }
                  } = query
@@ -298,8 +298,8 @@ defmodule TdDq.Rules.SearchTest do
           assert %{
                    bool: %{
                      filter: [
-                       %{term: %{"domain_ids" => _}},
-                       %{term: %{"_confidential" => false}}
+                       %{term: %{"_confidential" => false}},
+                       %{term: %{"domain_ids" => _}}
                      ]
                    }
                  } = query
@@ -324,7 +324,6 @@ defmodule TdDq.Rules.SearchTest do
           assert %{
                    bool: %{
                      filter: [
-                       %{term: %{"domain_ids" => _}},
                        %{
                          bool: %{
                            should: [
@@ -332,7 +331,8 @@ defmodule TdDq.Rules.SearchTest do
                              %{term: %{"_confidential" => false}}
                            ]
                          }
-                       }
+                       },
+                       %{term: %{"domain_ids" => _}}
                      ]
                    }
                  } = query
@@ -362,10 +362,10 @@ defmodule TdDq.Rules.SearchTest do
           assert %{
                    bool: %{
                      filter: [
-                       %{terms: %{"domain_ids" => [_, _]}},
-                       %{term: %{"_confidential" => false}},
+                       %{term: %{"domain_ids" => ^executable_domain_id}},
                        %{term: %{"executable" => true}},
-                       %{term: %{"domain_ids" => ^executable_domain_id}}
+                       %{term: %{"_confidential" => false}},
+                       %{terms: %{"domain_ids" => [_, _]}}
                      ]
                    }
                  } = query
