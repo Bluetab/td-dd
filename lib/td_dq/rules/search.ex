@@ -68,13 +68,20 @@ defmodule TdDq.Rules.Search do
   defp search_permissions([_true] = _executable) do
     [
       "view_quality_rule",
+      "manage_quality_rule_implementations",
+      "manage_raw_quality_rule_implementations",
       "manage_confidential_business_concepts",
       "execute_quality_rule_implementations"
     ]
   end
 
   defp search_permissions(_not_executable) do
-    ["view_quality_rule", "manage_confidential_business_concepts"]
+    [
+      "view_quality_rule",
+      "manage_quality_rule_implementations",
+      "manage_raw_quality_rule_implementations",
+      "manage_confidential_business_concepts"
+    ]
   end
 
   def scroll_implementations(%{"scroll_id" => _, "scroll" => _} = params) do

@@ -69,5 +69,53 @@ defmodule TdDq.Rules.Search.QueryTest do
                %{term: %{"domain_ids" => 3}}
              ]
     end
+
+    # mqri -> manage_quality_rule_implementations
+    # mrqri -> manage_raw_quality_rule_implementations
+    test "includes a must_not clause with mqri none mrqri none" do
+      permissions = %{
+        "view_quality_rule" => :all,
+        "manage_quality_rule_implementations" => :none,
+        "manage_raw_quality_rule_implementations" => :none
+      }
+
+      assert Query.build_filters(permissions) == [
+               %{match_all: %{}},
+               %{term: %{"_confidential" => false}},
+               %{must_not: [%{term: %{"status" => "draft"}}]}
+             ]
+    end
+
+    # mqri -> manage_quality_rule_implementations
+    # mrqri -> manage_raw_quality_rule_implementations
+    test "includes a must_not clause with mqri not none mrqri none" do
+      permissions = %{
+        "view_quality_rule" => :all,
+        "manage_quality_rule_implementations" => [1],
+        "manage_raw_quality_rule_implementations" => :none
+      }
+
+      assert Query.build_filters(permissions) == [
+               %{match_all: %{}},
+               %{term: %{"_confidential" => false}},
+               %{must_not: [%{term: %{"status" => "draft"}}]}
+             ]
+    end
+
+    # mqri -> manage_quality_rule_implementations
+    # mrqri -> manage_raw_quality_rule_implementations
+    test "includes a must_not clause with mqri none mrqri not none" do
+      permissions = %{
+        "view_quality_rule" => :all,
+        "manage_quality_rule_implementations" => :none,
+        "manage_raw_quality_rule_implementations" => [1]
+      }
+
+      assert Query.build_filters(permissions) == [
+               %{match_all: %{}},
+               %{term: %{"_confidential" => false}},
+               %{must_not: [%{term: %{"status" => "draft"}}]}
+             ]
+    end
   end
 end

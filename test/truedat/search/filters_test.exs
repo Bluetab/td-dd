@@ -57,8 +57,8 @@ defmodule Truedat.Search.FiltersTest do
              ) ==
                %{
                  must_not: [
-                  %{term: %{"bar" => "baz"}},
-                  %{term: %{"foo" => "bar"}}
+                   %{term: %{"bar" => "baz"}},
+                   %{term: %{"foo" => "bar"}}
                  ]
                }
     end
