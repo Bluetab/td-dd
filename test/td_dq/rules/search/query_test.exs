@@ -14,7 +14,10 @@ defmodule TdDq.Rules.Search.QueryTest do
         "view_quality_rule" => :all
       }
 
-      assert Query.build_filters(permissions) == [%{match_all: %{}}]
+      assert Query.build_filters(permissions) == [
+               %{match_all: %{}},
+               %{must_not: [%{term: %{"status" => "draft"}}]}
+             ]
     end
 
     test "includes a terms clause on the domain_ids field" do
@@ -23,7 +26,10 @@ defmodule TdDq.Rules.Search.QueryTest do
         "view_quality_rule" => [1, 2]
       }
 
-      assert Query.build_filters(permissions) == [%{terms: %{"domain_ids" => [1, 2]}}]
+      assert Query.build_filters(permissions) == [
+               %{terms: %{"domain_ids" => [1, 2]}},
+               %{must_not: [%{term: %{"status" => "draft"}}]}
+             ]
     end
 
     test "includes a term clause on the confidential field" do
@@ -33,7 +39,8 @@ defmodule TdDq.Rules.Search.QueryTest do
 
       assert Query.build_filters(permissions) == [
                %{terms: %{"domain_ids" => [1, 2]}},
-               %{term: %{"_confidential" => false}}
+               %{term: %{"_confidential" => false}},
+               %{must_not: [%{term: %{"status" => "draft"}}]}
              ]
     end
 
@@ -52,7 +59,8 @@ defmodule TdDq.Rules.Search.QueryTest do
                      %{term: %{"_confidential" => false}}
                    ]
                  }
-               }
+               },
+               %{must_not: [%{term: %{"status" => "draft"}}]}
              ]
     end
 
@@ -66,7 +74,8 @@ defmodule TdDq.Rules.Search.QueryTest do
       assert Query.build_filters(permissions) == [
                %{terms: %{"domain_ids" => [1, 2]}},
                %{term: %{"executable" => true}},
-               %{term: %{"domain_ids" => 3}}
+               %{term: %{"domain_ids" => 3}},
+               %{must_not: [%{term: %{"status" => "draft"}}]}
              ]
     end
 
@@ -115,6 +124,22 @@ defmodule TdDq.Rules.Search.QueryTest do
                %{match_all: %{}},
                %{term: %{"_confidential" => false}},
                %{must_not: [%{term: %{"status" => "draft"}}]}
+             ]
+    end
+
+    # mqri -> manage_quality_rule_implementations
+    # mrqri -> manage_raw_quality_rule_implementations
+    test "not includes a must_not clause with mqri not none mrqri not none" do
+      permissions = %{
+        "view_quality_rule" => :all,
+        "manage_quality_rule_implementations" => [1],
+        "manage_raw_quality_rule_implementations" => [1]
+      }
+
+      assert Query.build_filters(permissions) == [
+               %{match_all: %{}},
+               %{term: %{"_confidential" => false}},
+               %{term: %{"domain_ids" => 1}}
              ]
     end
   end

@@ -62,8 +62,8 @@ defmodule TdDd.DataStructures.SearchTest do
             assert %{
                      bool: %{
                        filter: [
-                         %{term: %{"domain_ids" => _}},
-                         %{term: %{"confidential" => false}}
+                         %{term: %{"confidential" => false}},
+                         %{term: %{"domain_ids" => _}}
                        ]
                      }
                    } = query
