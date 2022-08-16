@@ -358,8 +358,8 @@ defmodule TdDdWeb.SystemControllerTest do
                    bool: %{
                      filter: [
                        %{term: %{"system_id" => system_id}},
-                       %{term: %{"domain_ids" => domain_id}},
-                       %{term: %{"confidential" => false}}
+                       %{term: %{"confidential" => false}},
+                       %{term: %{"domain_ids" => domain_id}}
                      ],
                      must_not: [%{exists: %{field: "deleted_at"}}, %{exists: %{field: "path"}}]
                    }

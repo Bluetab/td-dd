@@ -13,10 +13,14 @@ defmodule TdDq.Rules.Search.Query do
     |> Map.take([
       "manage_confidential_business_concepts",
       "view_quality_rule",
+      "manage_quality_rule_implementations",
+      "manage_raw_quality_rule_implementations",
       "execute_quality_rule_implementations"
     ])
     |> Map.put_new("manage_confidential_business_concepts", :none)
     |> Map.put_new("view_quality_rule", :none)
+    |> Map.put_new("manage_quality_rule_implementations", :none)
+    |> Map.put_new("manage_raw_quality_rule_implementations", :none)
     |> Enum.reduce_while([], &reduce_term/2)
   end
 
@@ -26,6 +30,44 @@ defmodule TdDq.Rules.Search.Query do
   defp reduce_term({"view_quality_rule", domain_ids}, acc) do
     {:cont, [domain_filter(domain_ids) | acc]}
   end
+
+  defp reduce_term({"manage_quality_rule_implementations", :none}, acc) do
+    draft_filter = %{
+      must_not: [
+        %{
+          bool: %{
+            filter: [
+              %{term: %{"status" => "draft"}},
+              %{term: %{"implementation_type" => "default"}}
+            ]
+          }
+        }
+      ]
+    }
+
+    {:cont, [draft_filter | acc]}
+  end
+
+  defp reduce_term({"manage_quality_rule_implementations", _}, acc), do: {:cont, acc}
+
+  defp reduce_term({"manage_raw_quality_rule_implementations", :none}, acc) do
+    draft_filter = %{
+      must_not: [
+        %{
+          bool: %{
+            filter: [
+              %{term: %{"status" => "draft"}},
+              %{term: %{"implementation_type" => "raw"}}
+            ]
+          }
+        }
+      ]
+    }
+
+    {:cont, [draft_filter | acc]}
+  end
+
+  defp reduce_term({"manage_raw_quality_rule_implementations", _}, acc), do: {:cont, acc}
 
   defp reduce_term({"manage_confidential_business_concepts", :none}, acc),
     do: {:cont, [@not_confidential | acc]}

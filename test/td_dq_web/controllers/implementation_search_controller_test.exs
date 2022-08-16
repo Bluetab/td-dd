@@ -79,12 +79,20 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
         assert %{
                  bool: %{
                    filter: [
-                     %{term: %{"domain_ids" => _}},
-                     %{term: %{"_confidential" => false}}
+                     %{term: %{"_confidential" => false}},
+                     %{term: %{"domain_ids" => _}}
                    ],
-                   must_not: %{
-                     exists: %{field: "deleted_at"}
-                   }
+                   must_not: [
+                     %{exists: %{field: "deleted_at"}},
+                     %{
+                       bool: %{
+                         filter: [
+                           %{term: %{"status" => "draft"}},
+                           %{term: %{"implementation_type" => "raw"}}
+                         ]
+                       }
+                     }
+                   ]
                  }
                } = query
 
