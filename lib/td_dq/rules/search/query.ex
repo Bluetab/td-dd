@@ -19,20 +19,8 @@ defmodule TdDq.Rules.Search.Query do
     ])
     |> Map.put_new("manage_confidential_business_concepts", :none)
     |> Map.put_new("view_quality_rule", :none)
-    |> Map.put_new(
-      [
-        "manage_quality_rule_implementations",
-        "manage_raw_quality_rule_implementations"
-      ],
-      [
-        Map.get(permissions, "manage_quality_rule_implementations", :none),
-        Map.get(permissions, "manage_raw_quality_rule_implementations", :none)
-      ]
-    )
-    |> Map.drop([
-      "manage_quality_rule_implementations",
-      "manage_raw_quality_rule_implementations"
-    ])
+    |> Map.put_new("manage_quality_rule_implementations", :none)
+    |> Map.put_new("manage_raw_quality_rule_implementations", :none)
     |> Enum.reduce_while([], &reduce_term/2)
   end
 
@@ -43,41 +31,43 @@ defmodule TdDq.Rules.Search.Query do
     {:cont, [domain_filter(domain_ids) | acc]}
   end
 
-  defp reduce_term({"manage_quality_rule_implementations", :none}, _acc) do
-    {
-      :cont,
-      [
+  defp reduce_term({"manage_quality_rule_implementations", :none}, acc) do
+    draft_filter = %{
+      must_not: [
         %{
-          must_not: [
-            %{term: %{"status" => "draft"}}
-          ]
+          bool: %{
+            filter: [
+              %{term: %{"status" => "draft"}},
+              %{term: %{"implementation_type" => "default"}}
+            ]
+          }
         }
       ]
     }
+
+    {:cont, [draft_filter | acc]}
   end
 
-  defp reduce_term(
-         {[
-            "manage_quality_rule_implementations",
-            "manage_raw_quality_rule_implementations"
-          ], perm},
-         acc
-       ) do
-    case perm do
-      [:none, _] ->
-        reduce_term({"manage_quality_rule_implementations", :none}, acc)
+  defp reduce_term({"manage_quality_rule_implementations", _}, acc), do: {:cont, acc}
 
-      [_, :none] ->
-        reduce_term({"manage_quality_rule_implementations", :none}, acc)
+  defp reduce_term({"manage_raw_quality_rule_implementations", :none}, acc) do
+    draft_filter = %{
+      must_not: [
+        %{
+          bool: %{
+            filter: [
+              %{term: %{"status" => "draft"}},
+              %{term: %{"implementation_type" => "raw"}}
+            ]
+          }
+        }
+      ]
+    }
 
-      [:all, :all] ->
-        {:cont, [%{match_all: %{}} | acc]}
-
-      [qr_domain_ids, rqr_domains_ids] ->
-        domain_ids = qr_domain_ids -- qr_domain_ids -- rqr_domains_ids
-        {:cont, [domain_filter(domain_ids) | acc]}
-    end
+    {:cont, [draft_filter | acc]}
   end
+
+  defp reduce_term({"manage_raw_quality_rule_implementations", _}, acc), do: {:cont, acc}
 
   defp reduce_term({"manage_confidential_business_concepts", :none}, acc),
     do: {:cont, [@not_confidential | acc]}

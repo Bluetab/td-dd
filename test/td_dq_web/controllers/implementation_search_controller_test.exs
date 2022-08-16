@@ -84,7 +84,14 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
                    ],
                    must_not: [
                      %{exists: %{field: "deleted_at"}},
-                     %{term: %{"status" => "draft"}}
+                     %{
+                       bool: %{
+                         filter: [
+                           %{term: %{"status" => "draft"}},
+                           %{term: %{"implementation_type" => "raw"}}
+                         ]
+                       }
+                     }
                    ]
                  }
                } = query
