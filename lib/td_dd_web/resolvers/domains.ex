@@ -62,10 +62,12 @@ defmodule TdDdWeb.Resolvers.Domains do
     end)
   end
 
+  defp intersect_domains([]), do: []
+
   defp intersect_domains(domains_by_permission) do
-    Enum.reduce(domains_by_permission, fn domains_ids, acc ->
-      domains_ids -- domains_ids -- acc
-    end)
+    domains_by_permission
+    |> Enum.map(&MapSet.new/1)
+    |> Enum.reduce(&MapSet.intersection/2)
   end
 
   defp permitted_domain_ids(%{role: "user", jti: jti}, action) do
