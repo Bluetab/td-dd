@@ -8,15 +8,15 @@ defmodule Truedat.Jobs.UpdateDomainFields do
   import Ecto.Query
 
   alias Ecto.Multi
+  alias TdCache.TemplateCache
   alias TdCx.Sources.Source
-  alias TdDd.Repo
   alias TdDd.DataStructures.StructureNote
+  alias TdDd.Repo
   alias TdDd.Systems.System
   alias TdDq.Executions.Group
   alias TdDq.Implementations.Implementation
   alias TdDq.Remediations.Remediation
   alias TdDq.Rules.Rule
-  alias TdCache.TemplateCache
 
   require Logger
 
