@@ -300,10 +300,8 @@ defmodule TdDq.ImplementationsTest do
       claims = build(:dq_claims)
 
       assert {:error, :implementation,
-              %{valid?: false, errors: [implementation_key: {"duplicated", constraint}]},
+              %{valid?: false, errors: [implementation_key: {"duplicated", _}]},
               _} = Implementations.create_implementation(rule, params, claims)
-
-      assert "draft_implementation_key_index" = constraint[:constraint_name]
     end
 
     test "with duplicated rejected implementation key returns an error", %{rule: rule} do
@@ -320,10 +318,8 @@ defmodule TdDq.ImplementationsTest do
       claims = build(:dq_claims)
 
       assert {:error, :implementation,
-              %{valid?: false, errors: [implementation_key: {"duplicated", constraint}]},
+              %{valid?: false, errors: [implementation_key: {"duplicated", _}]},
               _} = Implementations.create_implementation(rule, params, claims)
-
-      assert "draft_implementation_key_index" = constraint[:constraint_name]
     end
 
     test "with duplicated published draft implementation key returns an error", %{rule: rule} do
@@ -340,10 +336,8 @@ defmodule TdDq.ImplementationsTest do
       claims = build(:dq_claims)
 
       assert {:error, :implementation,
-              %{valid?: false, errors: [implementation_key: {"duplicated", constraint}]},
+              %{valid?: false, errors: [implementation_key: {"duplicated", _}]},
               _} = Implementations.create_implementation(rule, params, claims)
-
-      assert "published_implementation_key_index" = constraint[:constraint_name]
     end
 
     test "can be more than one deprecated implementation", %{rule: rule} do

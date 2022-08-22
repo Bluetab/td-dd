@@ -6,6 +6,23 @@ defmodule TdDdWeb.Resolvers.Domains do
   alias TdCache.Permissions
   alias TdCache.TaxonomyCache
 
+  @actions_to_permissions %{
+    "manageConcepts" => [:update_business_concept],
+    "manageTags" => [:link_data_structure_tag],
+    "manageImplementations" => [:manage_quality_rule_implementations],
+    "manageRawImplementations" => [:manage_raw_quality_rule_implementations],
+    "manageRulelessImplementations" => [
+      :manage_quality_rule_implementations,
+      :manage_ruleless_implementations
+    ],
+    "manageRawRulelessImplementations" => [
+      :manage_raw_quality_rule_implementations,
+      :manage_ruleless_implementations
+    ],
+    "publishImplementation" => [:publish_implementation],
+    "manageSegments" => [:manage_segments]
+  }
+
   def domains(_parent, %{action: action}, resolution) do
     {:ok, permitted_domains(action, resolution)}
   end
@@ -19,6 +36,10 @@ defmodule TdDdWeb.Resolvers.Domains do
     {:ok, domains}
   end
 
+  def domain(_parent, %{id: id}, _resolution) do
+    {:ok, TaxonomyCache.get_domain(id)}
+  end
+
   defp permitted_domains(action, resolution) do
     resolution
     |> claims()
@@ -27,16 +48,34 @@ defmodule TdDdWeb.Resolvers.Domains do
     |> Enum.reject(&is_nil/1)
   end
 
+  def fetch_permission_domains({:actions, %{actions: actions}}, domains, %{claims: claims}) do
+    domains_by_actions =
+      Map.new(actions, fn action -> {action, permitted_domain_ids(claims, action)} end)
+
+    Map.new(domains, &{&1, actions_by_domain(&1, domains_by_actions)})
+  end
+
+  defp actions_by_domain(%{id: domain_id}, permitted_domains_by_actions) do
+    Enum.reduce(permitted_domains_by_actions, [], fn {action, domain_ids}, acc ->
+      has_any = Enum.any?(domain_ids, fn id -> id == domain_id end)
+      if has_any, do: [action | acc], else: acc
+    end)
+  end
+
+  defp intersect_domains(domains_by_permission) do
+    Enum.reduce(domains_by_permission, fn domains_ids, acc ->
+      domains_ids -- domains_ids -- acc
+    end)
+  end
+
+  defp permitted_domain_ids(%{role: "user", jti: jti}, action) do
+    jti
+    |> Permissions.permitted_domain_ids(Map.get(@actions_to_permissions, action, []))
+    |> intersect_domains()
+  end
+
   defp permitted_domain_ids(%{role: role}, _action) when role in ["admin", "service"] do
     TaxonomyCache.reachable_domain_ids(0)
-  end
-
-  defp permitted_domain_ids(%{role: "user", jti: jti}, "manageTags") do
-    Permissions.permitted_domain_ids(jti, :link_data_structure_tag)
-  end
-
-  defp permitted_domain_ids(%{role: "user", jti: jti}, "manageConcepts") do
-    Permissions.permitted_domain_ids(jti, :update_business_concept)
   end
 
   defp permitted_domain_ids(_other, _action), do: []

@@ -1,5 +1,15 @@
 # Changelog
 
+## [4.49.0] 2022-08-16
+
+### Added
+
+- [TD-5113] Add data_structures_hierarchy ds_id index
+- [TD-4945] Allow to publish from creation and published implementations
+- [TD-5070]
+  - Added must_not filters for rule implementations
+  - Filter draf implementation for users without permissions
+
 ## [4.48.1] 2022-08-02
 
 ### Fixed
