@@ -1,57 +1,49 @@
-defmodule TdDq.Jobs.UpdateDomainFields do
+defmodule Truedat.Jobs.UpdateDomainFields do
   @moduledoc """
   Runtime migration of domain content fields. Domain fields which are nested
   documents will be replaced by the domain id (or a list of ids if multiple
   nested documents exist).
   """
+
   import Ecto.Query
 
   alias Ecto.Multi
   alias TdCx.Sources.Source
   alias TdDd.Repo
   alias TdDd.DataStructures.StructureNote
+  alias TdDd.Systems.System
+  alias TdDq.Executions.Group
   alias TdDq.Implementations.Implementation
+  alias TdDq.Remediations.Remediation
   alias TdDq.Rules.Rule
   alias TdCache.TemplateCache
 
   require Logger
 
   def run do
-    # Task.Supervisor.start_child(TdDd.TaskSupervisor, fn -> update_rules() end)
-    # Task.Supervisor.start_child(TdDd.TaskSupervisor, fn -> update_sources() end)
-    # Task.Supervisor.start_child(TdDd.TaskSupervisor, fn -> update_implementations() end)
-    TdDd.Repo.transaction(fn ->
-      update_sources()
-      update_rules()
-      update_implementations()
-      update_notes()
-      # execution group
-      # system
-      # remediation
-      TdDd.Repo.rollback(:ok)
-    end)
+    Task.Supervisor.start_child(TdDd.TaskSupervisor, &update_execution_groups/0)
+    Task.Supervisor.start_child(TdDd.TaskSupervisor, &update_implementations/0)
+    Task.Supervisor.start_child(TdDd.TaskSupervisor, &update_notes/0)
+    Task.Supervisor.start_child(TdDd.TaskSupervisor, &update_remediations/0)
+    Task.Supervisor.start_child(TdDd.TaskSupervisor, &update_rules/0)
+    Task.Supervisor.start_child(TdDd.TaskSupervisor, &update_sources/0)
+    Task.Supervisor.start_child(TdDd.TaskSupervisor, &update_systems/0)
   end
 
-  defp update_notes, do: update_df_content("dd", StructureNote)
-  defp update_implementations, do: update_df_content("ri", Implementation)
-  defp update_rules, do: update_df_content("dq", Rule)
+  defp update_execution_groups, do: update_content("qe", Group)
+  defp update_implementations, do: update_content("ri", Implementation)
+  defp update_notes, do: update_content("dd", StructureNote)
+  defp update_remediations, do: update_content("remediation", Remediation)
+  defp update_rules, do: update_content("dq", Rule)
+  defp update_sources, do: update_content("cx", Source, :config)
+  defp update_systems, do: update_content("dd", System)
 
-  defp update_sources do
-    fields = domain_fields("cx")
-
-    fields
-    |> list(Source)
-    |> Enum.reduce(Multi.new(), &update_config(&2, &1, fields))
-    |> Repo.transaction()
-    |> maybe_log(Source)
-  end
-
-  defp update_df_content(scope, schema) do
+  defp update_content(scope, schema, prop \\ :df_content) do
     fields = domain_fields(scope)
 
     fields
     |> list(schema)
-    |> Enum.reduce(Multi.new(), &update_df_content(schema, &2, &1, fields))
+    |> Enum.reduce(Multi.new(), &update_content(schema, &2, &1, fields, prop))
     |> Repo.transaction()
     |> maybe_log(schema)
   end
@@ -76,7 +68,7 @@ defmodule TdDq.Jobs.UpdateDomainFields do
 
   defp maybe_log({:ok, res}, schema) when map_size(res) > 0 do
     source = schema.__schema__(:source)
-    Logger.info("Updated domain fields in #{map_size(res)} #{source}")
+    Logger.info("Updated domain fields in #{source}: #{map_size(res)} rows updated")
   end
 
   defp maybe_log({:ok, _}, _), do: :ok
@@ -84,9 +76,7 @@ defmodule TdDq.Jobs.UpdateDomainFields do
   defp list([], _schema), do: []
 
   defp list(fields, schema) do
-    Enum.map(fields, fn f ->
-      where_domain_field(schema, f)
-    end)
+    Enum.map(fields, &where_domain_field(schema, &1))
     |> Enum.reduce(fn q, acc -> union(acc, ^q) end)
     |> distinct(true)
     |> Repo.all()
@@ -113,25 +103,20 @@ defmodule TdDq.Jobs.UpdateDomainFields do
     )
   end
 
-  defp update_config(multi, %{config: content, id: id}, fields) do
-    queryable =
-      Source
-      |> where(id: ^id)
-      |> select([bcv], bcv.config)
-
-    Multi.update_all(multi, id, queryable, set: [config: map_content(content, fields)])
-  end
-
-  defp update_df_content(schema, multi, %{df_content: content, id: id}, fields) do
+  defp update_content(schema, multi, %{id: id} = struct, fields, prop) do
     queryable =
       schema
       |> where(id: ^id)
-      |> select([bcv], bcv.df_content)
+      |> select([bcv], field(bcv, ^prop))
 
-    Multi.update_all(multi, id, queryable, set: [df_content: map_content(content, fields)])
+    Multi.update_all(multi, id, queryable,
+      set: [{prop, map_content(Map.get(struct, prop), fields)}]
+    )
   end
 
-  defp map_content(content, fields) do
+  defp map_content(nil, _fields), do: nil
+
+  defp map_content(%{} = content, fields) do
     fields
     |> Enum.filter(&Map.has_key?(content, &1))
     |> Enum.reduce(content, fn field, content ->
