@@ -8,6 +8,11 @@ defmodule TdDdWeb.Resolvers.Domains do
 
   @actions_to_permissions %{
     "manageConcepts" => [:update_business_concept],
+    "manageConfigurations" => [:manage_configurations],
+    "manageIngests" => [:update_ingest],
+    "manageRules" => [:manage_quality_rule],
+    "manageSources" => [:manage_data_sources],
+    "manageStructures" => [:update_data_structure],
     "manageTags" => [:link_data_structure_tag],
     "manageImplementations" => [:manage_quality_rule_implementations],
     "manageRawImplementations" => [:manage_raw_quality_rule_implementations],
