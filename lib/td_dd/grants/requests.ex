@@ -163,7 +163,7 @@ defmodule TdDd.Grants.Requests do
     |> Map.new()
     |> grant_request_query()
     |> Repo.get!(id)
-    |> Repo.preload([:approvals])
+    |> Repo.preload([:approvals, :group])
     |> with_missing_roles(required, user_roles)
     |> enrich()
   end
@@ -187,8 +187,7 @@ defmodule TdDd.Grants.Requests do
 
     clauses
     # TODO TD-5078 when listing requests, preload group's modification_grant
-    # |> Map.put_new(:preload, [group: [:modification_grant], data_structure: :current_version])
-    |> Map.put_new(:preload, [:group, data_structure: :current_version])
+    |> Map.put_new(:preload, group: [:modification_grant], data_structure: :current_version)
     |> Enum.reduce(query, fn
       {:preload, preloads}, q ->
         preload(q, ^preloads)
@@ -214,6 +213,33 @@ defmodule TdDd.Grants.Requests do
       {:limit, lim}, q ->
         limit(q, ^lim)
     end)
+  end
+
+  def get_grant_request_by_data_structure(data_structure_id, user_id) do
+    GrantRequest
+    |> where([gr], data_structure_id: ^data_structure_id)
+    |> join(:left, [gr], grg in assoc(gr, :group))
+    |> where([_, gr], gr.user_id == ^user_id)
+    |> order_by(desc: :inserted_at)
+    |> limit(1)
+    |> Repo.one()
+  end
+
+  def get_group(grant_request) do
+    grant_request
+    |> Repo.preload(:group)
+    |> Map.get(:group)
+  end
+
+  def get_status(grant_request) do
+    [status] =
+      grant_request
+      |> Repo.preload(
+        status: from(s in GrantRequestStatus, order_by: [desc: s.inserted_at], limit: 1)
+      )
+      |> Map.get(:status)
+
+    status
   end
 
   def delete_grant_request(%GrantRequest{} = grant_request) do

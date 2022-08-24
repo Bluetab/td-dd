@@ -10,6 +10,7 @@ defmodule TdDdWeb.Schema do
   import_types(Absinthe.Plug.Types)
   import_types(Absinthe.Type.Custom)
   import_types(TdDdWeb.Schema.Domains)
+  import_types(TdDdWeb.Schema.GrantRequests)
   import_types(TdDdWeb.Schema.ImplementationResults)
   import_types(TdDdWeb.Schema.Implementations)
   import_types(TdDdWeb.Schema.ReferenceData)
@@ -25,6 +26,7 @@ defmodule TdDdWeb.Schema do
 
   query do
     import_fields(:domain_queries)
+    import_fields(:grant_request_queries)
     import_fields(:implementation_queries)
     import_fields(:implementation_results_queries)
     import_fields(:reference_data_queries)
@@ -49,6 +51,7 @@ defmodule TdDdWeb.Schema do
       Dataloader.new()
       |> Dataloader.add_source(TdDd.DataStructures, TdDd.DataStructures.datasource())
       |> Dataloader.add_source(TdCx.Sources, TdCx.Sources.datasource())
+      # |> Dataloader.add_source(TdDd.Grants.Requests, TdDd.Grants.Requests.datasource())
       |> Dataloader.add_source(:domain_actions, Dataloader.KV.new(fetch_permission_domains(ctx)))
 
     Map.put(ctx, :loader, loader)

@@ -546,11 +546,13 @@ defmodule TdDd.Factory do
     |> merge_attributes(attrs)
   end
 
-  def grant_request_group_factory do
+  def grant_request_group_factory(attrs) do
     %TdDd.Grants.GrantRequestGroup{
+      id: sequence(:grant_request_group, &(&1 + 1_080)),
       user_id: sequence(:user_id, &"#{&1}"),
       type: nil
     }
+    |> merge_attributes(attrs)
   end
 
   def grant_request_factory(attrs) do
