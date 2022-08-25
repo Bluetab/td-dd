@@ -29,5 +29,6 @@ defmodule TdDd.Lineage.Units.Event do
     |> validate_inclusion(:event, ["LoadStarted", "LoadFailed", "LoadSucceeded", "Deleted"])
     |> validate_required([:unit_id, :event, :inserted_at])
     |> validate_change(:info, &Validation.validate_safe/2)
+    |> foreign_key_constraint(:unit_id)
   end
 end

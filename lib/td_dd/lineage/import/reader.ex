@@ -44,7 +44,7 @@ defmodule TdDd.Lineage.Import.Reader do
     )
     |> case do
       {graph, []} -> {:ok, graph}
-      {_, missing_vertices} -> {:error, %{missing_vertices: missing_vertices}}
+      {_, missing_vertices} -> {:error, %{missing_vertices: Enum.uniq(missing_vertices)}}
     end
   end
 
