@@ -260,14 +260,15 @@ defmodule TdDd.Lineage.Units do
 
   defp delete_orphaned_nodes(opts) do
     Repo.transaction(fn ->
-      current_ids =
-        "units_nodes"
-        |> where([un], is_nil(un.deleted_at))
-        |> select([un], un.node_id)
+      orphaned_ids =
+        Node
+        |> join(:left, [n], un in "units_nodes", on: un.node_id == n.id)
+        |> where([_, un], is_nil(un.node_id) or not is_nil(un.deleted_at))
+        |> select([n], n.id)
         |> distinct(true)
 
       Node
-      |> where([n], n.id not in subquery(current_ids))
+      |> where([n], n.id in subquery(orphaned_ids))
       |> select([n], n.id)
       |> do_delete(Keyword.get(opts, :logical, false))
     end)

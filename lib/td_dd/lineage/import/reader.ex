@@ -5,6 +5,8 @@ defmodule TdDd.Lineage.Import.Reader do
 
   alias TdDd.Lineage.Import.Validations
 
+  NimbleCSV.define(LineageParser, separator: ",", escape: "\"")
+
   @doc """
   Read a graph from two CSV files. `nodes_path` is the path of a CSV file
   containing information about the vertices of the graph, `rels_path` is the
@@ -42,7 +44,7 @@ defmodule TdDd.Lineage.Import.Reader do
     )
     |> case do
       {graph, []} -> {:ok, graph}
-      {_, missing_vertices} -> {:error, %{missing_vertices: missing_vertices}}
+      {_, missing_vertices} -> {:error, %{missing_vertices: Enum.uniq(missing_vertices)}}
     end
   end
 
@@ -50,14 +52,14 @@ defmodule TdDd.Lineage.Import.Reader do
     nodes_task =
       Task.async(fn ->
         nodes_path
-        |> read_nodes()
+        |> read_csv(&record_to_node_transformer/1)
         |> Enum.uniq_by(fn {external_id, _label} -> external_id end)
       end)
 
     rels_task =
       Task.async(fn ->
         rels_path
-        |> read_rels()
+        |> read_csv(&record_to_rel_transformer/1)
         |> Enum.uniq_by(fn %{start_id: start_id, end_id: end_id} -> {start_id, end_id} end)
       end)
 
@@ -73,36 +75,40 @@ defmodule TdDd.Lineage.Import.Reader do
     end
   end
 
-  defp read_nodes(path) do
-    path
-    |> read_csv(headers: false, num_workers: 1)
-    |> Enum.reduce(nil, &record_to_node/2)
-    |> elem(1)
-  end
-
-  defp read_rels(path) do
-    path
-    |> read_csv(headers: false, num_workers: 1)
-    |> Enum.reduce(nil, &record_to_rel/2)
-    |> elem(1)
-  end
-
-  defp read_csv(path, opts) do
+  defp read_csv(path, transformer_fun) do
     path
     |> File.stream!()
-    |> CSV.decode!(opts)
+    |> flow_records(transformer_fun)
   end
 
-  defp record_to_node([_ | _] = record, {transform, nodes}) do
-    node =
-      record
-      |> transform.()
-      |> Map.pop!(:external_id)
+  defp flow_records(stream, transformer_fun) do
+    transform =
+      stream
+      |> read_headers()
+      |> transformer_fun.()
 
-    {transform, [node | nodes]}
+    stream
+    |> Stream.drop(1)
+    # line 1 is header, so index starts with 2
+    |> Flow.from_enumerable()
+    |> Flow.map(&parse_string/1)
+    |> Flow.map(transform)
+    |> Enum.to_list()
   end
 
-  defp record_to_node([_ | _] = headers, nil) do
+  defp read_headers(stream) do
+    stream
+    |> Enum.at(0)
+    |> parse_string()
+  end
+
+  defp parse_string(str) do
+    str
+    |> LineageParser.parse_string(skip_headers: false)
+    |> hd()
+  end
+
+  defp record_to_node_transformer([_ | _] = headers) do
     header_fns =
       Enum.map(headers, fn header ->
         cond do
@@ -123,7 +129,7 @@ defmodule TdDd.Lineage.Import.Reader do
         end
       end)
 
-    transform = fn record ->
+    fn record ->
       header_fns
       |> Enum.zip(record)
       |> Enum.map(fn {f, value} -> f.(value) end)
@@ -133,22 +139,11 @@ defmodule TdDd.Lineage.Import.Reader do
         _ -> false
       end)
       |> Map.new()
+      |> Map.pop!(:external_id)
     end
-
-    {transform, []}
   end
 
-  defp record_to_rel([_ | _] = record, {headers, rels}) do
-    rel =
-      headers
-      |> Enum.zip(record)
-      |> extract_metadata("m:")
-      |> Map.new()
-
-    {headers, [rel | rels]}
-  end
-
-  defp record_to_rel([_ | _] = headers, nil) do
+  defp record_to_rel_transformer([_ | _] = headers) do
     headers =
       Enum.map(headers, fn header ->
         cond do
@@ -159,7 +154,12 @@ defmodule TdDd.Lineage.Import.Reader do
         end
       end)
 
-    {headers, []}
+    fn record ->
+      headers
+      |> Enum.zip(record)
+      |> extract_metadata("m:")
+      |> Map.new()
+    end
   end
 
   defp extract_metadata([{:class, "CONTAINS"} | _] = map, _prefix), do: map
