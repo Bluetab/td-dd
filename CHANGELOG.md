@@ -8,7 +8,6 @@
   - Optimize `delete_orphaned_nodes` query
   - Change `CSV` reader to `NimbleCSV`
 
-
 ## [4.49.0] 2022-08-16
 
 ### Added
