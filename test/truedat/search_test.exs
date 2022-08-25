@@ -79,12 +79,14 @@ defmodule Truedat.SearchTest do
           %{results: [], total: 0}
         )
 
-      search_results_dsv_names =
-        Enum.map(search_results, fn %{"_source" => %{"name" => name}} -> name end)
+      search_results_dsv_ds_ids = Enum.map(search_results, fn %{"id" => id} -> id end)
 
-      dsv_names = Enum.map(dsvs, fn %DataStructureVersion{name: name} -> name end)
+      dsv_ds_ids =
+        Enum.map(dsvs, fn %DataStructureVersion{data_structure_id: data_structure_id} ->
+          data_structure_id
+        end)
 
-      assert search_results_dsv_names == dsv_names
+      assert search_results_dsv_ds_ids == dsv_ds_ids
     end
 
     test "translates atom to index alias" do
