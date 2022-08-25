@@ -75,7 +75,7 @@ defmodule TdDd.Lineage.Import.Reader do
     end
   end
 
-  def read_csv(path, transformer_fun) do
+  defp read_csv(path, transformer_fun) do
     path
     |> File.stream!()
     |> flow_records(transformer_fun)
