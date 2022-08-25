@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-3371] Make multiple Elasticsearch calls if a Data Catalog CSV download
+exceeds 10_000 structures.
+
 ## [4.49.0] 2022-08-16
 
 ### Added

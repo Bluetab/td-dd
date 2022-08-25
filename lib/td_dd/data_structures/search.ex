@@ -45,18 +45,37 @@ defmodule TdDd.DataStructures.Search do
     sort = Map.get(params, "sort", ["_score", "name.raw"])
 
     %{
-      from: page * size,
-      size: size,
       query: query,
       sort: sort
     }
+    |> maybe_add_from_size(page, size)
     |> do_search(params)
+  end
+
+  defp maybe_add_from_size(query, _page, :infinity = _size) do
+    Map.put(query, :size, :infinity)
+  end
+
+  defp maybe_add_from_size(query, page, size) do
+    Map.merge(
+      %{
+        from: page * size,
+        size: size
+      },
+      query
+    )
   end
 
   defp build_query(%Claims{} = claims, permission, %{} = params, %{} = aggs) do
     claims
     |> search_permissions(permission)
     |> Query.build_query(params, aggs)
+  end
+
+  defp do_search(%{size: :infinity} = query, _params) do
+    query
+    |> Search.search(@index)
+    |> transform_response()
   end
 
   defp do_search(query, %{"scroll" => scroll} = _params) do

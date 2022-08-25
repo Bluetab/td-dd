@@ -8,6 +8,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.StructureNotes
+  alias TdDd.Search.Cluster
 
   @moduletag sandbox: :shared
   @template_name "data_structure_controller_test_template"
@@ -821,9 +822,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
     @tag authentication: [role: "admin"]
     test "gets csv content", %{conn: conn} do
       dsv = insert(:data_structure_version)
+      %{"max_result_window" => max_result_window} = Cluster.setting(:structures)
 
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", %{size: 10_000}, [] ->
+      |> expect(:request, fn _, :post, "/structures/_search", %{size: ^max_result_window}, [] ->
         SearchHelpers.hits_response([dsv])
       end)
 

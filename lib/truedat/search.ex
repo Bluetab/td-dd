@@ -4,11 +4,26 @@ defmodule Truedat.Search do
   """
 
   alias TdCache.TaxonomyCache
+  alias TdDd.DataStructures.Search.Query
   alias TdDd.Search.Cluster
 
   require Logger
 
   def search(body, index, opts \\ [])
+
+  def search(%{size: :infinity} = body, index, opts) when is_atom(index) do
+    %{"max_result_window" => max_result_window} = Cluster.setting(index)
+    alias_name = Cluster.alias_name(index)
+
+    post_while(
+      %{body | size: max_result_window},
+      alias_name,
+      opts,
+      max_result_window,
+      max_result_window,
+      %{results: [], total: 0}
+    )
+  end
 
   def search(body, index, opts) when is_atom(index) do
     alias_name = Cluster.alias_name(index)
@@ -16,6 +31,28 @@ defmodule Truedat.Search do
   end
 
   def search(body, index, opts) when is_binary(index) do
+    post(body, index, opts)
+  end
+
+  def post_while(body, index, search_opts, last_results_length, max_size, %{results: acc_results} = _acc) when last_results_length >= max_size do
+    {:ok, %{results: results, total: total}} = post(body, index, search_opts)
+
+    List.last(results)
+    |> Query.add_search_after(body)
+    |> post_while(
+      index,
+      search_opts,
+      length(results),
+      max_size,
+      %{results: acc_results ++ results, total: total}
+    )
+  end
+
+  def post_while(_body, _index, _search_opts, _last_results_length, _max_size, acc) do
+    {:ok, acc}
+  end
+
+  defp post(body, index, opts) do
     search_opts = search_opts(opts[:params])
 
     Cluster
