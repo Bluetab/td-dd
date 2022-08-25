@@ -82,9 +82,10 @@ defmodule TdDd.Lineage.Import.Reader do
   end
 
   defp flow_records(stream, transformer_fun) do
-    transform = stream
-    |> read_headers()
-    |> transformer_fun.()
+    transform =
+      stream
+      |> read_headers()
+      |> transformer_fun.()
 
     stream
     |> Stream.drop(1)
