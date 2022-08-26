@@ -82,10 +82,11 @@ defmodule TdDdWeb.Schema.StructuresTest do
 
     @tag authentication: [role: "service"]
     test "returns data when queried by service role", %{conn: conn} do
-      %{id: expected_id_1, name: name_1} = insert(:data_structure_version,
-        updated_at: ~U[2019-01-01T00:00:00Z],
-        deleted_at: ~U[2019-01-01T00:00:00Z]
-      )
+      %{id: expected_id_1, name: name_1} =
+        insert(:data_structure_version,
+          updated_at: ~U[2019-01-01T00:00:00Z],
+          deleted_at: ~U[2019-01-01T00:00:00Z]
+        )
 
       %{id: expected_id_2, name: name_2} =
         insert(:data_structure_version, metadata: @metadata, domain_ids: [1, 2])
@@ -104,7 +105,7 @@ defmodule TdDdWeb.Schema.StructuresTest do
                  "id" => id_1,
                  "dataStructure" => %{"updated_at" => dsv_1_updated_at},
                  "name" => ^name_1
-                },
+               },
                %{
                  "id" => id_2,
                  "dataStructure" => data_structure_2,
