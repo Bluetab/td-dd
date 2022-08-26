@@ -19,13 +19,13 @@ defmodule Truedat.Search do
     alias_name = Cluster.alias_name(index)
 
     post_while(
-      %{body | size: max_result_window},
+      body,
       alias_name,
       opts,
       max_result_window,
-      max_result_window,
       max_chunked_total,
-      %{results: [], total: 0}
+      continue?(max_chunked_total, nil, 0),
+      %{results: [], results_length: 0, total: nil}
     )
   end
 
@@ -39,45 +39,38 @@ defmodule Truedat.Search do
   end
 
   def post_while(
-        _body,
-        _index,
-        _search_opts,
-        _last_results_length,
-        _max_result_window,
-        max_chunked_total,
-        %{results: acc_results} = acc
-      )
-      when length(acc_results) >= max_chunked_total do
-    if Mix.env != :test do
-      Logger.warn("Truedat.Search.post_while reached limit, total #{length(acc_results)}")
-    end
-    {:ok, acc}
-  end
-
-  def post_while(
         body,
         index,
         search_opts,
-        last_results_length,
         max_result_window,
         max_chunked_total,
-        %{results: acc_results} = _acc
-      )
-      when last_results_length >= max_result_window do
-    Logger.info("Truedat.Search.post_while current_total #{length(acc_results)}")
-    {:ok, %{results: curr_results, total: total}} = post(body, index, search_opts)
+        true = _continue?,
+        %{results: acc_results, results_length: acc_results_length, total: total} = _acc
+      ) do
+    next_size = Enum.min(
+      [
+        max_chunked_total - acc_results_length,
+        max_result_window
+      ] |> maybe_add_total_remainder(total, acc_results_length)
+    )
+    Logger.info("Truedat.Search.post_while current_total #{acc_results_length}}, next size: #{next_size}")
 
-    length_curr_results = length(curr_results)
+    {:ok, %{results: curr_results, total: total}} =
+      %{body | size: next_size}
+      |> post(index, search_opts)
+
+    new_results = acc_results ++ curr_results
+    new_results_length = length(new_results)
 
     List.last(curr_results)
     |> Query.add_search_after(body)
     |> post_while(
       index,
       search_opts,
-      length_curr_results,
       max_result_window,
       max_chunked_total,
-      %{results: acc_results ++ curr_results, total: total}
+      continue?(max_chunked_total, total, new_results_length),
+      %{results: new_results, results_length: new_results_length, total: total}
     )
   end
 
@@ -85,13 +78,34 @@ defmodule Truedat.Search do
         _body,
         _index,
         _search_opts,
-        _last_results_length,
         _max_result_window,
         _max_chunked_total,
+        _continue?,
         %{results: acc_results} = acc
       ) do
     Logger.info("Truedat.Search.post_while total #{length(acc_results)}")
     {:ok, acc}
+  end
+
+  def continue?(max_chunked_total, total, acc_results_length) do
+    (max_chunked_total - acc_results_length) > 0 and
+        reminder_till_total?(total, acc_results_length)
+  end
+
+  def reminder_till_total?(nil = _total, _acc_results_length) do
+    true
+  end
+
+  def reminder_till_total?(total, acc_results_length) do
+    (total - acc_results_length) > 0
+  end
+
+  def maybe_add_total_remainder(list, nil = _total, _acc_results_length) do
+    list
+  end
+
+  def maybe_add_total_remainder(list, total, acc_results_length) do
+    [total - acc_results_length | list]
   end
 
   defp post(body, index, opts) do

@@ -60,7 +60,7 @@ defmodule Truedat.SearchTest do
         hits_response
       end)
       |> expect(:request, fn _, :post, "/structures/_search", body, [] ->
-        assert %{size: ^max_result_window, foo: "bar"} = body
+        assert %{size: 2, foo: "bar"} = body
 
         hits_response =
           {:ok, %{"hits" => %{"hits" => hits}}} = SearchHelpers.hits_response(chunk_3, 10)
@@ -75,9 +75,9 @@ defmodule Truedat.SearchTest do
           :structures,
           [],
           max_result_window,
-          max_result_window,
           100_000,
-          %{results: [], total: 0}
+          true,
+          %{results: [], results_length: 0, total: nil}
         )
 
       search_results_dsv_ds_ids = Enum.map(search_results, fn %{"id" => id} -> id end)
@@ -90,7 +90,7 @@ defmodule Truedat.SearchTest do
       assert search_results_dsv_ds_ids == dsv_ds_ids
     end
 
-    test "sends multiple POST requests chunked every max_result_window, final empty chunk" do
+    test "sends multiple POST requests chunked every max_result_window, total is multiple of max_request_window" do
       max_result_window = 4
       total = 12
       dsvs = Enum.map(1..total, fn _ -> insert(:data_structure_version) end)
@@ -129,15 +129,6 @@ defmodule Truedat.SearchTest do
         assert length(hits) == max_result_window
         hits_response
       end)
-      |> expect(:request, fn _, :post, "/structures/_search", body, [] ->
-        assert %{size: 4, foo: "bar"} = body
-
-        hits_response =
-          {:ok, %{"hits" => %{"hits" => hits}}} = SearchHelpers.hits_response([], total)
-
-        assert hits == []
-        hits_response
-      end)
 
       {:ok, %{results: search_results}} =
         Search.post_while(
@@ -145,9 +136,9 @@ defmodule Truedat.SearchTest do
           :structures,
           [],
           max_result_window,
-          max_result_window,
           100_000,
-          %{results: [], total: 0}
+          true,
+          %{results: [], results_length: 0, total: nil}
         )
 
       search_results_dsv_ds_ids = Enum.map(search_results, fn %{"id" => id} -> id end)
@@ -164,7 +155,7 @@ defmodule Truedat.SearchTest do
       max_result_window = 4
       total = 10
       dsvs = Enum.map(1..total, fn _ -> insert(:data_structure_version) end)
-      [chunk_1, chunk_2, _chunk_3] = Enum.chunk_every(dsvs, 4)
+      [chunk_1, [chunk_2_element_0 | _tail_chunk_2], _chunk_3] = Enum.chunk_every(dsvs, 4)
 
       body_post_while = %{
         size: max_result_window,
@@ -182,12 +173,12 @@ defmodule Truedat.SearchTest do
         hits_response
       end)
       |> expect(:request, fn _, :post, "/structures/_search", body, [] ->
-        assert %{size: 4, foo: "bar"} = body
+        assert %{size: 1, foo: "bar"} = body
 
         hits_response =
-          {:ok, %{"hits" => %{"hits" => hits}}} = SearchHelpers.hits_response(chunk_2, total)
+          {:ok, %{"hits" => %{"hits" => hits}}} = SearchHelpers.hits_response([chunk_2_element_0], total)
 
-        assert length(hits) == 4
+        assert length(hits) == 1
         hits_response
       end)
 
@@ -197,17 +188,16 @@ defmodule Truedat.SearchTest do
           :structures,
           [],
           max_result_window,
-          max_result_window,
           5,
-          %{results: [], total: 0}
+          true,
+          %{results: [], results_length: 0, total: nil}
         )
 
       search_results_dsv_ds_ids = Enum.map(search_results, fn %{"id" => id} -> id end)
 
       dsv_ds_ids =
         dsvs
-        # 8 is 5's (max_chunked_total) closest upper multiple of 4 (4 is the max_result_window)
-        |> Enum.take(8)
+        |> Enum.take(5)
         |> Enum.map(fn %DataStructureVersion{data_structure_id: data_structure_id} ->
           data_structure_id
         end)
