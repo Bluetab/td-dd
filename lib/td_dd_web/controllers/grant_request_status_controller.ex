@@ -9,6 +9,20 @@ defmodule TdDdWeb.GrantRequestStatusController do
 
   action_fallback TdDdWeb.FallbackController
 
+  def create(conn, %{"grant_request_id" => id, "status" => "cancelled" = status}) do
+    with claims <- conn.assigns[:current_resource],
+         request <- Requests.get_grant_request!(id, claims),
+         {:can, true} <- {:can, can?(claims, cancel(request))},
+         {:ok, _grant_request_status} <-
+           Statuses.create_grant_request_status(request, status),
+         updated_request <- Requests.get_grant_request!(id, claims) do
+      conn
+      |> put_status(:created)
+      |> put_view(GrantRequestView)
+      |> render("show.json", grant_request: updated_request)
+    end
+  end
+
   def create(conn, %{"grant_request_id" => id, "status" => status} = params) do
     status_reason = Map.get(params, "reason")
 

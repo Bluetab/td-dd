@@ -30,15 +30,28 @@ defmodule TdDd.Grants.Requests do
   end
 
   def get_grant_request_group!(id, opts \\ []) do
-    preloads = Keyword.get(opts, :preload, requests: [data_structure: :current_version])
+    preloads =
+      Keyword.get(opts, :preload, [
+        :modification_grant,
+        requests: [data_structure: :current_version]
+      ])
 
     GrantRequestGroup
     |> preload(^preloads)
     |> Repo.get!(id)
   end
 
-  def create_grant_request_group(%{} = params, %Claims{user_id: user_id}) do
-    changeset = GrantRequestGroup.changeset(%GrantRequestGroup{user_id: user_id}, params)
+  def create_grant_request_group(
+        %{} = params,
+        %Claims{user_id: user_id},
+        modification_grant \\ nil
+      ) do
+    changeset =
+      GrantRequestGroup.changeset(
+        %GrantRequestGroup{user_id: user_id},
+        params,
+        modification_grant
+      )
 
     Multi.new()
     |> Multi.insert(:group, changeset)
@@ -150,7 +163,7 @@ defmodule TdDd.Grants.Requests do
     |> Map.new()
     |> grant_request_query()
     |> Repo.get!(id)
-    |> Repo.preload([:approvals])
+    |> Repo.preload([:approvals, :group])
     |> with_missing_roles(required, user_roles)
     |> enrich()
   end
@@ -173,7 +186,7 @@ defmodule TdDd.Grants.Requests do
       })
 
     clauses
-    |> Map.put_new(:preload, [:group, data_structure: :current_version])
+    |> Map.put_new(:preload, group: [:modification_grant], data_structure: :current_version)
     |> Enum.reduce(query, fn
       {:preload, preloads}, q ->
         preload(q, ^preloads)
@@ -199,6 +212,33 @@ defmodule TdDd.Grants.Requests do
       {:limit, lim}, q ->
         limit(q, ^lim)
     end)
+  end
+
+  def latest_grant_request_by_data_structure(data_structure_id, user_id) do
+    GrantRequest
+    |> where([gr], data_structure_id: ^data_structure_id)
+    |> join(:left, [gr], grg in assoc(gr, :group))
+    |> where([_, gr], gr.user_id == ^user_id)
+    |> order_by(desc: :inserted_at)
+    |> limit(1)
+    |> Repo.one()
+  end
+
+  def get_group(grant_request) do
+    grant_request
+    |> Repo.preload(:group)
+    |> Map.get(:group)
+  end
+
+  def latest_grant_request_status(grant_request) do
+    [status] =
+      grant_request
+      |> Repo.preload(
+        status: from(s in GrantRequestStatus, order_by: [desc: s.inserted_at], limit: 1)
+      )
+      |> Map.get(:status)
+
+    status
   end
 
   def delete_grant_request(%GrantRequest{} = grant_request) do
