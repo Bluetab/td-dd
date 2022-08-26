@@ -66,6 +66,8 @@ defmodule TdDd.Lineage.Import do
   def handle_info({:DOWN, ref, :process, _pid, _error}, state) do
     {unit_name, state} = Map.pop(state, ref)
     Logger.warn("Load failed for unit=#{unit_name}")
+    {:ok, unit} = Units.get_by(name: unit_name)
+    Units.insert_event(unit, "LoadFailed")
     {:noreply, state}
   end
 
