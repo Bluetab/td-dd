@@ -138,6 +138,7 @@ config :td_dd, TdDd.Search.Cluster,
     "number_of_replicas" => System.get_env("ES_REPLICAS", "1") |> String.to_integer(),
     "refresh_interval" => System.get_env("ES_REFRESH_INTERVAL", "5s"),
     "max_result_window" => System.get_env("ES_MAX_RESULT_WINDOW", "10000") |> String.to_integer,
+    "max_chunked_total" => System.get_env("ES_MAX_CHUNKED_TOTAL", "100000") |> String.to_integer,
     "index.indexing.slowlog.threshold.index.warn" =>
       System.get_env("ES_INDEXING_SLOWLOG_THRESHOLD_WARN", "10s"),
     "index.indexing.slowlog.threshold.index.info" =>

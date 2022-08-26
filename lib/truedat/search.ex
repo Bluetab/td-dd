@@ -12,7 +12,10 @@ defmodule Truedat.Search do
   def search(body, index, opts \\ [])
 
   def search(%{size: :infinity} = body, index, opts) when is_atom(index) do
-    %{"max_result_window" => max_result_window} = Cluster.setting(index)
+    %{
+      "max_result_window" => max_result_window,
+      "max_chunked_total" => max_chunked_total
+    } = Cluster.setting(index)
     alias_name = Cluster.alias_name(index)
 
     post_while(
@@ -21,6 +24,7 @@ defmodule Truedat.Search do
       opts,
       max_result_window,
       max_result_window,
+      max_chunked_total,
       %{results: [], total: 0}
     )
   end
@@ -34,21 +38,57 @@ defmodule Truedat.Search do
     post(body, index, opts)
   end
 
-  def post_while(body, index, search_opts, last_results_length, max_size, %{results: acc_results} = _acc) when last_results_length >= max_size do
-    {:ok, %{results: results, total: total}} = post(body, index, search_opts)
+  def post_while(
+        _body,
+        _index,
+        _search_opts,
+        _last_results_length,
+        _max_result_window,
+        max_chunked_total,
+        %{results: acc_results} = acc
+      )
+      when length(acc_results) >= max_chunked_total do
+    Logger.warn("Truedat.Search.post_while reached limit, total #{length(acc_results)}")
+    {:ok, acc}
+  end
 
-    List.last(results)
+  def post_while(
+        body,
+        index,
+        search_opts,
+        last_results_length,
+        max_result_window,
+        max_chunked_total,
+        %{results: acc_results} = _acc
+      )
+      when last_results_length >= max_result_window do
+    Logger.info("Truedat.Search.post_while current_total #{length(acc_results)}")
+    {:ok, %{results: curr_results, total: total}} = post(body, index, search_opts)
+
+    length_curr_results = length(curr_results)
+
+    List.last(curr_results)
     |> Query.add_search_after(body)
     |> post_while(
       index,
       search_opts,
-      length(results),
-      max_size,
-      %{results: acc_results ++ results, total: total}
+      length_curr_results,
+      max_result_window,
+      max_chunked_total,
+      %{results: acc_results ++ curr_results, total: total}
     )
   end
 
-  def post_while(_body, _index, _search_opts, _last_results_length, _max_size, acc) do
+  def post_while(
+        _body,
+        _index,
+        _search_opts,
+        _last_results_length,
+        _max_result_window,
+        _max_chunked_total,
+        %{results: acc_results} = acc
+      ) do
+    Logger.info("Truedat.Search.post_while total #{length(acc_results)}")
     {:ok, acc}
   end
 
