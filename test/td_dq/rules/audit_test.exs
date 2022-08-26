@@ -264,46 +264,69 @@ defmodule TdDq.Rules.AuditTest do
     end
 
     test "publishes implementation_moved", %{
+      rule: rule,
       implementation: implementation,
       claims: %{user_id: user_id}
     } do
       %{
         id: implementation_id,
-        implementation_key: implementation_key,
         rule_id: rule_id,
         domain_id: domain_id
       } = implementation
 
+      child_implementation =
+        insert(
+          :implementation,
+          rule: rule,
+          implementation_ref: implementation_id,
+          domain_id: domain_id
+        )
+
+      implementations_moved = [implementation, child_implementation]
+
       changeset = %{changes: %{rule_id: rule_id}}
 
-      assert {:ok, event_id} =
+      assert {:ok, event_ids} =
                Audit.implementation_updated(
                  Repo,
-                 %{implementation: implementation},
+                 %{implementations_moved: {2, implementations_moved}},
                  changeset,
                  user_id
                )
 
-      assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
-      user_id = "#{user_id}"
-      resource_id = "#{implementation_id}"
+      event_ids
+      |> Enum.reverse()
+      |> Enum.with_index()
+      |> Enum.each(fn {event_id, i} ->
+        assert {:ok, [event]} =
+                 Stream.range(:redix, @stream, event_id, event_id, transform: :range)
 
-      assert %{
-               event: "implementation_moved",
-               payload: payload,
-               resource_id: ^resource_id,
-               resource_type: "implementation",
-               service: "td_dd",
-               ts: _ts,
-               user_id: ^user_id
-             } = event
+        user_id = "#{user_id}"
 
-      assert %{
-               "implementation_key" => ^implementation_key,
-               "rule_id" => ^rule_id,
-               "domain_id" => ^domain_id,
-               "rule_name" => _
-             } = Jason.decode!(payload)
+        %{id: resource_id, implementation_key: implementation_key} =
+          implementations_moved
+          |> Enum.at(i)
+          |> Map.take([:id, :implementation_key])
+
+        resource_id = "#{resource_id}"
+
+        assert %{
+                 event: "implementation_moved",
+                 payload: payload,
+                 resource_id: ^resource_id,
+                 resource_type: "implementation",
+                 service: "td_dd",
+                 ts: _ts,
+                 user_id: ^user_id
+               } = event
+
+        assert %{
+                 "implementation_key" => ^implementation_key,
+                 "rule_id" => ^rule_id,
+                 "domain_id" => ^domain_id,
+                 "rule_name" => _
+               } = Jason.decode!(payload)
+      end)
     end
   end
 

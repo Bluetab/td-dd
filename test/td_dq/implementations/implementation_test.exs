@@ -60,12 +60,9 @@ defmodule TdDq.Implementations.ImplementationTest do
       template_with_identifier: template_with_identifier,
       identifier_name: identifier_name
     } do
-      %{id: rule_id} = insert(:rule)
-
       params =
         string_params_for(
           :implementation,
-          rule_id: rule_id,
           implementation_key: "foo",
           df_name: template_with_identifier.name,
           df_content: %{"text" => "some text"},
@@ -83,12 +80,9 @@ defmodule TdDq.Implementations.ImplementationTest do
       template_name: template_without_identifier_name,
       identifier_name: identifier_name
     } do
-      %{id: rule_id} = insert(:rule)
-
       params =
         string_params_for(
           :implementation,
-          rule_id: rule_id,
           implementation_key: "foo",
           df_name: template_without_identifier_name,
           df_content: %{"text" => "some text"}
@@ -111,11 +105,10 @@ defmodule TdDq.Implementations.ImplementationTest do
   describe "changeset/2" do
     test "puts next available implementation_key if none specified and changeset valid" do
       insert(:implementation, implementation_key: "ri0123")
-      %{id: rule_id} = insert(:rule)
 
       params =
         :implementation
-        |> string_params_for(rule_id: rule_id)
+        |> string_params_for()
         |> Map.delete("implementation_key")
 
       assert %{changes: changes, valid?: true} = Implementation.changeset(@implementation, params)
