@@ -18,7 +18,19 @@ defmodule Truedat.Search.Query do
   end
 
   defp acc([]), do: %{}
-  defp acc([_ | _] = filters), do: %{filter: filters}
+
+  defp acc([_ | _] = filters) do
+    filters
+    |> Enum.reduce(%{}, fn
+      %{must_not: must_not_filters}, acu ->
+        acu
+        |> Map.update(:must_not, must_not_filters, fn mn -> mn ++ must_not_filters end)
+
+      f, acu ->
+        acu
+        |> Map.update(:filter, [f], fn filters -> [f | filters] end)
+    end)
+  end
 
   defp reduce_query({"filters", %{} = filters}, %{} = acc, aggs)
        when map_size(filters) > 0 do
