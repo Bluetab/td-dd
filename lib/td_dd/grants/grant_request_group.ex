@@ -5,6 +5,7 @@ defmodule TdDd.Grants.GrantRequestGroup do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias TdDd.Grants.Grant
   alias TdDd.Grants.GrantRequest
 
   schema "grant_request_groups" do
@@ -13,11 +14,18 @@ defmodule TdDd.Grants.GrantRequestGroup do
     field(:user, :map, virtual: true)
 
     has_many(:requests, GrantRequest, foreign_key: :group_id)
+    belongs_to(:modification_grant, Grant)
 
     timestamps(type: :utc_datetime_usec)
   end
 
-  def changeset(%__MODULE__{} = struct, params) do
+  def changeset(%__MODULE__{} = struct, params, %Grant{} = modification_grant) do
+    struct
+    |> changeset(params, nil)
+    |> put_assoc(:modification_grant, modification_grant)
+  end
+
+  def changeset(%__MODULE__{} = struct, params, _) do
     struct
     |> cast(params, [:type])
     |> cast_requests()

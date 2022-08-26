@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-5078] Add request modification for Grants
+
+### Changed
+
+- [TD-4994] Performance improvement of lineage load proccess
+  - Optimize `delete_orphaned_nodes` query
+  - Change `CSV` reader to `NimbleCSV`
+- [TD-4757] TD-4757 Take into account data structure updated_at in data structure version since-claused listing
+
 ### Fixed
 
 - [TD-5075] Fixed implementation can't no be moved to another rule
