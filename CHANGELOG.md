@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-### Added
+### Changed
 
 - [TD-4757] TD-4757 Take into account data structure updated_at in data structure version since-claused listing
 

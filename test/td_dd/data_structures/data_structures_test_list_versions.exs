@@ -93,7 +93,43 @@ defmodule TdDd.DataStructuresTestListVersions do
           deleted_at: day5
         )
 
-      assert [^dsv1, ^dsv2, ^dsv3, ^dsv4] = DataStructures.list_data_structure_versions(%{since: day4})
+      assert [^dsv1, ^dsv2, ^dsv3, ^dsv4] =
+               DataStructures.list_data_structure_versions(%{since: day4})
+    end
+
+    test "since filter works with other filters" do
+      day1 = ~U[2020-01-01 00:00:00Z]
+      day2 = ~U[2020-01-02 00:00:00Z]
+
+      ds = insert(:data_structure, inserted_at: day2, updated_at: day2)
+
+      _dsv1 =
+        insert(:data_structure_version,
+          data_structure_id: ds.id,
+          version: 0,
+          inserted_at: day2,
+          updated_at: day2
+        )
+
+      dsv2 =
+        insert(:data_structure_version,
+          data_structure_id: ds.id,
+          version: 1,
+          inserted_at: day2,
+          updated_at: day2
+        )
+
+      dsv3 =
+        insert(:data_structure_version,
+          data_structure_id: ds.id,
+          version: 2,
+          inserted_at: day2,
+          updated_at: day2
+        )
+
+      assert [^dsv2, ^dsv3] =
+               DataStructures.list_data_structure_versions(%{since: day1, min_id: dsv2.id})
+               |> Enum.sort_by(& &1.id)
     end
   end
 end
