@@ -64,6 +64,10 @@ defmodule TdDd.Canada.Abilities do
     def can?(%Claims{role: "user"}, :query, :domain), do: true
     def can?(%Claims{role: "user"}, :query, :templates), do: true
 
+    def can?(%Claims{role: "user"} = claims, :query, :latest_grant_request) do
+      GrantAbilities.can?(claims, :list, GrantRequest)
+    end
+
     def can?(%Claims{role: "user"} = claims, :query, :sources),
       do: SourceAbilities.can?(claims, :list, Source)
 

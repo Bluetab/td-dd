@@ -18,11 +18,21 @@ defmodule TdDd.Grants.GrantRequestStatus do
     timestamps(type: :utc_datetime_usec, updated_at: false)
   end
 
-  @valid_statuses ["pending", "approved", "rejected", "processing", "processed", "failed"]
+  @valid_statuses [
+    "pending",
+    "approved",
+    "rejected",
+    "processing",
+    "processed",
+    "failed",
+    "cancelled"
+  ]
   @valid_status_changes [
     {"approved", "processing"},
     {"processing", "processed"},
-    {"processing", "failed"}
+    {"processing", "failed"},
+    {"pending", "cancelled"},
+    {"approved", "cancelled"}
   ]
 
   def changeset(%{} = params) do

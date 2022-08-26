@@ -19,8 +19,21 @@ defmodule TdDd.Canada.GrantAbilities do
 
   def can?(%Claims{}, _, GrantRequest), do: false
 
+  def can?(%Claims{user_id: user_id}, :cancel, %GrantRequest{group: %{user_id: user_id}}) do
+    true
+  end
+
+  def can?(%Claims{} = claims, :cancel, %GrantRequest{domain_ids: domain_ids}) do
+    Permissions.authorized?(claims, :approve_grant_request, domain_ids)
+  end
+
   def can?(%Claims{} = claims, :approve, %GrantRequest{domain_ids: domain_ids}) do
     Permissions.authorized?(claims, :approve_grant_request, domain_ids)
+  end
+
+  def can?(%Claims{} = claims, :list, %GrantRequest{domain_ids: domain_ids}) do
+    Permissions.authorized?(claims, :approve_grant_request, domain_ids) or
+      Permissions.authorized?(claims, :create_grant_request, domain_ids)
   end
 
   def can?(%Claims{user_id: user_id}, :show, %GrantRequest{group: %{user_id: user_id}}) do

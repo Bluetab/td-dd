@@ -94,7 +94,7 @@ defmodule TdDd.TestOperators do
   end
 
   defp approximately_equal(%GrantRequestGroup{} = a, %GrantRequestGroup{} = b) do
-    Map.drop(a, [:requests]) == Map.drop(b, [:requests])
+    Map.drop(a, [:requests, :modification_grant]) == Map.drop(b, [:requests, :modification_grant])
   end
 
   defp approximately_equal(%Profile{} = a, %Profile{} = b) do
