@@ -29,17 +29,17 @@ defmodule TdDq.Cache.ImplementationLoader do
   `Ecto.Multi.run/5`.
   """
   def maybe_update_implementation_cache(_repo, %{implementations_moved: {_, implementations}}) do
-    implementations
-    |> Enum.map(fn %{id: implementation_id} ->
-      case Implementations.get_implementation_links(%Implementation{id: implementation_id}) do
-        [] -> nil
-        _ -> implementation_id
-      end
-    end)
-    |> Enum.filter(fn implementation_id -> implementation_id != nil end)
-    |> (fn implementation_ids ->
-          {:ok, cache_implementations(implementation_ids, force: true)}
-        end).()
+    implementation_to_cache =
+      implementations
+      |> Enum.map(fn %{id: implementation_id} ->
+        case Implementations.get_implementation_links(%Implementation{id: implementation_id}) do
+          [] -> nil
+          _ -> implementation_id
+        end
+      end)
+      |> Enum.filter(fn implementation_id -> implementation_id != nil end)
+
+    {:ok, cache_implementations(implementation_to_cache, force: true)}
   end
 
   def maybe_update_implementation_cache(_repo, %{implementation: %{id: implementation_id}}) do
