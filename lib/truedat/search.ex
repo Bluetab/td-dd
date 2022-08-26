@@ -48,7 +48,9 @@ defmodule Truedat.Search do
         %{results: acc_results} = acc
       )
       when length(acc_results) >= max_chunked_total do
-    Logger.warn("Truedat.Search.post_while reached limit, total #{length(acc_results)}")
+    if Mix.env != :test do
+      Logger.warn("Truedat.Search.post_while reached limit, total #{length(acc_results)}")
+    end
     {:ok, acc}
   end
 
