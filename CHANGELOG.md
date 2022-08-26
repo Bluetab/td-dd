@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-5078] Add request modification for Grants
+
 ### Changed
 
 - [TD-4994] Performance improvement of lineage load proccess
