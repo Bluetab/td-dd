@@ -186,7 +186,6 @@ defmodule TdDd.Grants.Requests do
       })
 
     clauses
-    # TODO TD-5078 when listing requests, preload group's modification_grant
     |> Map.put_new(:preload, group: [:modification_grant], data_structure: :current_version)
     |> Enum.reduce(query, fn
       {:preload, preloads}, q ->
@@ -215,7 +214,7 @@ defmodule TdDd.Grants.Requests do
     end)
   end
 
-  def get_grant_request_by_data_structure(data_structure_id, user_id) do
+  def latest_grant_request_by_data_structure(data_structure_id, user_id) do
     GrantRequest
     |> where([gr], data_structure_id: ^data_structure_id)
     |> join(:left, [gr], grg in assoc(gr, :group))
@@ -231,7 +230,7 @@ defmodule TdDd.Grants.Requests do
     |> Map.get(:group)
   end
 
-  def get_status(grant_request) do
+  def latest_grant_request_status(grant_request) do
     [status] =
       grant_request
       |> Repo.preload(

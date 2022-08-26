@@ -51,7 +51,6 @@ defmodule TdDdWeb.Schema do
       Dataloader.new()
       |> Dataloader.add_source(TdDd.DataStructures, TdDd.DataStructures.datasource())
       |> Dataloader.add_source(TdCx.Sources, TdCx.Sources.datasource())
-      # |> Dataloader.add_source(TdDd.Grants.Requests, TdDd.Grants.Requests.datasource())
       |> Dataloader.add_source(:domain_actions, Dataloader.KV.new(fetch_permission_domains(ctx)))
 
     Map.put(ctx, :loader, loader)

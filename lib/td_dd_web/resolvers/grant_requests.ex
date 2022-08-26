@@ -12,7 +12,7 @@ defmodule TdDdWeb.Resolvers.GrantRequests do
     with {:claims, %{user_id: user_id} = claims} <- {:claims, claims(resolution)},
          {:grant_request, grant_request} <-
            {:grant_request,
-            Requests.get_grant_request_by_data_structure(data_structure_id, user_id)},
+            Requests.latest_grant_request_by_data_structure(data_structure_id, user_id)},
          {:can, true} <- {:can, can_view_grant_request(claims, grant_request)} do
       {:ok, grant_request}
     else
@@ -22,16 +22,12 @@ defmodule TdDdWeb.Resolvers.GrantRequests do
     end
   end
 
-  defp can_view_grant_request(_, nil), do: true
-
-  defp can_view_grant_request(claims, grant_request), do: can?(claims, list(grant_request))
-
   def group(grant_request, _args, _resolution) do
     {:ok, Requests.get_group(grant_request)}
   end
 
   def status(grant_request, _args, _resolution) do
-    {:ok, Requests.get_status(grant_request)}
+    {:ok, Requests.latest_grant_request_status(grant_request)}
   end
 
   def grant(%{modification_grant_id: nil}, _args, _resolution) do
@@ -41,6 +37,9 @@ defmodule TdDdWeb.Resolvers.GrantRequests do
   def grant(%{modification_grant_id: grant_id}, _args, _resolution) do
     {:ok, Grants.get_grant!(grant_id)}
   end
+
+  defp can_view_grant_request(_, nil), do: true
+  defp can_view_grant_request(claims, grant_request), do: can?(claims, list(grant_request))
 
   defp claims(%{context: %{claims: claims}}), do: claims
   defp claims(_), do: nil
