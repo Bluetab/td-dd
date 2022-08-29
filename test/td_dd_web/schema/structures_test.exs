@@ -21,6 +21,7 @@ defmodule TdDdWeb.Schema.StructuresTest do
           id
           externalId
         }
+        updated_at
       }
       parents {
         id
@@ -81,12 +82,12 @@ defmodule TdDdWeb.Schema.StructuresTest do
 
     @tag authentication: [role: "service"]
     test "returns data when queried by service role", %{conn: conn} do
-      insert(:data_structure_version,
+      %{id: expected_id_1, name: name_1} = insert(:data_structure_version,
         updated_at: ~U[2019-01-01T00:00:00Z],
         deleted_at: ~U[2019-01-01T00:00:00Z]
       )
 
-      %{id: expected_id, name: name} =
+      %{id: expected_id_2, name: name_2} =
         insert(:data_structure_version, metadata: @metadata, domain_ids: [1, 2])
 
       assert %{"data" => data} =
@@ -100,14 +101,25 @@ defmodule TdDdWeb.Schema.StructuresTest do
 
       assert [
                %{
-                 "id" => id,
-                 "dataStructure" => data_structure,
+                 "id" => id_1,
+                 "dataStructure" => %{"updated_at" => dsv_1_updated_at},
+                 "name" => ^name_1
+                },
+               %{
+                 "id" => id_2,
+                 "dataStructure" => data_structure_2,
                  "metadata" => @metadata,
-                 "name" => ^name
+                 "name" => ^name_2
                }
              ] = data_structure_versions
 
-      assert id == to_string(expected_id)
+      assert id_1 == to_string(expected_id_1)
+      assert id_2 == to_string(expected_id_2)
+
+      %{"since" => since} = @variables
+      assert {:ok, datetime_dsv_1_updated_at, 0} = DateTime.from_iso8601(dsv_1_updated_at)
+      assert {:ok, datetime_since, 0} = DateTime.from_iso8601(since)
+      assert DateTime.compare(datetime_dsv_1_updated_at, datetime_since) in [:gt, :eq]
 
       assert %{
                "id" => _,
@@ -115,7 +127,7 @@ defmodule TdDdWeb.Schema.StructuresTest do
                "system" => system,
                "domainId" => 1,
                "domainIds" => [1, 2]
-             } = data_structure
+             } = data_structure_2
 
       assert %{"id" => _, "externalId" => _} = system
     end
