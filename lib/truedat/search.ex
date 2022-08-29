@@ -16,6 +16,7 @@ defmodule Truedat.Search do
       "max_result_window" => max_result_window,
       "max_chunked_total" => max_chunked_total
     } = Cluster.setting(index)
+
     alias_name = Cluster.alias_name(index)
 
     post_while(
@@ -47,13 +48,18 @@ defmodule Truedat.Search do
         true = _continue?,
         %{results: acc_results, results_length: acc_results_length, total: total} = _acc
       ) do
-    next_size = Enum.min(
-      [
-        max_chunked_total - acc_results_length,
-        max_result_window
-      ] |> maybe_add_total_remainder(total, acc_results_length)
+    next_size =
+      Enum.min(
+        [
+          max_chunked_total - acc_results_length,
+          max_result_window
+        ]
+        |> maybe_add_total_remainder(total, acc_results_length)
+      )
+
+    Logger.info(
+      "Truedat.Search.post_while current_total #{acc_results_length}}, next size: #{next_size}"
     )
-    Logger.info("Truedat.Search.post_while current_total #{acc_results_length}}, next size: #{next_size}")
 
     {:ok, %{results: curr_results, total: total}} =
       %{body | size: next_size}
@@ -88,8 +94,8 @@ defmodule Truedat.Search do
   end
 
   def continue?(max_chunked_total, total, acc_results_length) do
-    (max_chunked_total - acc_results_length) > 0 and
-        reminder_till_total?(total, acc_results_length)
+    max_chunked_total - acc_results_length > 0 and
+      reminder_till_total?(total, acc_results_length)
   end
 
   def reminder_till_total?(nil = _total, _acc_results_length) do
@@ -97,7 +103,7 @@ defmodule Truedat.Search do
   end
 
   def reminder_till_total?(total, acc_results_length) do
-    (total - acc_results_length) > 0
+    total - acc_results_length > 0
   end
 
   def maybe_add_total_remainder(list, nil = _total, _acc_results_length) do

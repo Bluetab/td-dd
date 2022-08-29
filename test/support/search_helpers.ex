@@ -55,7 +55,10 @@ defmodule SearchHelpers do
     |> maybe_add_sort(doc)
   end
 
-  defp maybe_add_sort(encoded, %DataStructureVersion{name: name, data_structure_id: data_structure_id}) do
+  defp maybe_add_sort(encoded, %DataStructureVersion{
+         name: name,
+         data_structure_id: data_structure_id
+       }) do
     Map.put(encoded, "sort", [12.34, name, data_structure_id])
   end
 

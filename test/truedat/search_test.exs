@@ -176,7 +176,8 @@ defmodule Truedat.SearchTest do
         assert %{size: 1, foo: "bar"} = body
 
         hits_response =
-          {:ok, %{"hits" => %{"hits" => hits}}} = SearchHelpers.hits_response([chunk_2_element_0], total)
+          {:ok, %{"hits" => %{"hits" => hits}}} =
+          SearchHelpers.hits_response([chunk_2_element_0], total)
 
         assert length(hits) == 1
         hits_response

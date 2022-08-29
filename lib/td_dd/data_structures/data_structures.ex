@@ -48,10 +48,19 @@ defmodule TdDd.DataStructures do
       {:since, since}, q ->
         q
         |> join(:inner, [dsv], ds in assoc(dsv, :data_structure))
-        |> where([dsv, ds], ds.updated_at >= ^since or dsv.updated_at >= ^since or dsv.deleted_at >= ^since)
-      {:min_id, id}, q -> where(q, [dsv], dsv.id >= ^id)
-      {:order_by, "id"}, q -> order_by(q, :id)
-      {:limit, limit}, q -> limit(q, ^limit)
+        |> where(
+          [dsv, ds],
+          ds.updated_at >= ^since or dsv.updated_at >= ^since or dsv.deleted_at >= ^since
+        )
+
+      {:min_id, id}, q ->
+        where(q, [dsv], dsv.id >= ^id)
+
+      {:order_by, "id"}, q ->
+        order_by(q, :id)
+
+      {:limit, limit}, q ->
+        limit(q, ^limit)
     end)
     |> Repo.all()
   end
