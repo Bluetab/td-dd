@@ -129,11 +129,8 @@ defmodule TdDd.DataStructures do
 
   def get_cached_content(%{} = content, %{data_structure_type: %{template_id: template_id}}) do
     case TemplateCache.get(template_id) do
-      {:ok, template} ->
-        Format.enrich_content_values(content, template)
-
-      _ ->
-        content
+      {:ok, template} -> Format.enrich_content_values(content, template)
+      _ -> content
     end
   end
 
