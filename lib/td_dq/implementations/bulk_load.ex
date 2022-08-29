@@ -9,6 +9,8 @@ defmodule TdDq.Implementations.BulkLoad do
   alias TdDq.Implementations
   alias TdDq.Rules
 
+  require Logger
+
   @index_worker Application.compile_env(:td_dd, :dq_index_worker)
 
   @required_headers [
@@ -30,8 +32,6 @@ defmodule TdDq.Implementations.BulkLoad do
     "validations" => []
   }
 
-  require Logger
-
   def required_headers, do: @required_headers
 
   def bulk_load(implementations, claims) do
@@ -52,19 +52,10 @@ defmodule TdDq.Implementations.BulkLoad do
   defp create_implementations(implementations, claims) do
     implementations
     |> Enum.reduce(%{ids: [], errors: []}, fn imp, acc ->
-      domain_id =
-        imp
-        |> Map.get("domain_external_id")
-        |> DomainCache.external_id_to_id()
-        |> case do
-          {:ok, domain_id} -> domain_id
-          :error -> nil
-        end
-
       imp =
         imp
         |> enrich_implementation()
-        |> maybe_put_domain_id(domain_id)
+        |> maybe_put_domain_id()
         |> Map.put("status", "draft")
         |> Map.put("version", 1)
 
@@ -95,7 +86,7 @@ defmodule TdDq.Implementations.BulkLoad do
   defp create_implementation(%{"rule_name" => rule_name} = imp, claims)
        when is_binary(rule_name) do
     case Rules.get_rule_by_name(rule_name) do
-      nil -> {:error, {imp["implementation_key"], "rule #{rule_name} not exists"}}
+      nil -> {:error, {imp["implementation_key"], "rule #{rule_name} does not exist"}}
       rule -> Implementations.create_implementation(rule, imp, claims, true)
     end
   end
@@ -110,9 +101,7 @@ defmodule TdDq.Implementations.BulkLoad do
       if Enum.member?(@headers, header) do
         Map.put(acc, header, value)
       else
-        Map.update!(acc, "df_content", fn content ->
-          Map.put(content, header, value)
-        end)
+        Map.update!(acc, "df_content", &Map.put(&1, header, value))
       end
     end)
     |> ensure_template()
@@ -120,8 +109,7 @@ defmodule TdDq.Implementations.BulkLoad do
   end
 
   defp ensure_template(%{"df_content" => df_content} = implementation) do
-    if Enum.empty?(df_content) or
-         (!Enum.empty?(df_content) && Map.has_key?(implementation, "template")) do
+    if Enum.empty?(df_content) or Map.has_key?(implementation, "template") do
       implementation
       |> Map.put("df_name", implementation["template"])
       |> Map.delete("template")
@@ -130,6 +118,13 @@ defmodule TdDq.Implementations.BulkLoad do
     end
   end
 
-  defp maybe_put_domain_id(params, nil), do: params
-  defp maybe_put_domain_id(params, domain_id), do: Map.put(params, "domain_id", domain_id)
+  defp maybe_put_domain_id(%{"domain_external_id" => external_id} = params)
+       when is_binary(external_id) do
+    case DomainCache.external_id_to_id(external_id) do
+      {:ok, domain_id} -> Map.put(params, "domain_id", domain_id)
+      :error -> params
+    end
+  end
+
+  defp maybe_put_domain_id(params), do: params
 end

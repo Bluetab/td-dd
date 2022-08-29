@@ -109,6 +109,11 @@ config :td_dd, TdDd.Scheduler,
       schedule: "@reboot",
       task: {TdDd.DataStructures.DataStructureTypes, :refresh_metadata_fields, []},
       run_strategy: Quantum.RunStrategy.Local
+    ],
+    update_domain_fields: [
+      schedule: "@reboot",
+      task: {Truedat.Jobs.UpdateDomainFields, :run, []},
+      run_strategy: Quantum.RunStrategy.Local
     ]
   ]
 

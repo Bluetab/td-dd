@@ -14,6 +14,8 @@ exceeds 10_000 structures.
   - Optimize `delete_orphaned_nodes` query
   - Change `CSV` reader to `NimbleCSV`
 - [TD-4757] TD-4757 Take into account data structure updated_at in data structure version since-claused listing
+- [TD-5091] Dynamic `domain` fields are now integer ids instead of embedded
+  documents
 
 ## [4.49.0] 2022-08-16
 
