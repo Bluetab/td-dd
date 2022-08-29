@@ -92,17 +92,6 @@ defmodule TdDq.Implementations.Implementation do
 
   def valid_result_types, do: @valid_result_types
 
-  def changeset(
-        %__MODULE__{rule_id: rule_id} = implementation,
-        %{"rule_id" => new_rule_id} = params
-      )
-      when rule_id != new_rule_id do
-    implementation
-    |> cast(params, [:rule_id])
-    |> validate_required([:rule_id])
-    |> foreign_key_constraint(:rule_id)
-  end
-
   def changeset(%__MODULE__{} = implementation, %{"populations" => [population | _]} = params)
       when is_list(population) do
     populations =

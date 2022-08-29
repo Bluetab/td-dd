@@ -295,7 +295,6 @@ defmodule TdDq.Rules.AuditTest do
                )
 
       event_ids
-      |> Enum.reverse()
       |> Enum.with_index()
       |> Enum.each(fn {event_id, i} ->
         assert {:ok, [event]} =

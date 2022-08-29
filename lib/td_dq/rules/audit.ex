@@ -137,30 +137,22 @@ defmodule TdDq.Rules.Audit do
       ) do
     %{name: rule_name} = Rules.get_rule!(rule_id)
 
-    events =
-      implementations
-      |> Enum.map(fn %{id: id} = implementation ->
-        payload =
-          implementation
-          |> Map.take([:implementation_key, :rule_id, :domain_id])
-          |> Map.put(:rule_name, rule_name)
+    implementations
+    |> Enum.map(fn %{id: id} = implementation ->
+      payload =
+        implementation
+        |> Map.take([:implementation_key, :rule_id, :domain_id])
+        |> Map.put(:rule_name, rule_name)
 
-        publish("implementation_moved", "implementation", id, user_id, payload)
-      end)
-
-    events_ids =
-      events
-      |> Enum.reduce(%{status: [], events_ids: []}, fn event, acc ->
-        acc
-        |> Map.put(:status, [elem(event, 0) | acc.status])
-        |> Map.put(:events_ids, [elem(event, 1) | acc.events_ids])
-      end)
-
-    if Enum.all?(events_ids.status) do
-      {:ok, events_ids.events_ids}
-    else
-      {:error, events_ids.events_ids}
-    end
+      %{
+        event: "implementation_moved",
+        resource_type: "implementation",
+        resource_id: id,
+        user_id: user_id,
+        payload: payload
+      }
+    end)
+    |> publish
   end
 
   def implementation_updated(
