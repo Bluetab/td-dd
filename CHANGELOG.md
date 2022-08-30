@@ -15,6 +15,10 @@
 - [TD-5091] Dynamic `domain` fields are now integer ids instead of embedded
   documents
 
+### Fixed
+
+- [TD-5075] Fixed implementation can't be moved to another rule
+
 ## [4.49.0] 2022-08-16
 
 ### Added
