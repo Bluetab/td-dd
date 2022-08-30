@@ -1071,17 +1071,50 @@ defmodule TdDq.ImplementationsTest do
              } = clause
     end
 
-    test "domain change when moving to another rule" do
-      implementation = insert(:implementation)
+    test "domain change for all implementations when moving one to another rule" do
+      implementation_ref = insert(:implementation, status: "versioned")
+
+      implementation =
+        insert(:implementation, status: "published", implementation_ref: implementation_ref.id)
+
       claims = build(:dq_claims)
       domain_id = System.unique_integer([:positive])
       %{id: rule_id} = insert(:rule, domain_id: domain_id)
       update_attrs = string_params_for(:implementation, rule_id: rule_id)
 
-      assert {:ok, %{implementation: updated}} =
+      assert {:ok, %{implementations_moved: {2, updated}}} =
                Implementations.update_implementation(implementation, update_attrs, claims)
 
-      assert %{domain_id: ^domain_id, rule_id: ^rule_id} = updated
+      updated
+      |> Enum.each(fn updated_implementation ->
+        assert %{domain_id: ^domain_id} = updated_implementation
+      end)
+    end
+
+    test "childs implementations are moved when moving any implementation to another rule" do
+      claims = build(:dq_claims)
+      domain_id = System.unique_integer([:positive])
+      rule_from = insert(:rule, domain_id: domain_id)
+      %{id: rule_id} = insert(:rule, domain_id: domain_id)
+      implementation_ref = insert(:implementation, status: "versioned", rule: rule_from)
+
+      implementation =
+        insert(
+          :implementation,
+          status: "published",
+          implementation_ref: implementation_ref.id,
+          rule: rule_from
+        )
+
+      update_attrs = string_params_for(:implementation, rule_id: rule_id)
+
+      assert {:ok, %{implementations_moved: {2, updated}}} =
+               Implementations.update_implementation(implementation, update_attrs, claims)
+
+      updated
+      |> Enum.each(fn updated_implementation ->
+        assert %{rule_id: ^rule_id} = updated_implementation
+      end)
     end
 
     test "with invalid data returns error changeset" do
