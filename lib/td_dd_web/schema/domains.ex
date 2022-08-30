@@ -13,6 +13,7 @@ defmodule TdDdWeb.Schema.Domains do
     @desc "Get a list of domains"
     field :domains, list_of(:domain) do
       arg(:action, :string)
+      arg(:ids, list_of(:id))
       resolve(&Resolvers.Domains.domains/3)
     end
 

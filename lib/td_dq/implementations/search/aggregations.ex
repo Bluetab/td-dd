@@ -28,7 +28,10 @@ defmodule TdDq.Implementations.Search.Aggregations do
     content
     |> Format.flatten_content_fields()
     |> Enum.flat_map(fn
-      %{"name" => field, "type" => type} when type in ["domain", "system"] ->
+      %{"name" => field, "type" => "domain"} ->
+        [{field, %{terms: %{field: "df_content.#{field}", size: 50}, meta: %{type: "domain"}}}]
+
+      %{"name" => field, "type" => "system"} ->
         [{field, nested_agg(field)}]
 
       %{"name" => field, "type" => "user"} ->

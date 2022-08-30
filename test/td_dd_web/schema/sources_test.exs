@@ -144,7 +144,7 @@ defmodule TdDdWeb.Schema.SourcesTest do
   end
 
   defp create_source(%{domain: %{id: domain_id}, template: %{name: source_type}}) do
-    config = %{"foo" => "bar", "domain" => %{"id" => domain_id}}
+    config = %{"foo" => "bar", "domain" => domain_id}
     [source: insert(:source, config: config, type: source_type)]
   end
 
