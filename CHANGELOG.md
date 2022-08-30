@@ -17,7 +17,7 @@
 
 ### Fixed
 
-- [TD-5075] Fixed implementation can't no be moved to another rule
+- [TD-5075] Fixed implementation can't be moved to another rule
 
 ## [4.49.0] 2022-08-16
 
