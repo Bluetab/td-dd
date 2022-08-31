@@ -51,8 +51,7 @@ defmodule SearchHelpers do
       |> Jason.encode!()
       |> Jason.decode!()
 
-    %{"id" => id, "_source" => source}
-    |> maybe_add_sort(doc)
+    maybe_add_sort(%{"id" => id, "_source" => source}, doc)
   end
 
   defp maybe_add_sort(encoded, %DataStructureVersion{

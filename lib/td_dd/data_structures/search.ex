@@ -54,7 +54,7 @@ defmodule TdDd.DataStructures.Search do
     |> do_search(params)
   end
 
-  defp maybe_add_from_size(query, _page, :infinity = _size) do
+  defp maybe_add_from_size(query, _page, :infinity) do
     Map.put(query, :size, :infinity)
   end
 
@@ -80,7 +80,7 @@ defmodule TdDd.DataStructures.Search do
     |> transform_response()
   end
 
-  defp do_search(query, %{"scroll" => scroll} = _params) do
+  defp do_search(query, %{"scroll" => scroll}) do
     query
     |> Search.search(@index, params: %{"scroll" => scroll})
     |> transform_response()

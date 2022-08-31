@@ -1,5 +1,5 @@
 defmodule Truedat.SearchTest do
-  # use ExUnit.Case
+  use ExUnit.Case
   use TdDd.DataCase
 
   alias TdDd.DataStructures.DataStructureVersion
@@ -151,7 +151,7 @@ defmodule Truedat.SearchTest do
       assert search_results_dsv_ds_ids == dsv_ds_ids
     end
 
-    test "send multiple POST requests chunked every max_result_window, limit by max_chunked_total" do
+    test "send multiple POST requests chunked every max_result_window, limit by max_result_window_total" do
       max_result_window = 4
       total = 10
       dsvs = Enum.map(1..total, fn _ -> insert(:data_structure_version) end)

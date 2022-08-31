@@ -104,11 +104,11 @@ defmodule TdDd.DataStructures.Search.Query do
     %{bool: %{should: should, minimum_should_match: "2<-75%"}}
   end
 
-  def add_search_after(%{"sort" => last_element_sort} = _last_element, query) do
+  def add_search_after(last_element, query)
+
+  def add_search_after(%{"sort" => last_element_sort}, query) do
     Map.put(query, :search_after, last_element_sort)
   end
 
-  def add_search_after(nil = _last_element, query) do
-    query
-  end
+  def add_search_after(nil, query), do: query
 end
