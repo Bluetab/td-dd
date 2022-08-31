@@ -167,6 +167,26 @@ defmodule TdDq.Implementations do
   end
 
   def update_implementation(
+        %Implementation{rule_id: rule_id} = implementation,
+        %{"rule_id" => new_rule_id} = params,
+        %Claims{user_id: user_id} = claims
+      )
+      when rule_id != new_rule_id do
+    changeset = upsert_changeset(implementation, params)
+
+    Multi.new()
+    |> Multi.run(:can, fn _, _ ->
+      if can?(claims, :move, changeset), do: {:ok, nil}, else: {:error, false}
+    end)
+    |> upsert(changeset)
+    |> Multi.run(:implementation, fn _repo, _changes -> {:ok, implementation} end)
+    |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
+    |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
+    |> Repo.transaction()
+    |> on_upsert()
+  end
+
+  def update_implementation(
         %Implementation{status: status} = implementation,
         params,
         %Claims{user_id: user_id} = claims
@@ -209,6 +229,22 @@ defmodule TdDq.Implementations do
       :published -> Multi.insert(new_multi, :implementation, changeset)
       _ -> Multi.update(new_multi, :implementation, changeset)
     end
+  end
+
+  defp upsert(multi, %{data: implementation, changes: %{rule_id: rule_id}}) do
+    %{domain_id: new_domain_id} = Repo.get!(Rule, rule_id)
+
+    query =
+      Implementation
+      |> where([i], i.implementation_ref == ^implementation.implementation_ref)
+      |> select([i], i)
+
+    multi
+    |> Multi.update_all(
+      :implementations_moved,
+      query,
+      set: [rule_id: rule_id, domain_id: new_domain_id]
+    )
   end
 
   defp upsert_changeset(
@@ -378,6 +414,14 @@ defmodule TdDq.Implementations do
 
   defp on_upsert({:ok, %{implementation: %{id: id}}} = result, false) do
     @index_worker.reindex_implementations(id)
+    result
+  end
+
+  defp on_upsert({:ok, %{implementations_moved: {_, implementations}}} = result, false) do
+    implementations
+    |> Enum.map(fn %{id: id} -> id end)
+    |> @index_worker.reindex_implementations()
+
     result
   end
 

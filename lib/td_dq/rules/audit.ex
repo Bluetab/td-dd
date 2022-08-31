@@ -131,22 +131,28 @@ defmodule TdDq.Rules.Audit do
 
   def implementation_updated(
         _repo,
-        %{implementation: %{id: id} = implementation},
+        %{implementations_moved: {_, implementations}},
         %{changes: %{rule_id: rule_id}},
         user_id
       ) do
     %{name: rule_name} = Rules.get_rule!(rule_id)
 
-    payload =
-      implementation
-      |> Map.take([:implementation_key, :rule_id, :domain_id])
-      |> Map.put(:rule_name, rule_name)
+    implementations
+    |> Enum.map(fn %{id: id} = implementation ->
+      payload =
+        implementation
+        |> Map.take([:implementation_key, :rule_id, :domain_id])
+        |> Map.put(:rule_name, rule_name)
 
-    # TODO: TD-4455 What about other fields that have changed?
-    # Why do we need an implementation_moved event instead of using a
-    # generic implementation_updated event?
-
-    publish("implementation_moved", "implementation", id, user_id, payload)
+      %{
+        event: "implementation_moved",
+        resource_type: "implementation",
+        resource_id: id,
+        user_id: user_id,
+        payload: payload
+      }
+    end)
+    |> publish
   end
 
   def implementation_updated(
