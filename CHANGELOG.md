@@ -15,6 +15,10 @@
 - [TD-5091] Dynamic `domain` fields are now integer ids instead of embedded
   documents
 
+### Fixed
+
+- [TD-4348] Return errors if load_graph fails, so that an event is created.
+
 ## [4.49.0] 2022-08-16
 
 ### Added
