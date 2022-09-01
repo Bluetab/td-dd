@@ -4,6 +4,8 @@
 
 ### Added
 
+- [TD-3371] Make multiple Elasticsearch calls if a Data Catalog CSV download
+exceeds 10_000 structures.
 - [TD-5078] Add request modification for Grants
 
 ### Changed

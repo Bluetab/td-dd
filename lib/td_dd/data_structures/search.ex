@@ -44,13 +44,21 @@ defmodule TdDd.DataStructures.Search do
     query = build_query(claims, permission, params, aggs)
     sort = Map.get(params, "sort", ["_score", "name.raw"])
 
+    # id as tiebreaker in case several hits have the same _score and name
+    # otherwise search_after will skip some hits
     %{
-      from: page * size,
-      size: size,
       query: query,
-      sort: sort
+      sort: sort ++ [%{"id" => "asc"}]
     }
+    |> Map.put(:size, size)
+    |> maybe_add_from(page, size)
     |> do_search(params)
+  end
+
+  defp maybe_add_from(query, _page, :infinity), do: query
+
+  defp maybe_add_from(query, page, size) do
+    Map.put(query, :from, page * size)
   end
 
   defp build_query(%Claims{} = claims, permission, %{} = params, %{} = aggs) do
