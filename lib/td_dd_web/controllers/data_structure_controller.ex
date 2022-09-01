@@ -395,7 +395,7 @@ defmodule TdDdWeb.DataStructureController do
     params
     |> Map.put("without", "deleted_at")
     |> Map.drop(["page", "size"])
-    |> Search.search_data_structures(claims, permission, 0, 10_000)
+    |> Search.search_data_structures(claims, permission, 0, :infinity)
   end
 
   swagger_path :csv do

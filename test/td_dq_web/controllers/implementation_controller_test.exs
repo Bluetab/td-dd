@@ -2023,6 +2023,94 @@ defmodule TdDqWeb.ImplementationControllerTest do
     end
 
     @tag authentication: [role: "admin"]
+    test "admin user can move implementation", %{
+      conn: conn
+    } do
+      implementation = insert(:implementation)
+      %{id: rule_id} = insert(:rule)
+
+      params =
+        %{rule_id: rule_id}
+        |> Map.Helpers.stringify_keys()
+
+      assert conn
+             |> put(Routes.implementation_path(conn, :update, implementation),
+               rule_implementation: params
+             )
+             |> json_response(:ok)
+    end
+
+    @tag authentication: [
+           role: "non_admin",
+           permissions: [
+             :manage_quality_rule_implementations,
+             :manage_ruleless_implementations,
+             :manage_quality_rule
+           ]
+         ]
+    test "non admin user can't move implementation", %{
+      conn: conn,
+      domain: %{id: domain_id}
+    } do
+      implementation = insert(:implementation, segments: [], domain_id: domain_id)
+      %{id: rule_id} = insert(:rule, domain_id: domain_id)
+
+      params =
+        %{rule_id: rule_id}
+        |> Map.Helpers.stringify_keys()
+
+      assert conn
+             |> put(Routes.implementation_path(conn, :update, implementation),
+               rule_implementation: params
+             )
+             |> json_response(:forbidden)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "admin user can move ruleless implementation", %{
+      conn: conn
+    } do
+      implementation = insert(:ruleless_implementation)
+      %{id: rule_id} = insert(:rule)
+
+      params =
+        %{rule_id: rule_id}
+        |> Map.Helpers.stringify_keys()
+
+      assert conn
+             |> put(Routes.implementation_path(conn, :update, implementation),
+               rule_implementation: params
+             )
+             |> json_response(:ok)
+    end
+
+    @tag authentication: [
+           role: "non_admin",
+           permissions: [
+             :manage_quality_rule_implementations,
+             :manage_ruleless_implementations,
+             :manage_quality_rule
+           ]
+         ]
+    test "non admin user can't move ruleless implementation", %{
+      conn: conn,
+      domain: %{id: domain_id}
+    } do
+      implementation = insert(:ruleless_implementation, segments: [], domain_id: domain_id)
+      %{id: rule_id} = insert(:rule, domain_id: domain_id)
+
+      params =
+        %{rule_id: rule_id}
+        |> Map.Helpers.stringify_keys()
+
+      assert conn
+             |> put(Routes.implementation_path(conn, :update, implementation),
+               rule_implementation: params
+             )
+             |> json_response(:forbidden)
+    end
+
+    @tag authentication: [role: "admin"]
     test "renders errors when data is invalid", %{conn: conn} do
       implementation = insert(:implementation)
 
@@ -2101,6 +2189,29 @@ defmodule TdDqWeb.ImplementationControllerTest do
              |> json_response(:ok)
 
       assert {:ok, %{id: ^id, goal: 40.0}} = CacheHelpers.get_implementation(id)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "move implementation will update the cache", %{
+      conn: conn
+    } do
+      %{id: id} = implementation = insert(:implementation)
+      %{id: rule_id} = insert(:rule)
+      update_attrs = %{rule_id: rule_id}
+
+      CacheHelpers.put_implementation(implementation)
+      %{id: concept_id} = CacheHelpers.insert_concept()
+      CacheHelpers.insert_link(id, "implementation", "business_concept", concept_id)
+
+      assert {:ok, %{id: ^id, deleted_at: nil}} = CacheHelpers.get_implementation(id)
+
+      assert conn
+             |> put(Routes.implementation_path(conn, :update, implementation),
+               rule_implementation: update_attrs
+             )
+             |> json_response(:ok)
+
+      assert {:ok, %{id: ^id, rule_id: ^rule_id}} = CacheHelpers.get_implementation(id)
     end
 
     @tag authentication: [role: "admin"]

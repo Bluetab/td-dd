@@ -823,7 +823,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       dsv = insert(:data_structure_version)
 
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", %{size: 10_000}, [] ->
+      |> expect(:request, fn _, :post, "/structures/_search", _, [] ->
         SearchHelpers.hits_response([dsv])
       end)
 
