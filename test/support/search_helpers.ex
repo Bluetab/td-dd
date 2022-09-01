@@ -58,7 +58,8 @@ defmodule SearchHelpers do
          name: name,
          data_structure_id: data_structure_id
        }) do
-    Map.put(encoded, "sort", [12.34, name, data_structure_id])
+    score = data_structure_id
+    Map.put(encoded, "sort", [score, name, data_structure_id])
   end
 
   defp maybe_add_sort(encoded, _doc) do

@@ -50,22 +50,15 @@ defmodule TdDd.DataStructures.Search do
       query: query,
       sort: sort ++ [%{"id" => "asc"}]
     }
-    |> maybe_add_from_size(page, size)
+    |> Map.put(:size, size)
+    |> maybe_add_from(page, size)
     |> do_search(params)
   end
 
-  defp maybe_add_from_size(query, _page, :infinity) do
-    Map.put(query, :size, :infinity)
-  end
+  defp maybe_add_from(query, _page, :infinity), do: query
 
-  defp maybe_add_from_size(query, page, size) do
-    Map.merge(
-      %{
-        from: page * size,
-        size: size
-      },
-      query
-    )
+  defp maybe_add_from(query, page, size) do
+    Map.put(query, :from, page * size)
   end
 
   defp build_query(%Claims{} = claims, permission, %{} = params, %{} = aggs) do
@@ -74,13 +67,7 @@ defmodule TdDd.DataStructures.Search do
     |> Query.build_query(params, aggs)
   end
 
-  defp do_search(%{size: :infinity} = query, _params) do
-    query
-    |> Search.search(@index)
-    |> transform_response()
-  end
-
-  defp do_search(query, %{"scroll" => scroll}) do
+  defp do_search(query, %{"scroll" => scroll} = _params) do
     query
     |> Search.search(@index, params: %{"scroll" => scroll})
     |> transform_response()

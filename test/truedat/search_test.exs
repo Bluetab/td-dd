@@ -60,7 +60,7 @@ defmodule Truedat.SearchTest do
         hits_response
       end)
       |> expect(:request, fn _, :post, "/structures/_search", body, [] ->
-        assert %{size: 2, foo: "bar"} = body
+        assert %{size: _, foo: "bar"} = body
 
         hits_response =
           {:ok, %{"hits" => %{"hits" => hits}}} = SearchHelpers.hits_response(chunk_3, 10)
@@ -70,14 +70,11 @@ defmodule Truedat.SearchTest do
       end)
 
       {:ok, %{results: search_results}} =
-        Search.post_while(
+        Search.search(
+          %{page_size: max_result_window, max_results: 100},
           body_post_while,
           :structures,
-          [],
-          max_result_window,
-          100_000,
-          true,
-          %{results: [], results_length: 0, total: nil}
+          []
         )
 
       search_results_dsv_ds_ids = Enum.map(search_results, fn %{"id" => id} -> id end)
@@ -92,14 +89,9 @@ defmodule Truedat.SearchTest do
 
     test "sends multiple POST requests chunked every max_result_window, total is multiple of max_request_window" do
       max_result_window = 4
-      total = 12
+      total = max_result_window * 3
       dsvs = Enum.map(1..total, fn _ -> insert(:data_structure_version) end)
-      [chunk_1, chunk_2, chunk_3] = Enum.chunk_every(dsvs, 4)
-
-      body_post_while = %{
-        size: max_result_window,
-        foo: "bar"
-      }
+      [chunk_1, chunk_2, chunk_3] = Enum.chunk_every(dsvs, max_result_window)
 
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/structures/_search", body, [] ->
@@ -131,14 +123,11 @@ defmodule Truedat.SearchTest do
       end)
 
       {:ok, %{results: search_results}} =
-        Search.post_while(
-          body_post_while,
+        Search.search(
+          %{page_size: max_result_window, max_results: total},
+          %{size: :infinity, foo: "bar"},
           :structures,
-          [],
-          max_result_window,
-          100_000,
-          true,
-          %{results: [], results_length: 0, total: nil}
+          []
         )
 
       search_results_dsv_ds_ids = Enum.map(search_results, fn %{"id" => id} -> id end)
@@ -173,7 +162,7 @@ defmodule Truedat.SearchTest do
         hits_response
       end)
       |> expect(:request, fn _, :post, "/structures/_search", body, [] ->
-        assert %{size: 1, foo: "bar"} = body
+        assert %{size: _, foo: "bar"} = body
 
         hits_response =
           {:ok, %{"hits" => %{"hits" => hits}}} =
@@ -184,14 +173,11 @@ defmodule Truedat.SearchTest do
       end)
 
       {:ok, %{results: search_results}} =
-        Search.post_while(
+        Search.search(
+          %{page_size: max_result_window, max_results: total},
           body_post_while,
           :structures,
-          [],
-          max_result_window,
-          5,
-          true,
-          %{results: [], results_length: 0, total: nil}
+          []
         )
 
       search_results_dsv_ds_ids = Enum.map(search_results, fn %{"id" => id} -> id end)
