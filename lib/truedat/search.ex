@@ -37,16 +37,15 @@ defmodule Truedat.Search do
         end
       )
 
-    {:ok, %{results: results}}
+    {:ok, %{results: results |> IO.inspect(label: "RESULTS")}}
   end
 
   def search(body, index, opts \\ [])
 
   def search(%{size: :infinity} = body, index, opts) when is_atom(index) do
-    %{
-      "max_result_window" => page_size,
-      "max_result_window_total" => max_results
-    } = Cluster.setting(index)
+    %{"max_result_window" => page_size} = Cluster.setting(index)
+
+    max_results = Application.get_env(:td_dd, __MODULE__)[:max_result_window_total]
 
     search(%{page_size: page_size, max_results: max_results}, body, index, opts)
   end
