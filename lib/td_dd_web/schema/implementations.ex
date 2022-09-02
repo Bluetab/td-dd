@@ -124,6 +124,7 @@ defmodule TdDdWeb.Schema.Implementations do
   end
 
   object :quality_event do
+    field :id, non_null(:id)
     field :inserted_at, :datetime
     field :message, :string
     field :type, :string
