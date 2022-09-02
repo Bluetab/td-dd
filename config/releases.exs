@@ -156,7 +156,8 @@ config :td_dd, TdDd.Search.Cluster,
   }
 
 config :td_dd, Truedat.Search,
-  max_result_window_total: System.get_env("MAX_RESULT_WINDOW_TOTAL", "100000") |> String.to_integer()
+  max_result_window_total:
+    System.get_env("MAX_RESULT_WINDOW_TOTAL", "100000") |> String.to_integer()
 
 config :td_dd, TdDd.DataStructures.HistoryManager,
   history_depth_days:

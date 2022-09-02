@@ -37,7 +37,7 @@ defmodule Truedat.Search do
         end
       )
 
-    {:ok, %{results: results |> IO.inspect(label: "RESULTS")}}
+    {:ok, %{results: results}}
   end
 
   def search(body, index, opts \\ [])

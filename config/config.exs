@@ -121,8 +121,7 @@ config :td_cache, :event_stream,
     [group: "dq", key: "template:events", consumer: TdDq.Search.IndexWorker]
   ]
 
-config :td_dd, Truedat.Search,
-  max_result_window_total: 100_000
+config :td_dd, Truedat.Search, max_result_window_total: 100_000
 
 config :td_dd, TdDd.Scheduler,
   jobs: [
