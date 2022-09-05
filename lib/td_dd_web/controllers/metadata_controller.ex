@@ -64,6 +64,7 @@ defmodule TdDdWeb.MetadataController do
     else
       {:can, false} -> {:can, false}
       nil -> {:error, :not_found}
+      {:error, :graph, message, _changes_so_far} -> {:error, :unprocessable_entity, message}
     end
   end
 

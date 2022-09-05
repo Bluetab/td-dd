@@ -16,7 +16,7 @@ defmodule TdDd.DataStructures.MerkleGraphTest do
 
     test "new/2 does not allow cycles" do
       {structures, relations} = tree(["foo", "bar", "baz", "foo"])
-      assert_raise(RuntimeError, fn -> MerkleGraph.new(structures, relations) end)
+      {:error, "duplicate foo"} = MerkleGraph.new(structures, relations)
     end
   end
 
