@@ -19,6 +19,7 @@ exceeds 10_000 structures.
 
 ### Fixed
 
+- [TD-4348] Return errors if load_graph fails, so that an event is created.
 - [TD-5075] Fixed implementation can't be moved to another rule
 
 ## [4.49.0] 2022-08-16
