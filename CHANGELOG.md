@@ -1,19 +1,17 @@
 # Changelog
 
-## [Unreleased]
+## [4.50.0] 2022-09-05
 
 ### Added
 
-- [TD-3371] Make multiple Elasticsearch calls if a Data Catalog CSV download
-exceeds 10_000 structures.
 - [TD-5078] Add request modification for Grants
 
 ### Changed
 
-- [TD-4994] Performance improvement of lineage load proccess
-  - Optimize `delete_orphaned_nodes` query
-  - Change `CSV` reader to `NimbleCSV`
-- [TD-4757] TD-4757 Take into account data structure updated_at in data structure version since-claused listing
+- [TD-3371] Catalog CSV download can now return more than 10,000 structures
+- [TD-4994] Performance improvements of lineage load process
+- [TD-4757] Take into account data structure `updated_at` in data structure
+  version since-claused listing
 - [TD-5091] Dynamic `domain` fields are now integer ids instead of embedded
   documents
 
