@@ -442,7 +442,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
                  "delete" => %{"method" => "POST"},
                  "edit" => %{"method" => "POST"},
                  "manage_segments" => %{"method" => "POST"},
-                 "submit" => %{"method" => "POST"}
+                 "submit" => %{"method" => "POST"},
+                 "clone" => %{"method" => "POST"}
                } == actions
       end
     end
@@ -499,7 +500,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
                  "delete" => %{"method" => "POST"},
                  "edit" => %{"method" => "POST"},
                  "submit" => %{"method" => "POST"},
-                 "manage_segments" => %{"method" => "POST"}
+                 "manage_segments" => %{"method" => "POST"},
+                 "clone" => %{"method" => "POST"}
                } == actions
       end
     end
@@ -543,7 +545,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "edit" => %{"method" => "POST"},
                "delete" => %{"method" => "POST"},
                "submit" => %{"method" => "POST"},
-               "manage_segments" => %{"method" => "POST"}
+               "manage_segments" => %{"method" => "POST"},
+               "clone" => %{"method" => "POST"}
              } == actions
     end
 
@@ -587,7 +590,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "edit" => %{"method" => "POST"},
                "delete" => %{"method" => "POST"},
                "submit" => %{"method" => "POST"},
-               "manage_segments" => %{"method" => "POST"}
+               "manage_segments" => %{"method" => "POST"},
+               "clone" => %{"method" => "POST"}
              } == actions
     end
 
