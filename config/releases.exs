@@ -143,8 +143,6 @@ config :td_dd, TdDd.Search.Cluster,
     "number_of_replicas" => System.get_env("ES_REPLICAS", "1") |> String.to_integer(),
     "refresh_interval" => System.get_env("ES_REFRESH_INTERVAL", "5s"),
     "max_result_window" => System.get_env("ES_MAX_RESULT_WINDOW", "10000") |> String.to_integer(),
-    "max_result_window_total" =>
-      System.get_env("ES_MAX_RESULT_WINDOW_TOTAL", "100000") |> String.to_integer(),
     "index.indexing.slowlog.threshold.index.warn" =>
       System.get_env("ES_INDEXING_SLOWLOG_THRESHOLD_WARN", "10s"),
     "index.indexing.slowlog.threshold.index.info" =>
@@ -156,6 +154,10 @@ config :td_dd, TdDd.Search.Cluster,
     "index.indexing.slowlog.level" => System.get_env("ES_INDEXING_SLOWLOG_LEVEL", "info"),
     "index.indexing.slowlog.source" => System.get_env("ES_INDEXING_SLOWLOG_SOURCE", "1000")
   }
+
+config :td_dd, Truedat.Search,
+  max_result_window_total:
+    System.get_env("MAX_RESULT_WINDOW_TOTAL", "100000") |> String.to_integer()
 
 config :td_dd, TdDd.DataStructures.HistoryManager,
   history_depth_days:
