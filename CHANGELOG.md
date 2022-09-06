@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-5076] Allow to clone implementations for non admin users
+
 ## [4.50.0] 2022-09-05
 
 ### Added

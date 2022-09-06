@@ -154,6 +154,13 @@ defmodule TdDq.Canada.ImplementationAbilities do
       Permissions.authorized?(claims, :manage_segments, domain_id)
   end
 
+  def can?(%{} = claims, :clone, %Implementation{domain_id: domain_id} = implementation) do
+    Enum.all?(
+      permissions(implementation),
+      &Permissions.authorized?(claims, &1, domain_id)
+    )
+  end
+
   def can?(%{} = claims, :edit, %Implementation{domain_id: domain_id} = implementation) do
     valid_action?(:edit, implementation) &&
       Enum.all?(
