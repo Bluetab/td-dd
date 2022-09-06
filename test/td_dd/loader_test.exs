@@ -516,9 +516,8 @@ defmodule TdDd.LoaderTest do
 
       relation = %{child_external_id: "xxx", parent_external_id: "xxx"}
 
-      assert_raise(RuntimeError, fn ->
+      {:error, :graph, "reflexive relations are not permitted (xxx)", %{} = _changes_so_far} =
         Loader.load(%{structures: [structure], relations: [relation]}, audit())
-      end)
     end
 
     test "loads changes in relations with relation type" do

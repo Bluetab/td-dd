@@ -257,6 +257,31 @@ defmodule TdDdWeb.MetadataControllerTest do
       assert %{"children" => children} = data
       assert_lists_equal(children, ["Child1", "Child2"], &(&1["name"] == &2))
     end
+
+    @tag authentication: [role: "service"]
+    test "validate_graph", %{conn: conn} do
+      insert(:system, external_id: "test1", name: "test1")
+
+      assert conn
+             |> post(Routes.metadata_path(conn, :upload),
+               data_structures: upload("test/fixtures/td2520/structures2.csv"),
+               data_structure_relations: upload("test/fixtures/td2520/relations2.csv")
+             )
+             |> response(:accepted)
+
+      # wait for loader to complete
+      Worker.await(20_000)
+
+      assert %{"message" => "vertex exists: td-2520.fieldchild1"} =
+               conn
+               |> post(Routes.metadata_path(conn, :upload),
+                 data_structures: upload("test/fixtures/td2520/structures2.csv"),
+                 data_structure_relations: upload("test/fixtures/td2520/relations2.csv"),
+                 parent_external_id: "td-2520.fieldchild1",
+                 external_id: "td-2520.child1"
+               )
+               |> json_response(:unprocessable_entity)
+    end
   end
 
   defp create_source(_) do
