@@ -26,6 +26,7 @@ defmodule TdDdWeb.Schema.Executions do
     field :executions, list_of(:execution), resolve: dataloader(TdDq.Executions)
     field :implementations, list_of(:implementation), resolve: dataloader(TdDq.Executions)
     field :inserted_at, :datetime
+    field :status_counts, :json, resolve: dataloader(TdDq.Executions.KV)
   end
 
   object :execution do

@@ -21,8 +21,8 @@ defmodule TdDdWeb.Schema.Me do
     field :execution_groups_connection, :execution_groups_connection do
       arg(:first, :integer)
       arg(:last, :integer)
-      arg(:after, :string)
-      arg(:before, :string)
+      arg(:after, :cursor)
+      arg(:before, :cursor)
       resolve(&Resolvers.Executions.execution_groups_connection/3)
     end
   end

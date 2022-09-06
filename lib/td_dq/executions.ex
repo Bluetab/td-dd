@@ -160,4 +160,33 @@ defmodule TdDq.Executions do
   defp query(queryable, params) do
     Enum.reduce(params, queryable, fn _, q -> q end)
   end
+
+  def kv_datasource({:status_counts, %{}}, groups) do
+    group_ids = Enum.map(groups, & &1.id)
+
+    counts =
+      Execution
+      |> where([e], e.group_id in ^group_ids)
+      |> join(:left, [e], qe in assoc(e, :quality_events))
+      |> distinct([e], e.id)
+      |> order_by([_, qe], desc: qe.inserted_at, desc: qe.id)
+      |> select([e, qe], %{
+        group_id: e.group_id,
+        type: fragment("coalesce(?, 'PENDING')", qe.type),
+        id: e.id
+      })
+      |> subquery()
+      |> group_by([:group_id, :type])
+      |> select([sq], %{id: sq.group_id, status: sq.type, count: count(sq)})
+      |> Repo.all()
+      |> Enum.group_by(& &1.id)
+
+    Map.new(groups, fn %{id: id} = group -> {group, status_counts(counts, id)} end)
+  end
+
+  defp status_counts(counts, id) do
+    counts
+    |> Map.get(id, [])
+    |> Map.new(fn %{status: status, count: count} -> {status, count} end)
+  end
 end

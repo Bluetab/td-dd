@@ -15,11 +15,13 @@ defmodule TdDdWeb.Schema.Types.Custom.Cursor do
 
   @spec decode(Absinthe.Blueprint.Input.String.t()) :: {:ok, term()} | :error
   @spec decode(Absinthe.Blueprint.Input.Null.t()) :: {:ok, nil}
-  def decode(%Absinthe.Blueprint.Input.String{value: data}), do: Base.decode64(data)
+  def decode(%Absinthe.Blueprint.Input.String{value: data}),
+    do: Base.decode64(data, padding: false)
+
   def decode(%Absinthe.Blueprint.Input.Null{}), do: {:ok, nil}
   def decode(_), do: :error
 
   def encode(nil), do: nil
-  def encode(value) when is_binary(value), do: Base.encode64(value)
-  def encode(value) when is_integer(value), do: Base.encode64(to_string(value))
+  def encode(value) when is_binary(value), do: Base.encode64(value, padding: false)
+  def encode(value) when is_integer(value), do: Base.encode64(to_string(value), padding: false)
 end

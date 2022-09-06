@@ -4,7 +4,7 @@ defmodule TdDdWeb.Schema.ExecutionsTest do
   alias TdDdWeb.Schema.Types.Custom.Cursor
 
   @query """
-  query MyExecutionGroups($last: Int!, $before: String) {
+  query MyExecutionGroups($last: Int!, $before: Cursor) {
     me {
       id
       executionGroupsConnection(last: $last, before: $before) {
@@ -17,6 +17,7 @@ defmodule TdDdWeb.Schema.ExecutionsTest do
         }
         page {
           id
+          statusCounts
           executions {
             id
             implementation {
@@ -46,10 +47,12 @@ defmodule TdDdWeb.Schema.ExecutionsTest do
 
       insert(:execution,
         group_id: id,
-        quality_events: [build(:quality_event)],
+        quality_events: [build(:quality_event, type: "SUCCEEDED")],
         result: build(:rule_result),
         rule: build(:rule)
       )
+
+      insert(:execution, group_id: id)
 
       assert %{"data" => data} =
                response =
@@ -63,7 +66,8 @@ defmodule TdDdWeb.Schema.ExecutionsTest do
 
       assert %{"page" => [execution_group], "totalCount" => 1} = connection
 
-      assert %{"id" => ^id, "executions" => [execution]} = execution_group
+      assert %{"id" => ^id, "executions" => [execution, _], "statusCounts" => status_counts} =
+               execution_group
 
       assert %{
                "id" => _,
@@ -72,6 +76,8 @@ defmodule TdDdWeb.Schema.ExecutionsTest do
                "result" => %{"id" => _},
                "rule" => %{"id" => _}
              } = execution
+
+      assert status_counts == %{"SUCCEEDED" => 1, "PENDING" => 1}
 
       refute Map.has_key?(response, "errors")
     end

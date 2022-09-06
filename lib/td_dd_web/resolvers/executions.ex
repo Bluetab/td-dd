@@ -10,10 +10,10 @@ defmodule TdDdWeb.Resolvers.Executions do
       args
       |> Map.take([:first, :last, :after, :before])
       |> Map.new(fn
+        {:after, cursor} -> {:after, cursor}
+        {:before, cursor} -> {:before, cursor}
         {:first, first} -> {:limit, first}
         {:last, last} -> {:limit, last}
-        {:after, cursor} -> {:after, Base.decode64!(cursor)}
-        {:before, cursor} -> {:before, Base.decode64!(cursor)}
       end)
       |> Map.put(:created_by_id, user_id)
       |> put_order_by(args)
@@ -21,8 +21,8 @@ defmodule TdDdWeb.Resolvers.Executions do
     {:ok, connection(args)}
   end
 
+  defp put_order_by(args, %{after: _}), do: Map.put(args, :order_by, :id)
   defp put_order_by(args, %{last: _}), do: Map.put(args, :order_by, desc: :id)
-  defp put_order_by(args, %{before: _}), do: Map.put(args, :order_by, desc: :id)
   defp put_order_by(args, %{}), do: Map.put(args, :order_by, :id)
 
   # see https://graphql.org/learn/pagination/
@@ -54,7 +54,7 @@ defmodule TdDdWeb.Resolvers.Executions do
       |> Enum.min_max(fn -> {0, nil} end)
 
     %{
-      page: page,
+      page: Enum.sort_by(page, &(-&1.id)),
       total_count: count,
       page_info: %{
         start_cursor: start_cursor,
