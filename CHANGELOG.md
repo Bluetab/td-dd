@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-5076] Allow to clone implementations for non admin users
+- [TD-5082] Filter protected metadata (field "_protected")
 
 ## [4.50.0] 2022-09-05
 

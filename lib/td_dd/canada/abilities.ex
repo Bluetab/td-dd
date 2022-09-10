@@ -12,6 +12,7 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Canada.GrantAbilities
   alias TdDd.Canada.LineageAbilities
   alias TdDd.Canada.LinkAbilities
+  alias TdDd.Canada.MetadataAbilities
   alias TdDd.Canada.ReferenceDataAbilities
   alias TdDd.Canada.StructureNoteAbilities
   alias TdDd.Canada.StructureTagAbilities
@@ -204,6 +205,10 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%Claims{} = claims, action, %GrantRequestGroup{} = group) do
       GrantAbilities.can?(claims, action, group)
+    end
+
+    def can?(%Claims{} = claims, action, [DataStructure, DataStructureVersion]) do
+      MetadataAbilities.can?(claims, action, [DataStructure, DataStructureVersion])
     end
 
     def can?(%Claims{} = claims, action, %DataStructure{} = data_structure) do

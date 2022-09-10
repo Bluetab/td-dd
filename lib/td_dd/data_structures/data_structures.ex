@@ -28,6 +28,8 @@ defmodule TdDd.DataStructures do
   alias TdDd.Search.StructureVersionEnricher
   alias TdDfLib.Format
 
+  @protected "_protected"
+
   # Data structure version associations preloaded for some views
   @preload_dsv_assocs [
     :published_note,
@@ -35,6 +37,8 @@ defmodule TdDd.DataStructures do
     :classifications,
     data_structure: :system
   ]
+
+  def protected, do: @protected
 
   def list_data_structures(clauses \\ %{}) do
     clauses
@@ -119,16 +123,23 @@ defmodule TdDd.DataStructures do
   end
 
   def get_data_structure_version!(data_structure_version_id, opts) do
+    with_metadata_protected? = Enum.member?(opts, :with_metadata_protected)
+
     data_structure_version_id
-    |> get_data_structure_version!()
+    |> enriched_structure_version!(with_metadata_protected: with_metadata_protected?)
     |> enrich(opts)
   end
 
   def get_data_structure_version!(data_structure_id, version, opts) do
+    with_metadata_protected? = Enum.member?(opts, :with_metadata_protected)
+
     DataStructureVersion
     |> Repo.get_by!(data_structure_id: data_structure_id, version: version)
     |> Map.get(:id)
-    |> enriched_structure_version!(preload: @preload_dsv_assocs)
+    |> enriched_structure_version!(
+      with_metadata_protected: with_metadata_protected?,
+      preload: @preload_dsv_assocs
+    )
     |> enrich(opts)
   end
 
@@ -145,36 +156,60 @@ defmodule TdDd.DataStructures do
 
   def get_cached_content(content, _structure), do: content
 
+  defp enrich(
+         %DataStructureVersion{id: id} = _data_structure_version,
+         with_metadata_protected?,
+         :defaults
+       ) do
+    enriched_structure_version!(id,
+      with_metadata_protected: with_metadata_protected?,
+      preload: [data_structure: :source]
+    )
+  end
+
   defp enrich(nil = _target, _opts), do: nil
 
   defp enrich(target, nil = _opts), do: target
 
-  defp enrich(%DataStructureVersion{id: id} = _data_structure_version, :defaults) do
-    enriched_structure_version!(id, preload: [data_structure: :source])
-  end
-
   defp enrich(%DataStructureVersion{} = dsv, opts) do
     deleted = not is_nil(Map.get(dsv, :deleted_at))
     with_confidential = Enum.member?(opts, :with_confidential)
+    with_metadata_protected? = Enum.member?(opts, :with_metadata_protected)
 
     dsv
-    |> enrich(:defaults)
+    |> enrich(with_metadata_protected?, :defaults)
+    |> protected_metadata(with_metadata_protected?)
     |> enrich(opts, :classifications, &get_classifications!/1)
     |> enrich(opts, :system, &get_system!/1)
     |> enrich(
       opts,
       :parents,
-      &get_parents(&1, deleted: deleted, with_confidential: with_confidential)
+      &get_parents(
+        &1,
+        deleted: deleted,
+        with_confidential: with_confidential,
+        with_metadata_protected: with_metadata_protected?
+      )
     )
     |> enrich(
       opts,
       :children,
-      &get_children(&1, deleted: deleted, with_confidential: with_confidential)
+      &get_children(
+        &1,
+        deleted: deleted,
+        with_confidential: with_confidential,
+        with_metadata_protected: with_metadata_protected?
+      )
     )
     |> enrich(
       opts,
       :siblings,
-      &get_siblings(&1, deleted: deleted, with_confidential: with_confidential)
+      &get_siblings(
+        &1,
+        deleted: deleted,
+        with_confidential: with_confidential,
+        with_metadata_protected: with_metadata_protected?
+      )
     )
     |> enrich(
       opts,
@@ -186,7 +221,8 @@ defmodule TdDd.DataStructures do
             do: [:published_note, data_structure: :profile],
             else: []
           ),
-        with_confidential: with_confidential
+        with_confidential: with_confidential,
+        with_metadata_protected: with_metadata_protected?
       )
     )
     |> enrich(opts, :data_field_degree, &get_field_degree/1)
@@ -194,15 +230,28 @@ defmodule TdDd.DataStructures do
     |> enrich(
       opts,
       :relations,
-      &get_relations(&1, deleted: deleted, default: false, with_confidential: with_confidential)
+      &get_relations(
+        &1,
+        deleted: deleted,
+        default: false,
+        with_confidential: with_confidential,
+        with_metadata_protected: with_metadata_protected?
+      )
     )
     |> enrich(opts, :relation_links, &get_relation_links/1)
-    |> enrich(opts, :versions, &get_versions!/1)
+    |> enrich(opts, :versions, &get_versions!(&1, with_metadata_protected?))
     |> enrich(opts, :degree, &get_degree/1)
     |> enrich(opts, :profile, &get_profile!/1)
     |> enrich(opts, :links, &get_structure_links/1)
     |> enrich(opts, :source, &get_source!/1)
-    |> enrich(opts, :metadata_versions, &get_metadata_versions!/1)
+    |> enrich(
+      opts,
+      :metadata_versions,
+      &get_metadata_versions!(
+        &1,
+        with_metadata_protected: with_metadata_protected?
+      )
+    )
     |> enrich(opts, :data_structure_type, &get_data_structure_type!/1)
     |> enrich(opts, :grants, &get_grants/1)
     |> enrich(opts, :grant, &get_grant(&1, opts[:user_id]))
@@ -261,6 +310,8 @@ defmodule TdDd.DataStructures do
   def get_data_structure_type(_data_structure), do: nil
 
   def get_field_structures(data_structure_version, opts) do
+    with_metadata_protected? = Keyword.get(opts, :with_metadata_protected)
+
     data_structure_version
     |> Ecto.assoc(:children)
     |> where(class: "field")
@@ -273,12 +324,15 @@ defmodule TdDd.DataStructures do
     |> select([child], child)
     |> Repo.all()
     |> Repo.preload(opts[:preload] || [])
+    |> protected_metadata(with_metadata_protected?)
   end
 
   def get_children(%DataStructureVersion{id: id}, opts \\ []) do
     default = Keyword.get(opts, :default)
     deleted = Keyword.get(opts, :deleted)
     confidential = Keyword.get(opts, :with_confidential)
+
+    with_metadata_protected? = Keyword.get(opts, :with_metadata_protected)
 
     DataStructureRelation
     |> where([r], r.parent_id == ^id)
@@ -301,12 +355,15 @@ defmodule TdDd.DataStructures do
     })
     |> Repo.all()
     |> select_structures(default)
+    |> protected_metadata(with_metadata_protected?)
   end
 
   def get_parents(%DataStructureVersion{id: id}, opts \\ []) do
     default = Keyword.get(opts, :default)
     deleted = Keyword.get(opts, :deleted)
     confidential = Keyword.get(opts, :with_confidential)
+
+    with_metadata_protected? = Keyword.get(opts, :with_metadata_protected)
 
     DataStructureRelation
     |> where([r], r.child_id == ^id)
@@ -329,11 +386,14 @@ defmodule TdDd.DataStructures do
     })
     |> Repo.all()
     |> select_structures(default)
+    |> protected_metadata(with_metadata_protected?)
   end
 
   def get_siblings(%DataStructureVersion{id: id}, opts \\ []) do
     default = Keyword.get(opts, :default)
     confidential = Keyword.get(opts, :with_confidential)
+
+    with_metadata_protected? = Keyword.get(opts, :with_metadata_protected)
 
     DataStructureRelation
     |> where([r], r.child_id == ^id)
@@ -365,6 +425,7 @@ defmodule TdDd.DataStructures do
     |> Repo.all()
     |> Repo.preload(@preload_dsv_assocs)
     |> Enum.uniq_by(& &1.data_structure_id)
+    |> protected_metadata(with_metadata_protected?)
   end
 
   defp get_relations(%DataStructureVersion{} = version, opts) do
@@ -392,9 +453,11 @@ defmodule TdDd.DataStructures do
     |> Map.put(:parents, parents)
   end
 
-  defp get_versions!(%DataStructureVersion{} = dsv) do
+  defp get_versions!(%DataStructureVersion{} = dsv, with_metadata_protected?) do
     case Repo.preload(dsv, data_structure: :versions) do
-      %{data_structure: %{versions: versions}} -> versions
+      %{data_structure: %{versions: versions}} ->
+        versions
+        |> protected_metadata(with_metadata_protected?)
     end
   end
 
@@ -447,13 +510,69 @@ defmodule TdDd.DataStructures do
     end
   end
 
-  defp get_metadata_versions!(%DataStructureVersion{} = dsv) do
+  defp get_metadata_versions!(%DataStructureVersion{} = dsv, opts) do
+    with_metadata_protected? = Keyword.get(opts, :with_metadata_protected)
+
     case Repo.preload(dsv, data_structure: :metadata_versions) do
-      %{data_structure: %{metadata_versions: metadata_versions}} -> metadata_versions
+      %{data_structure: %{metadata_versions: metadata_versions}} ->
+        protected_metadata(
+          metadata_versions,
+          with_metadata_protected?
+        )
     end
   end
 
-  defp get_implementations!(%DataStructureVersion{} = dsv) do
+  def protected_metadata(dsv_or_sm_or_sm_list_or_map, with_metadata_protected?)
+
+  def protected_metadata(nil, _with_metadata_protected?), do: nil
+
+  def protected_metadata(dsv_or_sm_or_sm_list_or_map, nil) do
+    protected_metadata(dsv_or_sm_or_sm_list_or_map, false)
+  end
+
+  def protected_metadata(dsv_or_sm_or_sm_list_or_map, true) do
+    dsv_or_sm_or_sm_list_or_map
+  end
+
+  def protected_metadata(structuremetadata_or_dsv_with_mutable_metadata, false)
+      when is_list(structuremetadata_or_dsv_with_mutable_metadata) do
+    Enum.map(structuremetadata_or_dsv_with_mutable_metadata, &protected_metadata(&1, false))
+  end
+
+  def protected_metadata(
+        %DataStructureVersion{
+          metadata: metadata,
+          # From DataStructureQueries.enriched_structure_versions
+          mutable_metadata: enriched_mm
+        } = dsv,
+        false
+      ) do
+    %DataStructureVersion{
+      dsv
+      | metadata: protected_metadata(metadata, false),
+        mutable_metadata: protected_metadata(enriched_mm, false)
+    }
+  end
+
+  def protected_metadata(%StructureMetadata{fields: fields} = mutable_metadata, false) do
+    %StructureMetadata{
+      mutable_metadata
+      | fields: protected_metadata(fields, false)
+    }
+  end
+
+  # def protected_metadata(%{metadata: metadata} = taken_from_version, false) do
+  #   %{
+  #     taken_from_version
+  #     | metadata: protected_metadata(metadata, false)
+  #   }
+  # end
+
+  def protected_metadata(metadata, false) do
+    Map.drop(metadata, [@protected])
+  end
+
+  def get_implementations!(%DataStructureVersion{} = dsv) do
     case Repo.preload(dsv, data_structure: [implementations: [implementation: [:rule, :results]]]) do
       %{data_structure: %{implementations: implementations}} -> implementations
     end
@@ -893,11 +1012,15 @@ defmodule TdDd.DataStructures do
     {enrich_opts, opts} = Keyword.split(opts, [:content, :filters])
     enrich = StructureVersionEnricher.enricher(enrich_opts)
 
+    with_metadata_protected? = Keyword.get(opts, :with_metadata_protected)
+
     opts
     |> Map.new()
+    |> Map.drop([:with_metadata_protected])
     |> DataStructureQueries.enriched_structure_versions()
     |> Repo.all()
     |> Enum.map(&enrich.(&1))
+    |> protected_metadata(with_metadata_protected?)
   end
 
   ## Dataloader

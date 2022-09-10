@@ -13,6 +13,7 @@ defmodule TdDdWeb.MetadataControllerTest do
   alias TdDd.Repo
 
   @moduletag sandbox: :shared
+  @protected DataStructures.protected()
 
   setup_all do
     start_supervised!(TdDd.Search.Cluster)
@@ -208,6 +209,49 @@ defmodule TdDdWeb.MetadataControllerTest do
 
       assert frequencies == %{source_external_id => 5 + 68}
     end
+  end
+
+  @tag authentication: [role: "service"]
+  test "protected metadata", %{conn: conn} do
+    insert(:system, external_id: "test1", name: "test1")
+
+    assert conn
+           |> post(Routes.metadata_path(conn, :upload),
+             data_structures: upload("test/fixtures/td5082/structures_protected_metadata.csv")
+           )
+           |> response(:accepted)
+
+    # wait for loader to complete
+    Worker.await(20_000)
+
+    assert %DataStructure{
+             id: id,
+             current_metadata: %{
+               fields: %{
+                 @protected => %{
+                   "mmp1" => "mmp1_value",
+                   "mmp2" => "mmp2_value"
+                 }
+               }
+             }
+           } =
+             DataStructures.get_data_structure_by_external_id("structure_mp")
+             |> Repo.preload(:current_metadata)
+
+    assert %DataStructureVersion{
+             mutable_metadata: %{
+               @protected => %{
+                 "mmp1" => "mmp1_value",
+                 "mmp2" => "mmp2_value"
+               }
+             },
+             metadata: %{
+               @protected => %{
+                 "mp1" => "mp1_value",
+                 "mp2" => "mp2_value"
+               }
+             }
+           } = DataStructures.get_latest_version(id, [:with_metadata_protected])
   end
 
   describe "td-2520" do

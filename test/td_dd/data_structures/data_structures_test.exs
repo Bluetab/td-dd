@@ -281,6 +281,79 @@ defmodule TdDd.DataStructuresTest do
       assert %{mutable_metadata: ^fields} = DataStructures.get_latest_version(id)
     end
 
+    test "enriches with filtered protected mutable_metadata" do
+      %{data_structure_id: id} =
+        insert(
+          :data_structure_version,
+          metadata: %{
+            "m_foo" => "m_bar",
+            DataStructures.protected() => %{
+              "m_field1" => "m_field1",
+              "m_field2" => "m_field2"
+            }
+          }
+        )
+
+      %{fields: _fields_with_protected} =
+        insert(
+          :structure_metadata,
+          data_structure_id: id,
+          fields: %{
+            "mm_foo" => "mm_bar",
+            DataStructures.protected() => %{
+              "mm_field1" => "mm_field1",
+              "mm_field2" => "mm_field2"
+            }
+          }
+        )
+
+      %{
+        metadata: metadata,
+        mutable_metadata: mutable_metadata
+      } = DataStructures.get_latest_version(id)
+
+      assert metadata == %{"m_foo" => "m_bar"}
+      assert mutable_metadata == %{"mm_foo" => "mm_bar"}
+    end
+
+    test "enriches with protected mutable_metadata" do
+      metadata = %{
+        "m_foo" => "m_bar",
+        DataStructures.protected() => %{
+          "m_field1" => "m_field1",
+          "m_field2" => "m_field2"
+        }
+      }
+
+      mutable_metadata = %{
+        "mm_foo" => "mm_bar",
+        DataStructures.protected() => %{
+          "mm_field1" => "mm_field1",
+          "mm_field2" => "mm_field2"
+        }
+      }
+
+      %{data_structure_id: id} =
+        insert(
+          :data_structure_version,
+          metadata: metadata
+        )
+
+      insert(
+        :structure_metadata,
+        data_structure_id: id,
+        fields: mutable_metadata
+      )
+
+      assert %{
+               metadata: dsv_m,
+               mutable_metadata: dsv_mm
+             } = DataStructures.get_latest_version(id, [:with_metadata_protected])
+
+      assert metadata == dsv_m
+      assert mutable_metadata == dsv_mm
+    end
+
     test "enriches with parents", %{
       data_structure_version: %{
         id: parent_id,
@@ -430,6 +503,76 @@ defmodule TdDd.DataStructuresTest do
                )
 
       assert filters == %{"baz" => ["baz1", "baz2"], "foo" => "foo"}
+    end
+
+    test "gets protected metadata" do
+      metadata = %{
+        "m_foo" => "m_bar",
+        DataStructures.protected() => %{
+          "m_field1" => "m_field1",
+          "m_field2" => "m_field2"
+        }
+      }
+
+      mutable_metadata = %{
+        "mm_foo" => "mm_bar",
+        DataStructures.protected() => %{
+          "mm_field1" => "mm_field1",
+          "mm_field2" => "mm_field2"
+        }
+      }
+
+      %{data_structure_id: id} = insert(:data_structure_version, metadata: metadata)
+
+      insert(:structure_metadata,
+        data_structure_id: id,
+        fields: mutable_metadata
+      )
+
+      assert [%{metadata: result_metadata, mutable_metadata: result_mm}] =
+               DataStructures.enriched_structure_versions(
+                 data_structure_ids: [id],
+                 relation_type_id: RelationTypes.default_id!(),
+                 with_metadata_protected: true
+               )
+
+      assert result_metadata == metadata
+      assert result_mm == mutable_metadata
+    end
+
+    test "filters protected metadata" do
+      metadata = %{
+        "m_foo" => "m_bar",
+        DataStructures.protected() => %{
+          "m_field1" => "m_field1",
+          "m_field2" => "m_field2"
+        }
+      }
+
+      mutable_metadata = %{
+        "mm_foo" => "mm_bar",
+        DataStructures.protected() => %{
+          "mm_field1" => "mm_field1",
+          "mm_field2" => "mm_field2"
+        }
+      }
+
+      %{data_structure_id: id} = insert(:data_structure_version, metadata: metadata)
+
+      insert(:structure_metadata,
+        data_structure_id: id,
+        fields: mutable_metadata
+      )
+
+      assert [%{metadata: result_metadata, mutable_metadata: result_mm}] =
+               DataStructures.enriched_structure_versions(
+                 data_structure_ids: [id],
+                 relation_type_id: RelationTypes.default_id!(),
+                 with_metadata_protected: false
+               )
+
+      assert result_metadata == %{"m_foo" => "m_bar"}
+      assert result_mm == %{"mm_foo" => "mm_bar"}
     end
   end
 
@@ -613,6 +756,190 @@ defmodule TdDd.DataStructuresTest do
       assert parents <|> [parent]
       assert children <|> [child]
       assert siblings <|> [sibling, dsv]
+      assert relations.parents == []
+      assert relations.children == []
+    end
+
+    test "get_data_structure_version!/2 enriches with parents, children, siblings and relations, including their protected metadata" do
+      metadata = %{
+        "m_foo" => "m_bar",
+        DataStructures.protected() => %{
+          "m_field1" => "m_field1",
+          "m_field2" => "m_field2"
+        }
+      }
+
+      mutable_metadata = %{
+        "mm_foo" => "mm_bar",
+        DataStructures.protected() => %{
+          "mm_field1" => "mm_field1",
+          "mm_field2" => "mm_field2"
+        }
+      }
+
+      data_structures =
+        Enum.map(
+          ["structure", "parent", "child", "sibling"],
+          &insert(:data_structure, external_id: &1)
+        )
+
+      Enum.map(
+        data_structures,
+        &insert(
+          :structure_metadata,
+          data_structure_id: &1.id,
+          fields: mutable_metadata
+        )
+      )
+
+      [dsv, parent, child, sibling] =
+        Enum.map(
+          data_structures,
+          &insert(:data_structure_version, data_structure_id: &1.id, metadata: metadata)
+        )
+
+      relation_type_id = RelationTypes.default_id!()
+
+      insert(:data_structure_relation,
+        parent_id: parent.id,
+        child_id: dsv.id,
+        relation_type_id: relation_type_id
+      )
+
+      insert(:data_structure_relation,
+        parent_id: parent.id,
+        child_id: sibling.id,
+        relation_type_id: relation_type_id
+      )
+
+      insert(:data_structure_relation,
+        parent_id: dsv.id,
+        child_id: child.id,
+        relation_type_id: relation_type_id
+      )
+
+      enrich_opts = [:parents, :children, :siblings, :relations, :with_metadata_protected]
+
+      assert %{
+               id: id,
+               parents: [result_parent] = parents,
+               children: [result_child] = children,
+               siblings: [result_sibling, result_dsv] = siblings,
+               relations: relations,
+               metadata: dsv_m,
+               mutable_metadata: dsv_mm
+             } = DataStructures.get_data_structure_version!(dsv.id, enrich_opts)
+
+      assert dsv_m == metadata
+      assert dsv_mm == mutable_metadata
+      assert id == dsv.id
+      assert parents <|> [parent]
+      assert result_parent.metadata == metadata
+      # Enriched parents, children and siblings do not have mutable_metadata loaded.
+      assert result_parent.mutable_metadata == nil
+      assert children <|> [child]
+      assert result_child.metadata == metadata
+      assert result_child.mutable_metadata == nil
+      assert siblings <|> [sibling, dsv]
+      assert result_sibling.metadata == metadata
+      assert result_sibling.mutable_metadata == nil
+      assert result_dsv.metadata == metadata
+      assert result_dsv.mutable_metadata == nil
+      assert relations.parents == []
+      assert relations.children == []
+    end
+
+    test "get_data_structure_version!/2 enriches with parents, children, siblings and relations, filtering protected metadata" do
+      metadata = %{
+        "m_foo" => "m_bar",
+        DataStructures.protected() => %{
+          "m_field1" => "m_field1",
+          "m_field2" => "m_field2"
+        }
+      }
+
+      mutable_metadata = %{
+        "mm_foo" => "mm_bar",
+        DataStructures.protected() => %{
+          "mm_field1" => "mm_field1",
+          "mm_field2" => "mm_field2"
+        }
+      }
+
+      data_structures =
+        Enum.map(
+          ["structure", "parent", "child", "sibling"],
+          &insert(:data_structure, external_id: &1)
+        )
+
+      Enum.map(
+        data_structures,
+        &insert(
+          :structure_metadata,
+          data_structure_id: &1.id,
+          fields: mutable_metadata
+        )
+      )
+
+      [dsv, parent, child, sibling] =
+        Enum.map(
+          data_structures,
+          &insert(:data_structure_version, data_structure_id: &1.id, metadata: metadata)
+        )
+
+      relation_type_id = RelationTypes.default_id!()
+
+      insert(:data_structure_relation,
+        parent_id: parent.id,
+        child_id: dsv.id,
+        relation_type_id: relation_type_id
+      )
+
+      insert(:data_structure_relation,
+        parent_id: parent.id,
+        child_id: sibling.id,
+        relation_type_id: relation_type_id
+      )
+
+      insert(:data_structure_relation,
+        parent_id: dsv.id,
+        child_id: child.id,
+        relation_type_id: relation_type_id
+      )
+
+      enrich_opts = [:parents, :children, :siblings, :relations]
+
+      assert %{
+               id: id,
+               parents: [result_parent] = parents,
+               children: [result_child] = children,
+               siblings: [result_sibling, result_dsv] = siblings,
+               relations: relations,
+               metadata: dsv_m,
+               mutable_metadata: dsv_mm
+             } = DataStructures.get_data_structure_version!(dsv.id, enrich_opts)
+
+      assert dsv_m == %{"m_foo" => "m_bar"}
+      assert dsv_mm == %{"mm_foo" => "mm_bar"}
+      assert id == dsv.id
+      assert parents <|> [%{parent | metadata: %{"m_foo" => "m_bar"}}]
+      assert result_parent.metadata == %{"m_foo" => "m_bar"}
+      # Enriched parents, children and siblings do not have mutable_metadata loaded.
+      assert result_parent.mutable_metadata == nil
+      assert children <|> [%{child | metadata: %{"m_foo" => "m_bar"}}]
+      assert result_child.metadata == %{"m_foo" => "m_bar"}
+      assert result_child.mutable_metadata == nil
+
+      assert siblings
+             <|> [
+               %{sibling | metadata: %{"m_foo" => "m_bar"}},
+               %{dsv | metadata: %{"m_foo" => "m_bar"}}
+             ]
+
+      assert result_sibling.metadata == %{"m_foo" => "m_bar"}
+      assert result_sibling.mutable_metadata == nil
+      assert result_dsv.metadata == %{"m_foo" => "m_bar"}
+      assert result_dsv.mutable_metadata == nil
       assert relations.parents == []
       assert relations.children == []
     end
