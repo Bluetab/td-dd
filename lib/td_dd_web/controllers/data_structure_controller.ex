@@ -33,7 +33,7 @@ defmodule TdDdWeb.DataStructureController do
     :siblings,
     :system,
     :versions,
-    :with_metadata_protected,
+    :with_protected_metadata,
     :metadata_versions,
     :data_structure_type
   ]
@@ -113,7 +113,7 @@ defmodule TdDdWeb.DataStructureController do
 
   def filter_opts(claims) do
     Enum.filter(@enrich_attrs, fn
-      :with_metadata_protected ->
+      :with_protected_metadata ->
         can?(claims, view_protected_metadata([DataStructure, DataStructureVersion]))
 
       _ ->

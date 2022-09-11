@@ -335,6 +335,8 @@ defmodule TdDdWeb.DataStructureVersionView do
           metadata,
           mutable_metadata,
           fn
+            # List to avoid conflicts merging _protected from both metadata and
+            # mutable_metadata
             @protected, mp, mmp -> [mp, mmp]
             _key, _mp, mmp -> mmp
           end

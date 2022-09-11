@@ -348,7 +348,7 @@ defmodule TdDd.DataStructuresTest do
       assert %{
                metadata: dsv_m,
                mutable_metadata: dsv_mm
-             } = DataStructures.get_latest_version(id, [:with_metadata_protected])
+             } = DataStructures.get_latest_version(id, [:with_protected_metadata])
 
       assert metadata == dsv_m
       assert mutable_metadata == dsv_mm
@@ -533,7 +533,7 @@ defmodule TdDd.DataStructuresTest do
                DataStructures.enriched_structure_versions(
                  data_structure_ids: [id],
                  relation_type_id: RelationTypes.default_id!(),
-                 with_metadata_protected: true
+                 with_protected_metadata: true
                )
 
       assert result_metadata == metadata
@@ -568,7 +568,7 @@ defmodule TdDd.DataStructuresTest do
                DataStructures.enriched_structure_versions(
                  data_structure_ids: [id],
                  relation_type_id: RelationTypes.default_id!(),
-                 with_metadata_protected: false
+                 with_protected_metadata: false
                )
 
       assert result_metadata == %{"m_foo" => "m_bar"}
@@ -818,7 +818,7 @@ defmodule TdDd.DataStructuresTest do
         relation_type_id: relation_type_id
       )
 
-      enrich_opts = [:parents, :children, :siblings, :relations, :with_metadata_protected]
+      enrich_opts = [:parents, :children, :siblings, :relations, :with_protected_metadata]
 
       assert %{
                id: id,

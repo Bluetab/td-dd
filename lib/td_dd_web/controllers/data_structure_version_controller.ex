@@ -30,7 +30,7 @@ defmodule TdDdWeb.DataStructureVersionController do
     :domain,
     :external_id,
     :links,
-    :with_metadata_protected,
+    :with_protected_metadata,
     :metadata_versions,
     :parents,
     :profile,
@@ -90,7 +90,7 @@ defmodule TdDdWeb.DataStructureVersionController do
       :grants ->
         can?(claims, view_grants(data_structure))
 
-      :with_metadata_protected ->
+      :with_protected_metadata ->
         can?(claims, view_protected_metadata([DataStructure, DataStructureVersion]))
 
       _ ->

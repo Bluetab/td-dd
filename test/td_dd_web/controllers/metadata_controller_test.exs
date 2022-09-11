@@ -251,7 +251,7 @@ defmodule TdDdWeb.MetadataControllerTest do
                  "mp2" => "mp2_value"
                }
              }
-           } = DataStructures.get_latest_version(id, [:with_metadata_protected])
+           } = DataStructures.get_latest_version(id, [:with_protected_metadata])
   end
 
   describe "td-2520" do

@@ -75,7 +75,7 @@ defmodule TdDd.Search.Store do
       content: :searchable,
       filters: filters,
       # Protected metadata is not indexed
-      with_metadata_protected: false
+      with_protected_metadata: false
     )
   end
 
