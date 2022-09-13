@@ -13,6 +13,8 @@ defmodule TdDq.Executions do
   alias TdDq.Executions.Group
   alias TdDq.Implementations.ImplementationQueries
 
+  @pagination_params [:order_by, :limit, :before, :after]
+
   @doc """
   Fetches the `Execution` with the given id.
   """
@@ -38,15 +40,28 @@ defmodule TdDq.Executions do
   @doc """
   Returns a list of execution groups.
   """
-  def list_groups(params \\ %{}, opts \\ []) do
-    preloads = Keyword.get(opts, :preload, [])
-
+  def list_groups(params \\ %{}) do
     params
-    |> Enum.reduce(Group, fn
-      {:created_by_id, id}, q -> where(q, [g], g.created_by_id == ^id)
-    end)
-    |> preload(^preloads)
+    |> group_query()
     |> Repo.all()
+  end
+
+  def group_min_max_count(params) do
+    params
+    |> Map.drop(@pagination_params)
+    |> group_query()
+    |> select([g], %{count: count(g), min_id: min(g.id), max_id: max(g.id)})
+    |> Repo.one()
+  end
+
+  defp group_query(params) do
+    Enum.reduce(params, Group, fn
+      {:created_by_id, id}, q -> where(q, [g], g.created_by_id == ^id)
+      {:order_by, order}, q -> order_by(q, ^order)
+      {:limit, lim}, q -> limit(q, ^lim)
+      {:before, id}, q -> where(q, [g], g.id < type(^id, :integer))
+      {:after, id}, q -> where(q, [g], g.id > type(^id, :integer))
+    end)
   end
 
   @doc """
@@ -134,5 +149,44 @@ defmodule TdDq.Executions do
     )
     |> Multi.run(:audit, Audit, :execution_group_created, [changeset])
     |> Repo.transaction()
+  end
+
+  ## Dataloader
+
+  def datasource do
+    Dataloader.Ecto.new(TdDd.Repo, query: &query/2, timeout: Dataloader.default_timeout())
+  end
+
+  defp query(queryable, params) do
+    Enum.reduce(params, queryable, fn _, q -> q end)
+  end
+
+  def kv_datasource({:status_counts, %{}}, groups) do
+    group_ids = Enum.map(groups, & &1.id)
+
+    counts =
+      Execution
+      |> where([e], e.group_id in ^group_ids)
+      |> join(:left, [e], qe in assoc(e, :quality_events))
+      |> distinct([e], e.id)
+      |> order_by([_, qe], desc: qe.inserted_at, desc: qe.id)
+      |> select([e, qe], %{
+        group_id: e.group_id,
+        type: fragment("coalesce(?, 'PENDING')", qe.type),
+        id: e.id
+      })
+      |> subquery()
+      |> group_by([:group_id, :type])
+      |> select([sq], %{id: sq.group_id, status: sq.type, count: count(sq)})
+      |> Repo.all()
+      |> Enum.group_by(& &1.id)
+
+    Map.new(groups, fn %{id: id} = group -> {group, status_counts(counts, id)} end)
+  end
+
+  defp status_counts(counts, id) do
+    counts
+    |> Map.get(id, [])
+    |> Map.new(fn %{status: status, count: count} -> {status, count} end)
   end
 end

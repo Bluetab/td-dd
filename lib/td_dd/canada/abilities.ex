@@ -60,6 +60,7 @@ defmodule TdDd.Canada.Abilities do
     def can?(%Claims{role: "admin"}, :query, _resource), do: true
 
     # GraphQL queries for regular users
+    def can?(%Claims{role: "user"}, :query, :me), do: true
     def can?(%Claims{role: "user"}, :query, :domains), do: true
     def can?(%Claims{role: "user"}, :query, :domain), do: true
     def can?(%Claims{role: "user"}, :query, :templates), do: true
