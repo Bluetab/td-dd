@@ -6,6 +6,14 @@
 
 - [TD-5076] Allow to clone implementations for non admin users
 
+### Changed
+
+- [TD-4794] GraphQL `domains` query now supports additional actions
+
+### Removed
+
+- Removed `/api/unit_domains` (replaced by GraphQL `domains` query)
+
 ## [4.50.0] 2022-09-05
 
 ### Added
