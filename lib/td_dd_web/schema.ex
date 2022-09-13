@@ -10,9 +10,11 @@ defmodule TdDdWeb.Schema do
   import_types(Absinthe.Plug.Types)
   import_types(Absinthe.Type.Custom)
   import_types(TdDdWeb.Schema.Domains)
+  import_types(TdDdWeb.Schema.Executions)
   import_types(TdDdWeb.Schema.GrantRequests)
   import_types(TdDdWeb.Schema.ImplementationResults)
   import_types(TdDdWeb.Schema.Implementations)
+  import_types(TdDdWeb.Schema.Me)
   import_types(TdDdWeb.Schema.ReferenceData)
   import_types(TdDdWeb.Schema.Rules)
   import_types(TdDdWeb.Schema.Sources)
@@ -21,6 +23,7 @@ defmodule TdDdWeb.Schema do
   import_types(TdDdWeb.Schema.Structures)
   import_types(TdDdWeb.Schema.Tags)
   import_types(TdDdWeb.Schema.Templates)
+  import_types(TdDdWeb.Schema.Types.Custom.Cursor)
   import_types(TdDdWeb.Schema.Types.Custom.DataURL)
   import_types(TdDdWeb.Schema.Types.Custom.JSON)
 
@@ -29,6 +32,7 @@ defmodule TdDdWeb.Schema do
     import_fields(:grant_request_queries)
     import_fields(:implementation_queries)
     import_fields(:implementation_results_queries)
+    import_fields(:me_queries)
     import_fields(:reference_data_queries)
     import_fields(:rule_queries)
     import_fields(:source_queries)
@@ -50,6 +54,11 @@ defmodule TdDdWeb.Schema do
     loader =
       Dataloader.new()
       |> Dataloader.add_source(TdDd.DataStructures, TdDd.DataStructures.datasource())
+      |> Dataloader.add_source(TdDq.Executions, TdDq.Executions.datasource())
+      |> Dataloader.add_source(
+        TdDq.Executions.KV,
+        Dataloader.KV.new(&TdDq.Executions.kv_datasource/2)
+      )
       |> Dataloader.add_source(TdCx.Sources, TdCx.Sources.datasource())
       |> Dataloader.add_source(:domain_actions, Dataloader.KV.new(fetch_permission_domains(ctx)))
 
