@@ -46,18 +46,31 @@ defmodule TdDd.DataStructures do
     clauses
     |> Enum.reduce(DataStructureVersion, fn
       {:since, since}, q ->
+        join_ds_updated_at =
+          q
+          |> join(:inner, [dsv], ds in assoc(dsv, :data_structure))
+          |> where(
+            [_dsv, ds],
+            ds.updated_at >= ^since
+          )
+
         q
         |> join(:inner, [dsv], ds in assoc(dsv, :data_structure))
         |> where(
-          [dsv, ds],
-          ds.updated_at >= ^since or dsv.updated_at >= ^since or dsv.deleted_at >= ^since
+          [dsv, _ds],
+          dsv.updated_at >= ^since or dsv.deleted_at >= ^since
         )
+        |> union(^join_ds_updated_at)
 
       {:min_id, id}, q ->
         where(q, [dsv], dsv.id >= ^id)
 
       {:order_by, "id"}, q ->
-        order_by(q, :id)
+        # Use literal instead of named field in case order_by is used with
+        # the union from the :since clause above, to avoid this error:
+        # ** (Postgrex.Error) ERROR 42P01 (undefined_table) missing
+        # FROM-clause entry for table "d0"
+        order_by(q, fragment("id"))
 
       {:limit, limit}, q ->
         limit(q, ^limit)
