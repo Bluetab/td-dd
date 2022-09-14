@@ -12,6 +12,7 @@ defmodule TdDd.Canada.MetadataAbilities do
   def can?(%Claims{role: "service"}, :view_protected_metadata, _any), do: true
 
   def can?(%Claims{} = claims, :view_protected_metadata, [DataStructure, DataStructureVersion]) do
+    ## REVIEW TD-5082: It is not working, the domains must be verified
     Permissions.authorized?(claims, :view_protected_metadata)
   end
 end

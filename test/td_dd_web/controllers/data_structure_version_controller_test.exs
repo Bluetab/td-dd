@@ -992,6 +992,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       [metadata: metadata, mutable_metadata: mutable_metadata, structure: structure]
     end
 
+    ## REVIEW TD-5082 make some permissions tests
     @tag authentication: [
            role: "user",
            permissions: [:view_data_structure, :view_protected_metadata]
