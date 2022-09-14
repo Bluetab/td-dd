@@ -21,7 +21,6 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Classifiers.Classifier
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureType
-  alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.Tags.StructureTag

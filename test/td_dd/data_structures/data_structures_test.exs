@@ -1638,14 +1638,15 @@ defmodule TdDd.DataStructuresTest do
         &insert(:data_structure, external_id: &1)
       )
 
-    Enum.map(
-      data_structures,
-      &insert(
-        :structure_metadata,
-        data_structure_id: &1.id,
-        fields: mutable_metadata
+    _inserted_mutable_metadata =
+      Enum.map(
+        data_structures,
+        &insert(
+          :structure_metadata,
+          data_structure_id: &1.id,
+          fields: mutable_metadata
+        )
       )
-    )
 
     [dsv, parent, child, sibling] =
       Enum.map(
