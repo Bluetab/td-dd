@@ -760,63 +760,15 @@ defmodule TdDd.DataStructuresTest do
       assert relations.children == []
     end
 
-    test "get_data_structure_version!/2 enriches with parents, children, siblings and relations, including their protected metadata" do
-      metadata = %{
-        "m_foo" => "m_bar",
-        DataStructures.protected() => %{
-          "m_field1" => "m_field1",
-          "m_field2" => "m_field2"
-        }
-      }
-
-      mutable_metadata = %{
-        "mm_foo" => "mm_bar",
-        DataStructures.protected() => %{
-          "mm_field1" => "mm_field1",
-          "mm_field2" => "mm_field2"
-        }
-      }
-
-      data_structures =
-        Enum.map(
-          ["structure", "parent", "child", "sibling"],
-          &insert(:data_structure, external_id: &1)
-        )
-
-      Enum.map(
-        data_structures,
-        &insert(
-          :structure_metadata,
-          data_structure_id: &1.id,
-          fields: mutable_metadata
-        )
-      )
-
-      [dsv, parent, child, sibling] =
-        Enum.map(
-          data_structures,
-          &insert(:data_structure_version, data_structure_id: &1.id, metadata: metadata)
-        )
-
-      relation_type_id = RelationTypes.default_id!()
-
-      insert(:data_structure_relation,
-        parent_id: parent.id,
-        child_id: dsv.id,
-        relation_type_id: relation_type_id
-      )
-
-      insert(:data_structure_relation,
-        parent_id: parent.id,
-        child_id: sibling.id,
-        relation_type_id: relation_type_id
-      )
-
-      insert(:data_structure_relation,
-        parent_id: dsv.id,
-        child_id: child.id,
-        relation_type_id: relation_type_id
-      )
+    test "get_data_structure_version!/2 enriches with protecting metadata, except parents, siblings and children." do
+      %{
+        dsv: dsv,
+        parent_dsv: parent,
+        child_dsv: child,
+        sibling_dsv: sibling,
+        metadata: metadata_with_protected,
+        mutable_metadata: mutable_metadata_with_protected
+      } = create_hierarchy_with_protected_metadata()
 
       enrich_opts = [:parents, :children, :siblings, :relations, :with_protected_metadata]
 
@@ -830,10 +782,11 @@ defmodule TdDd.DataStructuresTest do
                mutable_metadata: dsv_mm
              } = DataStructures.get_data_structure_version!(dsv.id, enrich_opts)
 
-      assert dsv_m == metadata
-      assert dsv_mm == mutable_metadata
+      assert dsv_m == metadata_with_protected
+      assert dsv_mm == mutable_metadata_with_protected
       assert id == dsv.id
-      # Parents, children and siblings have always their metadata removed
+      # Parents, children and siblings have always their metadata removed, even
+      # when enriched :with_protected_metadata
       assert parents <|> [%{parent | metadata: %{"m_foo" => "m_bar"}}]
       assert result_parent.metadata == %{"m_foo" => "m_bar"}
       # Enriched parents, children and siblings do not have mutable_metadata loaded.
@@ -857,62 +810,12 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "get_data_structure_version!/2 enriches with parents, children, siblings and relations, filtering protected metadata" do
-      metadata = %{
-        "m_foo" => "m_bar",
-        DataStructures.protected() => %{
-          "m_field1" => "m_field1",
-          "m_field2" => "m_field2"
-        }
-      }
-
-      mutable_metadata = %{
-        "mm_foo" => "mm_bar",
-        DataStructures.protected() => %{
-          "mm_field1" => "mm_field1",
-          "mm_field2" => "mm_field2"
-        }
-      }
-
-      data_structures =
-        Enum.map(
-          ["structure", "parent", "child", "sibling"],
-          &insert(:data_structure, external_id: &1)
-        )
-
-      Enum.map(
-        data_structures,
-        &insert(
-          :structure_metadata,
-          data_structure_id: &1.id,
-          fields: mutable_metadata
-        )
-      )
-
-      [dsv, parent, child, sibling] =
-        Enum.map(
-          data_structures,
-          &insert(:data_structure_version, data_structure_id: &1.id, metadata: metadata)
-        )
-
-      relation_type_id = RelationTypes.default_id!()
-
-      insert(:data_structure_relation,
-        parent_id: parent.id,
-        child_id: dsv.id,
-        relation_type_id: relation_type_id
-      )
-
-      insert(:data_structure_relation,
-        parent_id: parent.id,
-        child_id: sibling.id,
-        relation_type_id: relation_type_id
-      )
-
-      insert(:data_structure_relation,
-        parent_id: dsv.id,
-        child_id: child.id,
-        relation_type_id: relation_type_id
-      )
+      %{
+        dsv: dsv,
+        parent_dsv: parent,
+        child_dsv: child,
+        sibling_dsv: sibling
+      } = create_hierarchy_with_protected_metadata()
 
       enrich_opts = [:parents, :children, :siblings, :relations]
 
@@ -1710,5 +1613,73 @@ defmodule TdDd.DataStructuresTest do
           data_structure: build(:data_structure, confidential: false)
         )
     )
+  end
+
+  defp create_hierarchy_with_protected_metadata do
+    metadata = %{
+      "m_foo" => "m_bar",
+      DataStructures.protected() => %{
+        "m_field1" => "m_field1",
+        "m_field2" => "m_field2"
+      }
+    }
+
+    mutable_metadata = %{
+      "mm_foo" => "mm_bar",
+      DataStructures.protected() => %{
+        "mm_field1" => "mm_field1",
+        "mm_field2" => "mm_field2"
+      }
+    }
+
+    data_structures =
+      Enum.map(
+        ["structure", "parent", "child", "sibling"],
+        &insert(:data_structure, external_id: &1)
+      )
+
+    Enum.map(
+      data_structures,
+      &insert(
+        :structure_metadata,
+        data_structure_id: &1.id,
+        fields: mutable_metadata
+      )
+    )
+
+    [dsv, parent, child, sibling] =
+      Enum.map(
+        data_structures,
+        &insert(:data_structure_version, data_structure_id: &1.id, metadata: metadata)
+      )
+
+    relation_type_id = RelationTypes.default_id!()
+
+    insert(:data_structure_relation,
+      parent_id: parent.id,
+      child_id: dsv.id,
+      relation_type_id: relation_type_id
+    )
+
+    insert(:data_structure_relation,
+      parent_id: parent.id,
+      child_id: sibling.id,
+      relation_type_id: relation_type_id
+    )
+
+    insert(:data_structure_relation,
+      parent_id: dsv.id,
+      child_id: child.id,
+      relation_type_id: relation_type_id
+    )
+
+    %{
+      dsv: dsv,
+      parent_dsv: parent,
+      child_dsv: child,
+      sibling_dsv: sibling,
+      metadata: metadata,
+      mutable_metadata: mutable_metadata
+    }
   end
 end
