@@ -102,7 +102,7 @@ defmodule TdDdWeb.DataStructureController do
          {:can, true} <- {:can, can?(claims, update_data_structure(changeset))},
          {:ok, _} <- DataStructures.update_data_structure(claims, changeset, inherit) do
       claims = conn.assigns[:current_resource]
-      options = filter_opts(claims)
+      options = filter_opts(claims, structure)
       structure = get_data_structure(id, options)
       do_render_data_structure(conn, claims, structure)
     else
@@ -111,11 +111,11 @@ defmodule TdDdWeb.DataStructureController do
     end
   end
 
-  defp filter_opts(claims) do
+  defp filter_opts(claims, structure) do
     Enum.filter(@enrich_attrs, fn
       :with_protected_metadata ->
         ## REVIEW TD-5082: It is not working, the domains must be verified
-        can?(claims, view_protected_metadata([DataStructure, DataStructureVersion]))
+        can?(claims, view_protected_metadata(structure))
 
       _ ->
         true

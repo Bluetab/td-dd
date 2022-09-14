@@ -92,7 +92,7 @@ defmodule TdDdWeb.DataStructureVersionController do
 
       :with_protected_metadata ->
         ## REVIEW TD-5082:It is not working, the domains must be verified
-        can?(claims, view_protected_metadata([DataStructure, DataStructureVersion]))
+        can?(claims, view_protected_metadata(data_structure))
 
       _ ->
         true

@@ -42,7 +42,11 @@ defmodule TdDd.Canada.DataStructureAbilities do
   end
 
   def can?(%Claims{} = claims, action, %DataStructure{domain_ids: domain_ids})
-      when action in [:delete_data_structure, :update_data_structure, :view_data_structure] do
+      when action in [
+             :delete_data_structure,
+             :update_data_structure,
+             :view_data_structure
+           ] do
     Permissions.authorized?(claims, _permission = action, domain_ids)
   end
 
@@ -57,7 +61,8 @@ defmodule TdDd.Canada.DataStructureAbilities do
              :reject_structure_note,
              :send_structure_note_to_approval,
              :unreject_structure_note,
-             :view_structure_note_history
+             :view_structure_note_history,
+             :view_protected_metadata
              # :force_create_structure_note is not a permission (only admin can)
            ] do
     Permissions.authorized?(claims, :view_data_structure, domain_ids) and

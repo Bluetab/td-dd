@@ -971,12 +971,12 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     setup %{domain: %{id: domain_id}} do
       metadata = %{
         "m_foo" => "m_foo",
-        @protected => %{"m_foo" => "m_foo"}
+        @protected => %{"mp_foo" => "mp_foo"}
       }
 
       mutable_metadata = %{
         "mm_foo" => "mm_foo",
-        @protected => %{"mm_protected" => "mm_protected"}
+        @protected => %{"mmp_protected" => "mmp_protected"}
       }
 
       structure = insert(:data_structure, domain_ids: [domain_id])
@@ -1050,7 +1050,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       metadata,
       mutable_metadata,
       fn
-        @protected, mp, mmp -> [mp, mmp]
+        @protected, mp, mmp -> Map.merge(mp, mmp)
         _key, _mp, mmp -> mmp
       end
     )

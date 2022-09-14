@@ -335,9 +335,10 @@ defmodule TdDdWeb.DataStructureVersionView do
           metadata,
           mutable_metadata,
           fn
-            # List to avoid conflicts merging _protected from both metadata and
-            # mutable_metadata
-            @protected, mp, mmp -> [mp, mmp]
+            # Merge metadata and mutable_metadata @protected fields.
+            # If there is a conflict in the @protected content, the one from
+            # mutable metadata (rightmost in the Map.merge) will prevail.
+            @protected, mp, mmp -> Map.merge(mp, mmp)
             _key, _mp, mmp -> mmp
           end
         )
