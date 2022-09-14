@@ -2,6 +2,7 @@ defmodule TdDd.LoaderTest do
   use TdDd.DataCase
 
   import Ecto.Query
+  import ExUnit.CaptureLog
   import TdDd.TestOperators
 
   alias TdDd.DataStructures
@@ -516,8 +517,11 @@ defmodule TdDd.LoaderTest do
 
       relation = %{child_external_id: "xxx", parent_external_id: "xxx"}
 
-      {:error, :graph, "reflexive relations are not permitted (xxx)", %{} = _changes_so_far} =
-        Loader.load(%{structures: [structure], relations: [relation]}, audit())
+      assert capture_log(fn ->
+               {:error, :graph, "reflexive relations are not permitted (xxx)",
+                %{} = _changes_so_far} =
+                 Loader.load(%{structures: [structure], relations: [relation]}, audit())
+             end) =~ "reflexive relations are not permitted (xxx)"
     end
 
     test "loads changes in relations with relation type" do
