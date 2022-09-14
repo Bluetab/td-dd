@@ -5,6 +5,8 @@
 ### Added
 
 - [TD-5076] Allow to clone implementations for non admin users
+- [TD-5169] Improve list_data_structure_versions since query performance
+- [TD-5170] Capture graph tests Logger.warn output
 
 ### Changed
 
