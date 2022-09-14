@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-5076] Allow to clone implementations for non admin users
+- [TD-5169] Improve list_data_structure_versions since query performance
 
 ## [4.50.0] 2022-09-05
 
