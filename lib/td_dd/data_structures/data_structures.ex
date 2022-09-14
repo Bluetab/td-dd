@@ -200,7 +200,7 @@ defmodule TdDd.DataStructures do
         &1,
         deleted: deleted,
         with_confidential: with_confidential,
-        with_protected_metadata: with_protected_metadata
+        with_protected_metadata: false
       )
     )
     |> enrich(
@@ -210,7 +210,7 @@ defmodule TdDd.DataStructures do
         &1,
         deleted: deleted,
         with_confidential: with_confidential,
-        with_protected_metadata: with_protected_metadata
+        with_protected_metadata: false
       )
     )
     |> enrich(
@@ -220,7 +220,7 @@ defmodule TdDd.DataStructures do
         &1,
         deleted: deleted,
         with_confidential: with_confidential,
-        with_protected_metadata: with_protected_metadata
+        with_protected_metadata: false
       )
     )
     |> enrich(

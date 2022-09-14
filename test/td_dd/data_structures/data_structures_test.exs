@@ -833,17 +833,24 @@ defmodule TdDd.DataStructuresTest do
       assert dsv_m == metadata
       assert dsv_mm == mutable_metadata
       assert id == dsv.id
-      assert parents <|> [parent]
-      assert result_parent.metadata == metadata
+      # Parents, children and siblings have always their metadata removed
+      assert parents <|> [%{parent | metadata: %{"m_foo" => "m_bar"}}]
+      assert result_parent.metadata == %{"m_foo" => "m_bar"}
       # Enriched parents, children and siblings do not have mutable_metadata loaded.
       assert result_parent.mutable_metadata == nil
-      assert children <|> [child]
-      assert result_child.metadata == metadata
+      assert children <|> [%{child | metadata: %{"m_foo" => "m_bar"}}]
+      assert result_child.metadata == %{"m_foo" => "m_bar"}
       assert result_child.mutable_metadata == nil
-      assert siblings <|> [sibling, dsv]
-      assert result_sibling.metadata == metadata
+
+      assert siblings
+             <|> [
+               %{sibling | metadata: %{"m_foo" => "m_bar"}},
+               %{dsv | metadata: %{"m_foo" => "m_bar"}}
+             ]
+
+      assert result_sibling.metadata == %{"m_foo" => "m_bar"}
       assert result_sibling.mutable_metadata == nil
-      assert result_dsv.metadata == metadata
+      assert result_dsv.metadata == %{"m_foo" => "m_bar"}
       assert result_dsv.mutable_metadata == nil
       assert relations.parents == []
       assert relations.children == []
