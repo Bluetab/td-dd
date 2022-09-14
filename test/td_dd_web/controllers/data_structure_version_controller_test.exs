@@ -992,7 +992,6 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       [metadata: metadata, mutable_metadata: mutable_metadata, structure: structure]
     end
 
-    ## REVIEW TD-5082 make some permissions tests
     @tag authentication: [
            role: "user",
            permissions: [:view_data_structure, :view_protected_metadata]
@@ -1035,6 +1034,54 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                    conn,
                    :show,
                    structure.id,
+                   "latest"
+                 )
+               )
+               |> json_response(:ok)
+
+      assert merged_metadata ==
+               merge_metadata(metadata, mutable_metadata) |> Map.drop([@protected])
+    end
+
+    ## REVIEW TD-5082 make some permissions tests
+    @tag authentication: [
+           role: "user",
+           permissions: [:view_data_structure, :view_protected_metadata]
+         ]
+    test "filters protected metadata fields if view_protected metadata permission domain (@tag above) does not match structure domain",
+         %{
+           conn: conn,
+           metadata: metadata,
+           mutable_metadata: mutable_metadata,
+           claims: claims
+         } do
+      %{id: another_domain_id} = CacheHelpers.insert_domain()
+
+      CacheHelpers.put_session_permissions(claims, %{
+        "view_data_structure" => [another_domain_id]
+        # No view protected metadata for another_domain_id.
+      })
+
+      another_structure = insert(:data_structure, domain_ids: [another_domain_id])
+
+      insert(
+        :data_structure_version,
+        data_structure_id: another_structure.id,
+        metadata: metadata
+      )
+
+      insert(:structure_metadata,
+        data_structure_id: another_structure.id,
+        fields: mutable_metadata
+      )
+
+      assert %{"data" => %{"metadata" => merged_metadata}} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(
+                   conn,
+                   :show,
+                   another_structure.id,
                    "latest"
                  )
                )
