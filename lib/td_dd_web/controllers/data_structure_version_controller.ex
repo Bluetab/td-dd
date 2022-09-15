@@ -28,6 +28,7 @@ defmodule TdDdWeb.DataStructureVersionController do
     :domain,
     :external_id,
     :links,
+    :with_protected_metadata,
     :metadata_versions,
     :parents,
     :profile,
@@ -78,10 +79,20 @@ defmodule TdDdWeb.DataStructureVersionController do
 
   defp enrich_opts(%{user_id: user_id} = claims, data_structure) do
     Enum.filter(@enrich_attrs, fn
-      :profile -> can?(claims, view_data_structures_profile(data_structure))
-      :with_confidential -> can?(claims, manage_confidential_structures(data_structure))
-      :grants -> can?(claims, view_grants(data_structure))
-      _ -> true
+      :profile ->
+        can?(claims, view_data_structures_profile(data_structure))
+
+      :with_confidential ->
+        can?(claims, manage_confidential_structures(data_structure))
+
+      :grants ->
+        can?(claims, view_grants(data_structure))
+
+      :with_protected_metadata ->
+        can?(claims, view_protected_metadata(data_structure))
+
+      _ ->
+        true
     end) ++ [user_id: user_id]
   end
 
@@ -138,7 +149,10 @@ defmodule TdDdWeb.DataStructureVersionController do
   end
 
   defp get_data_structure_version(data_structure_id, "latest", opts) do
-    DataStructures.get_latest_version(data_structure_id, opts)
+    DataStructures.get_latest_version(
+      data_structure_id,
+      opts
+    )
   end
 
   defp get_data_structure_version(data_structure_id, version, opts) do
