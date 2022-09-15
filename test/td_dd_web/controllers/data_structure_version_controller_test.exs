@@ -1043,7 +1043,6 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                merge_metadata(metadata, mutable_metadata) |> Map.drop([@protected])
     end
 
-    ## REVIEW TD-5082 make some permissions tests
     @tag authentication: [
            role: "user",
            permissions: [:view_data_structure, :view_protected_metadata]
