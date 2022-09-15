@@ -114,7 +114,6 @@ defmodule TdDdWeb.DataStructureController do
   defp filter_opts(claims, structure) do
     Enum.filter(@enrich_attrs, fn
       :with_protected_metadata ->
-        ## REVIEW TD-5082: It is not working, the domains must be verified
         can?(claims, view_protected_metadata(structure))
 
       _ ->

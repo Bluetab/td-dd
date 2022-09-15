@@ -8,8 +8,6 @@ defmodule TdDdWeb.DataStructureVersionController do
   alias Ecto
   alias TdCache.TemplateCache
   alias TdDd.DataStructures
-  alias TdDd.DataStructures.DataStructure
-  alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Tags
   alias TdDdWeb.SwaggerDefinitions
 
@@ -91,7 +89,6 @@ defmodule TdDdWeb.DataStructureVersionController do
         can?(claims, view_grants(data_structure))
 
       :with_protected_metadata ->
-        ## REVIEW TD-5082:It is not working, the domains must be verified
         can?(claims, view_protected_metadata(data_structure))
 
       _ ->

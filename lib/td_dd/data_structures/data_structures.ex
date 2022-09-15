@@ -1008,15 +1008,13 @@ defmodule TdDd.DataStructures do
     {enrich_opts, opts} = Keyword.split(opts, [:content, :filters])
     enrich = StructureVersionEnricher.enricher(enrich_opts)
 
-    with_protected_metadata = Keyword.get(opts, :with_protected_metadata)
-
     opts
     |> Map.new()
     |> Map.drop([:with_protected_metadata])
     |> DataStructureQueries.enriched_structure_versions()
     |> Repo.all()
     |> Enum.map(&enrich.(&1))
-    |> protect_metadata(with_protected_metadata)
+    |> protect_metadata(Keyword.get(opts, :with_protected_metadata))
   end
 
   ## Dataloader
