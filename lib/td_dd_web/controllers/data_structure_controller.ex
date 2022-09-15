@@ -33,6 +33,7 @@ defmodule TdDdWeb.DataStructureController do
     :siblings,
     :system,
     :versions,
+    :with_protected_metadata,
     :metadata_versions,
     :data_structure_type
   ]
@@ -100,12 +101,24 @@ defmodule TdDdWeb.DataStructureController do
            DataStructures.update_changeset(claims, structure, structure_params),
          {:can, true} <- {:can, can?(claims, update_data_structure(changeset))},
          {:ok, _} <- DataStructures.update_data_structure(claims, changeset, inherit) do
-      structure = get_data_structure(id)
+      claims = conn.assigns[:current_resource]
+      options = filter_opts(claims, structure)
+      structure = get_data_structure(id, options)
       do_render_data_structure(conn, claims, structure)
     else
       %{valid?: false} = changeset -> {:error, changeset}
       other -> other
     end
+  end
+
+  defp filter_opts(claims, structure) do
+    Enum.filter(@enrich_attrs, fn
+      :with_protected_metadata ->
+        can?(claims, view_protected_metadata(structure))
+
+      _ ->
+        true
+    end)
   end
 
   swagger_path :delete do
@@ -451,8 +464,8 @@ defmodule TdDdWeb.DataStructureController do
     end
   end
 
-  defp get_data_structure(id) do
-    case DataStructures.get_latest_version(id, @enrich_attrs) do
+  defp get_data_structure(id, enrich_attrs) do
+    case DataStructures.get_latest_version(id, enrich_attrs) do
       nil ->
         DataStructures.get_data_structure!(id)
 
