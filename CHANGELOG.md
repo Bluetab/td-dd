@@ -10,6 +10,10 @@
 - [TD-5082] Filter protected metadata (field "_protected")
 
 
+### Changed
+
+- [TD-5168] GraphQL `source` query no longer enriches dynamic domain fields
+
 ## [4.50.0] 2022-09-05
 
 ### Added
