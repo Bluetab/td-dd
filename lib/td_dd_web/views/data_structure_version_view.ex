@@ -8,6 +8,8 @@ defmodule TdDdWeb.DataStructureVersionView do
   alias TdDdWeb.TagView
   alias TdDqWeb.ImplementationStructureView
 
+  @protected DataStructures.protected()
+
   def render("show.json", %{actions: actions} = assigns) do
     "show.json"
     |> render(Map.delete(assigns, :actions))
@@ -325,8 +327,21 @@ defmodule TdDdWeb.DataStructureVersionView do
     %{fields: mutable_metadata} = Enum.max_by(metadata_versions, & &1.version)
 
     Map.update(dsv, :metadata, mutable_metadata, fn
-      nil -> mutable_metadata
-      %{} = metadata -> Map.merge(metadata, mutable_metadata)
+      nil ->
+        mutable_metadata
+
+      %{} = metadata ->
+        Map.merge(
+          metadata,
+          mutable_metadata,
+          fn
+            # Merge metadata and mutable_metadata @protected fields.
+            # If there is a conflict in the @protected content, the one from
+            # mutable metadata (rightmost in the Map.merge) will prevail.
+            @protected, mp, mmp -> Map.merge(mp, mmp)
+            _key, _mp, mmp -> mmp
+          end
+        )
     end)
   end
 

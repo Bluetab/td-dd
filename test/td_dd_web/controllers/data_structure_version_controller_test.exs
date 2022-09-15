@@ -5,10 +5,12 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
   import Mox
 
+  alias TdDd.DataStructures
   alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
 
   @moduletag sandbox: :shared
+  @protected DataStructures.protected()
 
   setup_all do
     start_supervised!(TdDd.Lineage.GraphData)
@@ -121,7 +123,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                )
                |> json_response(:ok)
 
-      assert merged_metadata == Map.merge(metadata, mutable_metadata)
+      assert merged_metadata == merge_metadata(metadata, mutable_metadata)
     end
 
     @tag authentication: [role: "admin"]
@@ -963,6 +965,141 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                })
                |> json_response(:ok)
     end
+  end
+
+  describe "protected metadata" do
+    setup %{domain: %{id: domain_id}} do
+      metadata = %{
+        "m_foo" => "m_foo",
+        @protected => %{"mp_foo" => "mp_foo"}
+      }
+
+      mutable_metadata = %{
+        "mm_foo" => "mm_foo",
+        @protected => %{"mmp_protected" => "mmp_protected"}
+      }
+
+      structure = insert(:data_structure, domain_ids: [domain_id])
+
+      insert(:structure_metadata, data_structure_id: structure.id, fields: mutable_metadata)
+
+      insert(
+        :data_structure_version,
+        data_structure_id: structure.id,
+        metadata: metadata
+      )
+
+      [metadata: metadata, mutable_metadata: mutable_metadata, structure: structure]
+    end
+
+    @tag authentication: [
+           role: "user",
+           permissions: [:view_data_structure, :view_protected_metadata]
+         ]
+    test "renders protected metadata fields if the user has view_protected_metadata permission",
+         %{
+           conn: conn,
+           metadata: metadata,
+           mutable_metadata: mutable_metadata,
+           structure: structure
+         } do
+      assert %{"data" => %{"metadata" => merged_metadata}} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(
+                   conn,
+                   :show,
+                   structure.id,
+                   "latest"
+                 )
+               )
+               |> json_response(:ok)
+
+      assert merged_metadata == merge_metadata(metadata, mutable_metadata)
+      assert @protected in Map.keys(merged_metadata)
+    end
+
+    @tag authentication: [role: "user", permissions: [:view_data_structure]]
+    test "filters protected metadata fields if the user does not have view_protected_metadata permission",
+         %{
+           conn: conn,
+           metadata: metadata,
+           mutable_metadata: mutable_metadata,
+           structure: structure
+         } do
+      assert %{"data" => %{"metadata" => merged_metadata}} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(
+                   conn,
+                   :show,
+                   structure.id,
+                   "latest"
+                 )
+               )
+               |> json_response(:ok)
+
+      assert merged_metadata ==
+               merge_metadata(metadata, mutable_metadata) |> Map.drop([@protected])
+    end
+
+    @tag authentication: [
+           role: "user",
+           permissions: [:view_data_structure, :view_protected_metadata]
+         ]
+    test "filters protected metadata fields if view_protected metadata permission domain (@tag above) does not match structure domain",
+         %{
+           conn: conn,
+           metadata: metadata,
+           mutable_metadata: mutable_metadata,
+           claims: claims
+         } do
+      %{id: another_domain_id} = CacheHelpers.insert_domain()
+
+      CacheHelpers.put_session_permissions(claims, %{
+        "view_data_structure" => [another_domain_id]
+        # No view protected metadata for another_domain_id.
+      })
+
+      another_structure = insert(:data_structure, domain_ids: [another_domain_id])
+
+      insert(
+        :data_structure_version,
+        data_structure_id: another_structure.id,
+        metadata: metadata
+      )
+
+      insert(:structure_metadata,
+        data_structure_id: another_structure.id,
+        fields: mutable_metadata
+      )
+
+      assert %{"data" => %{"metadata" => merged_metadata}} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(
+                   conn,
+                   :show,
+                   another_structure.id,
+                   "latest"
+                 )
+               )
+               |> json_response(:ok)
+
+      assert merged_metadata ==
+               merge_metadata(metadata, mutable_metadata) |> Map.drop([@protected])
+    end
+  end
+
+  defp merge_metadata(metadata, mutable_metadata) do
+    Map.merge(
+      metadata,
+      mutable_metadata,
+      fn
+        @protected, mp, mmp -> Map.merge(mp, mmp)
+        _key, _mp, mmp -> mmp
+      end
+    )
   end
 
   defp create_structure_hierarchy(_) do

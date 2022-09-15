@@ -67,7 +67,7 @@ defmodule TdDd.Search.StructureEnricher do
       ) do
     reply =
       data_structure
-      |> enrich_domains()
+      |> enrich_domains
       |> enrich_links(links)
       |> search_content(content_opt, types, type)
 

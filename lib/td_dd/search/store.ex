@@ -73,7 +73,9 @@ defmodule TdDd.Search.Store do
       ids: ids,
       relation_type_id: relation_type_id,
       content: :searchable,
-      filters: filters
+      filters: filters,
+      # Protected metadata is not indexed
+      with_protected_metadata: false
     )
   end
 
