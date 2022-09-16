@@ -105,6 +105,85 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
     end
 
     @tag authentication: [role: "admin"]
+    test "if user_id is specified, will not take the claims user_id", %{
+      conn: conn,
+      claims: %{user_id: created_by_id},
+      create_params: create_params
+    } do
+      user_id = :rand.uniform(10)
+      params = Map.put(create_params, "user_id", user_id)
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.grant_request_group_path(conn, :create),
+                 grant_request_group: params
+               )
+               |> json_response(:created)
+
+      assert %{"id" => id} = data
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.grant_request_group_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "id" => ^id,
+               "user_id" => ^user_id,
+               "created_by_id" => ^created_by_id
+             } = data
+    end
+
+    @tag authentication: [user: "non_admin", permissions: [:create_grant_request]]
+    test "user without permission cannot create request_group with different user_id", %{
+      conn: conn,
+      domain: %{id: domain_id}
+    } do
+      %{id: ds_id} = insert(:data_structure, domain_ids: [domain_id])
+      user_id = :rand.uniform(10)
+
+      params = %{
+        "user_id" => user_id,
+        "requests" => [%{"data_structure_id" => ds_id}],
+        "type" => nil
+      }
+
+      assert conn
+             |> post(Routes.grant_request_group_path(conn, :create),
+               grant_request_group: params
+             )
+             |> json_response(:forbidden)
+    end
+
+    @tag authentication: [
+           user: "non_admin",
+           permissions: [:create_grant_request, :create_foreign_grant_request]
+         ]
+    test "user with permission can create request_group on authorized user_id", %{
+      conn: conn,
+      domain: %{id: domain_id}
+    } do
+      %{id: ds_id} = insert(:data_structure, domain_ids: [domain_id])
+
+      role_name = "test_role"
+      CacheHelpers.put_permission_on_role("allow_foreign_grant_request", role_name)
+      %{id: user_id} = CacheHelpers.insert_user()
+      CacheHelpers.insert_acl(domain_id, role_name, [user_id])
+
+      params = %{
+        "user_id" => user_id,
+        "requests" => [%{"data_structure_id" => ds_id}],
+        "type" => nil
+      }
+
+      assert conn
+             |> post(Routes.grant_request_group_path(conn, :create),
+               grant_request_group: params
+             )
+             |> json_response(:created)
+    end
+
+    @tag authentication: [role: "admin"]
     test "renders grant_request_group when data is valid with modification_grant", %{
       conn: conn,
       claims: %{user_id: user_id},

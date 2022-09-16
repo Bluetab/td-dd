@@ -197,10 +197,18 @@ defmodule TdDd.Canada.Abilities do
       GrantAbilities.can?(claims, :create_grant_request, domain_ids)
     end
 
-    def can?(%Claims{role: "admin"}, :create_grant_request_group, %DataStructure{}), do: true
+    def can?(%Claims{role: "admin"}, :create_grant_request_group, _), do: true
 
     def can?(%Claims{} = claims, :create_grant_request_group, params) do
       GrantAbilities.can?(claims, :create_grant_request_group, params)
+    end
+
+    def can?(%Claims{role: "admin"}, :create_foreign_grant_request, _), do: true
+
+    def can?(%Claims{} = claims, :create_foreign_grant_request, %DataStructure{
+          domain_ids: domain_ids
+        }) do
+      GrantAbilities.can?(claims, :create_foreign_grant_request, domain_ids)
     end
 
     def can?(%Claims{} = claims, action, %GrantRequestGroup{} = group) do
