@@ -12,11 +12,12 @@
 
 ### Changed
 
+- [TD-5168] GraphQL `source` query no longer enriches dynamic domain fields
 - [TD-4794] GraphQL `domains` query now supports additional actions
 
 ### Removed
 
-- Removed `/api/unit_domains` (replaced by GraphQL `domains` query)
+- [TD-4794] Removed `/api/unit_domains` (replaced by GraphQL `domains` query)
 
 ## [4.50.0] 2022-09-05
 
