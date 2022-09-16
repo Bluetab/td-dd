@@ -119,6 +119,14 @@ defmodule CacheHelpers do
 
   defp expand_domain_ids(entry), do: [entry]
 
+  def put_permission_on_role(permission, role_name) do
+    put_permissions_on_roles(%{permission => [role_name]})
+  end
+
+  def put_permissions_on_roles(permissions) do
+    TdCache.Permissions.put_permission_roles(permissions)
+  end
+
   def put_session_permissions(%{} = claims, domain_id, permissions) do
     domain_ids_by_permission = Map.new(permissions, &{to_string(&1), [domain_id]})
     put_session_permissions(claims, domain_ids_by_permission)

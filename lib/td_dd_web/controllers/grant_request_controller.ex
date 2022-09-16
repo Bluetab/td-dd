@@ -19,7 +19,10 @@ defmodule TdDdWeb.GrantRequestController do
   def index(conn, %{"user" => "me"} = params) do
     with claims <- conn.assigns[:current_resource],
          {:ok, grant_requests} <-
-           Requests.list_grant_requests(claims, Map.put(params, "user_id", claims.user_id)) do
+           Requests.list_grant_requests(
+             claims,
+             Map.put(params, "user_id_or_created_by_id", claims.user_id)
+           ) do
       render(conn, "index.json", grant_requests: grant_requests)
     end
   end

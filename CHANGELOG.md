@@ -8,6 +8,7 @@
 - [TD-5169] Improve list_data_structure_versions since query performance
 - [TD-5170] Capture graph tests Logger.warn output
 - [TD-5082] Filter protected metadata (field "_protected")
+- [TD-5133] Support for creating grant requests for third parties
 
 
 ### Changed
