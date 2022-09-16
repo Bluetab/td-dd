@@ -224,10 +224,11 @@ defmodule TdDdWeb.GrantRequestControllerTest do
       %{id: id} =
         insert(:grant_request,
           data_structure_id: data_structure_id,
-          group: insert(:grant_request_group,
-            user_id: user_id,
-            created_by_id: user_id
-          )
+          group:
+            insert(:grant_request_group,
+              user_id: user_id,
+              created_by_id: user_id
+            )
         )
 
       assert %{"data" => %{"id" => ^id, "_embedded" => embedded}} =
@@ -240,7 +241,7 @@ defmodule TdDdWeb.GrantRequestControllerTest do
       assert %{
                "id" => ^data_structure_id,
                "external_id" => ^external_id,
-               "name" => ^name,
+               "name" => ^name
              } = data_structure
 
       assert %{"type" => _, "id" => _, "_embedded" => embedded} = group

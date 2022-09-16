@@ -42,7 +42,7 @@ defmodule TdDd.Grants.RequestsTest do
 
     test "create_grant_request_group/2 with valid data creates a grant_request_group" do
       %{id: data_structure_id} = insert(:data_structure)
-      %{user_id: user_id} =  build(:claims)
+      %{user_id: user_id} = build(:claims)
 
       params = %{
         type: @template_name,
@@ -107,8 +107,7 @@ defmodule TdDd.Grants.RequestsTest do
         created_by_id: user_id
       }
 
-      assert {:ok, %{group: %{requests: requests}}} =
-               Requests.create_grant_request_group(params)
+      assert {:ok, %{group: %{requests: requests}}} = Requests.create_grant_request_group(params)
 
       assert [
                %{

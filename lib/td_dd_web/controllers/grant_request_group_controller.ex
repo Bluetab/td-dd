@@ -43,6 +43,7 @@ defmodule TdDdWeb.GrantRequestGroupController do
 
   defp with_created_by_id(params, %{user_id: created_by_id}) do
     user_id = Map.get(params, "user_id", created_by_id)
+
     params
     |> Map.put("user_id", user_id)
     |> Map.put("created_by_id", created_by_id)

@@ -548,6 +548,7 @@ defmodule TdDd.Factory do
 
   def grant_request_group_factory(attrs) do
     user_id = sequence(:user_id, &"#{&1}")
+
     %TdDd.Grants.GrantRequestGroup{
       id: sequence(:grant_request_group, &(&1 + 1_080)),
       user_id: user_id,

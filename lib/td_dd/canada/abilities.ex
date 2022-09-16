@@ -204,7 +204,9 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%Claims{role: "admin"}, :create_foreign_grant_request, _), do: true
 
-    def can?(%Claims{} = claims, :create_foreign_grant_request, %DataStructure{domain_ids: domain_ids}) do
+    def can?(%Claims{} = claims, :create_foreign_grant_request, %DataStructure{
+          domain_ids: domain_ids
+        }) do
       GrantAbilities.can?(claims, :create_foreign_grant_request, domain_ids)
     end
 
