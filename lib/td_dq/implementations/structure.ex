@@ -36,7 +36,7 @@ defmodule TdDq.Implementations.Structure do
   defp validate_required_by_type(struct, "reference_dataset", params) do
     struct
     |> cast(params, [:type])
-    |> validate_required([:id])
+    |> validate_required(:id)
   end
 
   defp validate_required_by_type(struct, _, _) do

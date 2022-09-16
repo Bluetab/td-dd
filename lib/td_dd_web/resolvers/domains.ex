@@ -5,6 +5,7 @@ defmodule TdDdWeb.Resolvers.Domains do
 
   alias TdCache.Permissions
   alias TdCache.TaxonomyCache
+  alias TdDd.Lineage.Units
 
   def domains(_parent, %{action: action}, resolution) do
     {:ok, permitted_domains(action, resolution)}
@@ -27,6 +28,7 @@ defmodule TdDdWeb.Resolvers.Domains do
     resolution
     |> claims()
     |> permitted_domain_ids(action)
+    |> maybe_filter(action)
     |> Enum.map(&TaxonomyCache.get_domain/1)
     |> Enum.reject(&is_nil/1)
   end
@@ -96,25 +98,33 @@ defmodule TdDdWeb.Resolvers.Domains do
     |> intersection()
   end
 
-  defp permitted_domain_ids(%{role: "user", jti: jti}, "manageSegments"),
-    do: Permissions.permitted_domain_ids(jti, :manage_segments)
-
   defp permitted_domain_ids(%{role: "user", jti: jti}, "manageSource"),
     do: Permissions.permitted_domain_ids(jti, :manage_data_sources)
 
   defp permitted_domain_ids(%{role: "user", jti: jti}, "manageTags"),
     do: Permissions.permitted_domain_ids(jti, :link_data_structure_tag)
 
-  defp permitted_domain_ids(%{role: "user", jti: jti}, "publishImplementation"),
-    do: Permissions.permitted_domain_ids(jti, :publish_implementation)
-
-  defp permitted_domain_ids(%{role: "user", jti: jti}, "viewDomain"),
+  defp permitted_domain_ids(%{role: "user", jti: jti}, "shareConcept"),
     do: Permissions.permitted_domain_ids(jti, :view_domain)
 
   defp permitted_domain_ids(%{role: "user", jti: jti}, "createForeignGrantRequest"),
     do: Permissions.permitted_domain_ids(jti, :create_foreign_grant_request)
 
+  defp permitted_domain_ids(%{role: "user", jti: jti}, action_or_permission),
+    do: Permissions.permitted_domain_ids(jti, Macro.underscore(action_or_permission))
+
   defp permitted_domain_ids(_other, _action), do: []
+
+  defp maybe_filter(domain_ids, "viewLineage") do
+    with [_ | _] = unit_domain_ids <- Units.list_domain_ids(),
+         [_ | _] = reaching_ids <- TaxonomyCache.reaching_domain_ids(unit_domain_ids) do
+      intersection([domain_ids, reaching_ids])
+    else
+      _ -> []
+    end
+  end
+
+  defp maybe_filter(domain_ids, _action), do: domain_ids
 
   defp claims(%{context: %{claims: claims}}), do: claims
   defp claims(_), do: nil

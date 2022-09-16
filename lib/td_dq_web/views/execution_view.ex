@@ -68,8 +68,17 @@ defmodule TdDqWeb.ExecutionView do
   end
 
   defp put_embedding({:quality_events, events}, %{} = acc) when is_list(events) do
+    status =
+      case Enum.max_by(events, & &1.id, fn -> nil end) do
+        %{type: status} -> status
+        _ -> "PENDING"
+      end
+
     events = render_many(events, QualityEventView, "quality_event.json")
-    Map.put(acc, :quality_events, events)
+
+    acc
+    |> Map.put(:quality_events, events)
+    |> Map.put(:status, status)
   end
 
   defp put_embedding({:group, %{df_content: %{} = df_content}}, %{} = acc) do

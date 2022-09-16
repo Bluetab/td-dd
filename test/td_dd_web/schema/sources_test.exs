@@ -213,7 +213,11 @@ defmodule TdDdWeb.Schema.SourcesTest do
 
     @tag authentication: [role: "admin"]
     @tag domain: "foo"
-    test "enriches domain configuration from cache", %{conn: conn, source: %{id: source_id}} do
+    test "does not enrich domain configuration from cache", %{
+      conn: conn,
+      source: %{id: source_id},
+      domain: %{id: domain_id}
+    } do
       assert %{"data" => data} =
                response =
                conn
@@ -226,7 +230,7 @@ defmodule TdDdWeb.Schema.SourcesTest do
       assert response["errors"] == nil
       assert %{"source" => source} = data
       assert %{"config" => config} = source
-      assert %{"name" => "foo", "external_id" => _} = config["domain"]
+      assert %{"domain" => ^domain_id} = config
     end
 
     @tag authentication: [role: "admin"]

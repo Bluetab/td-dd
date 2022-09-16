@@ -17,8 +17,9 @@ defmodule TdDq.Executions.Group do
     field(:created_by_id, :integer)
     field(:df_content, :map)
     has_many(:executions, Execution)
+    field(:status_count, {:array, :map}, virtual: true)
     many_to_many(:implementations, Implementation, join_through: Execution)
-    timestamps(updated_at: false)
+    timestamps(updated_at: false, type: :utc_datetime_usec)
   end
 
   def changeset(%{} = params) do

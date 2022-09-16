@@ -13,6 +13,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   @template_name "data_structure_controller_test_template"
   @template_with_multifields_name "data_structure_controller_test_template_with_multifields"
   @receive_timeout 500
+  @protected DataStructures.protected()
 
   # function that returns the function to be injected
   def notify_callback do
@@ -293,6 +294,85 @@ defmodule TdDdWeb.DataStructureControllerTest do
              )
              |> validate_resp_schema(schema, "DataStructureResponse")
              |> json_response(:forbidden)
+    end
+
+    @tag authentication: [
+           role: "user",
+           permissions: [
+             :view_data_structure,
+             :update_data_structure,
+             :manage_confidential_structures,
+             :view_protected_metadata
+           ]
+         ]
+    test "shows updated structure protected metadata if user has view_protected_metadata permission",
+         %{
+           conn: conn,
+           data_structure: data_structure,
+           swagger_schema: schema
+         } do
+      mutable_metadata = %{
+        "mm_foo" => "mm_foo",
+        @protected => %{"mm_protected" => "mm_protected"}
+      }
+
+      insert(:structure_metadata, data_structure_id: data_structure.id, fields: mutable_metadata)
+
+      assert %{"data" => data} =
+               conn
+               |> put(data_structure_path(conn, :update, data_structure),
+                 data_structure: %{confidential: true}
+               )
+               |> validate_resp_schema(schema, "DataStructureResponse")
+               |> json_response(:ok)
+
+      assert %{
+               "metadata_versions" => [
+                 %{
+                   "fields" => ^mutable_metadata
+                 }
+               ]
+             } = data
+    end
+
+    @tag authentication: [
+           role: "user",
+           permissions: [
+             :view_data_structure,
+             :update_data_structure,
+             :manage_confidential_structures
+           ]
+         ]
+    test "filters updated structure protected metadata if user does not have view_protected_metadata permission",
+         %{
+           conn: conn,
+           data_structure: data_structure,
+           swagger_schema: schema
+         } do
+      mutable_metadata = %{
+        "mm_foo" => "mm_foo",
+        @protected => %{"mm_protected" => "mm_protected"}
+      }
+
+      insert(:structure_metadata, data_structure_id: data_structure.id, fields: mutable_metadata)
+
+      assert %{"data" => data} =
+               conn
+               |> put(data_structure_path(conn, :update, data_structure),
+                 data_structure: %{confidential: true}
+               )
+               |> validate_resp_schema(schema, "DataStructureResponse")
+               |> json_response(:ok)
+
+      assert %{
+               "metadata_versions" => [
+                 %{
+                   "fields" => fields
+                 }
+               ]
+             } = data
+
+      assert fields == %{"mm_foo" => "mm_foo"}
     end
 
     @tag authentication: [role: "user"]

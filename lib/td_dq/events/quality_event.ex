@@ -9,6 +9,7 @@ defmodule TdDq.Events.QualityEvent do
 
   schema "quality_events" do
     belongs_to(:execution, Execution)
+    has_one(:group, through: [:execution, :group])
     field(:type, :string)
     field(:message, :string)
 
