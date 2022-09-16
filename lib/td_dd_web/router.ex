@@ -86,8 +86,6 @@ defmodule TdDdWeb.Router do
       resources("/events", UnitEventController, only: [:index], name: "event")
     end
 
-    resources("/unit_domains", UnitDomainController, only: [:index])
-
     post("/profiles/search", ProfileController, :search)
     post("/profiles/upload", ProfileController, :upload)
 

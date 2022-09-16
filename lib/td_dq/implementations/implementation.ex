@@ -117,7 +117,7 @@ defmodule TdDq.Implementations.Implementation do
   def implementation_ref_changeset(%__MODULE__{} = implementation, params) do
     implementation
     |> cast(params, [:implementation_ref])
-    |> validate_required([:implementation_ref])
+    |> validate_required(:implementation_ref)
   end
 
   def changeset_validations(%Ecto.Changeset{} = changeset, %__MODULE__{} = implementation, params) do
