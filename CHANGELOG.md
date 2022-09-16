@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-5076] Allow to clone implementations for non admin users
+- [TD-5133] Support for creating grant requests for third parties
 
 ## [4.50.0] 2022-09-05
 

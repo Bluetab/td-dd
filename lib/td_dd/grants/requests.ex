@@ -43,12 +43,11 @@ defmodule TdDd.Grants.Requests do
 
   def create_grant_request_group(
         %{} = params,
-        %Claims{user_id: user_id},
         modification_grant \\ nil
       ) do
     changeset =
       GrantRequestGroup.changeset(
-        %GrantRequestGroup{user_id: user_id},
+        %GrantRequestGroup{},
         params,
         modification_grant
       )
@@ -89,6 +88,7 @@ defmodule TdDd.Grants.Requests do
        status: :string,
        updated_since: :utc_datetime_usec,
        user_id: :integer,
+       user_id_or_created_by_id: :integer,
        user: :string
      }}
     |> Changeset.cast(params, [
@@ -99,6 +99,7 @@ defmodule TdDd.Grants.Requests do
       :status,
       :updated_since,
       :user_id,
+      :user_id_or_created_by_id,
       :user
     ])
     |> Changeset.apply_action(:update)
@@ -205,6 +206,9 @@ defmodule TdDd.Grants.Requests do
 
       {:user_id, user_id}, q ->
         where(q, [..., grg], grg.user_id == ^user_id)
+
+      {:user_id_or_created_by_id, user_id}, q ->
+        where(q, [..., grg], grg.user_id == ^user_id or grg.created_by_id == ^user_id)
 
       {:group_id, group_id}, q ->
         where(q, [g], g.group_id == ^group_id)
@@ -382,9 +386,13 @@ defmodule TdDd.Grants.Requests do
     }
   end
 
-  defp enrich(%GrantRequestGroup{user_id: user_id} = group) do
-    case UserCache.get(user_id) do
-      {:ok, user} -> %{group | user: user}
+  defp enrich(%GrantRequestGroup{user_id: user_id, created_by_id: created_by_id} = group) do
+    with {:ok, user} <- UserCache.get(user_id),
+         {:ok, created_by} <- UserCache.get(created_by_id) do
+      group
+      |> Map.put(:user, user)
+      |> Map.put(:created_by, created_by)
+    else
       _ -> group
     end
   end

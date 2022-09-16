@@ -42,15 +42,17 @@ defmodule TdDd.Grants.RequestsTest do
 
     test "create_grant_request_group/2 with valid data creates a grant_request_group" do
       %{id: data_structure_id} = insert(:data_structure)
-      %{user_id: user_id} = claims = build(:claims)
+      %{user_id: user_id} =  build(:claims)
 
       params = %{
         type: @template_name,
-        requests: [%{data_structure_id: data_structure_id, metadata: @valid_metadata}]
+        requests: [%{data_structure_id: data_structure_id, metadata: @valid_metadata}],
+        user_id: user_id,
+        created_by_id: user_id
       }
 
       assert {:ok, %{group: group, statuses: statuses, requests: {_count, [request_id]}}} =
-               Requests.create_grant_request_group(params, claims)
+               Requests.create_grant_request_group(params)
 
       assert %{
                type: @template_name,
@@ -64,16 +66,18 @@ defmodule TdDd.Grants.RequestsTest do
 
     test "create_grant_request_group/2 with modification_grant" do
       %{id: data_structure_id} = insert(:data_structure)
-      %{user_id: user_id} = claims = build(:claims)
+      %{user_id: user_id} = build(:claims)
       %{id: grant_id} = modification_grant = insert(:grant, data_structure_id: data_structure_id)
 
       params = %{
         type: @template_name,
-        requests: [%{data_structure_id: data_structure_id, metadata: @valid_metadata}]
+        requests: [%{data_structure_id: data_structure_id, metadata: @valid_metadata}],
+        user_id: user_id,
+        created_by_id: user_id
       }
 
       assert {:ok, %{group: group}} =
-               Requests.create_grant_request_group(params, claims, modification_grant)
+               Requests.create_grant_request_group(params, modification_grant)
 
       assert %{
                type: @template_name,
@@ -85,6 +89,7 @@ defmodule TdDd.Grants.RequestsTest do
     test "creates grant_request_group requests" do
       %{id: ds_id_1} = insert(:data_structure)
       %{id: ds_id_2} = insert(:data_structure)
+      %{user_id: user_id} = build(:claims)
 
       requests = [
         %{
@@ -97,11 +102,13 @@ defmodule TdDd.Grants.RequestsTest do
 
       params = %{
         type: @template_name,
-        requests: requests
+        requests: requests,
+        user_id: user_id,
+        created_by_id: user_id
       }
 
       assert {:ok, %{group: %{requests: requests}}} =
-               Requests.create_grant_request_group(params, build(:claims))
+               Requests.create_grant_request_group(params)
 
       assert [
                %{

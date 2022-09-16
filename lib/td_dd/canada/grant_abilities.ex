@@ -40,6 +40,42 @@ defmodule TdDd.Canada.GrantAbilities do
     true
   end
 
+  def can?(%Claims{user_id: user_id}, :show, %GrantRequest{group: %{created_by_id: user_id}}) do
+    true
+  end
+
+  def can?(%Claims{}, :create_grant_request_group, %{
+        "user_id" => user_id,
+        "created_by_id" => user_id
+      }) do
+    true
+  end
+
+  def can?(%Claims{jti: jti}, :create_grant_request_group, %{"user_id" => user_id}) do
+    create_domain_ids =
+      jti
+      |> TdCache.Permissions.permitted_domain_ids(:create_foreign_grant_request)
+      |> Enum.into(MapSet.new())
+
+    allow_domain_ids =
+      user_id
+      |> TdCache.Permissions.permitted_domain_ids_by_user_id(:allow_foreign_grant_request)
+      |> Enum.into(MapSet.new())
+
+    create_domain_ids
+    |> MapSet.intersection(allow_domain_ids)
+    |> Enum.empty?()
+    |> Kernel.!()
+  end
+
+  def can?(%Claims{}, :create_grant_request_group, _) do
+    false
+  end
+
+  def can?(%Claims{} = claims, :create_foreign_grant_request, domain_ids) do
+    Permissions.authorized?(claims, :create_foreign_grant_request, domain_ids)
+  end
+
   def can?(%Claims{} = claims, :show, %GrantRequest{domain_ids: domain_ids}) do
     Permissions.authorized?(claims, :approve_grant_request, domain_ids)
   end

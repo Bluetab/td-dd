@@ -111,6 +111,9 @@ defmodule TdDdWeb.Resolvers.Domains do
   defp permitted_domain_ids(%{role: "user", jti: jti}, "viewDomain"),
     do: Permissions.permitted_domain_ids(jti, :view_domain)
 
+  defp permitted_domain_ids(%{role: "user", jti: jti}, "createForeignGrantRequest"),
+    do: Permissions.permitted_domain_ids(jti, :create_foreign_grant_request)
+
   defp permitted_domain_ids(_other, _action), do: []
 
   defp claims(%{context: %{claims: claims}}), do: claims

@@ -155,6 +155,26 @@ defmodule TdDdWeb.GrantRequestControllerTest do
                |> get(Routes.grant_request_path(conn, :index, params))
                |> json_response(:ok)
     end
+
+    @tag authentication: [role: "user"]
+    test "lists requests where user has created_by_id with parameter user => me", %{
+      conn: conn,
+      claims: %{user_id: user_id}
+    } do
+      %{id: id} =
+        insert(:grant_request,
+          group: insert(:grant_request_group, created_by_id: user_id)
+        )
+
+      insert(:grant_request)
+
+      params = %{"user" => "me"}
+
+      assert %{"data" => [%{"id" => ^id}]} =
+               conn
+               |> get(Routes.grant_request_path(conn, :index, params))
+               |> json_response(:ok)
+    end
   end
 
   describe "show grant_request" do
@@ -172,6 +192,63 @@ defmodule TdDdWeb.GrantRequestControllerTest do
                conn
                |> get(Routes.grant_request_path(conn, :show, id))
                |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "user"]
+    test "user without permission can show grant_request created_by user", %{
+      conn: conn,
+      claims: %{user_id: user_id}
+    } do
+      %{id: id} =
+        insert(:grant_request,
+          group: insert(:grant_request_group, created_by_id: user_id)
+        )
+
+      assert %{"data" => %{"id" => ^id}} =
+               conn
+               |> get(Routes.grant_request_path(conn, :show, id))
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "_embedded is populated", %{
+      conn: conn,
+      claims: %{user_id: user_id}
+    } do
+      %{
+        data_structure_id: data_structure_id,
+        data_structure: %{external_id: external_id},
+        name: name
+      } = insert(:data_structure_version)
+
+      %{id: id} =
+        insert(:grant_request,
+          data_structure_id: data_structure_id,
+          group: insert(:grant_request_group,
+            user_id: user_id,
+            created_by_id: user_id
+          )
+        )
+
+      assert %{"data" => %{"id" => ^id, "_embedded" => embedded}} =
+               conn
+               |> get(Routes.grant_request_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{"data_structure" => data_structure, "group" => group} = embedded
+
+      assert %{
+               "id" => ^data_structure_id,
+               "external_id" => ^external_id,
+               "name" => ^name,
+             } = data_structure
+
+      assert %{"type" => _, "id" => _, "_embedded" => embedded} = group
+
+      assert %{
+               "user" => %{"id" => ^user_id, "user_name" => _, "full_name" => _},
+               "created_by" => %{"id" => ^user_id, "user_name" => _, "full_name" => _}
+             } = embedded
     end
 
     @tag authentication: [role: "user"]

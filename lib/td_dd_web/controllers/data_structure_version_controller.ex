@@ -101,7 +101,8 @@ defmodule TdDdWeb.DataStructureVersionController do
         view_profiling_permission: can?(claims, view_data_structures_profile(data_structure)),
         profile_permission: can?(claims, profile(dsv)),
         request_grant: can_request_grant?(claims, data_structure),
-        update_grant_removal: can_update_grant_removal?(claims, data_structure)
+        update_grant_removal: can_update_grant_removal?(claims, data_structure),
+        create_foreign_grant_request: can?(claims, create_foreign_grant_request(data_structure))
       }
 
       render(conn, "show.json",
