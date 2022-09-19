@@ -171,6 +171,92 @@ defmodule TdDd.CSV.DownloadTest do
                """
     end
 
+    test "to_editable_csv/1 will not return duplicated fields from templates" do
+      CacheHelpers.insert_template(%{
+        id: 51,
+        name: "template1",
+        label: "label1",
+        scope: "dd",
+        content: [
+          %{
+            "name" => "group",
+            "fields" => [
+              %{
+                "name" => "field1",
+                "type" => "string",
+                "label" => "field1",
+                "cardinality" => "1"
+              },
+              %{
+                "name" => "field_dup",
+                "type" => "string",
+                "label" => "field_dup",
+                "cardinality" => "1"
+              }
+            ]
+          }
+        ]
+      })
+      CacheHelpers.insert_template(%{
+        id: 52,
+        name: "template2",
+        label: "label2",
+        scope: "dd",
+        content: [
+          %{
+            "name" => "group",
+            "fields" => [
+              %{
+                "name" => "field2",
+                "type" => "string",
+                "label" => "field2",
+                "cardinality" => "1"
+              },
+              %{
+                "name" => "field_dup",
+                "type" => "string",
+                "label" => "field_dup",
+                "cardinality" => "1"
+              }
+            ]
+          }
+        ]
+      })
+
+      insert(:data_structure_type, name: "type1", template_id: 51)
+      insert(:data_structure_type, name: "type2", template_id: 52)
+
+      structures = [
+        %{
+          name: "name1",
+          path: ["foo", "bar"],
+          note: %{
+            "field1" => "1",
+            "field_dup" => "dup"
+          },
+          external_id: "ext_id1",
+          type: "type1"
+        },
+        %{
+          name: "name2",
+          path: ["foo", "bar"],
+          note: %{
+            "field2" => "2",
+            "field_dup" => "dup"
+          },
+          external_id: "ext_id2",
+          type: "type2"
+        }
+      ]
+
+      assert Download.to_editable_csv(structures) ==
+               """
+               external_id;name;type;path;field1;field_dup;field2\r
+               ext_id1;name1;type1;foo > bar;1;dup;\r
+               ext_id2;name2;type2;foo > bar;;dup;2\r
+               """
+    end
+
     test "to_csv/1 return csv content with multiple fields to download" do
       template_name = "Table"
       field_label = "Label foo"

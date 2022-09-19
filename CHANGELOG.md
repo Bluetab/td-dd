@@ -16,6 +16,10 @@
 - [TD-5168] GraphQL `source` query no longer enriches dynamic domain fields
 - [TD-4794] GraphQL `domains` query now supports additional actions
 
+### Fixed
+
+- [TD-4956] When downloading structures csv, fields with same name on templates were duplicated
+
 ### Removed
 
 - [TD-4794] Removed `/api/unit_domains` (replaced by GraphQL `domains` query)
