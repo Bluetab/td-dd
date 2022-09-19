@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-4903] Include `sobelow` static code analysis in CI pipeline
+
 ## [4.51.0] 2022-09-19
 
 ### Added
