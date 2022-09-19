@@ -67,6 +67,7 @@ defmodule TdDd.CSV.Download do
       |> Enum.uniq()
       |> Enum.map(&DataStructureTypes.get_by(name: &1))
       |> Enum.flat_map(&type_editable_fields/1)
+      |> Enum.uniq_by(&Map.get(&1, "name"))
 
     type_headers = Enum.map(type_fields, &Map.get(&1, "name"))
 
