@@ -87,7 +87,7 @@ defmodule TdDd.MixProject do
       {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "4.50.0"},
       {:graph, git: "https://github.com/Bluetab/graph.git", tag: "1.2.0"},
       {:vaultex, "~> 1.0.1"},
-      {:sobelow, "~> 0.8", only: :dev}
+      {:sobelow, "~> 0.11", only: [:dev, :test]}
     ]
   end
 
