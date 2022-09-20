@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+ - [TD-4587]
+  - Download implementations with reference_data
+  - Implementations download when dataset has a table joing itself
+
 ## [4.51.0] 2022-09-19
 
 ### Added
