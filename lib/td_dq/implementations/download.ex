@@ -163,12 +163,10 @@ defmodule TdDq.Implementations.Download do
 
   defp get_implementation_fields(%{dataset: dataset} = _implementation, :datasets) do
     dataset
-    |> Enum.map(
-      fn
-        %{structure: %{external_id: external_id}} -> external_id
-        %{structure: %{name: name, type: "reference_dataset"}} -> "reference_dataset://#{name}"
-      end
-    )
+    |> Enum.map(fn
+      %{structure: %{external_id: external_id}} -> external_id
+      %{structure: %{name: name, type: "reference_dataset"}} -> "reference_dataset://#{name}"
+    end)
     |> Enum.uniq()
   end
 
