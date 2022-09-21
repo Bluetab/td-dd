@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-4903] Include `sobelow` static code analysis in CI pipeline
+
 ### Fixed
 
  - [TD-4587]
