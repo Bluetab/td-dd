@@ -1,6 +1,5 @@
 defmodule TdDdWeb.DataStructureVersionController do
   use TdDdWeb, :controller
-  use TdHypermedia, :controller
   use PhoenixSwagger
 
   import Canada, only: [can?: 2]
@@ -120,19 +119,16 @@ defmodule TdDdWeb.DataStructureVersionController do
         data_structure_version: dsv,
         tags: tags,
         user_permissions: user_permissions,
-        actions: actions(claims, data_structure),
-        hypermedia: hypermedia("data_structure_version", conn, dsv)
+        actions: actions(claims, dsv)
       )
     else
       render_error(conn, :forbidden)
     end
   end
 
-  defp actions(claims, data_structure) do
-    if can?(claims, link_data_structure_tag(data_structure)) do
-      %{manage_tags: Tags.list_available_tags(data_structure)}
-    else
-      %{}
+  defp actions(claims, dsv) do
+    if can?(claims, create_link(dsv)) do
+      %{create_link: true}
     end
   end
 

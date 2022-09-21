@@ -1,5 +1,4 @@
 defmodule TdDqWeb.RuleController do
-  use TdHypermedia, :controller
   use TdDqWeb, :controller
 
   import Canada, only: [can?: 2]
@@ -162,7 +161,6 @@ defmodule TdDqWeb.RuleController do
       render(
         conn,
         "show.json",
-        hypermedia: hypermedia("rule", conn, rule),
         rule: rule,
         user_permissions: get_user_permissions(claims, rule)
       )

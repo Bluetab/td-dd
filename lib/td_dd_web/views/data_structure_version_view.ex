@@ -1,11 +1,9 @@
 defmodule TdDdWeb.DataStructureVersionView do
   use TdDdWeb, :view
-  use TdHypermedia, :view
 
   alias TdDd.DataStructures
   alias TdDdWeb.GrantView
   alias TdDdWeb.StructureTagView
-  alias TdDdWeb.TagView
   alias TdDqWeb.ImplementationStructureView
 
   @protected DataStructures.protected()
@@ -16,19 +14,9 @@ defmodule TdDdWeb.DataStructureVersionView do
     |> put_actions(actions)
   end
 
-  def render(
-        "show.json",
-        %{data_structure_version: dsv, user_permissions: user_permissions, hypermedia: hypermedia} =
-          assigns
-      ) do
-    dsv
-    |> render_one_hypermedia(
-      hypermedia,
-      __MODULE__,
-      "show.json",
-      Map.drop(assigns, [:hypermedia, :data_structure_version, :user_permissions])
-    )
-    |> lift_data()
+  def render("show.json", %{user_permissions: user_permissions} = assigns) do
+    "show.json"
+    |> render(Map.delete(assigns, :user_permissions))
     |> Map.put(:user_permissions, user_permissions)
   end
 
@@ -311,18 +299,6 @@ defmodule TdDdWeb.DataStructureVersionView do
 
   defp with_profile_attrs(dsv, _), do: Map.delete(dsv, :profile)
 
-  defp lift_data(%{"data" => data} = attrs) when is_map(data) do
-    case Map.get(data, :data) do
-      nil ->
-        attrs
-
-      nested ->
-        Map.put(attrs, "data", nested)
-    end
-  end
-
-  defp lift_data(attrs), do: attrs
-
   defp merge_metadata(%{metadata_versions: [_ | _] = metadata_versions} = dsv) do
     %{fields: mutable_metadata} =
       Enum.max_by(metadata_versions, & &1.version)
@@ -409,9 +385,8 @@ defmodule TdDdWeb.DataStructureVersionView do
 
   defp add_grants(ds), do: ds
 
-  defp put_actions(ds, %{manage_tags: tags}) when is_list(tags) do
-    tags = render_many(tags, TagView, "embedded.json")
-    actions = %{manage_tags: %{data: tags}}
+  defp put_actions(ds, %{create_link: true}) do
+    actions = %{create_link: %{}}
     Map.update(ds, "_actions", actions, &Map.merge(&1, actions))
   end
 
