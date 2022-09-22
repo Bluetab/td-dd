@@ -197,6 +197,7 @@ defmodule TdDd.CSV.DownloadTest do
           }
         ]
       })
+
       CacheHelpers.insert_template(%{
         id: 52,
         name: "template2",

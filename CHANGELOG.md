@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [TD-5184] Removed dependency on td-hypermedia library
+
 ### Added
 
 - [TD-4903] Include `sobelow` static code analysis in CI pipeline

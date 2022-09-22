@@ -759,7 +759,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
              :view_data_structure
            ]
          ]
-    test "can create notes when the latest note is deprecated, and show the action in hypermedia",
+    test "can create notes when the latest note is deprecated, and show the action",
          %{conn: conn, domain: domain} do
       %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
       create_attrs = string_params_for(:structure_note)
