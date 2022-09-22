@@ -1,6 +1,5 @@
 defmodule TdDqWeb.ImplementationController do
   use TdDqWeb, :controller
-  use TdHypermedia, :controller
 
   import Canada, only: [can?: 2]
 

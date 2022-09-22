@@ -30,9 +30,7 @@ defmodule TdDdWeb.StructureNoteController do
     response(404, "Not Found")
   end
 
-  def index(conn, %{
-        "data_structure_id" => data_structure_id
-      }) do
+  def index(conn, %{"data_structure_id" => data_structure_id}) do
     with claims <- conn.assigns[:current_resource],
          data_structure <- DataStructures.get_data_structure!(data_structure_id),
          {:can, true} <- {:can, can?(claims, view_data_structure(data_structure))},

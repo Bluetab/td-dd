@@ -1,6 +1,5 @@
 defmodule TdDqWeb.RemediationView do
   use TdDqWeb, :view
-  use TdHypermedia, :view
 
   def render("show.json", %{actions: actions} = assigns) do
     "show.json"
