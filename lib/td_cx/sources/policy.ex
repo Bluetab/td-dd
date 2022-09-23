@@ -6,6 +6,10 @@ defmodule TdCx.Sources.Policy do
   alias TdCx.Permissions
   alias TdCx.Sources.Source
 
+  def authorize(action, %{context: %{claims: claims}} = _resolution, params) do
+    authorize(action, claims, params)
+  end
+
   def authorize(:view_secrets, %{role: role, user_name: user_name}, %Source{type: type})
       when role in ["admin", "service"] do
     String.downcase(type) == String.downcase(user_name)

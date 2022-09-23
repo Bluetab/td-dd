@@ -71,6 +71,11 @@ defmodule TdDdWeb.Schema do
     end
   end
 
+  def middleware(middleware, %{identifier: field}, %{identifier: :query})
+      when field in [:source, :sources] do
+    middleware
+  end
+
   def middleware(middleware, %{identifier: field}, %{identifier: :query}) do
     [
       {Middleware.Authorize, [action: :query, resource: field]} | middleware

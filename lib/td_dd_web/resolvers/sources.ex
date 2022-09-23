@@ -8,12 +8,16 @@ defmodule TdDdWeb.Resolvers.Sources do
   alias TdCache.TemplateCache
   alias TdCx.Sources
 
-  def sources(_parent, args, _resolution) do
-    {:ok, Sources.query_sources(args)}
+  def sources(_parent, args, resolution) do
+    with :ok <- Bodyguard.permit(Sources, :list, resolution) do
+      {:ok, Sources.query_sources(args)}
+    end
   end
 
-  def source(_parent, args, _resolution) do
-    {:ok, Sources.get_source(args)}
+  def source(_parent, args, resolution) do
+    with :ok <- Bodyguard.permit(Sources, :list, resolution) do
+      {:ok, Sources.get_source(args)}
+    end
   end
 
   def template(%{type: type}, _args, _resolution) do
