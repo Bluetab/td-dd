@@ -2,6 +2,7 @@ defmodule TdDdWeb.DataStructureController do
   use TdDdWeb, :controller
   use PhoenixSwagger
 
+  import Bodyguard, only: [permit?: 4]
   import Canada, only: [can?: 2]
   import Canada.Can, only: [can?: 3]
 
@@ -13,7 +14,7 @@ defmodule TdDdWeb.DataStructureController do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Search
-  alias TdDd.DataStructures.StructureNote
+  alias TdDd.DataStructures.StructureNotes
   alias TdDd.DataStructures.StructureNotesWorkflow
   alias TdDd.DataStructures.Tags
   alias TdDd.Utils.FileHash
@@ -113,11 +114,8 @@ defmodule TdDdWeb.DataStructureController do
 
   defp filter_opts(claims, structure) do
     Enum.filter(@enrich_attrs, fn
-      :with_protected_metadata ->
-        can?(claims, view_protected_metadata(structure))
-
-      _ ->
-        true
+      :with_protected_metadata -> can?(claims, view_protected_metadata(structure))
+      _ -> true
     end)
   end
 
@@ -379,17 +377,16 @@ defmodule TdDdWeb.DataStructureController do
         true
 
       {_content, %{data_structure: data_structure}} ->
-        action = StructureNotesWorkflow.get_action_editable_action(data_structure)
-
         can_edit =
-          case action do
-            :create -> can?(claims, create_structure_note(data_structure))
-            :edit -> can?(claims, edit_structure_note(data_structure))
+          case StructureNotesWorkflow.get_action_editable_action(data_structure) do
+            :create -> permit?(StructureNotes, :create_structure_note, claims, data_structure)
+            :edit -> permit?(StructureNotes, :edit_structure_note, claims, data_structure)
             _ -> true
           end
 
         if auto_publish do
-          can_edit and can?(claims, publish_structure_note_from_draft(data_structure))
+          can_edit and
+            permit?(StructureNotes, :publish_structure_note_from_draft, claims, data_structure)
         else
           can_edit
         end
@@ -482,10 +479,11 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   defp do_render_data_structure(conn, claims, data_structure) do
-    if can?(claims, view_data_structure(data_structure)) do
+    if permit?(DataStructures, :view_data_structure, claims, data_structure) do
       user_permissions = %{
         update: can?(claims, update_data_structure(data_structure)),
-        confidential: can?(claims, manage_confidential_structures(data_structure)),
+        confidential:
+          permit?(DataStructures, :manage_confidential_structures, claims, data_structure),
         view_profiling_permission: can?(claims, view_data_structures_profile(data_structure))
       }
 
@@ -552,7 +550,7 @@ defmodule TdDdWeb.DataStructureController do
     actions =
       params
       |> actions_notes(total)
-      |> Enum.filter(&can?(claims, &1, StructureNote))
+      |> Enum.filter(&Bodyguard.permit?(StructureNotes, &1, claims))
       |> Enum.reduce(%{}, fn
         :bulk_update, acc ->
           Map.put(acc, "bulkUpdate", %{

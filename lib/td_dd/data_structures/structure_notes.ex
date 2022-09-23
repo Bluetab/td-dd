@@ -13,6 +13,8 @@ defmodule TdDd.DataStructures.StructureNotes do
   alias TdDd.Repo
   alias TdDd.Search.IndexWorker
 
+  defdelegate authorize(action, user, params), to: TdDd.DataStructures.StructureNotes.Policy
+
   @doc """
   Returns the list of structure_notes.
 

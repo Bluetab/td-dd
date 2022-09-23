@@ -1,8 +1,6 @@
 defmodule TdDd.Canada.Abilities do
   @moduledoc false
   alias TdCache.Link
-  alias TdCx.Canada.SourceAbilities
-  alias TdCx.Sources.Source
   alias TdDd.Auth.Claims
   alias TdDd.Canada.AccessAbilities
   alias TdDd.Canada.DataStructureAbilities
@@ -13,7 +11,6 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Canada.LineageAbilities
   alias TdDd.Canada.LinkAbilities
   alias TdDd.Canada.ReferenceDataAbilities
-  alias TdDd.Canada.StructureNoteAbilities
   alias TdDd.Canada.StructureTagAbilities
   alias TdDd.Canada.SystemAbilities
   alias TdDd.Canada.TagAbilities
@@ -22,7 +19,6 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
-  alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.Tags.StructureTag
   alias TdDd.DataStructures.Tags.Tag
   alias TdDd.Executions.ProfileEvent
@@ -68,9 +64,6 @@ defmodule TdDd.Canada.Abilities do
     def can?(%Claims{role: "user"} = claims, :query, :latest_grant_request) do
       GrantAbilities.can?(claims, :list, GrantRequest)
     end
-
-    def can?(%Claims{role: "user"} = claims, :query, :sources),
-      do: SourceAbilities.can?(claims, :list, Source)
 
     def can?(%Claims{role: "user"} = claims, :query, :tags),
       do: TagAbilities.can?(claims, :index, Tag)
@@ -225,14 +218,6 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%Claims{} = claims, action, %DataStructureVersion{} = data_structure_version) do
       DataStructureVersionAbilities.can?(claims, action, data_structure_version)
-    end
-
-    def can?(%Claims{} = claims, action, :structure_notes) do
-      StructureNoteAbilities.can?(claims, action, :structure_notes)
-    end
-
-    def can?(%Claims{} = claims, action, StructureNote) do
-      StructureNoteAbilities.can?(claims, action, StructureNote)
     end
 
     def can?(%Claims{} = claims, action, Tag) do
