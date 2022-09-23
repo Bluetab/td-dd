@@ -8,14 +8,12 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Canada.GrantAbilities
   alias TdDd.Canada.LineageAbilities
   alias TdDd.Canada.LinkAbilities
-  alias TdDd.Canada.ReferenceDataAbilities
   alias TdDd.Canada.StructureTagAbilities
   alias TdDd.Canada.SystemAbilities
   alias TdDd.Canada.TagAbilities
   alias TdDd.Canada.UnitAbilities
   alias TdDd.Classifiers.Classifier
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Tags.StructureTag
   alias TdDd.DataStructures.Tags.Tag
@@ -29,7 +27,6 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Lineage.Units.Node
   alias TdDd.Lineage.Units.Unit
   alias TdDd.Profiles.Profile
-  alias TdDd.ReferenceData.Dataset, as: ReferenceDataset
   alias TdDd.Systems.System
   alias TdDq.Canada.ImplementationAbilities
   alias TdDq.Canada.RuleResultAbilities
@@ -72,12 +69,6 @@ defmodule TdDd.Canada.Abilities do
     def can?(%Claims{role: "user"} = claims, :query, :implementation_result),
       do: RuleResultAbilities.can?(claims, :view, RuleResult)
 
-    def can?(%Claims{role: "user"} = claims, :query, :reference_dataset),
-      do: ReferenceDataAbilities.can?(claims, :show, ReferenceDataset)
-
-    def can?(%Claims{role: "user"} = claims, :query, :reference_datasets),
-      do: ReferenceDataAbilities.can?(claims, :list, ReferenceDataset)
-
     def can?(%Claims{}, _action, nil), do: false
 
     def can?(%{} = claims, :mutation, mutation) when mutation in @implementation_mutations do
@@ -96,14 +87,6 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%Claims{} = claims, action, %RuleResult{} = ruleResult) do
       RuleResultAbilities.can?(claims, action, ruleResult)
-    end
-
-    def can?(%Claims{} = claims, action, ReferenceDataset) do
-      ReferenceDataAbilities.can?(claims, action, ReferenceDataset)
-    end
-
-    def can?(%Claims{} = claims, action, %ReferenceDataset{} = resource) do
-      ReferenceDataAbilities.can?(claims, action, resource)
     end
 
     def can?(%Claims{} = claims, action, System) do

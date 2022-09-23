@@ -1,8 +1,6 @@
 defmodule TdDdWeb.ReferenceDataController do
   use TdDdWeb, :controller
 
-  import Canada, only: [can?: 2]
-
   alias Plug.Upload
   alias TdDd.ReferenceData
   alias TdDd.ReferenceData.Dataset
@@ -14,7 +12,7 @@ defmodule TdDdWeb.ReferenceDataController do
   def index(conn, _params) do
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(claims, list(Dataset))},
+    with :ok <- Bodyguard.permit(ReferenceData, :list, claims),
          datasets <- ReferenceData.list() do
       render(conn, "index.json", datasets: datasets)
     end
@@ -23,9 +21,9 @@ defmodule TdDdWeb.ReferenceDataController do
   def show(conn, %{"id" => id}) do
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(claims, show(Dataset))},
+    with :ok <- Bodyguard.permit(ReferenceData, :show, claims),
          %{} = dataset <- ReferenceData.get!(id),
-         {:can, true} <- {:can, can?(claims, show(dataset))} do
+         :ok <- Bodyguard.permit(ReferenceData, :show, claims, dataset) do
       render(conn, "show.json", dataset: dataset)
     end
   end
@@ -33,7 +31,7 @@ defmodule TdDdWeb.ReferenceDataController do
   def create(conn, %{"dataset" => %Upload{path: path}, "name" => name}) do
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(claims, create(Dataset))},
+    with :ok <- Bodyguard.permit(ReferenceData, :create, claims),
          {:ok, %{} = dataset} <- ReferenceData.create(%{name: name, path: path}) do
       conn
       |> put_status(:created)
@@ -44,9 +42,9 @@ defmodule TdDdWeb.ReferenceDataController do
   def update(conn, %{"id" => id, "name" => name, "dataset" => %Upload{path: path}}) do
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(claims, update(Dataset))},
+    with :ok <- Bodyguard.permit(ReferenceData, :update, claims),
          %Dataset{} = dataset <- ReferenceData.get!(id),
-         {:can, true} <- {:can, can?(claims, update(dataset))},
+         :ok <- Bodyguard.permit(ReferenceData, :update, claims, dataset),
          {:ok, %{} = dataset} <- ReferenceData.update(dataset, %{name: name, path: path}) do
       render(conn, "show.json", dataset: dataset)
     end
@@ -55,9 +53,9 @@ defmodule TdDdWeb.ReferenceDataController do
   def delete(conn, %{"id" => id}) do
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(claims, delete(Dataset))},
+    with :ok <- Bodyguard.permit(ReferenceData, :delete, claims),
          %{} = dataset <- ReferenceData.get!(id),
-         {:can, true} <- {:can, can?(claims, delete(dataset))},
+         :ok <- Bodyguard.permit(ReferenceData, :delete, claims, dataset),
          {:ok, %{} = _dataset} <- ReferenceData.delete(dataset) do
       send_resp(conn, :no_content, "")
     end

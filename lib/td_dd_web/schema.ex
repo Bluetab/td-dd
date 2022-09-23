@@ -72,7 +72,24 @@ defmodule TdDdWeb.Schema do
   end
 
   def middleware(middleware, %{identifier: field}, %{identifier: :query})
-      when field in [:source, :sources, :structure_notes, :data_structure, :data_structures] do
+      when field in [
+             :data_structure,
+             :data_structures,
+             :reference_dataset,
+             :reference_datasets,
+             :source,
+             :sources,
+             :structure_notes
+           ] do
+    middleware
+  end
+
+  def middleware(middleware, %{identifier: field}, %{identifier: :mutate})
+      when field in [
+             :create_reference_dataset,
+             :delete_reference_dataset,
+             :update_reference_dataset
+           ] do
     middleware
   end
 
