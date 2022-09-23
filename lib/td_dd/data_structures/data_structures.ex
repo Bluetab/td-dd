@@ -38,6 +38,8 @@ defmodule TdDd.DataStructures do
     data_structure: :system
   ]
 
+  defdelegate authorize(action, user, params), to: TdDd.DataStructures.Policy
+
   def protected, do: @protected
 
   def list_data_structures(clauses \\ %{}) do

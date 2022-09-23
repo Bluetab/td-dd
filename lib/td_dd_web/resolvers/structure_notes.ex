@@ -1,6 +1,6 @@
 defmodule TdDdWeb.Resolvers.StructureNotes do
   @moduledoc """
-  Absinthe resolvers for structure_notes and related entities
+  Absinthe resolvers for structure notes and related entities
   """
 
   alias TdDd.DataStructures.StructureNotes
@@ -28,16 +28,16 @@ defmodule TdDdWeb.Resolvers.StructureNotes do
   defp claims(_), do: nil
 
   defp can_take_action(claims, %{status: :draft, data_structure: data_structure}) do
-    Bodyguard.permit?(StructureNotes, :publish_structure_note_from_draft, claims, data_structure) or
-      Bodyguard.permit?(StructureNotes, :edit_structure_note, claims, data_structure)
+    Bodyguard.permit?(StructureNotes, :publish_draft, claims, data_structure) or
+      Bodyguard.permit?(StructureNotes, :edit, claims, data_structure)
   end
 
   defp can_take_action(claims, %{status: :pending_approval, data_structure: data_structure}) do
-    Bodyguard.permit?(StructureNotes, :publish_structure_note, claims, data_structure)
+    Bodyguard.permit?(StructureNotes, :publish, claims, data_structure)
   end
 
   defp can_take_action(claims, %{status: :rejected, data_structure: data_structure}) do
-    Bodyguard.permit?(StructureNotes, :unreject_structure_note, claims, data_structure)
+    Bodyguard.permit?(StructureNotes, :unreject, claims, data_structure)
   end
 
   defp can_take_action(_claims, _), do: false

@@ -30,9 +30,11 @@ defmodule TdDdWeb.Schema.DataStructureQueryTest do
 
     @tag authentication: [role: "user"]
     test "returns forbidden if user has no permissions", %{conn: conn} do
+      %{id: id} = insert(:data_structure)
+
       assert %{"data" => data, "errors" => errors} =
                conn
-               |> post("/api/v2", %{"query" => @structure_query, "variables" => %{"id" => 1}})
+               |> post("/api/v2", %{"query" => @structure_query, "variables" => %{"id" => id}})
                |> json_response(:ok)
 
       assert data == %{"dataStructure" => nil}

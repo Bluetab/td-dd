@@ -2,6 +2,7 @@ defmodule TdDdWeb.DataStructureVersionController do
   use TdDdWeb, :controller
   use PhoenixSwagger
 
+  import Bodyguard, only: [permit?: 4]
   import Canada, only: [can?: 2]
 
   alias Ecto
@@ -82,7 +83,7 @@ defmodule TdDdWeb.DataStructureVersionController do
         can?(claims, view_data_structures_profile(data_structure))
 
       :with_confidential ->
-        can?(claims, manage_confidential_structures(data_structure))
+        Bodyguard.permit?(DataStructures, :manage_confidential_structures, claims, data_structure)
 
       :grants ->
         can?(claims, view_grants(data_structure))
@@ -100,13 +101,14 @@ defmodule TdDdWeb.DataStructureVersionController do
   end
 
   defp render_with_permissions(conn, claims, %{data_structure: data_structure} = dsv) do
-    if can?(claims, view_data_structure(data_structure)) do
+    if permit?(DataStructures, :view_data_structure, claims, data_structure) do
       tags = Tags.tags(dsv)
       dsv = DataStructures.profile_source(dsv)
 
       user_permissions = %{
         update: can?(claims, update_data_structure(data_structure)),
-        confidential: can?(claims, manage_confidential_structures(data_structure)),
+        confidential:
+          permit?(DataStructures, :manage_confidential_structures, claims, data_structure),
         update_domain: can?(claims, manage_structures_domain(data_structure)),
         view_profiling_permission: can?(claims, view_data_structures_profile(data_structure)),
         profile_permission: can?(claims, profile(dsv)),

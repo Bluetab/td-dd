@@ -8,7 +8,7 @@ defmodule TdDd.DataStructures.StructureNotes.Policy do
   @behaviour Bodyguard.Policy
 
   def authorize(:bulk_upload, %{role: "user"} = claims, _params) do
-    Permissions.authorized?(claims, [:create_structure_note, :edit_structure_note])
+    Permissions.authorized?(claims, [:create_structure_note, :edit])
   end
 
   def authorize(:auto_publish, %{role: "user"} = claims, _params) do
@@ -17,20 +17,31 @@ defmodule TdDd.DataStructures.StructureNotes.Policy do
 
   def authorize(action, %{role: "user"} = claims, %DataStructure{domain_ids: domain_ids} = ds)
       when action in [
-             :create_structure_note,
-             :delete_structure_note,
-             :deprecate_structure_note,
-             :edit_structure_note,
-             :publish_structure_note,
-             :publish_structure_note_from_draft,
-             :reject_structure_note,
-             :send_structure_note_to_approval,
-             :unreject_structure_note,
-             :view_structure_note_history
+             :create,
+             :delete,
+             :deprecate,
+             :edit,
+             :publish,
+             :publish_draft,
+             :reject,
+             :submit,
+             :unreject,
+             :history
            ] do
     Bodyguard.permit?(DataStructures, :view_data_structure, claims, ds) and
-      Permissions.authorized?(claims, _permission = action, domain_ids)
+      Permissions.authorized?(claims, permission(action), domain_ids)
   end
 
   def authorize(_action, %{role: role}, _params), do: role in ["admin", "service"]
+
+  defp permission(:create), do: :create_structure_note
+  defp permission(:delete), do: :delete_structure_note
+  defp permission(:deprecate), do: :deprecate_structure_note
+  defp permission(:edit), do: :edit_structure_note
+  defp permission(:history), do: :view_structure_note_history
+  defp permission(:publish), do: :publish_structure_note
+  defp permission(:publish_draft), do: :publish_structure_note_from_draft
+  defp permission(:reject), do: :reject_structure_note
+  defp permission(:submit), do: :send_structure_note_to_approval
+  defp permission(:unreject), do: :unreject_structure_note
 end

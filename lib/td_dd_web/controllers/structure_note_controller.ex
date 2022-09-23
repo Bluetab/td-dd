@@ -114,7 +114,7 @@ defmodule TdDdWeb.StructureNoteController do
     with %{user_id: user_id} = claims <- conn.assigns[:current_resource],
          data_structure <-
            DataStructures.get_data_structure!(data_structure_id, @data_structure_type_preload),
-         :ok <- Bodyguard.permit(StructureNotes, :create_structure_note, claims, data_structure),
+         :ok <- Bodyguard.permit(StructureNotes, :create, claims, data_structure),
          {:ok, %StructureNote{} = structure_note} <-
            StructureNotesWorkflow.create(
              data_structure,
@@ -141,7 +141,8 @@ defmodule TdDdWeb.StructureNoteController do
       ) do
     with claims <- conn.assigns[:current_resource],
          data_structure <- DataStructures.get_data_structure_by_external_id(external_id),
-         :ok <- Bodyguard.permit(StructureNotes, :force_create_structure_note, claims, data_structure) do
+         :ok <-
+           Bodyguard.permit(StructureNotes, :force_create_structure_note, claims, data_structure) do
       creation_params = Map.put(params, "data_structure_id", data_structure.id)
       create(conn, creation_params, true)
     end
@@ -235,7 +236,7 @@ defmodule TdDdWeb.StructureNoteController do
 
     with claims <- conn.assigns[:current_resource],
          data_structure <- DataStructures.get_data_structure!(structure_note.data_structure_id),
-         :ok <- Bodyguard.permit(StructureNotes, :delete_structure_note, claims, data_structure),
+         :ok <- Bodyguard.permit(StructureNotes, :delete, claims, data_structure),
          {:ok, %StructureNote{}} <- StructureNotesWorkflow.delete(structure_note, claims.user_id) do
       send_resp(conn, :no_content, "")
     end
@@ -248,7 +249,7 @@ defmodule TdDdWeb.StructureNoteController do
   end
 
   defp can(%{status: :draft}, %{"df_content" => _df_content}, claims, data_structure) do
-    {:can, permit?(StructureNotes, :edit_structure_note, claims, data_structure)}
+    {:can, permit?(StructureNotes, :edit, claims, data_structure)}
   end
 
   defp available_actions(conn, nil = structure_note, claims, data_structure) do
@@ -328,55 +329,48 @@ defmodule TdDdWeb.StructureNoteController do
   end
 
   defp is_available(:draft, :published, claims, data_structure),
-    do: permit?(StructureNotes, :publish_structure_note_from_draft, claims, data_structure)
+    do: permit?(StructureNotes, :publish_draft, claims, data_structure)
 
   defp is_available(nil, :draft, claims, data_structure),
-    do: permit?(StructureNotes, :edit_structure_note, claims, data_structure)
+    do: permit?(StructureNotes, :edit, claims, data_structure)
 
   defp is_available(:draft, :edited, claims, data_structure),
-    do: permit?(StructureNotes, :edit_structure_note, claims, data_structure)
+    do: permit?(StructureNotes, :edit, claims, data_structure)
 
   defp is_available(_, :pending_approval, claims, data_structure),
-    do: permit?(StructureNotes, :send_structure_note_to_approval, claims, data_structure)
+    do: permit?(StructureNotes, :submit, claims, data_structure)
 
   defp is_available(_, :rejected, claims, data_structure),
-    do: permit?(StructureNotes, :reject_structure_note, claims, data_structure)
+    do: permit?(StructureNotes, :reject, claims, data_structure)
 
   defp is_available(:rejected, :draft, claims, data_structure),
-    do: permit?(StructureNotes, :unreject_structure_note, claims, data_structure)
+    do: permit?(StructureNotes, :unreject, claims, data_structure)
 
   defp is_available(_, :draft, claims, data_structure),
-    do: permit?(StructureNotes, :unreject_structure_note, claims, data_structure)
+    do: permit?(StructureNotes, :unreject, claims, data_structure)
 
   defp is_available(_, :deprecated, claims, data_structure),
-    do: permit?(StructureNotes, :deprecate_structure_note, claims, data_structure)
+    do: permit?(StructureNotes, :deprecate, claims, data_structure)
 
   defp is_available(_, :published, claims, data_structure),
-    do: permit?(StructureNotes, :publish_structure_note, claims, data_structure)
+    do: permit?(StructureNotes, :publish, claims, data_structure)
 
   defp is_available(_, :deleted, claims, data_structure),
-    do: permit?(StructureNotes, :delete_structure_note, claims, data_structure)
+    do: permit?(StructureNotes, :delete, claims, data_structure)
 
   defp is_available(_, _, _claims, _data_structure), do: false
 
   defp listable_statuses(claims, data_structure) do
     [
-      {permit?(StructureNotes, :edit_structure_note, claims, data_structure), [:draft]},
-      {permit?(StructureNotes, :send_structure_note_to_approval, claims, data_structure),
-       [:draft, :pending_approval]},
-      {permit?(StructureNotes, :reject_structure_note, claims, data_structure),
-       [:pending_approval, :rejected]},
-      {permit?(StructureNotes, :unreject_structure_note, claims, data_structure),
-       [:rejected, :draft]},
-      {permit?(StructureNotes, :deprecate_structure_note, claims, data_structure), [:deprecated]},
-      {permit?(StructureNotes, :publish_structure_note, claims, data_structure),
-       [:pending_approval]},
-      {permit?(StructureNotes, :delete_structure_note, claims, data_structure),
-       [:draft, :rejected]},
-      {permit?(StructureNotes, :publish_structure_note_from_draft, claims, data_structure),
-       [:draft]},
-      {permit?(StructureNotes, :view_structure_note_history, claims, data_structure),
-       [:versioned, :deprecated]},
+      {permit?(StructureNotes, :edit, claims, data_structure), [:draft]},
+      {permit?(StructureNotes, :submit, claims, data_structure), [:draft, :pending_approval]},
+      {permit?(StructureNotes, :reject, claims, data_structure), [:pending_approval, :rejected]},
+      {permit?(StructureNotes, :unreject, claims, data_structure), [:rejected, :draft]},
+      {permit?(StructureNotes, :deprecate, claims, data_structure), [:deprecated]},
+      {permit?(StructureNotes, :publish, claims, data_structure), [:pending_approval]},
+      {permit?(StructureNotes, :delete, claims, data_structure), [:draft, :rejected]},
+      {permit?(StructureNotes, :publish_draft, claims, data_structure), [:draft]},
+      {permit?(StructureNotes, :history, claims, data_structure), [:versioned, :deprecated]},
       {permit?(DataStructures, :view_data_structure, claims, data_structure), [:published]}
     ]
     |> Enum.filter(fn {permission, _} -> permission end)

@@ -15,15 +15,14 @@ defmodule TdDdWeb.Resolvers.Structures do
   end
 
   def data_structure(_parent, %{id: id} = _args, resolution) do
-    with {:claims, %{} = claims} <- {:claims, claims(resolution)},
-         {:data_structure, %{} = structure} <-
+    with {:data_structure, %{} = structure} <-
            {:data_structure, DataStructures.get_data_structure(id)},
-         {:can, true} <- {:can, can?(claims, view_data_structure(structure))} do
+         :ok <- Bodyguard.permit(DataStructures, :view_data_structure, resolution, structure) do
       {:ok, structure}
     else
       {:claims, nil} -> {:error, :unauthorized}
       {:data_structure, nil} -> {:error, :not_found}
-      {:can, false} -> {:error, :forbidden}
+      {:error, :forbidden} -> {:error, :forbidden}
     end
   end
 

@@ -379,14 +379,14 @@ defmodule TdDdWeb.DataStructureController do
       {_content, %{data_structure: data_structure}} ->
         can_edit =
           case StructureNotesWorkflow.get_action_editable_action(data_structure) do
-            :create -> permit?(StructureNotes, :create_structure_note, claims, data_structure)
-            :edit -> permit?(StructureNotes, :edit_structure_note, claims, data_structure)
+            :create -> permit?(StructureNotes, :create, claims, data_structure)
+            :edit -> permit?(StructureNotes, :edit, claims, data_structure)
             _ -> true
           end
 
         if auto_publish do
           can_edit and
-            permit?(StructureNotes, :publish_structure_note_from_draft, claims, data_structure)
+            permit?(StructureNotes, :publish_draft, claims, data_structure)
         else
           can_edit
         end
