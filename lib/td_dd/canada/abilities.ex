@@ -3,7 +3,6 @@ defmodule TdDd.Canada.Abilities do
   alias TdCache.Link
   alias TdDd.Auth.Claims
   alias TdDd.Canada.DataStructureAbilities
-  alias TdDd.Canada.DataStructureTypeAbilities
   alias TdDd.Canada.DataStructureVersionAbilities
   alias TdDd.Canada.ExecutionAbilities
   alias TdDd.Canada.GrantAbilities
@@ -66,9 +65,6 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%Claims{role: "user"} = claims, :query, :tags),
       do: TagAbilities.can?(claims, :index, Tag)
-
-    def can?(%Claims{role: "user"} = claims, :query, :data_structure),
-      do: DataStructureAbilities.can?(claims, :query, DataStructure)
 
     def can?(%Claims{role: "user"} = claims, :query, :implementation),
       do: ImplementationAbilities.can?(claims, :list, Implementation)
@@ -217,10 +213,6 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%Claims{} = claims, action, %StructureTag{} = structure_tag) do
       StructureTagAbilities.can?(claims, action, structure_tag)
-    end
-
-    def can?(%Claims{} = claims, action, %DataStructureType{} = data_structure_type) do
-      DataStructureTypeAbilities.can?(claims, action, data_structure_type)
     end
 
     def can?(%Claims{} = claims, action, %Node{} = node) do
