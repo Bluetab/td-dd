@@ -65,6 +65,7 @@ defmodule TdDd.MixProject do
       {:dialyxir, "~> 1.0", only: :dev, runtime: false},
       {:guardian, "~> 2.0"},
       {:canada, "~> 2.0"},
+      {:bodyguard, "~> 2.4"},
       {:quantum, "~> 3.0"},
       {:ex_machina, "~> 2.4", only: :test},
       {:mox, "~> 1.0", only: :test},

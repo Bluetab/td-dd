@@ -214,6 +214,8 @@ config :td_dd, TdDd.Scheduler,
     ]
   ]
 
+config :bodyguard, default_error: :forbidden
+
 import_config "metadata.exs"
 import_config "profiling.exs"
 
