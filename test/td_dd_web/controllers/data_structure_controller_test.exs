@@ -264,7 +264,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
         update_data_structure: [old_domain_id],
         manage_confidential_structures: [old_domain_id, new_domain_id],
         manage_structures_domain: [old_domain_id, new_domain_id],
-        view_data_structure: [new_domain_id]
+        view_data_structure: [old_domain_id, new_domain_id]
       })
 
       assert %{"data" => %{"id" => ^id}} =
@@ -669,7 +669,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
       %{id: foo_domain_id} = CacheHelpers.insert_domain(%{external_id: "foo"})
 
       CacheHelpers.put_session_permissions(claims, %{
-        manage_structures_domain: [bar_domain_id, foo_domain_id]
+        manage_structures_domain: [bar_domain_id, foo_domain_id],
+        view_data_structure: [bar_domain_id, foo_domain_id]
       })
 
       {[id_one, _id_two, id_three], [_, bar_external_id_2, _]} =
@@ -715,7 +716,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
       %{id: pan_domain_id} = CacheHelpers.insert_domain(%{external_id: "pan"})
 
       CacheHelpers.put_session_permissions(claims, %{
-        manage_structures_domain: [bar_domain_id, foo_domain_id]
+        manage_structures_domain: [bar_domain_id, foo_domain_id],
+        view_data_structure: [bar_domain_id, foo_domain_id]
       })
 
       {[bar_id_one, _bar_id_two, _bar_id_three],
@@ -745,7 +747,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                  %{
                    "external_id" => foo_external_id_3,
                    "message" => %{
-                     "update_domain" => ["forbbiden"]
+                     "update_domain" => ["forbidden"]
                    },
                    "row" => 4
                  },
@@ -759,7 +761,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                  %{
                    "external_id" => pan_external_id_1,
                    "message" => %{
-                     "update_domain" => ["forbbiden"]
+                     "update_domain" => ["forbidden"]
                    },
                    "row" => 6
                  }
@@ -785,7 +787,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert message =~ ~r/invalid_headers/
     end
 
-    @tag authentication: [role: "user", permissions: [:manage_structures_domain]]
+    @tag authentication: [
+           role: "user",
+           permissions: [:manage_structures_domain, :view_data_structure]
+         ]
     test "throw error on invalid csv (missing external_id fields)", %{
       conn: conn,
       domain_id: domain_id
@@ -843,7 +848,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
       %{id: zoo_domain_id} = CacheHelpers.insert_domain(%{external_id: "zoo"})
 
       CacheHelpers.put_session_permissions(claims, %{
-        manage_structures_domain: [foo_domain_id, zoo_domain_id]
+        manage_structures_domain: [foo_domain_id, zoo_domain_id],
+        view_data_structure: [foo_domain_id, zoo_domain_id]
       })
 
       {[_, _, id_three], [external_id_1, external_id_2, _external_id_3]} =
@@ -874,14 +880,14 @@ defmodule TdDdWeb.DataStructureControllerTest do
                  %{
                    "row" => 4,
                    "message" => %{
-                     "update_domain" => ["forbbiden"]
+                     "update_domain" => ["forbidden"]
                    },
                    "external_id" => external_id_2
                  },
                  %{
                    "row" => 5,
                    "message" => %{
-                     "update_domain" => ["forbbiden"]
+                     "update_domain" => ["forbidden"]
                    },
                    "external_id" => bar_external_id_1
                  }

@@ -3,16 +3,15 @@ defmodule TdDd.Canada.ReferenceDataAbilities do
   Permissions for reference datasets
   """
 
-  alias TdDd.Auth.Claims
   alias TdDq.Canada.ImplementationAbilities
   alias TdDq.Implementations.Implementation
 
-  def can?(%Claims{role: "admin"}, _action, _resource), do: true
+  def can?(%{role: "admin"}, _action, _resource), do: true
 
-  # Service accounts can do anything with reference data
-  def can?(%Claims{role: "service"}, action, _resource) when action in [:show, :list], do: true
+  # Service accounts can list and show reference data
+  def can?(%{role: "service"}, action, _resource) when action in [:list, :show], do: true
 
-  def can?(%Claims{} = claims, action, _resource) when action in [:list, :show] do
+  def can?(%{} = claims, action, _resource) when action in [:list, :show] do
     ImplementationAbilities.can?(claims, "create", Implementation)
   end
 

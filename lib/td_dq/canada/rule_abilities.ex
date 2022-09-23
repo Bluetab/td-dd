@@ -2,14 +2,13 @@ defmodule TdDq.Canada.RuleAbilities do
   @moduledoc false
   alias Ecto.Changeset
   alias TdCache.ConceptCache
-  alias TdDq.Auth.Claims
   alias TdDq.Permissions
   alias TdDq.Rules.Rule
 
   # Service account can view all rules
-  def can?(%Claims{role: "service"}, :show, %Rule{}), do: true
+  def can?(%{role: "service"}, :show, %Rule{}), do: true
 
-  def can?(%Claims{} = claims, :show, %Rule{
+  def can?(%{} = claims, :show, %Rule{
         business_concept_id: business_concept_id,
         domain_id: domain_id
       }) do
@@ -17,7 +16,7 @@ defmodule TdDq.Canada.RuleAbilities do
       authorized?(claims, business_concept_id)
   end
 
-  def can?(%Claims{} = claims, :update, %Changeset{} = changeset) do
+  def can?(%{} = claims, :update, %Changeset{} = changeset) do
     domain_ids = fetch_values(changeset, :domain_id)
     business_concept_ids = fetch_values(changeset, :business_concept_id)
 
@@ -25,8 +24,7 @@ defmodule TdDq.Canada.RuleAbilities do
       Enum.all?(business_concept_ids, &authorized?(claims, &1))
   end
 
-  def can?(%Claims{} = claims, action, %Changeset{} = changeset)
-      when action in [:create, :delete] do
+  def can?(%{} = claims, action, %Changeset{} = changeset) when action in [:create, :delete] do
     domain_id = Changeset.fetch_field!(changeset, :domain_id)
     business_concept_id = Changeset.fetch_field!(changeset, :business_concept_id)
 
@@ -34,27 +32,27 @@ defmodule TdDq.Canada.RuleAbilities do
       authorized?(claims, business_concept_id)
   end
 
-  def can?(%Claims{} = claims, :manage, Rule) do
+  def can?(%{} = claims, :manage, Rule) do
     Permissions.authorized?(claims, :manage_quality_rule)
   end
 
-  def can?(%Claims{} = claims, :manage_segments_action, %Rule{domain_id: domain_id}) do
+  def can?(%{} = claims, :manage_segments_action, %Rule{domain_id: domain_id}) do
     Permissions.authorized?(claims, :manage_segments, domain_id)
   end
 
-  def can?(%Claims{} = claims, :create_implementation, %Rule{domain_id: domain_id}) do
+  def can?(%{} = claims, :create_implementation, %Rule{domain_id: domain_id}) do
     Permissions.authorized?(claims, :manage_quality_rule_implementations, domain_id)
   end
 
-  def can?(%Claims{} = claims, :create_raw_implementation, %Rule{domain_id: domain_id}) do
+  def can?(%{} = claims, :create_raw_implementation, %Rule{domain_id: domain_id}) do
     Permissions.authorized?(claims, :manage_raw_quality_rule_implementations, domain_id)
   end
 
-  def can?(%Claims{} = claims, :manage_remediations, %Rule{domain_id: domain_id}) do
+  def can?(%{} = claims, :manage_remediations, %Rule{domain_id: domain_id}) do
     Permissions.authorized?(claims, :manage_remediations, domain_id)
   end
 
-  def can?(%Claims{}, _action, _entity), do: false
+  def can?(%{}, _action, _entity), do: false
 
   defp fetch_values(%Changeset{data: %Rule{} = data} = changeset, field)
        when field in [:domain_id, :business_concept_id] do
@@ -66,7 +64,7 @@ defmodule TdDq.Canada.RuleAbilities do
 
   defp authorized?(_claims, nil), do: true
 
-  defp authorized?(%Claims{} = claims, business_concept_id) do
+  defp authorized?(%{} = claims, business_concept_id) do
     {:ok, status} = ConceptCache.member_confidential_ids(business_concept_id)
 
     case status do

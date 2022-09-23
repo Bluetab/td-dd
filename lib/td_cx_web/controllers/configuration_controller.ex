@@ -4,7 +4,6 @@ defmodule TdCxWeb.ConfigurationController do
 
   alias TdCx.Configurations
   alias TdCx.Configurations.Configuration
-  alias TdCxWeb.ErrorView
   alias TdCxWeb.SwaggerDefinitions
 
   action_fallback(TdCxWeb.FallbackController)

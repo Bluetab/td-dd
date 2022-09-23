@@ -3,8 +3,6 @@ defmodule TdDd.DataStructures.BulkUpdate do
   Support for bulk update of data structures.
   """
 
-  import Canada, only: [can?: 2]
-
   alias Codepagex
   alias Ecto.Changeset
   alias Ecto.Multi
@@ -22,6 +20,8 @@ defmodule TdDd.DataStructures.BulkUpdate do
   require Logger
 
   @data_structure_preloads [:system, current_version: :structure_type]
+
+  defdelegate authorize(action, user, params), to: __MODULE__.Policy
 
   def update_all(
         ids,
@@ -220,10 +220,10 @@ defmodule TdDd.DataStructures.BulkUpdate do
             params = %{domain_ids: Enum.map(domains, & &1.id)}
             changeset = DataStructures.update_changeset(claims, structure, params)
 
-            if can?(claims, update_data_structure(changeset)) do
+            if Bodyguard.permit?(DataStructures, :update_data_structure, claims, changeset) do
               {index, check_data_structure(changeset)}
             else
-              {index, {:error, {:update_domain, :forbbiden}}}
+              {index, {:error, {:update_domain, :forbidden}}}
             end
           end
       end)

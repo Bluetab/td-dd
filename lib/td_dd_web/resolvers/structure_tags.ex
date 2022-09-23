@@ -16,7 +16,7 @@ defmodule TdDdWeb.Resolvers.StructureTags do
     with {:claims, %{} = claims} <- {:claims, claims(resolution)},
          {:struct, %{} = structure} <- {:struct, DataStructures.get_data_structure(structure_id)},
          {:tag, %{} = tag} <- {:tag, Tags.get_tag(id: tag_id)},
-         {:can, true} <- {:can, can?(claims, tag(structure))},
+         :ok <- Bodyguard.permit(DataStructures, :tag, claims, structure),
          {:ok, %{structure_tag: %{} = structure_tag}} <-
            Tags.tag_structure(structure, tag, args, claims) do
       {:ok, structure_tag}
@@ -24,7 +24,7 @@ defmodule TdDdWeb.Resolvers.StructureTags do
       {:claims, nil} -> {:error, :unauthorized}
       {:struct, nil} -> {:error, :not_found}
       {:tag, nil} -> {:error, :not_found}
-      {:can, false} -> {:error, :forbidden}
+      {:error, :forbidden} -> {:error, :forbidden}
       {:error, _, changeset, _} -> {:error, changeset}
     end
   end

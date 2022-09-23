@@ -9,6 +9,10 @@ defmodule TdDqWeb.FallbackController do
   alias TdDqWeb.ErrorView
 
   def call(conn, {:can, false}) do
+    call(conn, {:error, :forbidden})
+  end
+
+  def call(conn, {:error, :forbidden}) do
     conn
     |> put_status(:forbidden)
     |> put_view(ErrorView)

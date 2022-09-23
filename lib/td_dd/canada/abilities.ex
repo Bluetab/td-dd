@@ -203,14 +203,6 @@ defmodule TdDd.Canada.Abilities do
       GrantAbilities.can?(claims, action, group)
     end
 
-    def can?(%Claims{} = claims, action, %DataStructure{} = data_structure) do
-      DataStructureAbilities.can?(claims, action, data_structure)
-    end
-
-    def can?(%Claims{} = claims, :update_data_structure, %{} = changeset) do
-      DataStructureAbilities.can?(claims, :update_data_structure, changeset)
-    end
-
     def can?(%Claims{} = claims, action, %DataStructureVersion{} = data_structure_version) do
       DataStructureVersionAbilities.can?(claims, action, data_structure_version)
     end
@@ -235,11 +227,8 @@ defmodule TdDd.Canada.Abilities do
       UnitAbilities.can?(claims, action, node)
     end
 
-    def can?(%Claims{} = claims, action, DataStructure) do
-      DataStructureAbilities.can?(claims, action, DataStructure)
-    end
-
     def can?(%Claims{} = claims, action, domain_id) do
+      # raise "#{action} #{domain_id}"
       DataStructureAbilities.can?(claims, action, domain_id)
     end
   end

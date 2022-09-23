@@ -100,7 +100,7 @@ defmodule TdDdWeb.DataStructureController do
 
     with %{valid?: true} = changeset <-
            DataStructures.update_changeset(claims, structure, structure_params),
-         {:can, true} <- {:can, can?(claims, update_data_structure(changeset))},
+         :ok <- Bodyguard.permit(DataStructures, :update_data_structure, claims, changeset),
          {:ok, _} <- DataStructures.update_data_structure(claims, changeset, inherit) do
       claims = conn.assigns[:current_resource]
       options = filter_opts(claims, structure)
@@ -114,8 +114,11 @@ defmodule TdDdWeb.DataStructureController do
 
   defp filter_opts(claims, structure) do
     Enum.filter(@enrich_attrs, fn
-      :with_protected_metadata -> can?(claims, view_protected_metadata(structure))
-      _ -> true
+      :with_protected_metadata ->
+        Bodyguard.permit?(DataStructures, :view_protected_metadata, claims, structure)
+
+      _ ->
+        true
     end)
   end
 
@@ -155,7 +158,7 @@ defmodule TdDdWeb.DataStructureController do
     claims = conn.assigns[:current_resource]
     data_structure = DataStructures.get_data_structure!(id)
 
-    with {:can, true} <- {:can, can?(claims, delete_data_structure(data_structure))},
+    with :ok <- Bodyguard.permit(DataStructures, :delete_data_structure, claims, data_structure),
          {:ok, %{data_structure: _deleted_data_structure}} <-
            DataStructures.delete_data_structure(data_structure, claims) do
       send_resp(conn, :no_content, "")
@@ -263,7 +266,7 @@ defmodule TdDdWeb.DataStructureController do
     headers = ["external_id", "domain_external_ids"]
 
     with claims <- conn.assigns[:current_resource],
-         {:can, true} <- {:can, can?(claims, update_domain_ids(DataStructure))},
+         :ok <- Bodyguard.permit(BulkUpdate, :bulk_update_domains, claims),
          :ok <-
            BulkUpdate.check_csv_headers(structures_content_upload, headers),
          [_ | _] = rows <- BulkUpdate.from_csv(structures_content_upload, :simple),
@@ -481,10 +484,11 @@ defmodule TdDdWeb.DataStructureController do
   defp do_render_data_structure(conn, claims, data_structure) do
     if permit?(DataStructures, :view_data_structure, claims, data_structure) do
       user_permissions = %{
-        update: can?(claims, update_data_structure(data_structure)),
+        update: permit?(DataStructures, :update_data_structure, claims, data_structure),
         confidential:
           permit?(DataStructures, :manage_confidential_structures, claims, data_structure),
-        view_profiling_permission: can?(claims, view_data_structures_profile(data_structure))
+        view_profiling_permission:
+          permit?(DataStructures, :view_data_structures_profile, claims, data_structure)
       }
 
       # TODO: tags not consumed by front?

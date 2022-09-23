@@ -80,12 +80,9 @@ defmodule TdDq.Canada.Abilities do
     end
 
     def can?(%Claims{} = claims, action, %DataStructure{} = data_structure) do
-      dd_claims = TdDd.Auth.Claims.from(claims)
-      DataStructureAbilities.can?(dd_claims, action, data_structure)
+      DataStructureAbilities.can?(claims, action, data_structure)
     end
 
-    def can?(%Claims{}, _action, _entity) do
-      false
-    end
+    def can?(%Claims{}, _action, _entity), do: false
   end
 end

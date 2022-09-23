@@ -72,7 +72,7 @@ defmodule TdDdWeb.Schema do
   end
 
   def middleware(middleware, %{identifier: field}, %{identifier: :query})
-      when field in [:source, :sources, :structure_notes] do
+      when field in [:source, :sources, :structure_notes, :data_structure, :data_structures] do
     middleware
   end
 
