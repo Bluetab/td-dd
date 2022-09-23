@@ -4,7 +4,6 @@ defmodule TdCx.Sources do
   """
 
   import Ecto.Query
-  import Canada, only: [can?: 2]
 
   require Logger
 
@@ -17,6 +16,8 @@ defmodule TdCx.Sources do
   alias TdDd.Repo
   alias TdDfLib.Format
   alias TdDfLib.Validation
+
+  defdelegate authorize(action, user, params), to: TdCx.Sources.Policy
 
   @doc """
   Returns the list of sources.
@@ -135,8 +136,8 @@ defmodule TdCx.Sources do
   defp source_params(list) when is_list(list), do: Map.new(list)
 
   def enrich_secrets(%Claims{} = claims, %Source{} = source) do
-    case can?(claims, view_secrets(source)) do
-      true -> enrich_secrets(source)
+    case Bodyguard.permit(__MODULE__, :view_secrets, claims, source) do
+      :ok -> enrich_secrets(source)
       _ -> source
     end
   end
@@ -395,18 +396,11 @@ defmodule TdCx.Sources do
     Source.changeset(source, %{})
   end
 
-  def job_types(%Claims{} = claims, %Source{} = source) do
-    with true <- can?(claims, view_job_types(source)) do
-      source
-      |> Map.get(:config)
-      |> Map.get("job_types", [])
-      |> case do
-        nil -> []
-        job_types -> job_types
-      end
-      |> Enum.uniq()
-    end
+  def job_types(%Source{config: %{"job_types" => job_types}}) when is_list(job_types) do
+    Enum.uniq(job_types)
   end
+
+  def job_types(%Source{}), do: []
 
   @spec get_aliases(non_neg_integer) :: [binary]
   def get_aliases(source_id) do
