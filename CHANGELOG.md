@@ -9,6 +9,7 @@
 ### Added
 
 - [TD-4903] Include `sobelow` static code analysis in CI pipeline
+- [TD-2430] Allow different join types on implementation dataset
 
 ## [4.51.0] 2022-09-19
 

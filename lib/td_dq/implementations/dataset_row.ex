@@ -12,7 +12,7 @@ defmodule TdDq.Implementations.DatasetRow do
     embeds_one(:alias, StructureAlias, on_replace: :delete)
     embeds_one(:structure, Structure, on_replace: :delete)
     embeds_many(:clauses, JoinClause, on_replace: :delete)
-    field(:join_type, :string)
+    field(:join_type, Ecto.Enum, values: [:inner, :right, :left, :full_outer])
   end
 
   def changeset(%{} = params) do
