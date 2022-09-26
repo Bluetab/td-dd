@@ -3,7 +3,6 @@ defmodule TdDdWeb.DataStructureVersionController do
   use PhoenixSwagger
 
   import Bodyguard, only: [permit?: 4]
-  import Canada, only: [can?: 2]
 
   alias Ecto
   alias TdCache.TemplateCache
@@ -80,16 +79,16 @@ defmodule TdDdWeb.DataStructureVersionController do
   defp enrich_opts(%{user_id: user_id} = claims, data_structure) do
     Enum.filter(@enrich_attrs, fn
       :profile ->
-        Bodyguard.permit?(DataStructures, :view_data_structures_profile, claims, data_structure)
+        permit?(DataStructures, :view_data_structures_profile, claims, data_structure)
 
       :with_confidential ->
-        Bodyguard.permit?(DataStructures, :manage_confidential_structures, claims, data_structure)
+        permit?(DataStructures, :manage_confidential_structures, claims, data_structure)
 
       :grants ->
-        can?(claims, view_grants(data_structure))
+        permit?(DataStructures, :view_grants, claims, data_structure)
 
       :with_protected_metadata ->
-        Bodyguard.permit?(DataStructures, :view_protected_metadata, claims, data_structure)
+        permit?(DataStructures, :view_protected_metadata, claims, data_structure)
 
       _ ->
         true
@@ -114,8 +113,10 @@ defmodule TdDdWeb.DataStructureVersionController do
           permit?(DataStructures, :view_data_structures_profile, claims, data_structure),
         profile_permission: permit?(TdDd.Profiles, :profile, claims, dsv),
         request_grant: can_request_grant?(claims, data_structure),
-        update_grant_removal: can_update_grant_removal?(claims, data_structure),
-        create_foreign_grant_request: can?(claims, create_foreign_grant_request(data_structure))
+        update_grant_removal:
+          permit?(DataStructures, :request_grant_removal, claims, data_structure),
+        create_foreign_grant_request:
+          permit?(DataStructures, :create_foreign_grant_request, claims, data_structure)
       }
 
       render(conn, "show.json",
@@ -129,19 +130,17 @@ defmodule TdDdWeb.DataStructureVersionController do
     end
   end
 
-  defp actions(claims, dsv) do
-    if can?(claims, create_link(dsv)) do
+  defp actions(claims, %{data_structure: data_structure} = _dsv) do
+    if permit?(DataStructures, :link_data_structure, claims, data_structure) do
       %{create_link: true}
     end
   end
 
   defp can_request_grant?(claims, data_structure) do
     {:ok, templates} = TemplateCache.list_by_scope("gr")
-    can?(claims, create_grant_request(data_structure)) and not Enum.empty?(templates)
-  end
 
-  defp can_update_grant_removal?(claims, data_structure) do
-    can?(claims, update_grant_removal(data_structure))
+    permit?(DataStructures, :create_grant_request, claims, data_structure) and
+      not Enum.empty?(templates)
   end
 
   defp get_data_structure_version(data_structure_version_id, opts) do

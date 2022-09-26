@@ -19,6 +19,8 @@ defmodule TdDd.Grants.Requests do
   alias TdDd.Grants.GrantRequestStatus
   alias TdDd.Repo
 
+  defdelegate authorize(action, user, params), to: TdDd.Grants.Policy
+
   def list_grant_request_groups do
     Repo.all(GrantRequestGroup)
   end
@@ -220,9 +222,10 @@ defmodule TdDd.Grants.Requests do
 
   def latest_grant_request_by_data_structure(data_structure_id, user_id) do
     GrantRequest
-    |> where([gr], data_structure_id: ^data_structure_id)
-    |> join(:left, [gr], grg in assoc(gr, :group))
-    |> where([_, gr], gr.user_id == ^user_id)
+    |> where([r], data_structure_id: ^data_structure_id)
+    |> join(:inner, [r], g in assoc(r, :group))
+    |> where([_, g], g.user_id == ^user_id)
+    |> preload(:group)
     |> order_by(desc: :inserted_at)
     |> limit(1)
     |> Repo.one()

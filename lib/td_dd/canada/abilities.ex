@@ -4,7 +4,6 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Auth.Claims
   alias TdDd.Canada.DataStructureAbilities
   alias TdDd.Canada.DataStructureVersionAbilities
-  alias TdDd.Canada.GrantAbilities
   alias TdDd.Canada.LineageAbilities
   alias TdDd.Canada.LinkAbilities
   alias TdDd.Canada.StructureTagAbilities
@@ -12,13 +11,9 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Canada.TagAbilities
   alias TdDd.Canada.UnitAbilities
   alias TdDd.Classifiers.Classifier
-  alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Tags.StructureTag
   alias TdDd.DataStructures.Tags.Tag
-  alias TdDd.Grants.Grant
-  alias TdDd.Grants.GrantRequest
-  alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Lineage.LineageEvent
   alias TdDd.Lineage.Units.Node
   alias TdDd.Lineage.Units.Unit
@@ -50,10 +45,6 @@ defmodule TdDd.Canada.Abilities do
     def can?(%Claims{role: "user"}, :query, :domains), do: true
     def can?(%Claims{role: "user"}, :query, :domain), do: true
     def can?(%Claims{role: "user"}, :query, :templates), do: true
-
-    def can?(%Claims{role: "user"} = claims, :query, :latest_grant_request) do
-      GrantAbilities.can?(claims, :list, GrantRequest)
-    end
 
     def can?(%Claims{role: "user"} = claims, :query, :tags),
       do: TagAbilities.can?(claims, :index, Tag)
@@ -100,10 +91,6 @@ defmodule TdDd.Canada.Abilities do
       LinkAbilities.can?(claims, action, link)
     end
 
-    def can?(%Claims{} = claims, :create_link, %{data_structure: data_structure}) do
-      LinkAbilities.can?(claims, :create_link, data_structure)
-    end
-
     def can?(%Claims{} = claims, action, Unit) do
       UnitAbilities.can?(claims, action, Unit)
     end
@@ -114,56 +101,6 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%Claims{} = claims, action, LineageEvent) do
       LineageAbilities.can?(claims, action, LineageEvent)
-    end
-
-    def can?(%Claims{} = claims, :view_grants, %DataStructure{} = data_structure) do
-      GrantAbilities.can?(claims, :view_grants, data_structure)
-    end
-
-    def can?(%Claims{} = claims, :create_grant, %DataStructure{} = data_structure) do
-      GrantAbilities.can?(claims, :create_grant, data_structure)
-    end
-
-    def can?(%Claims{} = claims, action, %Grant{} = grant) do
-      GrantAbilities.can?(claims, action, grant)
-    end
-
-    def can?(%Claims{} = claims, action, GrantRequest) do
-      GrantAbilities.can?(claims, action, GrantRequest)
-    end
-
-    def can?(%Claims{} = claims, action, %GrantRequest{} = target) do
-      GrantAbilities.can?(claims, action, target)
-    end
-
-    def can?(%Claims{role: "admin"}, :update_grant_removal, %DataStructure{}), do: true
-
-    def can?(%Claims{} = claims, :update_grant_removal, %DataStructure{domain_ids: domain_ids}) do
-      GrantAbilities.can?(claims, :update_pending_removal, domain_ids)
-    end
-
-    def can?(%Claims{role: "admin"}, :create_grant_request, %DataStructure{}), do: true
-
-    def can?(%Claims{} = claims, :create_grant_request, %DataStructure{domain_ids: domain_ids}) do
-      GrantAbilities.can?(claims, :create_grant_request, domain_ids)
-    end
-
-    def can?(%Claims{role: "admin"}, :create_grant_request_group, _), do: true
-
-    def can?(%Claims{} = claims, :create_grant_request_group, params) do
-      GrantAbilities.can?(claims, :create_grant_request_group, params)
-    end
-
-    def can?(%Claims{role: "admin"}, :create_foreign_grant_request, _), do: true
-
-    def can?(%Claims{} = claims, :create_foreign_grant_request, %DataStructure{
-          domain_ids: domain_ids
-        }) do
-      GrantAbilities.can?(claims, :create_foreign_grant_request, domain_ids)
-    end
-
-    def can?(%Claims{} = claims, action, %GrantRequestGroup{} = group) do
-      GrantAbilities.can?(claims, action, group)
     end
 
     def can?(%Claims{} = claims, action, %DataStructureVersion{} = data_structure_version) do

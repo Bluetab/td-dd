@@ -65,10 +65,15 @@ defmodule TdDd.DataStructures.Policy do
 
   def authorize(action, %{} = claims, %DataStructure{domain_ids: domain_ids})
       when action in [
+             :create_grant_request,
+             :create_foreign_grant_request,
              :delete_data_structure,
              :link_data_structure,
+             :manage_grants,
+             :request_grant_removal,
              :update_data_structure,
              :view_data_structures_profile,
+             :view_grants,
              :view_protected_metadata
            ] do
     Permissions.authorized?(claims, :view_data_structure, domain_ids) and

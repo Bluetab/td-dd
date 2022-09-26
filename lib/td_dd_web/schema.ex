@@ -75,6 +75,7 @@ defmodule TdDdWeb.Schema do
       when field in [
              :data_structure,
              :data_structures,
+             :latest_grant_request,
              :reference_dataset,
              :reference_datasets,
              :source,

@@ -13,6 +13,8 @@ defmodule TdDd.Grants do
   alias TdDd.Repo
   alias TdDd.Search.IndexWorker
 
+  defdelegate authorize(action, user, params), to: __MODULE__.Policy
+
   def get_grant!(id, opts \\ []) do
     Grant
     |> Repo.get!(id)

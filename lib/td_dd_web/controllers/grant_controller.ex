@@ -2,8 +2,6 @@ defmodule TdDdWeb.GrantController do
   use TdDdWeb, :controller
   use PhoenixSwagger
 
-  import Canada, only: [can?: 2]
-
   alias TdDd.CSV.Download
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
@@ -29,7 +27,7 @@ defmodule TdDdWeb.GrantController do
   def index(conn, _params) do
     claims = conn.assigns[:current_resource]
 
-    with true <- can?(claims, index(%Grant{})),
+    with :ok <- Bodyguard.permit(Grants, :query, claims, Grant),
          grants <- Grants.list_grants([]) do
       render(conn, "index.json", grants: grants)
     end
@@ -59,7 +57,7 @@ defmodule TdDdWeb.GrantController do
          {:data_structure, %DataStructure{} = data_structure} <-
            {:data_structure,
             DataStructures.get_data_structure_by_external_id(data_structure_external_id)},
-         {:can, true} <- {:can, can?(claims, create_grant(data_structure))},
+         :ok <- Bodyguard.permit(DataStructures, :manage_grants, claims, data_structure),
          {:ok, %{grant: %{id: id}}} <- Grants.create_grant(grant_params, data_structure, claims),
          %Grant{} = grant <- Grants.get_grant!(id, preload: [:data_structure, :system]) do
       conn
@@ -88,7 +86,7 @@ defmodule TdDdWeb.GrantController do
   def show(conn, %{"id" => id}) do
     with claims <- conn.assigns[:current_resource],
          %Grant{} = grant <- Grants.get_grant!(id, preload: [:data_structure, :system]),
-         {:can, true} <- {:can, can?(claims, show(grant))} do
+         :ok <- Bodyguard.permit(Grants, :view, claims, grant) do
       render(conn, "show.json", grant: grant)
     end
   end
@@ -115,7 +113,7 @@ defmodule TdDdWeb.GrantController do
   def update(conn, %{"id" => id, "action" => "request_removal"}) do
     with claims <- conn.assigns[:current_resource],
          %Grant{} = grant <- Grants.get_grant!(id, preload: :data_structure),
-         {:can, true} <- {:can, can?(claims, update_pending_removal(grant))},
+         :ok <- Bodyguard.permit(Grants, :request_removal, claims, grant),
          {:ok, %{grant: _}} <- Grants.update_grant(grant, %{pending_removal: true}, claims),
          %Grant{} = grant <- Grants.get_grant!(id, preload: [:data_structure, :system]) do
       render(conn, "show.json", grant: grant)
@@ -125,7 +123,7 @@ defmodule TdDdWeb.GrantController do
   def update(conn, %{"id" => id, "action" => "cancel_removal"}) do
     with claims <- conn.assigns[:current_resource],
          %Grant{} = grant <- Grants.get_grant!(id, preload: :data_structure),
-         {:can, true} <- {:can, can?(claims, update_pending_removal(grant))},
+         :ok <- Bodyguard.permit(Grants, :request_removal, claims, grant),
          {:ok, %{grant: _}} <- Grants.update_grant(grant, %{pending_removal: false}, claims),
          %Grant{} = grant <- Grants.get_grant!(id, preload: [:data_structure, :system]) do
       render(conn, "show.json", grant: grant)
@@ -140,7 +138,7 @@ defmodule TdDdWeb.GrantController do
 
     with claims <- conn.assigns[:current_resource],
          %Grant{} = grant <- Grants.get_grant!(id, preload: :data_structure),
-         {:can, true} <- {:can, can?(claims, update(grant))},
+         :ok <- Bodyguard.permit(Grants, :manage, claims, grant),
          {:ok, %{grant: _}} <- Grants.update_grant(grant, update_params, claims),
          %Grant{} = grant <- Grants.get_grant!(id, preload: [:data_structure, :system]) do
       render(conn, "show.json", grant: grant)
@@ -150,7 +148,7 @@ defmodule TdDdWeb.GrantController do
   def update(conn, %{"id" => id, "grant" => grant_params}) do
     with claims <- conn.assigns[:current_resource],
          %Grant{} = grant <- Grants.get_grant!(id, preload: :data_structure),
-         {:can, true} <- {:can, can?(claims, update(grant))},
+         :ok <- Bodyguard.permit(Grants, :manage, claims, grant),
          {:ok, %{grant: _}} <- Grants.update_grant(grant, grant_params, claims),
          %Grant{} = grant <- Grants.get_grant!(id, preload: [:data_structure, :system]) do
       render(conn, "show.json", grant: grant)
@@ -173,7 +171,7 @@ defmodule TdDdWeb.GrantController do
   def delete(conn, %{"id" => id}) do
     with claims <- conn.assigns[:current_resource],
          %Grant{} = grant <- Grants.get_grant!(id, preload: [:data_structure, :system]),
-         {:can, true} <- {:can, can?(claims, delete(grant))},
+         :ok <- Bodyguard.permit(Grants, :manage, claims, grant),
          {:ok, %{grant: %Grant{}}} <- Grants.delete_grant(grant, claims) do
       send_resp(conn, :no_content, "")
     end
