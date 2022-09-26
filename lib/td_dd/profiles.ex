@@ -13,6 +13,8 @@ defmodule TdDd.Profiles do
   alias TdDd.Repo
   alias TdDd.Search.IndexWorker
 
+  defdelegate authorize(action, user, params), to: TdDd.Profiles.Policy
+
   @doc """
   Returns the list of profiles.
 

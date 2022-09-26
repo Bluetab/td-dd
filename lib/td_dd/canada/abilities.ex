@@ -4,7 +4,6 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Auth.Claims
   alias TdDd.Canada.DataStructureAbilities
   alias TdDd.Canada.DataStructureVersionAbilities
-  alias TdDd.Canada.ExecutionAbilities
   alias TdDd.Canada.GrantAbilities
   alias TdDd.Canada.LineageAbilities
   alias TdDd.Canada.LinkAbilities
@@ -17,16 +16,12 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Tags.StructureTag
   alias TdDd.DataStructures.Tags.Tag
-  alias TdDd.Executions.ProfileEvent
-  alias TdDd.Executions.ProfileExecution
-  alias TdDd.Executions.ProfileGroup
   alias TdDd.Grants.Grant
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Lineage.LineageEvent
   alias TdDd.Lineage.Units.Node
   alias TdDd.Lineage.Units.Unit
-  alias TdDd.Profiles.Profile
   alias TdDd.Systems.System
   alias TdDq.Canada.ImplementationAbilities
   alias TdDq.Canada.RuleResultAbilities
@@ -100,17 +95,6 @@ defmodule TdDd.Canada.Abilities do
     def can?(%Claims{} = claims, action, %Classifier{} = classifier) do
       SystemAbilities.can?(claims, action, classifier)
     end
-
-    def can?(%Claims{} = claims, action, target)
-        when target in [ProfileEvent, ProfileExecution, ProfileGroup] do
-      ExecutionAbilities.can?(claims, action, target)
-    end
-
-    def can?(%Claims{} = claims, action, %ProfileExecution{} = target) do
-      ExecutionAbilities.can?(claims, action, target)
-    end
-
-    def can?(%Claims{role: "service"}, :index, Profile), do: true
 
     def can?(%Claims{} = claims, action, %Link{} = link) do
       LinkAbilities.can?(claims, action, link)
