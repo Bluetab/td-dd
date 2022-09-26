@@ -88,8 +88,7 @@ defmodule TdDd.Lineage.GraphData.Nodes do
   end
 
   defp by_permissions(claims, node) do
-    import Canada, only: [can?: 2]
-    not can?(claims, view_lineage(node))
+    not Bodyguard.permit?(Units, :view_lineage, claims, node)
   end
 
   defp class(%{class: "Group"}), do: :groups

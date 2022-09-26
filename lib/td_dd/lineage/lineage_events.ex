@@ -8,6 +8,8 @@ defmodule TdDd.Lineage.LineageEvents do
   alias TdDd.Lineage.LineageEvent
   alias TdDd.Repo
 
+  defdelegate authorize(action, user, params), to: TdDd.Lineage.Policy
+
   def create_event(attrs \\ %{}) do
     %LineageEvent{}
     |> LineageEvent.changeset(attrs)

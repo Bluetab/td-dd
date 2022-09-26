@@ -4,19 +4,14 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Auth.Claims
   alias TdDd.Canada.DataStructureAbilities
   alias TdDd.Canada.DataStructureVersionAbilities
-  alias TdDd.Canada.LineageAbilities
   alias TdDd.Canada.LinkAbilities
   alias TdDd.Canada.StructureTagAbilities
   alias TdDd.Canada.SystemAbilities
   alias TdDd.Canada.TagAbilities
-  alias TdDd.Canada.UnitAbilities
   alias TdDd.Classifiers.Classifier
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Tags.StructureTag
   alias TdDd.DataStructures.Tags.Tag
-  alias TdDd.Lineage.LineageEvent
-  alias TdDd.Lineage.Units.Node
-  alias TdDd.Lineage.Units.Unit
   alias TdDd.Systems.System
   alias TdDq.Canada.ImplementationAbilities
   alias TdDq.Canada.RuleResultAbilities
@@ -91,18 +86,6 @@ defmodule TdDd.Canada.Abilities do
       LinkAbilities.can?(claims, action, link)
     end
 
-    def can?(%Claims{} = claims, action, Unit) do
-      UnitAbilities.can?(claims, action, Unit)
-    end
-
-    def can?(%Claims{} = claims, action, %{hint: :domain} = domain) do
-      UnitAbilities.can?(claims, action, domain)
-    end
-
-    def can?(%Claims{} = claims, action, LineageEvent) do
-      LineageAbilities.can?(claims, action, LineageEvent)
-    end
-
     def can?(%Claims{} = claims, action, %DataStructureVersion{} = data_structure_version) do
       DataStructureVersionAbilities.can?(claims, action, data_structure_version)
     end
@@ -117,10 +100,6 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%Claims{} = claims, action, %StructureTag{} = structure_tag) do
       StructureTagAbilities.can?(claims, action, structure_tag)
-    end
-
-    def can?(%Claims{} = claims, action, %Node{} = node) do
-      UnitAbilities.can?(claims, action, node)
     end
 
     def can?(%Claims{} = claims, action, domain_id) do

@@ -89,7 +89,12 @@ defmodule TdDdWeb.Schema do
       when field in [
              :create_reference_dataset,
              :delete_reference_dataset,
-             :update_reference_dataset
+             :update_reference_dataset,
+             :create_source,
+             :delete_source,
+             :disable_source,
+             :enable_source,
+             :update_source
            ] do
     middleware
   end
