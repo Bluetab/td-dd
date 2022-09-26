@@ -71,34 +71,6 @@ defmodule TdDdWeb.Schema do
     end
   end
 
-  def middleware(middleware, %{identifier: field}, %{identifier: :query})
-      when field in [
-             :data_structure,
-             :data_structures,
-             :latest_grant_request,
-             :reference_dataset,
-             :reference_datasets,
-             :source,
-             :sources,
-             :structure_notes
-           ] do
-    middleware
-  end
-
-  def middleware(middleware, %{identifier: field}, %{identifier: :mutate})
-      when field in [
-             :create_reference_dataset,
-             :delete_reference_dataset,
-             :update_reference_dataset,
-             :create_source,
-             :delete_source,
-             :disable_source,
-             :enable_source,
-             :update_source
-           ] do
-    middleware
-  end
-
   def middleware(middleware, %{identifier: field}, %{identifier: :query}) do
     [
       {Middleware.Authorize, [action: :query, resource: field]} | middleware

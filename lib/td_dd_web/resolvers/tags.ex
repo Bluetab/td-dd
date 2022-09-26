@@ -3,8 +3,6 @@ defmodule TdDdWeb.Resolvers.Tags do
   Absinthe resolvers for tags
   """
 
-  import Canada, only: [can?: 2]
-
   alias TdDd.DataStructures.Tags
   alias TdDd.Utils.ChangesetUtils
 
@@ -30,33 +28,26 @@ defmodule TdDdWeb.Resolvers.Tags do
   def update_tag(_parent, %{tag: %{id: id} = params} = _args, resolution) do
     with {:claims, %{} = claims} <- {:claims, claims(resolution)},
          {:tag, %{} = tag} <- {:tag, Tags.get_tag(id: id)},
-         {:can, true} <- {:can, can?(claims, update(tag))},
+         :ok <- Bodyguard.permit(Tags, :update, claims, tag),
          {:ok, _} = reply <- Tags.update_tag(tag, params) do
       reply
     else
-      {:claims, nil} ->
-        {:error, :unauthorized}
-
-      {:tag, nil} ->
-        {:error, :not_found}
-
-      {:can, false} ->
-        {:error, :forbidden}
-
-      {:error, changeset} ->
-        {:error, ChangesetUtils.error_message_list_on(changeset)}
+      {:claims, nil} -> {:error, :unauthorized}
+      {:tag, nil} -> {:error, :not_found}
+      {:error, :forbidden} -> {:error, :forbidden}
+      {:error, changeset} -> {:error, ChangesetUtils.error_message_list_on(changeset)}
     end
   end
 
   def delete_tag(_parent, %{id: id} = _args, resolution) do
     with {:claims, %{} = claims} <- {:claims, claims(resolution)},
          {:tag, %{} = tag} <- {:tag, Tags.get_tag(id: id)},
-         {:can, true} <- {:can, can?(claims, delete(tag))} do
+         :ok <- Bodyguard.permit(Tags, :delete, claims, tag) do
       Tags.delete_tag(tag)
     else
       {:claims, nil} -> {:error, :unauthorized}
       {:tag, nil} -> {:error, :not_found}
-      {:can, false} -> {:error, :forbidden}
+      {:error, :forbidden} -> {:error, :forbidden}
     end
   end
 

@@ -6,16 +6,13 @@ defmodule TdDd.ReferenceData.Policy do
 
   @behaviour Bodyguard.Policy
 
-  # Extract claims from Absinthe Resolution context
-  def authorize(action, %{context: %{claims: claims}} = _resolution, params) do
-    authorize(action, claims, params)
-  end
-
-  def authorize(action, %{role: "user"} = claims, _params) when action in [:list, :show] do
+  def authorize(action, %{role: "user"} = claims, _params)
+      when action in [:list, :show, :query] do
     ImplementationAbilities.can?(claims, "create", Implementation)
   end
 
-  def authorize(action, %{role: "service"}, _params) when action in [:list, :show], do: true
+  def authorize(action, %{role: "service"}, _params) when action in [:list, :show, :query],
+    do: true
 
   def authorize(_action, %{role: "admin"}, _params), do: true
 

@@ -12,6 +12,8 @@ defmodule TdDd.Systems do
   alias TdDd.Systems.Audit
   alias TdDd.Systems.System
 
+  defdelegate authorize(action, user, params), to: __MODULE__.Policy
+
   @doc """
   Returns the list of systems.
 

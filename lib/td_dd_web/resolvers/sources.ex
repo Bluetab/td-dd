@@ -6,16 +6,12 @@ defmodule TdDdWeb.Resolvers.Sources do
   alias TdCache.TemplateCache
   alias TdCx.Sources
 
-  def sources(_parent, args, resolution) do
-    with :ok <- Bodyguard.permit(Sources, :list, resolution) do
-      {:ok, Sources.query_sources(args)}
-    end
+  def sources(_parent, args, _resolution) do
+    {:ok, Sources.query_sources(args)}
   end
 
-  def source(_parent, args, resolution) do
-    with :ok <- Bodyguard.permit(Sources, :list, resolution) do
-      {:ok, Sources.get_source(args)}
-    end
+  def source(_parent, args, _resolution) do
+    {:ok, Sources.get_source(args)}
   end
 
   def template(%{type: type}, _args, _resolution) do
@@ -38,10 +34,12 @@ defmodule TdDdWeb.Resolvers.Sources do
   def create_source(_parent, %{source: params} = _args, resolution) do
     params = to_string_keys(params)
 
-    with :ok <- Bodyguard.permit(Sources, :create, resolution),
+    with {:claims, %{} = claims} <- {:claims, claims(resolution)},
+         :ok <- Bodyguard.permit(Sources, :create, claims),
          {:ok, %{id: id} = _source} <- Sources.create_source(params) do
       {:ok, Sources.get_source(id: id)}
     else
+      {:claims, nil} -> {:error, :unauthorized}
       {:error, error} -> {:error, error}
       {:vault_error, error} -> {:error, error}
     end

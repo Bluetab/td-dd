@@ -42,7 +42,7 @@ defmodule TdCxWeb.SourceController do
   def index(conn, _params) do
     claims = conn.assigns[:current_resource]
 
-    with :ok <- Bodyguard.permit(Sources, :list, claims),
+    with :ok <- Bodyguard.permit(Sources, :query, claims),
          sources <- Sources.list_sources(deleted: false) do
       render(conn, "index.json", sources: sources)
     end

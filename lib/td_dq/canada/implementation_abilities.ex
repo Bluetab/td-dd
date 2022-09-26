@@ -19,8 +19,8 @@ defmodule TdDq.Canada.ImplementationAbilities do
 
   @action_permissions %{
     "execute" => :execute_quality_rule_implementations,
-    "create" => [:manage_quality_rule_implementations],
-    "createRaw" => [:manage_raw_quality_rule_implementations],
+    "create" => :manage_quality_rule_implementations,
+    "createRaw" => :manage_raw_quality_rule_implementations,
     "createRawRuleLess" => [
       :manage_raw_quality_rule_implementations,
       :manage_ruleless_implementations

@@ -7,11 +7,6 @@ defmodule TdDd.DataStructures.Policy do
 
   @behaviour Bodyguard.Policy
 
-  # Extract claims from Absinthe Resolution context
-  def authorize(action, %{context: %{claims: claims}} = _resolution, params) do
-    authorize(action, claims, params)
-  end
-
   # Admin accounts can do anything with data structures
   def authorize(_action, %{role: "admin"}, _params), do: true
 

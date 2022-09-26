@@ -5,14 +5,7 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Canada.DataStructureAbilities
   alias TdDd.Canada.DataStructureVersionAbilities
   alias TdDd.Canada.LinkAbilities
-  alias TdDd.Canada.StructureTagAbilities
-  alias TdDd.Canada.SystemAbilities
-  alias TdDd.Canada.TagAbilities
-  alias TdDd.Classifiers.Classifier
   alias TdDd.DataStructures.DataStructureVersion
-  alias TdDd.DataStructures.Tags.StructureTag
-  alias TdDd.DataStructures.Tags.Tag
-  alias TdDd.Systems.System
   alias TdDq.Canada.ImplementationAbilities
   alias TdDq.Canada.RuleResultAbilities
   alias TdDq.Implementations.Implementation
@@ -25,8 +18,6 @@ defmodule TdDd.Canada.Abilities do
       :reject_implementation,
       :submit_implementation
     ]
-
-    @structure_tag_mutations [:tag_structure, :delete_structure_tag]
 
     # service accounts can upload metadata and profiling
     def can?(%Claims{role: "service"}, :upload, _resource), do: true
@@ -41,9 +32,6 @@ defmodule TdDd.Canada.Abilities do
     def can?(%Claims{role: "user"}, :query, :domain), do: true
     def can?(%Claims{role: "user"}, :query, :templates), do: true
 
-    def can?(%Claims{role: "user"} = claims, :query, :tags),
-      do: TagAbilities.can?(claims, :index, Tag)
-
     def can?(%Claims{role: "user"} = claims, :query, :implementation),
       do: ImplementationAbilities.can?(claims, :list, Implementation)
 
@@ -56,10 +44,6 @@ defmodule TdDd.Canada.Abilities do
       ImplementationAbilities.can?(claims, :mutation, mutation)
     end
 
-    def can?(%{} = claims, :mutation, mutation) when mutation in @structure_tag_mutations do
-      StructureTagAbilities.can?(claims, :mutation, mutation)
-    end
-
     def can?(%{role: role}, :mutation, _mutation), do: role == "admin"
 
     def can?(%Claims{} = claims, action, %Implementation{} = implementation) do
@@ -70,36 +54,12 @@ defmodule TdDd.Canada.Abilities do
       RuleResultAbilities.can?(claims, action, ruleResult)
     end
 
-    def can?(%Claims{} = claims, action, System) do
-      SystemAbilities.can?(claims, action, System)
-    end
-
-    def can?(%Claims{} = claims, action, %System{} = system) do
-      SystemAbilities.can?(claims, action, system)
-    end
-
-    def can?(%Claims{} = claims, action, %Classifier{} = classifier) do
-      SystemAbilities.can?(claims, action, classifier)
-    end
-
     def can?(%Claims{} = claims, action, %Link{} = link) do
       LinkAbilities.can?(claims, action, link)
     end
 
     def can?(%Claims{} = claims, action, %DataStructureVersion{} = data_structure_version) do
       DataStructureVersionAbilities.can?(claims, action, data_structure_version)
-    end
-
-    def can?(%Claims{} = claims, action, Tag) do
-      TagAbilities.can?(claims, action, Tag)
-    end
-
-    def can?(%Claims{} = claims, action, %Tag{} = tag) do
-      TagAbilities.can?(claims, action, tag)
-    end
-
-    def can?(%Claims{} = claims, action, %StructureTag{} = structure_tag) do
-      StructureTagAbilities.can?(claims, action, structure_tag)
     end
 
     def can?(%Claims{} = claims, action, domain_id) do

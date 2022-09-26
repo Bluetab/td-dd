@@ -8,6 +8,8 @@ defmodule TdDd.DataStructures.RelationTypes do
   alias TdDd.DataStructures.RelationType
   alias TdDd.Repo
 
+  defdelegate authorize(action, user, params), to: __MODULE__.Policy
+
   def list_relation_types(args \\ %{}) do
     args
     |> relation_type_query()

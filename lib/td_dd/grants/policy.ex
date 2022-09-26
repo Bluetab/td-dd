@@ -13,7 +13,7 @@ defmodule TdDd.Grants.Policy do
 
   def authorize(_action, %{role: "admin"}, _params), do: true
 
-  def authorize(:query, %{} = claims, GrantRequest) do
+  def authorize(:query, %{} = claims, _params) do
     Permissions.authorized?(claims, :approve_grant_request) or
       Permissions.authorized?(claims, :create_grant_request)
   end

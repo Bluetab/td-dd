@@ -2,7 +2,6 @@ defmodule TdDdWeb.DataStructureTypeController do
   use TdDdWeb, :controller
   use PhoenixSwagger
 
-  alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureTypes
   alias TdDdWeb.SwaggerDefinitions
 

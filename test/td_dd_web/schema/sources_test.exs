@@ -337,11 +337,13 @@ defmodule TdDdWeb.Schema.SourcesTest do
   describe "enableSource mutation" do
     @tag authentication: [role: "user"]
     test "returns forbidden when performed by user role", %{conn: conn} do
+      %{id: id} = insert(:source, active: false)
+
       assert %{"data" => nil, "errors" => errors} =
                conn
                |> post("/api/v2", %{
                  "query" => @enable_source,
-                 "variables" => %{"id" => 123}
+                 "variables" => %{"id" => id}
                })
                |> json_response(:ok)
 
@@ -370,11 +372,13 @@ defmodule TdDdWeb.Schema.SourcesTest do
   describe "disableSource mutation" do
     @tag authentication: [role: "user"]
     test "returns forbidden when queried by user role", %{conn: conn} do
+      %{id: id} = insert(:source, active: false)
+
       assert %{"data" => nil, "errors" => errors} =
                conn
                |> post("/api/v2", %{
                  "query" => @disable_source,
-                 "variables" => %{"id" => 123}
+                 "variables" => %{"id" => id}
                })
                |> json_response(:ok)
 
@@ -461,7 +465,8 @@ defmodule TdDdWeb.Schema.SourcesTest do
 
     @tag authentication: [role: "user"]
     test "returns forbidden for a non-admin user", %{conn: conn} do
-      params = %{"id" => "123"}
+      %{id: id} = insert(:source)
+      params = %{"id" => id}
 
       assert %{"data" => nil, "errors" => errors} =
                conn
@@ -509,11 +514,13 @@ defmodule TdDdWeb.Schema.SourcesTest do
   describe "deleteSource mutation" do
     @tag authentication: [role: "user"]
     test "returns forbidden for a non-admin user", %{conn: conn} do
+      %{id: id} = insert(:source)
+
       assert %{"data" => nil, "errors" => errors} =
                conn
                |> post("/api/v2", %{
                  "query" => @delete_source,
-                 "variables" => %{"id" => "123"}
+                 "variables" => %{"id" => id}
                })
                |> json_response(:ok)
 

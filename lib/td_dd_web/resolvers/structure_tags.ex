@@ -3,8 +3,6 @@ defmodule TdDdWeb.Resolvers.StructureTags do
   Absinthe resolvers for data structure tags
   """
 
-  import Canada, only: [can?: 2]
-
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Tags
 
@@ -32,14 +30,14 @@ defmodule TdDdWeb.Resolvers.StructureTags do
   def delete_structure_tag(_parent, %{id: id} = _args, resolution) do
     with {:claims, %{} = claims} <- {:claims, claims(resolution)},
          {:structure_tag, %{} = structure_tag} <- {:structure_tag, Tags.get_structure_tag(id)},
-         {:can, true} <- {:can, can?(claims, delete(structure_tag))},
+         :ok <- Bodyguard.permit(Tags, :delete, claims, structure_tag),
          {:ok, %{structure_tag: %{} = structure_tag}} <-
            Tags.delete_structure_tag(structure_tag, claims) do
       {:ok, structure_tag}
     else
       {:claims, nil} -> {:error, :unauthorized}
       {:structure_tag, nil} -> {:error, :not_found}
-      {:can, false} -> {:error, :forbidden}
+      {:error, error} -> {:error, error}
       {:error, _, changeset, _} -> {:error, changeset}
     end
   end

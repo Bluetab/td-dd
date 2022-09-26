@@ -8,16 +8,15 @@ defmodule TdDdWeb.Resolvers.Structures do
   alias TdDd.DataStructures.Relations
   alias TdDd.DataStructures.Tags
 
-  def data_structures(_parent, args, resolution) do
-    with :ok <- Bodyguard.permit(DataStructures, :query, resolution) do
-      {:ok, DataStructures.list_data_structures(args)}
-    end
+  def data_structures(_parent, args, _resolution) do
+    {:ok, DataStructures.list_data_structures(args)}
   end
 
   def data_structure(_parent, %{id: id} = _args, resolution) do
-    with {:data_structure, %{} = structure} <-
+    with {:claims, claims} when not is_nil(claims) <- {:claims, claims(resolution)},
+         {:data_structure, %{} = structure} <-
            {:data_structure, DataStructures.get_data_structure(id)},
-         :ok <- Bodyguard.permit(DataStructures, :view_data_structure, resolution, structure) do
+         :ok <- Bodyguard.permit(DataStructures, :view_data_structure, claims, structure) do
       {:ok, structure}
     else
       {:claims, nil} -> {:error, :unauthorized}
