@@ -7,14 +7,6 @@ defmodule TdDd.DataStructures.StructureNotes.Policy do
 
   @behaviour Bodyguard.Policy
 
-  def authorize(:bulk_upload, %{role: "user"} = claims, _params) do
-    Permissions.authorized?(claims, [:create_structure_note, :edit])
-  end
-
-  def authorize(:auto_publish, %{role: "user"} = claims, _params) do
-    Permissions.authorized?(claims, :publish_structure_note_from_draft)
-  end
-
   def authorize(action, %{role: "user"} = claims, %DataStructure{domain_ids: domain_ids} = ds)
       when action in [
              :create,

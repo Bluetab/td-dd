@@ -112,7 +112,7 @@ defmodule TdDdWeb.DataStructureVersionController do
         update_domain: permit?(DataStructures, :manage_structures_domain, claims, data_structure),
         view_profiling_permission:
           permit?(DataStructures, :view_data_structures_profile, claims, data_structure),
-        profile_permission: can?(claims, profile(dsv)),
+        profile_permission: permit?(TdDd.Profiles, :profile, claims, dsv),
         request_grant: can_request_grant?(claims, data_structure),
         update_grant_removal: can_update_grant_removal?(claims, data_structure),
         create_foreign_grant_request: can?(claims, create_foreign_grant_request(data_structure))

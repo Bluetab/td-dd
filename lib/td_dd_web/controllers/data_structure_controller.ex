@@ -3,8 +3,6 @@ defmodule TdDdWeb.DataStructureController do
   use PhoenixSwagger
 
   import Bodyguard, only: [permit?: 4]
-  import Canada, only: [can?: 2]
-  import Canada.Can, only: [can?: 3]
 
   alias TdDd.CSV.Download
   alias TdDd.DataStructures
@@ -38,8 +36,6 @@ defmodule TdDdWeb.DataStructureController do
     :metadata_versions,
     :data_structure_type
   ]
-
-  @structures_actions [:update_domain_ids]
 
   plug(TdDdWeb.SearchPermissionPlug)
 
@@ -140,16 +136,10 @@ defmodule TdDdWeb.DataStructureController do
   def delete(conn, %{"id" => id, "logical" => "true"}) do
     claims = conn.assigns[:current_resource]
 
-    with %DataStructure{} = data_structure <-
-           DataStructures.get_data_structure!(id),
-         {:can, true} <- {:can, can?(claims, delete_structure(data_structure))},
-         %DataStructureVersion{} = data_structure_version <-
-           DataStructures.get_latest_version(data_structure),
-         {:ok, _} <-
-           DataStructures.logical_delete_data_structure(
-             data_structure_version,
-             claims
-           ) do
+    with %DataStructure{} = ds <- DataStructures.get_data_structure!(id),
+         :ok <- Bodyguard.permit(DataStructures, :delete_data_structure, claims, ds),
+         %DataStructureVersion{} = dsv <- DataStructures.get_latest_version(ds),
+         {:ok, _} <- DataStructures.logical_delete_data_structure(dsv, claims) do
       send_resp(conn, :no_content, "")
     end
   end
@@ -218,7 +208,7 @@ defmodule TdDdWeb.DataStructureController do
     permission = conn.assigns[:search_permission]
     auto_publish = bulk_update_request |> Map.get("auto_publish", false)
 
-    with {:can, true} <- {:can, can?(claims, create(BulkUpdate))},
+    with :ok <- Bodyguard.permit(BulkUpdate, :bulk_update_notes, claims),
          %{results: results} <- search_all_structures(claims, permission, search_params),
          ids <- Enum.map(results, & &1.id),
          {:ok, %{update_notes: update_notes}} <-
@@ -266,9 +256,8 @@ defmodule TdDdWeb.DataStructureController do
     headers = ["external_id", "domain_external_ids"]
 
     with claims <- conn.assigns[:current_resource],
-         :ok <- Bodyguard.permit(BulkUpdate, :bulk_update_domains, claims),
-         :ok <-
-           BulkUpdate.check_csv_headers(structures_content_upload, headers),
+         :ok <- Bodyguard.permit(BulkUpdate, :bulk_upload_domains, claims),
+         :ok <- BulkUpdate.check_csv_headers(structures_content_upload, headers),
          [_ | _] = rows <- BulkUpdate.from_csv(structures_content_upload, :simple),
          info <- BulkUpdate.csv_bulk_update_domains(rows, claims),
          summary <- csv_bulk_upload_domains_summary(rows, info) do
@@ -553,8 +542,8 @@ defmodule TdDdWeb.DataStructureController do
 
     actions =
       params
-      |> actions_notes(total)
-      |> Enum.filter(&Bodyguard.permit?(StructureNotes, &1, claims))
+      |> bulk_actions(total)
+      |> Enum.filter(&Bodyguard.permit?(BulkUpdate, &1, claims))
       |> Enum.reduce(%{}, fn
         :bulk_update, acc ->
           Map.put(acc, "bulkUpdate", %{
@@ -573,28 +562,20 @@ defmodule TdDdWeb.DataStructureController do
             href: Routes.data_structure_path(conn, :bulk_update_template_content),
             method: "POST"
           })
+
+        :bulk_upload_domains, acc ->
+          Map.put(acc, "bulkUploadDomains", %{
+            href: Routes.data_structure_path(conn, :bulk_upload_domains),
+            method: "POST"
+          })
       end)
-      |> put_actions_structures(conn, claims)
 
     assign(conn, :actions, actions)
   end
 
-  defp put_actions_structures(actions, conn, claims) do
-    @structures_actions
-    |> Enum.filter(&can?(claims, &1, DataStructure))
-    |> Enum.reduce(%{}, fn
-      :update_domain_ids, acc ->
-        Map.put(acc, "bulkUploadDomains", %{
-          href: Routes.data_structure_path(conn, :bulk_upload_domains),
-          method: "POST"
-        })
-    end)
-    |> Map.merge(actions)
+  defp bulk_actions(%{"filters" => %{"type.raw" => [_]}} = _params, total) when total > 0 do
+    [:bulk_upload, :auto_publish, :bulk_update, :bulk_upload_domains]
   end
 
-  defp actions_notes(%{"filters" => %{"type.raw" => [_]}} = _params, total) when total > 0 do
-    [:bulk_upload, :auto_publish, :bulk_update]
-  end
-
-  defp actions_notes(_params, _), do: [:bulk_upload, :auto_publish]
+  defp bulk_actions(_params, _), do: [:bulk_upload, :auto_publish, :bulk_upload_domains]
 end
