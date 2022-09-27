@@ -2584,10 +2584,10 @@ defmodule TdDqWeb.ImplementationControllerTest do
       for regex <- [
             # credo:disable-for-lines:5 Credo.Check.Readability.MaxLineLength
             "implementation_key;implementation_type;executable;rule;rule_template;implementation_template;goal;minimum;business_concept;last_execution_at;records;errors;result;execution;inserted_at;dataset_external_id_1;validation_field_1\r",
-            ~r/#{key_0};default;[\w+.]+;#{name_0};;;\d*\.?\d*;\d*\.?\d*;;;;;;;#{ts_0};;;\r/,
-            ~r/#{key_1};default;[\w+.]+;#{name_1};;;\d*\.?\d*;\d*\.?\d*;;[[:ascii:]]+;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;#{ts_1};;;\r/,
-            ~r/#{key_2};default;[\w+.]+;#{name_2};;;\d*\.?\d*;\d*\.?\d*;;;;;;;#{ts_2};;;\r/,
-            ~r/#{key_3};default;[\w+.]+;#{name_3};;;\d*\.?\d*;\d*\.?\d*;;;;;;;#{ts_3};;;\r/
+            ~r/#{key_0};default;[\w+.]+;#{name_0};;;\d*\.?\d*;\d*\.?\d*;;;;;;;#{ts_0};;\r/,
+            ~r/#{key_1};default;[\w+.]+;#{name_1};;;\d*\.?\d*;\d*\.?\d*;;[[:ascii:]]+;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;#{ts_1};;\r/,
+            ~r/#{key_2};default;[\w+.]+;#{name_2};;;\d*\.?\d*;\d*\.?\d*;;;;;;;#{ts_2};;\r/,
+            ~r/#{key_3};default;[\w+.]+;#{name_3};;;\d*\.?\d*;\d*\.?\d*;;;;;;;#{ts_3};;\r/
           ] do
         assert body =~ regex
       end
