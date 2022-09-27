@@ -5,10 +5,8 @@ defmodule TdDq.Canada.Abilities do
   alias TdDd.DataStructures.DataStructure
   alias TdDq.Auth.Claims
   alias TdDq.Canada.ImplementationAbilities
-  alias TdDq.Canada.RuleAbilities
   alias TdDq.Implementations.Implementation
   alias TdDq.Permissions
-  alias TdDq.Rules.Rule
 
   defimpl Canada.Can, for: Claims do
     def can?(%Claims{} = claims, action, Implementation) do
@@ -30,22 +28,6 @@ defmodule TdDq.Canada.Abilities do
     # admin can do anything (except some actions authorized by ImplementionAbilities)
     def can?(%Claims{role: "admin"}, _action, _domain) do
       true
-    end
-
-    def can?(%Claims{} = claims, action, %Ecto.Changeset{data: %Rule{}} = target) do
-      RuleAbilities.can?(claims, action, target)
-    end
-
-    def can?(%Claims{} = claims, action, Rule) do
-      RuleAbilities.can?(claims, action, Rule)
-    end
-
-    def can?(%Claims{} = claims, action, %Rule{} = target) do
-      RuleAbilities.can?(claims, action, target)
-    end
-
-    def can?(%Claims{} = claims, action, %{"resource_type" => "rule"} = target) do
-      RuleAbilities.can?(claims, action, target)
     end
 
     def can?(%Claims{} = claims, :view_published_concept, domain_id) do

@@ -1,9 +1,7 @@
 defmodule TdDqWeb.RuleSearchController do
   use TdDqWeb, :controller
 
-  import Canada, only: [can?: 2]
-
-  alias TdDq.Rules.Rule
+  alias TdDq.Rules
   alias TdDq.Rules.Search
 
   @index_worker Application.compile_env(:td_dd, :dq_index_worker)
@@ -17,9 +15,12 @@ defmodule TdDqWeb.RuleSearchController do
   end
 
   def reindex(conn, _params) do
-    # TODO: Permissions?
-    @index_worker.reindex_rules(:all)
-    send_resp(conn, :accepted, "")
+    claims = conn.assigns[:current_resource]
+
+    with :ok <- Bodyguard.permit(Rules, :reindex, claims) do
+      @index_worker.reindex_rules(:all)
+      send_resp(conn, :accepted, "")
+    end
   end
 
   swagger_path :create do
@@ -50,7 +51,7 @@ defmodule TdDqWeb.RuleSearchController do
       rules: rules,
       filters: %{},
       user_permissions: %{
-        manage_quality_rules: can?(claims, manage(Rule))
+        manage_quality_rules: Bodyguard.permit?(Rules, :manage_quality_rule, claims)
       }
     )
   end
