@@ -2,7 +2,6 @@ defmodule TdDdWeb.Policy do
   @moduledoc "Authorization rules for GraphQL API"
 
   alias TdDq.Canada.ImplementationAbilities
-  alias TdDq.Canada.RuleResultAbilities
 
   @behaviour Bodyguard.Policy
 
@@ -37,7 +36,7 @@ defmodule TdDdWeb.Policy do
     do: ImplementationAbilities.can?(claims, :list, TdDq.Implementations.Implementation)
 
   def authorize(:query, %{} = claims, :implementation_result),
-    do: RuleResultAbilities.can?(claims, :view, TdDq.Rules.RuleResult)
+    do: Bodyguard.permit(TdDq.Rules.RuleResults, :query, claims)
 
   def authorize(:query, %{} = claims, :latest_grant_request),
     do: Bodyguard.permit(TdDd.Grants, :query, claims, :latest_grant_request)

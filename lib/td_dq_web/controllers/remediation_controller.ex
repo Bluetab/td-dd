@@ -1,8 +1,6 @@
 defmodule TdDqWeb.RemediationController do
   use TdDqWeb, :controller
 
-  import Canada, only: [can?: 2]
-
   alias TdDq.Remediations
   alias TdDq.Rules.RuleResult
   alias TdDq.Rules.RuleResults
@@ -30,7 +28,7 @@ defmodule TdDqWeb.RemediationController do
     with claims <- conn.assigns[:current_resource],
          %RuleResult{remediation: remediation} = rule_result <-
            RuleResults.get_rule_result(rule_result_id, preload: [:remediation, :rule]) do
-      if can?(claims, manage_remediation(rule_result)) do
+      if Bodyguard.permit?(RuleResults, :manage_remediations, claims, rule_result) do
         conn
         |> put_actions(rule_result)
         |> render("show.json", remediation: remediation)
@@ -58,7 +56,7 @@ defmodule TdDqWeb.RemediationController do
     with claims <- conn.assigns[:current_resource],
          %RuleResult{} = rule_result <-
            RuleResults.get_rule_result(rule_result_id, preload: [:rule]),
-         {:can, true} <- {:can, can?(claims, manage_remediation(rule_result))},
+         :ok <- Bodyguard.permit(RuleResults, :manage_remediations, claims, rule_result),
          {:ok, remediation} <- Remediations.create_remediation(rule_result_id, remediation_params) do
       conn
       |> put_status(:created)
@@ -89,7 +87,7 @@ defmodule TdDqWeb.RemediationController do
     with claims <- conn.assigns[:current_resource],
          %RuleResult{remediation: remediation} = rule_result <-
            RuleResults.get_rule_result(rule_result_id, preload: [:remediation, :rule]),
-         {:can, true} <- {:can, can?(claims, manage_remediation(rule_result))},
+         :ok <- Bodyguard.permit(RuleResults, :manage_remediations, claims, rule_result),
          {:ok, remediation} <- Remediations.update_remediation(remediation, remediation_params) do
       conn
       |> put_actions(rule_result)
@@ -116,7 +114,7 @@ defmodule TdDqWeb.RemediationController do
          %RuleResult{remediation: remediation} = rule_result <-
            RuleResults.get_rule_result(rule_result_id, preload: [:remediation, :rule]),
          true <- not is_nil(remediation) || nil,
-         {:can, true} <- {:can, can?(claims, manage_remediation(rule_result))},
+         :ok <- Bodyguard.permit(RuleResults, :manage_remediations, claims, rule_result),
          {:ok, _remediation} <- Remediations.delete_remediation(remediation) do
       send_resp(conn, :no_content, "")
     end

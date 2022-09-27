@@ -33,6 +33,8 @@ defmodule TdDq.Implementations do
   @typep multi_result ::
            {:ok, map} | {:error, Multi.name(), any(), %{required(Multi.name()) => any()}}
 
+  defdelegate authorize(action, user, params), to: TdDq.Implementations.Policy
+
   @doc """
   Gets a single implementation.
 

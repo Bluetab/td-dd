@@ -223,10 +223,6 @@ defmodule TdDq.Canada.ImplementationAbilities do
     Permissions.authorized?(claims, :execute_quality_rule_implementations, domain_id)
   end
 
-  def can?(%{} = claims, :manage_rule_results, %Implementation{domain_id: domain_id}) do
-    Permissions.authorized?(claims, :manage_rule_results, domain_id)
-  end
-
   def can?(_claims, _action, _resource), do: false
 
   defp domain_id(%{domain_id: domain_id}), do: domain_id

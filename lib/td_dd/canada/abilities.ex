@@ -7,9 +7,7 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Canada.LinkAbilities
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDq.Canada.ImplementationAbilities
-  alias TdDq.Canada.RuleResultAbilities
   alias TdDq.Implementations.Implementation
-  alias TdDq.Rules.RuleResult
 
   defimpl Canada.Can, for: Claims do
     @implementation_mutations [
@@ -35,9 +33,6 @@ defmodule TdDd.Canada.Abilities do
     def can?(%Claims{role: "user"} = claims, :query, :implementation),
       do: ImplementationAbilities.can?(claims, :list, Implementation)
 
-    def can?(%Claims{role: "user"} = claims, :query, :implementation_result),
-      do: RuleResultAbilities.can?(claims, :view, RuleResult)
-
     def can?(%Claims{}, _action, nil), do: false
 
     def can?(%{} = claims, :mutation, mutation) when mutation in @implementation_mutations do
@@ -48,10 +43,6 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%Claims{} = claims, action, %Implementation{} = implementation) do
       ImplementationAbilities.can?(claims, action, implementation)
-    end
-
-    def can?(%Claims{} = claims, action, %RuleResult{} = ruleResult) do
-      RuleResultAbilities.can?(claims, action, ruleResult)
     end
 
     def can?(%Claims{} = claims, action, %Link{} = link) do

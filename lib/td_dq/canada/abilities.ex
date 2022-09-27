@@ -6,11 +6,9 @@ defmodule TdDq.Canada.Abilities do
   alias TdDq.Auth.Claims
   alias TdDq.Canada.ImplementationAbilities
   alias TdDq.Canada.RuleAbilities
-  alias TdDq.Canada.RuleResultAbilities
   alias TdDq.Implementations.Implementation
   alias TdDq.Permissions
   alias TdDq.Rules.Rule
-  alias TdDq.Rules.RuleResult
 
   defimpl Canada.Can, for: Claims do
     def can?(%Claims{} = claims, action, Implementation) do
@@ -44,18 +42,6 @@ defmodule TdDq.Canada.Abilities do
 
     def can?(%Claims{} = claims, action, %Rule{} = target) do
       RuleAbilities.can?(claims, action, target)
-    end
-
-    def can?(%Claims{} = claims, action, RuleResult) do
-      RuleResultAbilities.can?(claims, action, RuleResult)
-    end
-
-    def can?(%Claims{} = claims, action, %RuleResult{} = rule_result) do
-      RuleResultAbilities.can?(claims, action, rule_result)
-    end
-
-    def can?(%Claims{} = claims, action, [%RuleResult{} = rule_result | _]) do
-      RuleResultAbilities.can?(claims, action, rule_result)
     end
 
     def can?(%Claims{} = claims, action, %{"resource_type" => "rule"} = target) do
