@@ -165,7 +165,7 @@ defmodule TdDq.Implementations.Download do
     dataset
     |> Enum.map(fn
       %{structure: %{external_id: external_id}} -> external_id
-      %{structure: %{name: name, type: "reference_dataset"}} -> "reference_dataset://#{name}"
+      %{structure: %{name: name, type: "reference_dataset"}} -> "reference_dataset:/#{name}"
     end)
     |> Enum.uniq()
   end
@@ -177,7 +177,7 @@ defmodule TdDq.Implementations.Download do
         external_id
 
       %{structure: %{name: name, type: "reference_dataset_field"}} ->
-        "reference_dataset_field://#{name}"
+        "reference_dataset_field:/#{name}"
     end)
     |> Enum.uniq()
   end
