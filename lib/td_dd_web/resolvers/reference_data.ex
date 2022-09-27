@@ -11,7 +11,7 @@ defmodule TdDdWeb.Resolvers.ReferenceData do
 
   def reference_dataset(_parent, %{id: id}, resolution) do
     with dataset <- ReferenceData.get!(id),
-         :ok <- Bodyguard.permit(ReferenceData, :show, claims(resolution), dataset) do
+         :ok <- Bodyguard.permit(ReferenceData, :view, claims(resolution), dataset) do
       {:ok, dataset}
     end
   rescue

@@ -21,9 +21,9 @@ defmodule TdDdWeb.ReferenceDataController do
   def show(conn, %{"id" => id}) do
     claims = conn.assigns[:current_resource]
 
-    with :ok <- Bodyguard.permit(ReferenceData, :show, claims),
+    with :ok <- Bodyguard.permit(ReferenceData, :view, claims),
          %{} = dataset <- ReferenceData.get!(id),
-         :ok <- Bodyguard.permit(ReferenceData, :show, claims, dataset) do
+         :ok <- Bodyguard.permit(ReferenceData, :view, claims, dataset) do
       render(conn, "show.json", dataset: dataset)
     end
   end

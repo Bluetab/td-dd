@@ -5,7 +5,7 @@ defmodule TdCx.Jobs.Policy do
 
   @behaviour Bodyguard.Policy
 
-  def authorize(action, %{role: "user"} = claims, _params) when action in [:show, :create] do
+  def authorize(action, %{role: "user"} = claims, _params) when action in [:view, :create] do
     Permissions.has_permission?(claims, :profile_structures)
   end
 

@@ -90,7 +90,7 @@ defmodule TdCxWeb.SourceController do
     claims = conn.assigns[:current_resource]
 
     with %Source{} = source <- Sources.get_source(external_id),
-         :ok <- Bodyguard.permit(Sources, :show, claims, source),
+         :ok <- Bodyguard.permit(Sources, :view, claims, source),
          %Source{} = source <- Sources.enrich_secrets(claims, source) do
       job_types = Sources.job_types(source)
       render(conn, "show.json", source: source, job_types: job_types)

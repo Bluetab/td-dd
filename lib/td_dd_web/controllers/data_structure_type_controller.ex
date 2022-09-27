@@ -48,7 +48,7 @@ defmodule TdDdWeb.DataStructureTypeController do
     claims = conn.assigns[:current_resource]
 
     with data_structure_type <- DataStructureTypes.get!(id),
-         :ok <- Bodyguard.permit(DataStructureTypes, :show, claims, data_structure_type) do
+         :ok <- Bodyguard.permit(DataStructureTypes, :view, claims, data_structure_type) do
       render(conn, "show.json", data_structure_type: data_structure_type)
     end
   end

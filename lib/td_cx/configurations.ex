@@ -11,7 +11,7 @@ defmodule TdCx.Configurations do
   alias TdCx.Vault
   alias TdDd.Repo
 
-  defdelegate authorize(action, user, params), to: TdCx.Configurations.Policy
+  defdelegate authorize(action, user, params), to: __MODULE__.Policy
 
   @doc """
   Returns the list of configurations.

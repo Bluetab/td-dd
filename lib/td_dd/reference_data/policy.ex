@@ -6,11 +6,11 @@ defmodule TdDd.ReferenceData.Policy do
   @behaviour Bodyguard.Policy
 
   def authorize(action, %{role: "user"} = claims, _params)
-      when action in [:list, :show, :query] do
+      when action in [:list, :view, :query] do
     Permissions.authorized?(claims, :manage_quality_rule_implementations)
   end
 
-  def authorize(action, %{role: "service"}, _params) when action in [:list, :show, :query],
+  def authorize(action, %{role: "service"}, _params) when action in [:list, :view, :query],
     do: true
 
   def authorize(_action, %{role: "admin"}, _params), do: true

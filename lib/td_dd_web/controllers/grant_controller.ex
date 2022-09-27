@@ -190,7 +190,6 @@ defmodule TdDdWeb.GrantController do
     response(422, "Error during CSV download")
   end
 
-  @spec csv(Plug.Conn.t(), map) :: Plug.Conn.t()
   def csv(conn, %{"search_by" => search_by, "header_labels" => header_labels} = params) do
     params = Map.drop(params, ["header_labels", "page", "size"])
     claims = conn.assigns[:current_resource]

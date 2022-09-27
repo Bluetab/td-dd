@@ -81,7 +81,7 @@ defmodule TdCxWeb.JobController do
     claims = conn.assigns[:current_resource]
 
     with %Job{} = job <- Jobs.get_job!(external_id, [:events, :source]),
-         :ok <- Bodyguard.permit(Jobs, :show, claims, job) do
+         :ok <- Bodyguard.permit(Jobs, :view, claims, job) do
       render(conn, "show.json", job: job)
     end
   end

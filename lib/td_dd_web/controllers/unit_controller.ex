@@ -34,7 +34,7 @@ defmodule TdDdWeb.UnitController do
   def show(conn, %{"name" => name}) do
     claims = conn.assigns[:current_resource]
 
-    with :ok <- Bodyguard.permit(Units, :show, claims),
+    with :ok <- Bodyguard.permit(Units, :view, claims),
          {:ok, %Units.Unit{} = unit} <- Units.get_by(name: name, status: true) do
       render(conn, "show.json", unit: unit)
     end

@@ -1,6 +1,6 @@
 defmodule TdDd.Lineage.LineageEvents do
   @moduledoc """
-  Quality Events context
+  Lineage events context
   """
 
   import Ecto.Query

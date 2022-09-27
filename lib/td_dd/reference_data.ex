@@ -8,7 +8,7 @@ defmodule TdDd.ReferenceData do
   alias TdDd.ReferenceData.Dataset
   alias TdDd.Repo
 
-  defdelegate authorize(action, user, params), to: TdDd.ReferenceData.Policy
+  defdelegate authorize(action, user, params), to: __MODULE__.Policy
 
   @spec get!(binary | integer) :: Dataset.t()
   def get!(id) do

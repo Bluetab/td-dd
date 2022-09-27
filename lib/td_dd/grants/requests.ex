@@ -423,7 +423,6 @@ defmodule TdDd.Grants.Requests do
     %{grant_request | pending_roles: pending_roles}
   end
 
-  # @spec with_missing_roles(map, MapSet.t(), map())
   defp with_missing_roles(
          %{approvals: approvals, domain_ids: domain_ids} = grant_request,
          required_roles,

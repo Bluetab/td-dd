@@ -13,7 +13,7 @@ defmodule TdDd.Lineage.Policy do
   # Service accounts can create, replace and view units
   def authorize(:create, %{role: "service"}, _params), do: true
   def authorize(:update, %{role: "service"}, _params), do: true
-  def authorize(:show, %{role: "service"}, _params), do: true
+  def authorize(:view, %{role: "service"}, _params), do: true
 
   # view_lineage required to view nodes and lineage events
   def authorize(:list, %{} = claims, LineageEvent),

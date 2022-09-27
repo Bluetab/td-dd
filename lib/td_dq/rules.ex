@@ -19,7 +19,7 @@ defmodule TdDq.Rules do
 
   @index_worker Application.compile_env(:td_dd, :dq_index_worker)
 
-  defdelegate authorize(action, user, params), to: TdDq.Rules.Policy
+  defdelegate authorize(action, user, params), to: __MODULE__.Policy
 
   @doc """
   Returns the list of rules.
@@ -305,8 +305,6 @@ defmodule TdDq.Rules do
     end)
   end
 
-  @spec enrich(Rule.t() | [Rule.t()], nil | atom | [atom]) ::
-          Rule.t() | [Rule.t()]
   defp enrich(target, nil), do: target
 
   defp enrich(target, opts) when is_list(target) do

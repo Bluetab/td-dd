@@ -39,8 +39,6 @@ defmodule TdDqWeb.RuleResultController do
     end
   end
 
-  @spec show(atom | %{:assigns => nil | maybe_improper_list | map, optional(any) => any}, map) ::
-          {:can, any} | Plug.Conn.t()
   def show(conn, %{"id" => id} = _params) do
     with claims <- conn.assigns[:current_resource],
          rule_result <- RuleResults.get_rule_result(id),

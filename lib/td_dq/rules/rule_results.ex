@@ -19,7 +19,7 @@ defmodule TdDq.Rules.RuleResults do
 
   @index_worker Application.compile_env(:td_dd, :dq_index_worker)
 
-  defdelegate authorize(action, user, params), to: TdDq.Rules.RuleResults.Policy
+  defdelegate authorize(action, user, params), to: __MODULE__.Policy
 
   def get_rule_result(id, options \\ []) do
     Repo.get_by(RuleResult, id: id)

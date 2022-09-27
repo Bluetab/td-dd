@@ -17,7 +17,7 @@ defmodule TdCx.Sources do
   alias TdDfLib.Validation
   alias Truedat.Auth.Claims
 
-  defdelegate authorize(action, user, params), to: TdCx.Sources.Policy
+  defdelegate authorize(action, user, params), to: __MODULE__.Policy
 
   @doc """
   Returns the list of sources.
