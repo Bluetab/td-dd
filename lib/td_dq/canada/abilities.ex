@@ -4,13 +4,9 @@ defmodule TdDq.Canada.Abilities do
   alias TdDd.Canada.DataStructureAbilities
   alias TdDd.DataStructures.DataStructure
   alias TdDq.Auth.Claims
-  alias TdDq.Canada.ExecutionAbilities
   alias TdDq.Canada.ImplementationAbilities
   alias TdDq.Canada.RuleAbilities
   alias TdDq.Canada.RuleResultAbilities
-  alias TdDq.Events.QualityEvent
-  alias TdDq.Executions.Execution
-  alias TdDq.Executions.Group
   alias TdDq.Implementations.Implementation
   alias TdDq.Permissions
   alias TdDq.Rules.Rule
@@ -36,15 +32,6 @@ defmodule TdDq.Canada.Abilities do
     # admin can do anything (except some actions authorized by ImplementionAbilities)
     def can?(%Claims{role: "admin"}, _action, _domain) do
       true
-    end
-
-    def can?(%Claims{} = claims, action, target)
-        when target in [Execution, Group, QualityEvent] do
-      ExecutionAbilities.can?(claims, action, target)
-    end
-
-    def can?(%Claims{} = claims, action, %Execution{} = target) do
-      ExecutionAbilities.can?(claims, action, target)
     end
 
     def can?(%Claims{} = claims, action, %Ecto.Changeset{data: %Rule{}} = target) do
