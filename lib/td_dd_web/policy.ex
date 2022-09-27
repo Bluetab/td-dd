@@ -1,8 +1,6 @@
 defmodule TdDdWeb.Policy do
   @moduledoc "Authorization rules for GraphQL API"
 
-  alias TdDq.Canada.ImplementationAbilities
-
   @behaviour Bodyguard.Policy
 
   @implementation_mutations [
@@ -33,7 +31,7 @@ defmodule TdDdWeb.Policy do
     do: Bodyguard.permit(TdDd.DataStructures, :query, claims)
 
   def authorize(:query, %{} = claims, :implementation),
-    do: ImplementationAbilities.can?(claims, :list, TdDq.Implementations.Implementation)
+    do: Bodyguard.permit(TdDq.Implementations, :query, claims)
 
   def authorize(:query, %{} = claims, :implementation_result),
     do: Bodyguard.permit(TdDq.Rules.RuleResults, :query, claims)
@@ -63,7 +61,7 @@ defmodule TdDdWeb.Policy do
     do: Bodyguard.permit(TdDd.DataStructures.Tags, :mutation, claims, mutation)
 
   def authorize(:mutation, %{} = claims, mutation) when mutation in @implementation_mutations,
-    do: ImplementationAbilities.can?(claims, :mutation, mutation)
+    do: Bodyguard.permit(TdDq.Implementations, :mutation, claims, mutation)
 
   def authorize(:mutation, _claims, _params), do: false
 end

@@ -1,14 +1,13 @@
 defmodule TdDd.ReferenceData.Policy do
   @moduledoc "Authorization rules for reference data"
 
-  alias TdDq.Canada.ImplementationAbilities
-  alias TdDq.Implementations.Implementation
+  alias TdDq.Permissions
 
   @behaviour Bodyguard.Policy
 
   def authorize(action, %{role: "user"} = claims, _params)
       when action in [:list, :show, :query] do
-    ImplementationAbilities.can?(claims, "create", Implementation)
+    Permissions.authorized?(claims, :manage_quality_rule_implementations)
   end
 
   def authorize(action, %{role: "service"}, _params) when action in [:list, :show, :query],

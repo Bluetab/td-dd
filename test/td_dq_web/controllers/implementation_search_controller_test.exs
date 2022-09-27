@@ -42,24 +42,12 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
 
     @tag authentication: [role: "user"]
     test "user with no permissions cannot search implementations", %{conn: conn} do
-      ElasticsearchMock
-      |> expect(:request, fn _, :post, "/implementations/_search", %{query: query}, [] ->
-        assert query == %{
-                 bool: %{
-                   filter: %{match_none: %{}},
-                   must_not: %{exists: %{field: "deleted_at"}}
-                 }
-               }
-
-        SearchHelpers.hits_response([])
-      end)
-
-      assert %{"data" => [], "_actions" => actions} =
+      assert %{"errors" => %{} = errors} =
                conn
                |> post(Routes.implementation_search_path(conn, :create))
-               |> json_response(:ok)
+               |> json_response(:forbidden)
 
-      refute Map.has_key?(actions, "execute")
+      refute errors == %{}
     end
 
     @tag authentication: [

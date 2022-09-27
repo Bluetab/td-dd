@@ -12,6 +12,10 @@ defmodule TdDqWeb.FallbackController do
     call(conn, {:error, :forbidden})
   end
 
+  def call(conn, {:error, {_id, :forbidden}}) do
+    call(conn, {:error, :forbidden})
+  end
+
   def call(conn, {:error, :forbidden}) do
     conn
     |> put_status(:forbidden)

@@ -3,8 +3,6 @@ defmodule TdDq.Implementations do
   The Rule Implementations context.
   """
 
-  import Canada, only: [can?: 2]
-  import Canada.Can, only: [can?: 3]
   import Ecto.Query
 
   alias Ecto.Changeset
@@ -91,7 +89,8 @@ defmodule TdDq.Implementations do
     |> Kernel.!=(false)
   end
 
-  @spec create_implementation(Rule.t(), map, Claims.t(), boolean) :: multi_result
+  @spec create_implementation(Rule.t(), map, Claims.t(), boolean) ::
+          multi_result | {:error, :forbidden}
   def create_implementation(rule, params, claims, is_bulk \\ false)
 
   def create_implementation(
@@ -112,15 +111,16 @@ defmodule TdDq.Implementations do
         params
       )
 
-    Multi.new()
-    |> Multi.run(:can, fn _, _ ->
-      multi_can(can?(claims, create(changeset)) and can?(claims, edit_segments(changeset)))
-    end)
-    |> Multi.run(:implementation, fn _, _ -> insert_implementation(changeset) end)
-    |> Multi.run(:data_structures, &create_implementation_structures/2)
-    |> Multi.run(:audit, Audit, :implementation_created, [changeset, user_id])
-    |> Repo.transaction()
-    |> on_upsert(is_bulk)
+    if Bodyguard.permit?(__MODULE__, :create, claims, changeset) do
+      Multi.new()
+      |> Multi.run(:implementation, fn _, _ -> insert_implementation(changeset) end)
+      |> Multi.run(:data_structures, &create_implementation_structures/2)
+      |> Multi.run(:audit, Audit, :implementation_created, [changeset, user_id])
+      |> Repo.transaction()
+      |> on_upsert(is_bulk)
+    else
+      {:error, {Changeset.fetch_field!(changeset, :implementation_key), :forbidden}}
+    end
   end
 
   @spec create_ruleless_implementation(map, Claims.t(), boolean) :: multi_result
@@ -137,28 +137,17 @@ defmodule TdDq.Implementations do
         params
       )
 
-    Multi.new()
-    |> Multi.run(:can, fn _, _ ->
-      multi_can(
-        Enum.all?(
-          [
-            :edit_segments,
-            :create_ruleless_implementations,
-            :create
-          ],
-          &can?(claims, &1, changeset)
-        )
-      )
-    end)
-    |> Multi.run(:implementation, fn _, _ -> insert_implementation(changeset) end)
-    |> Multi.run(:data_structures, &create_implementation_structures/2)
-    |> Multi.run(:audit, Audit, :implementation_created, [changeset, user_id])
-    |> Repo.transaction()
-    |> on_upsert(is_bulk)
+    if Bodyguard.permit?(__MODULE__, :create, claims, changeset) do
+      Multi.new()
+      |> Multi.run(:implementation, fn _, _ -> insert_implementation(changeset) end)
+      |> Multi.run(:data_structures, &create_implementation_structures/2)
+      |> Multi.run(:audit, Audit, :implementation_created, [changeset, user_id])
+      |> Repo.transaction()
+      |> on_upsert(is_bulk)
+    else
+      {:error, {Changeset.fetch_field!(changeset, :implementation_key), :forbidden}}
+    end
   end
-
-  defp multi_can(true), do: {:ok, nil}
-  defp multi_can(false), do: {:error, false}
 
   def maybe_update_implementation(%Implementation{} = implementation, params, %Claims{} = claims) do
     if need_update?(implementation, params) do
@@ -176,16 +165,15 @@ defmodule TdDq.Implementations do
       when rule_id != new_rule_id do
     changeset = upsert_changeset(implementation, params)
 
-    Multi.new()
-    |> Multi.run(:can, fn _, _ ->
-      if can?(claims, :move, changeset), do: {:ok, nil}, else: {:error, false}
-    end)
-    |> upsert(changeset)
-    |> Multi.run(:implementation, fn _repo, _changes -> {:ok, implementation} end)
-    |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
-    |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
-    |> Repo.transaction()
-    |> on_upsert()
+    with :ok <- Bodyguard.permit(__MODULE__, :move, claims, changeset) do
+      Multi.new()
+      |> upsert(changeset)
+      |> Multi.run(:implementation, fn _repo, _changes -> {:ok, implementation} end)
+      |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
+      |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
+      |> Repo.transaction()
+      |> on_upsert()
+    end
   end
 
   def update_implementation(
@@ -195,23 +183,16 @@ defmodule TdDq.Implementations do
       ) do
     changeset = upsert_changeset(implementation, params)
 
-    Multi.new()
-    |> Multi.run(:can, fn _, _ ->
-      multi_can(
-        Enum.all?([
-          can?(claims, :update, changeset),
-          can?(claims, edit_segments(implementation)),
-          can?(claims, edit_segments(changeset))
-        ])
-      )
-    end)
-    |> upsert(changeset, status, user_id)
-    |> Multi.run(:data_structures, &create_implementation_structures/2)
-    |> Multi.run(:audit_status, Audit, :implementation_status_updated, [changeset, user_id])
-    |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
-    |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
-    |> Repo.transaction()
-    |> on_upsert()
+    with :ok <- Bodyguard.permit(__MODULE__, :update, claims, changeset) do
+      Multi.new()
+      |> upsert(changeset, status, user_id)
+      |> Multi.run(:data_structures, &create_implementation_structures/2)
+      |> Multi.run(:audit_status, Audit, :implementation_status_updated, [changeset, user_id])
+      |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
+      |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
+      |> Repo.transaction()
+      |> on_upsert()
+    end
   end
 
   defp need_update?(implementation, params) do
@@ -471,7 +452,7 @@ defmodule TdDq.Implementations do
   def build_actions(claims, params, implementation) do
     params
     |> get_available_actions(implementation)
-    |> Enum.filter(&can?(claims, &1, implementation))
+    |> Enum.filter(&Bodyguard.permit?(__MODULE__, &1, claims, implementation))
     |> Enum.reduce(%{}, &Map.put(&2, &1, %{method: "POST"}))
   end
 
