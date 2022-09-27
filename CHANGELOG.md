@@ -11,6 +11,12 @@
 - [TD-4903] Include `sobelow` static code analysis in CI pipeline
 - [TD-2430] Allow different join types on implementation dataset
 
+### Fixed
+
+ - [TD-4587]
+  - Download implementations with reference_data
+  - Implementations download when dataset has a table joing itself
+
 ## [4.51.0] 2022-09-19
 
 ### Added
