@@ -1,4 +1,4 @@
-defmodule TdCx.Auth.Claims do
+defmodule Truedat.Auth.Claims do
   @moduledoc """
   Jason web tokens (JWTs) contain claims which are pieces of information
   asserted about a subject. This module provides a struct containing the claims

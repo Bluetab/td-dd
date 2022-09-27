@@ -11,11 +11,11 @@ defmodule TdDq.Rules do
   alias TdCache.TemplateCache
   alias TdDd.Repo
   alias TdDfLib.Format
-  alias TdDq.Auth.Claims
   alias TdDq.Cache.RuleLoader
   alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Audit
   alias TdDq.Rules.Rule
+  alias Truedat.Auth.Claims
 
   @index_worker Application.compile_env(:td_dd, :dq_index_worker)
 

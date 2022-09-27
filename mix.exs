@@ -64,7 +64,6 @@ defmodule TdDd.MixProject do
       {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.0", only: :dev, runtime: false},
       {:guardian, "~> 2.0"},
-      {:canada, "~> 2.0"},
       {:bodyguard, "~> 2.4"},
       {:quantum, "~> 3.0"},
       {:ex_machina, "~> 2.4", only: :test},

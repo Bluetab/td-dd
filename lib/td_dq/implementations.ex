@@ -14,7 +14,6 @@ defmodule TdDq.Implementations do
   alias TdDd.DataStructures
   alias TdDd.ReferenceData
   alias TdDd.Repo
-  alias TdDq.Auth.Claims
   alias TdDq.Cache.ImplementationLoader
   alias TdDq.Cache.RuleLoader
   alias TdDq.Events.QualityEvents
@@ -25,6 +24,7 @@ defmodule TdDq.Implementations do
   alias TdDq.Rules.Audit
   alias TdDq.Rules.Rule
   alias TdDq.Search.Helpers
+  alias Truedat.Auth.Claims
 
   @index_worker Application.compile_env(:td_dd, :dq_index_worker)
 

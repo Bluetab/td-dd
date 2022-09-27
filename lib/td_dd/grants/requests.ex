@@ -9,7 +9,6 @@ defmodule TdDd.Grants.Requests do
   alias Ecto.Multi
   alias TdCache.Permissions
   alias TdCache.UserCache
-  alias TdDd.Auth.Claims
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
@@ -18,6 +17,7 @@ defmodule TdDd.Grants.Requests do
   alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Grants.GrantRequestStatus
   alias TdDd.Repo
+  alias Truedat.Auth.Claims
 
   defdelegate authorize(action, user, params), to: TdDd.Grants.Policy
 

@@ -1,10 +1,10 @@
 defmodule TdDqWeb.ExecutionGroupController do
   use TdDqWeb, :controller
 
-  alias TdDq.Auth.Claims
   alias TdDq.Executions
   alias TdDq.Executions.Group
   alias TdDq.Implementations.Search
+  alias Truedat.Auth.Claims
 
   action_fallback(TdDqWeb.FallbackController)
 

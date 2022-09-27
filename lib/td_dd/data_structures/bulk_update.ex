@@ -7,7 +7,6 @@ defmodule TdDd.DataStructures.BulkUpdate do
   alias Ecto.Changeset
   alias Ecto.Multi
   alias TdCache.TaxonomyCache
-  alias TdDd.Auth.Claims
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
@@ -16,6 +15,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
   alias TdDd.Search.IndexWorker
   alias TdDfLib.Format
   alias TdDfLib.Templates
+  alias Truedat.Auth.Claims
 
   require Logger
 

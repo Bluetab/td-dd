@@ -3,8 +3,8 @@ defmodule TdDd.Grants.Search do
   The Grants Search context
   """
 
-  alias TdDd.Auth.Claims
   alias TdDd.Grants.Search.Query
+  alias Truedat.Auth.Claims
   alias Truedat.Search
   alias Truedat.Search.Permissions
 

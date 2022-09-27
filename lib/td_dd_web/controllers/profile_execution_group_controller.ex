@@ -2,10 +2,10 @@ defmodule TdDdWeb.ProfileExecutionGroupController do
   use PhoenixSwagger
   use TdDdWeb, :controller
 
-  alias TdDd.Auth.Claims
   alias TdDd.Executions
   alias TdDd.Executions.ProfileGroup
   alias TdDdWeb.SwaggerDefinitions
+  alias Truedat.Auth.Claims
 
   action_fallback(TdDdWeb.FallbackController)
 

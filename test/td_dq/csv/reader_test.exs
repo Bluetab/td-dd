@@ -19,7 +19,7 @@ defmodule TdDq.CSV.ReaderTest do
   end
 
   setup context do
-    claims = build(:dq_claims)
+    claims = build(:claims)
 
     if path = context[:fixture] do
       stream = File.stream!("test/fixtures/implementations/" <> path, [:trim_bom])

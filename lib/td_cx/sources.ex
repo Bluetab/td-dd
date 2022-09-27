@@ -8,7 +8,6 @@ defmodule TdCx.Sources do
   require Logger
 
   alias TdCache.TemplateCache
-  alias TdCx.Auth.Claims
   alias TdCx.Events.Event
   alias TdCx.Jobs.Job
   alias TdCx.Sources.Source
@@ -16,6 +15,7 @@ defmodule TdCx.Sources do
   alias TdDd.Repo
   alias TdDfLib.Format
   alias TdDfLib.Validation
+  alias Truedat.Auth.Claims
 
   defdelegate authorize(action, user, params), to: TdCx.Sources.Policy
 

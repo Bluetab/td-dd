@@ -1,9 +1,9 @@
-defmodule TdCx.Auth.Guardian do
+defmodule Truedat.Auth.Guardian do
   @moduledoc "Guardian implementation module"
 
   use Guardian, otp_app: :td_dd
 
-  alias TdCx.Auth.Claims
+  alias Truedat.Auth.Claims
 
   def subject_for_token(%Claims{user_id: user_id, user_name: user_name}, _claims) do
     Jason.encode(%{id: user_id, user_name: user_name})

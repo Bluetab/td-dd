@@ -5,7 +5,7 @@ defmodule TdDq.CSV.Reader do
 
   alias Codepagex
   alias NimbleCSV
-  alias TdDq.Auth.Claims
+  alias Truedat.Auth.Claims
 
   NimbleCSV.define(ReaderCsvParser, separator: ";", escape: "\"")
 
