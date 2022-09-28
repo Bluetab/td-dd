@@ -14,6 +14,11 @@ defmodule TdDd.ReferenceData do
     |> Repo.one!()
   end
 
+  def exists?(id) do
+    dataset_query(id: id)
+    |> Repo.exists?()
+  end
+
   @spec list :: [Dataset.t()]
   def list(args \\ %{}) do
     args

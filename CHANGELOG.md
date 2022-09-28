@@ -12,9 +12,11 @@
 
 ### Fixed
 
- - [TD-4587]
+- [TD-4587]
   - Download implementations with reference_data
   - Implementations download when dataset has a table joing itself
+- [TD-5183] Auto deprecate rule implementations based on
+  its referenced structures and datasets
 
 ## [4.51.0] 2022-09-19
 

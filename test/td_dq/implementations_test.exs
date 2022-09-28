@@ -1485,6 +1485,27 @@ defmodule TdDq.ImplementationsTest do
       assert id2 in ids
       assert id3 in ids
     end
+
+    test "only deprecates implementations with unexisting reference dataset" do
+      %{id: id} = insert(:reference_dataset)
+
+      insert(:implementation,
+        dataset: [build(:dataset_row, structure: %{id: id, type: "reference_dataset"})],
+        populations: [],
+        validations: [],
+        segments: []
+      )
+
+      assert :ok = Implementations.deprecate_implementations()
+
+      %{id: id_to_deprecate} =
+        insert(:implementation,
+          dataset: [%{structure: %{id: id + 1, type: "reference_dataset"}}]
+        )
+
+      assert {:ok, %{deprecated: deprecated}} = Implementations.deprecate_implementations()
+      assert {1, [%{id: ^id_to_deprecate}]} = deprecated
+    end
   end
 
   describe "get_sources/1" do
