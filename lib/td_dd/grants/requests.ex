@@ -11,12 +11,12 @@ defmodule TdDd.Grants.Requests do
   alias TdCache.UserCache
   alias TdDd.Auth.Claims
   alias TdDd.DataStructures
-  alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestApproval
   alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Grants.GrantRequestStatus
+  alias TdDd.Grants.Audit
   alias TdDd.Repo
 
   def list_grant_request_groups do
@@ -62,8 +62,11 @@ defmodule TdDd.Grants.Requests do
         &%{grant_request_id: &1, status: "pending", inserted_at: DateTime.utc_now()}
       )
     end)
+    |> Multi.run(:audit, Audit, :grant_request_group_created, [])
     |> Repo.transaction()
   end
+
+
 
   defp update_domain_ids(%{group: %{id: id}}) do
     GrantRequest
