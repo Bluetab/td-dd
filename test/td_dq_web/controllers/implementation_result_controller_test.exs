@@ -188,11 +188,12 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
              ]
     end
 
-    @tag authentication: [role: "service"]
+    @tag authentication: [role: "admin"]
     test "updates implementation cache after creation if it has link", %{conn: conn} do
       %{
         id: implementation_id,
-        implementation_key: implementation_key
+        implementation_key: implementation_key,
+        implementation_ref: implementation_ref
       } = implementation = insert(:implementation, status: :published)
 
       %{
@@ -204,8 +205,8 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
       %{id: concept_id} = CacheHelpers.insert_concept()
 
       CacheHelpers.insert_link(
-        implementation_id,
-        "implementation",
+        implementation_ref,
+        "implementation_ref",
         "business_concept",
         concept_id
       )

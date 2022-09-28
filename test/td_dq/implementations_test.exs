@@ -149,6 +149,28 @@ defmodule TdDq.ImplementationsTest do
     end
   end
 
+  describe "get_implementations_ref" do
+    test "return implementation list with implementation_ref relation" do
+      %{id: impl_id1} = insert(:implementation)
+      %{id: impl_id2} = insert(:implementation)
+      %{id: impl_id3} = insert(:implementation, implementation_ref: impl_id2)
+      %{id: impl_id4} = insert(:implementation)
+      %{id: impl_id5} = insert(:implementation, implementation_ref: impl_id4)
+      assert [
+        ^impl_id1,
+        ^impl_id1,
+        ^impl_id2,
+        ^impl_id2,
+        ^impl_id3,
+        ^impl_id2,
+        ^impl_id4,
+        ^impl_id4,
+        ^impl_id5,
+        ^impl_id4
+      ] = Implementations.get_implementations_ref([impl_id1, impl_id2, impl_id3, impl_id4, impl_id5])
+    end
+  end
+
   describe "get_implementation!/1" do
     test "returns the implementation with given id" do
       %{id: id} = implementation = insert(:implementation)
@@ -192,8 +214,8 @@ defmodule TdDq.ImplementationsTest do
         updated_at: DateTime.utc_now()
       })
 
-      %{id: id} = insert(:implementation)
-      CacheHelpers.insert_link(id, "implementation", "business_concept", concept_id)
+      %{id: id, implementation_ref: implementation_ref} = insert(:implementation)
+      CacheHelpers.insert_link(implementation_ref, "implementation_ref", "business_concept", concept_id)
 
       assert %{links: links} = Implementations.get_implementation!(id, enrich: [:links])
       string_concept_id = Integer.to_string(concept_id)
@@ -1612,6 +1634,32 @@ defmodule TdDq.ImplementationsTest do
       refute Implementations.last?(first)
       assert Implementations.last?(second)
       assert Implementations.last?(%Implementation{id: 0, implementation_ref: 0})
+    end
+  end
+
+  describe "get_linked_implementation/1" do
+    test "return draft if are not published implementation" do
+      %{id: implementation_id, implementation_ref: implementation_ref} =
+        insert(:implementation, version: 1, status: "draft")
+
+      %{id: linked_implementation_id}  = Implementations.get_linked_implementation!(implementation_ref)
+      assert ^implementation_id = linked_implementation_id
+    end
+
+    test "return published implementation if exists" do
+        %{implementation_ref: implementation_ref} =  insert(:implementation, version: 1, status: "draft")
+        %{id: implementation_id} = insert(:implementation, version: 2, status: "published", implementation_ref: implementation_ref)
+
+      %{id: linked_implementation_id}  = Implementations.get_linked_implementation!(implementation_ref)
+      assert ^implementation_id = linked_implementation_id
+    end
+
+    test "return deprecated implementation if are not published implementation" do
+        %{implementation_ref: implementation_ref} = insert(:implementation, version: 1, status: "versioned")
+        %{id: implementation_id} = insert(:implementation, version: 2, status: "deprecated", implementation_ref: implementation_ref)
+
+      %{id: linked_implementation_id}  = Implementations.get_linked_implementation!(implementation_ref)
+      assert ^implementation_id = linked_implementation_id
     end
   end
 end

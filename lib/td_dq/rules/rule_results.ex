@@ -119,6 +119,7 @@ defmodule TdDq.Rules.RuleResults do
     end)
     |> Multi.run(:audit, Audit, :rule_results_created, [0])
     |> Multi.run(:implementation, fn _, _ -> {:ok, impl} end)
+    ## TODO TD-5140: guardar ultima implementacion activa
     |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
     |> Repo.transaction()
     |> on_create()

@@ -24,33 +24,50 @@ defmodule TdDq.Cache.ImplementationLoader do
     GenServer.cast(__MODULE__, {:refresh, opts})
   end
 
+  def implementation_to_migrate(opts \\ []) do
+    GenServer.cast(__MODULE__, {:implementation_to_migrate, opts})
+  end
+
   @doc """
   Updates implementation cache if it has links. Should be called using
   `Ecto.Multi.run/5`.
   """
   def maybe_update_implementation_cache(_repo, %{implementations_moved: {_, implementations}}) do
-    implementation_to_cache =
+    implementation_ref_to_cache =
       implementations
-      |> Enum.map(fn %{id: implementation_id} ->
-        case Implementations.get_implementation_links(%Implementation{id: implementation_id}) do
+      |> Enum.map(fn  %Implementation{implementation_ref: implementation_ref} = implementation ->
+        ##
+        case Implementations.get_implementation_links(implementation) do
           [] -> nil
-          _ -> implementation_id
+          _ -> implementation_ref
         end
       end)
-      |> Enum.filter(fn implementation_id -> implementation_id != nil end)
-
-    {:ok, cache_implementations(implementation_to_cache, force: true)}
+      |> Enum.filter(fn implementation_ref -> implementation_ref != nil end)
+    IO.inspect(label: "maybeupdate implementatio ->")
+    {:ok, cache_implementations(implementation_ref_to_cache, force: true)}
   end
 
-  def maybe_update_implementation_cache(_repo, %{implementation: %{id: implementation_id}}) do
-    maybe_update_implementation_cache(implementation_id)
+  def maybe_update_implementation_cache(_repo, %{implementation: %{implementation_ref: implementation_ref}}) do
+    maybe_update_implementation_cache(implementation_ref)
   end
 
-  def maybe_update_implementation_cache(implementation_id) do
-    case Implementations.get_implementation_links(%Implementation{id: implementation_id}) do
+  def maybe_update_implementation_cache(implementation_ref) do
+    # IO.inspect(implementation_ref, label: "maybe update cache imp_ref ->")
+
+    case Implementations.get_implementation_links(%Implementation{implementation_ref: implementation_ref}) do
       [] -> {:ok, nil}
-      _ -> {:ok, cache_implementations([implementation_id], force: true)}
+      links ->
+      IO.inspect(links, label: "I have links --->")
+      {:ok, cache_implementations([implementation_ref], force: true)}
     end
+  end
+
+  def cache_map_implementation_id_to_implementation_ref do
+    ### TODO TD-5140 refactor this code
+    ImplementationCache.referenced_ids()
+    # |> IO.inspect(label: "referenced_ids")
+    |> Implementations.get_implementations_ref()
+    |> ImplementationCache.put_relation_impl_id_and_impl_ref()
   end
 
   ## EventStream.Consumer Callbacks
@@ -74,9 +91,19 @@ defmodule TdDq.Cache.ImplementationLoader do
     {:noreply, state}
   end
 
+  def handle_cast({:implementation_to_migrate, _opts}, state) do
+    ImplementationCache.delete_relation_impl_id_and_impl_ref()
+    # |> IO.inspect(label: "delete relation ->")
+    cache_map_implementation_id_to_implementation_ref()
+    # |> IO.inspect(label: "handel cast imop ->")
+    {:noreply, state}
+  end
+
   @impl GenServer
   def handle_call({:consume, events}, _from, state) do
     implementation_ids = Enum.flat_map(events, &read_implementation_ids/1)
+    |> IO.inspect(label: "consume read imp ->")
+    ## TODO TD-5140 revisar esta parte del código
     reply = cache_implementations(implementation_ids)
     {:reply, reply, state}
   end
@@ -84,6 +111,7 @@ defmodule TdDq.Cache.ImplementationLoader do
   ## Private functions
 
   defp read_implementation_ids(%{event: "add_link", source: source, target: target}) do
+    IO.inspect(source, label: " read imp ids source ->")
     extract_implementation_ids([source, target])
   end
 
@@ -96,20 +124,24 @@ defmodule TdDq.Cache.ImplementationLoader do
 
   defp extract_implementation_ids(implementation_keys) do
     implementation_keys
-    |> Enum.filter(&String.starts_with?(&1, "implementation:"))
+    |> IO.inspect(label: "implementations keys --->")
+    |> Enum.filter(&String.starts_with?(&1, "implementation_ref:"))
     |> Enum.uniq()
-    |> Enum.map(fn "implementation:" <> id -> id end)
+    |> Enum.map(fn "implementation_ref:" <> id -> id end)
     |> Enum.map(&String.to_integer/1)
   end
 
-  def cache_implementations(implementation_ids, opts \\ []) do
-    implementation_ids
-    |> Enum.map(&get_implementation/1)
+  def cache_implementations(implementation_refs, opts \\ []) do
+    ## la modifiacion para obtener el publicado o la ultima version con cada uno de los ids.
+    implementation_refs
+    |> IO.inspect(label: "implementation refs --->")
+    |> Enum.map(&get_linked_implementation/1)
+    |> IO.inspect(label: "linked implementations ->")
     |> Enum.map(&ImplementationCache.put(&1, opts))
   end
 
-  defp get_implementation(implementation_id) do
-    implementation = Implementations.get_implementation!(implementation_id, preload: [:rule])
+  defp get_linked_implementation(implementation_ref) do
+    %{id: implementation_id} = implementation = Implementations.get_linked_implementation!(implementation_ref, preload: [:rule])
 
     quality_event = QualityEvents.get_event_by_imp(implementation_id)
 
@@ -133,6 +165,7 @@ defmodule TdDq.Cache.ImplementationLoader do
   end
 
   defp refresh_cached_implementation(opts) do
+    ## TODO: TD-5140 revisar
     keep_ids = ImplementationCache.referenced_ids()
     remove_count = ImplementationCache.clean_cached_implementations(keep_ids)
     updates = cache_implementations(keep_ids, opts)

@@ -282,7 +282,7 @@ defmodule TdDqWeb.RuleResultControllerTest do
     @tag fixture: "test/fixtures/rule_results/rule_results_errors_records.csv"
     test "updates implementation cache with link after uploading rule results", %{
       conn: conn,
-      implementation: %{id: implementation_id} = implementation,
+      implementation: %{id: implementation_id, implementation_ref: implementation_ref} = implementation,
       rule_results_file: rule_results_file
     } do
       CacheHelpers.put_implementation(implementation)
@@ -290,8 +290,8 @@ defmodule TdDqWeb.RuleResultControllerTest do
       %{id: concept_id} = CacheHelpers.insert_concept()
 
       CacheHelpers.insert_link(
-        implementation_id,
-        "implementation",
+        implementation_ref,
+        "implementation_ref",
         "business_concept",
         concept_id
       )

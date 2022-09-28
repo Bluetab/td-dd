@@ -146,7 +146,8 @@ defmodule CacheHelpers do
     TdCache.Permissions.put_default_permissions(permissions)
   end
 
-  def put_implementation(implementation) do
+  def put_implementation(%{implementation_ref: implementation_ref} = implementation) do
+    on_exit(fn -> ImplementationCache.delete([implementation_ref]) end)
     ImplementationCache.put(implementation, publish: false)
   end
 
