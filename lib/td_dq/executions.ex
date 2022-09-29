@@ -15,6 +15,8 @@ defmodule TdDq.Executions do
 
   @pagination_params [:order_by, :limit, :before, :after]
 
+  defdelegate authorize(action, user, params), to: __MODULE__.Policy
+
   @doc """
   Fetches the `Execution` with the given id.
   """

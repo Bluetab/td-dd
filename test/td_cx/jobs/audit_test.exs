@@ -16,7 +16,7 @@ defmodule TdCx.Jobs.AuditTest do
   setup do
     on_exit(fn -> Redix.del!(@stream) end)
 
-    claims = build(:cx_claims, role: "admin")
+    claims = build(:claims, role: "admin")
     job = insert(:job, events: [], type: "foo")
     [claims: claims, job: job]
   end

@@ -1,10 +1,10 @@
-defmodule TdDqWeb.Authentication do
+defmodule AuthenticationSupport do
   @moduledoc """
   This module defines the functions required to add auth headers to requests
   """
   alias Plug.Conn
-  alias TdDq.Auth.Claims
-  alias TdDq.Auth.Guardian
+  alias Truedat.Auth.Claims
+  alias Truedat.Auth.Guardian
 
   def put_auth_headers(conn, jwt) do
     conn

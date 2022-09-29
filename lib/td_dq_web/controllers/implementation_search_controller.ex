@@ -24,15 +24,18 @@ defmodule TdDqWeb.ImplementationSearchController do
 
   def create(conn, %{} = params) do
     claims = conn.assigns[:current_resource]
-    %{results: _implementations, total: total} = response = do_search(claims, params)
 
-    response = search_assigns(response)
+    with :ok <- Bodyguard.permit(Implementations, :query, claims) do
+      %{results: _implementations, total: total} = response = do_search(claims, params)
 
-    conn
-    |> assign(:actions, Implementations.build_actions(claims, params))
-    |> put_view(TdDqWeb.SearchView)
-    |> put_resp_header("x-total-count", "#{total}")
-    |> render("search.json", response)
+      response = search_assigns(response)
+
+      conn
+      |> assign(:actions, Implementations.build_actions(claims, params))
+      |> put_view(TdDqWeb.SearchView)
+      |> put_resp_header("x-total-count", "#{total}")
+      |> render("search.json", response)
+    end
   end
 
   swagger_path :reindex do
@@ -44,8 +47,12 @@ defmodule TdDqWeb.ImplementationSearchController do
   end
 
   def reindex(conn, _params) do
-    @index_worker.reindex_implementations(:all)
-    send_resp(conn, :accepted, "")
+    claims = conn.assigns[:current_resource]
+
+    with :ok <- Bodyguard.permit(Implementations, :reindex, claims) do
+      @index_worker.reindex_implementations(:all)
+      send_resp(conn, :accepted, "")
+    end
   end
 
   defp search_assigns(%{results: implementations, scroll_id: scroll_id}) do

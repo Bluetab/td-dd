@@ -3,10 +3,10 @@ defmodule TdDd.DataStructures.Search do
   The Data Structures Search context
   """
 
-  alias TdDd.Auth.Claims
   alias TdDd.DataStructures.Search.Aggregations
   alias TdDd.DataStructures.Search.Query
   alias TdDd.Utils.CollectionUtils
+  alias Truedat.Auth.Claims
   alias Truedat.Search
   alias Truedat.Search.Permissions
 

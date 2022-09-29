@@ -18,6 +18,8 @@ defmodule TdDd.DataStructures.Tags do
   alias TdDd.Repo
   alias TdDd.Search.IndexWorker
 
+  defdelegate authorize(action, user, params), to: TdDd.DataStructures.Tags.Policy
+
   def list_available_tags(%DataStructure{domain_ids: domain_ids}) do
     domain_ids = TaxonomyCache.reaching_domain_ids(domain_ids)
     list_tags(domain_ids: domain_ids)

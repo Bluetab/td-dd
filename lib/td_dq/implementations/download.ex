@@ -6,7 +6,6 @@ defmodule TdDq.Implementations.Download do
   alias TdCache.TemplateCache
   alias TdDfLib.Format
 
-  @spec to_csv(any, any, any) :: binary
   def to_csv([], _, _), do: ""
 
   def to_csv(implementations, header_labels, content_labels) do

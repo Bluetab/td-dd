@@ -6,14 +6,13 @@ defmodule TdDq.Implementations.Workflow do
   import Ecto.Query
 
   alias Ecto.Multi
-  alias TdDd.Auth.Claims, as: TdDdClaims
   alias TdDd.Repo
   alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Audit
 
   @index_worker Application.compile_env(:td_dd, :dq_index_worker)
 
-  def submit_implementation(%Implementation{} = implementation, %TdDdClaims{} = claims) do
+  def submit_implementation(%Implementation{} = implementation, %{} = claims) do
     update_implementation_status(
       implementation,
       "pending_approval",
@@ -22,15 +21,15 @@ defmodule TdDq.Implementations.Workflow do
     )
   end
 
-  def reject_implementation(%Implementation{} = implementation, %TdDdClaims{} = claims) do
+  def reject_implementation(%Implementation{} = implementation, %{} = claims) do
     update_implementation_status(implementation, "rejected", :implementation_rejected, claims)
   end
 
-  def publish_implementation(%Implementation{} = implementation, %TdDdClaims{} = claims) do
+  def publish_implementation(%Implementation{} = implementation, %{} = claims) do
     update_implementation_status(implementation, "published", :implementation_published, claims)
   end
 
-  def deprecate_implementation(%Implementation{} = implementation, %TdDdClaims{} = claims) do
+  def deprecate_implementation(%Implementation{} = implementation, %{} = claims) do
     update_implementation_status(implementation, "deprecated", :implementation_deprecated, claims)
   end
 

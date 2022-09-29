@@ -87,7 +87,7 @@ defmodule TdCx.ConfigurationsTest do
     alias TdCx.Configurations.Configuration
 
     test "list_configurations/2 returns filtered configurations" do
-      claims = build(:cx_claims)
+      claims = build(:claims)
       configuration = insert(:configuration)
 
       assert Configurations.list_configurations(claims, %{type: configuration.type}) == [
@@ -104,7 +104,7 @@ defmodule TdCx.ConfigurationsTest do
     end
 
     test "get_configuration_by_external_id!/2 returns the configuration with secrets if whe hace permissions" do
-      claims = build(:cx_claims, user_name: @valid_secret_attrs.type, role: "admin")
+      claims = build(:claims, user_name: @valid_secret_attrs.type, role: "admin")
 
       {:ok, %Configuration{} = configuration} =
         Configurations.create_configuration(@valid_secret_attrs)
@@ -112,14 +112,14 @@ defmodule TdCx.ConfigurationsTest do
       assert %{content: %{"public_field" => "public_value", "secret_field" => "secret_value"}} =
                Configurations.get_configuration_by_external_id!(claims, configuration.external_id)
 
-      claims = build(:cx_claims, user_name: @valid_secret_attrs.type, role: "user")
+      claims = build(:claims, user_name: @valid_secret_attrs.type, role: "user")
 
       content =
         Configurations.get_configuration_by_external_id!(claims, configuration.external_id).content
 
       assert is_nil(Map.get(content, "secret_field"))
 
-      claims = build(:cx_claims, user_name: "foo", role: "admin")
+      claims = build(:claims, user_name: "foo", role: "admin")
 
       content =
         Configurations.get_configuration_by_external_id!(claims, configuration.external_id).content
@@ -139,7 +139,7 @@ defmodule TdCx.ConfigurationsTest do
     end
 
     test "create_configuration/1 with valid data creates a configuration with secrets" do
-      claims = build(:cx_claims, user_name: @valid_secret_attrs.type, role: "admin")
+      claims = build(:claims, user_name: @valid_secret_attrs.type, role: "admin")
 
       assert {:ok, %Configuration{} = configuration} =
                Configurations.create_configuration(@valid_secret_attrs)
@@ -176,7 +176,7 @@ defmodule TdCx.ConfigurationsTest do
     end
 
     test "update_configuration/2 with valid data updates the configuration with secrets" do
-      claims = build(:cx_claims, user_name: @valid_secret_attrs.type, role: "admin")
+      claims = build(:claims, user_name: @valid_secret_attrs.type, role: "admin")
 
       {:ok, %Configuration{} = configuration} =
         Configurations.create_configuration(@valid_secret_attrs)
@@ -197,7 +197,7 @@ defmodule TdCx.ConfigurationsTest do
 
     test "update_configuration/2 updates secrets key when template changes" do
       type = @valid_secret_attrs.type
-      claims = build(:cx_claims, user_name: type, role: "admin")
+      claims = build(:claims, user_name: type, role: "admin")
 
       {:ok, %Configuration{external_id: external_id, secrets_key: nil} = configuration} =
         Configurations.create_configuration(@valid_attrs)

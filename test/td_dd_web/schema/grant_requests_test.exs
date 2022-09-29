@@ -106,7 +106,10 @@ defmodule TdDdWeb.Schema.GrantRequestsTest do
       assert grant_request == grant_request_result
     end
 
-    @tag authentication: [role: "user", permissions: [:create_grant_request]]
+    @tag authentication: [
+           role: "user",
+           permissions: [:create_grant_request, :view_data_structure]
+         ]
     test "users with permissions can get their owns grant request by structure_id", %{
       conn: conn,
       domain: %{id: domain_id},

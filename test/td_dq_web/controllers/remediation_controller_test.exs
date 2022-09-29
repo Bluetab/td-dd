@@ -92,7 +92,7 @@ defmodule TdDqWeb.RemediationControllerTest do
     end
 
     @tag authentication: [role: "user"]
-    test "user without manage_remediation can view remediation", %{
+    test "user without manage_remediations can view remediation", %{
       conn: conn,
       rule_result: %{id: rule_result_id},
       remediation: %{id: remediation_id}
@@ -106,7 +106,7 @@ defmodule TdDqWeb.RemediationControllerTest do
     end
 
     @tag authentication: [role: "user", permissions: ["manage_remediations"]]
-    test "user with manage_remediation permission can view remediation", %{
+    test "user with manage_remediations permission can view remediation", %{
       conn: conn,
       rule_result: %{id: rule_result_id},
       remediation: %{id: remediation_id}
@@ -120,7 +120,7 @@ defmodule TdDqWeb.RemediationControllerTest do
     end
 
     @tag authentication: [role: "user", permissions: ["manage_remediations"]]
-    test "user with manage_remediation permission can create remediation", %{
+    test "user with manage_remediations permission can create remediation", %{
       conn: conn,
       rule_result: %{id: rule_result_id}
     } do
@@ -147,7 +147,7 @@ defmodule TdDqWeb.RemediationControllerTest do
     end
 
     @tag authentication: [role: "user", permissions: ["manage_remediations"]]
-    test "user with manage_remediation permission can update remediation", %{
+    test "user with manage_remediations permission can update remediation", %{
       conn: conn,
       template: %{name: df_name},
       rule_result: %{id: rule_result_id}

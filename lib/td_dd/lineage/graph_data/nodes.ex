@@ -57,7 +57,7 @@ defmodule TdDd.Lineage.GraphData.Nodes do
     %{external_id: children}
     |> Units.list_nodes(preload: :units)
     |> Enum.map(&domain_ids/1)
-    |> Enum.reject(&by_permissions(claims, &1))
+    |> Enum.filter(&Bodyguard.permit?(Units, :view_lineage, claims, &1))
   end
 
   defp get_nodes(children, claims, domain_id) do
@@ -66,7 +66,8 @@ defmodule TdDd.Lineage.GraphData.Nodes do
     |> Enum.map(&domain_ids/1)
     |> Enum.map(&parent_domain_ids/1)
     |> Enum.filter(fn %{parent_ids: parent_ids} -> domain_id in parent_ids end)
-    |> Enum.reject(&by_permissions(claims, &1))
+    # credo:disable-for-next-line
+    |> Enum.filter(&Bodyguard.permit?(Units, :view_lineage, claims, &1))
   end
 
   defp hidden?(%Graph{} = t, id) do
@@ -85,11 +86,6 @@ defmodule TdDd.Lineage.GraphData.Nodes do
   defp parent_domain_ids(%{domain_ids: domain_ids} = node) do
     parent_ids = TaxonomyCache.reaching_domain_ids(domain_ids)
     Map.put(node, :parent_ids, parent_ids)
-  end
-
-  defp by_permissions(claims, node) do
-    import Canada, only: [can?: 2]
-    not can?(claims, view_lineage(node))
   end
 
   defp class(%{class: "Group"}), do: :groups
