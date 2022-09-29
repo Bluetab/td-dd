@@ -273,11 +273,21 @@ defmodule TdDq.Implementations do
   @spec deprecate_implementations ::
           :ok | {:ok, map} | {:error, Multi.name(), any, %{required(Multi.name()) => any}}
   def deprecate_implementations do
-    implementation_ids_by_structure_id =
+    {
+      implementation_ids_by_structure_id,
+      implementation_ids_by_reference_dataset_id
+    } =
       list_implementations()
-      |> Enum.map(fn %{id: id} = impl -> {get_structure_ids(impl), id} end)
-      |> Enum.flat_map(fn {structure_ids, id} -> Enum.map(structure_ids, &{&1, id}) end)
+      |> Enum.map(fn %{id: id} = impl -> {get_structures(impl), id} end)
+      |> Enum.flat_map(fn {structures, id} -> Enum.map(structures, &{&1, id}) end)
       |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+      |> Enum.reduce({%{}, %{}}, fn
+        {%{id: id, type: "reference_dataset"}, impls}, {by_structures, by_references} ->
+          {by_structures, Map.put(by_references, id, impls)}
+
+        {%{id: id, type: _}, impls}, {by_structures, by_references} ->
+          {Map.put(by_structures, id, impls), by_references}
+      end)
 
     existing_structure_ids =
       implementation_ids_by_structure_id
@@ -286,11 +296,23 @@ defmodule TdDq.Implementations do
       |> Enum.filter(&is_nil(&1.deleted_at))
       |> Enum.map(& &1.data_structure_id)
 
-    implementation_ids_by_structure_id
-    |> Map.drop(existing_structure_ids)
-    |> Enum.flat_map(fn {_, impl_ids} -> impl_ids end)
-    |> Enum.uniq()
-    |> deprecate()
+    impl_ids_to_deprecate_by_structure_id =
+      implementation_ids_by_structure_id
+      |> Map.drop(existing_structure_ids)
+      |> Enum.flat_map(fn {_, impl_ids} -> impl_ids end)
+
+    impl_ids_to_deprecate_by_reference_id =
+      implementation_ids_by_reference_dataset_id
+      |> Enum.reject(fn {id, _impl_ids} -> ReferenceData.exists?(id) end)
+      |> Enum.flat_map(fn {_, impl_ids} -> impl_ids end)
+
+    impl_ids_to_deprecate =
+      Enum.uniq(
+        impl_ids_to_deprecate_by_structure_id ++
+          impl_ids_to_deprecate_by_reference_id
+      )
+
+    deprecate(impl_ids_to_deprecate)
   end
 
   @doc """
@@ -903,16 +925,17 @@ defmodule TdDq.Implementations do
     do: structure(structure)
 
   defp structure(%{left: left = %{}, right: right = %{}}),
-    do: [Map.take(left, [:id, :name]), Map.take(right, [:id, :name])]
+    do: [Map.take(left, [:id, :name, :type]), Map.take(right, [:id, :name, :type])]
 
   defp structure(%{value: value}), do: structure(value)
 
   defp structure(%{id: _id} = structure),
-    do: [Map.take(structure, [:id, :name])]
+    do: [Map.take(structure, [:id, :name, :type])]
 
   defp structure(%{"id" => id} = structure) do
     name = Map.get(structure, "name")
-    [%{id: id, name: name}]
+    type = Map.get(structure, "type")
+    [%{id: id, name: name, type: type}]
   end
 
   defp structure(%{population: population}) do
