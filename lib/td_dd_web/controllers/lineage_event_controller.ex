@@ -2,8 +2,6 @@ defmodule TdDdWeb.LineageEventController do
   use TdDdWeb, :controller
   use PhoenixSwagger
 
-  import Canada, only: [can?: 2]
-
   alias TdDd.Lineage.LineageEvent
   alias TdDd.Lineage.LineageEvents
 
@@ -20,7 +18,7 @@ defmodule TdDdWeb.LineageEventController do
 
   def index(conn, _params) do
     with %{user_id: user_id} = claims <- conn.assigns[:current_resource],
-         {:can, true} <- {:can, can?(claims, list(LineageEvent))} do
+         :ok <- Bodyguard.permit(LineageEvents, :list, claims, LineageEvent) do
       render(conn, "index.json", %{lineage_events: LineageEvents.get_by_user_id(user_id)})
     end
   end

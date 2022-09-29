@@ -68,7 +68,7 @@ defmodule TdDdWeb.GrantControllerTest do
              } = data
     end
 
-    @tag authentication: [role: "non_admin", permissions: [:manage_grants]]
+    @tag authentication: [permissions: [:view_data_structure, :manage_grants]]
     test "user with permissions can create a grant", %{
       conn: conn,
       data_structure: %{external_id: data_structure_external_id},
@@ -99,7 +99,7 @@ defmodule TdDdWeb.GrantControllerTest do
              } = data
     end
 
-    @tag authentication: [role: "non_admin", permissions: [:manage_grants]]
+    @tag authentication: [permissions: [:manage_grants]]
     test "user with permissions cannot create a grant with a structure in other domain", %{
       conn: conn,
       domain: %{id: domain_id}
@@ -173,7 +173,7 @@ defmodule TdDdWeb.GrantControllerTest do
                |> json_response(:ok)
     end
 
-    @tag authentication: [role: "non_admin", permissions: [:view_grants]]
+    @tag authentication: [permissions: [:view_grants, :view_data_structure]]
     test "user with permissions can show grant", %{conn: conn, grant: %{id: id}} do
       conn = get(conn, Routes.grant_path(conn, :show, id))
 
@@ -198,7 +198,7 @@ defmodule TdDdWeb.GrantControllerTest do
       assert %{"id" => ^id} = json_response(conn, :ok)["data"]
     end
 
-    @tag authentication: [role: "non_admin", permissions: [:view_grants]]
+    @tag authentication: [permissions: [:view_grants]]
     test "user with permissions cannot show a grant with structure in other domain", %{conn: conn} do
       %{id: id} = insert(:grant)
       conn = get(conn, Routes.grant_path(conn, :show, id))
@@ -236,7 +236,7 @@ defmodule TdDdWeb.GrantControllerTest do
              } = data
     end
 
-    @tag authentication: [role: "non_admin", permissions: [:manage_grants]]
+    @tag authentication: [permissions: [:manage_grants, :view_data_structure]]
     test "user with permissions can update a grant", %{
       conn: conn,
       grant: %Grant{id: id} = grant
@@ -259,7 +259,9 @@ defmodule TdDdWeb.GrantControllerTest do
              } = data
     end
 
-    @tag authentication: [role: "non_admin", permissions: [:request_grant_removal, :view_grants]]
+    @tag authentication: [
+           permissions: [:request_grant_removal, :view_grants, :view_data_structure]
+         ]
     test "user with permissions can request removal of a grant", %{
       conn: conn,
       grant: %Grant{id: id} = grant
@@ -370,7 +372,7 @@ defmodule TdDdWeb.GrantControllerTest do
       assert not pending_removal
     end
 
-    @tag authentication: [role: "non_admin", permissions: [:manage_grants]]
+    @tag authentication: [permissions: [:manage_grants]]
     test "user with permissions cannot update a grant with a structure in other domain", %{
       conn: conn
     } do
@@ -414,23 +416,23 @@ defmodule TdDdWeb.GrantControllerTest do
              |> delete(Routes.grant_path(conn, :delete, grant))
              |> response(:no_content)
 
-      assert_error_sent(404, fn ->
+      assert_error_sent :not_found, fn ->
         get(conn, Routes.grant_path(conn, :show, grant))
-      end)
+      end
     end
 
-    @tag authentication: [role: "non_admin", permissions: [:manage_grants]]
+    @tag authentication: [permissions: [:manage_grants, :view_data_structure]]
     test "user with permissions can delete grant", %{conn: conn, grant: grant} do
       assert conn
              |> delete(Routes.grant_path(conn, :delete, grant))
              |> response(:no_content)
 
-      assert_error_sent(404, fn ->
+      assert_error_sent :not_found, fn ->
         get(conn, Routes.grant_path(conn, :show, grant))
-      end)
+      end
     end
 
-    @tag authentication: [role: "non_admin", permissions: [:manage_grants]]
+    @tag authentication: [permissions: [:manage_grants, :view_data_structure]]
     test "user with permissions cannot delete grant with structure in other domain", %{conn: conn} do
       grant = insert(:grant)
 

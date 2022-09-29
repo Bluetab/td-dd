@@ -47,7 +47,7 @@ guides](http://www.phoenixframework.org/docs/deployment).
 - [httpoison](https://hex.pm/packages/httpoison) - An HTTP client
 - [credo](https://hex.pm/packages/credo) - Static code analysis
 - [guardian](https://hex.pm/packages/guardian) - Authentication library
-- [canada](https://hex.pm/packages/canada) - A declarative permissions library
+- [bodyguard](https://hex.pm/packages/bodyguard) - Authorization library
 - [ex_machina](https://hex.pm/packages/ex_machina) - A factory library for test
   data
 - [cors_plug](https://hex.pm/packages/cors_plug) - Plug for CORS support

@@ -1,4 +1,4 @@
-defmodule TdDd.Auth.Claims do
+defmodule Truedat.Auth.Claims do
   @moduledoc """
   Jason web tokens (JWTs) contain claims which are pieces of information
   asserted about a subject. This module provides a struct containing the claims
@@ -16,13 +16,4 @@ defmodule TdDd.Auth.Claims do
 
   @derive {Jason.Encoder, only: [:user_id, :user_name]}
   defstruct [:user_id, :user_name, :role, :jti, :exp]
-
-  def from(%{user_id: user_id, user_name: user_name, role: role, jti: jti, exp: exp}),
-    do: %TdDd.Auth.Claims{
-      user_id: user_id,
-      user_name: user_name,
-      role: role,
-      jti: jti,
-      exp: exp
-    }
 end

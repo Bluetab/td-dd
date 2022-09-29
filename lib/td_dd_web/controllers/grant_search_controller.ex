@@ -2,9 +2,6 @@ defmodule TdDdWeb.GrantSearchController do
   use PhoenixSwagger
   use TdDdWeb, :controller
 
-  import Canada, only: [can?: 2]
-
-  alias TdDd.Grants.Grant
   alias TdDd.Grants.Search
 
   action_fallback(TdDdWeb.FallbackController)
@@ -21,11 +18,9 @@ defmodule TdDdWeb.GrantSearchController do
   def reindex_all_grants(conn, _params) do
     claims = conn.assigns[:current_resource]
 
-    if can?(claims, reindex_all(Grant)) do
+    with :ok <- Bodyguard.permit(TdDd.Grants, :reindex, claims) do
       @index_worker.reindex_grants(:all)
       send_resp(conn, :accepted, "")
-    else
-      render_error(conn, :forbidden)
     end
   end
 
@@ -38,25 +33,19 @@ defmodule TdDdWeb.GrantSearchController do
   end
 
   def search_grants(conn, params) do
-    claims = conn.assigns[:current_resource]
-    manage_permission = can?(claims, manage(Grant))
-    user_permissions = %{manage_grants: manage_permission}
     %{total: total} = response = search(conn, params, :by_permissions)
 
     conn
     |> put_resp_header("x-total-count", "#{total}")
-    |> render("search.json", search_assigns(response, user_permissions))
+    |> render("search.json", search_assigns(response))
   end
 
   def search_my_grants(conn, params) do
-    claims = conn.assigns[:current_resource]
-    manage_permission = can?(claims, manage(Grant))
-    user_permissions = %{manage_grants: manage_permission}
     %{total: total} = response = search(conn, params, :by_user)
 
     conn
     |> put_resp_header("x-total-count", "#{total}")
-    |> render("search.json", search_assigns(response, user_permissions))
+    |> render("search.json", search_assigns(response))
   end
 
   defp search(_conn, %{"scroll_id" => _scroll_id, "scroll" => _scroll} = params, _by) do
@@ -82,15 +71,15 @@ defmodule TdDdWeb.GrantSearchController do
     Search.search(params, claims, page, size)
   end
 
-  defp search_assigns(%{results: grants, scroll_id: scroll_id}, _user_permissions) do
+  defp search_assigns(%{results: grants, scroll_id: scroll_id}) do
     [grants: grants, scroll_id: scroll_id]
   end
 
-  defp search_assigns(%{results: grants, aggregations: aggregations}, user_permissions) do
-    [grants: grants, filters: aggregations, user_permissions: user_permissions]
+  defp search_assigns(%{results: grants, aggregations: aggregations}) do
+    [grants: grants, filters: aggregations]
   end
 
-  defp search_assigns(%{results: grants}, user_permissions) do
-    [grants: grants, user_permissions: user_permissions]
+  defp search_assigns(%{results: grants}) do
+    [grants: grants]
   end
 end

@@ -27,7 +27,7 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
   end
 
   describe "POST /api/rule_implementations/:id/results" do
-    @tag authentication: [role: "non_admin", permissions: [:manage_rule_results]]
+    @tag authentication: [role: "user", permissions: [:manage_rule_results]]
     test "returns 201 Created with the result for a published implementation", %{
       conn: conn,
       swagger_schema: schema,
@@ -87,7 +87,7 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
       |> json_response(:not_found)
     end
 
-    @tag authentication: [role: "non_admin", permissions: [:manage_rule_results]]
+    @tag authentication: [role: "user", permissions: [:manage_rule_results]]
     test "returns 201 Created with the result with segments on a published implementation", %{
       conn: conn,
       swagger_schema: schema,

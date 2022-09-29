@@ -37,7 +37,7 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
       assert [%{"id" => ^id}] = data
     end
 
-    @tag authentication: [user_name: "non_admin"]
+    @tag authentication: []
     test "non admin user can only list own grant_request_groups", %{
       conn: conn,
       claims: %{user_id: user_id}
@@ -55,7 +55,7 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
   end
 
   describe "show" do
-    @tag authentication: [user_namer: "non_admin"]
+    @tag authentication: []
     test "non admin user cannot show grant_request_group from other user", %{conn: conn} do
       %{id: id} = insert(:grant_request_group)
 
@@ -64,7 +64,7 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
              |> response(:forbidden)
     end
 
-    @tag authentication: [user_namer: "non_admin"]
+    @tag authentication: []
     test "non admin user can show own grant_request_group", %{
       conn: conn,
       claims: %{user_id: user_id}
@@ -134,7 +134,7 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
              } = data
     end
 
-    @tag authentication: [user: "non_admin", permissions: [:create_grant_request]]
+    @tag authentication: [permissions: [:create_grant_request]]
     test "user without permission cannot create request_group with different user_id", %{
       conn: conn,
       domain: %{id: domain_id}
@@ -156,8 +156,11 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
     end
 
     @tag authentication: [
-           user: "non_admin",
-           permissions: [:create_grant_request, :create_foreign_grant_request]
+           permissions: [
+             :create_grant_request,
+             :create_foreign_grant_request,
+             :view_data_structure
+           ]
          ]
     test "user with permission can create request_group on authorized user_id", %{
       conn: conn,
@@ -215,7 +218,7 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
              } = data
     end
 
-    @tag authentication: [user: "non_admin"]
+    @tag authentication: []
     test "user without permission on structure cannot create grant_request_group", %{
       conn: conn,
       create_params: create_params
@@ -227,7 +230,10 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
              |> response(:forbidden)
     end
 
-    @tag authentication: [user: "non_admin", permissions: [:create_grant_request]]
+    @tag authentication: [
+           user: "non_admin",
+           permissions: [:create_grant_request, :view_data_structure]
+         ]
     test "user with permission on structure can create grant_request_group", %{
       conn: conn,
       domain: %{id: domain_id},
@@ -433,7 +439,7 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
       end
     end
 
-    @tag authentication: [user_name: "non_admin"]
+    @tag authentication: []
     test "non admin cannot delete grant_request_group", %{conn: conn, group: group} do
       assert conn
              |> delete(Routes.grant_request_group_path(conn, :delete, group))

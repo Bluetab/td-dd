@@ -13,15 +13,8 @@ defmodule TdDd.DataStructures.StructureNotes do
   alias TdDd.Repo
   alias TdDd.Search.IndexWorker
 
-  @doc """
-  Returns the list of structure_notes.
+  defdelegate authorize(action, user, params), to: TdDd.DataStructures.StructureNotes.Policy
 
-  ## Examples
-
-      iex> list_structure_notes()
-      [%StructureNote{}, ...]
-
-  """
   def list_structure_notes do
     Repo.all(StructureNote)
   end
@@ -117,20 +110,6 @@ defmodule TdDd.DataStructures.StructureNotes do
 
   defp get_cursor_params(params), do: params
 
-  @doc """
-  Gets a single structure_note.
-
-  Raises `Ecto.NoResultsError` if the Structure note does not exist.
-
-  ## Examples
-
-      iex> get_structure_note!(123)
-      %StructureNote{}
-
-      iex> get_structure_note!(456)
-      ** (Ecto.NoResultsError)
-
-  """
   def get_structure_note!(id), do: Repo.get!(StructureNote, id)
 
   def latest_structure_note_query(query, data_structure_id) do
@@ -155,18 +134,6 @@ defmodule TdDd.DataStructures.StructureNotes do
     |> Repo.one()
   end
 
-  @doc """
-  Creates a structure_note.
-
-  ## Examples
-
-      iex> create_structure_note(%{field: value}, %{}, user_id)
-      {:ok, %StructureNote{}}
-
-      iex> create_structure_note(%{field: bad_value}, %{}, user_id)
-      {:error, %Ecto.Changeset{}}
-
-  """
   def create_structure_note(%DataStructure{id: id} = data_structure, attrs, user_id) do
     changeset =
       StructureNote.create_changeset(
@@ -216,19 +183,7 @@ defmodule TdDd.DataStructures.StructureNotes do
     |> on_update()
   end
 
-  @doc """
-  Updates a structure_note with bulk_update behaviour.
-
-  ## Examples
-
-      iex> bulk_update_structure_note(structure_note, %{field: new_value}, user_id)
-      {:ok, %StructureNote{}}
-
-      iex> bulk_update_structure_note(structure_note, %{field: bad_value}, user_id)
-      {:error, %Ecto.Changeset{}}
-
-  """
-
+  @doc "Updates a structure_note with bulk_update behaviour"
   def bulk_update_structure_note(%StructureNote{} = structure_note, attrs, user_id) do
     structure_note = Repo.preload(structure_note, :data_structure)
     changeset = StructureNote.bulk_update_changeset(structure_note, attrs)
@@ -248,19 +203,6 @@ defmodule TdDd.DataStructures.StructureNotes do
       |> on_update()
     end
   end
-
-  @doc """
-  Updates a structure_note.
-
-  ## Examples
-
-      iex> update_structure_note(structure_note, %{field: new_value}, user_id)
-      {:ok, %StructureNote{}}
-
-      iex> update_structure_note(structure_note, %{field: bad_value}, user_id)
-      {:error, %Ecto.Changeset{}}
-
-  """
 
   def update_structure_note(_structure_note, _attrs, _user_id, opts \\ [])
 
@@ -326,18 +268,6 @@ defmodule TdDd.DataStructures.StructureNotes do
 
   def maybe_update_alias(multi, _status, _user_id), do: multi
 
-  @doc """
-  Deletes a structure_note.
-
-  ## Examples
-
-      iex> delete_structure_note(structure_note, user_id)
-      {:ok, %StructureNote{}}
-
-      iex> delete_structure_note(structure_note, user_id)
-      {:error, %Ecto.Changeset{}}
-
-  """
   def delete_structure_note(
         %StructureNote{} = structure_note,
         user_id

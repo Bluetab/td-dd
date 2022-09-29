@@ -2,12 +2,11 @@ defmodule TdDdWeb.ProfileEventController do
   use PhoenixSwagger
   use TdDdWeb, :controller
 
-  import Canada, only: [can?: 2]
-
   alias TdDd.Executions
   alias TdDd.Executions.ProfileEvent
   alias TdDd.Executions.ProfileEvents
   alias TdDd.Executions.ProfileExecution
+  alias TdDd.Profiles
   alias TdDdWeb.SwaggerDefinitions
 
   action_fallback(TdDdWeb.FallbackController)
@@ -25,7 +24,7 @@ defmodule TdDdWeb.ProfileEventController do
   def create(conn, %{"profile_execution_id" => id, "profile_event" => event}) do
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(claims, create(ProfileEvent))},
+    with :ok <- Bodyguard.permit(Profiles, :create, claims),
          %ProfileExecution{id: id} <- Executions.get_profile_execution(id),
          {:ok, %ProfileEvent{} = event} <-
            ProfileEvents.create_event(Map.put(event, "profile_execution_id", id)) do

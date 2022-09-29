@@ -146,9 +146,7 @@ defmodule TdDdWeb.GrantsControllerTest do
         |> Map.put(:data_structure_external_id, data_structure_external_id)
 
       assert conn
-             |> patch(Routes.grants_path(conn, :update),
-               grants: [create_attr]
-             )
+             |> patch(Routes.grants_path(conn, :update), grants: [create_attr])
              |> json_response(:forbidden)
     end
   end

@@ -9,8 +9,11 @@ defmodule TdDdWeb.Resolvers.ReferenceData do
     {:ok, ReferenceData.list()}
   end
 
-  def reference_dataset(_parent, %{id: id}, _resolution) do
-    {:ok, ReferenceData.get!(id)}
+  def reference_dataset(_parent, %{id: id}, resolution) do
+    with dataset <- ReferenceData.get!(id),
+         :ok <- Bodyguard.permit(ReferenceData, :view, claims(resolution), dataset) do
+      {:ok, dataset}
+    end
   rescue
     _ -> {:error, :not_found}
   end
@@ -19,19 +22,24 @@ defmodule TdDdWeb.Resolvers.ReferenceData do
     ReferenceData.create(args)
   end
 
-  def update_reference_dataset(_parent, %{dataset: %{id: id} = args}, _resolution) do
-    id
-    |> ReferenceData.get!()
-    |> ReferenceData.update(args)
+  def update_reference_dataset(_parent, %{dataset: %{id: id} = args}, resolution) do
+    with dataset <- ReferenceData.get!(id),
+         :ok <- Bodyguard.permit(ReferenceData, :update, claims(resolution), dataset) do
+      ReferenceData.update(dataset, args)
+    end
   rescue
     _ -> {:error, :not_found}
   end
 
-  def delete_reference_dataset(_parent, %{id: id}, _resolution) do
-    id
-    |> ReferenceData.get!()
-    |> ReferenceData.delete()
+  def delete_reference_dataset(_parent, %{id: id}, resolution) do
+    with dataset <- ReferenceData.get!(id),
+         :ok <- Bodyguard.permit(ReferenceData, :delete, claims(resolution), dataset) do
+      ReferenceData.delete(dataset)
+    end
   rescue
     _ -> {:error, :not_found}
   end
+
+  defp claims(%{context: %{claims: claims}}), do: claims
+  defp claims(_), do: nil
 end
