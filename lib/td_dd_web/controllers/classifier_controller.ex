@@ -2,8 +2,6 @@ defmodule TdDdWeb.ClassifierController do
   use PhoenixSwagger
   use TdDdWeb, :controller
 
-  import Canada, only: [can?: 2]
-
   alias TdDd.Classifiers
   alias TdDd.Systems
   alias TdDdWeb.SwaggerDefinitions
@@ -29,7 +27,7 @@ defmodule TdDdWeb.ClassifierController do
 
   def index(conn, _params, system) do
     with claims <- conn.assigns[:current_resource],
-         {:can, true} <- {:can, can?(claims, show(system))} do
+         :ok <- Bodyguard.permit(Systems, :view, claims, system) do
       render(conn, "index.json", classifiers: system.classifiers)
     end
   end
@@ -49,7 +47,7 @@ defmodule TdDdWeb.ClassifierController do
 
   def create(conn, %{"classifier" => params}, system) do
     with claims <- conn.assigns[:current_resource],
-         {:can, true} <- {:can, can?(claims, classify(system))},
+         :ok <- Bodyguard.permit(Systems, :classify, claims, system),
          {:ok, %{classifier: classifier}} <- Classifiers.create_classifier(system, params) do
       conn
       |> put_status(:created)
@@ -68,7 +66,7 @@ defmodule TdDdWeb.ClassifierController do
   def delete(conn, %{"id" => id}, system) do
     with claims <- conn.assigns[:current_resource],
          classifier <- Classifiers.get_classifier!(system, id),
-         {:can, true} <- {:can, can?(claims, delete(classifier))},
+         :ok <- Bodyguard.permit(Systems, :delete, claims, classifier),
          {:ok, _multi_result} <- Classifiers.delete_classifier(classifier) do
       send_resp(conn, :no_content, "")
     end

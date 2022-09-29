@@ -18,7 +18,7 @@ defmodule TdCx.Sources.EventsTest do
     SearchHelpers.expect_bulk_index("/jobs/_doc/_bulk")
     %{id: job_id} = insert(:job)
     params = %{type: "init", message: "Message", job_id: job_id}
-    claims = build(:cx_claims, role: "admin")
+    claims = build(:claims, role: "admin")
     assert {:ok, %{event: event, job_updated_at: {1, nil}}} = Events.create_event(params, claims)
     assert %{job_id: ^job_id, type: "init", message: "Message"} = event
   end

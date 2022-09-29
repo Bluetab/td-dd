@@ -4,6 +4,8 @@
 
 ### Changed
 
+- [TD-4871] Unify `Claims` structs, replace `canada` with `bodyguard` for
+  authorizations
 - [TD-5184] Removed dependency on td-hypermedia library
 
 ### Added

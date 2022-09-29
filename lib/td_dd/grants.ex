@@ -6,12 +6,14 @@ defmodule TdDd.Grants do
   import Ecto.Query
 
   alias Ecto.Multi
-  alias TdDd.Auth.Claims
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
   alias TdDd.Grants.Grant
   alias TdDd.Repo
   alias TdDd.Search.IndexWorker
+  alias Truedat.Auth.Claims
+
+  defdelegate authorize(action, user, params), to: __MODULE__.Policy
 
   def get_grant!(id, opts \\ []) do
     Grant

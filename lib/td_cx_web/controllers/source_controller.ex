@@ -2,8 +2,6 @@ defmodule TdCxWeb.SourceController do
   use TdCxWeb, :controller
   use PhoenixSwagger
 
-  import Canada, only: [can?: 2]
-
   alias TdCx.Sources
   alias TdCx.Sources.Source
   alias TdCxWeb.SwaggerDefinitions
@@ -27,12 +25,12 @@ defmodule TdCxWeb.SourceController do
     response(422, "Client Error")
   end
 
-  def index(conn, %{"type" => source_type} = attrs) do
+  def index(conn, %{"type" => source_type} = params) do
     claims = conn.assigns[:current_resource]
     sources = Sources.list_sources_by_source_type(source_type)
 
-    case can?(claims, view_secrets(attrs)) do
-      true ->
+    case Bodyguard.permit(Sources, :view_secrets, claims, params) do
+      :ok ->
         sources = Enum.map(sources, &Sources.enrich_secrets(&1))
         render(conn, "index.json", sources: sources)
 
@@ -44,7 +42,7 @@ defmodule TdCxWeb.SourceController do
   def index(conn, _params) do
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(claims, list(Source))},
+    with :ok <- Bodyguard.permit(Sources, :query, claims),
          sources <- Sources.list_sources(deleted: false) do
       render(conn, "index.json", sources: sources)
     end
@@ -66,7 +64,7 @@ defmodule TdCxWeb.SourceController do
   def create(conn, %{"source" => source_params}) do
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(claims, create(%Source{}))},
+    with :ok <- Bodyguard.permit(Sources, :create, claims),
          {:ok, %Source{} = source} <- Sources.create_or_update_source(source_params) do
       conn
       |> put_status(:created)
@@ -91,10 +89,10 @@ defmodule TdCxWeb.SourceController do
   def show(conn, %{"external_id" => external_id}) do
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(claims, show(%Source{}))},
-         %Source{} = source <- Sources.get_source(external_id),
-         %Source{} = source <- Sources.enrich_secrets(claims, source),
-         job_types <- Sources.job_types(claims, source) do
+    with %Source{} = source <- Sources.get_source(external_id),
+         :ok <- Bodyguard.permit(Sources, :view, claims, source),
+         %Source{} = source <- Sources.enrich_secrets(claims, source) do
+      job_types = Sources.job_types(source)
       render(conn, "show.json", source: source, job_types: job_types)
     end
   end
@@ -123,8 +121,8 @@ defmodule TdCxWeb.SourceController do
   def update(conn, %{"external_id" => external_id, "source" => source_params}) do
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(claims, update(%Source{}))},
-         %Source{} = source <- Sources.get_source(external_id),
+    with %Source{} = source <- Sources.get_source(external_id),
+         :ok <- Bodyguard.permit(Sources, :update, claims, source),
          {:ok, %Source{} = source} <- Sources.update_source(source, source_params) do
       render(conn, "show.json", source: source)
     end
@@ -133,8 +131,8 @@ defmodule TdCxWeb.SourceController do
   def update(conn, %{"external_id" => external_id, "source_config" => config}) do
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(claims, update(%Source{}))},
-         %Source{} = source <- Sources.get_source(external_id),
+    with %Source{} = source <- Sources.get_source(external_id),
+         :ok <- Bodyguard.permit(Sources, :update, claims, source),
          {:ok, %Source{} = source} <- Sources.update_source_config(source, config) do
       render(conn, "show.json", source: source)
     end
@@ -155,8 +153,8 @@ defmodule TdCxWeb.SourceController do
   def delete(conn, %{"external_id" => external_id}) do
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(claims, delete(%Source{}))},
-         %Source{} = source <- Sources.get_source!(external_id: external_id, preload: :jobs),
+    with %Source{} = source <- Sources.get_source!(external_id: external_id, preload: :jobs),
+         :ok <- Bodyguard.permit(Sources, :delete, claims, source),
          {:ok, %Source{} = _source} <- Sources.delete_source(source) do
       send_resp(conn, :no_content, "")
     end

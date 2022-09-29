@@ -1,8 +1,6 @@
 defmodule TdDqWeb.ImplementationController do
   use TdDqWeb, :controller
 
-  import Canada, only: [can?: 2]
-
   alias TdDq.Events.QualityEvents
   alias TdDq.Implementations
   alias TdDq.Implementations.Download
@@ -30,7 +28,7 @@ defmodule TdDqWeb.ImplementationController do
       |> add_rule_filter(params, "rule_business_concept_id", "business_concept_id")
       |> add_rule_filter(params, "is_rule_active", "active")
 
-    with {:can, true} <- {:can, can?(claims, list(Implementation))} do
+    with :ok <- Bodyguard.permit(Implementations, :query, claims) do
       implementations =
         filters
         |> Implementations.list_implementations(preload: [:rule, :results], enrich: :source)
@@ -146,7 +144,7 @@ defmodule TdDqWeb.ImplementationController do
 
     actions = Implementations.build_actions(claims, implementation)
 
-    with {:can, true} <- {:can, can?(claims, show(implementation))} do
+    with :ok <- Bodyguard.permit(Implementations, :view, claims, implementation) do
       render(conn, "show.json", implementation: implementation, actions: actions)
     end
   end
@@ -161,7 +159,7 @@ defmodule TdDqWeb.ImplementationController do
   defp filter_links_by_permission(implementation, _claims), do: implementation
 
   defp filter_link_by_permission(claims, %{resource_type: :concept, domain: %{id: domain_id}}) do
-    can?(claims, view_published_concept(domain_id))
+    Bodyguard.permit(Implementations, :view_published_concept, claims, domain_id)
   end
 
   defp filter_link_by_permission(_claims, _), do: false
@@ -174,7 +172,7 @@ defmodule TdDqWeb.ImplementationController do
        ) do
     data_structures =
       Enum.filter(data_structures, fn %{data_structure: data_structure} ->
-        can?(claims, show(data_structure))
+        Bodyguard.permit?(TdDd.DataStructures, :view_data_structure, claims, data_structure)
       end)
 
     Map.put(implementation, :data_structures, data_structures)
@@ -204,7 +202,7 @@ defmodule TdDqWeb.ImplementationController do
 
     implementation = Implementations.get_implementation!(id)
 
-    with {:can, true} <- {:can, can?(claims, edit(implementation))},
+    with :ok <- Bodyguard.permit(Implementations, :edit, claims, implementation),
          {:ok, %{implementation: %{id: id}} = update_info} <-
            Implementations.maybe_update_implementation(implementation, update_params, claims),
          error <- Map.get(update_info, :error, :nothing),
@@ -230,7 +228,7 @@ defmodule TdDqWeb.ImplementationController do
     claims = conn.assigns[:current_resource]
     implementation = Implementations.get_implementation!(id)
 
-    with {:can, true} <- {:can, can?(claims, delete(implementation))},
+    with :ok <- Bodyguard.permit(Implementations, :delete, claims, implementation),
          {:ok, %{implementation: _}} <-
            Implementations.delete_implementation(implementation, claims) do
       send_resp(conn, :no_content, "")
@@ -251,7 +249,7 @@ defmodule TdDqWeb.ImplementationController do
     claims = conn.assigns[:current_resource]
     rule_id = String.to_integer(id)
 
-    with {:can, true} <- {:can, can?(claims, list(Implementation))},
+    with :ok <- Bodyguard.permit(Implementations, :query, claims),
          implementations <- Search.search_by_rule_id(params, claims, rule_id, 0, 1000) do
       actions = Implementations.build_actions(claims)
       render(conn, "index.json", implementations: implementations, actions: actions)

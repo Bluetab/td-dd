@@ -16,6 +16,8 @@ defmodule TdDd.Lineage.Units do
   @typep multi_success :: {:ok, map()}
   @typep multi_result :: multi_success() | multi_error()
 
+  defdelegate authorize(action, user, params), to: TdDd.Lineage.Policy
+
   def get_by(clauses) do
     Unit
     |> reduce_clauses(clauses)

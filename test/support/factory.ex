@@ -25,11 +25,7 @@ defmodule TdDd.Factory do
   alias TdDd.UserSearchFilters.UserSearchFilter
   alias TdDq.Remediations.Remediation
 
-  def claims_factory(attrs), do: do_claims(attrs, TdDd.Auth.Claims)
-
-  def cx_claims_factory(attrs), do: do_claims(attrs, TdCx.Auth.Claims)
-
-  def dq_claims_factory(attrs), do: do_claims(attrs, TdDq.Auth.Claims)
+  def claims_factory(attrs), do: do_claims(attrs, Truedat.Auth.Claims)
 
   defp do_claims(attrs, module) do
     module

@@ -3,7 +3,7 @@ defmodule TdCx.Jobs.Search do
   Helper module to construct job search queries.
   """
 
-  alias TdCx.Auth.Claims
+  alias Truedat.Auth.Claims
   alias Truedat.Search
   alias Truedat.Search.Query
 

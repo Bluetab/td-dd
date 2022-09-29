@@ -1,12 +1,14 @@
 defmodule TdDd.Lineage.LineageEvents do
   @moduledoc """
-  Quality Events context
+  Lineage events context
   """
 
   import Ecto.Query
 
   alias TdDd.Lineage.LineageEvent
   alias TdDd.Repo
+
+  defdelegate authorize(action, user, params), to: TdDd.Lineage.Policy
 
   def create_event(attrs \\ %{}) do
     %LineageEvent{}

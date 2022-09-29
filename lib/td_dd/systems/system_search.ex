@@ -2,9 +2,9 @@ defmodule TdDd.Systems.SystemSearch do
   @moduledoc """
   The Systems context.
   """
-  alias TdDd.Auth.Claims
   alias TdDd.DataStructures.Search
   alias TdDd.Systems
+  alias Truedat.Auth.Claims
 
   def search_systems(%Claims{role: role} = claims, permission, params)
       when role in ["admin", "service"] do

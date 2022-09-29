@@ -122,8 +122,9 @@ defmodule TdCxWeb.JobControllerTest do
 
     @tag authentication: [role: "admin"]
     test "renders errors when source does not exist", %{conn: conn} do
-      conn = post(conn, Routes.source_job_path(conn, :create, "invented external_id"))
-      assert json_response(conn, 404)["errors"] != %{}
+      assert_error_sent :not_found, fn ->
+        post(conn, Routes.source_job_path(conn, :create, "invented external_id"))
+      end
     end
   end
 

@@ -2,8 +2,6 @@ defmodule TdDdWeb.GroupController do
   use TdDdWeb, :controller
   use PhoenixSwagger
 
-  import Canada, only: [can?: 2]
-
   alias TdDd.Groups
   alias TdDd.Systems
   alias TdDdWeb.SwaggerDefinitions
@@ -31,14 +29,14 @@ defmodule TdDdWeb.GroupController do
     claims = conn.assigns[:current_resource]
 
     with system when not is_nil(system) <- Systems.get_by(external_id: system_external_id),
-         {:can, true} <- {:can, can?(claims, manage(system))} do
+         :ok <- Bodyguard.permit(Systems, :manage, claims, system) do
       groups = Groups.list_by_system(system_external_id)
 
       conn
       |> put_resp_content_type("application/json", "utf-8")
       |> send_resp(:ok, Jason.encode!(%{data: groups}))
     else
-      {:can, false} -> {:can, false}
+      {:error, error} -> {:error, error}
       nil -> {:error, :not_found}
     end
   end
@@ -61,11 +59,11 @@ defmodule TdDdWeb.GroupController do
     claims = conn.assigns[:current_resource]
 
     with system when not is_nil(system) <- Systems.get_by(external_id: system_external_id),
-         {:can, true} <- {:can, can?(claims, manage(system))},
+         :ok <- Bodyguard.permit(Systems, :manage, claims, system),
          :ok <- Groups.delete(system_external_id, group) do
       send_resp(conn, :no_content, "")
     else
-      {:can, false} -> {:can, false}
+      {:error, error} -> {:error, error}
       nil -> {:error, :not_found}
     end
   end

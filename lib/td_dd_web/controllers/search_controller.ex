@@ -2,9 +2,7 @@ defmodule TdDdWeb.SearchController do
   use PhoenixSwagger
   use TdDdWeb, :controller
 
-  import Canada, only: [can?: 2]
-
-  alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures
 
   action_fallback(TdDdWeb.FallbackController)
 
@@ -20,11 +18,9 @@ defmodule TdDdWeb.SearchController do
   def reindex_all(conn, _params) do
     claims = conn.assigns[:current_resource]
 
-    if can?(claims, reindex_all(DataStructure)) do
+    with :ok <- Bodyguard.permit(DataStructures, :reindex, claims) do
       @index_worker.reindex(:all)
       send_resp(conn, :accepted, "")
-    else
-      render_error(conn, :forbidden)
     end
   end
 end
