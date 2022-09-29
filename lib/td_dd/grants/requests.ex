@@ -65,8 +65,6 @@ defmodule TdDd.Grants.Requests do
     |> Repo.transaction()
   end
 
-
-
   defp update_domain_ids(%{group: %{id: id}}) do
     GrantRequest
     |> select([gr], gr.id)

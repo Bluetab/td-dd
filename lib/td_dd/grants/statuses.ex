@@ -15,15 +15,15 @@ defmodule TdDd.Grants.Statuses do
         user_id,
         reason \\ nil
       ) do
-    changeset = %GrantRequestStatus{
-      user_id: user_id,
-      previous_status: current_status,
-      status: status,
-      grant_request_id: grant_request_id,
-      reason: reason
-    }
-    |> GrantRequestStatus.changeset(%{})
-
+    changeset =
+      %GrantRequestStatus{
+        user_id: user_id,
+        previous_status: current_status,
+        status: status,
+        grant_request_id: grant_request_id,
+        reason: reason
+      }
+      |> GrantRequestStatus.changeset(%{})
 
     Multi.new()
     |> Multi.insert(:grant_request_status, changeset)

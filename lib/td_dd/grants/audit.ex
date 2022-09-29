@@ -10,22 +10,23 @@ defmodule TdDd.Grants.Audit do
   alias TdCache.TaxonomyCache
   alias TdDd.Repo
 
-
   def grant_request_group_created(_repo, %{
-    group: group
-  }) do
-    %{id: id, created_by_id: created_by_id, requests: requests} = Repo.preload(group, requests: [data_structure: [:current_version]])
+        group: group
+      }) do
+    %{id: id, created_by_id: created_by_id, requests: requests} =
+      Repo.preload(group, requests: [data_structure: [:current_version]])
 
-    payload = Enum.reduce(
-      requests,
-      %{
-        id: id,
-        requests: take_from_grant_requests(requests)
-      },
-      fn request, acc_payload ->
-        with_acc_domain_ids(acc_payload, request)
-      end
-    )
+    payload =
+      Enum.reduce(
+        requests,
+        %{
+          id: id,
+          requests: take_from_grant_requests(requests)
+        },
+        fn request, acc_payload ->
+          with_acc_domain_ids(acc_payload, request)
+        end
+      )
 
     publish("grant_request_group_creation", "grant_request_groups", id, created_by_id, payload)
   end
@@ -38,11 +39,11 @@ defmodule TdDd.Grants.Audit do
   end
 
   defp take_from_grant_request(%{
-    id: id,
-    data_structure: %{
-      current_version: %{name: name}
-    }
-  }) do
+         id: id,
+         data_structure: %{
+           current_version: %{name: name}
+         }
+       }) do
     %{
       id: id,
       data_structure: %{
@@ -52,11 +53,11 @@ defmodule TdDd.Grants.Audit do
   end
 
   defp take_from_grant_request(%{
-    id: id,
-    data_structure: %{
-      current_version: nil
-    }
-  }) do
+         id: id,
+         data_structure: %{
+           current_version: nil
+         }
+       }) do
     %{
       id: id,
       data_structure: %{
@@ -65,25 +66,25 @@ defmodule TdDd.Grants.Audit do
     }
   end
 
-
   def grant_request_approval_created(_repo, %{
-    approval: approval,
-    status: grant_request_status
-  }) do
+        approval: approval,
+        status: grant_request_status
+      }) do
     %{
       id: id,
       user_id: user_id,
       grant_request: grant_request,
-      comment: comment,
+      comment: comment
     } = Repo.preload(approval, grant_request: [:group, data_structure: :current_version])
 
-    payload = %{
-      grant_request: take_from_grant_request(grant_request),
-      comment: comment,
-      status: status_to_string(grant_request_status)
-    }
-    |> with_self_reported_recipient(grant_request_status, grant_request)
-    |> with_domain_ids(grant_request)
+    payload =
+      %{
+        grant_request: take_from_grant_request(grant_request),
+        comment: comment,
+        status: status_to_string(grant_request_status)
+      }
+      |> with_self_reported_recipient(grant_request_status, grant_request)
+      |> with_domain_ids(grant_request)
 
     grant_request_status
     |> status_to_event_name
@@ -95,29 +96,33 @@ defmodule TdDd.Grants.Audit do
   end
 
   def grant_request_status_created(_repo, %{
-    grant_request_status:  grant_request_status,
-  }) do
+        grant_request_status: grant_request_status
+      }) do
     %{id: id, user_id: user_id, status: status, grant_request: grant_request} =
-    Repo.preload(grant_request_status, grant_request: [:group, data_structure: :current_version])
+      Repo.preload(grant_request_status, grant_request: [:group, data_structure: :current_version])
 
-    payload = %{
-      grant_request: take_from_grant_request(grant_request),
-      status: status
-    }
-    |> with_domain_ids(grant_request)
+    payload =
+      %{
+        grant_request: take_from_grant_request(grant_request),
+        status: status
+      }
+      |> with_domain_ids(grant_request)
 
     status
     |> status_name_to_event_name
     |> publish("grant_request_status", id, user_id, payload)
-
   end
 
   defp status_to_string(nil), do: "pending"
   defp status_to_string(%TdDd.Grants.GrantRequestStatus{status: status}), do: status
 
   defp status_to_event_name(nil), do: "grant_request_approval_addition"
-  defp status_to_event_name(%TdDd.Grants.GrantRequestStatus{status: "approved"}), do: "grant_request_approval_consensus"
-  defp status_to_event_name(%TdDd.Grants.GrantRequestStatus{status: "rejected"}), do: "grant_request_rejection"
+
+  defp status_to_event_name(%TdDd.Grants.GrantRequestStatus{status: "approved"}),
+    do: "grant_request_approval_consensus"
+
+  defp status_to_event_name(%TdDd.Grants.GrantRequestStatus{status: "rejected"}),
+    do: "grant_request_rejection"
 
   defp status_name_to_event_name("processing"), do: "grant_request_status_process_start"
   defp status_name_to_event_name("processed"), do: "grant_request_status_process_end"
@@ -125,16 +130,18 @@ defmodule TdDd.Grants.Audit do
   defp status_name_to_event_name("cancelled"), do: "grant_request_status_cancellation"
 
   defp with_self_reported_recipient(
-    payload,
-    %TdDd.Grants.GrantRequestStatus{status: "rejected"} = _status,
-    %{group: %{user_id: recipient_id}} = _grant_request
-  ) do
+         payload,
+         %TdDd.Grants.GrantRequestStatus{status: "rejected"} = _status,
+         %{group: %{user_id: recipient_id}} = _grant_request
+       ) do
     Map.put(payload, :recipient_ids, [recipient_id])
   end
+
   defp with_self_reported_recipient(payload, _status_, _grant_request), do: payload
 
-
-  defp with_acc_domain_ids(%{domain_ids: acc_domain_ids} = payload, %{data_structure: %{domain_ids: domain_ids}}) do
+  defp with_acc_domain_ids(%{domain_ids: acc_domain_ids} = payload, %{
+         data_structure: %{domain_ids: domain_ids}
+       }) do
     Map.put(payload, :domain_ids, [get_domain_ids(domain_ids) | acc_domain_ids])
   end
 

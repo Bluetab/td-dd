@@ -271,7 +271,9 @@ defmodule TdDd.DataStructures.Audit do
     Changeset.put_change(changeset, :domain_ids, get_domain_ids(domain_ids))
   end
 
-  defp with_domain_ids(%{domain_ids: acc_domain_ids} = payload, %{data_structure: %{domain_ids: domain_ids}}) do
+  defp with_domain_ids(%{domain_ids: acc_domain_ids} = payload, %{
+         data_structure: %{domain_ids: domain_ids}
+       }) do
     Map.put(payload, :domain_ids, acc_domain_ids ++ get_domain_ids(domain_ids))
   end
 

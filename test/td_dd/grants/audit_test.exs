@@ -60,35 +60,37 @@ defmodule TdDd.Grants.AuditTest do
           domain_ids: [domain_id]
         )
 
-      assert {:ok, %{
-        audit: event_id,
-        grant_request_status: %{id: grant_request_status_id},
-      }} = Statuses.create_grant_request_status(request, "processing", user_id)
+      assert {:ok,
+              %{
+                audit: event_id,
+                grant_request_status: %{id: grant_request_status_id}
+              }} = Statuses.create_grant_request_status(request, "processing", user_id)
 
       resource_id = "#{grant_request_status_id}"
 
       assert {
-        :ok,
-        [
-          %{
-            id: ^event_id,
-            event: "grant_request_status_process_start",
-            resource_id: ^resource_id,
-            resource_type: "grant_request_status",
-            payload: payload
-          }
-        ]
-      } = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+               :ok,
+               [
+                 %{
+                   id: ^event_id,
+                   event: "grant_request_status_process_start",
+                   resource_id: ^resource_id,
+                   resource_type: "grant_request_status",
+                   payload: payload
+                 }
+               ]
+             } = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
 
       assert %{
-        "status" => "processing",
-        "grant_request" => %{"data_structure" => %{"current_version" => %{"name" => dsv_name}}}
-      } = Jason.decode!(payload)
+               "status" => "processing",
+               "grant_request" => %{
+                 "data_structure" => %{"current_version" => %{"name" => dsv_name}}
+               }
+             } = Jason.decode!(payload)
 
       assert dsv_name =~ "data_structure_version_name"
     end
   end
-
 
   describe "Requests.create_grant_request_group/3" do
     setup do
@@ -98,9 +100,17 @@ defmodule TdDd.Grants.AuditTest do
     test "grant request group insertion publishes an audit event", %{
       claims: %{user_id: user_id} = claims
     } do
+      [
+        domain_parent_id: domain_1_parent_id,
+        domain_id: domain_id_1,
+        data_structure: data_structure_1
+      ] = setup_grant_request(%{claims: claims})
 
-      [domain_parent_id: domain_1_parent_id, domain_id: domain_id_1, data_structure: data_structure_1] = setup_grant_request(%{claims: claims})
-      [domain_parent_id: domain_2_parent_id, domain_id: domain_id_2, data_structure: data_structure_2] = setup_grant_request(%{claims: claims})
+      [
+        domain_parent_id: domain_2_parent_id,
+        domain_id: domain_id_2,
+        data_structure: data_structure_2
+      ] = setup_grant_request(%{claims: claims})
 
       insert(:grant, data_structure_id: data_structure_1.id)
       insert(:grant, data_structure_id: data_structure_2.id)
@@ -109,45 +119,49 @@ defmodule TdDd.Grants.AuditTest do
         type: @template_name,
         requests: [
           %{data_structure_id: data_structure_1.id, metadata: @valid_metadata},
-          %{data_structure_id: data_structure_2.id, metadata: @valid_metadata},
+          %{data_structure_id: data_structure_2.id, metadata: @valid_metadata}
         ],
         user_id: user_id,
         created_by_id: user_id
       }
 
-      assert {:ok, %{
-        audit: event_id,
-        group: %{id: grant_request_group_id, requests: _grant_requests},
-      }} = Requests.create_grant_request_group(params, nil)
+      assert {:ok,
+              %{
+                audit: event_id,
+                group: %{id: grant_request_group_id, requests: _grant_requests}
+              }} = Requests.create_grant_request_group(params, nil)
 
       resource_id = "#{grant_request_group_id}"
 
       assert {
-        :ok,
-        [
-          %{
-            id: ^event_id,
-            event: "grant_request_group_creation",
-            resource_id: ^resource_id,
-            resource_type: "grant_request_groups",
-            payload: payload
-          }
-        ]
-      } = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+               :ok,
+               [
+                 %{
+                   id: ^event_id,
+                   event: "grant_request_group_creation",
+                   resource_id: ^resource_id,
+                   resource_type: "grant_request_groups",
+                   payload: payload
+                 }
+               ]
+             } = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
 
       assert %{
-        "domain_ids" => [[^domain_id_2, ^domain_2_parent_id], [^domain_id_1, ^domain_1_parent_id]],
-        "requests" => [
-          %{
-            "id" => _grant_request_1_id,
-            "data_structure" => %{"current_version" => %{"name" => dsv_1_name}}
-          },
-          %{
-            "id" => _grant_request_2_id,
-            "data_structure" => %{"current_version" => %{"name" => dsv_2_name}}
-          }
-        ]
-      } = Jason.decode!(payload)
+               "domain_ids" => [
+                 [^domain_id_2, ^domain_2_parent_id],
+                 [^domain_id_1, ^domain_1_parent_id]
+               ],
+               "requests" => [
+                 %{
+                   "id" => _grant_request_1_id,
+                   "data_structure" => %{"current_version" => %{"name" => dsv_1_name}}
+                 },
+                 %{
+                   "id" => _grant_request_2_id,
+                   "data_structure" => %{"current_version" => %{"name" => dsv_2_name}}
+                 }
+               ]
+             } = Jason.decode!(payload)
 
       assert dsv_1_name =~ "data_structure_version_name"
       assert dsv_2_name =~ "data_structure_version_name"
