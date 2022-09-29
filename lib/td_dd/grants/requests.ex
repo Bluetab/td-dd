@@ -12,11 +12,11 @@ defmodule TdDd.Grants.Requests do
   alias TdDd.Auth.Claims
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.Grants.Audit
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestApproval
   alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Grants.GrantRequestStatus
-  alias TdDd.Grants.Audit
   alias TdDd.Repo
 
   def list_grant_request_groups do

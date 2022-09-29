@@ -5,8 +5,8 @@ defmodule TdDd.Grants.Statuses do
 
   alias Ecto.Multi
 
-  alias TdDd.Grants.GrantRequestStatus
   alias TdDd.Grants.Audit
+  alias TdDd.Grants.GrantRequestStatus
   alias TdDd.Repo
 
   def create_grant_request_status(
