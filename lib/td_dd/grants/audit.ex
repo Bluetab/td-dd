@@ -14,7 +14,7 @@ defmodule TdDd.Grants.Audit do
   def grant_request_group_created(_repo, %{
     group: group
   }) do
-    %{id: id, user_id: user_id, requests: requests} = Repo.preload(group, requests: [data_structure: [:current_version]])
+    %{id: id, created_by_id: created_by_id, requests: requests} = Repo.preload(group, requests: [data_structure: [:current_version]])
 
     payload = Enum.reduce(
       requests,
@@ -27,7 +27,7 @@ defmodule TdDd.Grants.Audit do
       end
     )
 
-    publish("grant_request_group_creation", "grant_request_groups", id, user_id, payload)
+    publish("grant_request_group_creation", "grant_request_groups", id, created_by_id, payload)
   end
 
   defp take_from_grant_requests(requests) do
