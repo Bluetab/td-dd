@@ -35,21 +35,23 @@ defmodule CacheHelpers do
     id = System.unique_integer([:positive])
     target_id = if is_nil(target_id), do: System.unique_integer([:positive]), else: target_id
 
+    link = %{
+      id: id,
+      source_type: source_type,
+      source_id: source_id,
+      target_type: target_type,
+      target_id: target_id,
+      updated_at: DateTime.utc_now()
+    }
+
     LinkCache.put(
-      %{
-        id: id,
-        source_type: source_type,
-        source_id: source_id,
-        target_type: target_type,
-        target_id: target_id,
-        updated_at: DateTime.utc_now()
-      },
+      link,
       publish: false
     )
 
     on_exit(fn -> LinkCache.delete(id, publish: false) end)
     _maybe_error = StructureEnricher.refresh()
-    :ok
+    link
   end
 
   def insert_template(params \\ %{}) do
@@ -146,11 +148,16 @@ defmodule CacheHelpers do
     TdCache.Permissions.put_default_permissions(permissions)
   end
 
-  def put_implementation(implementation) do
+  def put_implementation(%{implementation_ref: implementation_ref} = implementation) do
+    on_exit(fn -> ImplementationCache.delete([implementation_ref]) end)
     ImplementationCache.put(implementation, publish: false)
   end
 
   def get_implementation(implementation_id) do
     ImplementationCache.get(implementation_id)
+  end
+
+  def get_link(link_id) do
+    LinkCache.get(link_id)
   end
 end
