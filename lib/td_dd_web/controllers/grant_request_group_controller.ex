@@ -23,11 +23,13 @@ defmodule TdDdWeb.GrantRequestGroupController do
 
   def create(conn, %{"grant_request_group" => params}) do
     with claims <- conn.assigns[:current_resource],
+         params <- with_created_by_id(params, claims),
          {:ok, params} <- with_valid_requests(params),
-         {:ok, _} <- can_create_on_structures(claims, params),
+         {:can, true} <- can_create_on_structures(claims, params),
+         {:can, true} <- {:can, can?(claims, create_grant_request_group(params))},
          modification_grant <- with_modification_grant(params),
          {:ok, %{group: %{id: id}}} <-
-           Requests.create_grant_request_group(params, claims, modification_grant),
+           Requests.create_grant_request_group(params, modification_grant),
          %{} = group <- Requests.get_grant_request_group!(id) do
       conn
       |> put_status(:created)
@@ -37,6 +39,14 @@ defmodule TdDdWeb.GrantRequestGroupController do
       )
       |> render("show.json", grant_request_group: group)
     end
+  end
+
+  defp with_created_by_id(params, %{user_id: created_by_id}) do
+    user_id = Map.get(params, "user_id", created_by_id)
+
+    params
+    |> Map.put("user_id", user_id)
+    |> Map.put("created_by_id", created_by_id)
   end
 
   defp with_modification_grant(%{"modification_grant_id" => grant_id}) when not is_nil(grant_id),
@@ -93,7 +103,7 @@ defmodule TdDdWeb.GrantRequestGroupController do
 
   defp can_create_on_structure(claims, %{"data_structure" => data_structure}) do
     if can?(claims, create_grant_request(data_structure)) do
-      {:cont, {:ok, nil}}
+      {:cont, {:can, true}}
     else
       {:halt, {:can, false}}
     end

@@ -51,7 +51,12 @@ defmodule TdDd.Loader do
       |> Map.get(:relations, [])
       |> RelationTypes.with_relation_types()
 
-    multi(structure_records, relation_records, audit, opts)
+    multi(
+      structure_records,
+      relation_records,
+      audit,
+      opts
+    )
   end
 
   @spec replace_mutable_metadata([map], TdDd.Systems.System.t(), map, Keyword.t()) ::

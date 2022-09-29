@@ -79,7 +79,7 @@ defmodule TdDdWeb.Schema.Sources do
     field :active, :boolean
     field :type, :string
     field :job_types, list_of(:string), resolve: &Resolvers.Sources.job_types/3
-    field :config, :json, resolve: &Resolvers.Sources.config/3
+    field :config, :json
 
     field :events, list_of(:event) do
       arg(:limit, :integer, default_value: 5)

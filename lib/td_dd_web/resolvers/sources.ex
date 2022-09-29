@@ -6,7 +6,6 @@ defmodule TdDdWeb.Resolvers.Sources do
   import Canada, only: [can?: 2]
 
   alias TdCache.TemplateCache
-  alias TdCx.Format
   alias TdCx.Sources
 
   def sources(_parent, args, _resolution) do
@@ -19,10 +18,6 @@ defmodule TdDdWeb.Resolvers.Sources do
 
   def template(%{type: type}, _args, _resolution) do
     TemplateCache.get_by_name(type)
-  end
-
-  def config(%{type: type, config: config}, _args, _resolution) do
-    {:ok, Format.get_cached_content(config, type)}
   end
 
   def job_types(%{config: config}, _args, _resolution) do

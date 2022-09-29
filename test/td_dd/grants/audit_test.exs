@@ -96,7 +96,7 @@ defmodule TdDd.Grants.AuditTest do
     end
 
     test "grant request group insertion publishes an audit event", %{
-      claims: claims
+      claims: %{user_id: user_id} = claims
     } do
 
       [domain_parent_id: domain_1_parent_id, domain_id: domain_id_1, data_structure: data_structure_1] = setup_grant_request(%{claims: claims})
@@ -110,13 +110,15 @@ defmodule TdDd.Grants.AuditTest do
         requests: [
           %{data_structure_id: data_structure_1.id, metadata: @valid_metadata},
           %{data_structure_id: data_structure_2.id, metadata: @valid_metadata},
-        ]
+        ],
+        user_id: user_id,
+        created_by_id: user_id
       }
 
       assert {:ok, %{
         audit: event_id,
         group: %{id: grant_request_group_id, requests: _grant_requests},
-      }} = Requests.create_grant_request_group(params, claims, nil)
+      }} = Requests.create_grant_request_group(params, nil)
 
       resource_id = "#{grant_request_group_id}"
 

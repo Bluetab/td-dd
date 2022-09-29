@@ -2,12 +2,43 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [TD-5184] Removed dependency on td-hypermedia library
+
+### Added
+
+- [TD-4903] Include `sobelow` static code analysis in CI pipeline
+- [TD-4214] Publish grant requests workflow events
+
+### Fixed
+
+ - [TD-4587]
+  - Download implementations with reference_data
+  - Implementations download when dataset has a table joing itself
+
+## [4.51.0] 2022-09-19
+
 ### Added
 
 - [TD-5076] Allow to clone implementations for non admin users
 - [TD-5169] Improve list_data_structure_versions since query performance
 - [TD-5170] Capture graph tests Logger.warn output
-- [TD-4214] Publish grant requests workflow events
+- [TD-5082] Filter protected metadata (field "_protected")
+- [TD-5133] Support for creating grant requests for third parties
+
+### Changed
+
+- [TD-5168] GraphQL `source` query no longer enriches dynamic domain fields
+- [TD-4794] GraphQL `domains` query now supports additional actions
+
+### Fixed
+
+- [TD-4956] When downloading structures csv, fields with same name on templates were duplicated
+
+### Removed
+
+- [TD-4794] Removed `/api/unit_domains` (replaced by GraphQL `domains` query)
 
 ## [4.50.0] 2022-09-05
 

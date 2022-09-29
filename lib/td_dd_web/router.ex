@@ -43,12 +43,7 @@ defmodule TdDdWeb.Router do
       only: [:index]
     )
 
-    post(
-      "/data_structures/bulk_upload_domains",
-      DataStructureController,
-      :bulk_upload_domains
-    )
-
+    post("/data_structures/bulk_upload_domains", DataStructureController, :bulk_upload_domains)
     post("/data_structure_notes/search", StructureNoteController, :search)
     post("/data_structure_notes", StructureNoteController, :create_by_external_id)
 
@@ -59,9 +54,7 @@ defmodule TdDdWeb.Router do
       resources("/grants", GrantController, only: [:create])
     end
 
-    resources("/data_structure_versions", DataStructureVersionController, only: [:show]) do
-      post("/links", DataStructureLinkController, :create_link)
-    end
+    resources("/data_structure_versions", DataStructureVersionController, only: [:show])
 
     resources("/profile_execution_groups", ProfileExecutionGroupController, except: [:new, :edit])
 
@@ -85,8 +78,6 @@ defmodule TdDdWeb.Router do
     resources("/units", UnitController, except: [:new, :edit], param: "name") do
       resources("/events", UnitEventController, only: [:index], name: "event")
     end
-
-    resources("/unit_domains", UnitDomainController, only: [:index])
 
     post("/profiles/search", ProfileController, :search)
     post("/profiles/upload", ProfileController, :upload)

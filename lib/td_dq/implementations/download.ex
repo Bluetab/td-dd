@@ -162,11 +162,24 @@ defmodule TdDq.Implementations.Download do
   end
 
   defp get_implementation_fields(%{dataset: dataset} = _implementation, :datasets) do
-    Enum.map(dataset, fn %{structure: %{external_id: external_id}} -> external_id end)
+    dataset
+    |> Enum.map(fn
+      %{structure: %{external_id: external_id}} -> external_id
+      %{structure: %{name: name, type: "reference_dataset"}} -> "reference_dataset:/#{name}"
+    end)
+    |> Enum.uniq()
   end
 
   defp get_implementation_fields(%{validations: validations} = _implementation, :validations) do
-    Enum.map(validations, fn %{structure: %{external_id: external_id}} -> external_id end)
+    validations
+    |> Enum.map(fn
+      %{structure: %{external_id: external_id}} ->
+        external_id
+
+      %{structure: %{name: name, type: "reference_dataset_field"}} ->
+        "reference_dataset_field:/#{name}"
+    end)
+    |> Enum.uniq()
   end
 
   defp get_implementation_fields(_, _), do: []
