@@ -17,9 +17,7 @@ defmodule TdDd.Repo.Migrations.FixJoinTypeValueForReferenceDatasetJoins do
             ) need_update
           FROM
             rule_implementations,
-            jsonb_array_elements(
-              array_to_json(dataset):: jsonb
-            ) elems
+            unnest(dataset) elems
           group by
             id
         )
@@ -47,9 +45,7 @@ defmodule TdDd.Repo.Migrations.FixJoinTypeValueForReferenceDatasetJoins do
             ) need_update
           FROM
             rule_implementations,
-            jsonb_array_elements(
-              array_to_json(dataset):: jsonb
-            ) elems
+            unnest(dataset) elems
           group by
             id
         )
