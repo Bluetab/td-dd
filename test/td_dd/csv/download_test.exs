@@ -147,6 +147,8 @@ defmodule TdDd.CSV.DownloadTest do
       })
 
       insert(:data_structure_type, name: "type", template_id: 42)
+      %{id: domain_id_1} = CacheHelpers.insert_domain(name: "domain_1")
+      %{id: domain_id_2} = CacheHelpers.insert_domain(name: "domain_2")
 
       structures = [
         %{
@@ -157,7 +159,7 @@ defmodule TdDd.CSV.DownloadTest do
             "field_numbers" => [1, 2],
             "field_texts" => ["multi", "field"],
             "field_text" => ["field"],
-            "field_domains" => [%{"name" => "domain_1"}, %{"name" => "domain_2"}]
+            "field_domains" => [domain_id_1, domain_id_2]
           },
           external_id: "ext_id",
           type: "type"
