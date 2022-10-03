@@ -1,8 +1,6 @@
 defmodule TdDqWeb.ImplementationResultController do
   use TdDqWeb, :controller
 
-  import Canada, only: [can?: 2]
-
   alias TdDq.Implementations
   alias TdDq.Rules.RuleResults
   alias TdDqWeb.RuleResultView
@@ -29,7 +27,7 @@ defmodule TdDqWeb.ImplementationResultController do
     claims = conn.assigns[:current_resource]
 
     with {:ok, implementation} <- Implementations.get_published_implementation_by_key(key),
-         {:can, true} <- {:can, can?(claims, manage_rule_results(implementation))},
+         :ok <- Bodyguard.permit(Implementations, :manage_rule_results, claims, implementation),
          {:ok, %{result: %{id: id} = result, segments: segments}} <-
            RuleResults.create_rule_result(implementation, params) do
       result = Map.put(result, :segments_inserted, length(segments))

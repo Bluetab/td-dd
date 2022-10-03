@@ -11,11 +11,7 @@ config :td_dd, TdDd.Repo,
   pool_size: System.get_env("DB_POOL_SIZE", "16") |> String.to_integer(),
   timeout: System.get_env("DB_TIMEOUT_MILLIS", "600000") |> String.to_integer()
 
-config :td_dd, TdDd.Auth.Guardian, secret_key: System.fetch_env!("GUARDIAN_SECRET_KEY")
-
-config :td_dd, TdCx.Auth.Guardian, secret_key: System.fetch_env!("GUARDIAN_SECRET_KEY")
-
-config :td_dd, TdDq.Auth.Guardian, secret_key: System.fetch_env!("GUARDIAN_SECRET_KEY")
+config :td_dd, Truedat.Auth.Guardian, secret_key: System.fetch_env!("GUARDIAN_SECRET_KEY")
 
 config :td_dd, :vault,
   token: System.fetch_env!("VAULT_TOKEN"),

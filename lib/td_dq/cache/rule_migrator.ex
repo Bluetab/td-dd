@@ -10,9 +10,9 @@ defmodule TdDq.Cache.RuleMigrator do
   alias TdCache.ConceptCache
   alias TdCache.Redix
   alias TdDd.Repo
-  alias TdDq.Auth.Claims
   alias TdDq.Rules
   alias TdDq.Rules.Rule
+  alias Truedat.Auth.Claims
 
   require Logger
 

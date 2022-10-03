@@ -3,18 +3,16 @@ defmodule TdDdWeb.Resolvers.ImplementationResults do
   Absinthe resolvers for implementation results
   """
 
-  import Canada, only: [can?: 2]
-
   alias TdDq.Rules.RuleResults
 
   def result(_parent, %{id: id}, resolution) do
     with {:claims, %{} = claims} <- {:claims, claims(resolution)},
          result <- RuleResults.get_rule_result(id),
-         {:can, true} <- {:can, can?(claims, view(result))} do
+         :ok <- Bodyguard.permit(RuleResults, :view, claims, result) do
       {:ok, result}
     else
       {:claims, nil} -> {:error, :unauthorized}
-      {:can, false} -> {:error, :forbidden}
+      {:error, :forbidden} -> {:error, :forbidden}
       {:error, :result, changeset, _} -> {:error, changeset}
     end
   end

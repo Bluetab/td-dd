@@ -26,7 +26,12 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
   describe "tagStructure mutation" do
     @tag authentication: [role: "user"]
     test "returns forbidden for a user without permissions", %{conn: conn} do
-      variables = %{"structureTag" => %{"tagId" => 123, "dataStructureId" => 123}}
+      %{id: tag_id} = insert(:tag, domain_ids: [123])
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [123])
+
+      variables = %{
+        "structureTag" => %{"tagId" => tag_id, "dataStructureId" => data_structure_id}
+      }
 
       assert %{"data" => nil, "errors" => errors} =
                conn
@@ -80,7 +85,10 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
       assert [%{"message" => "not_found", "path" => ["tagStructure"]}] = errors
     end
 
-    @tag authentication: [role: "user", permissions: [:link_data_structure_tag]]
+    @tag authentication: [
+           role: "user",
+           permissions: [:link_data_structure_tag, :view_data_structure]
+         ]
     test "returns data on success", %{conn: conn, domain: domain} do
       %{id: tag_id} = insert(:tag, domain_ids: [domain.id])
       %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
@@ -108,7 +116,8 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
   describe "deleteStructureTag mutation" do
     @tag authentication: [role: "user"]
     test "returns forbidden for a user without permissions", %{conn: conn} do
-      variables = %{"id" => 123}
+      %{id: id} = insert(:structure_tag)
+      variables = %{"id" => id}
 
       assert %{"data" => nil, "errors" => errors} =
                conn

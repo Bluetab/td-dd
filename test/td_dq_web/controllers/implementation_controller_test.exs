@@ -386,7 +386,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
     end
 
     @tag authentication: [
-           user_name: "non_admin",
+           role: "user",
            permissions: [:link_implementation_structure, :view_quality_rule]
          ]
     test "renders link_structure action", %{conn: conn, domain: domain} do

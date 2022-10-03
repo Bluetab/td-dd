@@ -243,7 +243,7 @@ defmodule TdDq.ImplementationsTest do
         string_params_for(:implementation, rule_id: rule.id)
         |> Map.delete("domain_id")
 
-      claims = build(:dq_claims)
+      claims = build(:claims)
 
       assert {:ok, %{implementation: implementation}} =
                Implementations.create_implementation(rule, params, claims)
@@ -257,7 +257,7 @@ defmodule TdDq.ImplementationsTest do
         string_params_for(:implementation, rule_id: rule.id)
         |> Map.delete("domain_id")
 
-      claims = build(:dq_claims)
+      claims = build(:claims)
 
       assert {:ok, %{implementation: implementation}} =
                Implementations.create_implementation(rule, params, claims)
@@ -277,7 +277,7 @@ defmodule TdDq.ImplementationsTest do
           implementation_key: impl.implementation_key
         )
 
-      claims = build(:dq_claims)
+      claims = build(:claims)
 
       assert {:error, :implementation,
               %{valid?: false, errors: [implementation_key: {"duplicated", constraint}]},
@@ -297,7 +297,7 @@ defmodule TdDq.ImplementationsTest do
           status: "pending_approval"
         )
 
-      claims = build(:dq_claims)
+      claims = build(:claims)
 
       assert {:error, :implementation,
               %{valid?: false, errors: [implementation_key: {"duplicated", _}]},
@@ -315,7 +315,7 @@ defmodule TdDq.ImplementationsTest do
           status: "rejected"
         )
 
-      claims = build(:dq_claims)
+      claims = build(:claims)
 
       assert {:error, :implementation,
               %{valid?: false, errors: [implementation_key: {"duplicated", _}]},
@@ -333,7 +333,7 @@ defmodule TdDq.ImplementationsTest do
           status: "published"
         )
 
-      claims = build(:dq_claims)
+      claims = build(:claims)
 
       assert {:error, :implementation,
               %{valid?: false, errors: [implementation_key: {"duplicated", _}]},
@@ -351,7 +351,7 @@ defmodule TdDq.ImplementationsTest do
           status: "deprecated"
         )
 
-      claims = build(:dq_claims)
+      claims = build(:claims)
 
       assert {:ok, %{implementation: _implementation}} =
                Implementations.create_implementation(rule, params, claims)
@@ -360,7 +360,7 @@ defmodule TdDq.ImplementationsTest do
     test "with invalid keywords in raw content of raw implementation returns error", %{rule: rule} do
       raw_content = build(:raw_content, validations: "drop cliente")
       params = string_params_for(:raw_implementation, raw_content: raw_content)
-      claims = build(:dq_claims)
+      claims = build(:claims)
 
       assert {:error, :implementation, %Changeset{valid?: false} = changeset, _} =
                Implementations.create_implementation(rule, params, claims)
@@ -376,7 +376,7 @@ defmodule TdDq.ImplementationsTest do
       %{id: rule_id, domain_id: domain_id} = rule
 
       params = string_params_for(:raw_implementation, rule_id: rule_id, domain_id: domain_id)
-      claims = build(:dq_claims, role: "admin")
+      claims = build(:claims, role: "admin")
 
       assert {:ok, %{implementation: implementation}} =
                Implementations.create_implementation(rule, params, claims)
@@ -392,7 +392,7 @@ defmodule TdDq.ImplementationsTest do
           domain_id: rule.domain_id
         )
 
-      claims = build(:dq_claims, role: "admin")
+      claims = build(:claims, role: "admin")
 
       assert {:ok, %{implementation: implementation}} =
                Implementations.create_implementation(rule, params, claims)
@@ -413,7 +413,7 @@ defmodule TdDq.ImplementationsTest do
           domain_id: rule.domain_id
         )
 
-      claims = build(:dq_claims)
+      claims = build(:claims)
 
       assert {:ok, %{implementation: implementation}} =
                Implementations.create_implementation(rule, params, claims)
@@ -437,7 +437,7 @@ defmodule TdDq.ImplementationsTest do
           domain_id: rule.domain_id
         )
 
-      claims = build(:dq_claims, role: "admin")
+      claims = build(:claims, role: "admin")
 
       assert {:ok, %{implementation: %Implementation{validations: [%{population: [clause]}]}}} =
                Implementations.create_implementation(rule, params, claims)
@@ -461,7 +461,7 @@ defmodule TdDq.ImplementationsTest do
           domain_id: rule.domain_id
         )
 
-      claims = build(:dq_claims, role: "admin")
+      claims = build(:claims, role: "admin")
 
       assert {:ok, %{implementation: %{id: id}}} =
                Implementations.create_implementation(rule, params, claims)
@@ -497,7 +497,7 @@ defmodule TdDq.ImplementationsTest do
           }
         )
 
-      claims = build(:dq_claims, role: "admin")
+      claims = build(:claims, role: "admin")
 
       assert {:ok, %{implementation: %{id: id}}} =
                Implementations.create_implementation(rule, params, claims)
@@ -971,7 +971,7 @@ defmodule TdDq.ImplementationsTest do
 
   describe "create_ruleless_implementation/3" do
     setup do
-      [claims: build(:dq_claims, role: "admin")]
+      [claims: build(:claims, role: "admin")]
     end
 
     test "with valid data creates a implementation", %{claims: claims} do
@@ -1008,7 +1008,7 @@ defmodule TdDq.ImplementationsTest do
   describe "update_implementation/3" do
     test "with valid data updates the implementation" do
       implementation = insert(:implementation)
-      claims = build(:dq_claims)
+      claims = build(:claims)
 
       validations = [
         %{
@@ -1050,7 +1050,7 @@ defmodule TdDq.ImplementationsTest do
 
     test "with population in validations updates data" do
       implementation = insert(:implementation)
-      claims = build(:dq_claims)
+      claims = build(:claims)
 
       %{
         "operator" => %{"name" => name, "value_type" => type},
@@ -1077,7 +1077,7 @@ defmodule TdDq.ImplementationsTest do
       implementation =
         insert(:implementation, status: "published", implementation_ref: implementation_ref.id)
 
-      claims = build(:dq_claims)
+      claims = build(:claims)
       domain_id = System.unique_integer([:positive])
       %{id: rule_id} = insert(:rule, domain_id: domain_id)
       update_attrs = string_params_for(:implementation, rule_id: rule_id)
@@ -1092,7 +1092,7 @@ defmodule TdDq.ImplementationsTest do
     end
 
     test "childs implementations are moved when moving any implementation to another rule" do
-      claims = build(:dq_claims)
+      claims = build(:claims)
       domain_id = System.unique_integer([:positive])
       rule_from = insert(:rule, domain_id: domain_id)
       %{id: rule_id} = insert(:rule, domain_id: domain_id)
@@ -1119,7 +1119,7 @@ defmodule TdDq.ImplementationsTest do
 
     test "with invalid data returns error changeset" do
       implementation = insert(:implementation)
-      claims = build(:dq_claims)
+      claims = build(:claims)
       udpate_attrs = Map.put(%{}, :dataset, nil)
 
       assert {:error, :implementation, %Changeset{}, _} =
@@ -1148,7 +1148,7 @@ defmodule TdDq.ImplementationsTest do
         }
         |> Map.Helpers.stringify_keys()
 
-      claims = build(:dq_claims, role: "admin")
+      claims = build(:claims, role: "admin")
 
       assert {:ok, %{implementation: %{id: id}}} =
                Implementations.update_implementation(implementation, update_attrs, claims)
@@ -1190,7 +1190,7 @@ defmodule TdDq.ImplementationsTest do
         }
         |> Map.Helpers.stringify_keys()
 
-      claims = build(:dq_claims, role: "admin")
+      claims = build(:claims, role: "admin")
 
       assert {:ok, %{implementation: %{id: id}}} =
                Implementations.update_implementation(implementation, update_attrs, claims)
@@ -1206,7 +1206,7 @@ defmodule TdDq.ImplementationsTest do
   describe "delete_implementation/2" do
     test "deletes the implementation" do
       implementation = insert(:implementation)
-      claims = build(:dq_claims)
+      claims = build(:claims)
 
       assert {:ok, %{implementation: %{__meta__: meta}}} =
                Implementations.delete_implementation(implementation, claims)
@@ -1220,7 +1220,7 @@ defmodule TdDq.ImplementationsTest do
       %{id: implementation_structure_id} =
         insert(:implementation_structure, implementation: implementation)
 
-      claims = build(:dq_claims)
+      claims = build(:claims)
 
       assert {:ok, %{implementation: %{__meta__: meta}}} =
                Implementations.delete_implementation(implementation, claims)
@@ -1240,7 +1240,7 @@ defmodule TdDq.ImplementationsTest do
           result: insert(:rule_result)
         )
 
-      claims = build(:dq_claims)
+      claims = build(:claims)
 
       assert {:ok, %{implementation: %{__meta__: meta}}} =
                Implementations.delete_implementation(implementation, claims)
@@ -1484,6 +1484,27 @@ defmodule TdDq.ImplementationsTest do
       assert ids = Enum.map(implementations, & &1.id)
       assert id2 in ids
       assert id3 in ids
+    end
+
+    test "only deprecates implementations with unexisting reference dataset" do
+      %{id: id} = insert(:reference_dataset)
+
+      insert(:implementation,
+        dataset: [build(:dataset_row, structure: %{id: id, type: "reference_dataset"})],
+        populations: [],
+        validations: [],
+        segments: []
+      )
+
+      assert :ok = Implementations.deprecate_implementations()
+
+      %{id: id_to_deprecate} =
+        insert(:implementation,
+          dataset: [%{structure: %{id: id + 1, type: "reference_dataset"}}]
+        )
+
+      assert {:ok, %{deprecated: deprecated}} = Implementations.deprecate_implementations()
+      assert {1, [%{id: ^id_to_deprecate}]} = deprecated
     end
   end
 

@@ -163,16 +163,15 @@ defmodule TdCx.SourcesTest do
       assert source.type == Map.get(attrs, "type")
     end
 
-    test "job_types/0 with valid an invalid data" do
-      claims = build(:cx_claims)
+    test "job_types/1 with valid and invalid data" do
       source = insert(:source, config: %{"job_types" => ["catalog"]})
-      assert ["catalog"] = Sources.job_types(claims, source)
+      assert ["catalog"] = Sources.job_types(source)
 
       source = insert(:source, config: %{"a" => "1"})
-      assert [] = Sources.job_types(claims, source)
+      assert [] = Sources.job_types(source)
 
       source = insert(:source, config: %{"job_types" => nil})
-      assert [] = Sources.job_types(claims, source)
+      assert [] = Sources.job_types(source)
     end
   end
 

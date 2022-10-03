@@ -3,20 +3,21 @@ defmodule TdDdWeb.Resolvers.GrantRequests do
   Absinthe resolvers for grant requests
   """
 
-  import Canada, only: [can?: 2]
-
   alias TdDd.Grants
+  alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.Requests
 
   def latest_grant_request(_parent, %{data_structure_id: data_structure_id}, resolution) do
     with {:claims, %{user_id: user_id} = claims} <- {:claims, claims(resolution)},
+         :ok <- Bodyguard.permit(Requests, :query, claims, GrantRequest),
          {:grant_request, grant_request} <-
            {:grant_request,
             Requests.latest_grant_request_by_data_structure(data_structure_id, user_id)},
-         {:can, true} <- {:can, can_view_grant_request(claims, grant_request)} do
+         :ok <- Bodyguard.permit(Requests, :view, claims, grant_request) do
       {:ok, grant_request}
     else
       {:claims, nil} -> {:error, :unauthorized}
+      {:error, :forbidden} -> {:error, :forbidden}
       {:can, false} -> {:error, :forbidden}
       {:error, :grant_request, changeset, _} -> {:error, changeset}
     end
@@ -37,9 +38,6 @@ defmodule TdDdWeb.Resolvers.GrantRequests do
   def grant(%{modification_grant_id: grant_id}, _args, _resolution) do
     {:ok, Grants.get_grant!(grant_id)}
   end
-
-  defp can_view_grant_request(_, nil), do: true
-  defp can_view_grant_request(claims, grant_request), do: can?(claims, list(grant_request))
 
   defp claims(%{context: %{claims: claims}}), do: claims
   defp claims(_), do: nil

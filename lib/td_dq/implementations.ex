@@ -3,8 +3,6 @@ defmodule TdDq.Implementations do
   The Rule Implementations context.
   """
 
-  import Canada, only: [can?: 2]
-  import Canada.Can, only: [can?: 3]
   import Ecto.Query
 
   alias Ecto.Changeset
@@ -16,7 +14,6 @@ defmodule TdDq.Implementations do
   alias TdDd.DataStructures
   alias TdDd.ReferenceData
   alias TdDd.Repo
-  alias TdDq.Auth.Claims
   alias TdDq.Cache.ImplementationLoader
   alias TdDq.Cache.RuleLoader
   alias TdDq.Events.QualityEvents
@@ -27,11 +24,14 @@ defmodule TdDq.Implementations do
   alias TdDq.Rules.Audit
   alias TdDq.Rules.Rule
   alias TdDq.Search.Helpers
+  alias Truedat.Auth.Claims
 
   @index_worker Application.compile_env(:td_dd, :dq_index_worker)
 
   @typep multi_result ::
            {:ok, map} | {:error, Multi.name(), any(), %{required(Multi.name()) => any()}}
+
+  defdelegate authorize(action, user, params), to: __MODULE__.Policy
 
   @doc """
   Gets a single implementation.
@@ -89,7 +89,8 @@ defmodule TdDq.Implementations do
     |> Kernel.!=(false)
   end
 
-  @spec create_implementation(Rule.t(), map, Claims.t(), boolean) :: multi_result
+  @spec create_implementation(Rule.t(), map, Claims.t(), boolean) ::
+          multi_result | {:error, :forbidden}
   def create_implementation(rule, params, claims, is_bulk \\ false)
 
   def create_implementation(
@@ -110,15 +111,16 @@ defmodule TdDq.Implementations do
         params
       )
 
-    Multi.new()
-    |> Multi.run(:can, fn _, _ ->
-      multi_can(can?(claims, create(changeset)) and can?(claims, edit_segments(changeset)))
-    end)
-    |> Multi.run(:implementation, fn _, _ -> insert_implementation(changeset) end)
-    |> Multi.run(:data_structures, &create_implementation_structures/2)
-    |> Multi.run(:audit, Audit, :implementation_created, [changeset, user_id])
-    |> Repo.transaction()
-    |> on_upsert(is_bulk)
+    if Bodyguard.permit?(__MODULE__, :create, claims, changeset) do
+      Multi.new()
+      |> Multi.run(:implementation, fn _, _ -> insert_implementation(changeset) end)
+      |> Multi.run(:data_structures, &create_implementation_structures/2)
+      |> Multi.run(:audit, Audit, :implementation_created, [changeset, user_id])
+      |> Repo.transaction()
+      |> on_upsert(is_bulk)
+    else
+      {:error, {Changeset.fetch_field!(changeset, :implementation_key), :forbidden}}
+    end
   end
 
   @spec create_ruleless_implementation(map, Claims.t(), boolean) :: multi_result
@@ -135,28 +137,17 @@ defmodule TdDq.Implementations do
         params
       )
 
-    Multi.new()
-    |> Multi.run(:can, fn _, _ ->
-      multi_can(
-        Enum.all?(
-          [
-            :edit_segments,
-            :create_ruleless_implementations,
-            :create
-          ],
-          &can?(claims, &1, changeset)
-        )
-      )
-    end)
-    |> Multi.run(:implementation, fn _, _ -> insert_implementation(changeset) end)
-    |> Multi.run(:data_structures, &create_implementation_structures/2)
-    |> Multi.run(:audit, Audit, :implementation_created, [changeset, user_id])
-    |> Repo.transaction()
-    |> on_upsert(is_bulk)
+    if Bodyguard.permit?(__MODULE__, :create, claims, changeset) do
+      Multi.new()
+      |> Multi.run(:implementation, fn _, _ -> insert_implementation(changeset) end)
+      |> Multi.run(:data_structures, &create_implementation_structures/2)
+      |> Multi.run(:audit, Audit, :implementation_created, [changeset, user_id])
+      |> Repo.transaction()
+      |> on_upsert(is_bulk)
+    else
+      {:error, {Changeset.fetch_field!(changeset, :implementation_key), :forbidden}}
+    end
   end
-
-  defp multi_can(true), do: {:ok, nil}
-  defp multi_can(false), do: {:error, false}
 
   def maybe_update_implementation(%Implementation{} = implementation, params, %Claims{} = claims) do
     if need_update?(implementation, params) do
@@ -174,16 +165,15 @@ defmodule TdDq.Implementations do
       when rule_id != new_rule_id do
     changeset = upsert_changeset(implementation, params)
 
-    Multi.new()
-    |> Multi.run(:can, fn _, _ ->
-      if can?(claims, :move, changeset), do: {:ok, nil}, else: {:error, false}
-    end)
-    |> upsert(changeset)
-    |> Multi.run(:implementation, fn _repo, _changes -> {:ok, implementation} end)
-    |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
-    |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
-    |> Repo.transaction()
-    |> on_upsert()
+    with :ok <- Bodyguard.permit(__MODULE__, :move, claims, changeset) do
+      Multi.new()
+      |> upsert(changeset)
+      |> Multi.run(:implementation, fn _repo, _changes -> {:ok, implementation} end)
+      |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
+      |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
+      |> Repo.transaction()
+      |> on_upsert()
+    end
   end
 
   def update_implementation(
@@ -193,23 +183,16 @@ defmodule TdDq.Implementations do
       ) do
     changeset = upsert_changeset(implementation, params)
 
-    Multi.new()
-    |> Multi.run(:can, fn _, _ ->
-      multi_can(
-        Enum.all?([
-          can?(claims, :update, changeset),
-          can?(claims, edit_segments(implementation)),
-          can?(claims, edit_segments(changeset))
-        ])
-      )
-    end)
-    |> upsert(changeset, status, user_id)
-    |> Multi.run(:data_structures, &create_implementation_structures/2)
-    |> Multi.run(:audit_status, Audit, :implementation_status_updated, [changeset, user_id])
-    |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
-    |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
-    |> Repo.transaction()
-    |> on_upsert()
+    with :ok <- Bodyguard.permit(__MODULE__, :update, claims, changeset) do
+      Multi.new()
+      |> upsert(changeset, status, user_id)
+      |> Multi.run(:data_structures, &create_implementation_structures/2)
+      |> Multi.run(:audit_status, Audit, :implementation_status_updated, [changeset, user_id])
+      |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
+      |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
+      |> Repo.transaction()
+      |> on_upsert()
+    end
   end
 
   defp need_update?(implementation, params) do
@@ -290,11 +273,21 @@ defmodule TdDq.Implementations do
   @spec deprecate_implementations ::
           :ok | {:ok, map} | {:error, Multi.name(), any, %{required(Multi.name()) => any}}
   def deprecate_implementations do
-    implementation_ids_by_structure_id =
+    {
+      implementation_ids_by_structure_id,
+      implementation_ids_by_reference_dataset_id
+    } =
       list_implementations()
-      |> Enum.map(fn %{id: id} = impl -> {get_structure_ids(impl), id} end)
-      |> Enum.flat_map(fn {structure_ids, id} -> Enum.map(structure_ids, &{&1, id}) end)
+      |> Enum.map(fn %{id: id} = impl -> {get_structures(impl), id} end)
+      |> Enum.flat_map(fn {structures, id} -> Enum.map(structures, &{&1, id}) end)
       |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+      |> Enum.reduce({%{}, %{}}, fn
+        {%{id: id, type: "reference_dataset"}, impls}, {by_structures, by_references} ->
+          {by_structures, Map.put(by_references, id, impls)}
+
+        {%{id: id, type: _}, impls}, {by_structures, by_references} ->
+          {Map.put(by_structures, id, impls), by_references}
+      end)
 
     existing_structure_ids =
       implementation_ids_by_structure_id
@@ -303,11 +296,23 @@ defmodule TdDq.Implementations do
       |> Enum.filter(&is_nil(&1.deleted_at))
       |> Enum.map(& &1.data_structure_id)
 
-    implementation_ids_by_structure_id
-    |> Map.drop(existing_structure_ids)
-    |> Enum.flat_map(fn {_, impl_ids} -> impl_ids end)
-    |> Enum.uniq()
-    |> deprecate()
+    impl_ids_to_deprecate_by_structure_id =
+      implementation_ids_by_structure_id
+      |> Map.drop(existing_structure_ids)
+      |> Enum.flat_map(fn {_, impl_ids} -> impl_ids end)
+
+    impl_ids_to_deprecate_by_reference_id =
+      implementation_ids_by_reference_dataset_id
+      |> Enum.reject(fn {id, _impl_ids} -> ReferenceData.exists?(id) end)
+      |> Enum.flat_map(fn {_, impl_ids} -> impl_ids end)
+
+    impl_ids_to_deprecate =
+      Enum.uniq(
+        impl_ids_to_deprecate_by_structure_id ++
+          impl_ids_to_deprecate_by_reference_id
+      )
+
+    deprecate(impl_ids_to_deprecate)
   end
 
   @doc """
@@ -469,7 +474,7 @@ defmodule TdDq.Implementations do
   def build_actions(claims, params, implementation) do
     params
     |> get_available_actions(implementation)
-    |> Enum.filter(&can?(claims, &1, implementation))
+    |> Enum.filter(&Bodyguard.permit?(__MODULE__, &1, claims, implementation))
     |> Enum.reduce(%{}, &Map.put(&2, &1, %{method: "POST"}))
   end
 
@@ -920,16 +925,17 @@ defmodule TdDq.Implementations do
     do: structure(structure)
 
   defp structure(%{left: left = %{}, right: right = %{}}),
-    do: [Map.take(left, [:id, :name]), Map.take(right, [:id, :name])]
+    do: [Map.take(left, [:id, :name, :type]), Map.take(right, [:id, :name, :type])]
 
   defp structure(%{value: value}), do: structure(value)
 
   defp structure(%{id: _id} = structure),
-    do: [Map.take(structure, [:id, :name])]
+    do: [Map.take(structure, [:id, :name, :type])]
 
   defp structure(%{"id" => id} = structure) do
     name = Map.get(structure, "name")
-    [%{id: id, name: name}]
+    type = Map.get(structure, "type")
+    [%{id: id, name: name, type: type}]
   end
 
   defp structure(%{population: population}) do

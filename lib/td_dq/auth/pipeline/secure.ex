@@ -6,7 +6,7 @@ defmodule TdDq.Auth.Pipeline.Secure do
   use Guardian.Plug.Pipeline,
     otp_app: :td_dq,
     error_handler: Truedat.Auth.ErrorHandler,
-    module: TdDq.Auth.Guardian
+    module: Truedat.Auth.Guardian
 
   plug Guardian.Plug.EnsureAuthenticated, claims: %{"aud" => "truedat", "iss" => "tdauth"}
   plug Guardian.Plug.LoadResource

@@ -3,10 +3,10 @@ defmodule TdDq.Implementations.Download do
   Helper module to download implementations.
   """
 
+  alias TdCache.DomainCache
   alias TdCache.TemplateCache
   alias TdDfLib.Format
 
-  @spec to_csv(any, any, any) :: binary
   def to_csv([], _, _), do: ""
 
   def to_csv(implementations, header_labels, content_labels) do
@@ -57,6 +57,7 @@ defmodule TdDq.Implementations.Download do
     number_of_dataset_external_ids = count_implementations_items(implementations, :datasets)
     number_of_validations_fields = count_implementations_items(implementations, :validations)
     time_zone = Application.get_env(:td_dd, :time_zone)
+    {:ok, domain_name_map} = DomainCache.id_to_name_map()
 
     Enum.map(implementations, fn implementation ->
       rule = Map.get(implementation, :rule, %{})
@@ -95,12 +96,16 @@ defmodule TdDq.Implementations.Download do
           )
 
       values_with_rule_content =
-        Enum.reduce(rule_fields, values, &(&2 ++ [get_content_field(&1, rule_content)]))
+        Enum.reduce(
+          rule_fields,
+          values,
+          &(&2 ++ [get_content_field(&1, rule_content, domain_name_map)])
+        )
 
       Enum.reduce(
         implementation_fields,
         values_with_rule_content,
-        &(&2 ++ [get_content_field(&1, implementation_content)])
+        &(&2 ++ [get_content_field(&1, implementation_content, domain_name_map)])
       )
     end)
   end
@@ -191,11 +196,9 @@ defmodule TdDq.Implementations.Download do
     end
   end
 
-  defp get_content_field(_template, nil) do
-    ""
-  end
+  defp get_content_field(_template, nil, _domain_map), do: ""
 
-  defp get_content_field(%{"type" => "url", "name" => name}, content) do
+  defp get_content_field(%{"type" => "url", "name" => name}, content, _domain_map) do
     content
     |> Map.get(String.to_atom(name), [])
     |> content_to_list()
@@ -204,8 +207,16 @@ defmodule TdDq.Implementations.Download do
     |> Enum.join(", ")
   end
 
-  defp get_content_field(%{"type" => type, "name" => name}, content)
-       when type in ["domain", "system"] do
+  defp get_content_field(%{"type" => "domain", "name" => name}, content, domain_map) do
+    content
+    |> Map.get(String.to_atom(name), [])
+    |> content_to_list()
+    |> Enum.map(&Map.get(domain_map, &1))
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join(", ")
+  end
+
+  defp get_content_field(%{"type" => "system", "name" => name}, content, _domain_map) do
     content
     |> Map.get(String.to_atom(name), [])
     |> content_to_list()
@@ -220,7 +231,8 @@ defmodule TdDq.Implementations.Download do
            "name" => name,
            "values" => %{"fixed_tuple" => values}
          },
-         content
+         content,
+         _domain_map
        ) do
     content
     |> Map.get(String.to_atom(name), [])
@@ -232,13 +244,13 @@ defmodule TdDq.Implementations.Download do
     |> Enum.map_join(", ", &Map.get(&1, "text", ""))
   end
 
-  defp get_content_field(%{"type" => "table"}, _content), do: ""
+  defp get_content_field(%{"type" => "table"}, _content, _domain_map), do: ""
 
-  defp get_content_field(%{"name" => "tags"}, %{tags: tags}) when is_list(tags) do
+  defp get_content_field(%{"name" => "tags"}, %{tags: tags}, _domain_map) when is_list(tags) do
     Enum.join(tags, ", ")
   end
 
-  defp get_content_field(%{"name" => name}, content) do
+  defp get_content_field(%{"name" => name}, content, _domain_map) do
     Map.get(content, String.to_atom(name), "")
   end
 

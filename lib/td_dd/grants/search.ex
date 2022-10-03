@@ -3,12 +3,14 @@ defmodule TdDd.Grants.Search do
   The Grants Search context
   """
 
-  alias TdDd.Auth.Claims
   alias TdDd.Grants.Search.Query
+  alias Truedat.Auth.Claims
   alias Truedat.Search
   alias Truedat.Search.Permissions
 
   require Logger
+
+  @behaviour Bodyguard.Policy
 
   @index :grants
   @default_sort ["_id"]
@@ -20,6 +22,8 @@ defmodule TdDd.Grants.Search do
       terms: %{field: "data_structure_version.system.external_id.raw", size: 50}
     }
   }
+
+  def authorize(:manage, %{role: role}, _any), do: role == "admin"
 
   def get_filter_values(claims, params, user_id) do
     params = put_filter(params, "user_id", user_id)

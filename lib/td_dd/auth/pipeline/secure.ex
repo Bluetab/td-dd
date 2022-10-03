@@ -6,7 +6,7 @@ defmodule TdDd.Auth.Pipeline.Secure do
   use Guardian.Plug.Pipeline,
     otp_app: :td_dd,
     error_handler: Truedat.Auth.ErrorHandler,
-    module: TdDd.Auth.Guardian
+    module: Truedat.Auth.Guardian
 
   plug Guardian.Plug.EnsureAuthenticated, claims: %{"aud" => "truedat", "iss" => "tdauth"}
   plug Guardian.Plug.LoadResource
