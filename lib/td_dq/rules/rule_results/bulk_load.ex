@@ -31,9 +31,8 @@ defmodule TdDq.Rules.RuleResults.BulkLoad do
     |> Multi.run(:results, fn _, %{ids: ids} -> RuleResults.select_results(ids) end)
     |> Multi.run(:cache, fn _, %{results: results} ->
       {:ok,
-       Enum.map(results, fn %{implementation_id: implementation_id} ->
-         ## TODO TD-5140: verificar que se actualiza la cache con la ultima activa
-         ImplementationLoader.maybe_update_implementation_cache(implementation_id)
+       Enum.map(results, fn %{implementation_ref: implementation_ref} = result ->
+         ImplementationLoader.maybe_update_implementation_cache(implementation_ref)
        end)}
     end)
     |> Multi.run(:audit, Audit, :rule_results_created, [0])

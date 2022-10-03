@@ -213,6 +213,7 @@ defmodule TdDq.Rules.RuleResults do
       )
       |> select_merge([_, i, _], %{
         implementation_id: i.id,
+        implementation_ref: i.implementation_ref,
         implementation_key: i.implementation_key,
         rule_id: i.rule_id,
         goal: i.goal,
