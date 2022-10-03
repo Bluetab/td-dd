@@ -11,6 +11,7 @@
 ### Added
 
 - [TD-4903] Include `sobelow` static code analysis in CI pipeline
+- [TD-4214] Publish grant requests workflow events
 - [TD-2430] Allow different join types on implementation dataset
 
 ### Fixed
@@ -30,7 +31,6 @@
 - [TD-5170] Capture graph tests Logger.warn output
 - [TD-5082] Filter protected metadata (field "_protected")
 - [TD-5133] Support for creating grant requests for third parties
-
 
 ### Changed
 
