@@ -103,7 +103,7 @@ config :td_cache, :event_stream,
     [group: "dd", key: "template:events", consumer: TdDd.Search.IndexWorker],
     [group: "dq", key: "business_concept:events", consumer: TdDq.Search.IndexWorker],
     [group: "dq", key: "domain:events", consumer: TdDq.Cache.DomainEventConsumer],
-    [group: "dq", key: "implementation:events", consumer: TdDq.Cache.ImplementationLoader],
+    [group: "dq", key: "implementation_ref:events", consumer: TdDq.Cache.ImplementationLoader],
     [group: "dq", key: "template:events", consumer: TdDq.Search.IndexWorker]
   ]
 
@@ -181,6 +181,12 @@ config :td_dd, TdDd.Scheduler,
     force_update_implementation_cache: [
       schedule: "@reboot",
       task: {TdDq.Cache.ImplementationsForceUpdate, :migrate, []},
+      run_strategy: Quantum.RunStrategy.Local
+    ],
+    do_relation_between_impl_id_and_impl_ref: [
+      schedule: "@reboot",
+      task:
+        {TdDq.Cache.ImplementationLoader, :implementation_ids_to_migrate_implementation_ref, []},
       run_strategy: Quantum.RunStrategy.Local
     ],
     expand_profile_values: [

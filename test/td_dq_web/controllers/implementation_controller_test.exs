@@ -345,12 +345,19 @@ defmodule TdDqWeb.ImplementationControllerTest do
            permissions: [:view_published_business_concepts, :view_quality_rule]
          ]
     test "rendes only authorized links", %{conn: conn, domain: domain} do
-      %{id: id} = insert(:implementation, domain_id: domain.id)
+      %{id: id, implementation_ref: implementation_ref} =
+        insert(:implementation, domain_id: domain.id)
 
       concept_id_authorized = System.unique_integer([:positive])
 
       CacheHelpers.insert_concept(%{id: concept_id_authorized, domain_id: domain.id})
-      CacheHelpers.insert_link(id, "implementation", "business_concept", concept_id_authorized)
+
+      CacheHelpers.insert_link(
+        implementation_ref,
+        "implementation_ref",
+        "business_concept",
+        concept_id_authorized
+      )
 
       concept_id_forbidden = System.unique_integer([:positive])
 
@@ -359,7 +366,12 @@ defmodule TdDqWeb.ImplementationControllerTest do
         domain_id: System.unique_integer([:positive])
       })
 
-      CacheHelpers.insert_link(id, "implementation", "business_concept", concept_id_forbidden)
+      CacheHelpers.insert_link(
+        implementation_ref,
+        "implementation_ref",
+        "business_concept",
+        concept_id_forbidden
+      )
 
       assert %{"data" => %{"links" => links}} =
                conn
@@ -2177,14 +2189,21 @@ defmodule TdDqWeb.ImplementationControllerTest do
     test "updating implementation will update the cache if implementation is linked", %{
       conn: conn
     } do
-      %{id: id} = implementation = insert(:implementation)
+      %{id: id, implementation_ref: implementation_ref} = implementation = insert(:implementation)
       update_attrs = %{goal: "40"}
 
       CacheHelpers.put_implementation(implementation)
       %{id: concept_id} = CacheHelpers.insert_concept()
-      CacheHelpers.insert_link(id, "implementation", "business_concept", concept_id)
 
-      assert {:ok, %{id: ^id, deleted_at: nil}} = CacheHelpers.get_implementation(id)
+      CacheHelpers.insert_link(
+        implementation_ref,
+        "implementation_ref",
+        "business_concept",
+        concept_id
+      )
+
+      assert {:ok, %{id: ^id, deleted_at: nil}} =
+               CacheHelpers.get_implementation(implementation_ref)
 
       assert conn
              |> put(Routes.implementation_path(conn, :update, implementation),
@@ -2192,22 +2211,29 @@ defmodule TdDqWeb.ImplementationControllerTest do
              )
              |> json_response(:ok)
 
-      assert {:ok, %{id: ^id, goal: 40.0}} = CacheHelpers.get_implementation(id)
+      assert {:ok, %{id: ^id, goal: 40.0}} = CacheHelpers.get_implementation(implementation_ref)
     end
 
     @tag authentication: [role: "admin"]
     test "move implementation will update the cache", %{
       conn: conn
     } do
-      %{id: id} = implementation = insert(:implementation)
+      %{id: id, implementation_ref: implementation_ref} = implementation = insert(:implementation)
       %{id: rule_id} = insert(:rule)
       update_attrs = %{rule_id: rule_id}
 
       CacheHelpers.put_implementation(implementation)
       %{id: concept_id} = CacheHelpers.insert_concept()
-      CacheHelpers.insert_link(id, "implementation", "business_concept", concept_id)
 
-      assert {:ok, %{id: ^id, deleted_at: nil}} = CacheHelpers.get_implementation(id)
+      CacheHelpers.insert_link(
+        implementation_ref,
+        "implementation_ref",
+        "business_concept",
+        concept_id
+      )
+
+      assert {:ok, %{id: ^id, deleted_at: nil}} =
+               CacheHelpers.get_implementation(implementation_ref)
 
       assert conn
              |> put(Routes.implementation_path(conn, :update, implementation),
@@ -2215,18 +2241,21 @@ defmodule TdDqWeb.ImplementationControllerTest do
              )
              |> json_response(:ok)
 
-      assert {:ok, %{id: ^id, rule_id: ^rule_id}} = CacheHelpers.get_implementation(id)
+      assert {:ok, %{id: ^id, rule_id: ^rule_id}} =
+               CacheHelpers.get_implementation(implementation_ref)
     end
 
     @tag authentication: [role: "admin"]
     test "updating implementation will not update the cache if implementation is not linked", %{
       conn: conn
     } do
-      %{id: id} = implementation = insert(:implementation)
+      %{id: id, implementation_ref: implementation_ref} = implementation = insert(:implementation)
       update_attrs = %{goal: "40"}
 
       CacheHelpers.put_implementation(implementation)
-      assert {:ok, %{id: ^id, deleted_at: nil}} = CacheHelpers.get_implementation(id)
+
+      assert {:ok, %{id: ^id, deleted_at: nil}} =
+               CacheHelpers.get_implementation(implementation_ref)
 
       assert conn
              |> put(Routes.implementation_path(conn, :update, implementation),
@@ -2234,7 +2263,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
              )
              |> json_response(:ok)
 
-      assert {:ok, %{id: ^id, goal: 30.0}} = CacheHelpers.get_implementation(id)
+      assert {:ok, %{id: ^id, goal: 30.0}} = CacheHelpers.get_implementation(implementation_ref)
     end
   end
 
@@ -2411,6 +2440,73 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> delete(Routes.implementation_path(conn, :delete, implementation))
                |> response(:forbidden)
       end
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: @imp_ruleless_permissions ++ [:publish_implementation]
+         ]
+    test "deprecated implementation will update the cache if implementation is linked", %{
+      conn: conn,
+      domain: %{id: domain_id}
+    } do
+      %{id: id, implementation_ref: implementation_ref} =
+        implementation =
+        insert(:ruleless_implementation, domain_id: domain_id, status: "published")
+
+      CacheHelpers.put_implementation(implementation)
+      %{id: concept_id} = CacheHelpers.insert_concept(domain_id: domain_id)
+
+      CacheHelpers.insert_link(
+        implementation_ref,
+        "implementation_ref",
+        "business_concept",
+        concept_id
+      )
+
+      assert {:ok, %{id: ^id, deleted_at: nil, status: "published"}} =
+               CacheHelpers.get_implementation(implementation_ref)
+
+      assert conn
+             |> delete(Routes.implementation_path(conn, :delete, implementation))
+             |> response(:no_content)
+
+      assert {:ok, %{id: ^id, deleted_at: deleted_at, status: "deprecated"}} =
+               CacheHelpers.get_implementation(implementation_ref)
+
+      refute is_nil(deleted_at)
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: @imp_ruleless_permissions ++ [:publish_implementation]
+         ]
+    test "delete one implementation in status draft will be deleted from cache if implementation is linked",
+         %{
+           conn: conn,
+           domain: %{id: domain_id}
+         } do
+      %{id: id, implementation_ref: implementation_ref} =
+        implementation = insert(:ruleless_implementation, domain_id: domain_id, status: "draft")
+
+      CacheHelpers.put_implementation(implementation)
+      %{id: concept_id} = CacheHelpers.insert_concept(domain_id: domain_id)
+
+      CacheHelpers.insert_link(
+        implementation_ref,
+        "implementation_ref",
+        "business_concept",
+        concept_id
+      )
+
+      assert {:ok, %{id: ^id, deleted_at: nil, status: "draft"}} =
+               CacheHelpers.get_implementation(implementation_ref)
+
+      assert conn
+             |> delete(Routes.implementation_path(conn, :delete, implementation))
+             |> response(:no_content)
+
+      assert {:ok, nil} = CacheHelpers.get_implementation(implementation_ref)
     end
   end
 
