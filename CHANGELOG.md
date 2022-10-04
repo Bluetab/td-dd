@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-5140] fixed bulk_load implementations results for reload implementation cache
+
 ## [4.52.0] 2022-10-03
 
 ### Changed
