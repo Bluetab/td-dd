@@ -1,6 +1,8 @@
 defmodule TdDdWeb.UserSearchFilterControllerTest do
   use TdDdWeb.ConnCase
 
+  import TdDd.TestOperators
+
   @create_attrs %{
     filters: %{country: ["Spa"]},
     name: "some name",
@@ -61,6 +63,46 @@ defmodule TdDdWeb.UserSearchFilterControllerTest do
 
       assert [%{"id" => ^id}] = data
     end
+
+    @tag authentication: [user_name: "non_admin"]
+    test "lists current user user_search_filters with global filters", %{
+      conn: conn,
+      claims: %{user_id: user_id}
+    } do
+      %{id: id1} = insert(:user_search_filter, name: "a", user_id: user_id)
+      %{id: id2} = insert(:user_search_filter, name: "b", is_global: true)
+      insert(:user_search_filter, name: "c", is_global: false)
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.user_search_filter_path(conn, :index_by_user))
+               |> json_response(:ok)
+
+      assert [%{"id" => id1}, %{"id" => id2}] <|> data
+    end
+
+    @tag authentication: [user_name: "non_admin", permissions: ["view_data_structure"]]
+    test "global filters with taxonomy will only appear for users with permission on any filter domain",
+         %{
+           conn: conn,
+           claims: %{user_id: user_id},
+           domain: %{id: domain_id}
+         } do
+      %{id: id1} = insert(:user_search_filter, user_id: user_id)
+
+      %{id: id2} =
+        insert(:user_search_filter, filters: %{"taxonomy" => [domain_id]}, is_global: true)
+
+      insert(:user_search_filter, filters: %{"taxonomy" => [domain_id + 1]}, is_global: true)
+      insert(:user_search_filter, is_global: false)
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.user_search_filter_path(conn, :index_by_user))
+               |> json_response(:ok)
+
+      assert [%{"id" => id1}, %{"id" => id2}] <|> data
+    end
   end
 
   describe "create user_search_filter" do
@@ -83,8 +125,44 @@ defmodule TdDdWeb.UserSearchFilterControllerTest do
                "filters" => %{},
                "name" => "some name",
                "user_id" => _user_id,
-               "scope" => "rule_implementation"
+               "scope" => "rule_implementation",
+               "is_global" => false
              } = data
+    end
+
+    @tag authentication: [user_name: "non_admin"]
+    test "non admin users can create filters", %{conn: conn} do
+      assert %{"data" => %{"id" => id}} =
+               conn
+               |> post(Routes.user_search_filter_path(conn, :create),
+                 user_search_filter: @create_attrs
+               )
+               |> json_response(:created)
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.user_search_filter_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "id" => _id,
+               "filters" => %{},
+               "name" => "some name",
+               "user_id" => _user_id,
+               "scope" => "rule_implementation",
+               "is_global" => false
+             } = data
+    end
+
+    @tag authentication: [user_name: "non_admin"]
+    test "non admin users cannot create global filters", %{conn: conn} do
+      global_attrs = Map.put(@create_attrs, :is_global, true)
+
+      assert conn
+             |> post(Routes.user_search_filter_path(conn, :create),
+               user_search_filter: global_attrs
+             )
+             |> json_response(:forbidden)
     end
 
     @tag authentication: [role: "admin"]

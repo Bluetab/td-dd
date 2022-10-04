@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-5195] Support for global user filters
+
 ## [4.52.0] 2022-10-03
 
 ### Changed
