@@ -50,21 +50,7 @@ config :logger, :console,
 config :phoenix, :json_library, Jason
 config :phoenix_swagger, json_library: Jason
 
-config :td_dd, TdDd.Auth.Guardian,
-  allowed_algos: ["HS512"],
-  issuer: "tdauth",
-  aud: "truedat",
-  ttl: {1, :hours},
-  secret_key: "SuperSecretTruedat"
-
-config :td_dd, TdCx.Auth.Guardian,
-  allowed_algos: ["HS512"],
-  issuer: "tdauth",
-  aud: "truedat",
-  ttl: {1, :hours},
-  secret_key: "SuperSecretTruedat"
-
-config :td_dd, TdDq.Auth.Guardian,
+config :td_dd, Truedat.Auth.Guardian,
   allowed_algos: ["HS512"],
   issuer: "tdauth",
   aud: "truedat",
@@ -219,6 +205,8 @@ config :td_dd, TdDd.Scheduler,
       run_strategy: Quantum.RunStrategy.Local
     ]
   ]
+
+config :bodyguard, default_error: :forbidden
 
 import_config "metadata.exs"
 import_config "profiling.exs"

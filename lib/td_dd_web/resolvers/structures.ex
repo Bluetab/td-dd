@@ -3,8 +3,6 @@ defmodule TdDdWeb.Resolvers.Structures do
   Absinthe resolvers for data structures and related entities
   """
 
-  import Canada, only: [can?: 2]
-
   alias TdCache.TaxonomyCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Relations
@@ -15,15 +13,15 @@ defmodule TdDdWeb.Resolvers.Structures do
   end
 
   def data_structure(_parent, %{id: id} = _args, resolution) do
-    with {:claims, %{} = claims} <- {:claims, claims(resolution)},
+    with {:claims, claims} when not is_nil(claims) <- {:claims, claims(resolution)},
          {:data_structure, %{} = structure} <-
            {:data_structure, DataStructures.get_data_structure(id)},
-         {:can, true} <- {:can, can?(claims, view_data_structure(structure))} do
+         :ok <- Bodyguard.permit(DataStructures, :view_data_structure, claims, structure) do
       {:ok, structure}
     else
       {:claims, nil} -> {:error, :unauthorized}
       {:data_structure, nil} -> {:error, :not_found}
-      {:can, false} -> {:error, :forbidden}
+      {:error, :forbidden} -> {:error, :forbidden}
     end
   end
 
@@ -67,7 +65,7 @@ defmodule TdDdWeb.Resolvers.Structures do
 
   def available_tags(%{} = structure, _args, resolution) do
     with {:claims, %{} = claims} <- {:claims, claims(resolution)},
-         {:can, true} <- {:can, can?(claims, tag(structure))} do
+         :ok <- Bodyguard.permit(DataStructures, :tag, claims, structure) do
       {:ok, Tags.list_available_tags(structure)}
     else
       {:claims, nil} -> {:error, :unauthorized}

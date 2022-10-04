@@ -14,7 +14,7 @@ defmodule TdDq.Rules.BulkLoadTest do
     %{name: template_name} = CacheHelpers.insert_template(scope: "dq")
     %{external_id: domain_external_id} = CacheHelpers.insert_domain()
 
-    [external_id: domain_external_id, template_name: template_name, claims: build(:dq_claims)]
+    [external_id: domain_external_id, template_name: template_name, claims: build(:claims)]
   end
 
   describe "bulk_load/2" do

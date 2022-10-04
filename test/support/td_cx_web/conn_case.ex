@@ -15,7 +15,7 @@ defmodule TdCxWeb.ConnCase do
 
   use ExUnit.CaseTemplate
 
-  import TdCxWeb.Authentication, only: :functions
+  import AuthenticationSupport, only: :functions
 
   alias Ecto.Adapters.SQL.Sandbox
   alias Phoenix.ConnTest

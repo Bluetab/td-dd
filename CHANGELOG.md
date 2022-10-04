@@ -1,5 +1,27 @@
 # Changelog
 
+## [4.52.0] 2022-10-03
+
+### Changed
+
+- [TD-4871] Unify `Claims` structs, replace `canada` with `bodyguard` for
+  authorizations
+- [TD-5184] Removed dependency on td-hypermedia library
+
+### Added
+
+- [TD-4903] Include `sobelow` static code analysis in CI pipeline
+- [TD-4214] Publish grant requests workflow events
+- [TD-2430] Allow different join types on implementation dataset
+
+### Fixed
+
+- [TD-4587]
+  - Download implementations with reference_data
+  - Implementations download when dataset has a table joing itself
+- [TD-5183] Auto deprecate rule implementations based on
+  its referenced structures and datasets
+
 ## [4.51.0] 2022-09-19
 
 ### Added
@@ -9,7 +31,6 @@
 - [TD-5170] Capture graph tests Logger.warn output
 - [TD-5082] Filter protected metadata (field "_protected")
 - [TD-5133] Support for creating grant requests for third parties
-
 
 ### Changed
 

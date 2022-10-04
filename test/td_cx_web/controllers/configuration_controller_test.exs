@@ -237,11 +237,13 @@ defmodule TdCxWeb.ConfigurationControllerTest do
 
     @tag authentication: [role: "admin"]
     test "deletes chosen config", %{conn: conn, configuration: configuration} do
-      conn = delete(conn, Routes.configuration_path(conn, :delete, configuration.external_id))
-      assert response(conn, 204)
+      assert conn
+             |> delete(Routes.configuration_path(conn, :delete, configuration.external_id))
+             |> response(:no_content)
 
-      conn = get(conn, Routes.configuration_path(conn, :show, configuration.external_id))
-      assert response(conn, 404)
+      assert_error_sent :not_found, fn ->
+        get(conn, Routes.configuration_path(conn, :show, configuration.external_id))
+      end
     end
   end
 

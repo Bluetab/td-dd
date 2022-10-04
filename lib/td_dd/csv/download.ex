@@ -3,6 +3,7 @@ defmodule TdDd.CSV.Download do
   Helper module to download structures.
   """
 
+  alias TdCache.DomainCache
   alias TdDd.DataStructures.DataStructureTypes
   alias TdDfLib.Format
 
@@ -72,7 +73,8 @@ defmodule TdDd.CSV.Download do
     type_headers = Enum.map(type_fields, &Map.get(&1, "name"))
 
     headers = @editable_headers ++ type_headers
-    core = Enum.map(structures, &editable_structure_values(&1, type_fields))
+    {:ok, domain_name_map} = DomainCache.id_to_name_map()
+    core = Enum.map(structures, &editable_structure_values(&1, type_fields, domain_name_map))
 
     [headers | core]
     |> CSV.encode(separator: ?;)
@@ -86,15 +88,15 @@ defmodule TdDd.CSV.Download do
 
   defp type_editable_fields(_type), do: []
 
-  defp editable_structure_values(%{note: nil} = structure, type_headers) do
+  defp editable_structure_values(%{note: nil} = structure, type_headers, _domain_name_map) do
     structure_values = Enum.map(@editable_headers, &editable_structure_value(structure, &1))
     empty_values = List.duplicate(nil, length(type_headers))
     structure_values ++ empty_values
   end
 
-  defp editable_structure_values(%{note: content} = structure, type_fields) do
+  defp editable_structure_values(%{note: content} = structure, type_fields, domain_name_map) do
     structure_values = Enum.map(@editable_headers, &editable_structure_value(structure, &1))
-    content_values = Enum.map(type_fields, &get_content_field(&1, content))
+    content_values = Enum.map(type_fields, &get_content_field(&1, content, domain_name_map))
     structure_values ++ content_values
   end
 
@@ -159,6 +161,8 @@ defmodule TdDd.CSV.Download do
   end
 
   defp structures_to_list(structures, content_fields \\ []) do
+    {:ok, domain_name_map} = DomainCache.id_to_name_map()
+
     Enum.map(structures, fn structure ->
       content = structure.note
 
@@ -174,7 +178,11 @@ defmodule TdDd.CSV.Download do
         structure.inserted_at
       ]
 
-      Enum.reduce(content_fields, values, &(&2 ++ [&1 |> get_content_field(content)]))
+      Enum.reduce(
+        content_fields,
+        values,
+        &(&2 ++ [get_content_field(&1, content, domain_name_map)])
+      )
     end)
   end
 
@@ -239,9 +247,9 @@ defmodule TdDd.CSV.Download do
     Enum.map(headers, fn h -> Map.get(header_labels, h, h) end)
   end
 
-  defp get_content_field(_template, nil), do: ""
+  defp get_content_field(_template, nil, _domain_map), do: ""
 
-  defp get_content_field(%{"type" => "url", "name" => name}, content) do
+  defp get_content_field(%{"type" => "url", "name" => name}, content, _domain_map) do
     content
     |> Map.get(name, [])
     |> content_to_list()
@@ -250,8 +258,16 @@ defmodule TdDd.CSV.Download do
     |> Enum.join(", ")
   end
 
-  defp get_content_field(%{"type" => type, "name" => name}, content)
-       when type in ["domain", "system"] do
+  defp get_content_field(%{"type" => "domain", "name" => name}, content, domain_map) do
+    content
+    |> Map.get(name)
+    |> List.wrap()
+    |> Enum.map(&Map.get(domain_map, &1))
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join(", ")
+  end
+
+  defp get_content_field(%{"type" => "system", "name" => name}, content, _domain_map) do
     content
     |> Map.get(name, [])
     |> content_to_list()
@@ -266,7 +282,8 @@ defmodule TdDd.CSV.Download do
            "name" => name,
            "values" => %{"fixed_tuple" => values}
          },
-         content
+         content,
+         _domain_map
        ) do
     content
     |> Map.get(name, [])
@@ -277,14 +294,15 @@ defmodule TdDd.CSV.Download do
     |> Enum.map_join(", ", &Map.get(&1, "text", ""))
   end
 
-  defp get_content_field(%{"type" => "table"}, _content), do: ""
+  defp get_content_field(%{"type" => "table"}, _content, _domain_map), do: ""
 
   defp get_content_field(
          %{
            "name" => name,
            "cardinality" => cardinality
          },
-         content
+         content,
+         _domain_map
        )
        when cardinality in ["+", "*"] do
     content
@@ -293,7 +311,7 @@ defmodule TdDd.CSV.Download do
     |> Enum.join("|")
   end
 
-  defp get_content_field(%{"name" => name}, content) do
+  defp get_content_field(%{"name" => name}, content, _domain_map) do
     Map.get(content, name, "")
   end
 

@@ -1,8 +1,6 @@
 defmodule TdDdWeb.GrantRequestStatusController do
   use TdDdWeb, :controller
 
-  import Canada, only: [can?: 2]
-
   alias TdDd.Grants.Requests
   alias TdDd.Grants.Statuses
   alias TdDdWeb.GrantRequestView
@@ -10,11 +8,11 @@ defmodule TdDdWeb.GrantRequestStatusController do
   action_fallback TdDdWeb.FallbackController
 
   def create(conn, %{"grant_request_id" => id, "status" => "cancelled" = status}) do
-    with claims <- conn.assigns[:current_resource],
+    with %{user_id: user_id} = claims <- conn.assigns[:current_resource],
          request <- Requests.get_grant_request!(id, claims),
-         {:can, true} <- {:can, can?(claims, cancel(request))},
+         :ok <- Bodyguard.permit(Requests, :cancel, claims, request),
          {:ok, _grant_request_status} <-
-           Statuses.create_grant_request_status(request, status),
+           Statuses.create_grant_request_status(request, status, user_id),
          updated_request <- Requests.get_grant_request!(id, claims) do
       conn
       |> put_status(:created)
@@ -26,11 +24,11 @@ defmodule TdDdWeb.GrantRequestStatusController do
   def create(conn, %{"grant_request_id" => id, "status" => status} = params) do
     status_reason = Map.get(params, "reason")
 
-    with claims <- conn.assigns[:current_resource],
+    with %{user_id: user_id} = claims <- conn.assigns[:current_resource],
          request <- Requests.get_grant_request!(id, claims),
-         {:can, true} <- {:can, can?(claims, approve(request))},
+         :ok <- Bodyguard.permit(Requests, :approve, claims, request),
          {:ok, _grant_request_status} <-
-           Statuses.create_grant_request_status(request, status, status_reason),
+           Statuses.create_grant_request_status(request, status, user_id, status_reason),
          updated_request <- Requests.get_grant_request!(id, claims) do
       conn
       |> put_status(:created)

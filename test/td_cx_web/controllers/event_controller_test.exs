@@ -68,12 +68,9 @@ defmodule TdCxWeb.EventControllerTest do
 
     @tag authentication: [role: "admin"]
     test "renders errors when job does not exist", %{conn: conn} do
-      assert %{"errors" => %{} = errors} =
-               conn
-               |> post(Routes.job_event_path(conn, :index, Ecto.UUID.generate()), event: %{})
-               |> json_response(:not_found)
-
-      refute errors == %{}
+      assert_error_sent :not_found, fn ->
+        post(conn, Routes.job_event_path(conn, :index, Ecto.UUID.generate()), event: %{})
+      end
     end
   end
 end

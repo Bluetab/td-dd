@@ -13,7 +13,6 @@ defmodule TdDd.DataStructures do
   alias TdCache.UserCache
   alias TdCx.Sources
   alias TdCx.Sources.Source
-  alias TdDd.Auth.Claims
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureQueries
@@ -27,6 +26,7 @@ defmodule TdDd.DataStructures do
   alias TdDd.Search.IndexWorker
   alias TdDd.Search.StructureVersionEnricher
   alias TdDfLib.Format
+  alias Truedat.Auth.Claims
 
   @protected "_protected"
 
@@ -37,6 +37,8 @@ defmodule TdDd.DataStructures do
     :classifications,
     data_structure: :system
   ]
+
+  defdelegate authorize(action, user, params), to: __MODULE__.Policy
 
   def protected, do: @protected
 

@@ -9,15 +9,17 @@ defmodule TdDd.Grants.Requests do
   alias Ecto.Multi
   alias TdCache.Permissions
   alias TdCache.UserCache
-  alias TdDd.Auth.Claims
   alias TdDd.DataStructures
-  alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.Grants.Audit
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestApproval
   alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Grants.GrantRequestStatus
   alias TdDd.Repo
+  alias Truedat.Auth.Claims
+
+  defdelegate authorize(action, user, params), to: TdDd.Grants.Policy
 
   def list_grant_request_groups do
     Repo.all(GrantRequestGroup)
@@ -61,6 +63,7 @@ defmodule TdDd.Grants.Requests do
         &%{grant_request_id: &1, status: "pending", inserted_at: DateTime.utc_now()}
       )
     end)
+    |> Multi.run(:audit, Audit, :grant_request_group_created, [])
     |> Repo.transaction()
   end
 
@@ -220,9 +223,10 @@ defmodule TdDd.Grants.Requests do
 
   def latest_grant_request_by_data_structure(data_structure_id, user_id) do
     GrantRequest
-    |> where([gr], data_structure_id: ^data_structure_id)
-    |> join(:left, [gr], grg in assoc(gr, :group))
-    |> where([_, gr], gr.user_id == ^user_id)
+    |> where([r], data_structure_id: ^data_structure_id)
+    |> join(:inner, [r], g in assoc(r, :group))
+    |> where([_, g], g.user_id == ^user_id)
+    |> preload(:group)
     |> order_by(desc: :inserted_at)
     |> limit(1)
     |> Repo.one()
@@ -420,7 +424,6 @@ defmodule TdDd.Grants.Requests do
     %{grant_request | pending_roles: pending_roles}
   end
 
-  # @spec with_missing_roles(map, MapSet.t(), map())
   defp with_missing_roles(
          %{approvals: approvals, domain_ids: domain_ids} = grant_request,
          required_roles,

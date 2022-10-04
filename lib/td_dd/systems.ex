@@ -6,11 +6,13 @@ defmodule TdDd.Systems do
   import Ecto.Query
 
   alias Ecto.Multi
-  alias TdDd.Auth.Claims
   alias TdDd.Cache.SystemLoader
   alias TdDd.Repo
   alias TdDd.Systems.Audit
   alias TdDd.Systems.System
+  alias Truedat.Auth.Claims
+
+  defdelegate authorize(action, user, params), to: __MODULE__.Policy
 
   @doc """
   Returns the list of systems.

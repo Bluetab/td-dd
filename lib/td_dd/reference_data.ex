@@ -8,10 +8,17 @@ defmodule TdDd.ReferenceData do
   alias TdDd.ReferenceData.Dataset
   alias TdDd.Repo
 
+  defdelegate authorize(action, user, params), to: __MODULE__.Policy
+
   @spec get!(binary | integer) :: Dataset.t()
   def get!(id) do
     dataset_query(id: id)
     |> Repo.one!()
+  end
+
+  def exists?(id) do
+    dataset_query(id: id)
+    |> Repo.exists?()
   end
 
   @spec list :: [Dataset.t()]

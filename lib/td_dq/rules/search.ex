@@ -3,8 +3,8 @@ defmodule TdDq.Rules.Search do
   The Rules Search context
   """
 
-  alias TdDq.Auth.Claims
   alias TdDq.Rules.Search.Query
+  alias Truedat.Auth.Claims
   alias Truedat.Search
   alias Truedat.Search.Permissions
 

@@ -20,7 +20,7 @@ defmodule TdDq.RulesTest do
     start_supervised(TdDq.MockRelationCache)
     start_supervised(TdDd.Search.MockIndexWorker)
     start_supervised(TdDq.Cache.RuleLoader)
-    [claims: build(:dq_claims)]
+    [claims: build(:claims)]
   end
 
   describe "list_rules/0" do

@@ -12,6 +12,7 @@ defmodule TdDd.Grants.GrantRequestStatus do
     field(:status, :string)
     field(:previous_status, :string, virtual: true)
     field(:reason, :string)
+    field(:user_id, :integer)
 
     belongs_to(:grant_request, GrantRequest)
 
@@ -42,6 +43,7 @@ defmodule TdDd.Grants.GrantRequestStatus do
   def changeset(%__MODULE__{} = struct, %{} = params) do
     struct
     |> cast(params, [])
+    |> validate_required(:user_id)
     |> validate_inclusion(:status, @valid_statuses)
     |> validate_status()
   end

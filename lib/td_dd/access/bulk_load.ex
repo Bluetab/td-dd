@@ -4,10 +4,13 @@ defmodule TdDd.Access.BulkLoad do
   """
 
   import Ecto.Query
+
   require Logger
 
   alias TdDd.Access
   alias TdDd.Repo
+
+  defdelegate authorize(action, user, params), to: TdDd.Access.Policy
 
   def bulk_load(accesses) do
     Logger.info("Loading Accesses")
