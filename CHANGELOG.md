@@ -4,7 +4,7 @@
 
 ### Fixed
 
-- [TD-5140] Changed implementations ids by implementations refs for link manager 
+- [TD-5140] Changed implementations ids by implementations refs and links migration
 
 ## [4.52.0] 2022-10-03
 
