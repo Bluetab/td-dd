@@ -23,5 +23,9 @@ defmodule TdDq.Functions.Function do
     struct
     |> cast(params, [:name, :group, :scope, :args])
     |> validate_required([:name, :args])
+    |> unique_constraint([:name, :args])
+    |> unique_constraint([:name, :args, :group])
+    |> unique_constraint([:name, :args, :scope])
+    |> unique_constraint([:name, :args, :group, :scope])
   end
 end
