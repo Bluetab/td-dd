@@ -661,7 +661,8 @@ defmodule TdDd.Factory do
 
   def function_factory do
     %TdDq.Functions.Function{
-      name: sequence("function_name")
+      name: sequence("function_name"),
+      args: [%{"foo" => "bar"}]
     }
   end
 
