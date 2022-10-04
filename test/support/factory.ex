@@ -662,7 +662,13 @@ defmodule TdDd.Factory do
   def function_factory do
     %TdDq.Functions.Function{
       name: sequence("function_name"),
-      args: [%{"foo" => "bar"}]
+      args: [build(:argument)]
+    }
+  end
+
+  def argument_factory do
+    %TdDq.Functions.Argument{
+      type: sequence(:argument_type, ["string", "number", "any"])
     }
   end
 

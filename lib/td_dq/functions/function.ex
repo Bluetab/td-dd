@@ -7,11 +7,13 @@ defmodule TdDq.Functions.Function do
 
   import Ecto.Changeset
 
+  alias TdDq.Functions.Argument
+
   schema "functions" do
     field :name, :string
     field :group, :string
     field :scope, :string
-    field :args, {:array, :map}
+    embeds_many :args, Argument
     timestamps type: :utc_datetime_usec, updated_at: false
   end
 
@@ -21,8 +23,9 @@ defmodule TdDq.Functions.Function do
 
   def changeset(%__MODULE__{} = struct, %{} = params) do
     struct
-    |> cast(params, [:name, :group, :scope, :args])
-    |> validate_required([:name, :args])
+    |> cast(params, [:name, :group, :scope])
+    |> cast_embed(:args, with: &Argument.changeset/2, required: true)
+    |> validate_required([:name])
     |> unique_constraint([:name, :args])
     |> unique_constraint([:name, :args, :group])
     |> unique_constraint([:name, :args, :scope])

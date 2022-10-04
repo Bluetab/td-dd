@@ -6,13 +6,26 @@ defmodule TdDq.Functions.FunctionTest do
 
   describe "changeset/2" do
     test "validates args" do
-      params = params_for(:function, args: [%{"foo" => "bar"}])
+      params = string_params_for(:function, args: nil)
+      assert %{valid?: false} = Function.changeset(params)
 
+      params = string_params_for(:function, args: [])
+      assert %{valid?: false} = Function.changeset(params)
+
+      params = string_params_for(:function, args: [%{}])
+      assert %{valid?: false} = Function.changeset(params)
+
+      params = string_params_for(:function, args: [build(:argument)])
       assert %{valid?: true} = Function.changeset(params)
     end
 
     test "captures unique constraint on name and args" do
-      params = insert(:function) |> Map.take([:name, :args])
+      params = string_params_for(:function)
+
+      assert {:ok, _} =
+               params
+               |> Function.changeset()
+               |> Repo.insert()
 
       assert {:error, %{errors: errors}} =
                params
@@ -24,7 +37,12 @@ defmodule TdDq.Functions.FunctionTest do
     end
 
     test "captures unique constraint on name, group and args" do
-      params = insert(:function, group: "g1") |> Map.take([:name, :args, :group])
+      params = string_params_for(:function, group: "g1")
+
+      assert {:ok, _} =
+               params
+               |> Function.changeset()
+               |> Repo.insert()
 
       assert {:error, %{errors: errors}} =
                params
@@ -36,7 +54,12 @@ defmodule TdDq.Functions.FunctionTest do
     end
 
     test "captures unique constraint on name, scope and args" do
-      params = insert(:function, scope: "s1") |> Map.take([:name, :args, :scope])
+      params = string_params_for(:function, scope: "s1")
+
+      assert {:ok, _} =
+               params
+               |> Function.changeset()
+               |> Repo.insert()
 
       assert {:error, %{errors: errors}} =
                params
@@ -48,8 +71,12 @@ defmodule TdDq.Functions.FunctionTest do
     end
 
     test "captures unique constraint on name, group, scope and args" do
-      params =
-        insert(:function, group: "g1", scope: "s1") |> Map.take([:name, :args, :group, :scope])
+      params = string_params_for(:function, group: "g1", scope: "s1")
+
+      assert {:ok, _} =
+               params
+               |> Function.changeset()
+               |> Repo.insert()
 
       assert {:error, %{errors: errors}} =
                params
