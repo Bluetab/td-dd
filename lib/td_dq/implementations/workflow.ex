@@ -7,10 +7,15 @@ defmodule TdDq.Implementations.Workflow do
 
   alias Ecto.Multi
   alias TdDd.Repo
+  alias TdDq.Cache.ImplementationLoader
   alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Audit
 
   @index_worker Application.compile_env(:td_dd, :dq_index_worker)
+
+  @status_order "published, pending_approval, draft, rejected, deprecated, versioned"
+
+  def get_workflow_status_order, do: @status_order
 
   def submit_implementation(%Implementation{} = implementation, %{} = claims) do
     update_implementation_status(
@@ -44,6 +49,7 @@ defmodule TdDq.Implementations.Workflow do
     Multi.new()
     |> maybe_version_existing(implementation, status, user_id)
     |> Multi.update(:implementation, changeset)
+    |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
     |> Multi.run(:audit, Audit, :implementation_status_updated, [changeset, user_id])
     |> Repo.transaction()
     |> on_upsert()
