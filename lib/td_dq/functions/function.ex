@@ -11,6 +11,7 @@ defmodule TdDq.Functions.Function do
 
   schema "functions" do
     field :name, :string
+    field :return_type, :string
     field :group, :string
     field :scope, :string
     embeds_many :args, Argument
@@ -23,9 +24,9 @@ defmodule TdDq.Functions.Function do
 
   def changeset(%__MODULE__{} = struct, %{} = params) do
     struct
-    |> cast(params, [:name, :group, :scope])
+    |> cast(params, [:name, :return_type, :group, :scope])
     |> cast_embed(:args, with: &Argument.changeset/2, required: true)
-    |> validate_required([:name])
+    |> validate_required([:name, :return_type])
     |> unique_constraint([:name, :args])
     |> unique_constraint([:name, :args, :group])
     |> unique_constraint([:name, :args, :scope])

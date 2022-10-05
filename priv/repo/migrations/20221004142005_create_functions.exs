@@ -7,6 +7,7 @@ defmodule TdDd.Repo.Migrations.CreateFunctions do
       add :args, :map, null: false
       add :group, :string
       add :scope, :string
+      add :return_type, :string, null: false
       timestamps(type: :utc_datetime_usec, updated_at: false)
     end
 

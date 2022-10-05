@@ -9,6 +9,10 @@ defmodule TdDq.Functions do
   alias TdDq.Functions.Bulk
   alias TdDq.Functions.Function
 
+  def list_functions do
+    Repo.all(Function)
+  end
+
   def replace_all(%{} = params) do
     case Bulk.changeset(params) do
       %{valid?: false} = changeset ->

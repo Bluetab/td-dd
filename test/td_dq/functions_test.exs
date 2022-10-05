@@ -3,13 +3,21 @@ defmodule TdDq.FunctionsTest do
 
   alias TdDq.Functions
 
+  describe "Functions.list_functions/0" do
+    test "returns all functions" do
+      for _ <- 1..10, do: insert(:function)
+
+      [_ | _] = functions = Functions.list_functions()
+      assert length(functions) == 10
+    end
+  end
+
   describe "Functions.replace_all/1" do
     test "replaces all functions" do
-      insert(:function)
       functions = Enum.map(1..10, fn _ -> string_params_for(:function) end)
 
       assert {:ok, %{delete_all: delete_all}} = Functions.replace_all(%{"functions" => functions})
-      assert {1, nil} = delete_all
+      assert {0, nil} = delete_all
 
       assert {:ok, %{delete_all: delete_all}} = Functions.replace_all(%{"functions" => functions})
       assert {10, nil} = delete_all
@@ -23,7 +31,11 @@ defmodule TdDq.FunctionsTest do
 
       assert Ecto.Changeset.traverse_errors(changeset, fn {msg, _opts} -> msg end) == %{
                functions: [
-                 %{args: ["can't be blank"], name: ["can't be blank"]},
+                 %{
+                   args: ["can't be blank"],
+                   name: ["can't be blank"],
+                   return_type: ["can't be blank"]
+                 },
                  %{}
                ]
              }
