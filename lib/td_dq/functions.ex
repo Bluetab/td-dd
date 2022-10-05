@@ -3,30 +3,35 @@ defmodule TdDq.Functions do
   Context for data quality functions and operators
   """
 
+  alias Ecto.Changeset
   alias Ecto.Multi
   alias TdDd.Repo
+  alias TdDq.Functions.Bulk
   alias TdDq.Functions.Function
 
-  def replace_all(%{"functions" => functions} = _params) do
-    # %{"functions" => [%{"name" => _, "group" => _, "args" => _} | _]}
+  def replace_all(%{} = params) do
+    case Bulk.changeset(params) do
+      %{valid?: false} = changeset ->
+        {:error, changeset}
 
-    {valid, invalid} =
-      functions
-      |> Enum.map(&Function.changeset/1)
-      |> Enum.with_index()
-      |> Enum.split_with(fn {%{valid?: valid}, _index} -> valid end)
-
-    case invalid do
-      [] ->
-        Multi.new()
-        |> Multi.delete_all(:delete_all, Function)
-        |> insert_functions(valid)
-        |> Repo.transaction()
+      changeset ->
+        changeset
+        |> Changeset.get_change(:functions)
+        |> Enum.with_index()
+        |> do_replace_all()
     end
   end
 
-  defp insert_functions(%Multi{} = multi, valid) when is_list(valid) do
-    Enum.reduce(valid, multi, fn {changeset, index}, multi ->
+  defp do_replace_all(changesets_with_index) do
+    Multi.new()
+    |> Multi.delete_all(:delete_all, Function)
+    |> insert_functions(changesets_with_index)
+    |> Repo.transaction()
+  end
+
+  defp insert_functions(%Multi{} = multi, changesets_with_index)
+       when is_list(changesets_with_index) do
+    Enum.reduce(changesets_with_index, multi, fn {changeset, index}, multi ->
       Multi.insert(multi, index, changeset)
     end)
   end
