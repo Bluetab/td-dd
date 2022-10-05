@@ -600,6 +600,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
         swagger_schema do
           properties do
             type(:string, "Argument type", required: true)
+            name(:string, "Optional name")
             values(:array, "Optional list of allowed values")
           end
         end

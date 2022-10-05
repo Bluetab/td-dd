@@ -10,6 +10,7 @@ defmodule TdDdWeb.Schema.FunctionsTest do
       group
       scope
       args {
+        name
         type
         values
       }
@@ -30,7 +31,7 @@ defmodule TdDdWeb.Schema.FunctionsTest do
 
     @tag authentication: [role: "user", permissions: ["manage_quality_rule_implementations"]]
     test "returns data when queried by a user with permissions", %{conn: conn} do
-      %{name: name} = insert(:function)
+      %{name: name} = insert(:function, args: [build(:argument, name: "foo")])
 
       assert %{"data" => data} =
                resp =
@@ -40,7 +41,7 @@ defmodule TdDdWeb.Schema.FunctionsTest do
 
       refute Map.has_key?(resp, "errors")
       assert %{"functions" => [function]} = data
-      assert %{"id" => _, "name" => ^name, "args" => [%{"type" => _}]} = function
+      assert %{"id" => _, "name" => ^name, "args" => [%{"name" => "foo", "type" => _}]} = function
     end
   end
 end

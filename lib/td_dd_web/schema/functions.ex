@@ -5,8 +5,6 @@ defmodule TdDdWeb.Schema.Functions do
 
   use Absinthe.Schema.Notation
 
-  import Absinthe.Resolution.Helpers, only: [dataloader: 1]
-
   alias TdDdWeb.Resolvers
 
   object :function_queries do
@@ -27,6 +25,7 @@ defmodule TdDdWeb.Schema.Functions do
 
   object :argument do
     field :type, :string
+    field :name, :string
     field :values, list_of(:string)
   end
 end

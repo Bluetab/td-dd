@@ -11,6 +11,7 @@ defmodule TdDq.Functions.Argument do
 
   embedded_schema do
     field :type, :string
+    field :name, :string
     field :values, {:array, :string}
   end
 
@@ -20,7 +21,7 @@ defmodule TdDq.Functions.Argument do
 
   def changeset(%__MODULE__{} = struct, %{} = params) do
     struct
-    |> cast(params, [:type, :values])
+    |> cast(params, [:type, :name, :values])
     |> validate_required([:type])
   end
 end

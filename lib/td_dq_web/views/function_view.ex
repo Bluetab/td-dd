@@ -19,8 +19,10 @@ defmodule TdDqWeb.FunctionView do
     |> Map.put(:args, args)
   end
 
-  defp render_arg(%{type: type, values: values}) when is_list(values),
-    do: %{type: type, values: values}
-
-  defp render_arg(%{type: type, values: nil}), do: %{type: type}
+  defp render_arg(%{} = arg) do
+    arg
+    |> Map.take([:name, :type, :values])
+    |> Enum.reject(fn {_k, v} -> is_nil(v) end)
+    |> Map.new()
+  end
 end

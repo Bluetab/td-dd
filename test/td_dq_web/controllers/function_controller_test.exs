@@ -13,7 +13,8 @@ defmodule TdDqWeb.FunctionControllerTest do
 
     @tag authentication: [role: "user", permissions: ["manage_quality_rule_implementations"]]
     test "returns functions", %{conn: conn, swagger_schema: schema} do
-      %{id: id, name: name, return_type: return_type} = insert(:function)
+      %{id: id, name: name, return_type: return_type} =
+        insert(:function, args: [build(:argument, name: "foo")])
 
       assert %{"data" => data} =
                conn
@@ -23,7 +24,7 @@ defmodule TdDqWeb.FunctionControllerTest do
 
       assert [
                %{
-                 "args" => [%{"type" => _}],
+                 "args" => [%{"name" => "foo", "type" => _}],
                  "id" => ^id,
                  "name" => ^name,
                  "return_type" => ^return_type
