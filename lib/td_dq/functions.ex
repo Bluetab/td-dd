@@ -9,6 +9,8 @@ defmodule TdDq.Functions do
   alias TdDq.Functions.Bulk
   alias TdDq.Functions.Function
 
+  defdelegate authorize(action, claims, params), to: __MODULE__.Policy
+
   def list_functions do
     Repo.all(Function)
   end

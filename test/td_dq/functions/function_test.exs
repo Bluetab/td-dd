@@ -4,7 +4,7 @@ defmodule TdDq.Functions.FunctionTest do
   alias TdDd.Repo
   alias TdDq.Functions.Function
 
-  describe "changeset/2" do
+  describe "Function.changeset/2" do
     test "validates args" do
       params = string_params_for(:function, args: nil)
       assert %{valid?: false} = Function.changeset(params)

@@ -1,5 +1,5 @@
 defmodule TdDq.Functions.BulkTest do
-  use ExUnit.Case
+  use TdDd.DataCase
 
   alias TdDq.Functions.Bulk
 
@@ -8,7 +8,8 @@ defmodule TdDq.Functions.BulkTest do
       params = %{"functions" => [%{"foo" => "bar"}]}
       assert %{valid?: false} = Bulk.changeset(params)
 
-      params = %{"functions" => [%{"name" => "foo", "args" => [%{"type" => "string"}]}]}
+      params = %{"functions" => [string_params_for(:function)]}
+
       assert %{valid?: true} = Bulk.changeset(params)
     end
   end
