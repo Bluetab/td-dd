@@ -264,11 +264,21 @@ defmodule TdDdWeb.GrantControllerTest do
          ]
     test "user with permissions can request removal of a grant", %{
       conn: conn,
-      grant: %Grant{id: id} = grant
+      claims: %{user_id: user_id}
     } do
+      %{id: domain_id} = build(:domain)
+
+      %{external_id: external_id} =
+        data_structure = insert(:data_structure, domain_ids: [domain_id])
+
+      %{id: id} = grant = insert(:grant, data_structure: data_structure, user_id: user_id)
+
       assert %{"data" => %{"id" => ^id}} =
                conn
-               |> put(Routes.grant_path(conn, :update, grant), action: "request_removal")
+               |> put(Routes.grant_path(conn, :update, grant),
+                 action: "request_removal",
+                 data_structure_external_id: external_id
+               )
                |> json_response(:ok)
 
       assert %{"data" => data} =
@@ -287,11 +297,15 @@ defmodule TdDdWeb.GrantControllerTest do
       conn: conn,
       claims: %{user_id: user_id}
     } do
-      %{id: id} = grant = insert(:grant, user_id: user_id)
+      %{external_id: external_id} = data_structure = insert(:data_structure)
+      %{id: id} = grant = insert(:grant, user_id: user_id, data_structure: data_structure)
 
       assert %{"data" => %{"id" => ^id}} =
                conn
-               |> put(Routes.grant_path(conn, :update, grant), action: "request_removal")
+               |> put(Routes.grant_path(conn, :update, grant),
+                 action: "request_removal",
+                 data_structure_external_id: external_id
+               )
                |> json_response(:ok)
 
       assert %{"data" => data} =
@@ -310,11 +324,18 @@ defmodule TdDdWeb.GrantControllerTest do
       conn: conn,
       claims: %{user_id: user_id}
     } do
-      %{id: id} = grant = insert(:grant, user_id: user_id, pending_removal: true)
+      %{external_id: external_id} = data_structure = insert(:data_structure)
+
+      %{id: id} =
+        grant =
+        insert(:grant, user_id: user_id, pending_removal: true, data_structure: data_structure)
 
       assert %{"data" => %{"id" => ^id}} =
                conn
-               |> put(Routes.grant_path(conn, :update, grant), action: "cancel_removal")
+               |> put(Routes.grant_path(conn, :update, grant),
+                 action: "cancel_removal",
+                 data_structure_external_id: external_id
+               )
                |> json_response(:ok)
 
       assert %{"data" => data} =
@@ -326,6 +347,31 @@ defmodule TdDdWeb.GrantControllerTest do
                "id" => ^id,
                "pending_removal" => false
              } = data
+    end
+
+    @tag authentication: [
+           permissions: [:request_grant_removal, :view_grants, :view_data_structure]
+         ]
+    test "user with permissions can't request removal of no direct access grant", %{
+      conn: conn,
+      claims: %{user_id: user_id}
+    } do
+      %{id: domain_id} = build(:domain)
+
+      %{external_id: ancestry_external_id} = insert(:data_structure, domain_ids: [domain_id])
+
+      %{external_id: _external_id} =
+        data_structure = insert(:data_structure, domain_ids: [domain_id])
+
+      grant = insert(:grant, data_structure: data_structure, user_id: user_id)
+
+      assert %{"errors" => _errors} =
+               conn
+               |> put(Routes.grant_path(conn, :update, grant),
+                 action: "request_removal",
+                 data_structure_external_id: ancestry_external_id
+               )
+               |> json_response(:forbidden)
     end
 
     @tag authentication: [role: "admin"]

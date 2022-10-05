@@ -18,8 +18,12 @@ defmodule TdDd.Grants.Policy do
       Permissions.authorized?(claims, :create_grant_request)
   end
 
-  def authorize(:request_removal, %{user_id: user_id} = _claims, %Grant{user_id: user_id}),
-    do: true
+  def authorize(:request_removal, %{user_id: user_id} = _claims, %{
+        grant: %Grant{user_id: user_id, data_structure: data_structure},
+        external_id: external_id
+      }) do
+    data_structure.external_id == external_id
+  end
 
   def authorize(:request_removal, %{} = claims, %Grant{data_structure: data_structure}) do
     Bodyguard.permit?(DataStructures, :request_grant_removal, claims, data_structure)
