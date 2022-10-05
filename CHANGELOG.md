@@ -9,6 +9,7 @@
 ### Added
 
 - [TD-4558] Support for managing data quality functions using API
+- [TD-5167] Avoid to remove grant of ancestry data structures
 
 ## [4.52.0] 2022-10-03
 
