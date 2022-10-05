@@ -3,6 +3,33 @@ defmodule TdDq.FunctionsTest do
 
   alias TdDq.Functions
 
+  describe "Functions.get_function!/1" do
+    test "returns a function" do
+      %{id: id} = insert(:function)
+      assert Functions.get_function!(id)
+    end
+
+    test "raises" do
+      assert_raise Ecto.NoResultsError, fn ->
+        Functions.get_function!(99)
+      end
+    end
+  end
+
+  describe "Functions.create_function/1" do
+    test "returns a function" do
+      params = string_params_for(:function)
+      assert {:ok, _} = Functions.create_function(params)
+    end
+  end
+
+  describe "Functions.delete_function/1" do
+    test "deletes a function" do
+      function = insert(:function)
+      assert {:ok, _} = Functions.delete_function(function)
+    end
+  end
+
   describe "Functions.list_functions/0" do
     test "returns all functions" do
       for _ <- 1..10, do: insert(:function)

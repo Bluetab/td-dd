@@ -14,4 +14,14 @@ defmodule TdDqWeb.FunctionsController do
       render(conn, "show.json", functions: functions)
     end
   end
+
+  def update(conn, params) do
+    claims = conn.assigns[:current_resource]
+
+    with :ok <- Bodyguard.permit(Functions, :replace, claims),
+         {:ok, _multi} <- Functions.replace_all(params) do
+      functions = Functions.list_functions()
+      render(conn, "show.json", functions: functions)
+    end
+  end
 end

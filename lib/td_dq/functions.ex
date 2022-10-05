@@ -15,6 +15,20 @@ defmodule TdDq.Functions do
     Repo.all(Function)
   end
 
+  def get_function!(id) do
+    Repo.get!(Function, id)
+  end
+
+  def delete_function(%Function{} = function) do
+    Repo.delete(function)
+  end
+
+  def create_function(%{} = params) do
+    params
+    |> Function.changeset()
+    |> Repo.insert()
+  end
+
   def replace_all(%{} = params) do
     case Bulk.changeset(params) do
       %{valid?: false} = changeset ->

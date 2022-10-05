@@ -1,6 +1,10 @@
 defmodule TdDqWeb.FunctionView do
   use TdDqWeb, :view
 
+  def render("show.json", %{function: function}) do
+    %{data: render_one(function, __MODULE__, "function.json")}
+  end
+
   def render("function.json", %{function: %{args: args} = function}) do
     args = Enum.map(args, &render_arg/1)
 

@@ -76,7 +76,8 @@ defmodule TdDqWeb.Router do
 
     post("/rule_implementations/csv", ImplementationController, :csv)
 
-    resources("/functions", FunctionsController, only: [:show], singleton: true)
+    resources("/functions", FunctionsController, only: [:show, :update], singleton: true)
+    resources("/functions", FunctionController, only: [:create, :delete])
   end
 
   def swagger_info do
