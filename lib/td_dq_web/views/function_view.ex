@@ -1,6 +1,10 @@
 defmodule TdDqWeb.FunctionView do
   use TdDqWeb, :view
 
+  def render("index.json", %{functions: functions}) do
+    %{data: render_many(functions, __MODULE__, "function.json")}
+  end
+
   def render("show.json", %{function: function}) do
     %{data: render_one(function, __MODULE__, "function.json")}
   end
