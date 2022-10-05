@@ -659,6 +659,20 @@ defmodule TdDd.Factory do
     }
   end
 
+  def function_factory do
+    %TdDq.Functions.Function{
+      name: sequence("function_name"),
+      return_type: sequence(:argument_type, ["string", "number", "boolean"]),
+      args: [build(:argument)]
+    }
+  end
+
+  def argument_factory do
+    %TdDq.Functions.Argument{
+      type: sequence(:argument_type, ["string", "number", "any"])
+    }
+  end
+
   defp default_assoc(attrs, id_key, key, build_key \\ nil, build_params \\ %{}) do
     if Enum.any?([key, id_key], &Map.has_key?(attrs, &1)) do
       attrs
