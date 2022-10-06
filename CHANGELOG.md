@@ -2,8 +2,13 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- [TD-5140] Changed implementations ids by implementations refs and links migration
+
 ### Added
 
+- [TD-4558] Support for managing data quality functions using API
 - [TD-5195] Support for global user filters
 
 ## [4.52.0] 2022-10-03

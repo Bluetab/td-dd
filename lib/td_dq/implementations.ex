@@ -61,6 +61,14 @@ defmodule TdDq.Implementations do
     Repo.get(Implementation, id)
   end
 
+  ## used only for migrations
+  def get_implementations_ref(ids) do
+    Implementation
+    |> where([i], i.id in ^ids)
+    |> select([i], [i.id, i.implementation_ref])
+    |> Repo.all()
+  end
+
   def get_versions(%{implementation_ref: implementation_ref}) do
     Implementation
     |> where([i], i.implementation_ref == ^implementation_ref)
@@ -77,6 +85,19 @@ defmodule TdDq.Implementations do
       nil -> {:error, :not_found}
       implementation -> {:ok, implementation}
     end
+  end
+
+  def get_linked_implementation!(implementation_ref, opts \\ []) do
+    status_order = Workflow.get_workflow_status_order()
+    preloads = Keyword.get(opts, :preload, :rule)
+
+    Implementation
+    |> preload(^preloads)
+    |> where([ri], ri.implementation_ref == ^implementation_ref)
+    |> order_by(fragment("position(status::text in ?)", ^status_order))
+    |> order_by(desc: :version)
+    |> limit(1)
+    |> Repo.one()
   end
 
   def last?(%Implementation{id: id, implementation_ref: implementation_ref}) do
@@ -169,8 +190,8 @@ defmodule TdDq.Implementations do
       Multi.new()
       |> upsert(changeset)
       |> Multi.run(:implementation, fn _repo, _changes -> {:ok, implementation} end)
-      |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
       |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
+      |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
       |> Repo.transaction()
       |> on_upsert()
     end
@@ -188,8 +209,8 @@ defmodule TdDq.Implementations do
       |> upsert(changeset, status, user_id)
       |> Multi.run(:data_structures, &create_implementation_structures/2)
       |> Multi.run(:audit_status, Audit, :implementation_status_updated, [changeset, user_id])
-      |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
       |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
+      |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
       |> Repo.transaction()
       |> on_upsert()
     end
@@ -380,6 +401,7 @@ defmodule TdDq.Implementations do
 
     Multi.new()
     |> Multi.update(:implementation, changeset)
+    |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
     |> Multi.run(:audit_status, Audit, :implementation_status_updated, [changeset, user_id])
     |> Repo.transaction()
     |> on_delete()
@@ -396,6 +418,7 @@ defmodule TdDq.Implementations do
 
     Multi.new()
     |> Multi.delete(:implementation, changeset)
+    |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
     |> Multi.run(:audit, Audit, :implementation_deleted, [changeset, user_id])
     |> Repo.transaction()
     |> on_delete()
@@ -1010,14 +1033,14 @@ defmodule TdDq.Implementations do
 
   defp enrich(target, _), do: target
 
-  def get_implementation_links(%Implementation{id: id}) do
-    case LinkCache.list("implementation", id) do
+  def get_implementation_links(%Implementation{implementation_ref: id}) do
+    case LinkCache.list("implementation_ref", id) do
       {:ok, links} -> links
     end
   end
 
-  def get_implementation_links(%Implementation{id: id}, target_type) do
-    case LinkCache.list("implementation", id, target_type) do
+  def get_implementation_links(%Implementation{implementation_ref: id}, target_type) do
+    case LinkCache.list("implementation_ref", id, target_type) do
       {:ok, links} -> links
     end
   end

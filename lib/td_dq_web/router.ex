@@ -75,6 +75,9 @@ defmodule TdDqWeb.Router do
     get("/rule_implementations/search/reindex_all", ImplementationSearchController, :reindex)
 
     post("/rule_implementations/csv", ImplementationController, :csv)
+
+    resources("/functions", FunctionsController, only: [:update], singleton: true)
+    resources("/functions", FunctionController, only: [:index, :create, :delete])
   end
 
   def swagger_info do

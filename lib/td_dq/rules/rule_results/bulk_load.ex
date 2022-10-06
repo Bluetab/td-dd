@@ -31,8 +31,8 @@ defmodule TdDq.Rules.RuleResults.BulkLoad do
     |> Multi.run(:results, fn _, %{ids: ids} -> RuleResults.select_results(ids) end)
     |> Multi.run(:cache, fn _, %{results: results} ->
       {:ok,
-       Enum.map(results, fn %{implementation_id: implementation_id} ->
-         ImplementationLoader.maybe_update_implementation_cache(implementation_id)
+       Enum.map(results, fn %{implementation_ref: implementation_ref} ->
+         ImplementationLoader.maybe_update_implementation_cache(implementation_ref)
        end)}
     end)
     |> Multi.run(:audit, Audit, :rule_results_created, [0])

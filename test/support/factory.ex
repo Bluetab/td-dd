@@ -157,18 +157,6 @@ defmodule TdDd.Factory do
     |> merge_attributes(with_ref_attrs)
   end
 
-  # def implementation_with_ref_factory(attrs) do
-  #   id = Map.get(attrs, :id, System.unique_integer([:positive]))
-  #   with_ref_attrs = %{
-  #     id: id,
-  #     implementation_ref: Map.get(attrs, :implementation_ref, id)
-  #   }
-
-  #   :implementation
-  #   |> build(attrs)
-  #   |> merge_attributes(with_ref_attrs)
-  # end
-
   def ruleless_implementation_factory(attrs) do
     attrs = merge_attrs_with_ref(attrs)
 
@@ -669,6 +657,20 @@ defmodule TdDd.Factory do
       name: sequence("dataset_name"),
       headers: ["FOO", "BAR", "BAZ"],
       rows: [["foo1", "bar1", "baz1"], ["foo2", "bar2", "baz2"]]
+    }
+  end
+
+  def function_factory do
+    %TdDq.Functions.Function{
+      name: sequence("function_name"),
+      return_type: sequence(:argument_type, ["string", "number", "boolean"]),
+      args: [build(:argument)]
+    }
+  end
+
+  def argument_factory do
+    %TdDq.Functions.Argument{
+      type: sequence(:argument_type, ["string", "number", "any"])
     }
   end
 
