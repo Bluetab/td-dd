@@ -11,13 +11,13 @@ defmodule TdDq.Implementations.Implementation do
   alias TdDfLib.Validation
   alias TdDq.Events.QualityEvents
   alias TdDq.Implementations
-  alias TdDq.Implementations.ConditionRow
   alias TdDq.Implementations.DatasetRow
   alias TdDq.Implementations.Implementation
   alias TdDq.Implementations.ImplementationStructure
   alias TdDq.Implementations.Populations
   alias TdDq.Implementations.RawContent
   alias TdDq.Implementations.SegmentsRow
+  alias TdDq.Implementations.ValidationsSet
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleResult
   alias TdDq.Rules.RuleResults
@@ -72,7 +72,7 @@ defmodule TdDq.Implementations.Implementation do
     embeds_one(:raw_content, RawContent, on_replace: :delete)
     embeds_many(:dataset, DatasetRow, on_replace: :delete)
     embeds_many(:populations, Populations, on_replace: :delete)
-    embeds_many(:validations, ConditionRow, on_replace: :delete)
+    embeds_many(:validations_set, ValidationsSet, on_replace: :delete)
     embeds_many(:segments, SegmentsRow, on_replace: :delete)
 
     belongs_to(:rule, Rule)
@@ -100,6 +100,19 @@ defmodule TdDq.Implementations.Implementation do
       |> Enum.map(&%{"population" => &1})
 
     changeset(implementation, %{params | "populations" => populations})
+  end
+
+  def changeset(
+        %__MODULE__{} = implementation,
+        %{"validations_set" => [validations | _]} = params
+      )
+      when is_list(validations) do
+    validations_set =
+      params
+      |> Map.get("validations_set")
+      |> Enum.map(&%{"validations" => &1})
+
+    changeset(implementation, %{params | "validations_set" => validations_set})
   end
 
   def changeset(%__MODULE__{} = implementation, params) do
@@ -296,7 +309,7 @@ defmodule TdDq.Implementations.Implementation do
     changeset
     |> maybe_cast_embed(:dataset, with: &DatasetRow.changeset/2, required: true)
     |> maybe_cast_embed(:populations, with: &Populations.changeset/2)
-    |> maybe_cast_embed(:validations, with: &ConditionRow.changeset/2, required: true)
+    |> maybe_cast_embed(:validations_set, with: &ValidationsSet.changeset/2, required: true)
     |> maybe_cast_embed(:segments, with: &SegmentsRow.changeset/2)
   end
 
@@ -377,7 +390,7 @@ defmodule TdDq.Implementations.Implementation do
       :rule_id,
       :inserted_at,
       :updated_at,
-      :validations,
+      :validations_set,
       :segments,
       :df_name,
       :executable,
@@ -428,7 +441,7 @@ defmodule TdDq.Implementations.Implementation do
       |> Map.take(@implementation_keys)
       |> transform_dataset()
       |> transform_populations()
-      |> transform_validations()
+      |> transform_validations_set()
       |> transform_segments()
       |> maybe_rule(rule)
       |> Map.put(:raw_content, get_raw_content(implementation))
@@ -476,11 +489,23 @@ defmodule TdDq.Implementations.Implementation do
       Map.put(data, :population, [])
     end
 
-    defp transform_validations(%{validations: validations = [_ | _]} = data) do
-      Map.put(data, :validations, Enum.map(validations, &condition_row/1))
+    defp transform_validations_set(%{validations_set: validations_set = [_ | _]} = data) do
+      encoded_validations_set =
+        Enum.map(validations_set, fn %{validations: condition_rows} ->
+          %{validations: Enum.map(condition_rows, &condition_row/1)}
+        end)
+
+      data
+      |> Map.put(:validations_set, encoded_validations_set)
+      |> Map.put(
+        :validations,
+        Map.get(List.first(encoded_validations_set, %{validations: []}), :validations)
+      )
     end
 
-    defp transform_validations(data), do: data
+    defp transform_validations_set(data) do
+      Map.put(data, :validations, [])
+    end
 
     defp transform_segments(%{segments: segments = [_ | _]} = data) do
       Map.put(data, :segments, Enum.map(segments, &segmentation_row/1))

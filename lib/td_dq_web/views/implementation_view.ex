@@ -8,6 +8,7 @@ defmodule TdDqWeb.ImplementationView do
   alias TdDqWeb.Implementation.RawContentView
   alias TdDqWeb.Implementation.SegmentsView
   alias TdDqWeb.Implementation.StructureView
+  alias TdDqWeb.Implementation.ValidationsSetView
   alias TdDqWeb.ImplementationStructureView
 
   alias TdDqWeb.RuleResultView
@@ -115,13 +116,11 @@ defmodule TdDqWeb.ImplementationView do
       :version
     ])
     |> Map.put(:dataset, render_many(implementation.dataset, DatasetView, "dataset_row.json"))
-    |> Map.put(
-      :validations,
-      render_many(implementation.validations, ConditionView, "condition_row.json")
-    )
     |> add_segments(implementation)
     |> add_first_population(implementation)
     |> add_populations(implementation)
+    |> add_first_validations(implementation)
+    |> add_validations_set(implementation)
     |> add_rule(implementation)
     |> add_quality_event_info(implementation)
     |> add_last_rule_results(implementation)
@@ -149,6 +148,28 @@ defmodule TdDqWeb.ImplementationView do
   end
 
   defp add_populations(mapping, _implementation), do: mapping
+
+  defp add_first_validations(mapping, %{validations_set: [%{validations: validations} | _]})
+       when is_list(validations) do
+    mapping
+    |> Map.put(
+      :validations,
+      render_many(validations, ConditionView, "condition_row.json")
+    )
+  end
+
+  defp add_first_validations(mapping, _implementation), do: mapping
+
+  defp add_validations_set(mapping, %{validations_set: validations_set})
+       when is_list(validations_set) do
+    mapping
+    |> Map.put(
+      :validations_set,
+      render_many(validations_set, ValidationsSetView, "validations_set.json")
+    )
+  end
+
+  defp add_validations_set(mapping, _implementation), do: mapping
 
   defp add_segments(mapping, %{segments: segments}) do
     mapping
@@ -436,5 +457,19 @@ defmodule TdDqWeb.Implementation.PopulationsView do
 
   def render("populations.json", %{populations: population}) do
     %{population: render_many(population, ConditionView, "condition_row.json")}
+  end
+end
+
+defmodule TdDqWeb.Implementation.ValidationsSetView do
+  use TdDqWeb, :view
+
+  alias TdDqWeb.Implementation.ConditionView
+
+  def render("validations_set.json", %{validations_set: %{validations: validations}}) do
+    render_many(validations, ConditionView, "condition_row.json")
+  end
+
+  def render("validations_set.json", %{validations_set: validations}) do
+    %{validations: render_many(validations, ConditionView, "condition_row.json")}
   end
 end

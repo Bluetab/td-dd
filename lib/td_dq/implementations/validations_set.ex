@@ -1,4 +1,4 @@
-defmodule TdDq.Implementations.Populations do
+defmodule TdDq.Implementations.ValidationsSet do
   @moduledoc false
 
   use Ecto.Schema
@@ -9,7 +9,7 @@ defmodule TdDq.Implementations.Populations do
 
   @primary_key false
   embedded_schema do
-    embeds_many(:population, ConditionRow, on_replace: :delete)
+    embeds_many(:validations, ConditionRow, on_replace: :delete)
   end
 
   def changeset(%{} = params) do
@@ -19,6 +19,6 @@ defmodule TdDq.Implementations.Populations do
   def changeset(struct, %{} = params) do
     struct
     |> cast(params, [])
-    |> cast_embed(:population, with: &ConditionRow.changeset/2, required: true)
+    |> cast_embed(:validations, with: &ConditionRow.changeset/2, required: true)
   end
 end

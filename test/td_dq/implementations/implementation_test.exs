@@ -379,17 +379,21 @@ defmodule TdDq.Implementations.ImplementationTest do
       rule = insert(:rule)
 
       creation_attrs = %{
-        validations: [
+        validations_set: [
           %{
-            operator: %{
-              name: "timestamp_gt_timestamp",
-              value_type: "timestamp",
-              value_type_filter: "timestamp"
-            },
-            structure: %{id: 7, name: "s7"},
-            value: [%{raw: "2019-12-02 05:35:00"}],
-            modifier: build(:modifier),
-            value_modifier: [build(:modifier)]
+            validations: [
+              %{
+                operator: %{
+                  name: "timestamp_gt_timestamp",
+                  value_type: "timestamp",
+                  value_type_filter: "timestamp"
+                },
+                structure: %{id: 7, name: "s7"},
+                value: [%{raw: "2019-12-02 05:35:00"}],
+                modifier: build(:modifier),
+                value_modifier: [build(:modifier)]
+              }
+            ]
           }
         ]
       }
@@ -400,7 +404,7 @@ defmodule TdDq.Implementations.ImplementationTest do
         insert(:implementation,
           implementation_key: implementation_key,
           rule: rule,
-          validations: creation_attrs.validations
+          validations_set: creation_attrs.validations_set
         )
 
       assert %{
