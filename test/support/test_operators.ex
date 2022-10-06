@@ -25,7 +25,7 @@ defmodule TdDd.TestOperators do
   end
 
   defp sorted([%{"id" => _} | _] = list) do
-    Enum.sort_by(list, & Map.get(&1, "id"))
+    Enum.sort_by(list, &Map.get(&1, "id"))
   end
 
   defp sorted([%Hierarchy{} | _] = list) do

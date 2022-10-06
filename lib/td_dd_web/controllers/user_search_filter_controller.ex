@@ -41,15 +41,18 @@ defmodule TdDdWeb.UserSearchFilterController do
     %{user_id: user_id} = claims = conn.assigns[:current_resource]
 
     global_domains = permitted_view_domains(claims)
-    params_with_user = params
-    |> Map.put("user_id", user_id)
-    |> Map.put("with_globals", global_domains)
+
+    params_with_user =
+      params
+      |> Map.put("user_id", user_id)
+      |> Map.put("with_globals", global_domains)
 
     user_search_filters = UserSearchFilters.list_user_search_filters(params_with_user)
     render(conn, "index.json", user_search_filters: user_search_filters)
   end
 
   defp permitted_view_domains(%{role: "admin"}), do: :all
+
   defp permitted_view_domains(%{jti: jti}) do
     Permissions.permitted_domain_ids(jti, :view_data_structure)
   end
@@ -77,7 +80,7 @@ defmodule TdDdWeb.UserSearchFilterController do
     create_params = Map.put(user_search_filter_params, "user_id", user_id)
 
     with :ok <- Bodyguard.permit(UserSearchFilters, :create, claims, create_params),
-      {:ok, %UserSearchFilter{} = user_search_filter} <-
+         {:ok, %UserSearchFilter{} = user_search_filter} <-
            UserSearchFilters.create_user_search_filter(create_params) do
       conn
       |> put_status(:created)
