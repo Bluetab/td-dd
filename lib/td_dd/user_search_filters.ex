@@ -8,6 +8,8 @@ defmodule TdDd.UserSearchFilters do
 
   alias TdDd.UserSearchFilters.UserSearchFilter
 
+  defdelegate authorize(action, user, params), to: __MODULE__.Policy
+
   @doc """
   Returns the list of user_search_filters.
 
@@ -18,16 +20,42 @@ defmodule TdDd.UserSearchFilters do
 
   """
   def list_user_search_filters(criteria \\ []) do
-    criteria
-    |> Enum.reduce(UserSearchFilter, fn
-      {"scope", scope_string}, query ->
-        case UserSearchFilter.scope_to_atom(scope_string) do
-          nil -> where(query, [usf], is_nil(usf.scope))
-          scope -> where(query, [usf], usf.scope == ^scope)
-        end
+    base_query =
+      criteria
+      |> Enum.reduce(UserSearchFilter, fn
+        {"scope", scope_string}, query ->
+          case UserSearchFilter.scope_to_atom(scope_string) do
+            nil -> where(query, [usf], is_nil(usf.scope))
+            scope -> where(query, [usf], usf.scope == ^scope)
+          end
 
-      {"user_id", user_id}, query ->
-        where(query, [usf], usf.user_id == ^user_id)
+        {"user_id", user_id}, query ->
+          where(query, [usf], usf.user_id == ^user_id)
+
+        _, query ->
+          query
+      end)
+
+    criteria
+    |> Enum.reduce(base_query, fn
+      {"with_globals", :all}, query ->
+        UserSearchFilter
+        |> where([u], u.is_global)
+        |> union(^query)
+
+      {"with_globals", domains}, query ->
+        UserSearchFilter
+        |> where(
+          [u],
+          u.is_global and
+            (fragment("NOT(? \\? 'taxonomy')", u.filters) or
+               fragment(
+                 "translate((? -> 'taxonomy')::text, '[]', '{}')::int[] && ?",
+                 u.filters,
+                 ^domains
+               ))
+        )
+        |> union(^query)
 
       _, query ->
         query

@@ -14,6 +14,7 @@ defmodule TdDd.UserSearchFilters.UserSearchFilter do
     field(:name, :string)
     field(:user_id, :integer)
     field(:scope, Ecto.Enum, values: [:data_structure, :rule, :rule_implementation])
+    field(:is_global, :boolean)
 
     timestamps()
   end
@@ -25,7 +26,7 @@ defmodule TdDd.UserSearchFilters.UserSearchFilter do
 
   def changeset(user_search_filter, params) do
     user_search_filter
-    |> cast(params, [:name, :filters, :user_id, :scope])
+    |> cast(params, [:name, :filters, :user_id, :scope, :is_global])
     |> validate_required([:name, :filters, :user_id, :scope])
     |> validate_change(:filters, &Validation.validate_safe/2)
     |> unique_constraint([:name, :user_id],
