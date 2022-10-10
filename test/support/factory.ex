@@ -282,7 +282,8 @@ defmodule TdDd.Factory do
       name: sequence("filter_name"),
       filters: %{country: ["Sp"]},
       user_id: sequence(:user_id, & &1),
-      scope: :data_structure
+      scope: :data_structure,
+      is_global: false
     }
   end
 
