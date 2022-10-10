@@ -17,5 +17,9 @@
 - [ ] Revisioncilla de Guille
 - [ ] Changelogs y demás
 
-
+[TD-WEB-MODULES]
+- [ ] Eliminar poblaciones no te limpia el OR
+- [ ] Quitar consoles
+- [ ] internalización del OR
 - [ ] Probar a tener 3 validaciones con OR, y luego cambiar el dataset (si se quedan tres huecos vacíos, debería ser uno único incial, vacío)
+- [ ] Tests 
