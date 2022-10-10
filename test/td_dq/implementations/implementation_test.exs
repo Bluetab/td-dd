@@ -568,6 +568,154 @@ defmodule TdDq.Implementations.ImplementationTest do
              } = Document.encode(rule_implementation)
     end
 
+    test "encoded implementation includes validationsSet" do
+      rule = insert(:rule)
+
+      operator = %{
+        name: "timestamp_gt_timestamp",
+        value_type: "timestamp",
+        value_type_filter: "timestamp"
+      }
+
+      modifier = build(:modifier)
+
+      value = [%{raw: "2019-12-02 05:35:00"}]
+
+      creation_attrs = %{
+        validations_set: [
+          %{
+            validations: [
+              %{
+                operator: operator,
+                structure: %{id: 7, name: "s7"},
+                value: value,
+                modifier: modifier,
+                value_modifier: [modifier]
+              }
+            ]
+          },
+          %{
+            validations: [
+              %{
+                operator: operator,
+                structure: %{id: 8, name: "s8"},
+                value: value,
+                modifier: modifier,
+                value_modifier: [modifier]
+              }
+            ]
+          }
+        ]
+      }
+
+      implementation_key = "rik1"
+
+      rule_implementation =
+        insert(:implementation,
+          implementation_key: implementation_key,
+          rule: rule,
+          validations_set: creation_attrs.validations_set
+        )
+
+      assert %{
+               validations_set: [
+                 %{
+                   validations: [
+                     %{
+                       modifier: ^modifier,
+                       operator: ^operator,
+                       structure: %{
+                         id: 7,
+                         name: "s7"
+                       },
+                       value: ^value,
+                       value_modifier: [^modifier]
+                     }
+                   ]
+                 },
+                 %{
+                   validations: [
+                     %{
+                       modifier: ^modifier,
+                       operator: ^operator,
+                       structure: %{
+                         id: 8,
+                         name: "s8"
+                       },
+                       value: ^value,
+                       value_modifier: [^modifier]
+                     }
+                   ]
+                 }
+               ]
+             } = Document.encode(rule_implementation)
+    end
+
+    test "encoded implementation includes validations (backward compatibility)" do
+      rule = insert(:rule)
+
+      operator = %{
+        name: "timestamp_gt_timestamp",
+        value_type: "timestamp",
+        value_type_filter: "timestamp"
+      }
+
+      modifier = build(:modifier)
+
+      value = [%{raw: "2019-12-02 05:35:00"}]
+
+      creation_attrs = %{
+        validations_set: [
+          %{
+            validations: [
+              %{
+                operator: operator,
+                structure: %{id: 7, name: "s7"},
+                value: value,
+                modifier: modifier,
+                value_modifier: [modifier]
+              }
+            ]
+          },
+          %{
+            validations: [
+              %{
+                operator: operator,
+                structure: %{id: 8, name: "s8"},
+                value: value,
+                modifier: modifier,
+                value_modifier: [modifier]
+              }
+            ]
+          }
+        ]
+      }
+
+      implementation_key = "rik1"
+
+      rule_implementation =
+        insert(:implementation,
+          implementation_key: implementation_key,
+          rule: rule,
+          validations_set: creation_attrs.validations_set
+        )
+
+      assert %{
+               validations: [
+                 %{
+                   modifier: ^modifier,
+                   operator: ^operator,
+                   structure: %{
+                     id: 7,
+                     name: "s7"
+                   },
+                   value: ^value,
+                   value_modifier: [^modifier]
+                 }
+               ]
+             } = Document.encode(rule_implementation)
+    end
+
     test "encoded implementation includes segments" do
       rule = insert(:rule)
 

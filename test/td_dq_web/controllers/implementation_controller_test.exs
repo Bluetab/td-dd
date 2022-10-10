@@ -720,7 +720,36 @@ defmodule TdDqWeb.ImplementationControllerTest do
               }
             ]
           ],
-          validations_set: @validations_set,
+          validations_set: [
+            [
+              %{
+                operator: %{
+                  name: "gt",
+                  value_type: "timestamp"
+                },
+                structure: %{id: 12_554},
+                value: [%{raw: "2019-12-02 05:35:00"}]
+              }
+            ],
+            [
+              %{
+                operator: %{
+                  name: "eq",
+                  value_type: "timestamp"
+                },
+                structure: %{id: 12_553},
+                value: [%{raw: "2019-12-02 05:35:00"}]
+              },
+              %{
+                operator: %{
+                  name: "lt",
+                  value_type: "timestamp"
+                },
+                structure: %{id: 12_552},
+                value: [%{raw: "2019-12-02 05:35:00"}]
+              }
+            ]
+          ],
           result_type: "percentage",
           minimum: 50,
           goal: 100
@@ -748,15 +777,29 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert "draft" == data["status"]
       assert 1 == data["version"]
 
-      assert equals_condition_row(
-               data |> Map.get("validations_set") |> List.first(),
-               creation_attrs |> Map.get("validations_set") |> List.first()
-             )
+      validations_set_data = Map.get(data, "validations_set")
+      validations_set_attrs = Map.get(creation_attrs, "validations_set")
 
-      assert equals_condition_row(
-               data |> Map.get("populations") |> List.first(),
-               creation_attrs |> Map.get("populations") |> List.first()
-             )
+      validations_set_data
+      |> Enum.with_index()
+      |> Enum.each(fn {_element, index} ->
+        assert equals_condition_row(
+                 Enum.at(validations_set_data, index),
+                 Enum.at(validations_set_attrs, index)
+               )
+      end)
+
+      populations_data = Map.get(data, "populations")
+      populations_attrs = Map.get(creation_attrs, "populations")
+
+      populations_data
+      |> Enum.with_index()
+      |> Enum.each(fn {_element, index} ->
+        assert equals_condition_row(
+                 Enum.at(populations_data, index),
+                 Enum.at(populations_attrs, index)
+               )
+      end)
     end
 
     @tag authentication: [role: "admin"]

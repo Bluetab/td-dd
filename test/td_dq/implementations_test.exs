@@ -1471,6 +1471,26 @@ defmodule TdDq.ImplementationsTest do
                 value: nil
               }
             ]
+          },
+          %{
+            validations: [
+              %{
+                operator: %{
+                  name: "timestamp_gt_timestamp",
+                  value_type: "timestamp",
+                  value_type_filter: "timestamp"
+                },
+                structure: %{id: 13},
+                value: [%{raw: "2019-12-02 05:35:00"}]
+              },
+              %{
+                operator: %{
+                  name: "not_empty"
+                },
+                structure: %{id: 14},
+                value: nil
+              }
+            ]
           }
         ],
         segments: [
@@ -1497,7 +1517,7 @@ defmodule TdDq.ImplementationsTest do
 
       structures_ids = Implementations.get_structure_ids(rule_implementaton)
 
-      assert Enum.sort(structures_ids) == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+      assert Enum.sort(structures_ids) == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
     end
   end
 
