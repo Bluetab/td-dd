@@ -35,6 +35,12 @@ defmodule TdDq.Implementations.ImplementationQueries do
     |> source_external_ids()
   end
 
+  def implementation_ids_by_ref_query(ref) do
+    Implementation
+    |> where(implementation_ref: ^ref)
+    |> select([i], i.id)
+  end
+
   defp source_external_ids(q) do
     q
     |> group_by([i], i.id)

@@ -151,26 +151,21 @@ defmodule TdDq.ImplementationsTest do
 
   describe "get_implementations_ref" do
     test "return implementation list with implementation_ref relation" do
-      %{id: impl_id1} = insert(:implementation)
-      %{id: impl_id2} = insert(:implementation)
-      %{id: impl_id3} = insert(:implementation, implementation_ref: impl_id2)
-      %{id: impl_id4} = insert(:implementation)
-      %{id: impl_id5} = insert(:implementation, implementation_ref: impl_id4)
+      %{id: id1} = insert(:implementation)
+      %{id: id2} = insert(:implementation)
+      %{id: id3} = insert(:implementation, implementation_ref: id2)
+      %{id: id4} = insert(:implementation)
+      %{id: id5} = insert(:implementation, implementation_ref: id4)
 
-      assert [
-               [^impl_id1, ^impl_id1],
-               [^impl_id2, ^impl_id2],
-               [^impl_id3, ^impl_id2],
-               [^impl_id4, ^impl_id4],
-               [^impl_id5, ^impl_id4]
-             ] =
-               Implementations.get_implementations_ref([
-                 impl_id1,
-                 impl_id2,
-                 impl_id3,
-                 impl_id4,
-                 impl_id5
-               ])
+      [id1, id2, id3, id4, id5]
+      |> Implementations.get_implementations_ref()
+      |> assert_lists_equal([
+        [id1, id1],
+        [id2, id2],
+        [id3, id2],
+        [id4, id4],
+        [id5, id4]
+      ])
     end
   end
 
