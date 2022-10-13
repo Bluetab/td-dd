@@ -77,6 +77,21 @@ defmodule TdDdWeb.Resolvers.Implementations do
     end
   end
 
+  def restore_implementation(_parent, %{id: id}, resolution) do
+    implementation = Implementations.get_implementation!(id)
+
+    with {:claims, %{} = claims} <- {:claims, claims(resolution)},
+         :ok <- Bodyguard.permit(Implementations, :restore, claims, implementation),
+         {:ok, %{implementation: implementation}} <-
+           Workflow.restore_implementation(implementation, claims) do
+      {:ok, implementation}
+    else
+      {:claims, nil} -> {:error, :unauthorized}
+      {:error, :forbidden} -> {:error, :forbidden}
+      {:error, :implementation, changeset, _} -> {:error, changeset}
+    end
+  end
+
   def deprecate_implementation(_parent, %{id: id}, resolution) do
     implementation = Implementations.get_implementation!(id)
 

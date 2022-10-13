@@ -344,6 +344,8 @@ defmodule TdDq.Implementations.Implementation do
 
   def publishable?(%__MODULE__{status: status}), do: status in [:draft, :pending_approval]
 
+  def restorable?(%__MODULE__{status: status}), do: status == :deprecated
+
   def versionable?(%__MODULE__{status: status} = implementation),
     do: Implementations.last?(implementation) && status == :published
 
