@@ -4,11 +4,11 @@ defmodule TdDqWeb.ImplementationView do
   alias TdDq.Rules
   alias TdDqWeb.Implementation.ConditionView
   alias TdDqWeb.Implementation.DatasetView
-  alias TdDqWeb.Implementation.PopulationsView
+  alias TdDqWeb.Implementation.ConditionsView
   alias TdDqWeb.Implementation.RawContentView
   alias TdDqWeb.Implementation.SegmentsView
   alias TdDqWeb.Implementation.StructureView
-  alias TdDqWeb.Implementation.ValidationsSetView
+  alias TdDqWeb.Implementation.ConditionsView
   alias TdDqWeb.ImplementationStructureView
 
   alias TdDqWeb.RuleResultView
@@ -143,7 +143,7 @@ defmodule TdDqWeb.ImplementationView do
     mapping
     |> Map.put(
       :populations,
-      render_many(populations, PopulationsView, "populations.json")
+      render_many(populations, ConditionsView, "populations.json")
     )
   end
 
@@ -165,7 +165,7 @@ defmodule TdDqWeb.ImplementationView do
     mapping
     |> Map.put(
       :validations_set,
-      render_many(validations_set, ValidationsSetView, "validations_set.json")
+      render_many(validations_set, ConditionsView, "validations_set.json")
     )
   end
 
@@ -446,30 +446,12 @@ defmodule TdDqWeb.Implementation.ModifierView do
   end
 end
 
-defmodule TdDqWeb.Implementation.PopulationsView do
+defmodule TdDqWeb.Implementation.ConditionsView do
   use TdDqWeb, :view
 
   alias TdDqWeb.Implementation.ConditionView
 
-  def render("populations.json", %{populations: %{population: population}}) do
-    render_many(population, ConditionView, "condition_row.json")
-  end
-
-  def render("populations.json", %{populations: population}) do
-    %{population: render_many(population, ConditionView, "condition_row.json")}
-  end
-end
-
-defmodule TdDqWeb.Implementation.ValidationsSetView do
-  use TdDqWeb, :view
-
-  alias TdDqWeb.Implementation.ConditionView
-
-  def render("validations_set.json", %{validations_set: %{validations: validations}}) do
-    render_many(validations, ConditionView, "condition_row.json")
-  end
-
-  def render("validations_set.json", %{validations_set: validations}) do
-    %{validations: render_many(validations, ConditionView, "condition_row.json")}
+  def render(_, %{conditions: %{conditions: conditions}}) do
+    render_many(conditions, ConditionView, "condition_row.json")
   end
 end

@@ -520,7 +520,8 @@ defmodule TdDq.Implementations do
 
   def get_structures(%Implementation{} = implementation) do
     implementation
-    |> (&Map.put(&1, :validations, flatten_validations_set(&1.validations_set))).()
+    |> (&Map.put(&1, :validations, flatten_conditions_set(&1.validations_set))).()
+    |> (&Map.put(&1, :populations, flatten_conditions_set(&1.populations))).()
     |> Map.take([:dataset, :populations, :validations, :segments])
     |> Map.values()
     |> Enum.flat_map(&structure/1)
@@ -680,20 +681,20 @@ defmodule TdDq.Implementations do
 
   def valid_dataset_implementation_structures(_), do: []
 
-  defp flatten_validations_set([%TdDq.Implementations.ValidationsSet{} | _] = validations_set) do
-    validations_set
-    |> Enum.reduce([], fn %TdDq.Implementations.ValidationsSet{validations: validations}, acc ->
-      acc ++ validations
+  def flatten_conditions_set([%{} | _] = conditions_set) do
+    conditions_set
+    |> Enum.reduce([], fn %{conditions: conditions}, acc ->
+      acc ++ conditions
     end)
   end
 
-  defp flatten_validations_set(data), do: data
+  def flatten_conditions_set(data), do: data
 
   def valid_validation_implementation_structures(%Implementation{
         validations_set: [_ | _] = validations_set
       }) do
     validations_set
-    |> flatten_validations_set()
+    |> flatten_conditions_set()
     |> Enum.reject(fn dataset_row ->
       dataset_row |> Map.get(:structure) |> Map.get(:type) == "reference_dataset_field"
     end)

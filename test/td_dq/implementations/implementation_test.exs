@@ -381,7 +381,7 @@ defmodule TdDq.Implementations.ImplementationTest do
       creation_attrs = %{
         validations_set: [
           %{
-            validations: [
+            conditions: [
               %{
                 operator: %{
                   name: "timestamp_gt_timestamp",
@@ -440,7 +440,7 @@ defmodule TdDq.Implementations.ImplementationTest do
       creation_attrs = %{
         populations: [
           %{
-            population: [
+            conditions: [
               %{
                 operator: operator,
                 structure: structure,
@@ -454,7 +454,7 @@ defmodule TdDq.Implementations.ImplementationTest do
             ]
           },
           %{
-            population: [
+            conditions: [
               %{
                 operator: operator,
                 structure: structure,
@@ -477,7 +477,7 @@ defmodule TdDq.Implementations.ImplementationTest do
       assert %{
                populations: [
                  %{
-                   population: [
+                   conditions: [
                      %{
                        operator: ^operator,
                        structure: %{id: ^structure_id, name: ^structure_name},
@@ -491,7 +491,7 @@ defmodule TdDq.Implementations.ImplementationTest do
                    ]
                  },
                  %{
-                   population: [
+                   conditions: [
                      %{
                        operator: ^operator,
                        structure: %{id: ^structure_id, name: ^structure_name},
@@ -518,7 +518,7 @@ defmodule TdDq.Implementations.ImplementationTest do
       creation_attrs = %{
         populations: [
           %{
-            population: [
+            conditions: [
               %{
                 operator: operator,
                 structure: structure,
@@ -532,7 +532,7 @@ defmodule TdDq.Implementations.ImplementationTest do
             ]
           },
           %{
-            population: [
+            conditions: [
               %{
                 operator: operator,
                 structure: structure,
@@ -584,7 +584,7 @@ defmodule TdDq.Implementations.ImplementationTest do
       creation_attrs = %{
         validations_set: [
           %{
-            validations: [
+            conditions: [
               %{
                 operator: operator,
                 structure: %{id: 7, name: "s7"},
@@ -595,7 +595,7 @@ defmodule TdDq.Implementations.ImplementationTest do
             ]
           },
           %{
-            validations: [
+            conditions: [
               %{
                 operator: operator,
                 structure: %{id: 8, name: "s8"},
@@ -620,7 +620,7 @@ defmodule TdDq.Implementations.ImplementationTest do
       assert %{
                validations_set: [
                  %{
-                   validations: [
+                   conditions: [
                      %{
                        modifier: ^modifier,
                        operator: ^operator,
@@ -634,7 +634,7 @@ defmodule TdDq.Implementations.ImplementationTest do
                    ]
                  },
                  %{
-                   validations: [
+                   conditions: [
                      %{
                        modifier: ^modifier,
                        operator: ^operator,
@@ -667,7 +667,7 @@ defmodule TdDq.Implementations.ImplementationTest do
       creation_attrs = %{
         validations_set: [
           %{
-            validations: [
+            conditions: [
               %{
                 operator: operator,
                 structure: %{id: 7, name: "s7"},
@@ -678,7 +678,7 @@ defmodule TdDq.Implementations.ImplementationTest do
             ]
           },
           %{
-            validations: [
+            conditions: [
               %{
                 operator: operator,
                 structure: %{id: 8, name: "s8"},
@@ -784,7 +784,7 @@ defmodule TdDq.Implementations.ImplementationTest do
       creation_attrs = %{
         populations: [
           %{
-            population: [
+            conditions: [
               %{
                 operator: operator,
                 structure: structure,
@@ -798,7 +798,7 @@ defmodule TdDq.Implementations.ImplementationTest do
             ]
           },
           %{
-            population: [
+            conditions: [
               %{
                 operator: operator,
                 structure: structure,

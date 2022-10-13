@@ -464,7 +464,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
     ## rule implementation without actions
     for {permission_type, permissions} <- [
-          {"raw implementation", @imp_raw_permissions},
+          # {"raw implementation", @imp_raw_permissions},
           {"raw ruleless implementation", @imp_raw_ruleless_permissions}
         ] do
       @tag authentication: [user_name: "non_admin", permissions: permissions]
@@ -2680,6 +2680,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
       implementation: previous_implementation,
       implementations: new_implementations
     } do
+      # IO.inspect(previous_implementation, label: "previos ->")
+      # IO.inspect(new_implementations, label: "new_implementations ->")
+
       ElasticsearchMock
       |> expect(:request, fn
         _,

@@ -15,11 +15,12 @@
 - [x] Cuidado con las validaciones de las raw implementations
 - [x] Modificar búsqueda de estructuras dentro de las validaciones para cuando se quiere tener registro de su uso
 - [ ] Revisioncilla de Guille
+- [ ] hacer un test para comprobar el bulk_load y el poder hacer el download  ( ver el changeset )
 - [ ] Changelogs y demás
 
 [TD-WEB-MODULES]
-- [ ] Eliminar poblaciones no te limpia el OR
-- [ ] Quitar consoles
-- [ ] internalización del OR
-- [ ] Probar a tener 3 validaciones con OR, y luego cambiar el dataset (si se quedan tres huecos vacíos, debería ser uno único incial, vacío)
-- [ ] Tests 
+- [x] Eliminar poblaciones no te limpia el OR
+- [x] Quitar consoles
+- [x] internalización del OR
+- [x] Probar a tener 3 validaciones con OR, y luego cambiar el dataset (si se quedan tres huecos vacíos, debería ser uno único incial, vacío)
+- [x] Tests 

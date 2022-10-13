@@ -115,14 +115,14 @@ defmodule TdDq.ImplementationsTest do
         rule: rule,
         implementation_key: "ri11",
         dataset: [dataset_row],
-        validations_set: [%{validations: [validation_row]}]
+        validations_set: [%{conditions: [validation_row]}]
       )
 
       insert(:implementation,
         rule: rule,
         implementation_key: "ri12",
         dataset: [dataset_row],
-        validations_set: [%{validations: [validation_row]}]
+        validations_set: [%{conditions: [validation_row]}]
       )
 
       assert length(Implementations.list_implementations(%{"structure_id" => structure_id})) ==
@@ -475,7 +475,7 @@ defmodule TdDq.ImplementationsTest do
                 implementation: %Implementation{
                   validations_set: [
                     %{
-                      validations: [
+                      conditions: [
                         %{population: [clause]}
                       ]
                     }
@@ -499,7 +499,7 @@ defmodule TdDq.ImplementationsTest do
           dataset: [%{structure: %{id: dataset_data_structure_id}}],
           validations_set: [
             %{
-              validations: [
+              conditions: [
                 %{build(:condition_row) | structure: %{id: validation_data_structure_id}}
               ]
             }
@@ -915,7 +915,7 @@ defmodule TdDq.ImplementationsTest do
       implementation =
         insert(:implementation,
           validations_set: [
-            %{validations: [%{build(:condition_row) | structure: %{id: data_structure_id}}]}
+            %{conditions: [%{build(:condition_row) | structure: %{id: data_structure_id}}]}
           ]
         )
 
@@ -1086,7 +1086,7 @@ defmodule TdDq.ImplementationsTest do
 
       update_attrs =
         %{
-          validations_set: [%{validations: validations}]
+          validations_set: [%{conditions: validations}]
         }
         |> Map.Helpers.stringify_keys()
 
@@ -1100,8 +1100,8 @@ defmodule TdDq.ImplementationsTest do
                implementation.implementation_key
 
       assert updated_implementation.validations_set == [
-               %TdDq.Implementations.ValidationsSet{
-                 validations: [
+               %TdDq.Implementations.Conditions{
+                 conditions: [
                    %TdDq.Implementations.ConditionRow{
                      operator: %TdDq.Implementations.Operator{
                        name: "gt",
@@ -1131,7 +1131,7 @@ defmodule TdDq.ImplementationsTest do
       assert {:ok,
               %{
                 implementation: %Implementation{
-                  validations_set: [%{validations: [%{population: [clause]}]}]
+                  validations_set: [%{conditions: [%{population: [clause]}]}]
                 }
               }} = Implementations.update_implementation(implementation, update_attrs, claims)
 
@@ -1208,7 +1208,7 @@ defmodule TdDq.ImplementationsTest do
           dataset: [%{structure: %{id: dataset_data_structure_id}}],
           validations_set: [
             %{
-              validations: [
+              conditions: [
                 %{
                   operator: %{
                     name: "gt",
@@ -1254,7 +1254,7 @@ defmodule TdDq.ImplementationsTest do
           dataset: [%{structure: %{id: dataset_data_structure_id}}],
           validations_set: [
             %{
-              validations: [
+              conditions: [
                 %{
                   operator: %{
                     name: "gt",
@@ -1342,7 +1342,7 @@ defmodule TdDq.ImplementationsTest do
         ],
         populations: [
           %{
-            population: [
+            conditions: [
               %{
                 operator: %{
                   name: "timestamp_gt_timestamp",
@@ -1356,7 +1356,7 @@ defmodule TdDq.ImplementationsTest do
         ],
         validations_set: [
           %{
-            validations: [
+            conditions: [
               %{
                 operator: %{
                   name: "timestamp_gt_timestamp",
@@ -1419,7 +1419,7 @@ defmodule TdDq.ImplementationsTest do
         ],
         populations: [
           %{
-            population: [
+            conditions: [
               %{
                 operator: %{
                   name: "timestamp_gt_timestamp",
@@ -1439,7 +1439,7 @@ defmodule TdDq.ImplementationsTest do
             ]
           },
           %{
-            population: [
+            conditions: [
               %{
                 operator: %{
                   name: "timestamp_gt_timestamp",
@@ -1453,7 +1453,7 @@ defmodule TdDq.ImplementationsTest do
         ],
         validations_set: [
           %{
-            validations: [
+            conditions: [
               %{
                 operator: %{
                   name: "timestamp_gt_timestamp",
@@ -1473,7 +1473,7 @@ defmodule TdDq.ImplementationsTest do
             ]
           },
           %{
-            validations: [
+            conditions: [
               %{
                 operator: %{
                   name: "timestamp_gt_timestamp",
@@ -1637,7 +1637,7 @@ defmodule TdDq.ImplementationsTest do
       condition_row =
         build(:condition_row, structure: build(:dataset_structure, id: structure_id2))
 
-      validations_set = [%{validations: [condition_row]}]
+      validations_set = [%{conditions: [condition_row]}]
 
       raw_content1 = build(:raw_content, source_id: sid1)
       raw_content2 = build(:raw_content, source_id: sid2)

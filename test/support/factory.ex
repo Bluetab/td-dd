@@ -394,16 +394,16 @@ defmodule TdDd.Factory do
 
   def populations_factory(_attrs) do
     [
-      %TdDq.Implementations.Populations{
-        population: [build(:condition_row)]
+      %TdDq.Implementations.Conditions{
+        conditions: [build(:condition_row)]
       }
     ]
   end
 
   def validations_set_factory(_attrs) do
     [
-      %TdDq.Implementations.ValidationsSet{
-        validations: [build(:condition_row)]
+      %TdDq.Implementations.Conditions{
+        conditions: [build(:condition_row)]
       }
     ]
   end
