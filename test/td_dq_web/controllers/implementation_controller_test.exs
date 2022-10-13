@@ -777,15 +777,15 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert "draft" == data["status"]
       assert 1 == data["version"]
 
-      validations_set_data = Map.get(data, "validation")
-      validations_set_attrs = Map.get(creation_attrs, "validation")
+      validation_data = Map.get(data, "validation")
+      validation_attrs = Map.get(creation_attrs, "validation")
 
-      validations_set_data
+      validation_data
       |> Enum.with_index()
       |> Enum.each(fn {_element, index} ->
         assert equals_condition_row(
-                 Enum.at(validations_set_data, index),
-                 Enum.at(validations_set_attrs, index)
+                 Enum.at(validation_data, index),
+                 Enum.at(validation_attrs, index)
                )
       end)
 

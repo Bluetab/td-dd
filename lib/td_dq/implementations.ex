@@ -791,7 +791,7 @@ defmodule TdDq.Implementations do
       |> Enum.map(&enrich_dataset_row/1)
 
     enriched_populations = Enum.map(implementation.populations, &enrich_conditions/1)
-    enriched_validations_set = Enum.map(implementation.validation, &enrich_conditions/1)
+    enriched_validation = Enum.map(implementation.validation, &enrich_conditions/1)
     enriched_segments = Enum.map(implementation.segments, &enrich_condition/1)
 
     enriched_data_structures = enrich_data_structures_path(implementation)
@@ -799,7 +799,7 @@ defmodule TdDq.Implementations do
     implementation
     |> Map.put(:dataset, enriched_dataset)
     |> Map.put(:populations, enriched_populations)
-    |> Map.put(:validation, enriched_validations_set)
+    |> Map.put(:validation, enriched_validation)
     |> Map.put(:segments, enriched_segments)
     |> Map.put(:data_structures, enriched_data_structures)
   end

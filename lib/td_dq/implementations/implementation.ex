@@ -440,7 +440,7 @@ defmodule TdDq.Implementations.Implementation do
       |> Map.take(@implementation_keys)
       |> transform_dataset()
       |> transform_populations()
-      |> transform_validations_set()
+      |> transform_validation()
       |> transform_segments()
       |> maybe_rule(rule)
       |> Map.put(:raw_content, get_raw_content(implementation))
@@ -488,21 +488,21 @@ defmodule TdDq.Implementations.Implementation do
       Map.put(data, :population, [])
     end
 
-    defp transform_validations_set(%{validation: validation = [_ | _]} = data) do
-      encoded_validations_set =
+    defp transform_validation(%{validation: validation = [_ | _]} = data) do
+      encoded_validation =
         Enum.map(validation, fn %{conditions: condition_rows} ->
           %{conditions: Enum.map(condition_rows, &condition_row/1)}
         end)
 
       data
-      |> Map.put(:validation, encoded_validations_set)
+      |> Map.put(:validation, encoded_validation)
       |> Map.put(
         :validations,
-        Map.get(List.first(encoded_validations_set, %{conditions: []}), :conditions)
+        Map.get(List.first(encoded_validation, %{conditions: []}), :conditions)
       )
     end
 
-    defp transform_validations_set(data) do
+    defp transform_validation(data) do
       Map.put(data, :validations, [])
     end
 
