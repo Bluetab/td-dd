@@ -158,19 +158,19 @@ defmodule TdDq.ImplementationsTest do
       %{id: impl_id5} = insert(:implementation, implementation_ref: impl_id4)
 
       assert [
-               [^impl_id1, ^impl_id1],
-               [^impl_id2, ^impl_id2],
-               [^impl_id3, ^impl_id2],
-               [^impl_id4, ^impl_id4],
-               [^impl_id5, ^impl_id4]
-             ] =
-               Implementations.get_implementations_ref([
-                 impl_id1,
-                 impl_id2,
-                 impl_id3,
-                 impl_id4,
-                 impl_id5
-               ])
+               [impl_id1, impl_id1],
+               [impl_id2, impl_id2],
+               [impl_id3, impl_id2],
+               [impl_id4, impl_id4],
+               [impl_id5, impl_id4]
+             ]
+             <~> Implementations.get_implementations_ref([
+               impl_id1,
+               impl_id2,
+               impl_id3,
+               impl_id4,
+               impl_id5
+             ])
     end
   end
 
