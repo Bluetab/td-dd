@@ -790,8 +790,8 @@ defmodule TdDq.Implementations do
       |> Map.get(:dataset)
       |> Enum.map(&enrich_dataset_row/1)
 
-    enriched_populations = Enum.map(implementation.populations, &enrich_populations/1)
-    enriched_validations_set = Enum.map(implementation.validations_set, &enrich_validations_set/1)
+    enriched_populations = Enum.map(implementation.populations, &enrich_conditions/1)
+    enriched_validations_set = Enum.map(implementation.validations_set, &enrich_conditions/1)
     enriched_segments = Enum.map(implementation.segments, &enrich_condition/1)
 
     enriched_data_structures = enrich_data_structures_path(implementation)
@@ -865,17 +865,11 @@ defmodule TdDq.Implementations do
 
   defp enrich_data_structures_path(_), do: []
 
-  defp enrich_populations(%{population: population} = populations) do
-    %{populations | population: Enum.map(population, &enrich_condition/1)}
+  defp enrich_conditions(%{conditions: conditions} = conditions_list) do
+    %{conditions_list | conditions: Enum.map(conditions, &enrich_condition/1)}
   end
 
-  defp enrich_populations(populations), do: populations
-
-  defp enrich_validations_set(%{validations: validations} = validations_set) do
-    %{validations_set | validations: Enum.map(validations, &enrich_condition/1)}
-  end
-
-  defp enrich_validations_set(validations_set), do: validations_set
+  defp enrich_conditions(conditions), do: conditions
 
   defp enrich_condition(%{structure: structure = %{}} = condition) do
     enriched_structure = enrich_implementation_structure(structure)

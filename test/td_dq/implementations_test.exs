@@ -660,11 +660,11 @@ defmodule TdDq.ImplementationsTest do
       implementation =
         insert(:implementation,
           validations_set: [
-            %{validations: [%{build(:condition_row) | structure: %{id: data_structure_id}}]}
+            %{conditions: [%{build(:condition_row) | structure: %{id: data_structure_id}}]}
           ]
         )
 
-      assert %{validations_set: [%{validations: [%{structure: %{name: ^structure_name}}]}]} =
+      assert %{validations_set: [%{conditions: [%{structure: %{name: ^structure_name}}]}]} =
                Implementations.enrich_implementation_structures(implementation)
     end
 
@@ -709,11 +709,11 @@ defmodule TdDq.ImplementationsTest do
       implementation =
         insert(:implementation,
           populations: [
-            %{population: [%{build(:condition_row) | structure: %{id: data_structure_id}}]}
+            %{conditions: [%{build(:condition_row) | structure: %{id: data_structure_id}}]}
           ]
         )
 
-      assert %{populations: [%{population: [%{structure: %{name: ^structure_name}}]}]} =
+      assert %{populations: [%{conditions: [%{structure: %{name: ^structure_name}}]}]} =
                Implementations.enrich_implementation_structures(implementation)
     end
 

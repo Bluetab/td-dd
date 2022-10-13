@@ -2,13 +2,12 @@ defmodule TdDqWeb.ImplementationView do
   use TdDqWeb, :view
 
   alias TdDq.Rules
+  alias TdDqWeb.Implementation.ConditionsView
   alias TdDqWeb.Implementation.ConditionView
   alias TdDqWeb.Implementation.DatasetView
-  alias TdDqWeb.Implementation.ConditionsView
   alias TdDqWeb.Implementation.RawContentView
   alias TdDqWeb.Implementation.SegmentsView
   alias TdDqWeb.Implementation.StructureView
-  alias TdDqWeb.Implementation.ConditionsView
   alias TdDqWeb.ImplementationStructureView
 
   alias TdDqWeb.RuleResultView

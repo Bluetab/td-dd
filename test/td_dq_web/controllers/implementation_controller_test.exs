@@ -2680,9 +2680,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
       implementation: previous_implementation,
       implementations: new_implementations
     } do
-      # IO.inspect(previous_implementation, label: "previos ->")
-      # IO.inspect(new_implementations, label: "new_implementations ->")
-
       ElasticsearchMock
       |> expect(:request, fn
         _,

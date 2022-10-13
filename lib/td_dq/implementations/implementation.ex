@@ -11,12 +11,12 @@ defmodule TdDq.Implementations.Implementation do
   alias TdDfLib.Validation
   alias TdDq.Events.QualityEvents
   alias TdDq.Implementations
+  alias TdDq.Implementations.Conditions
   alias TdDq.Implementations.DatasetRow
   alias TdDq.Implementations.Implementation
   alias TdDq.Implementations.ImplementationStructure
   alias TdDq.Implementations.RawContent
   alias TdDq.Implementations.SegmentsRow
-  alias TdDq.Implementations.Conditions
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleResult
   alias TdDq.Rules.RuleResults

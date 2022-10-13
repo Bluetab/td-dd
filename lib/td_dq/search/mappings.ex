@@ -136,8 +136,7 @@ defmodule TdDq.Search.Mappings do
       populations: %{
         type: "nested",
         properties: %{
-          conditions:
-            get_condition_mappings()
+          conditions: get_condition_mappings()
         }
       },
       validations:
