@@ -1,7 +1,7 @@
 [TD-DD]
 - [x] Crear migración de las validaciones
     -[x] pruebas en local
-- [x] Schema del validations_set
+- [x] Schema del validation
 - [x] Actualizar factory
 - [x] Cambiar el schema de las implementaciones ConditionRow -> ValidationSet
     - [x] Cambios del changeset
@@ -14,8 +14,8 @@
 
 - [x] Cuidado con las validaciones de las raw implementations
 - [x] Modificar búsqueda de estructuras dentro de las validaciones para cuando se quiere tener registro de su uso
-- [ ] Revisioncilla de Guille
-- [ ] hacer un test para comprobar el bulk_load y el poder hacer el download  ( ver el changeset )
+- [x] Revisioncilla de Guille
+- [x] hacer un test para comprobar el bulk_load y el poder hacer el download  ( ver el changeset )
 - [ ] Changelogs y demás
 
 [TD-WEB-MODULES]

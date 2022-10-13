@@ -520,7 +520,7 @@ defmodule TdDq.Implementations do
 
   def get_structures(%Implementation{} = implementation) do
     implementation
-    |> (&Map.put(&1, :validations, flatten_conditions_set(&1.validations_set))).()
+    |> (&Map.put(&1, :validations, flatten_conditions_set(&1.validation))).()
     |> (&Map.put(&1, :populations, flatten_conditions_set(&1.populations))).()
     |> Map.take([:dataset, :populations, :validations, :segments])
     |> Map.values()
@@ -691,9 +691,9 @@ defmodule TdDq.Implementations do
   def flatten_conditions_set(data), do: data
 
   def valid_validation_implementation_structures(%Implementation{
-        validations_set: [_ | _] = validations_set
+        validation: [_ | _] = validation
       }) do
-    validations_set
+    validation
     |> flatten_conditions_set()
     |> Enum.reject(fn dataset_row ->
       dataset_row |> Map.get(:structure) |> Map.get(:type) == "reference_dataset_field"
@@ -791,7 +791,7 @@ defmodule TdDq.Implementations do
       |> Enum.map(&enrich_dataset_row/1)
 
     enriched_populations = Enum.map(implementation.populations, &enrich_conditions/1)
-    enriched_validations_set = Enum.map(implementation.validations_set, &enrich_conditions/1)
+    enriched_validations_set = Enum.map(implementation.validation, &enrich_conditions/1)
     enriched_segments = Enum.map(implementation.segments, &enrich_condition/1)
 
     enriched_data_structures = enrich_data_structures_path(implementation)
@@ -799,7 +799,7 @@ defmodule TdDq.Implementations do
     implementation
     |> Map.put(:dataset, enriched_dataset)
     |> Map.put(:populations, enriched_populations)
-    |> Map.put(:validations_set, enriched_validations_set)
+    |> Map.put(:validation, enriched_validations_set)
     |> Map.put(:segments, enriched_segments)
     |> Map.put(:data_structures, enriched_data_structures)
   end

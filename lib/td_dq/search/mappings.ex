@@ -141,7 +141,7 @@ defmodule TdDq.Search.Mappings do
       },
       validations:
         get_condition_mappings([:operator, :structure, :value, :population, :modifier]),
-      validations_set: %{
+      validation: %{
         type: "nested",
         properties: %{
           conditions:

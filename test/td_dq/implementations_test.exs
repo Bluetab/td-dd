@@ -115,14 +115,14 @@ defmodule TdDq.ImplementationsTest do
         rule: rule,
         implementation_key: "ri11",
         dataset: [dataset_row],
-        validations_set: [%{conditions: [validation_row]}]
+        validation: [%{conditions: [validation_row]}]
       )
 
       insert(:implementation,
         rule: rule,
         implementation_key: "ri12",
         dataset: [dataset_row],
-        validations_set: [%{conditions: [validation_row]}]
+        validation: [%{conditions: [validation_row]}]
       )
 
       assert length(Implementations.list_implementations(%{"structure_id" => structure_id})) ==
@@ -439,7 +439,7 @@ defmodule TdDq.ImplementationsTest do
 
       params =
         string_params_for(:implementation,
-          validations_set: [[validation]],
+          validation: [[validation]],
           rule_id: rule.id,
           domain_id: rule.domain_id
         )
@@ -459,12 +459,12 @@ defmodule TdDq.ImplementationsTest do
         "value" => value
       } = condition = string_params_for(:condition_row)
 
-      validations_set = [[string_params_for(:condition_row, population: [condition])]]
+      validation = [[string_params_for(:condition_row, population: [condition])]]
 
       params =
         string_params_for(:implementation,
           rule_id: rule.id,
-          validations_set: validations_set,
+          validation: validation,
           domain_id: rule.domain_id
         )
 
@@ -473,7 +473,7 @@ defmodule TdDq.ImplementationsTest do
       assert {:ok,
               %{
                 implementation: %Implementation{
-                  validations_set: [
+                  validation: [
                     %{
                       conditions: [
                         %{population: [clause]}
@@ -497,7 +497,7 @@ defmodule TdDq.ImplementationsTest do
       params =
         string_params_for(:implementation,
           dataset: [%{structure: %{id: dataset_data_structure_id}}],
-          validations_set: [
+          validation: [
             %{
               conditions: [
                 %{build(:condition_row) | structure: %{id: validation_data_structure_id}}
@@ -659,19 +659,19 @@ defmodule TdDq.ImplementationsTest do
 
       implementation =
         insert(:implementation,
-          validations_set: [
+          validation: [
             %{conditions: [%{build(:condition_row) | structure: %{id: data_structure_id}}]}
           ]
         )
 
-      assert %{validations_set: [%{conditions: [%{structure: %{name: ^structure_name}}]}]} =
+      assert %{validation: [%{conditions: [%{structure: %{name: ^structure_name}}]}]} =
                Implementations.enrich_implementation_structures(implementation)
     end
 
     test "enriches implementation validations with reference_dataset_field" do
       implementation =
         insert(:implementation,
-          validations_set: [
+          validation: [
             %{
               validations: [
                 %{
@@ -687,7 +687,7 @@ defmodule TdDq.ImplementationsTest do
         )
 
       assert %{
-               validations_set: [
+               validation: [
                  %{
                    validations: [
                      %{
@@ -914,7 +914,7 @@ defmodule TdDq.ImplementationsTest do
 
       implementation =
         insert(:implementation,
-          validations_set: [
+          validation: [
             %{conditions: [%{build(:condition_row) | structure: %{id: data_structure_id}}]}
           ]
         )
@@ -928,7 +928,7 @@ defmodule TdDq.ImplementationsTest do
 
       implementation =
         insert(:implementation,
-          validations_set: [
+          validation: [
             %{
               validations: [
                 %{
@@ -1086,7 +1086,7 @@ defmodule TdDq.ImplementationsTest do
 
       update_attrs =
         %{
-          validations_set: [%{conditions: validations}]
+          validation: [%{conditions: validations}]
         }
         |> Map.Helpers.stringify_keys()
 
@@ -1099,7 +1099,7 @@ defmodule TdDq.ImplementationsTest do
       assert updated_implementation.implementation_key ==
                implementation.implementation_key
 
-      assert updated_implementation.validations_set == [
+      assert updated_implementation.validation == [
                %TdDq.Implementations.Conditions{
                  conditions: [
                    %TdDq.Implementations.ConditionRow{
@@ -1125,13 +1125,13 @@ defmodule TdDq.ImplementationsTest do
         "value" => value
       } = condition = string_params_for(:condition_row)
 
-      validations_set = [[string_params_for(:condition_row, population: [condition])]]
-      update_attrs = %{"validations_set" => validations_set}
+      validation = [[string_params_for(:condition_row, population: [condition])]]
+      update_attrs = %{"validation" => validation}
 
       assert {:ok,
               %{
                 implementation: %Implementation{
-                  validations_set: [%{conditions: [%{population: [clause]}]}]
+                  validation: [%{conditions: [%{population: [clause]}]}]
                 }
               }} = Implementations.update_implementation(implementation, update_attrs, claims)
 
@@ -1206,7 +1206,7 @@ defmodule TdDq.ImplementationsTest do
       update_attrs =
         %{
           dataset: [%{structure: %{id: dataset_data_structure_id}}],
-          validations_set: [
+          validation: [
             %{
               conditions: [
                 %{
@@ -1252,7 +1252,7 @@ defmodule TdDq.ImplementationsTest do
       update_attrs =
         %{
           dataset: [%{structure: %{id: dataset_data_structure_id}}],
-          validations_set: [
+          validation: [
             %{
               conditions: [
                 %{
@@ -1354,7 +1354,7 @@ defmodule TdDq.ImplementationsTest do
             ]
           }
         ],
-        validations_set: [
+        validation: [
           %{
             conditions: [
               %{
@@ -1394,7 +1394,7 @@ defmodule TdDq.ImplementationsTest do
           rule: rule,
           dataset: creation_attrs.dataset,
           populations: creation_attrs.populations,
-          validations_set: creation_attrs.validations_set,
+          validation: creation_attrs.validation,
           segments: creation_attrs.segments
         )
 
@@ -1451,7 +1451,7 @@ defmodule TdDq.ImplementationsTest do
             ]
           }
         ],
-        validations_set: [
+        validation: [
           %{
             conditions: [
               %{
@@ -1511,7 +1511,7 @@ defmodule TdDq.ImplementationsTest do
           rule: rule,
           dataset: creation_attrs.dataset,
           populations: creation_attrs.populations,
-          validations_set: creation_attrs.validations_set,
+          validation: creation_attrs.validation,
           segments: creation_attrs.segments
         )
 
@@ -1570,7 +1570,7 @@ defmodule TdDq.ImplementationsTest do
       insert(:implementation,
         dataset: [build(:dataset_row, structure: build(:dataset_structure, id: structure_id1))],
         populations: [],
-        validations_set: [],
+        validation: [],
         segments: []
       )
 
@@ -1580,7 +1580,7 @@ defmodule TdDq.ImplementationsTest do
         insert(:implementation,
           dataset: [build(:dataset_row, structure: build(:dataset_structure, id: structure_id2))],
           populations: [],
-          validations_set: [],
+          validation: [],
           segments: []
         )
 
@@ -1599,7 +1599,7 @@ defmodule TdDq.ImplementationsTest do
       insert(:implementation,
         dataset: [build(:dataset_row, structure: %{id: id, type: "reference_dataset"})],
         populations: [],
-        validations_set: [],
+        validation: [],
         segments: []
       )
 
@@ -1637,13 +1637,12 @@ defmodule TdDq.ImplementationsTest do
       condition_row =
         build(:condition_row, structure: build(:dataset_structure, id: structure_id2))
 
-      validations_set = [%{conditions: [condition_row]}]
+      validation = [%{conditions: [condition_row]}]
 
       raw_content1 = build(:raw_content, source_id: sid1)
       raw_content2 = build(:raw_content, source_id: sid2)
 
-      implementation1 =
-        insert(:implementation, dataset: [dataset_row], validations_set: validations_set)
+      implementation1 = insert(:implementation, dataset: [dataset_row], validation: validation)
 
       implementation2 = insert(:raw_implementation, raw_content: raw_content1)
       implementation3 = insert(:raw_implementation, raw_content: raw_content2)

@@ -379,7 +379,7 @@ defmodule TdDq.Implementations.ImplementationTest do
       rule = insert(:rule)
 
       creation_attrs = %{
-        validations_set: [
+        validation: [
           %{
             conditions: [
               %{
@@ -404,7 +404,7 @@ defmodule TdDq.Implementations.ImplementationTest do
         insert(:implementation,
           implementation_key: implementation_key,
           rule: rule,
-          validations_set: creation_attrs.validations_set
+          validation: creation_attrs.validation
         )
 
       assert %{
@@ -582,7 +582,7 @@ defmodule TdDq.Implementations.ImplementationTest do
       value = [%{raw: "2019-12-02 05:35:00"}]
 
       creation_attrs = %{
-        validations_set: [
+        validation: [
           %{
             conditions: [
               %{
@@ -614,11 +614,11 @@ defmodule TdDq.Implementations.ImplementationTest do
         insert(:implementation,
           implementation_key: implementation_key,
           rule: rule,
-          validations_set: creation_attrs.validations_set
+          validation: creation_attrs.validation
         )
 
       assert %{
-               validations_set: [
+               validation: [
                  %{
                    conditions: [
                      %{
@@ -665,7 +665,7 @@ defmodule TdDq.Implementations.ImplementationTest do
       value = [%{raw: "2019-12-02 05:35:00"}]
 
       creation_attrs = %{
-        validations_set: [
+        validation: [
           %{
             conditions: [
               %{
@@ -697,7 +697,7 @@ defmodule TdDq.Implementations.ImplementationTest do
         insert(:implementation,
           implementation_key: implementation_key,
           rule: rule,
-          validations_set: creation_attrs.validations_set
+          validation: creation_attrs.validation
         )
 
       assert %{

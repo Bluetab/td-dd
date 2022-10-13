@@ -137,7 +137,7 @@ defmodule TdDd.Factory do
       domain_id: 2,
       dataset: build(:dataset),
       populations: build(:populations),
-      validations_set: build(:validations_set),
+      validation: build(:validation),
       segments: build(:segments),
       version: 1,
       status: :draft
@@ -168,7 +168,7 @@ defmodule TdDd.Factory do
       domain_id: 2,
       dataset: build(:dataset),
       populations: build(:populations),
-      validations_set: build(:validations_set),
+      validation: build(:validation),
       version: 1,
       status: :draft
     }
@@ -400,7 +400,7 @@ defmodule TdDd.Factory do
     ]
   end
 
-  def validations_set_factory(_attrs) do
+  def validation_factory(_attrs) do
     [
       %TdDq.Implementations.Conditions{
         conditions: [build(:condition_row)]

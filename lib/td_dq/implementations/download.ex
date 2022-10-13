@@ -177,7 +177,7 @@ defmodule TdDq.Implementations.Download do
   end
 
   defp get_implementation_fields(
-         %{validations_set: [%{conditions: [%{} | _]} | _] = validations} = _implementation,
+         %{validation: [%{conditions: [%{} | _]} | _] = validations} = _implementation,
          :validations
        ) do
     validations

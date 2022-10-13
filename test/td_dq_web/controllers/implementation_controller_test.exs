@@ -16,7 +16,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
     %{clauses: [%{left: %{id: 14_863}, right: %{id: 4028}}], structure: %{id: 3233}}
   ]
 
-  @validations_set [
+  @validation [
     [
       %{
         operator: %{
@@ -81,7 +81,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
   @rule_implementation_attr %{
     implementation_key: "a1",
     dataset: @valid_dataset,
-    validations_set: @validations_set,
+    validation: @validation,
     result_type: "percentage",
     minimum: 50,
     goal: 100
@@ -720,7 +720,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
               }
             ]
           ],
-          validations_set: [
+          validation: [
             [
               %{
                 operator: %{
@@ -777,8 +777,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert "draft" == data["status"]
       assert 1 == data["version"]
 
-      validations_set_data = Map.get(data, "validations_set")
-      validations_set_attrs = Map.get(creation_attrs, "validations_set")
+      validations_set_data = Map.get(data, "validation")
+      validations_set_attrs = Map.get(creation_attrs, "validation")
 
       validations_set_data
       |> Enum.with_index()
@@ -1287,8 +1287,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert %{"data_structures" => [%{"data_structure_id" => ^data_structure_id}]} = data
 
       assert equals_condition_row(
-               data |> Map.get("validations_set") |> List.first(),
-               params |> Map.get("validations_set") |> List.first()
+               data |> Map.get("validation") |> List.first(),
+               params |> Map.get("validation") |> List.first()
              )
     end
 
@@ -1527,7 +1527,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
               join_type: "inner"
             }
           ],
-          validations_set: [
+          validation: [
             [
               %{
                 structure: %{id: 2},
@@ -1618,13 +1618,13 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert implementation.rule_id == data["rule_id"]
 
       imp_validations_count =
-        implementation.validations_set
+        implementation.validation
         |> List.flatten()
         |> Enum.count()
 
       data_validations_count =
         data
-        |> Map.get("validations_set")
+        |> Map.get("validation")
         |> List.flatten()
         |> Enum.count()
 
@@ -1648,7 +1648,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
         goal: "40",
         dataset: @valid_dataset,
         minimum: "3",
-        validations_set: @validations_set,
+        validation: @validation,
         status: "draft"
       }
 
@@ -1701,7 +1701,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
         params =
           %{
             segments: [%{structure: %{id: structure_id}}],
-            validations_set: @validations_set,
+            validation: @validation,
             populations: @populations
           }
           |> Map.Helpers.stringify_keys()
@@ -1731,7 +1731,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
         implementation = insert(:implementation, rule_id: rule_id, domain_id: domain_id)
 
         params =
-          %{validations_set: @validations_set, populations: @populations}
+          %{validation: @validation, populations: @populations}
           |> Map.Helpers.stringify_keys()
 
         assert conn
@@ -1756,7 +1756,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
         implementation = insert(:raw_implementation, rule_id: rule_id, domain_id: domain_id)
 
         params =
-          %{validations_set: @validations_set, populations: @populations}
+          %{validation: @validation, populations: @populations}
           |> Map.Helpers.stringify_keys()
 
         assert %{"data" => _data} =
@@ -1782,7 +1782,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
         implementation = insert(:raw_implementation, rule_id: rule_id, domain_id: domain_id)
 
         params =
-          %{validations_set: @validations_set, populations: @populations}
+          %{validation: @validation, populations: @populations}
           |> Map.Helpers.stringify_keys()
 
         assert conn
@@ -1802,7 +1802,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
       implementation = insert(:ruleless_implementation, domain_id: domain_id)
 
       params =
-        %{validations_set: @validations_set, populations: @populations}
+        %{validation: @validation, populations: @populations}
         |> Map.Helpers.stringify_keys()
 
       assert %{"data" => _data} =
@@ -1827,7 +1827,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
         implementation = insert(:ruleless_implementation, domain_id: domain_id)
 
         params =
-          %{validations_set: @validations_set, populations: @populations}
+          %{validation: @validation, populations: @populations}
           |> Map.Helpers.stringify_keys()
 
         assert conn
@@ -1852,7 +1852,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
       params =
         %{
           segments: [%{structure: %{id: 12_554}}],
-          validations_set: @validations_set,
+          validation: @validation,
           populations: @populations
         }
         |> Map.Helpers.stringify_keys()
@@ -1880,7 +1880,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
         implementation = insert(:raw_implementation, domain_id: domain_id, rule_id: nil)
 
         params =
-          %{validations_set: @validations_set, populations: @populations}
+          %{validation: @validation, populations: @populations}
           |> Map.Helpers.stringify_keys()
 
         assert conn
@@ -1912,7 +1912,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
         )
 
       params =
-        %{validations_set: @validations_set}
+        %{validation: @validation}
         |> Map.Helpers.stringify_keys()
 
       assert %{"errors" => error} =
@@ -1939,7 +1939,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       params =
         %{
-          validations_set: @validations_set,
+          validation: @validation,
           populations: @populations
         }
         |> Map.Helpers.stringify_keys()
@@ -1967,7 +1967,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       params =
         %{
-          validations_set: @validations_set,
+          validation: @validation,
           populations: @populations
         }
         |> Map.Helpers.stringify_keys()
@@ -1996,7 +1996,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
       params =
         %{
           segments: [%{structure: %{id: 12_554}}],
-          validations_set: @validations_set,
+          validation: @validation,
           populations: @populations
         }
         |> Map.Helpers.stringify_keys()
@@ -2025,7 +2025,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       params =
         %{
-          validations_set: @validations_set,
+          validation: @validation,
           populations: @populations
         }
         |> Map.Helpers.stringify_keys()
@@ -2057,7 +2057,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
       params =
         %{
           segments: [%{structure: %{id: 12_554}}],
-          validations_set: @validations_set,
+          validation: @validation,
           populations: @populations
         }
         |> Map.Helpers.stringify_keys()

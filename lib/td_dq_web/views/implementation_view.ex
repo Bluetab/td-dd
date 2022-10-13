@@ -148,7 +148,7 @@ defmodule TdDqWeb.ImplementationView do
 
   defp add_populations(mapping, _implementation), do: mapping
 
-  defp add_first_validations(mapping, %{validations_set: [%{validations: validations} | _]})
+  defp add_first_validations(mapping, %{validation: [%{validations: validations} | _]})
        when is_list(validations) do
     mapping
     |> Map.put(
@@ -159,12 +159,12 @@ defmodule TdDqWeb.ImplementationView do
 
   defp add_first_validations(mapping, _implementation), do: mapping
 
-  defp add_validations_set(mapping, %{validations_set: validations_set})
-       when is_list(validations_set) do
+  defp add_validations_set(mapping, %{validation: validation})
+       when is_list(validation) do
     mapping
     |> Map.put(
-      :validations_set,
-      render_many(validations_set, ConditionsView, "validations_set.json")
+      :validation,
+      render_many(validation, ConditionsView, "validation.json")
     )
   end
 
