@@ -5,7 +5,7 @@
 ### Fixed
 
 - [TD-5140] Changed implementations ids by implementations refs and links migration
-
+- [TD-4927] Fix upload implementations file with and without rule raise an error
 ### Added
 
 - [TD-4558] Support for managing data quality functions using API
