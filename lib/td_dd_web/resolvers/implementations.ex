@@ -3,11 +3,11 @@ defmodule TdDdWeb.Resolvers.Implementations do
   Absinthe resolvers for implementations
   """
 
+  alias TdDd.Utils.ChangesetUtils
   alias TdDq.Events.QualityEvents
   alias TdDq.Implementations
   alias TdDq.Implementations.Workflow
   alias TdDq.Rules.RuleResults
-  alias TdDd.Utils.ChangesetUtils
 
   def implementation(_parent, %{id: id}, resolution) do
     with {:claims, %{} = claims} <- {:claims, claims(resolution)},
