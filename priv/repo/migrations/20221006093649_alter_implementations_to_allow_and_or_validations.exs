@@ -1,5 +1,9 @@
-defmodule TdDd.Repo.Migrations.AlterImplementationsToAllowValidationsSet do
+defmodule TdDd.Repo.Migrations.AlterImplementationsToAllowAndOrValidations do
   use Ecto.Migration
+
+  @moduledoc """
+  Migrate populations and validations to use Conditions schema
+  """
 
   defp refactor_condition(column_name, from_key, to_key) do
     """
