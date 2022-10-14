@@ -7,6 +7,7 @@ defmodule TdDdWeb.Resolvers.Implementations do
   alias TdDq.Implementations
   alias TdDq.Implementations.Workflow
   alias TdDq.Rules.RuleResults
+  alias TdDd.Utils.ChangesetUtils
 
   def implementation(_parent, %{id: id}, resolution) do
     with {:claims, %{} = claims} <- {:claims, claims(resolution)},
@@ -88,7 +89,7 @@ defmodule TdDdWeb.Resolvers.Implementations do
     else
       {:claims, nil} -> {:error, :unauthorized}
       {:error, :forbidden} -> {:error, :forbidden}
-      {:error, :implementation, changeset, _} -> {:error, changeset}
+      {:error, :implementation, changeset, _} -> {:error, ChangesetUtils.error_message_list_on(changeset)}
     end
   end
 

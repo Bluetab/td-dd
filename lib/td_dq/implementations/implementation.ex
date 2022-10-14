@@ -112,6 +112,7 @@ defmodule TdDq.Implementations.Implementation do
     implementation
     |> cast(params, [:status, :version, :deleted_at])
     |> validate_required([:status, :version])
+    |> validate_or_put_implementation_key
   end
 
   def implementation_ref_changeset(%__MODULE__{} = implementation, params) do
