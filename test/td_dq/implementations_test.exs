@@ -115,14 +115,14 @@ defmodule TdDq.ImplementationsTest do
         rule: rule,
         implementation_key: "ri11",
         dataset: [dataset_row],
-        validations: [validation_row]
+        validation: [%{conditions: [validation_row]}]
       )
 
       insert(:implementation,
         rule: rule,
         implementation_key: "ri12",
         dataset: [dataset_row],
-        validations: [validation_row]
+        validation: [%{conditions: [validation_row]}]
       )
 
       assert length(Implementations.list_implementations(%{"structure_id" => structure_id})) ==
@@ -158,19 +158,19 @@ defmodule TdDq.ImplementationsTest do
       %{id: impl_id5} = insert(:implementation, implementation_ref: impl_id4)
 
       assert [
-               [^impl_id1, ^impl_id1],
-               [^impl_id2, ^impl_id2],
-               [^impl_id3, ^impl_id2],
-               [^impl_id4, ^impl_id4],
-               [^impl_id5, ^impl_id4]
-             ] =
-               Implementations.get_implementations_ref([
-                 impl_id1,
-                 impl_id2,
-                 impl_id3,
-                 impl_id4,
-                 impl_id5
-               ])
+               [impl_id1, impl_id1],
+               [impl_id2, impl_id2],
+               [impl_id3, impl_id2],
+               [impl_id4, impl_id4],
+               [impl_id5, impl_id4]
+             ]
+             <~> Implementations.get_implementations_ref([
+               impl_id1,
+               impl_id2,
+               impl_id3,
+               impl_id4,
+               impl_id5
+             ])
     end
   end
 
@@ -439,7 +439,7 @@ defmodule TdDq.ImplementationsTest do
 
       params =
         string_params_for(:implementation,
-          validations: [validation],
+          validation: [[validation]],
           rule_id: rule.id,
           domain_id: rule.domain_id
         )
@@ -459,19 +459,29 @@ defmodule TdDq.ImplementationsTest do
         "value" => value
       } = condition = string_params_for(:condition_row)
 
-      validations = [string_params_for(:condition_row, population: [condition])]
+      validation = [[string_params_for(:condition_row, population: [condition])]]
 
       params =
         string_params_for(:implementation,
           rule_id: rule.id,
-          validations: validations,
+          validation: validation,
           domain_id: rule.domain_id
         )
 
       claims = build(:claims, role: "admin")
 
-      assert {:ok, %{implementation: %Implementation{validations: [%{population: [clause]}]}}} =
-               Implementations.create_implementation(rule, params, claims)
+      assert {:ok,
+              %{
+                implementation: %Implementation{
+                  validation: [
+                    %{
+                      conditions: [
+                        %{population: [clause]}
+                      ]
+                    }
+                  ]
+                }
+              }} = Implementations.create_implementation(rule, params, claims)
 
       assert %{
                operator: %{name: ^name, value_type: ^type},
@@ -487,7 +497,13 @@ defmodule TdDq.ImplementationsTest do
       params =
         string_params_for(:implementation,
           dataset: [%{structure: %{id: dataset_data_structure_id}}],
-          validations: [%{build(:condition_row) | structure: %{id: validation_data_structure_id}}],
+          validation: [
+            %{
+              conditions: [
+                %{build(:condition_row) | structure: %{id: validation_data_structure_id}}
+              ]
+            }
+          ],
           rule_id: rule.id,
           domain_id: rule.domain_id
         )
@@ -643,34 +659,44 @@ defmodule TdDq.ImplementationsTest do
 
       implementation =
         insert(:implementation,
-          validations: [%{build(:condition_row) | structure: %{id: data_structure_id}}]
+          validation: [
+            %{conditions: [%{build(:condition_row) | structure: %{id: data_structure_id}}]}
+          ]
         )
 
-      assert %{validations: [%{structure: %{name: ^structure_name}}]} =
+      assert %{validation: [%{conditions: [%{structure: %{name: ^structure_name}}]}]} =
                Implementations.enrich_implementation_structures(implementation)
     end
 
     test "enriches implementation validations with reference_dataset_field" do
       implementation =
         insert(:implementation,
-          validations: [
+          validation: [
             %{
-              build(:condition_row)
-              | structure: %{
-                  name: "reference_dataset_field_name",
-                  type: "reference_dataset_field"
+              validations: [
+                %{
+                  build(:condition_row)
+                  | structure: %{
+                      name: "reference_dataset_field_name",
+                      type: "reference_dataset_field"
+                    }
                 }
+              ]
             }
           ]
         )
 
       assert %{
-               validations: [
+               validation: [
                  %{
-                   structure: %{
-                     name: "reference_dataset_field_name",
-                     type: "reference_dataset_field"
-                   }
+                   validations: [
+                     %{
+                       structure: %{
+                         name: "reference_dataset_field_name",
+                         type: "reference_dataset_field"
+                       }
+                     }
+                   ]
                  }
                ]
              } = Implementations.enrich_implementation_structures(implementation)
@@ -683,11 +709,11 @@ defmodule TdDq.ImplementationsTest do
       implementation =
         insert(:implementation,
           populations: [
-            %{population: [%{build(:condition_row) | structure: %{id: data_structure_id}}]}
+            %{conditions: [%{build(:condition_row) | structure: %{id: data_structure_id}}]}
           ]
         )
 
-      assert %{populations: [%{population: [%{structure: %{name: ^structure_name}}]}]} =
+      assert %{populations: [%{conditions: [%{structure: %{name: ^structure_name}}]}]} =
                Implementations.enrich_implementation_structures(implementation)
     end
 
@@ -888,7 +914,9 @@ defmodule TdDq.ImplementationsTest do
 
       implementation =
         insert(:implementation,
-          validations: [%{build(:condition_row) | structure: %{id: data_structure_id}}]
+          validation: [
+            %{conditions: [%{build(:condition_row) | structure: %{id: data_structure_id}}]}
+          ]
         )
 
       assert [%{id: ^data_structure_id}] =
@@ -900,10 +928,14 @@ defmodule TdDq.ImplementationsTest do
 
       implementation =
         insert(:implementation,
-          validations: [
+          validation: [
             %{
-              build(:condition_row)
-              | structure: %{id: data_structure_id, type: "reference_dataset_field"}
+              validations: [
+                %{
+                  build(:condition_row)
+                  | structure: %{id: data_structure_id, type: "reference_dataset_field"}
+                }
+              ]
             }
           ]
         )
@@ -1054,7 +1086,7 @@ defmodule TdDq.ImplementationsTest do
 
       update_attrs =
         %{
-          validations: validations
+          validation: [%{conditions: validations}]
         }
         |> Map.Helpers.stringify_keys()
 
@@ -1067,14 +1099,18 @@ defmodule TdDq.ImplementationsTest do
       assert updated_implementation.implementation_key ==
                implementation.implementation_key
 
-      assert updated_implementation.validations == [
-               %TdDq.Implementations.ConditionRow{
-                 operator: %TdDq.Implementations.Operator{
-                   name: "gt",
-                   value_type: "timestamp"
-                 },
-                 structure: %TdDq.Implementations.Structure{id: 12_554},
-                 value: [%{"raw" => "2019-12-30 05:35:00"}]
+      assert updated_implementation.validation == [
+               %TdDq.Implementations.Conditions{
+                 conditions: [
+                   %TdDq.Implementations.ConditionRow{
+                     operator: %TdDq.Implementations.Operator{
+                       name: "gt",
+                       value_type: "timestamp"
+                     },
+                     structure: %TdDq.Implementations.Structure{id: 12_554},
+                     value: [%{"raw" => "2019-12-30 05:35:00"}]
+                   }
+                 ]
                }
              ]
     end
@@ -1089,11 +1125,15 @@ defmodule TdDq.ImplementationsTest do
         "value" => value
       } = condition = string_params_for(:condition_row)
 
-      validations = [string_params_for(:condition_row, population: [condition])]
-      update_attrs = %{"validations" => validations}
+      validation = [[string_params_for(:condition_row, population: [condition])]]
+      update_attrs = %{"validation" => validation}
 
-      assert {:ok, %{implementation: %Implementation{validations: [%{population: [clause]}]}}} =
-               Implementations.update_implementation(implementation, update_attrs, claims)
+      assert {:ok,
+              %{
+                implementation: %Implementation{
+                  validation: [%{conditions: [%{population: [clause]}]}]
+                }
+              }} = Implementations.update_implementation(implementation, update_attrs, claims)
 
       assert %{
                operator: %{name: ^name, value_type: ^type},
@@ -1166,14 +1206,18 @@ defmodule TdDq.ImplementationsTest do
       update_attrs =
         %{
           dataset: [%{structure: %{id: dataset_data_structure_id}}],
-          validations: [
+          validation: [
             %{
-              operator: %{
-                name: "gt",
-                value_type: "timestamp"
-              },
-              structure: %{id: validation_data_structure_id},
-              value: [%{raw: "2019-12-30 05:35:00"}]
+              conditions: [
+                %{
+                  operator: %{
+                    name: "gt",
+                    value_type: "timestamp"
+                  },
+                  structure: %{id: validation_data_structure_id},
+                  value: [%{raw: "2019-12-30 05:35:00"}]
+                }
+              ]
             }
           ]
         }
@@ -1208,14 +1252,18 @@ defmodule TdDq.ImplementationsTest do
       update_attrs =
         %{
           dataset: [%{structure: %{id: dataset_data_structure_id}}],
-          validations: [
+          validation: [
             %{
-              operator: %{
-                name: "gt",
-                value_type: "timestamp"
-              },
-              structure: %{id: validation_data_structure_id},
-              value: [%{raw: "2019-12-30 05:35:00"}]
+              conditions: [
+                %{
+                  operator: %{
+                    name: "gt",
+                    value_type: "timestamp"
+                  },
+                  structure: %{id: validation_data_structure_id},
+                  value: [%{raw: "2019-12-30 05:35:00"}]
+                }
+              ]
             }
           ]
         }
@@ -1294,7 +1342,7 @@ defmodule TdDq.ImplementationsTest do
         ],
         populations: [
           %{
-            population: [
+            conditions: [
               %{
                 operator: %{
                   name: "timestamp_gt_timestamp",
@@ -1306,22 +1354,26 @@ defmodule TdDq.ImplementationsTest do
             ]
           }
         ],
-        validations: [
+        validation: [
           %{
-            operator: %{
-              name: "timestamp_gt_timestamp",
-              value_type: "timestamp",
-              value_type_filter: "timestamp"
-            },
-            structure: %{id: 7, name: "s7"},
-            value: [%{raw: "2019-12-02 05:35:00"}]
-          },
-          %{
-            operator: %{
-              name: "not_empty"
-            },
-            structure: %{id: 8, name: "s8"},
-            value: nil
+            conditions: [
+              %{
+                operator: %{
+                  name: "timestamp_gt_timestamp",
+                  value_type: "timestamp",
+                  value_type_filter: "timestamp"
+                },
+                structure: %{id: 7, name: "s7"},
+                value: [%{raw: "2019-12-02 05:35:00"}]
+              },
+              %{
+                operator: %{
+                  name: "not_empty"
+                },
+                structure: %{id: 8, name: "s8"},
+                value: nil
+              }
+            ]
           }
         ],
         segments: [
@@ -1342,7 +1394,7 @@ defmodule TdDq.ImplementationsTest do
           rule: rule,
           dataset: creation_attrs.dataset,
           populations: creation_attrs.populations,
-          validations: creation_attrs.validations,
+          validation: creation_attrs.validation,
           segments: creation_attrs.segments
         )
 
@@ -1367,7 +1419,7 @@ defmodule TdDq.ImplementationsTest do
         ],
         populations: [
           %{
-            population: [
+            conditions: [
               %{
                 operator: %{
                   name: "timestamp_gt_timestamp",
@@ -1387,7 +1439,7 @@ defmodule TdDq.ImplementationsTest do
             ]
           },
           %{
-            population: [
+            conditions: [
               %{
                 operator: %{
                   name: "timestamp_gt_timestamp",
@@ -1399,22 +1451,46 @@ defmodule TdDq.ImplementationsTest do
             ]
           }
         ],
-        validations: [
+        validation: [
           %{
-            operator: %{
-              name: "timestamp_gt_timestamp",
-              value_type: "timestamp",
-              value_type_filter: "timestamp"
-            },
-            structure: %{id: 7},
-            value: [%{raw: "2019-12-02 05:35:00"}]
+            conditions: [
+              %{
+                operator: %{
+                  name: "timestamp_gt_timestamp",
+                  value_type: "timestamp",
+                  value_type_filter: "timestamp"
+                },
+                structure: %{id: 7},
+                value: [%{raw: "2019-12-02 05:35:00"}]
+              },
+              %{
+                operator: %{
+                  name: "not_empty"
+                },
+                structure: %{id: 8},
+                value: nil
+              }
+            ]
           },
           %{
-            operator: %{
-              name: "not_empty"
-            },
-            structure: %{id: 8},
-            value: nil
+            conditions: [
+              %{
+                operator: %{
+                  name: "timestamp_gt_timestamp",
+                  value_type: "timestamp",
+                  value_type_filter: "timestamp"
+                },
+                structure: %{id: 13},
+                value: [%{raw: "2019-12-02 05:35:00"}]
+              },
+              %{
+                operator: %{
+                  name: "not_empty"
+                },
+                structure: %{id: 14},
+                value: nil
+              }
+            ]
           }
         ],
         segments: [
@@ -1435,13 +1511,13 @@ defmodule TdDq.ImplementationsTest do
           rule: rule,
           dataset: creation_attrs.dataset,
           populations: creation_attrs.populations,
-          validations: creation_attrs.validations,
+          validation: creation_attrs.validation,
           segments: creation_attrs.segments
         )
 
       structures_ids = Implementations.get_structure_ids(rule_implementaton)
 
-      assert Enum.sort(structures_ids) == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+      assert Enum.sort(structures_ids) == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
     end
   end
 
@@ -1494,7 +1570,7 @@ defmodule TdDq.ImplementationsTest do
       insert(:implementation,
         dataset: [build(:dataset_row, structure: build(:dataset_structure, id: structure_id1))],
         populations: [],
-        validations: [],
+        validation: [],
         segments: []
       )
 
@@ -1504,7 +1580,7 @@ defmodule TdDq.ImplementationsTest do
         insert(:implementation,
           dataset: [build(:dataset_row, structure: build(:dataset_structure, id: structure_id2))],
           populations: [],
-          validations: [],
+          validation: [],
           segments: []
         )
 
@@ -1523,7 +1599,7 @@ defmodule TdDq.ImplementationsTest do
       insert(:implementation,
         dataset: [build(:dataset_row, structure: %{id: id, type: "reference_dataset"})],
         populations: [],
-        validations: [],
+        validation: [],
         segments: []
       )
 
@@ -1561,11 +1637,12 @@ defmodule TdDq.ImplementationsTest do
       condition_row =
         build(:condition_row, structure: build(:dataset_structure, id: structure_id2))
 
+      validation = [%{conditions: [condition_row]}]
+
       raw_content1 = build(:raw_content, source_id: sid1)
       raw_content2 = build(:raw_content, source_id: sid2)
 
-      implementation1 =
-        insert(:implementation, dataset: [dataset_row], validations: [condition_row])
+      implementation1 = insert(:implementation, dataset: [dataset_row], validation: validation)
 
       implementation2 = insert(:raw_implementation, raw_content: raw_content1)
       implementation3 = insert(:raw_implementation, raw_content: raw_content2)

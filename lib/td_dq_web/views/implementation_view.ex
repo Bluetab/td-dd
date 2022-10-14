@@ -2,9 +2,9 @@ defmodule TdDqWeb.ImplementationView do
   use TdDqWeb, :view
 
   alias TdDq.Rules
+  alias TdDqWeb.Implementation.ConditionsView
   alias TdDqWeb.Implementation.ConditionView
   alias TdDqWeb.Implementation.DatasetView
-  alias TdDqWeb.Implementation.PopulationsView
   alias TdDqWeb.Implementation.RawContentView
   alias TdDqWeb.Implementation.SegmentsView
   alias TdDqWeb.Implementation.StructureView
@@ -115,13 +115,11 @@ defmodule TdDqWeb.ImplementationView do
       :version
     ])
     |> Map.put(:dataset, render_many(implementation.dataset, DatasetView, "dataset_row.json"))
-    |> Map.put(
-      :validations,
-      render_many(implementation.validations, ConditionView, "condition_row.json")
-    )
     |> add_segments(implementation)
-    |> add_first_population(implementation)
     |> add_populations(implementation)
+    |> add_first_population(implementation)
+    |> add_validation(implementation)
+    |> add_first_validations(implementation)
     |> add_rule(implementation)
     |> add_quality_event_info(implementation)
     |> add_last_rule_results(implementation)
@@ -129,12 +127,12 @@ defmodule TdDqWeb.ImplementationView do
     |> maybe_render_data_structures(data_structures)
   end
 
-  defp add_first_population(mapping, %{populations: [%{population: population} | _]})
-       when is_list(population) do
+  defp add_first_population(mapping, %{populations: [%{conditions: conditions} | _]})
+       when is_list(conditions) do
     mapping
     |> Map.put(
       :population,
-      render_many(population, ConditionView, "condition_row.json")
+      render_many(conditions, ConditionView, "condition_row.json")
     )
   end
 
@@ -144,11 +142,33 @@ defmodule TdDqWeb.ImplementationView do
     mapping
     |> Map.put(
       :populations,
-      render_many(populations, PopulationsView, "populations.json")
+      render_many(populations, ConditionsView, "populations.json")
     )
   end
 
   defp add_populations(mapping, _implementation), do: mapping
+
+  defp add_first_validations(mapping, %{validation: [%{conditions: conditions} | _]})
+       when is_list(conditions) do
+    mapping
+    |> Map.put(
+      :validations,
+      render_many(conditions, ConditionView, "condition_row.json")
+    )
+  end
+
+  defp add_first_validations(mapping, _implementation), do: mapping
+
+  defp add_validation(mapping, %{validation: validation})
+       when is_list(validation) do
+    mapping
+    |> Map.put(
+      :validation,
+      render_many(validation, ConditionsView, "validation.json")
+    )
+  end
+
+  defp add_validation(mapping, _implementation), do: mapping
 
   defp add_segments(mapping, %{segments: segments}) do
     mapping
@@ -425,16 +445,12 @@ defmodule TdDqWeb.Implementation.ModifierView do
   end
 end
 
-defmodule TdDqWeb.Implementation.PopulationsView do
+defmodule TdDqWeb.Implementation.ConditionsView do
   use TdDqWeb, :view
 
   alias TdDqWeb.Implementation.ConditionView
 
-  def render("populations.json", %{populations: %{population: population}}) do
-    render_many(population, ConditionView, "condition_row.json")
-  end
-
-  def render("populations.json", %{populations: population}) do
-    %{population: render_many(population, ConditionView, "condition_row.json")}
+  def render(_, %{conditions: %{conditions: conditions}}) do
+    render_many(conditions, ConditionView, "condition_row.json")
   end
 end
