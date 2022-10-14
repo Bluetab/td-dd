@@ -6,6 +6,7 @@ defmodule TdDq.Implementations.Download do
   alias TdCache.DomainCache
   alias TdCache.TemplateCache
   alias TdDfLib.Format
+  alias TdDq.Implementations
 
   def to_csv([], _, _), do: ""
 
@@ -175,8 +176,12 @@ defmodule TdDq.Implementations.Download do
     |> Enum.uniq()
   end
 
-  defp get_implementation_fields(%{validations: validations} = _implementation, :validations) do
+  defp get_implementation_fields(
+         %{validation: [%{conditions: [%{} | _]} | _] = validations} = _implementation,
+         :validations
+       ) do
     validations
+    |> Implementations.flatten_conditions_set()
     |> Enum.map(fn
       %{structure: %{external_id: external_id}} ->
         external_id
