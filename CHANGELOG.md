@@ -4,7 +4,10 @@
 
 ### Fixed
 
-- [TD-5140] Changed implementations ids by implementations refs and links migration
+- [TD-5250] GraphQL `latestGrantRequest` no longer returns `forbidden` for users
+  with `view_data_structure` permissions
+- [TD-5140] Changed implementations ids by implementations refs and links
+  migration
 
 ### Added
 
