@@ -363,7 +363,7 @@ defmodule TdDq.Implementations.Implementation do
     do: Implementations.last?(implementation) && status == :published
 
   def deletable?(%__MODULE__{status: status}),
-    do: status in [:draft, :pending_approval, :rejected]
+    do: status in [:draft, :pending_approval, :rejected, :deprecated]
 
   def editable?(%__MODULE__{status: status} = implementation),
     do: Implementations.last?(implementation) && status in [:draft, :rejected]
