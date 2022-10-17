@@ -133,9 +133,21 @@ defmodule TdDq.Search.Mappings do
         }
       },
       population: get_condition_mappings(),
-      populations: %{type: "nested", properties: %{population: get_condition_mappings()}},
+      populations: %{
+        type: "nested",
+        properties: %{
+          conditions: get_condition_mappings()
+        }
+      },
       validations:
         get_condition_mappings([:operator, :structure, :value, :population, :modifier]),
+      validation: %{
+        type: "nested",
+        properties: %{
+          conditions:
+            get_condition_mappings([:operator, :structure, :value, :population, :modifier])
+        }
+      },
       segments: %{properties: get_structure_mappings()},
       df_name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
       df_content: content_mappings,
