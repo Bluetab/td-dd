@@ -32,6 +32,16 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
   }
   """
 
+  @restore_implementation """
+  mutation restoreImplementation($id: ID!) {
+    restoreImplementation(id: $id) {
+      id
+      status
+      version
+    }
+  }
+  """
+
   @implementation_with_versions_query """
   query Implementation($id: ID!) {
     implementation(id: $id) {
@@ -718,6 +728,203 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
                conn
                |> post("/api/v2", %{
                  "query" => @publish_implementation,
+                 "variables" => %{"id" => implementation_id}
+               })
+               |> json_response(:ok)
+
+      assert [%{"message" => "forbidden"}] = errors
+    end
+  end
+
+  describe "restoreImplementation mutation" do
+    @tag authentication: [role: "user"]
+    test "return error when user has no permissions", %{conn: conn} do
+      %{id: implementation_id} = insert(:implementation, status: "deprecated")
+
+      assert %{"data" => nil, "errors" => errors} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @restore_implementation,
+                 "variables" => %{"id" => implementation_id}
+               })
+               |> json_response(:ok)
+
+      assert [%{"message" => "forbidden"}] = errors
+    end
+
+    @tag authentication: [role: "user", permissions: ["publish_implementation"]]
+    test "return implementation when user has permissions", %{conn: conn, domain: domain} do
+      %{implementation_key: key, implementation_ref: implementation_ref} =
+        insert(:implementation, status: :published, version: 4)
+
+      %{id: implementation_id} =
+        insert(:implementation,
+          domain_id: domain.id,
+          status: "deprecated",
+          implementation_key: key <> "_dif_key",
+          version: 0,
+          implementation_ref: implementation_ref
+        )
+
+      assert %{"data" => data} =
+               resp =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @restore_implementation,
+                 "variables" => %{"id" => implementation_id}
+               })
+               |> json_response(:ok)
+
+      refute Map.has_key?(resp, "errors")
+      implementation_id = to_string(implementation_id)
+
+      assert %{
+               "restoreImplementation" => %{
+                 "id" => ^implementation_id,
+                 "status" => "published",
+                 "version" => 5
+               }
+             } = data
+    end
+
+    @tag authentication: [role: "admin"]
+    test "updating status workflow implementation will update the cache if implementation is linked",
+         %{conn: conn} do
+      %{id: id, implementation_ref: implementation_ref} =
+        implementation = insert(:implementation, status: :draft, version: 0)
+
+      CacheHelpers.put_implementation(implementation)
+
+      %{id: concept_id} = CacheHelpers.insert_concept()
+
+      CacheHelpers.insert_link(
+        implementation_ref,
+        "implementation_ref",
+        "business_concept",
+        concept_id
+      )
+
+      assert {:ok, %{id: ^id, deleted_at: nil, status: "draft"}} =
+               CacheHelpers.get_implementation(implementation_ref)
+
+      assert conn
+             |> post("/api/v2", %{
+               "query" => @submit_implementation,
+               "variables" => %{"id" => id}
+             })
+             |> json_response(:ok)
+
+      assert {:ok, %{id: ^id, status: "pending_approval"}} =
+               CacheHelpers.get_implementation(implementation_ref)
+    end
+
+    @tag authentication: [
+           role: "user",
+           permissions: [
+             "publish_implementation",
+             "manage_ruleless_implementations",
+             "manage_quality_rule_implementations",
+             "manage_raw_quality_rule_implementations"
+           ]
+         ]
+    test "updating status implementation will update the cache if implementation is linked", %{
+      conn: conn,
+      domain: domain
+    } do
+      %{id: id, implementation_key: key, implementation_ref: implementation_ref} =
+        implementation =
+        insert(:implementation, status: :published, version: 0, domain_id: domain.id)
+
+      CacheHelpers.put_implementation(implementation)
+      %{id: concept_id} = CacheHelpers.insert_concept(domain_id: domain.id)
+
+      CacheHelpers.insert_link(
+        implementation_ref,
+        "implementation_ref",
+        "business_concept",
+        concept_id
+      )
+
+      assert {:ok, %{id: ^id, deleted_at: nil, status: "published"}} =
+               CacheHelpers.get_implementation(implementation_ref)
+
+      %{id: implementation_id} =
+        insert(:implementation,
+          domain_id: domain.id,
+          status: "deprecated",
+          implementation_key: key <> "_dif_key",
+          version: 1,
+          implementation_ref: implementation_ref
+        )
+
+      assert conn
+             |> post("/api/v2", %{
+               "query" => @restore_implementation,
+               "variables" => %{"id" => implementation_id}
+             })
+             |> json_response(:ok)
+
+      assert {:ok, %{id: ^implementation_id, status: "published"}} =
+               CacheHelpers.get_implementation(implementation_ref)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "updating draft to restored implementation will update the cache if implementation is linked",
+         %{conn: conn} do
+      %{id: id, implementation_ref: implementation_ref} =
+        implementation = insert(:implementation, status: :deprecated, version: 0)
+
+      CacheHelpers.put_implementation(implementation)
+      %{id: concept_id} = CacheHelpers.insert_concept()
+
+      CacheHelpers.insert_link(
+        implementation_ref,
+        "implementation_ref",
+        "business_concept",
+        concept_id
+      )
+
+      assert {:ok, %{id: ^id, deleted_at: nil, status: "deprecated"}} =
+               CacheHelpers.get_implementation(implementation_ref)
+
+      assert conn
+             |> post("/api/v2", %{
+               "query" => @restore_implementation,
+               "variables" => %{"id" => id}
+             })
+             |> json_response(:ok)
+
+      assert {:ok, %{id: ^id, status: "published"}} =
+               CacheHelpers.get_implementation(implementation_ref)
+    end
+
+    @tag authentication: [role: "user", permissions: ["publish_implementation"]]
+    test "return error when user not has permissions for specific domain",
+         %{conn: conn} do
+      %{id: implementation_id} = insert(:implementation, status: "pending_approval")
+
+      assert %{"data" => nil, "errors" => errors} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @restore_implementation,
+                 "variables" => %{"id" => implementation_id}
+               })
+               |> json_response(:ok)
+
+      assert [%{"message" => "forbidden"}] = errors
+    end
+
+    @tag authentication: [role: "admin"]
+    test "return error when try restore implementation different for deprecated",
+         %{
+           conn: conn
+         } do
+      %{id: implementation_id} = insert(:implementation, status: "rejected")
+
+      assert %{"data" => nil, "errors" => errors} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @restore_implementation,
                  "variables" => %{"id" => implementation_id}
                })
                |> json_response(:ok)

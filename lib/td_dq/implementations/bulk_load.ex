@@ -20,7 +20,7 @@ defmodule TdDq.Implementations.BulkLoad do
     "minimum"
   ]
 
-  @optional_headers ["template", "rule_name", "domain_external_id"]
+  @optional_headers ["template", "rule_name", "domain_external_id", "domain_id"]
 
   @headers @required_headers ++ @optional_headers
 
@@ -84,7 +84,7 @@ defmodule TdDq.Implementations.BulkLoad do
   end
 
   defp create_implementation(%{"rule_name" => rule_name} = imp, claims)
-       when is_binary(rule_name) do
+       when is_binary(rule_name) and rule_name != "" do
     case Rules.get_rule_by_name(rule_name) do
       nil -> {:error, {imp["implementation_key"], "rule #{rule_name} does not exist"}}
       rule -> Implementations.create_implementation(rule, imp, claims, true)
@@ -124,6 +124,11 @@ defmodule TdDq.Implementations.BulkLoad do
       {:ok, domain_id} -> Map.put(params, "domain_id", domain_id)
       :error -> params
     end
+  end
+
+  defp maybe_put_domain_id(%{"domain_id" => domain_id} = params)
+       when is_binary(domain_id) do
+    Map.put(params, "domain_id", String.to_integer(domain_id))
   end
 
   defp maybe_put_domain_id(params), do: params

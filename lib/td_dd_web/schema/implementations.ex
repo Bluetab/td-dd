@@ -33,6 +33,12 @@ defmodule TdDdWeb.Schema.Implementations do
       resolve(&Resolvers.Implementations.publish_implementation/3)
     end
 
+    @desc "restore implementation"
+    field :restore_implementation, non_null(:implementation) do
+      arg(:id, non_null(:id))
+      resolve(&Resolvers.Implementations.restore_implementation/3)
+    end
+
     @desc "deprecate implementation"
     field :deprecate_implementation, non_null(:implementation) do
       arg(:id, non_null(:id))

@@ -70,8 +70,7 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
                      %{term: %{"_confidential" => false}},
                      %{term: %{"domain_ids" => _}}
                    ],
-                   must_not: [
-                     %{exists: %{field: "deleted_at"}},
+                   must_not:
                      %{
                        bool: %{
                          filter: [
@@ -80,7 +79,6 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
                          ]
                        }
                      }
-                   ]
                  }
                } = query
 
