@@ -28,6 +28,8 @@ defmodule TdDd.Grants.Policy do
     Bodyguard.permit?(DataStructures, :request_grant_removal, claims, data_structure)
   end
 
+  def authorize(:view, %{} = _claims, nil), do: true
+
   def authorize(:view, %{user_id: user_id}, %Grant{user_id: user_id}), do: true
 
   def authorize(:view, %{} = claims, %Grant{data_structure: data_structure}) do

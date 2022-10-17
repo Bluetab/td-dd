@@ -136,6 +136,26 @@ defmodule TdDdWeb.Schema.GrantRequestsTest do
       assert id == "#{grant_request_id}"
     end
 
+    @tag authentication: [role: "user", permissions: ["view_data_structure"]]
+    test "user with view_data_structure can query lastest grant request by structure_id even if nil",
+         %{
+           conn: conn,
+           domain: %{id: domain_id}
+         } do
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain_id])
+
+      assert %{"data" => %{"latestGrantRequest" => nil}} =
+               response =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @grant_request_query,
+                 "variables" => %{"id" => data_structure_id}
+               })
+               |> json_response(:ok)
+
+      refute Map.has_key?(response, "errors")
+    end
+
     @tag authentication: [role: "admin"]
     test "data_structure without grant requests will return nil and no errors", %{
       conn: conn
