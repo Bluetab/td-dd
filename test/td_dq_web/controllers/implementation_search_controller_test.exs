@@ -70,15 +70,14 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
                      %{term: %{"_confidential" => false}},
                      %{term: %{"domain_ids" => _}}
                    ],
-                   must_not:
-                     %{
-                       bool: %{
-                         filter: [
-                           %{term: %{"status" => "draft"}},
-                           %{term: %{"implementation_type" => "raw"}}
-                         ]
-                       }
+                   must_not: %{
+                     bool: %{
+                       filter: [
+                         %{term: %{"status" => "draft"}},
+                         %{term: %{"implementation_type" => "raw"}}
+                       ]
                      }
+                   }
                  }
                } = query
 
