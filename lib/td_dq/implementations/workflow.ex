@@ -34,6 +34,10 @@ defmodule TdDq.Implementations.Workflow do
     update_implementation_status(implementation, "published", :implementation_published, claims)
   end
 
+  def restore_implementation(%Implementation{} = implementation, %{} = claims) do
+    update_implementation_status(implementation, "restored", :implementation_published, claims)
+  end
+
   def deprecate_implementation(%Implementation{} = implementation, %{} = claims) do
     update_implementation_status(implementation, "deprecated", :implementation_deprecated, claims)
   end
@@ -76,6 +80,34 @@ defmodule TdDq.Implementations.Workflow do
     case latest_version do
       nil -> Implementation.status_changeset(implementation, %{status: "published", version: 1})
       v -> Implementation.status_changeset(implementation, %{status: "published", version: v})
+    end
+  end
+
+  defp status_changeset(
+         %Implementation{id: id, implementation_ref: implementation_ref} = implementation,
+         "restored"
+       ) do
+    latest_version =
+      Implementation
+      |> where(implementation_ref: ^implementation_ref)
+      |> where([i], i.id != ^id)
+      |> select([i], max(i.version) + 1)
+      |> Repo.one()
+
+    case latest_version do
+      nil ->
+        Implementation.status_changeset(implementation, %{
+          status: "published",
+          version: 1,
+          deleted_at: nil
+        })
+
+      v ->
+        Implementation.status_changeset(implementation, %{
+          status: "published",
+          version: v,
+          deleted_at: nil
+        })
     end
   end
 

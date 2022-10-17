@@ -7,7 +7,7 @@ defmodule TdDq.Implementations.Policy do
 
   @behaviour Bodyguard.Policy
 
-  @workflow_actions [:delete, :edit, :move, :execute, :publish, :reject, :submit]
+  @workflow_actions [:delete, :edit, :move, :execute, :publish, :restore, :reject, :submit]
   @media_actions [
     "execute",
     "create",
@@ -22,12 +22,17 @@ defmodule TdDq.Implementations.Policy do
   def authorize(:query, %{role: "admin"}, _params), do: true
   def authorize(:query, %{role: "service"}, _params), do: true
 
+  def authorize(:reindex, %{role: "admin"}, _params), do: true
+
   def authorize(:query, %{} = claims, _params),
     do: Permissions.authorized?(claims, :view_quality_rule)
 
   def authorize(:mutation, %{role: "admin"}, _params), do: true
 
   def authorize(:mutation, %{role: "user"} = claims, :publish_implementation),
+    do: Permissions.authorized?(claims, :publish_implementation)
+
+  def authorize(:mutation, %{role: "user"} = claims, :restore_implementation),
     do: Permissions.authorized?(claims, :publish_implementation)
 
   def authorize(:mutation, %{role: "user"} = claims, :reject_implementation),
@@ -149,7 +154,7 @@ defmodule TdDq.Implementations.Policy do
   end
 
   def authorize(action, %{} = claims, %Implementation{domain_id: domain_id} = implementation)
-      when action in [:publish, :reject] do
+      when action in [:publish, :reject, :restore] do
     valid_action?(action, implementation) and
       Permissions.authorized?(claims, :publish_implementation, domain_id)
   end
@@ -179,6 +184,7 @@ defmodule TdDq.Implementations.Policy do
   defp valid_action?(:edit, imp), do: Implementation.editable?(imp)
   defp valid_action?(:execute, imp), do: Implementation.executable?(imp)
   defp valid_action?(:publish, imp), do: Implementation.publishable?(imp)
+  defp valid_action?(:restore, imp), do: Implementation.restorable?(imp)
   defp valid_action?(:reject, imp), do: Implementation.rejectable?(imp)
   defp valid_action?(:submit, imp), do: Implementation.submittable?(imp)
   defp valid_action?(:move, imp), do: valid_action?(:edit, imp)
