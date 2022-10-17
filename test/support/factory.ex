@@ -651,6 +651,7 @@ defmodule TdDd.Factory do
   def user_factory do
     %{
       id: System.unique_integer([:positive]),
+      role: "user",
       user_name: sequence("user_name"),
       full_name: sequence("full_name"),
       external_id: sequence("user_external_id"),

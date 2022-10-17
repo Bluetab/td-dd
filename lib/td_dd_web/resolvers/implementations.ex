@@ -87,9 +87,14 @@ defmodule TdDdWeb.Resolvers.Implementations do
            Workflow.restore_implementation(implementation, claims) do
       {:ok, implementation}
     else
-      {:claims, nil} -> {:error, :unauthorized}
-      {:error, :forbidden} -> {:error, :forbidden}
-      {:error, :implementation, changeset, _} -> {:error, ChangesetUtils.error_message_list_on(changeset)}
+      {:claims, nil} ->
+        {:error, :unauthorized}
+
+      {:error, :forbidden} ->
+        {:error, :forbidden}
+
+      {:error, :implementation, changeset, _} ->
+        {:error, ChangesetUtils.error_message_list_on(changeset)}
     end
   end
 
