@@ -198,5 +198,21 @@ defmodule TdDdWeb.UserSearchFilterControllerTest do
              |> get(Routes.user_search_filter_path(conn, :show, id))
              |> response(:not_found)
     end
+
+    @tag authentication: [role: "admin"]
+    test "admin not owner deletes chosen user_search_filter", %{
+      conn: conn
+    } do
+      other_admin_user = build(:user, role: "admin")
+      %{id: id} = insert(:user_search_filter, user_id: other_admin_user.id)
+
+      assert conn
+             |> delete(Routes.user_search_filter_path(conn, :delete, id))
+             |> response(:no_content)
+
+      assert conn
+             |> get(Routes.user_search_filter_path(conn, :show, id))
+             |> response(:not_found)
+    end
   end
 end
