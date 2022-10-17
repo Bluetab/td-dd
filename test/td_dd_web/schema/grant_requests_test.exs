@@ -2,17 +2,17 @@ defmodule TdDdWeb.Schema.GrantRequestsTest do
   use TdDdWeb.ConnCase
 
   @grant_request_query """
-  query latestGrantRequest($id: ID!) {
-    latestGrantRequest(data_structure_id: $id) {
+  query LatestGrantRequest($id: ID!) {
+    latestGrantRequest(dataStructureId: $id) {
       id
-      data_structure_id
-      domain_ids
+      dataStructureId
+      domainIds
       group {
         id
         grant {
           id
-          start_date
-          end_date
+          startDate
+          endDate
         }
       }
       status {
@@ -76,25 +76,6 @@ defmodule TdDdWeb.Schema.GrantRequestsTest do
         domain_ids: [domain_id]
       )
 
-      grant_request_result = %{
-        "data_structure_id" => to_string(data_structure_id),
-        "domain_ids" => [to_string(domain_id)],
-        "group" => %{
-          "grant" => %{
-            "end_date" => Date.to_iso8601(end_date),
-            "id" => to_string(grant_id),
-            "start_date" => Date.to_iso8601(start_date)
-          },
-          "id" => to_string(group_id)
-        },
-        "id" => to_string(grant_request_id),
-        "status" => %{
-          "id" => to_string(status_id),
-          "reason" => reason,
-          "status" => status
-        }
-      }
-
       assert %{"data" => %{"latestGrantRequest" => grant_request}} =
                conn
                |> post("/api/v2", %{
@@ -103,61 +84,45 @@ defmodule TdDdWeb.Schema.GrantRequestsTest do
                })
                |> json_response(:ok)
 
-      assert grant_request == grant_request_result
+      assert grant_request == %{
+               "dataStructureId" => to_string(data_structure_id),
+               "domainIds" => [to_string(domain_id)],
+               "group" => %{
+                 "grant" => %{
+                   "endDate" => Date.to_iso8601(end_date),
+                   "id" => to_string(grant_id),
+                   "startDate" => Date.to_iso8601(start_date)
+                 },
+                 "id" => to_string(group_id)
+               },
+               "id" => to_string(grant_request_id),
+               "status" => %{
+                 "id" => to_string(status_id),
+                 "reason" => reason,
+                 "status" => status
+               }
+             }
     end
 
-    @tag authentication: [
-           role: "user",
-           permissions: [:create_grant_request, :view_data_structure]
-         ]
-    test "users with permissions can get their owns grant request by structure_id", %{
+    @tag authentication: [role: "user", permissions: ["view_data_structure"]]
+    test "user with view_data_structure can query their own grant request by structure_id", %{
       conn: conn,
       domain: %{id: domain_id},
       claims: %{user_id: user_id} = _claims
     } do
-      %{id: data_structure_id} = data_structure = insert(:data_structure, domain_ids: [domain_id])
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain_id])
 
-      %{id: grant_id, start_date: start_date, end_date: end_date} =
-        insert(:grant,
-          data_structure_id: data_structure_id
-        )
-
-      %{id: group_id} =
-        group = build(:grant_request_group, user_id: user_id, modification_grant_id: grant_id)
-
-      %{id: grant_request_id} =
-        insert(:grant_request,
-          group: group,
-          data_structure: data_structure,
-          data_structure_id: data_structure_id,
-          domain_ids: [domain_id]
-        )
-
-      %{id: status_id, reason: reason, status: status} =
+      %{grant_request_id: grant_request_id} =
         insert(:grant_request_status,
-          grant_request_id: grant_request_id,
+          grant_request:
+            build(:grant_request,
+              group: build(:grant_request_group, user_id: user_id),
+              data_structure_id: data_structure_id,
+              domain_ids: [domain_id]
+            ),
           status: "approved",
           reason: "status_approved"
         )
-
-      grant_request_result = %{
-        "data_structure_id" => to_string(data_structure_id),
-        "domain_ids" => [to_string(domain_id)],
-        "group" => %{
-          "grant" => %{
-            "end_date" => Date.to_iso8601(end_date),
-            "id" => to_string(grant_id),
-            "start_date" => Date.to_iso8601(start_date)
-          },
-          "id" => to_string(group_id)
-        },
-        "id" => to_string(grant_request_id),
-        "status" => %{
-          "id" => to_string(status_id),
-          "reason" => reason,
-          "status" => status
-        }
-      }
 
       assert %{"data" => %{"latestGrantRequest" => grant_request}} =
                conn
@@ -167,7 +132,8 @@ defmodule TdDdWeb.Schema.GrantRequestsTest do
                })
                |> json_response(:ok)
 
-      assert grant_request == grant_request_result
+      assert %{"id" => id} = grant_request
+      assert id == "#{grant_request_id}"
     end
 
     @tag authentication: [role: "admin"]

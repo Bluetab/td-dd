@@ -379,17 +379,21 @@ defmodule TdDq.Implementations.ImplementationTest do
       rule = insert(:rule)
 
       creation_attrs = %{
-        validations: [
+        validation: [
           %{
-            operator: %{
-              name: "timestamp_gt_timestamp",
-              value_type: "timestamp",
-              value_type_filter: "timestamp"
-            },
-            structure: %{id: 7, name: "s7"},
-            value: [%{raw: "2019-12-02 05:35:00"}],
-            modifier: build(:modifier),
-            value_modifier: [build(:modifier)]
+            conditions: [
+              %{
+                operator: %{
+                  name: "timestamp_gt_timestamp",
+                  value_type: "timestamp",
+                  value_type_filter: "timestamp"
+                },
+                structure: %{id: 7, name: "s7"},
+                value: [%{raw: "2019-12-02 05:35:00"}],
+                modifier: build(:modifier),
+                value_modifier: [build(:modifier)]
+              }
+            ]
           }
         ]
       }
@@ -400,7 +404,7 @@ defmodule TdDq.Implementations.ImplementationTest do
         insert(:implementation,
           implementation_key: implementation_key,
           rule: rule,
-          validations: creation_attrs.validations
+          validation: creation_attrs.validation
         )
 
       assert %{
@@ -436,7 +440,7 @@ defmodule TdDq.Implementations.ImplementationTest do
       creation_attrs = %{
         populations: [
           %{
-            population: [
+            conditions: [
               %{
                 operator: operator,
                 structure: structure,
@@ -450,7 +454,7 @@ defmodule TdDq.Implementations.ImplementationTest do
             ]
           },
           %{
-            population: [
+            conditions: [
               %{
                 operator: operator,
                 structure: structure,
@@ -473,7 +477,7 @@ defmodule TdDq.Implementations.ImplementationTest do
       assert %{
                populations: [
                  %{
-                   population: [
+                   conditions: [
                      %{
                        operator: ^operator,
                        structure: %{id: ^structure_id, name: ^structure_name},
@@ -487,7 +491,7 @@ defmodule TdDq.Implementations.ImplementationTest do
                    ]
                  },
                  %{
-                   population: [
+                   conditions: [
                      %{
                        operator: ^operator,
                        structure: %{id: ^structure_id, name: ^structure_name},
@@ -514,7 +518,7 @@ defmodule TdDq.Implementations.ImplementationTest do
       creation_attrs = %{
         populations: [
           %{
-            population: [
+            conditions: [
               %{
                 operator: operator,
                 structure: structure,
@@ -528,7 +532,7 @@ defmodule TdDq.Implementations.ImplementationTest do
             ]
           },
           %{
-            population: [
+            conditions: [
               %{
                 operator: operator,
                 structure: structure,
@@ -559,6 +563,154 @@ defmodule TdDq.Implementations.ImplementationTest do
                    operator: ^operator,
                    structure: %{id: ^structure_id, name: ^structure_name},
                    value: ^value
+                 }
+               ]
+             } = Document.encode(rule_implementation)
+    end
+
+    test "encoded implementation includes validationsSet" do
+      rule = insert(:rule)
+
+      operator = %{
+        name: "timestamp_gt_timestamp",
+        value_type: "timestamp",
+        value_type_filter: "timestamp"
+      }
+
+      modifier = build(:modifier)
+
+      value = [%{raw: "2019-12-02 05:35:00"}]
+
+      creation_attrs = %{
+        validation: [
+          %{
+            conditions: [
+              %{
+                operator: operator,
+                structure: %{id: 7, name: "s7"},
+                value: value,
+                modifier: modifier,
+                value_modifier: [modifier]
+              }
+            ]
+          },
+          %{
+            conditions: [
+              %{
+                operator: operator,
+                structure: %{id: 8, name: "s8"},
+                value: value,
+                modifier: modifier,
+                value_modifier: [modifier]
+              }
+            ]
+          }
+        ]
+      }
+
+      implementation_key = "rik1"
+
+      rule_implementation =
+        insert(:implementation,
+          implementation_key: implementation_key,
+          rule: rule,
+          validation: creation_attrs.validation
+        )
+
+      assert %{
+               validation: [
+                 %{
+                   conditions: [
+                     %{
+                       modifier: ^modifier,
+                       operator: ^operator,
+                       structure: %{
+                         id: 7,
+                         name: "s7"
+                       },
+                       value: ^value,
+                       value_modifier: [^modifier]
+                     }
+                   ]
+                 },
+                 %{
+                   conditions: [
+                     %{
+                       modifier: ^modifier,
+                       operator: ^operator,
+                       structure: %{
+                         id: 8,
+                         name: "s8"
+                       },
+                       value: ^value,
+                       value_modifier: [^modifier]
+                     }
+                   ]
+                 }
+               ]
+             } = Document.encode(rule_implementation)
+    end
+
+    test "encoded implementation includes validations (backward compatibility)" do
+      rule = insert(:rule)
+
+      operator = %{
+        name: "timestamp_gt_timestamp",
+        value_type: "timestamp",
+        value_type_filter: "timestamp"
+      }
+
+      modifier = build(:modifier)
+
+      value = [%{raw: "2019-12-02 05:35:00"}]
+
+      creation_attrs = %{
+        validation: [
+          %{
+            conditions: [
+              %{
+                operator: operator,
+                structure: %{id: 7, name: "s7"},
+                value: value,
+                modifier: modifier,
+                value_modifier: [modifier]
+              }
+            ]
+          },
+          %{
+            conditions: [
+              %{
+                operator: operator,
+                structure: %{id: 8, name: "s8"},
+                value: value,
+                modifier: modifier,
+                value_modifier: [modifier]
+              }
+            ]
+          }
+        ]
+      }
+
+      implementation_key = "rik1"
+
+      rule_implementation =
+        insert(:implementation,
+          implementation_key: implementation_key,
+          rule: rule,
+          validation: creation_attrs.validation
+        )
+
+      assert %{
+               validations: [
+                 %{
+                   modifier: ^modifier,
+                   operator: ^operator,
+                   structure: %{
+                     id: 7,
+                     name: "s7"
+                   },
+                   value: ^value,
+                   value_modifier: [^modifier]
                  }
                ]
              } = Document.encode(rule_implementation)
@@ -632,7 +784,7 @@ defmodule TdDq.Implementations.ImplementationTest do
       creation_attrs = %{
         populations: [
           %{
-            population: [
+            conditions: [
               %{
                 operator: operator,
                 structure: structure,
@@ -646,7 +798,7 @@ defmodule TdDq.Implementations.ImplementationTest do
             ]
           },
           %{
-            population: [
+            conditions: [
               %{
                 operator: operator,
                 structure: structure,

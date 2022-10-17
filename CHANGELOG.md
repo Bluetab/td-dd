@@ -4,12 +4,17 @@
 
 ### Fixed
 
-- [TD-5140] Changed implementations ids by implementations refs and links migration
+- [TD-5250] GraphQL `latestGrantRequest` no longer returns `forbidden` for users
+  with `view_data_structure` permissions
+- [TD-5140] Changed implementations ids by implementations refs and links
+  migration
 
 ### Added
 
 - [TD-4558] Support for managing data quality functions using API
 - [TD-5027] support for restoring deprecated `Implementations`
+- [TD-5195] Support for global user filters
+- [TD-3087] OR/AND in implementations validations
 
 ## [4.52.0] 2022-10-03
 
