@@ -4,7 +4,6 @@ defmodule TdDdWeb.Resolvers.GrantRequests do
   """
 
   alias TdDd.Grants
-  alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.Requests
 
   def latest_grant_request(_parent, %{data_structure_id: data_structure_id}, resolution) do

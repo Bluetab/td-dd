@@ -124,6 +124,7 @@ defmodule TdDq.Implementations.Implementation do
     implementation
     |> cast(params, [:status, :version, :deleted_at])
     |> validate_required([:status, :version])
+    |> validate_or_put_implementation_key
   end
 
   def implementation_ref_changeset(%__MODULE__{} = implementation, params) do
@@ -356,11 +357,13 @@ defmodule TdDq.Implementations.Implementation do
 
   def publishable?(%__MODULE__{status: status}), do: status in [:draft, :pending_approval]
 
+  def restorable?(%__MODULE__{status: status}), do: status == :deprecated
+
   def versionable?(%__MODULE__{status: status} = implementation),
     do: Implementations.last?(implementation) && status == :published
 
   def deletable?(%__MODULE__{status: status}),
-    do: status in [:draft, :pending_approval, :rejected]
+    do: status in [:draft, :pending_approval, :rejected, :deprecated]
 
   def editable?(%__MODULE__{status: status} = implementation),
     do: Implementations.last?(implementation) && status in [:draft, :rejected]

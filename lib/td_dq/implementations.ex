@@ -404,7 +404,7 @@ defmodule TdDq.Implementations do
     |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
     |> Multi.run(:audit_status, Audit, :implementation_status_updated, [changeset, user_id])
     |> Repo.transaction()
-    |> on_delete()
+    |> on_upsert()
   end
 
   def delete_implementation(
@@ -466,6 +466,7 @@ defmodule TdDq.Implementations do
       :manage_segments,
       :move,
       :publish,
+      :restore,
       :reject,
       :submit
     ]
