@@ -8,6 +8,7 @@ defmodule TdDq.Executions do
   alias Ecto.Changeset
   alias Ecto.Multi
   alias TdDd.Repo
+  alias TdDq.Events.QualityEvent
   alias TdDq.Executions.Audit
   alias TdDq.Executions.Execution
   alias TdDq.Executions.Group
@@ -48,6 +49,14 @@ defmodule TdDq.Executions do
     |> Repo.all()
   end
 
+  def min_max_count(params) do
+    params
+    |> Map.drop(@pagination_params)
+    |> executions_query()
+    |> select([e], %{count: count(e), min_id: min(e.id), max_id: max(e.id)})
+    |> Repo.one()
+  end
+
   def group_min_max_count(params) do
     params
     |> Map.drop(@pagination_params)
@@ -72,9 +81,36 @@ defmodule TdDq.Executions do
   def list_executions(params \\ %{}, opts \\ []) do
     preloads = Keyword.get(opts, :preload, [])
 
-    params = cast(params)
+    params
+    |> executions_query()
+    |> preload(^preloads)
+    |> Repo.all()
+  end
+
+  def execution_filters(%{} = params) do
+    q = executions_query(params)
+
+    statuses =
+      q
+      |> subquery()
+      |> join(:left, [e], qe in QualityEvent, on: qe.execution_id == e.id)
+      |> order_by([_, qe], desc: qe.inserted_at, desc: qe.id)
+      |> distinct([e], e.id)
+      |> select([_, qe], %{status: fragment("coalesce(?, ?)", qe.type, "PENDING")})
+      |> subquery()
+      |> select([s], s.status)
+      |> distinct(true)
+      |> Repo.all()
+
+    [%{field: "status", values: Enum.sort(statuses)}]
+  end
+
+  defp executions_query(%{} = params) do
+    {pagination, params} = Map.split(params, @pagination_params)
 
     params
+    |> cast()
+    |> Map.merge(pagination)
     |> Enum.reduce(Execution, fn
       {:group_id, id}, q ->
         where(q, [e], e.group_id == ^id)
@@ -89,25 +125,50 @@ defmodule TdDq.Executions do
         |> where([result: r], is_nil(r.id))
         |> where([event: qe], is_nil(qe.execution_id))
 
+      {:filters, filters}, q ->
+        Enum.reduce(filters, q, fn
+          {:status, statuses}, q ->
+            sq = status_query()
+
+            q
+            |> join(:left, [e], s in subquery(sq), on: s.execution_id == e.id)
+            |> where([_, s], fragment("coalesce(?, ?)", s.status, "PENDING") in ^statuses)
+        end)
+
       {:sources, external_ids}, q ->
         sources_query = ImplementationQueries.implementation_sources_query(external_ids)
         join(q, :inner, [e], s in ^sources_query, on: e.implementation_id == s.implementation_id)
 
+      {:ref, ref}, q ->
+        ids_query = ImplementationQueries.implementation_ids_by_ref_query(ref)
+        where(q, [e], e.implementation_id in subquery(ids_query))
+
+      {:order_by, order}, q ->
+        order_by(q, ^order)
+
+      {:limit, lim}, q ->
+        limit(q, ^lim)
+
+      {:before, id}, q ->
+        where(q, [e], e.id < type(^id, :integer))
+
+      {:after, id}, q ->
+        where(q, [e], e.id > type(^id, :integer))
+
       _, q ->
         q
     end)
-    |> order_by(:id)
-    |> preload(^preloads)
-    |> Repo.all()
   end
 
   defp cast(%{} = params) do
     types = %{
       group_id: :integer,
       execution_group_id: :integer,
-      status: :string,
+      ref: :integer,
+      filters: :map,
       source: :string,
-      sources: {:array, :string}
+      sources: {:array, :string},
+      status: :string
     }
 
     {%{}, types}
@@ -159,9 +220,8 @@ defmodule TdDq.Executions do
     Dataloader.Ecto.new(TdDd.Repo, query: &query/2, timeout: Dataloader.default_timeout())
   end
 
-  defp query(queryable, params) do
-    Enum.reduce(params, queryable, fn _, q -> q end)
-  end
+  defp query(QualityEvent, %{latest: true}), do: latest_event_query()
+  defp query(queryable, _params), do: queryable
 
   def kv_datasource({:status_counts, %{}}, groups) do
     group_ids = Enum.map(groups, & &1.id)
@@ -190,5 +250,16 @@ defmodule TdDq.Executions do
     counts
     |> Map.get(id, [])
     |> Map.new(fn %{status: status, count: count} -> {status, count} end)
+  end
+
+  defp latest_event_query do
+    QualityEvent
+    |> distinct([e], e.execution_id)
+    |> order_by([e], desc: e.inserted_at, desc: e.id)
+  end
+
+  defp status_query do
+    latest_event_query()
+    |> select([e], %{execution_id: e.execution_id, status: e.type})
   end
 end
