@@ -13,6 +13,9 @@ defmodule TdDd.Grants.Policy do
 
   def authorize(_action, %{role: "admin"}, _params), do: true
 
+  def authorize(:query, %{} = claims, :latest_grant_request),
+    do: Permissions.authorized?(claims, :view_data_structure)
+
   def authorize(:query, %{} = claims, _params) do
     Permissions.authorized?(claims, :approve_grant_request) or
       Permissions.authorized?(claims, :create_grant_request)
@@ -24,6 +27,8 @@ defmodule TdDd.Grants.Policy do
   def authorize(:request_removal, %{} = claims, %Grant{data_structure: data_structure}) do
     Bodyguard.permit?(DataStructures, :request_grant_removal, claims, data_structure)
   end
+
+  def authorize(:view, %{} = _claims, nil), do: true
 
   def authorize(:view, %{user_id: user_id}, %Grant{user_id: user_id}), do: true
 
