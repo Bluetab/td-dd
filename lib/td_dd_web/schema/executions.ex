@@ -5,11 +5,17 @@ defmodule TdDdWeb.Schema.Executions do
 
   use Absinthe.Schema.Notation
 
-  import Absinthe.Resolution.Helpers, only: [dataloader: 1]
+  import Absinthe.Resolution.Helpers, only: [dataloader: 1, dataloader: 3]
 
   object :execution_groups_connection do
     field :total_count, non_null(:integer)
     field :page, list_of(:execution_group)
+    field :page_info, :page_info
+  end
+
+  object :executions_connection do
+    field :total_count, non_null(:integer)
+    field :page, list_of(:execution)
     field :page_info, :page_info
   end
 
@@ -37,5 +43,16 @@ defmodule TdDdWeb.Schema.Executions do
     field :rule, :rule, resolve: dataloader(TdDq.Executions)
     field :inserted_at, :datetime
     field :updated_at, :datetime
+
+    field :latest_event, :quality_event,
+      resolve:
+        dataloader(TdDq.Executions, :quality_events,
+          args: %{latest: true},
+          callback: fn
+            [e], _, _ -> {:ok, e}
+            [], _, _ -> {:ok, nil}
+            nil, _, _ -> {:ok, nil}
+          end
+        )
   end
 end

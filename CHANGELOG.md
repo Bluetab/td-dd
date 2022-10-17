@@ -12,6 +12,7 @@
 
 ### Added
 
+- [TD-4177] Support for querying the executions of an implementation
 - [TD-4558] Support for managing data quality functions using API
 - [TD-5027] support for restoring deprecated `Implementations`
 - [TD-5195] Support for global user filters

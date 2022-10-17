@@ -468,10 +468,12 @@ defmodule TdDd.Factory do
   end
 
   def execution_factory(attrs) do
+    {impl_attrs, attrs} = Map.split(attrs, [:domain_id, :implementation_ref])
+
     attrs =
       attrs
       |> default_assoc(:group_id, :group, :execution_group)
-      |> default_assoc(:implementation_id, :implementation)
+      |> default_assoc(:implementation_id, :implementation, :implementation, impl_attrs)
 
     %TdDq.Executions.Execution{}
     |> merge_attributes(attrs)
