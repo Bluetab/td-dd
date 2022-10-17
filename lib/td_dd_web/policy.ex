@@ -7,7 +7,8 @@ defmodule TdDdWeb.Policy do
     :deprecate_implementation,
     :publish_implementation,
     :reject_implementation,
-    :submit_implementation
+    :submit_implementation,
+    :restore_implementation
   ]
 
   @tag_mutations [:tag_structure, :delete_structure_tag]

@@ -3,6 +3,7 @@ defmodule TdDdWeb.Resolvers.Implementations do
   Absinthe resolvers for implementations
   """
 
+  alias TdDd.Utils.ChangesetUtils
   alias TdDq.Events.QualityEvents
   alias TdDq.Implementations
   alias TdDq.Implementations.Workflow
@@ -74,6 +75,21 @@ defmodule TdDdWeb.Resolvers.Implementations do
       {:claims, nil} -> {:error, :unauthorized}
       {:error, :forbidden} -> {:error, :forbidden}
       {:error, :implementation, changeset, _} -> {:error, changeset}
+    end
+  end
+
+  def restore_implementation(_parent, %{id: id}, resolution) do
+    implementation = Implementations.get_implementation!(id)
+
+    with {:claims, %{} = claims} <- {:claims, claims(resolution)},
+         :ok <- Bodyguard.permit(Implementations, :restore, claims, implementation),
+         {:ok, %{implementation: implementation}} <-
+           Workflow.restore_implementation(implementation, claims) do
+      {:ok, implementation}
+    else
+      {:claims, nil} -> {:error, :unauthorized}
+      {:error, :forbidden} -> {:error, :forbidden}
+      {:error, :implementation, changeset, _} -> {:error, ChangesetUtils.error_message_list_on(changeset)}
     end
   end
 

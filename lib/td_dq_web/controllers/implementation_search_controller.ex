@@ -76,7 +76,7 @@ defmodule TdDqWeb.ImplementationSearchController do
     size = Map.get(params, "size", @default_size)
 
     params
-    |> Map.put("without", "deleted_at")
+    # |> Map.put("without", "deleted_at")
     |> Map.drop(["page", "size"])
     |> Search.search_implementations(claims, page, size)
   end
