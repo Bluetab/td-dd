@@ -129,15 +129,18 @@ defmodule TdDdWeb.UserSearchFilterController do
   end
 
   def delete(conn, %{"id" => id}) do
-    %{user_id: user_id} = conn.assigns[:current_resource]
+    claims = conn.assigns[:current_resource]
     user_search_filter = UserSearchFilters.get_user_search_filter!(id)
 
-    with true <- user_id == user_search_filter.user_id,
+    with :ok <-
+           Bodyguard.permit(UserSearchFilters, :delete, claims, %{
+             user_id: user_search_filter.user_id
+           }),
          {:ok, %UserSearchFilter{}} <-
            UserSearchFilters.delete_user_search_filter(user_search_filter) do
       send_resp(conn, :no_content, "")
     else
-      false ->
+      {:error, :forbidden} ->
         conn
         |> put_status(:forbidden)
         |> put_view(ErrorView)
