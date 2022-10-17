@@ -66,12 +66,23 @@ defmodule TdDdWeb.Schema.Implementations do
     field :version, :integer
     field :versions, list_of(:implementation), resolve: &Resolvers.Implementations.versions/3
     field :results, list_of(:implementation_result), resolve: &Resolvers.Implementations.results/3
+    field :updated_at, :datetime
+    field :deleted_at, :datetime
 
     field :last_quality_event, :quality_event,
       resolve: &Resolvers.Implementations.last_quality_event/3
 
-    field :updated_at, :datetime
-    field :deleted_at, :datetime
+    field :execution_filters, list_of(:execution_filter),
+      resolve: &Resolvers.Executions.executions_filters/3
+
+    field :executions_connection, :executions_connection do
+      arg(:first, :integer)
+      arg(:last, :integer)
+      arg(:after, :cursor)
+      arg(:before, :cursor)
+      arg(:filters, list_of(:execution_filter_input))
+      resolve(&Resolvers.Executions.executions_connection/3)
+    end
   end
 
   object :raw_content do
@@ -134,5 +145,15 @@ defmodule TdDdWeb.Schema.Implementations do
     field :inserted_at, :datetime
     field :message, :string
     field :type, :string
+  end
+
+  object :execution_filter do
+    field :field, :string
+    field :values, list_of(:string)
+  end
+
+  input_object :execution_filter_input do
+    field :field, :string
+    field :values, list_of(:string)
   end
 end
