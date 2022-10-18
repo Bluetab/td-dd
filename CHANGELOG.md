@@ -1,6 +1,12 @@
 # Changelog
 
-## [Unreleased]
+## [4.53.1] 2022-10-18
+
+### Fixed
+
+- [TD-5260] Avoid to create a draft with not changes for implementations
+
+## [4.53.0] 2022-10-18
 
 ### Fixed
 
@@ -9,7 +15,6 @@
 - [TD-5140] Changed implementations ids by implementations refs and links
   migration
 - [TD-4927] Fix upload implementations file with and without rule raise an error
-- [TD-5260] Avoid to create a draft with not changes for implementations
 
 ### Added
 
