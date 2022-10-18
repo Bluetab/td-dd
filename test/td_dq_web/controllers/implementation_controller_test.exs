@@ -977,7 +977,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
            swagger_schema: schema,
            claims: claims
          } do
-      rule_implementation_attr = string_params_for(:implementation) |> Map.drop(["status"])
+      rule_implementation_attr = string_params_for(:implementation)
 
       assert %{"data" => %{"id" => id}} =
                conn
@@ -1054,7 +1054,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
          } do
       rule_implementation_attr =
         string_params_for(:implementation, goal: 30, minimum: 10, domain_id: domain_id)
-        |> Map.drop(["status"])
 
       assert %{"data" => %{"id" => id}} =
                conn
