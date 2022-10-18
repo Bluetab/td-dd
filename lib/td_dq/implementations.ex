@@ -216,6 +216,10 @@ defmodule TdDq.Implementations do
     end
   end
 
+  defp need_update?(implementation, %{"status" => "draft"} = params) do
+    need_update?(implementation, Map.drop(params, ["status"]))
+  end
+
   defp need_update?(implementation, params) do
     implementation
     |> Implementation.changeset(params)

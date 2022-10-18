@@ -166,7 +166,6 @@ defmodule TdDq.ImplementationsTest do
         [id4, id4],
         [id5, id4]
       ])
-
     end
   end
 

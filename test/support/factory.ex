@@ -107,7 +107,7 @@ defmodule TdDd.Factory do
       raw_content: build(:raw_content, content_attrs),
       deleted_at: nil,
       version: 1,
-      status: :draft
+      status: "draft"
     }
     |> merge_attributes(attrs)
   end
@@ -140,7 +140,7 @@ defmodule TdDd.Factory do
       validation: build(:validation),
       segments: build(:segments),
       version: 1,
-      status: :draft
+      status: "draft"
     }
     |> merge_attributes(attrs)
   end
@@ -170,7 +170,7 @@ defmodule TdDd.Factory do
       populations: build(:populations),
       validation: build(:validation),
       version: 1,
-      status: :draft
+      status: "draft"
     }
     |> merge_attributes(attrs)
   end
