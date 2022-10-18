@@ -210,7 +210,7 @@ defmodule TdDdWeb.DataStructureVersionView do
     with_profile_attrs(dsv, profile)
   end
 
-  defp add_profile(dsv), do: dsv
+  defp add_profile(dsv), do: Map.delete(dsv, :profile)
 
   defp field_structure_json(
          %{
