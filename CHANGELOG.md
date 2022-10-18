@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-5234] `GET /api/data_structures/:id/versions/:version` now includes
+  `implementation_count` in response instead of embedded `implementations`
+
 ## [4.53.1] 2022-10-18
 
 ### Fixed
