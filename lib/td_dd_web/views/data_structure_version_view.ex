@@ -4,7 +4,6 @@ defmodule TdDdWeb.DataStructureVersionView do
   alias TdDd.DataStructures
   alias TdDdWeb.GrantView
   alias TdDdWeb.StructureTagView
-  alias TdDqWeb.ImplementationStructureView
 
   @protected DataStructures.protected()
 
@@ -39,7 +38,6 @@ defmodule TdDdWeb.DataStructureVersionView do
     |> add_profile()
     |> add_embedded_relations(dsv)
     |> merge_metadata()
-    |> merge_implementations()
     |> add_data_structure_type()
     |> add_note()
     |> add_tags(assigns)
@@ -62,7 +60,7 @@ defmodule TdDdWeb.DataStructureVersionView do
       :grants,
       :group,
       :id,
-      :implementations,
+      :implementation_count,
       :links,
       :metadata,
       :name,
@@ -247,8 +245,7 @@ defmodule TdDdWeb.DataStructureVersionView do
   end
 
   defp version_json(version) do
-    version
-    |> Map.take([:version, :deleted_at, :inserted_at, :updated_at])
+    Map.take(version, [:version, :deleted_at, :inserted_at, :updated_at])
   end
 
   defp add_system(dsv) do
@@ -330,16 +327,6 @@ defmodule TdDdWeb.DataStructureVersionView do
   end
 
   defp merge_metadata(dsv), do: dsv
-
-  defp merge_implementations(%{implementations: [_ | _] = implementations} = dsv) do
-    Map.put(
-      dsv,
-      :implementations,
-      render_many(implementations, ImplementationStructureView, "implementation_structure.json")
-    )
-  end
-
-  defp merge_implementations(dsv), do: dsv
 
   defp add_data_structure_type(%{data_structure_type: nil} = dsv),
     do: Map.put(dsv, :data_structure_type, %{})
