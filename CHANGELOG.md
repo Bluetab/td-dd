@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-5273] Allow request functions for grant request creators
+
 ## [4.53.1] 2022-10-18
 
 ### Fixed
