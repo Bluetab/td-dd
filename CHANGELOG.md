@@ -5,6 +5,18 @@
 ### Added
 
 - [TD-5171] enriches domain's parents on DataStructureVersion show
+## [4.53.2] 2022-10-20
+
+### Changed
+
+- [TD-5234] `GET /api/data_structures/:id/versions/:version` now includes
+  `implementation_count` in response instead of embedded `implementations`
+
+### Fixed
+
+- [TD-4999] Serialization issue for data structures with profile but without
+  class field
+- [TD-5273] Allow request functions for grant request creators
 
 ## [4.53.1] 2022-10-18
 
