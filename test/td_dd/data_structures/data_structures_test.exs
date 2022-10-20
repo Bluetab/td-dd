@@ -1205,6 +1205,35 @@ defmodule TdDd.DataStructuresTest do
       assert %{id: ^domain_id, name: ^domain_name, external_id: ^domain_external_id} = domain
     end
 
+    test "get_data_structure_version!/1 enriches data structure with domain parents", _ do
+      %{id: d1_id, name: d1_name, external_id: d1_ext_id} = CacheHelpers.insert_domain()
+
+      %{id: d2_id, name: d2_name, external_id: d2_ext_id} =
+        CacheHelpers.insert_domain(%{parent_id: d1_id})
+
+      %{id: d3_id, name: d3_name, external_id: d3_ext_id} =
+        CacheHelpers.insert_domain(%{parent_id: d2_id})
+
+      %{id: id} =
+        insert(:data_structure_version,
+          data_structure:
+            build(:data_structure,
+              domain_ids: [d3_id]
+            )
+        )
+
+      assert %{data_structure: data_structure} = DataStructures.get_data_structure_version!(id)
+      assert %{domains: [domain]} = data_structure
+
+      assert %{
+        name: ^d3_name,
+        external_id: ^d3_ext_id,
+        parents: [
+          %{id: ^d1_id, name: ^d1_name, external_id: ^d1_ext_id},
+          %{id: ^d2_id, name: ^d2_name, external_id: ^d2_ext_id}
+        ]} = domain
+    end
+
     test "get_data_structure_version!/1 enriches with empty map when there is no domain",
          %{data_structure_version: %{id: id}} do
       assert %{data_structure: data_structure} = DataStructures.get_data_structure_version!(id)

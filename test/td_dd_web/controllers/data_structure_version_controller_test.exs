@@ -471,6 +471,42 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     end
   end
 
+  describe "GET /api/data_structures/:id/versions/latest with domain hierarchy" do
+    @tag authentication: [role: "admin"]
+    test "includes domains parents on response", %{conn: conn} do
+
+      %{id: d1_id, name: d1_name, external_id: d1_ext_id} = CacheHelpers.insert_domain()
+
+      %{id: d2_id, name: d2_name, external_id: d2_ext_id} =
+        CacheHelpers.insert_domain(%{parent_id: d1_id})
+
+      %{id: d3_id, name: d3_name, external_id: d3_ext_id} =
+        CacheHelpers.insert_domain(%{parent_id: d2_id})
+
+      %{data_structure_id: id} = insert(:data_structure_version, data_structure: build(:data_structure,
+        domain_ids: [d3_id]
+      ))
+
+      assert %{"data" => data} =
+        conn
+        |> get(Routes.data_structure_data_structure_version_path(conn, :show, id, "latest"))
+        |> json_response(:ok)
+
+      assert %{"data_structure" => %{
+        "domains" => [
+          %{
+            "name" => ^d3_name,
+            "external_id" => ^d3_ext_id,
+            "parents" => [
+              %{"id" => ^d1_id, "name" => ^d1_name, "external_id" => ^d1_ext_id},
+              %{"id" => ^d2_id, "name" => ^d2_name, "external_id" => ^d2_ext_id}
+          ]}
+        ]
+      }} = data
+
+    end
+  end
+
   describe "GET /api/data_structures/:id/versions/latest with actions" do
     @tag authentication: [role: "admin"]
     test "includes actions in the response", %{conn: conn} do

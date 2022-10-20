@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-5171] enriches domain's parents on DataStructureVersion show
+
 ## [4.53.1] 2022-10-18
 
 ### Fixed
