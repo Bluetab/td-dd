@@ -39,6 +39,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     field(:with_profiling, :boolean, virtual: true)
     field(:_filters, :map, virtual: true)
     field(:tag_names, {:array, :string}, virtual: true)
+    field(:implementation_count, :integer, virtual: true)
 
     belongs_to(:data_structure, DataStructure)
 

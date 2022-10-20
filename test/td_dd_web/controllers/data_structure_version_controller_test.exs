@@ -850,15 +850,13 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   end
 
   describe "GET /api/data_structures/:id/versions/:version implementations" do
-    setup :create_structure_with_implementation
-
     @tag authentication: [role: "admin"]
-    test "rendes related implementations", %{
-      conn: conn,
-      data_structure: %{id: id},
-      implementation: %{implementation_key: implementation_key},
-      implementation_structure: %{id: implementation_structure_id}
-    } do
+    test "renders implementation count", %{conn: conn} do
+      %{data_structure_id: id} = insert(:data_structure_version)
+      insert(:implementation_structure, data_structure_id: id)
+      insert(:implementation_structure, data_structure_id: id)
+      insert(:implementation_structure, data_structure_id: id, deleted_at: DateTime.utc_now())
+
       assert %{"data" => data} =
                conn
                |> get(
@@ -866,14 +864,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                )
                |> json_response(:ok)
 
-      assert %{
-               "implementations" => [
-                 %{
-                   "id" => ^implementation_structure_id,
-                   "implementation" => %{"implementation_key" => ^implementation_key}
-                 }
-               ]
-             } = data
+      assert %{"implementation_count" => 2} = data
     end
   end
 
@@ -1161,24 +1152,6 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       parent_version: parent_version,
       structure_version: structure_version,
       structure: structure
-    ]
-  end
-
-  defp create_structure_with_implementation(_) do
-    %{data_structure: data_structure} = insert(:data_structure_version)
-
-    implementation = insert(:implementation)
-
-    implementation_structure =
-      insert(:implementation_structure,
-        implementation: implementation,
-        data_structure: data_structure
-      )
-
-    [
-      implementation: implementation,
-      data_structure: data_structure,
-      implementation_structure: implementation_structure
     ]
   end
 
