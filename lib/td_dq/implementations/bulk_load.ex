@@ -5,6 +5,7 @@ defmodule TdDq.Implementations.BulkLoad do
 
   alias Ecto.Changeset
   alias TdCache.DomainCache
+  alias TdCache.TemplateCache
   alias TdDdWeb.ErrorHelpers
   alias TdDq.Implementations
   alias TdDq.Rules
@@ -56,6 +57,7 @@ defmodule TdDq.Implementations.BulkLoad do
         imp
         |> enrich_implementation()
         |> maybe_put_domain_id()
+        |> maybe_put_template_domains_ids()
         |> Map.put("status", "draft")
         |> Map.put("version", 1)
 
@@ -132,4 +134,38 @@ defmodule TdDq.Implementations.BulkLoad do
   end
 
   defp maybe_put_domain_id(params), do: params
+
+  defp maybe_put_template_domains_ids(
+         %{"df_name" => template_name, "df_content" => df_content} = params
+       )
+       when is_binary(template_name) do
+    case TemplateCache.get_by_name!(template_name) do
+      nil ->
+        params
+
+      template ->
+        template_domain_fields =
+          template
+          |> Map.get(:content)
+          |> Enum.reduce([], fn %{"fields" => fields}, acc -> acc ++ fields end)
+          |> Enum.filter(fn %{"type" => type} -> type == "domain" end)
+          |> Enum.map(fn %{"name" => name} -> name end)
+
+        content_domain_fields =
+          df_content
+          |> Map.take(template_domain_fields)
+          |> Enum.map(fn {domain_field, external_id} ->
+            case DomainCache.external_id_to_id(external_id) do
+              {:ok, domain_id} -> {domain_field, domain_id}
+              :error -> {domain_field, nil}
+            end
+          end)
+          |> Enum.into(%{})
+
+        new_df_content = Map.merge(df_content, content_domain_fields)
+        Map.put(params, "df_content", new_df_content)
+    end
+  end
+
+  defp maybe_put_template_domains_ids(params), do: params
 end
