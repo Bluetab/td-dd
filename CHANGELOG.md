@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-3765] Support for empty_dataset in rule_results
+
 ## [4.53.2] 2022-10-20
 
 ### Changed
