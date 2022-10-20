@@ -53,7 +53,7 @@ defmodule TdDq.Search.Helpers do
     end
   end
 
-  def with_result_text(%{records: records} = result_map, _minimum, _goal, result_type)
+  def with_result_text(%{records: records} = result_map, _minimum, _goal, _result_type)
       when records === 0 do
     Map.put(result_map, :result_text, "quality_result.empty_dataset")
   end
