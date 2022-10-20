@@ -43,5 +43,22 @@ defmodule TdDdWeb.Schema.FunctionsTest do
       assert %{"functions" => [function]} = data
       assert %{"id" => _, "name" => ^name, "args" => [%{"name" => "foo", "type" => _}]} = function
     end
+
+    @tag authentication: [role: "user", permissions: ["create_grant_request"]]
+    test "returns data when queried by a user with create grant request permissions", %{
+      conn: conn
+    } do
+      %{name: name} = insert(:function, args: [build(:argument, name: "foo")])
+
+      assert %{"data" => data} =
+               resp =
+               conn
+               |> post("/api/v2", %{"query" => @functions})
+               |> json_response(:ok)
+
+      refute Map.has_key?(resp, "errors")
+      assert %{"functions" => [function]} = data
+      assert %{"id" => _, "name" => ^name, "args" => [%{"name" => "foo", "type" => _}]} = function
+    end
   end
 end
