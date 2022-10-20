@@ -269,7 +269,7 @@ defmodule TdDd.DataStructures do
     |> enrich(opts, :data_structure_type, &get_data_structure_type!/1)
     |> enrich(opts, :grants, &get_grants/1)
     |> enrich(opts, :grant, &get_grant(&1, opts[:user_id]))
-    |> enrich(opts, :implementations, &get_implementations!/1)
+    |> enrich(opts, :implementation_count, &get_implementation_count!/1)
     |> enrich(opts, :published_note, &get_published_note!/1)
   end
 
@@ -570,10 +570,12 @@ defmodule TdDd.DataStructures do
     Map.drop(metadata, [@protected])
   end
 
-  defp get_implementations!(%DataStructureVersion{} = dsv) do
-    case Repo.preload(dsv, data_structure: [implementations: [implementation: [:rule, :results]]]) do
-      %{data_structure: %{implementations: implementations}} -> implementations
-    end
+  defp get_implementation_count!(%DataStructureVersion{data_structure_id: id}) do
+    TdDq.Implementations.ImplementationStructure
+    |> where([i], is_nil(i.deleted_at))
+    |> where([i], i.data_structure_id == ^id)
+    |> select([i], count(i.implementation_id, :distinct))
+    |> Repo.one!()
   end
 
   def update_changeset(%Claims{user_id: user_id}, %DataStructure{} = data_structure, %{} = params) do
