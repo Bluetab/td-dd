@@ -122,9 +122,9 @@ defmodule TdDq.Implementations.BulkLoad do
 
   defp maybe_put_domain_id(%{"domain_external_id" => external_id} = params)
        when is_binary(external_id) do
-    case DomainCache.external_id_to_id(external_id) do
-      {:ok, domain_id} -> Map.put(params, "domain_id", domain_id)
-      :error -> params
+    case get_domain_id_by_external_id(external_id) do
+      nil -> params
+      domain_id -> Map.put(params, "domain_id", domain_id)
     end
   end
 
@@ -134,6 +134,13 @@ defmodule TdDq.Implementations.BulkLoad do
   end
 
   defp maybe_put_domain_id(params), do: params
+
+  defp get_domain_id_by_external_id(external_id) do
+    case DomainCache.external_id_to_id(external_id) do
+      {:ok, domain_id} -> domain_id
+      :error -> nil
+    end
+  end
 
   defp maybe_put_template_domains_ids(
          %{"df_name" => template_name, "df_content" => df_content} = params
@@ -155,10 +162,8 @@ defmodule TdDq.Implementations.BulkLoad do
           df_content
           |> Map.take(template_domain_fields)
           |> Enum.map(fn {domain_field, external_id} ->
-            case DomainCache.external_id_to_id(external_id) do
-              {:ok, domain_id} -> {domain_field, domain_id}
-              :error -> {domain_field, nil}
-            end
+            domain_id = get_domain_id_by_external_id(external_id)
+            {domain_field, domain_id}
           end)
           |> Enum.into(%{})
 
