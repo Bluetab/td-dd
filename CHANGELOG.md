@@ -6,6 +6,10 @@
 
 - [TD-5171] Enriches domain's parents on DataStructureVersion show
 
+### Fixed
+
+- [TD-5244] Admin user can't clone implementations
+
 ## [4.53.2] 2022-10-20
 
 ### Changed
