@@ -1226,12 +1226,13 @@ defmodule TdDd.DataStructuresTest do
       assert %{domains: [domain]} = data_structure
 
       assert %{
-        name: ^d3_name,
-        external_id: ^d3_ext_id,
-        parents: [
-          %{id: ^d1_id, name: ^d1_name, external_id: ^d1_ext_id},
-          %{id: ^d2_id, name: ^d2_name, external_id: ^d2_ext_id}
-        ]} = domain
+               name: ^d3_name,
+               external_id: ^d3_ext_id,
+               parents: [
+                 %{id: ^d1_id, name: ^d1_name, external_id: ^d1_ext_id},
+                 %{id: ^d2_id, name: ^d2_name, external_id: ^d2_ext_id}
+               ]
+             } = domain
     end
 
     test "get_data_structure_version!/1 enriches with empty map when there is no domain",

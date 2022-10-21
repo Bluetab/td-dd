@@ -4,7 +4,8 @@
 
 ### Added
 
-- [TD-5171] enriches domain's parents on DataStructureVersion show
+- [TD-5171] Enriches domain's parents on DataStructureVersion show
+
 ## [4.53.2] 2022-10-20
 
 ### Changed
