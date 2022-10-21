@@ -471,20 +471,20 @@ defmodule TdDqWeb.ImplementationControllerTest do
       %{id: id} = insert(:implementation, domain_id: domain.id)
 
       assert %{"_actions" => actions} =
-                conn
-                |> get(Routes.implementation_path(conn, :show, id))
-                |> json_response(:ok)
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
 
       assert %{
-                "delete" => %{"method" => "POST"},
-                "edit" => %{"method" => "POST"},
-                "submit" => %{"method" => "POST"},
-                "clone" => %{"method" => "POST"},
-                "link_concept" => %{"method" => "POST"},
-                "link_structure" => %{"method" => "POST"},
-                "move" => %{"method" => "POST"},
-                "publish" => %{"method" => "POST"}
-              } == actions
+               "delete" => %{"method" => "POST"},
+               "edit" => %{"method" => "POST"},
+               "submit" => %{"method" => "POST"},
+               "clone" => %{"method" => "POST"},
+               "link_concept" => %{"method" => "POST"},
+               "link_structure" => %{"method" => "POST"},
+               "move" => %{"method" => "POST"},
+               "publish" => %{"method" => "POST"}
+             } == actions
     end
 
     ## rule implementation without actions
@@ -548,9 +548,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
     ## Raw rule with admin actions
     @tag authentication: [role: "admin"]
     test "renders admin actions for raw implementations ", %{
-      conn: conn,
+      conn: conn
     } do
-
       domain = build(:domain)
       %{id: rule_id} = insert(:rule, domain_id: domain.id)
 
@@ -562,20 +561,20 @@ defmodule TdDqWeb.ImplementationControllerTest do
         )
 
       assert %{"_actions" => actions} =
-                conn
-                |> get(Routes.implementation_path(conn, :show, id))
-                |> json_response(:ok)
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
 
       assert %{
-                "delete" => %{"method" => "POST"},
-                "edit" => %{"method" => "POST"},
-                "submit" => %{"method" => "POST"},
-                "clone" => %{"method" => "POST"},
-                "link_concept" => %{"method" => "POST"},
-                "link_structure" => %{"method" => "POST"},
-                "move" => %{"method" => "POST"},
-                "publish" => %{"method" => "POST"}
-              } == actions
+               "delete" => %{"method" => "POST"},
+               "edit" => %{"method" => "POST"},
+               "submit" => %{"method" => "POST"},
+               "clone" => %{"method" => "POST"},
+               "link_concept" => %{"method" => "POST"},
+               "link_structure" => %{"method" => "POST"},
+               "move" => %{"method" => "POST"},
+               "publish" => %{"method" => "POST"}
+             } == actions
     end
 
     ## Raw rule without actions
@@ -694,6 +693,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
     @tag authentication: [role: "admin"]
     test "renders admin actions for ruleless raw implementations", %{conn: conn} do
       domain = build(:domain)
+
       %{id: id} =
         insert(:ruleless_implementation, domain_id: domain.id, implementation_type: "raw")
 
