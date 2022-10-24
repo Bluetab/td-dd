@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-5171] Enriches domain's parents on DataStructureVersion show
+- [TD-5245] Allow multiple fields for structure modifiers
 
 ## [4.53.2] 2022-10-20
 
