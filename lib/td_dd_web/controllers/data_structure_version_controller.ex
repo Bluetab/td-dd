@@ -41,7 +41,7 @@ defmodule TdDdWeb.DataStructureVersionController do
     :with_confidential,
     :grant,
     :grants,
-    :implementations,
+    :implementation_count,
     :published_note
   ]
 
@@ -148,10 +148,7 @@ defmodule TdDdWeb.DataStructureVersionController do
   end
 
   defp get_data_structure_version(data_structure_id, "latest", opts) do
-    DataStructures.get_latest_version(
-      data_structure_id,
-      opts
-    )
+    DataStructures.get_latest_version(data_structure_id, opts)
   end
 
   defp get_data_structure_version(data_structure_id, version, opts) do
