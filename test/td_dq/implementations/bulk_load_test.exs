@@ -80,6 +80,67 @@ defmodule TdDq.Implementations.BulkLoadTest do
       assert %{df_content: ^df_content} = Implementations.get_implementation!(id2)
     end
 
+    test "return ids with valid df_content that include domain_external_id", %{
+      rule: %{name: rule_name},
+      claims: claims,
+      domain: %{external_id: domain_external_id, id: domain_id}
+    } do
+      template_content = [
+        %{
+          "fields" => [
+            %{
+              "cardinality" => "1",
+              "label" => "label0",
+              "name" => "string",
+              "type" => "string",
+              "values" => nil
+            },
+            %{
+              "cardinality" => "1",
+              "label" => "label1",
+              "name" => "list",
+              "type" => "list",
+              "values" => %{"fixed" => ["one", "two", "three"]}
+            },
+            %{
+              "name" => "my_domain",
+              "type" => "domain",
+              "label" => "My domain",
+              "values" => nil,
+              "widget" => "dropdown",
+              "default" => "",
+              "cardinality" => "?",
+              "subscribable" => false
+            }
+          ],
+          "name" => "group_name0"
+        }
+      ]
+
+      %{name: template_name} =
+        CacheHelpers.insert_template(
+          scope: "ri",
+          content: template_content
+        )
+
+      imp =
+        Enum.map(@valid_implementation, fn imp ->
+          imp
+          |> Map.put("rule_name", rule_name)
+          |> Map.put("template", template_name)
+          |> Map.put("string", "initial")
+          |> Map.put("list", "one")
+          |> Map.put("my_domain", domain_external_id)
+        end)
+
+      assert {:ok, %{ids: [id1, id2], errors: []}} = BulkLoad.bulk_load(imp, claims)
+
+      df_content = %{"string" => "initial", "list" => "one", "my_domain" => domain_id}
+
+      assert %{df_content: ^df_content} = Implementations.get_implementation!(id1)
+      assert %{df_content: ^df_content} = Implementations.get_implementation!(id2)
+    end
+
     test "return error when rule not exist", %{
       rule: %{name: rule_name},
       claims: claims,
