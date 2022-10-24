@@ -34,6 +34,93 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
     end
 
     @tag authentication: [role: "admin"]
+    test "uploads implementations with domain selection template", %{conn: conn} do
+      attrs = %{
+        implementations: %Plug.Upload{
+          filename: "implementations.csv",
+          path: "test/fixtures/implementations/implementations_template_with_domain.csv"
+        }
+      }
+
+      %{id: domain_id1} = CacheHelpers.insert_domain(external_id: "domain_external_id1")
+      %{id: domain_id2} = CacheHelpers.insert_domain(external_id: "domain_external_id2")
+
+      template_content = [
+        %{
+          "fields" => [
+            %{
+              "name" => "my_domain1",
+              "type" => "domain",
+              "label" => "My domain",
+              "values" => nil,
+              "widget" => "dropdown",
+              "default" => "",
+              "cardinality" => "?",
+              "subscribable" => false
+            },
+            %{
+              "name" => "my_domain2",
+              "type" => "domain",
+              "label" => "My domain2",
+              "values" => nil,
+              "widget" => "dropdown",
+              "default" => "",
+              "cardinality" => "?",
+              "subscribable" => false
+            }
+          ],
+          "name" => "group_name0"
+        }
+      ]
+
+      CacheHelpers.insert_template(
+        scope: "ri",
+        content: template_content,
+        name: "domain_template"
+      )
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.implementation_upload_path(conn, :create), attrs)
+               |> json_response(:ok)
+
+      assert %{"ids" => [id1, id2, id3], "errors" => []} = data
+
+      assert %{
+               "data" => %{
+                 "df_content" => df_content
+               }
+             } =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id1))
+               |> json_response(:ok)
+
+      assert %{"my_domain1" => ^domain_id1, "my_domain2" => ^domain_id2} = df_content
+
+      assert %{
+               "data" => %{
+                 "df_content" => df_content2
+               }
+             } =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id2))
+               |> json_response(:ok)
+
+      assert %{"my_domain1" => ^domain_id1, "my_domain2" => nil} = df_content2
+
+      assert %{
+               "data" => %{
+                 "df_content" => df_content3
+               }
+             } =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id3))
+               |> json_response(:ok)
+
+      assert %{"my_domain1" => nil, "my_domain2" => nil} = df_content3
+    end
+
+    @tag authentication: [role: "admin"]
     test "uploads implementations without rules", %{conn: conn} do
       CacheHelpers.insert_domain(external_id: "some_domain_id")
 
