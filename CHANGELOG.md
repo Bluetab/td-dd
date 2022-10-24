@@ -1,11 +1,16 @@
 # Changelog
 
-## [4.53.1] 2022-10-18
+## [Unreleased]
 
 ### Fixed
 
 - [TD-4710] Domain type fields of templates it not working in bulk upload
   implementations
+
+## [4.53.1] 2022-10-18
+
+### Fixed
+
 - [TD-5260] Avoid to create a draft with not changes for implementations
 
 ## [4.53.0] 2022-10-18
