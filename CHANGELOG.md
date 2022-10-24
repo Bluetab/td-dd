@@ -6,6 +6,10 @@
 
 - [TD-5171] Enriches domain's parents on DataStructureVersion show
 
+### Fixed
+
+- [TD-4710] Domain type fields of templates it not working in bulk upload
+  implementations
 ## [4.53.2] 2022-10-20
 
 ### Changed
