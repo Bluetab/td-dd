@@ -10,6 +10,8 @@
 
 - [TD-4710] Domain type fields of templates it not working in bulk upload
   implementations
+- [TD-5244] Admin user can't clone implementations
+
 ## [4.53.2] 2022-10-20
 
 ### Changed

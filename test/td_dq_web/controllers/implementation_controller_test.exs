@@ -462,6 +462,31 @@ defmodule TdDqWeb.ImplementationControllerTest do
       end
     end
 
+    ## rule implementation with admin actions
+    @tag authentication: [role: "admin"]
+    test "renders actions for rule implementation for admin user", %{
+      conn: conn
+    } do
+      domain = build(:domain)
+      %{id: id} = insert(:implementation, domain_id: domain.id)
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "delete" => %{"method" => "POST"},
+               "edit" => %{"method" => "POST"},
+               "submit" => %{"method" => "POST"},
+               "clone" => %{"method" => "POST"},
+               "link_concept" => %{"method" => "POST"},
+               "link_structure" => %{"method" => "POST"},
+               "move" => %{"method" => "POST"},
+               "publish" => %{"method" => "POST"}
+             } == actions
+    end
+
     ## rule implementation without actions
     for {permission_type, permissions} <- [
           # {"raw implementation", @imp_raw_permissions},
@@ -520,6 +545,38 @@ defmodule TdDqWeb.ImplementationControllerTest do
       end
     end
 
+    ## Raw rule with admin actions
+    @tag authentication: [role: "admin"]
+    test "renders admin actions for raw implementations ", %{
+      conn: conn
+    } do
+      domain = build(:domain)
+      %{id: rule_id} = insert(:rule, domain_id: domain.id)
+
+      %{id: id} =
+        insert(:raw_implementation,
+          domain_id: domain.id,
+          rule_id: rule_id,
+          segments: [%{structure: %{id: 12_554}}]
+        )
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "delete" => %{"method" => "POST"},
+               "edit" => %{"method" => "POST"},
+               "submit" => %{"method" => "POST"},
+               "clone" => %{"method" => "POST"},
+               "link_concept" => %{"method" => "POST"},
+               "link_structure" => %{"method" => "POST"},
+               "move" => %{"method" => "POST"},
+               "publish" => %{"method" => "POST"}
+             } == actions
+    end
+
     ## Raw rule without actions
     for {permission_type, permissions} <- [
           {"rule implementation", @rule_implementation_permissions},
@@ -561,6 +618,29 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "submit" => %{"method" => "POST"},
                "manage_segments" => %{"method" => "POST"},
                "clone" => %{"method" => "POST"}
+             } == actions
+    end
+
+    ## ruleless with admin actions
+    @tag authentication: [role: "admin"]
+    test "renders ruleless implementations admin actions", %{conn: conn} do
+      domain = build(:domain)
+      %{id: id} = insert(:ruleless_implementation, domain_id: domain.id)
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "edit" => %{"method" => "POST"},
+               "delete" => %{"method" => "POST"},
+               "submit" => %{"method" => "POST"},
+               "clone" => %{"method" => "POST"},
+               "link_concept" => %{"method" => "POST"},
+               "link_structure" => %{"method" => "POST"},
+               "move" => %{"method" => "POST"},
+               "publish" => %{"method" => "POST"}
              } == actions
     end
 
@@ -606,6 +686,31 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "submit" => %{"method" => "POST"},
                "manage_segments" => %{"method" => "POST"},
                "clone" => %{"method" => "POST"}
+             } == actions
+    end
+
+    ## raw ruleless with admin actions
+    @tag authentication: [role: "admin"]
+    test "renders admin actions for ruleless raw implementations", %{conn: conn} do
+      domain = build(:domain)
+
+      %{id: id} =
+        insert(:ruleless_implementation, domain_id: domain.id, implementation_type: "raw")
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "edit" => %{"method" => "POST"},
+               "delete" => %{"method" => "POST"},
+               "submit" => %{"method" => "POST"},
+               "clone" => %{"method" => "POST"},
+               "link_concept" => %{"method" => "POST"},
+               "link_structure" => %{"method" => "POST"},
+               "move" => %{"method" => "POST"},
+               "publish" => %{"method" => "POST"}
              } == actions
     end
 
