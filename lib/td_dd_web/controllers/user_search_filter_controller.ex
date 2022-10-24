@@ -2,7 +2,6 @@ defmodule TdDdWeb.UserSearchFilterController do
   use TdDdWeb, :controller
   use PhoenixSwagger
 
-  alias TdCache.Permissions
   alias TdDd.UserSearchFilters
   alias TdDd.UserSearchFilters.UserSearchFilter
   alias TdDdWeb.ErrorView
@@ -24,8 +23,12 @@ defmodule TdDdWeb.UserSearchFilterController do
   end
 
   def index(conn, params) do
-    user_search_filters = UserSearchFilters.list_user_search_filters(params)
-    render(conn, "index.json", user_search_filters: user_search_filters)
+    claims = conn.assigns[:current_resource]
+
+    with :ok <- Bodyguard.permit(UserSearchFilters, :list, claims) do
+      user_search_filters = UserSearchFilters.list_user_search_filters(params)
+      render(conn, "index.json", user_search_filters: user_search_filters)
+    end
   end
 
   swagger_path :index_by_user do
@@ -38,23 +41,10 @@ defmodule TdDdWeb.UserSearchFilterController do
   end
 
   def index_by_user(conn, params) do
-    %{user_id: user_id} = claims = conn.assigns[:current_resource]
+    claims = conn.assigns[:current_resource]
 
-    global_domains = permitted_view_domains(claims)
-
-    params_with_user =
-      params
-      |> Map.put("user_id", user_id)
-      |> Map.put("with_globals", global_domains)
-
-    user_search_filters = UserSearchFilters.list_user_search_filters(params_with_user)
+    user_search_filters = UserSearchFilters.list_user_search_filters(params, claims)
     render(conn, "index.json", user_search_filters: user_search_filters)
-  end
-
-  defp permitted_view_domains(%{role: "admin"}), do: :all
-
-  defp permitted_view_domains(%{jti: jti}) do
-    Permissions.permitted_domain_ids(jti, :view_data_structure)
   end
 
   swagger_path :create do
