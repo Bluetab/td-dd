@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-5171] Enriches domain's parents on DataStructureVersion show
+- [TD-5245] Allow multiple fields for structure modifiers
 - [TD-4517] Adds `df_name` to Rule filters aggregation
 
 ### Fixed

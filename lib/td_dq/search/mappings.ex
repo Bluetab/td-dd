@@ -277,7 +277,7 @@ defmodule TdDq.Search.Mappings do
         modifier: %{
           properties: %{
             name: %{type: "text", fields: @raw},
-            params: %{type: "object"}
+            params: %{type: "object", enabled: false}
           }
         },
         value_modifier: %{
