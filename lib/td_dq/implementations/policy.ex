@@ -149,6 +149,8 @@ defmodule TdDq.Implementations.Policy do
       Enum.all?(permissions(implementation), &Permissions.authorized?(claims, &1, domain_id))
   end
 
+  def authorize(:clone, %{role: "admin"}, %Implementation{}), do: true
+
   def authorize(:clone, %{} = claims, %Implementation{domain_id: domain_id} = implementation) do
     Enum.all?(permissions(implementation), &Permissions.authorized?(claims, &1, domain_id))
   end

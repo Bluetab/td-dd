@@ -1,0 +1,4 @@
+rule_name;implementation_key;template;my_domain1;my_domain2;result_type;goal;minimum
+rule_foo;boo_key_1;domain_template;domain_external_id1;domain_external_id2;percentage;90;10
+rule_foo;boo_key_2;domain_template;domain_external_id1;;errors_number;10;90
+rule_foo;boo_key_3;domain_template;;;deviation;10;30
