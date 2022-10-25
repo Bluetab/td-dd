@@ -280,9 +280,10 @@ defmodule TdDd.Factory do
     %UserSearchFilter{
       id: sequence(:user_search_filter, & &1),
       name: sequence("filter_name"),
-      filters: %{country: ["Sp"]},
+      filters: %{"country" => ["Sp"]},
       user_id: sequence(:user_id, & &1),
-      scope: :data_structure,
+      scope:
+        sequence(:user_search_filter_scope, ["data_structure", "rule", "rule_implementation"]),
       is_global: false
     }
   end
