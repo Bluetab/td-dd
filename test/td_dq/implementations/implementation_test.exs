@@ -568,7 +568,7 @@ defmodule TdDq.Implementations.ImplementationTest do
              } = Document.encode(rule_implementation)
     end
 
-    test "encoded implementation includes validationsSet" do
+    test "encoded implementation includes validation" do
       rule = insert(:rule)
 
       operator = %{
