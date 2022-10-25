@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- [TD-5265] `GET /api/user_search_filters/me` wasn't considering the `scope` of
+  global filters
+
 ### Added
 
 - [TD-5171] Enriches domain's parents on DataStructureVersion show
