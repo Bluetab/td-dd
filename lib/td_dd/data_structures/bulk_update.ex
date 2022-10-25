@@ -390,9 +390,10 @@ defmodule TdDd.DataStructures.BulkUpdate do
     Audit.data_structures_bulk_updated(updates, user_id)
   end
 
-  defp on_complete({:ok, %{updates: updates, update_notes: update_notes} = result}) do
-    [updates, update_notes]
-    |> Enum.flat_map(&Map.keys/1)
+  defp on_complete({:ok, %{} = result}) do
+    result
+    |> Map.take([:updates, :update_notes])
+    |> Enum.flat_map(fn {_, v} -> Map.keys(v) end)
     |> Enum.uniq()
     |> IndexWorker.reindex()
 

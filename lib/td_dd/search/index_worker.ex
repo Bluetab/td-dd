@@ -51,6 +51,10 @@ defmodule TdDd.Search.IndexWorker do
     delete_grants([grant_id])
   end
 
+  def quiesce(timeout \\ 5_000) do
+    GenServer.call(__MODULE__, :quiesce, timeout)
+  end
+
   ## EventStream.Consumer Callbacks
 
   @impl true
@@ -65,8 +69,6 @@ defmodule TdDd.Search.IndexWorker do
     unless Application.get_env(:td_dd, :env) == :test do
       Process.send_after(self(), :migrate, 0)
     end
-
-    Logger.info("started")
 
     {:ok, :no_state}
   end
@@ -138,6 +140,11 @@ defmodule TdDd.Search.IndexWorker do
     end
 
     {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_call(:quiesce, _from, state) do
+    {:reply, :ok, state}
   end
 
   defp do_reindex_structures(:all) do
