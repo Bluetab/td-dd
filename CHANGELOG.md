@@ -9,6 +9,7 @@
 
 ### Added
 
+- [TD-3765] Support for empty_dataset in rule_results
 - [TD-5171] Enriches domain's parents on DataStructureVersion show
 - [TD-5245] Allow multiple fields for structure modifiers
 
