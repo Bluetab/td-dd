@@ -177,6 +177,7 @@ defmodule TdDq.Rules.Rule do
         updated_at: rule.updated_at,
         inserted_at: rule.inserted_at,
         df_name: rule.df_name,
+        df_label: Map.get(template, :label),
         df_content: df_content
       }
     end
