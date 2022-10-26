@@ -9,7 +9,7 @@ defmodule TdDq.Rules.Search.Aggregations do
   def aggregations do
     static_aggs = %{
       "active.raw" => %{terms: %{field: "active.raw"}},
-      "df_name.raw" => %{terms: %{field: "df_name.raw"}},
+      "df_label.raw" => %{terms: %{field: "df_label.raw", size: 50}},
       "taxonomy" => %{terms: %{field: "domain_ids", size: 500}}
     }
 
