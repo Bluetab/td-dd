@@ -198,7 +198,9 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
 
       %{
         "date" => expected_date
-      } = params = string_params_for(:rule_result_record, implementation_id: implementation_id)
+      } =
+        params =
+        string_params_for(:rule_result_record, records: 0, implementation_id: implementation_id)
 
       CacheHelpers.put_implementation(implementation)
 
@@ -223,12 +225,14 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
       {:ok,
        %{
          execution_result_info: %{
-           date: result_date
+           date: result_date,
+           records: records
          }
        }} = CacheHelpers.get_implementation(implementation_id)
 
       {:ok, expected_date_time} = NaiveDateTime.from_iso8601(expected_date)
       {:ok, result_date_time} = NaiveDateTime.from_iso8601(result_date)
+      assert records == 0
       assert NaiveDateTime.compare(expected_date_time, result_date_time) == :eq
     end
   end

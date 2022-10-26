@@ -4,11 +4,13 @@
 
 ### Fixed
 
+- [TD-5267] Bulk update was not reindexing changed structure notes
 - [TD-5265] `GET /api/user_search_filters/me` wasn't considering the `scope` of
   global filters
 
 ### Added
 
+- [TD-3765] Support for empty_dataset in rule_results
 - [TD-5171] Enriches domain's parents on DataStructureVersion show
 - [TD-5245] Allow multiple fields for structure modifiers
 - [TD-4517] Adds `df_name` to Rule filters aggregation
@@ -85,7 +87,7 @@
 - [TD-5076] Allow to clone implementations for non admin users
 - [TD-5169] Improve list_data_structure_versions since query performance
 - [TD-5170] Capture graph tests Logger.warn output
-- [TD-5082] Filter protected metadata (field "_protected")
+- [TD-5082] Filter protected metadata (field "\_protected")
 - [TD-5133] Support for creating grant requests for third parties
 
 ### Changed
