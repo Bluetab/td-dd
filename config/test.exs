@@ -6,6 +6,9 @@ config :td_dd, TdDdWeb.Endpoint, server: false
 config :td_dd, TdCxWeb.Endpoint, server: false
 config :td_dd, TdDqWeb.Endpoint, server: false
 
+# Track all Plug compile-time dependencies
+config :phoenix, :plug_init_mode, :runtime
+
 # Configure your database
 config :td_dd, TdDd.Repo,
   username: "postgres",
