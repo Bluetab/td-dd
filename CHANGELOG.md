@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [TD-5284] Phoenix 1.6.x
+
 ### Fixed
 
 - [TD-5267] Bulk update was not reindexing changed structure notes
