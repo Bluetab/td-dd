@@ -53,33 +53,38 @@ defmodule TdDq.Implementations.BulkLoad do
   defp create_implementations(implementations, claims) do
     implementations
     |> Enum.reduce(%{ids: [], errors: []}, fn imp, acc ->
-      imp =
-        imp
-        |> enrich_implementation()
-        |> maybe_put_domain_id()
-        |> maybe_put_template_domains_ids()
-        |> Map.put("status", "draft")
-        |> Map.put("version", 1)
+      with {:ok, imp} <- enrich_implementation(imp),
+           {:ok, imp} <- maybe_put_domain_id(imp),
+           {:ok, imp} <- format_df_content(imp)
+      do
+        imp =
+          imp
+          |> Map.put("status", "draft")
+          |> Map.put("version", 1)
 
-      case create_implementation(imp, claims) do
-        {:ok, %{implementation: %{id: id}}} ->
-          %{acc | ids: [id | acc.ids]}
+        case create_implementation(imp, claims) do
+          {:ok, %{implementation: %{id: id}}} ->
+            %{acc | ids: [id | acc.ids]}
 
-        {:error, _, changeset, _} ->
-          error = Changeset.traverse_errors(changeset, &ErrorHelpers.translate_error/1)
-          implementation_key = Changeset.get_field(changeset, :implementation_key)
+          {:error, _, changeset, _} ->
+            error = Changeset.traverse_errors(changeset, &ErrorHelpers.translate_error/1)
+            implementation_key = Changeset.get_field(changeset, :implementation_key)
 
-          %{
-            acc
-            | errors: [%{implementation_key: implementation_key, message: error} | acc.errors]
-          }
+            %{
+              acc
+              | errors: [%{implementation_key: implementation_key, message: error} | acc.errors]
+            }
 
-        {:error, {implementation_key, error}} ->
-          %{
-            acc
-            | errors: [%{implementation_key: implementation_key, message: error} | acc.errors]
-          }
+          {:error, {implementation_key, error}} ->
+            %{
+              acc
+              | errors: [%{implementation_key: implementation_key, message: error} | acc.errors]
+            }
+        end
+      else
+        {:error, error} -> %{acc | errors: [%{implementation_key: imp["implementation_key"], message: error} | acc.errors]}
       end
+
     end)
     |> Map.update!(:ids, &Enum.reverse/1)
     |> Map.update!(:errors, &Enum.reverse/1)
@@ -98,16 +103,18 @@ defmodule TdDq.Implementations.BulkLoad do
   end
 
   defp enrich_implementation(implementation) do
-    implementation
-    |> Enum.reduce(%{"df_content" => %{}}, fn {header, value}, acc ->
-      if Enum.member?(@headers, header) do
-        Map.put(acc, header, value)
-      else
-        Map.update!(acc, "df_content", &Map.put(&1, header, value))
-      end
-    end)
-    |> ensure_template()
-    |> Map.merge(@default_implementation)
+    imp =
+      implementation
+      |> Enum.reduce(%{"df_content" => %{}}, fn {header, value}, acc ->
+        if Enum.member?(@headers, header) do
+          Map.put(acc, header, value)
+        else
+          Map.update!(acc, "df_content", &Map.put(&1, header, value))
+        end
+      end)
+      |> ensure_template()
+      |> Map.merge(@default_implementation)
+    {:ok, imp}
   end
 
   defp ensure_template(%{"df_content" => df_content} = implementation) do
@@ -121,25 +128,29 @@ defmodule TdDq.Implementations.BulkLoad do
   end
 
   defp maybe_put_domain_id(%{"domain_external_id" => external_id} = params)
-       when is_binary(external_id) do
+       when is_binary(external_id) and external_id != "" do
     case get_domain_id_by_external_id(external_id) do
-      nil -> params
-      domain_id -> Map.put(params, "domain_id", domain_id)
+      {:ok, domain_id} -> {:ok, Map.put(params, "domain_id", domain_id)}
+      error -> error
     end
   end
 
   defp maybe_put_domain_id(%{"domain_id" => domain_id} = params)
        when is_binary(domain_id) do
-    Map.put(params, "domain_id", String.to_integer(domain_id))
+    {:ok, Map.put(params, "domain_id", String.to_integer(domain_id))}
   end
 
-  defp maybe_put_domain_id(params), do: params
+  defp maybe_put_domain_id(params), do: {:ok, params}
 
   defp get_domain_id_by_external_id(external_id) do
     case DomainCache.external_id_to_id(external_id) do
-      {:ok, domain_id} -> domain_id
-      :error -> nil
+      :error -> {:error, "Domain with external id #{external_id} doesn't exists"}
+      domain_id -> domain_id
     end
+  end
+
+  defp format_df_content(params) do
+    maybe_put_template_domains_ids(params)
   end
 
   defp maybe_put_template_domains_ids(
@@ -147,9 +158,7 @@ defmodule TdDq.Implementations.BulkLoad do
        )
        when is_binary(template_name) do
     case TemplateCache.get_by_name!(template_name) do
-      nil ->
-        params
-
+      nil -> {:error, "Template #{template_name} doesn't exists"}
       template ->
         template_domain_fields =
           template
@@ -162,15 +171,17 @@ defmodule TdDq.Implementations.BulkLoad do
           df_content
           |> Map.take(template_domain_fields)
           |> Enum.map(fn {domain_field, external_id} ->
-            domain_id = get_domain_id_by_external_id(external_id)
-            {domain_field, domain_id}
+            case get_domain_id_by_external_id(external_id) do
+              {:error, _} -> {domain_field, nil}
+              {:ok, domain_id} -> {domain_field, domain_id}
+            end
           end)
           |> Enum.into(%{})
 
         new_df_content = Map.merge(df_content, content_domain_fields)
-        Map.put(params, "df_content", new_df_content)
+        {:ok, Map.put(params, "df_content", new_df_content)}
     end
   end
 
-  defp maybe_put_template_domains_ids(params), do: params
+  defp maybe_put_template_domains_ids(params), do: {:ok, params}
 end
