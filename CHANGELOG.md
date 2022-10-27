@@ -2,11 +2,18 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [TD-5284] Phoenix 1.6.x
+
 ### Fixed
 
 - [TD-5267] Bulk update was not reindexing changed structure notes
 - [TD-5265] `GET /api/user_search_filters/me` wasn't considering the `scope` of
   global filters
+- [TD-4710] Domain type fields of templates it not working in bulk upload
+  implementations
+- [TD-5244] Admin user can't clone implementations
 
 ### Added
 
@@ -14,12 +21,6 @@
 - [TD-5171] Enriches domain's parents on DataStructureVersion show
 - [TD-5245] Allow multiple fields for structure modifiers
 - [TD-4517] Adds `df_label` to Rule filters aggregation
-
-### Fixed
-
-- [TD-4710] Domain type fields of templates it not working in bulk upload
-  implementations
-- [TD-5244] Admin user can't clone implementations
 
 ## [4.53.2] 2022-10-20
 
