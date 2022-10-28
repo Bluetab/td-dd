@@ -35,7 +35,9 @@ defmodule TdDdWeb.Resolvers.Templates do
       |> Enum.reject(&(&1 == ""))
       |> Enum.map(&String.to_integer/1)
 
-    template = Preprocessor.preprocess_template(template, %{domain_ids: domain_ids, claims: claims})
+    template =
+      Preprocessor.preprocess_template(template, %{domain_ids: domain_ids, claims: claims})
+
     {:ok, template}
   end
 

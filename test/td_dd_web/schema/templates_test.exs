@@ -161,9 +161,9 @@ defmodule TdDdWeb.Schema.TemplatesTest do
                |> post("/api/v2", %{
                  "query" => @template,
                  "variables" => %{
-                    "name" => template_name,
-                    "domainIds" => [domain_id_1, domain_id_2]
-                  }
+                   "name" => template_name,
+                   "domainIds" => [domain_id_1, domain_id_2]
+                 }
                })
                |> json_response(:ok)
 
