@@ -8,10 +8,18 @@ defmodule TdDdWeb.Schema.Templates do
   alias TdDdWeb.Resolvers
 
   object :template_queries do
+    @desc "Get a list of templates"
     field :templates, list_of(:template) do
       arg(:scope, :string)
       arg(:domain_ids, list_of(:id))
       resolve(&Resolvers.Templates.templates/3)
+    end
+
+    @desc "Get a template by name"
+    field :template, :template do
+      arg(:name, non_null(:string))
+      arg(:domain_ids, list_of(:id))
+      resolve(&Resolvers.Templates.template/3)
     end
   end
 
