@@ -1,8 +1,6 @@
 defmodule TdDd.Utils.ChangesetUtils do
   @moduledoc false
 
-  alias Ecto.Changeset
-
   @doc """
   A helper that transforms changeset errors into a list of messages.
 

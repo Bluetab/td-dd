@@ -53,7 +53,6 @@ defmodule TdDdWeb.Router do
       resources("/notes", StructureNoteController, except: [:new, :edit], name: :note)
       resources("/grants", GrantController, only: [:create])
       resources("/structure_links", DataStructureLinkController, only: [:index])
-      # resources("/structure_links", DataStructureLinkController, only: [:show, :delete])
     end
 
     post("/data_structure_links", DataStructureLinkController, :create)
@@ -63,10 +62,6 @@ defmodule TdDdWeb.Router do
     get("/data_structure_links/search_one", DataStructureLinkController, :show_by_external_ids)
     delete("/data_structure_links/search_delete_one", DataStructureLinkController, :delete_by_external_ids)
     resources("/data_structure_links/labels", LabelController)
-
-    # resources "/data_structures", DataStructureController, except: [:new, :edit, :show], param: "external_id" do
-    #   resources("/structure_links", DataStructureLinkController, only: [:index])
-    # end
 
     resources("/data_structure_versions", DataStructureVersionController, only: [:show])
 

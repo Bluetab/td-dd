@@ -14,6 +14,7 @@ defmodule TdDd.DataStructures.DataStructureLinks do
   alias TdDd.DataStructures.DataStructureLinkLabel
   alias TdDd.DataStructures.Label
   alias TdDd.Repo
+  alias TdDd.Utils.ChangesetUtils
 
   defdelegate authorize(action, user, params), to: __MODULE__.Policy
 
@@ -184,24 +185,7 @@ defmodule TdDd.DataStructures.DataStructureLinks do
             )
             |> Enum.reduce(
               %{label_names: [], data_structure_link_ids: []},
-              fn
-                {_key, [%DataStructureLink{id: link_id}, %{label_names: label_names}]}, acc ->
-                  Enum.reduce(label_names, acc, fn label_name,
-                                                   %{
-                                                     label_names: acc_label_names,
-                                                     data_structure_link_ids:
-                                                       acc_data_structure_link_ids
-                                                   } ->
-                    %{
-                      acc
-                      | label_names: [label_name | acc_label_names],
-                        data_structure_link_ids: [link_id | acc_data_structure_link_ids]
-                    }
-                  end)
-
-                _missing_link_or_label, acc ->
-                  acc
-              end
+              &reduce_columns/2
             )
 
           {:ok, group_by}
@@ -265,7 +249,7 @@ defmodule TdDd.DataStructures.DataStructureLinks do
       not_inserted: %{
         changeset_invalid_links:
           Enum.map(invalid_links, fn %{invalid_link: invalid_link, changeset: invalid_changeset} ->
-            TdDd.Utils.ChangesetUtils.error_message_list_on(invalid_changeset)
+            ChangesetUtils.error_message_list_on(invalid_changeset)
             |> Enum.map(fn %{field: field} = error_message ->
               Map.put(
                 error_message,
@@ -281,13 +265,30 @@ defmodule TdDd.DataStructures.DataStructureLinks do
     {:ok, result}
   end
 
+  defp reduce_columns({_key, [%DataStructureLink{id: link_id}, %{label_names: label_names}]}, acc) do
+    Enum.reduce(
+      label_names, acc, fn label_name,
+      %{
+        label_names: acc_label_names,
+        data_structure_link_ids: acc_data_structure_link_ids
+       } ->
+      %{
+        acc
+        | label_names: [label_name | acc_label_names],
+          data_structure_link_ids: [link_id | acc_data_structure_link_ids]
+      }
+    end)
+  end
+
+  defp reduce_columns(_missing_link_or_label, acc), do: acc
+
   def create_label(params \\ %{}) do
     %Label{}
     |> Label.changeset(params)
-    |> Repo.insert()
+    |> Repo.insert
   end
 
-  def list_labels() do
+  def list_labels do
     Repo.all(Label)
   end
 end

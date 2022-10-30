@@ -11,11 +11,11 @@ defmodule TdDd.Factory do
   alias TdCx.Jobs.Job
   alias TdCx.Sources.Source
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureLink
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Label
-  alias TdDd.DataStructures.DataStructureLink
   alias TdDd.DataStructures.MetadataField
   alias TdDd.DataStructures.MetadataView
   alias TdDd.DataStructures.RelationType

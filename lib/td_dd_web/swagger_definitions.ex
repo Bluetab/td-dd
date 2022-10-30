@@ -1098,10 +1098,8 @@ defmodule TdDdWeb.SwaggerDefinitions do
     }
   end
 
-
   def data_structure_link_swagger_definitions do
     %{
-
       BulkCreateDataStructureLinksRequest:
         swagger_schema do
           title("Bulk Data Structure Link request")
@@ -1171,6 +1169,4 @@ defmodule TdDdWeb.SwaggerDefinitions do
         end,
     }
   end
-
-
 end

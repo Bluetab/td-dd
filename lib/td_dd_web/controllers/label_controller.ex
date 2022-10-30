@@ -18,7 +18,7 @@ defmodule TdDdWeb.LabelController do
     claims = conn.assigns[:current_resource]
 
     with :ok <- Bodyguard.permit(DataStructureLinks, :create_label, claims, %{}),
-         {:ok, %Label{} = label} = DataStructureLinks.create_label(params) do
+         {:ok, %Label{} = label} <- DataStructureLinks.create_label(params) do
       conn
       |> put_status(:created)
       |> render("show.json", label: label)
