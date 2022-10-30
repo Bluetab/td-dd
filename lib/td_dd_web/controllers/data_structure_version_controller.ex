@@ -27,6 +27,7 @@ defmodule TdDdWeb.DataStructureVersionController do
     :domain,
     :external_id,
     :links,
+    :data_structure_links,
     :with_protected_metadata,
     :metadata_versions,
     :parents,

@@ -14,6 +14,8 @@ defmodule TdDd.Factory do
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.Label
+  alias TdDd.DataStructures.DataStructureLink
   alias TdDd.DataStructures.MetadataField
   alias TdDd.DataStructures.MetadataView
   alias TdDd.DataStructures.RelationType
@@ -679,6 +681,22 @@ defmodule TdDd.Factory do
     %TdDq.Functions.Argument{
       type: sequence(:argument_type, ["string", "number", "any"])
     }
+  end
+
+  def data_structure_link_factory(attrs) do
+    attrs = default_assoc(attrs, :source_id, :source)
+    |> default_assoc(:target_id, :target)
+    |> default_assoc(:labels, :labels)
+
+    %DataStructureLink{}
+    |> merge_attributes(attrs)
+  end
+
+  def label_factory(attrs) do
+    %Label{
+      name: sequence("label_name")
+    }
+    |> merge_attributes(attrs)
   end
 
   defp default_assoc(attrs, id_key, key, build_key \\ nil, build_params \\ %{}) do

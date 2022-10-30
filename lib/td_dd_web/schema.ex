@@ -9,6 +9,7 @@ defmodule TdDdWeb.Schema do
 
   import_types(Absinthe.Plug.Types)
   import_types(Absinthe.Type.Custom)
+  import_types(TdDdWeb.Schema.DataStructureLinks)
   import_types(TdDdWeb.Schema.Domains)
   import_types(TdDdWeb.Schema.Executions)
   import_types(TdDdWeb.Schema.Functions)
@@ -29,6 +30,7 @@ defmodule TdDdWeb.Schema do
   import_types(TdDdWeb.Schema.Types.Custom.JSON)
 
   query do
+    import_fields(:data_structure_link_queries)
     import_fields(:domain_queries)
     import_fields(:function_queries)
     import_fields(:grant_request_queries)
