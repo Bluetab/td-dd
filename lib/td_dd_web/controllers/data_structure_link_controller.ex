@@ -18,7 +18,7 @@ defmodule TdDdWeb.DataStructureLinkController do
       data_structure_id(:path, :integer, "Data structure id", required: true)
     end
 
-    response(204, "No Content")
+    response(200, "OK")
     response(403, "Forbidden")
     response(422, "Client Error")
   end
@@ -39,7 +39,7 @@ defmodule TdDdWeb.DataStructureLinkController do
       external_id(:query, :string, "Data structure external id", required: true)
     end
 
-    response(204, "No Content")
+    response(200, "OK")
     response(403, "Forbidden")
     response(422, "Client Error")
   end

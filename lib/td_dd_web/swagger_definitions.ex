@@ -1167,6 +1167,12 @@ defmodule TdDdWeb.SwaggerDefinitions do
             message(:string, "Invalidity reason")
           end
         end,
+      Label:
+        swagger_schema do
+          properties do
+            name(:string, "Label name")
+          end
+        end
     }
   end
 end

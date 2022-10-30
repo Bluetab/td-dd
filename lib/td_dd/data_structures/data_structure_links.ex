@@ -291,4 +291,16 @@ defmodule TdDd.DataStructures.DataStructureLinks do
   def list_labels do
     Repo.all(Label)
   end
+
+  def get_label_by(%{"id" => id}) do
+    Repo.get(Label, id)
+  end
+
+  def get_label_by(%{"name" => name}) do
+    Repo.get_by(Label, name: name)
+  end
+
+  def delete_label(label) do
+    Repo.delete(label)
+  end
 end

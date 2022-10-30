@@ -6,6 +6,10 @@ defmodule TdDdWeb.LabelView do
   end
 
   def render("show.json", %{label: label}) do
+    %{data: render_one(label, __MODULE__, "label.json")}
+  end
+
+  def render("label.json", %{label: label}) do
     Map.take(label, [:id, :name])
   end
 end

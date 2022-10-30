@@ -29,5 +29,6 @@ defmodule TdDd.DataStructures.Label do
     label
     |> cast(params, [:name])
     |> validate_required(:name)
+    |> unique_constraint(:name)
   end
 end

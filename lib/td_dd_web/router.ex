@@ -61,7 +61,8 @@ defmodule TdDdWeb.Router do
     delete("/data_structures/structure_links/source/:source_id/target/:target_id", DataStructureLinkController, :delete)
     get("/data_structure_links/search_one", DataStructureLinkController, :show_by_external_ids)
     delete("/data_structure_links/search_delete_one", DataStructureLinkController, :delete_by_external_ids)
-    resources("/data_structure_links/labels", LabelController)
+    delete("/labels/search_delete_one", LabelController, :delete_by_name)
+    resources("/labels", LabelController)
 
     resources("/data_structure_versions", DataStructureVersionController, only: [:show])
 
