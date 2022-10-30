@@ -47,6 +47,7 @@ defmodule TdDq.Search.Mappings do
       updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       df_name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
+      df_label: %{type: "text", fields: %{raw: %{type: "keyword"}}},
       _confidential: %{type: "boolean"},
       df_content: content_mappings
     }
@@ -277,7 +278,7 @@ defmodule TdDq.Search.Mappings do
         modifier: %{
           properties: %{
             name: %{type: "text", fields: @raw},
-            params: %{type: "object"}
+            params: %{type: "object", enabled: false}
           }
         },
         value_modifier: %{

@@ -1,6 +1,47 @@
 # Changelog
 
-## [4.53.0] 2022-10-17## [4.53.0] 2022-10-17
+## [Unreleased]
+
+### Changed
+
+- [TD-5284] Phoenix 1.6.x
+
+### Fixed
+
+- [TD-5267] Bulk update was not reindexing changed structure notes
+- [TD-5265] `GET /api/user_search_filters/me` wasn't considering the `scope` of
+  global filters
+- [TD-4710] Domain type fields of templates it not working in bulk upload
+  implementations
+- [TD-5244] Admin user can't clone implementations
+
+### Added
+
+- [TD-3765] Support for empty_dataset in rule_results
+- [TD-5171] Enriches domain's parents on DataStructureVersion show
+- [TD-5245] Allow multiple fields for structure modifiers
+- [TD-4517] Adds `df_label` to Rule filters aggregation
+
+## [4.53.2] 2022-10-20
+
+### Changed
+
+- [TD-5234] `GET /api/data_structures/:id/versions/:version` now includes
+  `implementation_count` in response instead of embedded `implementations`
+
+### Fixed
+
+- [TD-4999] Serialization issue for data structures with profile but without
+  class field
+- [TD-5273] Allow request functions for grant request creators
+
+## [4.53.1] 2022-10-18
+
+### Fixed
+
+- [TD-5260] Avoid to create a draft with not changes for implementations
+
+## [4.53.0] 2022-10-18
 
 ### Fixed
 
@@ -47,7 +88,7 @@
 - [TD-5076] Allow to clone implementations for non admin users
 - [TD-5169] Improve list_data_structure_versions since query performance
 - [TD-5170] Capture graph tests Logger.warn output
-- [TD-5082] Filter protected metadata (field "_protected")
+- [TD-5082] Filter protected metadata (field "\_protected")
 - [TD-5133] Support for creating grant requests for third parties
 
 ### Changed

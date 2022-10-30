@@ -91,7 +91,7 @@ defmodule TdDd.Search.StructureEnricher do
     domains =
       Enum.map(domain_ids, fn domain_id ->
         case TaxonomyCache.get_domain(domain_id) do
-          %{} = domain -> domain
+          %{} = domain -> Map.put(domain, :parents, get_domain_parents(domain.id))
           nil -> %{}
         end
       end)
@@ -101,6 +101,19 @@ defmodule TdDd.Search.StructureEnricher do
 
   defp enrich_domains(%DataStructure{} = structure),
     do: %{structure | domains: [%{}]}
+
+  def get_domain_parents(id) do
+    id
+    |> get_domain_parent_ids()
+    |> Enum.drop(1)
+    |> Enum.map(&TaxonomyCache.get_domain/1)
+    |> Enum.filter(& &1)
+    |> Enum.map(&Map.take(&1, [:id, :external_id, :name]))
+    |> Enum.reverse()
+  end
+
+  def get_domain_parent_ids(nil), do: []
+  def get_domain_parent_ids(id), do: TaxonomyCache.reaching_domain_ids(id)
 
   defp search_content(
          %DataStructure{domain_ids: domain_ids, published_note: %{df_content: %{} = content}} =

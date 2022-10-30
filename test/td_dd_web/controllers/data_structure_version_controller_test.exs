@@ -471,6 +471,49 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     end
   end
 
+  describe "GET /api/data_structures/:id/versions/latest with domain hierarchy" do
+    @tag authentication: [role: "admin"]
+    test "includes domains parents on response", %{conn: conn} do
+      %{id: d1_id, name: d1_name, external_id: d1_ext_id} = CacheHelpers.insert_domain()
+
+      %{id: d2_id, name: d2_name, external_id: d2_ext_id} =
+        CacheHelpers.insert_domain(%{parent_id: d1_id})
+
+      %{id: d3_id, name: d3_name, external_id: d3_ext_id} =
+        CacheHelpers.insert_domain(%{parent_id: d2_id})
+
+      %{data_structure_id: id} =
+        insert(:data_structure_version,
+          data_structure:
+            build(:data_structure,
+              domain_ids: [d3_id]
+            )
+        )
+
+      assert %{"data" => data} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
+               )
+               |> json_response(:ok)
+
+      assert %{
+               "data_structure" => %{
+                 "domains" => [
+                   %{
+                     "name" => ^d3_name,
+                     "external_id" => ^d3_ext_id,
+                     "parents" => [
+                       %{"id" => ^d1_id, "name" => ^d1_name, "external_id" => ^d1_ext_id},
+                       %{"id" => ^d2_id, "name" => ^d2_name, "external_id" => ^d2_ext_id}
+                     ]
+                   }
+                 ]
+               }
+             } = data
+    end
+  end
+
   describe "GET /api/data_structures/:id/versions/latest with actions" do
     @tag authentication: [role: "admin"]
     test "includes actions in the response", %{conn: conn} do
@@ -850,15 +893,13 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   end
 
   describe "GET /api/data_structures/:id/versions/:version implementations" do
-    setup :create_structure_with_implementation
-
     @tag authentication: [role: "admin"]
-    test "rendes related implementations", %{
-      conn: conn,
-      data_structure: %{id: id},
-      implementation: %{implementation_key: implementation_key},
-      implementation_structure: %{id: implementation_structure_id}
-    } do
+    test "renders implementation count", %{conn: conn} do
+      %{data_structure_id: id} = insert(:data_structure_version)
+      insert(:implementation_structure, data_structure_id: id)
+      insert(:implementation_structure, data_structure_id: id)
+      insert(:implementation_structure, data_structure_id: id, deleted_at: DateTime.utc_now())
+
       assert %{"data" => data} =
                conn
                |> get(
@@ -866,14 +907,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                )
                |> json_response(:ok)
 
-      assert %{
-               "implementations" => [
-                 %{
-                   "id" => ^implementation_structure_id,
-                   "implementation" => %{"implementation_key" => ^implementation_key}
-                 }
-               ]
-             } = data
+      assert %{"implementation_count" => 2} = data
     end
   end
 
@@ -1161,24 +1195,6 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       parent_version: parent_version,
       structure_version: structure_version,
       structure: structure
-    ]
-  end
-
-  defp create_structure_with_implementation(_) do
-    %{data_structure: data_structure} = insert(:data_structure_version)
-
-    implementation = insert(:implementation)
-
-    implementation_structure =
-      insert(:implementation_structure,
-        implementation: implementation,
-        data_structure: data_structure
-      )
-
-    [
-      implementation: implementation,
-      data_structure: data_structure,
-      implementation_structure: implementation_structure
     ]
   end
 

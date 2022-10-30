@@ -109,7 +109,7 @@ defmodule TdDd.Factory do
       raw_content: build(:raw_content, content_attrs),
       deleted_at: nil,
       version: 1,
-      status: :draft
+      status: "draft"
     }
     |> merge_attributes(attrs)
   end
@@ -142,7 +142,7 @@ defmodule TdDd.Factory do
       validation: build(:validation),
       segments: build(:segments),
       version: 1,
-      status: :draft
+      status: "draft"
     }
     |> merge_attributes(attrs)
   end
@@ -172,7 +172,7 @@ defmodule TdDd.Factory do
       populations: build(:populations),
       validation: build(:validation),
       version: 1,
-      status: :draft
+      status: "draft"
     }
     |> merge_attributes(attrs)
   end
@@ -282,9 +282,10 @@ defmodule TdDd.Factory do
     %UserSearchFilter{
       id: sequence(:user_search_filter, & &1),
       name: sequence("filter_name"),
-      filters: %{country: ["Sp"]},
+      filters: %{"country" => ["Sp"]},
       user_id: sequence(:user_id, & &1),
-      scope: :data_structure,
+      scope:
+        sequence(:user_search_filter_scope, ["data_structure", "rule", "rule_implementation"]),
       is_global: false
     }
   end
