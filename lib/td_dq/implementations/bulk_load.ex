@@ -77,7 +77,10 @@ defmodule TdDq.Implementations.BulkLoad do
           {:error, {implementation_key, error}} ->
             %{
               acc
-              | errors: [%{implementation_key: implementation_key, message: error} | acc.errors]
+              | errors: [
+                  %{implementation_key: implementation_key, message: %{implementation: [error]}}
+                  | acc.errors
+                ]
             }
         end
       else
@@ -107,19 +110,17 @@ defmodule TdDq.Implementations.BulkLoad do
   end
 
   defp enrich_implementation(implementation) do
-    imp =
-      implementation
-      |> Enum.reduce(%{"df_content" => %{}}, fn {header, value}, acc ->
-        if Enum.member?(@headers, header) do
-          Map.put(acc, header, value)
-        else
-          Map.update!(acc, "df_content", &Map.put(&1, header, value))
-        end
-      end)
-      |> ensure_template()
-      |> Map.merge(@default_implementation)
-
-    {:ok, imp}
+    implementation
+    |> Enum.reduce(%{"df_content" => %{}}, fn {header, value}, acc ->
+      if Enum.member?(@headers, header) do
+        Map.put(acc, header, value)
+      else
+        Map.update!(acc, "df_content", &Map.put(&1, header, value))
+      end
+    end)
+    |> ensure_template()
+    |> Map.merge(@default_implementation)
+    |> then(&{:ok, &1})
   end
 
   defp ensure_template(%{"df_content" => df_content} = implementation) do
@@ -161,43 +162,38 @@ defmodule TdDq.Implementations.BulkLoad do
         {:error, %{"template" => ["Template #{template_name} doesn't exists"]}}
 
       template ->
-        template_fields =
-          template
-          |> Map.get(:content)
-          |> Enum.reduce([], fn %{"fields" => fields}, acc -> acc ++ fields end)
-          |> Enum.filter(fn %{"name" => field_name} -> Map.has_key?(df_content, field_name) end)
-
-        format_df_content(params, template_fields)
+        template
+        |> Map.get(:content)
+        |> Enum.reduce([], fn %{"fields" => fields}, acc -> acc ++ fields end)
+        |> Enum.filter(fn %{"name" => field_name} -> Map.has_key?(df_content, field_name) end)
+        |> then(&format_df_content(params, &1))
     end
   end
 
   defp format_df_content(params), do: {:ok, params}
 
   defp format_df_content(%{"df_content" => df_content} = params, template_fields) do
-    df_content =
-      df_content
-      |> Enum.reduce_while(
-        {:ok, df_content},
-        fn {df_field_name, _} = entity, {:ok, df_content_aux} ->
-          field_meta =
-            Enum.find(
-              template_fields,
-              fn field_meta -> Map.get(field_meta, "name") == df_field_name end
-            )
+    df_content
+    |> Enum.reduce_while(
+      {:ok, df_content},
+      fn {df_field_name, _} = entity, {:ok, df_content_aux} ->
+        field_meta =
+          Enum.find(
+            template_fields,
+            fn field_meta -> Map.get(field_meta, "name") == df_field_name end
+          )
 
-          case field_meta do
-            nil ->
-              {:halt,
-               {:error,
-                %{"df_content" => ["The field #{df_field_name} doesn't exist in template"]}}}
+        case field_meta do
+          nil ->
+            {:halt,
+             {:error, %{"df_content" => ["The field #{df_field_name} doesn't exist in template"]}}}
 
-            field_meta ->
-              format_df_field(df_content_aux, entity, field_meta)
-          end
+          field_meta ->
+            format_df_field(df_content_aux, entity, field_meta)
         end
-      )
-
-    case df_content do
+      end
+    )
+    |> case do
       {:ok, df_content} -> {:ok, Map.put(params, "df_content", df_content)}
       error -> error
     end
