@@ -5,7 +5,7 @@ defmodule TdDd.Repo.Migrations.CreateLabelsAndDataStructureLinksLabels do
     create table(:labels) do
       add(:name, :string)
 
-      timestamps()
+      timestamps(type: :utc_datetime_usec)
     end
 
     create unique_index(:labels, [:name])

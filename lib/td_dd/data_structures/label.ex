@@ -18,7 +18,7 @@ defmodule TdDd.DataStructures.Label do
       on_delete: :delete_all
     )
 
-    timestamps()
+    timestamps(type: :utc_datetime_usec)
   end
 
   def changeset(%{} = params) do
