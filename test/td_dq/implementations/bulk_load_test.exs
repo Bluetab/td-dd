@@ -141,6 +141,45 @@ defmodule TdDq.Implementations.BulkLoadTest do
       assert %{df_content: ^df_content} = Implementations.get_implementation!(id2)
     end
 
+    test "return ids with valid df_content that include enriched text field", %{
+      rule: %{name: rule_name},
+      claims: claims
+    } do
+      template_content = [
+        %{
+          "fields" => [
+            %{
+              "name" => "enriched",
+              "type" => "enriched_text",
+              "label" => "enriched",
+              "values" => nil,
+              "widget" => "enriched_text",
+              "default" => "",
+              "cardinality" => "?",
+              "subscribable" => false
+            }
+          ],
+          "name" => "group_name0"
+        }
+      ]
+
+      %{name: template_name} =
+        CacheHelpers.insert_template(
+          scope: "ri",
+          content: template_content
+        )
+
+      imp =
+        Enum.map(@valid_implementation, fn imp ->
+          imp
+          |> Map.put("rule_name", rule_name)
+          |> Map.put("template", template_name)
+          |> Map.put("enriched", "foo")
+        end)
+
+      assert {:ok, %{ids: [_id1, _id2], errors: []}} = BulkLoad.bulk_load(imp, claims)
+    end
+
     test "return error when rule not exist", %{
       rule: %{name: rule_name},
       claims: claims,
@@ -195,6 +234,137 @@ defmodule TdDq.Implementations.BulkLoadTest do
         end)
 
       assert {:ok, %{ids: [], errors: [_e1, _e2]}} = BulkLoad.bulk_load(imp, claims)
+    end
+
+    test "return errors when some field doesn't exists and not template defined", %{
+      claims: claims,
+      domain: %{external_id: external_id}
+    } do
+      imp =
+        Enum.map(@valid_implementation, fn imp ->
+          imp
+          |> Map.put("field_that_not_exists", "foo")
+          |> Map.put("domain_external_id", external_id)
+        end)
+
+      assert {:ok,
+              %{
+                ids: [],
+                errors: [
+                  %{message: %{df_content: [_e1]}},
+                  %{message: %{df_content: [_e2]}}
+                ]
+              }} = BulkLoad.bulk_load(imp, claims)
+    end
+
+    test "return errors when some template field doesn't exists", %{
+      claims: claims,
+      domain: %{external_id: external_id},
+      template_name: template_name
+    } do
+      imp =
+        Enum.map(@valid_implementation, fn imp ->
+          imp
+          |> Map.put("field_that_not_exists", "foo")
+          |> Map.put("domain_external_id", external_id)
+          |> Map.put("template", template_name)
+        end)
+
+      assert {:ok,
+              %{
+                ids: [],
+                errors: [
+                  %{message: %{"df_content" => [_e1]}},
+                  %{message: %{"df_content" => [_e2]}}
+                ]
+              }} = BulkLoad.bulk_load(imp, claims)
+    end
+
+    test "return errors when domain_external_id doesn't exists", %{
+      claims: claims
+    } do
+      imp =
+        Enum.map(@valid_implementation, fn imp ->
+          imp
+          |> Map.put("domain_external_id", "foo")
+        end)
+
+      assert {:ok,
+              %{
+                ids: [],
+                errors: [
+                  %{message: %{"domain_external_id" => [_e1]}},
+                  %{message: %{"domain_external_id" => [_e2]}}
+                ]
+              }} = BulkLoad.bulk_load(imp, claims)
+    end
+
+    test "return errors when template doesn't exists", %{
+      claims: claims,
+      domain: %{external_id: external_id}
+    } do
+      imp =
+        Enum.map(@valid_implementation, fn imp ->
+          imp
+          |> Map.put("domain_external_id", "foo")
+          |> Map.put("domain_external_id", external_id)
+          |> Map.put("template", "template_that_not_exists")
+        end)
+
+      assert {:ok,
+              %{
+                ids: [],
+                errors: [
+                  %{message: %{"template" => [_e1]}},
+                  %{message: %{"template" => [_e2]}}
+                ]
+              }} = BulkLoad.bulk_load(imp, claims)
+    end
+
+    test "return errors when domain field of template doesn't exists", %{
+      claims: claims,
+      rule: %{name: rule_name}
+    } do
+      template_content = [
+        %{
+          "fields" => [
+            %{
+              "name" => "my_domain",
+              "type" => "domain",
+              "label" => "My domain",
+              "values" => nil,
+              "widget" => "dropdown",
+              "default" => "",
+              "cardinality" => "?",
+              "subscribable" => false
+            }
+          ],
+          "name" => "group_name0"
+        }
+      ]
+
+      %{name: template_name} =
+        CacheHelpers.insert_template(
+          scope: "ri",
+          content: template_content
+        )
+
+      imp =
+        Enum.map(@valid_implementation, fn imp ->
+          imp
+          |> Map.put("rule_name", rule_name)
+          |> Map.put("template", template_name)
+          |> Map.put("my_domain", "domain_that_not_exists")
+        end)
+
+      assert {:ok,
+              %{
+                ids: [],
+                errors: [
+                  %{message: %{"df_content.my_domain" => [_e1]}},
+                  %{message: %{"df_content.my_domain" => [_e2]}}
+                ]
+              }} = BulkLoad.bulk_load(imp, claims)
     end
   end
 end
