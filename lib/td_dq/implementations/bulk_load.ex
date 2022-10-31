@@ -53,31 +53,43 @@ defmodule TdDq.Implementations.BulkLoad do
   defp create_implementations(implementations, claims) do
     implementations
     |> Enum.reduce(%{ids: [], errors: []}, fn imp, acc ->
-      imp =
-        imp
-        |> enrich_implementation()
-        |> maybe_put_domain_id()
-        |> maybe_put_template_domains_ids()
-        |> Map.put("status", "draft")
-        |> Map.put("version", 1)
+      with {:ok, imp} <- enrich_implementation(imp),
+           {:ok, imp} <- maybe_put_domain_id(imp),
+           {:ok, imp} <- format_df_content(imp) do
+        imp =
+          imp
+          |> Map.put("status", "draft")
+          |> Map.put("version", 1)
 
-      case create_implementation(imp, claims) do
-        {:ok, %{implementation: %{id: id}}} ->
-          %{acc | ids: [id | acc.ids]}
+        case create_implementation(imp, claims) do
+          {:ok, %{implementation: %{id: id}}} ->
+            %{acc | ids: [id | acc.ids]}
 
-        {:error, _, changeset, _} ->
-          error = Changeset.traverse_errors(changeset, &ErrorHelpers.translate_error/1)
-          implementation_key = Changeset.get_field(changeset, :implementation_key)
+          {:error, _, changeset, _} ->
+            error = Changeset.traverse_errors(changeset, &ErrorHelpers.translate_error/1)
+            implementation_key = Changeset.get_field(changeset, :implementation_key)
 
+            %{
+              acc
+              | errors: [%{implementation_key: implementation_key, message: error} | acc.errors]
+            }
+
+          {:error, {implementation_key, error}} ->
+            %{
+              acc
+              | errors: [
+                  %{implementation_key: implementation_key, message: %{implementation: [error]}}
+                  | acc.errors
+                ]
+            }
+        end
+      else
+        {:error, error} ->
           %{
             acc
-            | errors: [%{implementation_key: implementation_key, message: error} | acc.errors]
-          }
-
-        {:error, {implementation_key, error}} ->
-          %{
-            acc
-            | errors: [%{implementation_key: implementation_key, message: error} | acc.errors]
+            | errors: [
+                %{implementation_key: imp["implementation_key"], message: error} | acc.errors
+              ]
           }
       end
     end)
@@ -108,6 +120,7 @@ defmodule TdDq.Implementations.BulkLoad do
     end)
     |> ensure_template()
     |> Map.merge(@default_implementation)
+    |> then(&{:ok, &1})
   end
 
   defp ensure_template(%{"df_content" => df_content} = implementation) do
@@ -121,56 +134,111 @@ defmodule TdDq.Implementations.BulkLoad do
   end
 
   defp maybe_put_domain_id(%{"domain_external_id" => external_id} = params)
-       when is_binary(external_id) do
+       when is_binary(external_id) and external_id != "" do
     case get_domain_id_by_external_id(external_id) do
-      nil -> params
-      domain_id -> Map.put(params, "domain_id", domain_id)
+      {:ok, domain_id} -> {:ok, Map.put(params, "domain_id", domain_id)}
+      {:error, msg} -> {:error, %{"domain_external_id" => [msg]}}
     end
   end
 
   defp maybe_put_domain_id(%{"domain_id" => domain_id} = params)
        when is_binary(domain_id) do
-    Map.put(params, "domain_id", String.to_integer(domain_id))
+    {:ok, Map.put(params, "domain_id", String.to_integer(domain_id))}
   end
 
-  defp maybe_put_domain_id(params), do: params
+  defp maybe_put_domain_id(params), do: {:ok, params}
 
   defp get_domain_id_by_external_id(external_id) do
     case DomainCache.external_id_to_id(external_id) do
-      {:ok, domain_id} -> domain_id
-      :error -> nil
+      :error -> {:error, "Domain with external id #{external_id} doesn't exists"}
+      domain_id -> domain_id
     end
   end
 
-  defp maybe_put_template_domains_ids(
-         %{"df_name" => template_name, "df_content" => df_content} = params
-       )
+  defp format_df_content(%{"df_name" => template_name, "df_content" => df_content} = params)
        when is_binary(template_name) do
     case TemplateCache.get_by_name!(template_name) do
       nil ->
-        params
+        {:error, %{"template" => ["Template #{template_name} doesn't exists"]}}
 
       template ->
-        template_domain_fields =
-          template
-          |> Map.get(:content)
-          |> Enum.reduce([], fn %{"fields" => fields}, acc -> acc ++ fields end)
-          |> Enum.filter(fn %{"type" => type} -> type == "domain" end)
-          |> Enum.map(fn %{"name" => name} -> name end)
-
-        content_domain_fields =
-          df_content
-          |> Map.take(template_domain_fields)
-          |> Enum.map(fn {domain_field, external_id} ->
-            domain_id = get_domain_id_by_external_id(external_id)
-            {domain_field, domain_id}
-          end)
-          |> Enum.into(%{})
-
-        new_df_content = Map.merge(df_content, content_domain_fields)
-        Map.put(params, "df_content", new_df_content)
+        template
+        |> Map.get(:content)
+        |> Enum.reduce([], fn %{"fields" => fields}, acc -> acc ++ fields end)
+        |> Enum.filter(fn %{"name" => field_name} -> Map.has_key?(df_content, field_name) end)
+        |> then(&format_df_content(params, &1))
     end
   end
 
-  defp maybe_put_template_domains_ids(params), do: params
+  defp format_df_content(params), do: {:ok, params}
+
+  defp format_df_content(%{"df_content" => df_content} = params, template_fields) do
+    df_content
+    |> Enum.reduce_while(
+      {:ok, df_content},
+      fn {df_field_name, _} = entity, {:ok, df_content_aux} ->
+        field_meta =
+          Enum.find(
+            template_fields,
+            fn field_meta -> Map.get(field_meta, "name") == df_field_name end
+          )
+
+        case field_meta do
+          nil ->
+            {:halt,
+             {:error, %{"df_content" => ["The field #{df_field_name} doesn't exist in template"]}}}
+
+          field_meta ->
+            format_df_field(df_content_aux, entity, field_meta)
+        end
+      end
+    )
+    |> case do
+      {:ok, df_content} -> {:ok, Map.put(params, "df_content", df_content)}
+      error -> error
+    end
+  end
+
+  defp format_df_field(df_content, {df_field_name, domain_external_id}, %{"type" => "domain"}) do
+    if domain_external_id == "" do
+      {:cont, {:ok, Map.put(df_content, df_field_name, nil)}}
+    else
+      case get_domain_id_by_external_id(domain_external_id) do
+        {:error, msg} -> {:halt, {:error, %{"df_content.#{df_field_name}" => [msg]}}}
+        {:ok, domain_id} -> {:cont, {:ok, Map.put(df_content, df_field_name, domain_id)}}
+      end
+    end
+  end
+
+  defp format_df_field(df_content, {df_field_name, df_field_value}, %{"type" => "enriched_text"}) do
+    if df_field_value == "" do
+      {:cont, {:ok, Map.put(df_content, df_field_name, %{})}}
+    else
+      enriched_structure = %{
+        "object" => "value",
+        "document" => %{
+          "data" => %{},
+          "nodes" => [
+            %{
+              "data" => %{},
+              "type" => "paragraph",
+              "object" => "block",
+              "nodes" => [
+                %{
+                  "text" => df_field_value,
+                  "marks" => [],
+                  "object" => "text"
+                }
+              ]
+            }
+          ],
+          "object" => "document"
+        }
+      }
+
+      {:cont, {:ok, Map.put(df_content, df_field_name, enriched_structure)}}
+    end
+  end
+
+  defp format_df_field(df_content, _entity, _template_fields), do: {:cont, {:ok, df_content}}
 end

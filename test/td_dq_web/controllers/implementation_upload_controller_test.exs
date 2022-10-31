@@ -121,6 +121,91 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
     end
 
     @tag authentication: [role: "admin"]
+    test "uploads implementations with template with enriched text", %{conn: conn} do
+      attrs = %{
+        implementations: %Plug.Upload{
+          filename: "implementations.csv",
+          path: "test/fixtures/implementations/implementations_template_with_enriched_text.csv"
+        }
+      }
+
+      template_content = [
+        %{
+          "fields" => [
+            %{
+              "name" => "enriched_field",
+              "type" => "enriched_text",
+              "label" => "Enriched field",
+              "values" => nil,
+              "widget" => "enriched_text",
+              "default" => "",
+              "cardinality" => "?",
+              "subscribable" => false
+            }
+          ],
+          "name" => "group_name0"
+        }
+      ]
+
+      CacheHelpers.insert_template(
+        scope: "ri",
+        content: template_content,
+        name: "enriched_template"
+      )
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.implementation_upload_path(conn, :create), attrs)
+               |> json_response(:ok)
+
+      assert %{"ids" => [id1, id2], "errors" => []} = data
+
+      assert %{
+               "data" => %{
+                 "df_content" => df_content
+               }
+             } =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id1))
+               |> json_response(:ok)
+
+      assert %{
+               "enriched_field" => %{
+                 "object" => "value",
+                 "document" => %{
+                   "data" => %{},
+                   "nodes" => [
+                     %{
+                       "data" => %{},
+                       "type" => "paragraph",
+                       "object" => "block",
+                       "nodes" => [
+                         %{
+                           "text" => "foo",
+                           "marks" => [],
+                           "object" => "text"
+                         }
+                       ]
+                     }
+                   ],
+                   "object" => "document"
+                 }
+               }
+             } = df_content
+
+      assert %{
+               "data" => %{
+                 "df_content" => df_content2
+               }
+             } =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id2))
+               |> json_response(:ok)
+
+      assert %{"enriched_field" => %{}} = df_content2
+    end
+
+    @tag authentication: [role: "admin"]
     test "uploads implementations without rules", %{conn: conn} do
       CacheHelpers.insert_domain(external_id: "some_domain_id")
 

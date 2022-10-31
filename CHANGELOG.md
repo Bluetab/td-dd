@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-5279] Fixed some inconsistencies in implementation bulk upload
+
 ## [4.54.0] 2022-10-31
 
 ### Changed
