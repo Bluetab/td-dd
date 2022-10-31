@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-5279] Fixed some inconsistencies in implementation bulk upload
+
 ## [4.54.0] 2022-10-31
 
 ### Changed
@@ -8,7 +14,6 @@
 
 ### Fixed
 
-- [TD-5279] Fixed some inconsistencies in implementation bulk upload
 - [TD-5267] Bulk update was not reindexing changed structure notes
 - [TD-5265] `GET /api/user_search_filters/me` wasn't considering the `scope` of
   global filters
