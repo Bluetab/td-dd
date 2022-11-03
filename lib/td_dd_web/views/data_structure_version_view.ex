@@ -63,7 +63,7 @@ defmodule TdDdWeb.DataStructureVersionView do
       :id,
       :implementation_count,
       :links,
-      :data_structure_links,
+      :data_structure_link_count,
       :metadata,
       :name,
       :note,
@@ -352,12 +352,11 @@ defmodule TdDdWeb.DataStructureVersionView do
 
   defp add_note(dsv), do: dsv
 
-  defp add_data_structure_links(%{data_structure_links: data_structure_links} = ds)
-       when is_list(data_structure_links) do
+  defp add_data_structure_links(%{data_structure_links: data_structure_link_count} = ds) do
     Map.put(
       ds,
-      :data_structure_links,
-      render_many(data_structure_links, TdDdWeb.DataStructureLinkView, "data_structure_link.json")
+      :data_structure_link_count,
+      data_structure_link_count
     )
   end
 

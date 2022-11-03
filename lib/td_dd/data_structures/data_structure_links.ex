@@ -18,6 +18,8 @@ defmodule TdDd.DataStructures.DataStructureLinks do
 
   defdelegate authorize(action, user, params), to: __MODULE__.Policy
 
+  def links(%DataStructure{id: id}), do: all_by_id(id)
+
   def all_by(clauses) do
     DataStructureLink
     |> where(^clauses)
@@ -30,6 +32,13 @@ defmodule TdDd.DataStructures.DataStructureLinks do
     |> where([dsl], dsl.source_id == ^data_structure_id or dsl.target_id == ^data_structure_id)
     |> Ecto.Query.preload([[source: :system], [target: :system], :labels])
     |> Repo.all()
+  end
+
+  def link_count(data_structure_id) do
+    DataStructureLink
+    |> where([dsl], dsl.source_id == ^data_structure_id or dsl.target_id == ^data_structure_id)
+    |> select([dsl], count(dsl.source_id))
+    |> Repo.one
   end
 
   def get_by(%{
@@ -54,6 +63,10 @@ defmodule TdDd.DataStructures.DataStructureLinks do
   end
 
   def get_by(%{"source_id" => source_id, "target_id" => target_id}) do
+    get_by(%{source_id: source_id, target_id: target_id})
+  end
+
+  def get_by(%{source_id: source_id, target_id: target_id}) do
     DataStructureLink
     |> Ecto.Query.preload([[source: :system], [target: :system], :labels])
     |> Repo.get_by(source_id: source_id, target_id: target_id)

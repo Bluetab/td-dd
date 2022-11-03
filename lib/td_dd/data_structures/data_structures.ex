@@ -258,7 +258,7 @@ defmodule TdDd.DataStructures do
     |> enrich(opts, :degree, &get_degree/1)
     |> enrich(opts, :profile, &get_profile!/1)
     |> enrich(opts, :links, &get_structure_links/1)
-    |> enrich(opts, :data_structure_links, &get_data_structure_links/1)
+    |> enrich(opts, :data_structure_link_count, &get_data_structure_link_count/1)
     |> enrich(opts, :source, &get_source!/1)
     |> enrich(
       opts,
@@ -791,48 +791,8 @@ defmodule TdDd.DataStructures do
     Enum.map(data_fields, &Map.put(&1, :links, get_structure_links(&1)))
   end
 
-  def get_data_structure_links(%{data_structure_id: this_ds_id} = _dsv) do
-    data_structure_links = DataStructureLinks.all_by_id(this_ds_id)
-
-    structure_ids =
-      Enum.reduce(
-        data_structure_links,
-        [],
-        fn
-          %{source: %{id: ds_id}}, acc when ds_id != this_ds_id -> [ds_id | acc]
-          %{target: %{id: ds_id}}, acc when ds_id != this_ds_id -> [ds_id | acc]
-        end
-      )
-
-    structures_enriched =
-      enriched_structure_versions(data_structure_ids: structure_ids)
-      |> Enum.reduce(
-        %{},
-        fn %{data_structure_id: ds_id} = ds, acc -> Map.put(acc, ds_id, ds) end
-      )
-
-    Enum.map(
-      data_structure_links,
-      fn
-        %{
-          source: %{id: source_id} = source
-        } = dsl
-        when source_id != this_ds_id ->
-          %{
-            dsl
-            | source: %{source | current_version: structures_enriched[source_id]}
-          }
-
-        %{
-          target: %{id: target_id} = target
-        } = dsl
-        when target_id != this_ds_id ->
-          %{
-            dsl
-            | target: %{target | current_version: structures_enriched[target_id]}
-          }
-      end
-    )
+  def get_data_structure_link_count(%{data_structure_id: this_ds_id} = _dsv) do
+    DataStructureLinks.link_count(this_ds_id)
   end
 
   def get_structure_links(%{data_structure_id: id}) do

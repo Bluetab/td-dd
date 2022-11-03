@@ -64,6 +64,9 @@ defmodule TdDdWeb.Schema.Structures do
     field :structure_tags, list_of(:structure_tag),
       resolve: &Resolvers.Structures.structure_tags/3
 
+    field :data_structure_links, list_of(:data_structure_link),
+      resolve: &Resolvers.Structures.data_structure_links/3
+
     field :available_tags, list_of(:tag), resolve: &Resolvers.Structures.available_tags/3
   end
 
@@ -81,11 +84,17 @@ defmodule TdDdWeb.Schema.Structures do
     field :metadata, :json
     field :data_structure, :data_structure, resolve: dataloader(TdDd.DataStructures)
     field :path, list_of(:string), resolve: &Resolvers.Structures.data_structure_version_path/3
+    field :path_with_ids, list_of(:path_with_id), resolve: &Resolvers.Structures.data_structure_version_path_with_ids/3
 
     field :parents, list_of(:data_structure_version) do
       arg(:deleted, :boolean, default_value: false)
       resolve(dataloader(TdDd.DataStructures))
     end
+  end
+
+  object :path_with_id do
+    field :data_structure_id, non_null(:id)
+    field :name, :string
   end
 
   object :data_structure_relation do
