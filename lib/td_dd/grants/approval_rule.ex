@@ -29,7 +29,7 @@ defmodule TdDd.Grants.ApprovalRule do
 
   def changeset(%__MODULE__{} = struct, %{} = attrs, claims \\ nil) do
     struct
-    |> cast(attrs, [:comment, :role, :action])
+    |> cast(attrs, [:comment, :role, :action, :domain_ids])
     |> validate_required([
       :user_id,
       :domain_ids,
