@@ -3,7 +3,6 @@ defmodule TdDdWeb.Resolvers.GrantApprovalRules do
   Absinthe resolvers for grant approval rules
   """
 
-  # alias TdDd.Grants.ApprovalRule
   alias TdDd.Grants.ApprovalRules
 
   def grant_approval_rules(_parent, _args, resolution) do
