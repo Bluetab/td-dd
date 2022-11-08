@@ -13,6 +13,12 @@ defmodule TdDdWeb.Policy do
 
   @tag_mutations [:tag_structure, :delete_structure_tag]
 
+  @approval_rule_mutations [
+    :create_grant_approval_rule,
+    :update_grant_approval_rule,
+    :delete_grant_approval_rule
+  ]
+
   # Extract claims from Absinthe Resolution context
   def authorize(action, %{context: %{claims: claims}} = _resolution, params) do
     authorize(action, claims, params)
@@ -41,6 +47,12 @@ defmodule TdDdWeb.Policy do
   def authorize(:query, %{} = claims, :implementation_result),
     do: Bodyguard.permit(TdDq.Rules.RuleResults, :query, claims)
 
+  def authorize(:query, %{} = claims, :grant_approval_rules),
+    do: Bodyguard.permit(TdDd.Grants, :query, claims, :grant_approval_rules)
+
+  def authorize(:query, %{} = claims, :grant_approval_rule),
+    do: Bodyguard.permit(TdDd.Grants, :query, claims, :grant_approval_rule)
+
   def authorize(:query, %{} = claims, :latest_grant_request),
     do: Bodyguard.permit(TdDd.Grants, :query, claims, :latest_grant_request)
 
@@ -61,6 +73,9 @@ defmodule TdDdWeb.Policy do
   # Mutations
 
   def authorize(:mutation, %{role: "admin"}, _mutation), do: true
+
+  def authorize(:mutation, %{} = claims, mutation) when mutation in @approval_rule_mutations,
+    do: Bodyguard.permit(TdDd.Grants, :mutation, claims, mutation)
 
   def authorize(:mutation, %{} = claims, mutation) when mutation in @tag_mutations,
     do: Bodyguard.permit(TdDd.DataStructures.Tags, :mutation, claims, mutation)
