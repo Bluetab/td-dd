@@ -29,6 +29,7 @@ defmodule TdDdWeb.Policy do
   def authorize(:query, %{role: "service"}, _resource), do: true
 
   def authorize(:query, %{role: "user"}, :me), do: true
+  def authorize(:query, %{role: "user"}, :current_roles), do: true
   def authorize(:query, %{role: "user"}, :domain), do: true
   def authorize(:query, %{role: "user"}, :domains), do: true
   def authorize(:query, %{role: "user"}, :templates), do: true
