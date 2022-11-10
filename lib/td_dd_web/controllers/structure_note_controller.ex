@@ -350,8 +350,9 @@ defmodule TdDdWeb.StructureNoteController do
       |> Map.from_struct()
       |> Map.get(:df_content)
       |> MapDiff.diff(published_structure_note)
-      |> Map.get(:changed, %{})
-      |> Map.keys()
+      |> Map.values()
+      |> Enum.map(&(Map.keys(&1)))
+      |> List.flatten()
 
     Map.put(draft_structure_note, :_diff, diff)
   end
