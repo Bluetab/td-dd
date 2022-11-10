@@ -181,9 +181,6 @@ defmodule TdDdWeb.StructureNoteControllerTest do
           "baz" => "qux",
           "new" => "value"
         }
-      )
-
-      %{
         "data" => [
           %{"status" => "published", "version" => 1},
           %{"_diff" => diff, "status" => "draft", "version" => 2}
@@ -197,15 +194,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "diff from a structure with a published and pending_approval note", %{conn: conn} do
-      %{id: data_structure_id} = data_structure = insert(:data_structure)
-
-      insert(
-        :structure_note,
         data_structure: data_structure,
-        status: :published,
-        version: 1,
-        df_content: %{
           "foo" => "bar",
           "baz" => "xyz"
         }
