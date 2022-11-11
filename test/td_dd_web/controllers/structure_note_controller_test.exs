@@ -166,7 +166,8 @@ defmodule TdDdWeb.StructureNoteControllerTest do
         version: 1,
         df_content: %{
           "foo" => "bar",
-          "baz" => "xyz"
+          "baz" => "xyz",
+          "old" => "value_to_remove"
         }
       )
 
@@ -177,7 +178,8 @@ defmodule TdDdWeb.StructureNoteControllerTest do
         version: 2,
         df_content: %{
           "foo" => "bar",
-          "baz" => "qux"
+          "baz" => "qux",
+          "new" => "value"
         }
       )
 
@@ -191,7 +193,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
         |> get(Routes.data_structure_note_path(conn, :index, data_structure_id))
         |> json_response(:ok)
 
-      assert ["baz"] == diff
+      assert ["old", "baz", "new"] == diff
     end
 
     @tag authentication: [role: "admin"]
