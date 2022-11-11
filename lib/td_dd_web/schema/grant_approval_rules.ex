@@ -59,6 +59,7 @@ defmodule TdDdWeb.Schema.GrantApprovalRules do
 
   input_object :update_grant_approval_rule_input do
     field :id, non_null(:id)
+    field :name, :string
     field :action, :string
     field :role, :string
     field :domain_ids, list_of(:id)
