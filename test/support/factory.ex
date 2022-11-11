@@ -586,6 +586,7 @@ defmodule TdDd.Factory do
 
   def approval_rule_factory do
     %TdDd.Grants.ApprovalRule{
+      name: sequence("rule_name"),
       user_id: sequence(:user_id, &"#{&1}"),
       role: "role1",
       domain_ids: [123],

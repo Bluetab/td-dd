@@ -5,6 +5,9 @@ defmodule TdDdWeb.Schema.GrantApprovalRulesTest do
   query GrantApprovalRules {
     grantApprovalRules {
       id
+      domains {
+        name
+      }
     }
   }
   """
@@ -81,7 +84,7 @@ defmodule TdDdWeb.Schema.GrantApprovalRulesTest do
     test "return list of approvals when queried by user", %{
       conn: conn,
       claims: %{user_id: user_id},
-      domain: %{id: domain_id}
+      domain: %{id: domain_id, name: domain_name}
     } do
       insert(:approval_rule)
 
@@ -100,7 +103,11 @@ defmodule TdDdWeb.Schema.GrantApprovalRulesTest do
 
       assert response["errors"] == nil
       assert %{"grantApprovalRules" => grant_approvals} = data
-      assert [%{"id" => ^id_1_str}, %{"id" => ^id_2_str}] = grant_approvals
+
+      assert [
+               %{"id" => ^id_1_str, "domains" => [%{"name" => ^domain_name}]},
+               %{"id" => ^id_2_str, "domains" => [%{"name" => ^domain_name}]}
+             ] = grant_approvals
     end
   end
 
@@ -194,6 +201,7 @@ defmodule TdDdWeb.Schema.GrantApprovalRulesTest do
         :approval_rule
         |> string_params_for(domain_ids: [domain_id], role: role_name)
         |> Map.take([
+          "name",
           "action",
           "role",
           "domain_ids",
@@ -231,6 +239,7 @@ defmodule TdDdWeb.Schema.GrantApprovalRulesTest do
         :approval_rule
         |> string_params_for()
         |> Map.take([
+          "name",
           "action",
           "role",
           "domain_ids",
@@ -260,6 +269,7 @@ defmodule TdDdWeb.Schema.GrantApprovalRulesTest do
         :approval_rule
         |> string_params_for(domain_ids: [domain_id])
         |> Map.take([
+          "name",
           "action",
           "role",
           "domain_ids",

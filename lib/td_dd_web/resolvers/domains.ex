@@ -12,8 +12,16 @@ defmodule TdDdWeb.Resolvers.Domains do
   end
 
   def domains(_parent, %{ids: ids}, _resolution) do
+    get_cache_domains(ids)
+  end
+
+  def domains(%{domain_ids: domain_ids}, _args, _resolution) do
+    get_cache_domains(domain_ids)
+  end
+
+  defp get_cache_domains(domain_ids) do
     domains =
-      ids
+      domain_ids
       |> Enum.map(&TaxonomyCache.get_domain/1)
       |> Enum.reject(&is_nil/1)
 

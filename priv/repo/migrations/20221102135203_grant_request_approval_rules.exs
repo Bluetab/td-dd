@@ -3,6 +3,7 @@ defmodule TdDd.Repo.Migrations.GrantRequestApprovalRules do
 
   def change do
     create table("approval_rules") do
+      add :name, :string
       add :user_id, :bigint, null: false
       add :domain_ids, {:array, :integer}, default: [], null: false
       add :role, :string, null: false

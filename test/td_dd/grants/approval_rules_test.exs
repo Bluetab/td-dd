@@ -45,6 +45,7 @@ defmodule TdDd.Grants.ApprovalRulesTest do
       domain_id: domain_id
     } do
       params = %{
+        name: "rule_name",
         role: @role,
         domain_ids: [domain_id],
         action: "approve",

@@ -3,7 +3,6 @@ defmodule TdDdWeb.Resolvers.Structures do
   Absinthe resolvers for data structures and related entities
   """
 
-  alias TdCache.TaxonomyCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Relations
   alias TdDd.DataStructures.Tags
@@ -41,15 +40,6 @@ defmodule TdDdWeb.Resolvers.Structures do
       end
 
     {:ok, domain_id}
-  end
-
-  def domains(%{domain_ids: domain_ids}, _args, _resolution) do
-    domains =
-      domain_ids
-      |> Enum.map(&TaxonomyCache.get_domain/1)
-      |> Enum.reject(&is_nil/1)
-
-    {:ok, domains}
   end
 
   def data_structure_version_path(%{id: id}, _args, _resolution) do

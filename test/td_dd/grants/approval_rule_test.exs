@@ -16,6 +16,7 @@ defmodule TdDd.Grants.ApprovalRuleTest do
   describe "ApprovalRule.changeset/2" do
     test "validate require fields" do
       assert %{errors: errors} = ApprovalRule.changeset(%{})
+      assert {_, [validation: :required]} = errors[:name]
       assert {_, [validation: :required]} = errors[:user_id]
       assert {_, [validation: :required]} = errors[:domain_ids]
       assert {_, [validation: :required]} = errors[:role]
@@ -28,6 +29,7 @@ defmodule TdDd.Grants.ApprovalRuleTest do
 
       assert %{errors: errors} =
                %ApprovalRule{
+                 name: "rule_name",
                  user_id: user_id,
                  domain_ids: [0],
                  action: "approve"
@@ -42,6 +44,7 @@ defmodule TdDd.Grants.ApprovalRuleTest do
 
       assert %{valid?: true} =
                %ApprovalRule{
+                 name: "rule_name",
                  user_id: user_id,
                  domain_ids: [domain_id],
                  action: "approve"

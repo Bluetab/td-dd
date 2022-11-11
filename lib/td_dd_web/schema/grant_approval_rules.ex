@@ -43,6 +43,7 @@ defmodule TdDdWeb.Schema.GrantApprovalRules do
   end
 
   input_object :create_grant_approval_rule_input do
+    field :name, non_null(:string)
     field :action, non_null(:string)
     field :role, non_null(:string)
     field :domain_ids, list_of(:id)
@@ -67,10 +68,12 @@ defmodule TdDdWeb.Schema.GrantApprovalRules do
 
   object :approval_rule do
     field :id, non_null(:id)
+    field :name, non_null(:string)
     field :user_id, non_null(:id)
     field :action, non_null(:string)
     field :role, non_null(:string)
     field :domain_ids, list_of(:id)
+    field :domains, list_of(:domain), resolve: &Resolvers.Domains.domains/3
     field :conditions, list_of(:condition)
     field :comment, :string
     field :inserted_at, :datetime

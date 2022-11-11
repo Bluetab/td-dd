@@ -12,6 +12,7 @@ defmodule TdDd.Grants.ApprovalRule do
   @valid_actions ["approve", "reject"]
 
   schema "approval_rules" do
+    field :name, :string
     field :user_id, :integer
     field :domain_ids, {:array, :integer}
     field :role, :string
@@ -29,8 +30,9 @@ defmodule TdDd.Grants.ApprovalRule do
 
   def changeset(%__MODULE__{} = struct, %{} = attrs, claims \\ nil) do
     struct
-    |> cast(attrs, [:comment, :role, :action, :domain_ids])
+    |> cast(attrs, [:comment, :role, :action, :domain_ids, :name])
     |> validate_required([
+      :name,
       :user_id,
       :domain_ids,
       :role,
