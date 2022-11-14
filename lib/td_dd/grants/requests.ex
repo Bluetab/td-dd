@@ -76,17 +76,37 @@ defmodule TdDd.Grants.Requests do
       {_, requests} -> requests
       _ -> []
     end
-    |> Enum.map(&get_grant_request!(&1, claims))
+    |> Enum.map(&get_grant_request_for_rule!(&1, claims))
     |> Enum.map(&ApprovalRules.get_rules_for_request/1)
     |> Enum.flat_map(fn {request, rules} ->
-        Enum.map(rules,
+      Enum.map(
+        rules,
         fn %{action: action, role: role} ->
           {request, %{is_rejection: action == "reject", role: role}}
-        end)
-      end)
+        end
+      )
+    end)
     |> Enum.each(fn {request, params} -> create_approval(claims, request, params) end)
 
     {:ok, nil}
+  end
+
+  defp get_grant_request_for_rule!(id, claims) do
+    # IO.inspect(claims, label: "claims ->")
+    required = required_approvals()
+    user_roles = get_user_roles(claims)
+
+    request =
+      %{}
+      |> grant_request_query()
+      |> Repo.get!(id)
+      |> with_missing_roles(required, user_roles)
+
+    # %{current_version: current_version} = Map.get(request, :data_structure)
+
+    # IO.inspect(current_version, label: "CURRENT VERSION ===========>")
+
+    request
   end
 
   defp update_domain_ids(%{group: %{id: id}}) do

@@ -9,10 +9,14 @@ defmodule TdDd.Grants.RequestsTest do
   alias TdDd.Grants.GrantRequestStatus
   alias TdDd.Grants.Requests
 
+  @moduletag sandbox: :shared
+
   @template_name "grant_request_test_template"
   @valid_metadata %{"list" => "one", "string" => "bar"}
 
   setup tags do
+    start_supervised!(TdDd.Search.StructureEnricher)
+
     case Map.get(tags, :role, "user") do
       "admin" ->
         claims = build(:claims, role: "admin")
@@ -41,7 +45,8 @@ defmodule TdDd.Grants.RequestsTest do
     end
 
     test "create_grant_request_group/2 with valid data creates a grant_request_group" do
-      %{id: data_structure_id} = insert(:data_structure)
+      %{id: domain_id} = CacheHelpers.insert_domain()
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain_id])
       %{user_id: user_id} = claims = build(:claims)
 
       params = %{
@@ -65,8 +70,9 @@ defmodule TdDd.Grants.RequestsTest do
     end
 
     test "create_grant_request_group/2 with modification_grant" do
-      %{id: data_structure_id} = insert(:data_structure)
-      %{user_id: user_id} = build(:claims)
+      %{id: domain_id} = CacheHelpers.insert_domain()
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain_id])
+      %{user_id: user_id} = claims = build(:claims)
       %{id: grant_id} = modification_grant = insert(:grant, data_structure_id: data_structure_id)
 
       params = %{
@@ -77,7 +83,7 @@ defmodule TdDd.Grants.RequestsTest do
       }
 
       assert {:ok, %{group: group}} =
-               Requests.create_grant_request_group(params, modification_grant)
+               Requests.create_grant_request_group(params, claims, modification_grant)
 
       assert %{
                type: @template_name,
@@ -89,39 +95,84 @@ defmodule TdDd.Grants.RequestsTest do
     test "create_grant_request_group/2 apply approval rules if there are any" do
       %{id: domain_id} = CacheHelpers.insert_domain()
       %{user_id: approver_user_id} = build(:claims)
-      approver_role =  "approver_role"
+      approver_role = "approver_role"
+
       CacheHelpers.put_grant_request_approvers([
         %{user_id: approver_user_id, domain_id: domain_id, role: approver_role}
       ])
 
       domain_ids = [domain_id]
-      %{id: data_structure_id } = insert(:data_structure, domain_ids: domain_ids)
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: domain_ids)
       %{user_id: user_id} = claims = build(:claims)
 
-      approval_rule = insert(:approval_rule,
+      insert(:approval_rule,
         role: approver_role,
         domain_ids: domain_ids,
-        conditions: [%{field: "request.string", operator: "eq", value: "bar"}])
+        conditions: [%{field: "request.string", operator: "eq", value: "bar"}]
+      )
 
       params = %{
         type: @template_name,
-        requests: [%{
-          data_structure_id: data_structure_id,
-          metadata: @valid_metadata
-        }],
+        requests: [
+          %{
+            data_structure_id: data_structure_id,
+            metadata: @valid_metadata
+          }
+        ],
         user_id: user_id,
         created_by_id: user_id
       }
 
-      assert {:ok, %{group: _group, statuses: statuses, requests: {_count, [request_id]}}} =
+      assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
                Requests.create_grant_request_group(params, claims)
 
       assert %{current_status: "approved"} = Requests.get_grant_request!(request_id, claims)
     end
 
+    test "create_grant_request_group/2 does not apply non matching rules" do
+      %{id: domain_id} = CacheHelpers.insert_domain()
+      %{user_id: approver_user_id} = build(:claims)
+      approver_role = "approver_role"
+
+      CacheHelpers.put_grant_request_approvers([
+        %{user_id: approver_user_id, domain_id: domain_id, role: approver_role}
+      ])
+
+      domain_ids = [domain_id]
+
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: domain_ids)
+
+      %{user_id: user_id} = claims = build(:claims)
+
+      insert(:approval_rule,
+        role: approver_role,
+        domain_ids: domain_ids,
+        conditions: [%{field: "request.string", operator: "eq", value: "not_bar_value"}]
+      )
+
+      params = %{
+        type: @template_name,
+        requests: [
+          %{
+            data_structure_id: data_structure_id,
+            metadata: @valid_metadata
+          }
+        ],
+        user_id: user_id,
+        created_by_id: user_id
+      }
+
+      assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
+               Requests.create_grant_request_group(params, claims)
+
+      assert %{current_status: "pending"} = Requests.get_grant_request!(request_id, claims)
+    end
+
     test "creates grant_request_group requests" do
-      %{id: ds_id_1} = insert(:data_structure)
-      %{id: ds_id_2} = insert(:data_structure)
+      %{id: domain_id} = CacheHelpers.insert_domain()
+      domain_ids = [domain_id]
+      %{id: ds_id_1} = insert(:data_structure, domain_ids: domain_ids)
+      %{id: ds_id_2} = insert(:data_structure, domain_ids: domain_ids)
       %{user_id: user_id} = claims = build(:claims)
 
       requests = [
@@ -140,7 +191,8 @@ defmodule TdDd.Grants.RequestsTest do
         created_by_id: user_id
       }
 
-      assert {:ok, %{group: %{requests: requests}}} = Requests.create_grant_request_group(params, claims)
+      assert {:ok, %{group: %{requests: requests}}} =
+               Requests.create_grant_request_group(params, claims)
 
       assert [
                %{

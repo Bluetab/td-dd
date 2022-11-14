@@ -99,14 +99,77 @@ defmodule TdDd.Grants.ApprovalRules do
   end
 
   def get_rules_for_request(%GrantRequest{domain_ids: [domain_id]} = grant_request) do
-    rules = ApprovalRule
-    |> where([ar], ^domain_id in ar.domain_ids)
-    |> Repo.all()
-    |> Enum.filter(&match_conditions(&1, grant_request))
+    rules =
+      ApprovalRule
+      |> where([ar], ^domain_id in ar.domain_ids)
+      |> Repo.all()
+      |> Enum.filter(&match_conditions(&1, grant_request))
+
     {grant_request, rules}
   end
 
-  defp match_conditions(_rule, _grant_request) do
-    true
+  defp match_conditions(%{conditions: conditions}, grant_request) do
+    Enum.all?(conditions, &match_condition(&1, grant_request))
   end
+
+  defp match_condition(
+         %{field: "request." <> field, operator: operator, value: value},
+         grant_request
+       ) do
+    metadata = get_request_metadata(grant_request)
+    match_condition(field, operator, value, metadata)
+  end
+
+  defp match_condition(
+         %{field: "metadata." <> field, operator: operator, value: value},
+         grant_request
+       ) do
+    metadata = get_data_structure_metadata(grant_request)
+    mutable = get_data_structure_mutable_metadata(grant_request)
+
+    match_condition(field, operator, value, metadata) or
+      match_condition(field, operator, value, mutable)
+  end
+
+  defp match_condition(
+         %{field: "note." <> field, operator: operator, value: value},
+         grant_request
+       ) do
+    metadata = get_data_structure_note(grant_request)
+    match_condition(field, operator, value, metadata)
+  end
+
+  defp match_condition(_, _), do: false
+
+  defp match_condition(_, _, _, nil), do: false
+
+  defp match_condition(field, "eq", value, metadata),
+    do: Map.has_key?(metadata, field) and value == Map.get(metadata, field)
+
+  defp match_condition(field, "neq", value, metadata),
+    do: Map.has_key?(metadata, field) and value != Map.get(metadata, field)
+
+  defp match_condition(_, _, _, _), do: false
+
+  defp get_request_metadata(%{metadata: metadata}), do: metadata
+  defp get_request_metadata(_), do: nil
+
+  defp get_data_structure_note(%{
+         data_structure: %{current_version: %{published_note: %{df_content: metadata}}}
+       }),
+       do: metadata
+
+  defp get_data_structure_note(_), do: nil
+
+  defp get_data_structure_metadata(%{data_structure: %{current_version: %{metadata: metadata}}}),
+    do: metadata
+
+  defp get_data_structure_metadata(_), do: nil
+
+  defp get_data_structure_mutable_metadata(%{
+         data_structure: %{current_version: %{current_metadata: %{fields: metadata}}}
+       }),
+       do: metadata
+
+  defp get_data_structure_mutable_metadata(_), do: nil
 end

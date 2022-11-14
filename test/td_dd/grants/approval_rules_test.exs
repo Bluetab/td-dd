@@ -106,4 +106,127 @@ defmodule TdDd.Grants.ApprovalRulesTest do
       assert_raise Ecto.NoResultsError, fn -> ApprovalRules.get!(id) end
     end
   end
+
+  describe "get_rules_for_request/1" do
+    test "filters ApprovalRule by request metadata field", %{domain_id: domain_id} do
+      %{id: id} =
+        insert(:approval_rule,
+          domain_ids: [domain_id],
+          conditions: [%{field: "request.foo", operator: "eq", value: "bar"}]
+        )
+
+      grant_request = insert(:grant_request, domain_ids: [domain_id], metadata: %{"foo" => "bar"})
+
+      assert {_, rules} = ApprovalRules.get_rules_for_request(grant_request)
+      assert [%{id: ^id}] = rules
+    end
+
+    test "rejects ApprovalRule by request metadata field", %{domain_id: domain_id} do
+      insert(:approval_rule,
+        domain_ids: [domain_id],
+        conditions: [%{field: "request.foo", operator: "eq", value: "bar"}]
+      )
+
+      grant_request =
+        insert(:grant_request, domain_ids: [domain_id], metadata: %{"foo" => "not bar"})
+
+      assert {_, []} = ApprovalRules.get_rules_for_request(grant_request)
+    end
+
+    test "filters ApprovalRule by data_structure note field", %{domain_id: domain_id} do
+      domain_ids = [domain_id]
+
+      %{data_structure: data_structure} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, domain_ids: domain_ids)
+        )
+
+      insert(:structure_note,
+        data_structure: data_structure,
+        df_content: %{"foo" => "bar"},
+        status: :published
+      )
+
+      data_structure =
+        TdDd.Repo.preload(data_structure, current_version: [:published_note, :current_metadata])
+
+      %{id: id} =
+        insert(:approval_rule,
+          domain_ids: domain_ids,
+          conditions: [%{field: "note.foo", operator: "eq", value: "bar"}]
+        )
+
+      grant_request =
+        insert(:grant_request,
+          data_structure: data_structure,
+          domain_ids: domain_ids,
+          metadata: %{"foo" => "bar"}
+        )
+
+      assert {_, rules} = ApprovalRules.get_rules_for_request(grant_request)
+      assert [%{id: ^id}] = rules
+    end
+
+    test "filters ApprovalRule by data_structure metadata field", %{domain_id: domain_id} do
+      domain_ids = [domain_id]
+
+      %{data_structure: data_structure} =
+        insert(:data_structure_version,
+          metadata: %{"foo" => "bar"},
+          data_structure: build(:data_structure, domain_ids: domain_ids)
+        )
+
+      data_structure =
+        TdDd.Repo.preload(data_structure, current_version: [:published_note, :current_metadata])
+
+      %{id: id} =
+        insert(:approval_rule,
+          domain_ids: domain_ids,
+          conditions: [%{field: "metadata.foo", operator: "eq", value: "bar"}]
+        )
+
+      grant_request =
+        insert(:grant_request,
+          data_structure: data_structure,
+          domain_ids: domain_ids,
+          metadata: %{"foo" => "bar"}
+        )
+
+      assert {_, rules} = ApprovalRules.get_rules_for_request(grant_request)
+      assert [%{id: ^id}] = rules
+    end
+
+    test "filters ApprovalRule by data_structure mutable metadata field", %{domain_id: domain_id} do
+      domain_ids = [domain_id]
+
+      %{data_structure: data_structure} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, domain_ids: domain_ids)
+        )
+
+      insert(:structure_metadata,
+        data_structure: data_structure,
+        fields: %{"foo" => "bar"}
+      )
+
+      data_structure =
+        TdDd.Repo.preload(data_structure, current_version: [:published_note, :current_metadata])
+
+      %{id: id} =
+        insert(:approval_rule,
+          domain_ids: domain_ids,
+          conditions: [%{field: "metadata.foo", operator: "eq", value: "bar"}]
+        )
+
+      grant_request =
+        insert(:grant_request,
+          data_structure: data_structure,
+          domain_ids: domain_ids,
+          metadata: %{"foo" => "bar"}
+        )
+
+      assert {_, rules} = ApprovalRules.get_rules_for_request(grant_request)
+      assert [%{id: ^id}] = rules
+    end
+  end
 end
