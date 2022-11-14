@@ -31,6 +31,18 @@ defmodule TdDdWeb.StructureNoteView do
     %{data: render_one(structure_note, StructureNoteView, "structure_note.json")}
   end
 
+  def render("structure_note.json", %{structure_note: %{_diff: [_ | _]} = structure_note}) do
+    %{
+      id: structure_note.id,
+      status: structure_note.status,
+      version: structure_note.version,
+      df_content: structure_note.df_content,
+      _diff: Map.get(structure_note, :_diff, []),
+      updated_at: structure_note.updated_at,
+      _actions: Map.get(structure_note, :actions, %{})
+    }
+  end
+
   def render("structure_note.json", %{structure_note: structure_note}) do
     %{
       id: structure_note.id,

@@ -9,6 +9,7 @@ defmodule TdDdWeb.StructureNoteController do
   alias TdDd.DataStructures.StructureNotes
   alias TdDd.DataStructures.StructureNotesWorkflow
   alias TdDdWeb.SwaggerDefinitions
+  alias TdDfLib.MapDiff
 
   action_fallback(TdDdWeb.FallbackController)
   @data_structure_type_preload [:system, [current_version: :structure_type]]
@@ -35,11 +36,14 @@ defmodule TdDdWeb.StructureNoteController do
          data_structure <- DataStructures.get_data_structure!(data_structure_id),
          :ok <- Bodyguard.permit(DataStructures, :view_data_structure, claims, data_structure),
          statuses <- listable_statuses(claims, data_structure) do
+      allowed_structure_notes = StructureNotes.list_structure_notes(data_structure_id, statuses)
+
       structure_notes =
-        data_structure_id
-        |> StructureNotes.list_structure_notes(statuses)
+        allowed_structure_notes
         |> Enum.map(fn sn ->
-          Map.put(sn, :actions, available_actions(conn, sn, claims, data_structure))
+          sn
+          |> Map.put(:actions, available_actions(conn, sn, claims, data_structure))
+          |> maybe_add_structure_note_diff(allowed_structure_notes)
         end)
 
       render(conn, "index.json",
@@ -327,6 +331,33 @@ defmodule TdDdWeb.StructureNoteController do
       is_available(status, action, claims, data_structure)
     end)
   end
+
+  defp maybe_add_structure_note_diff(
+         %{status: status} = draft_structure_note,
+         allowed_structure_notes
+       )
+       when status in [:draft, :pending_approval] do
+    published_structure_note =
+      allowed_structure_notes
+      |> Enum.find(%TdDd.DataStructures.StructureNote{}, fn asn ->
+        asn.status == :published
+      end)
+      |> Map.from_struct()
+      |> Map.get(:df_content, %{})
+
+    diff =
+      draft_structure_note
+      |> Map.from_struct()
+      |> Map.get(:df_content)
+      |> MapDiff.diff(published_structure_note)
+      |> Map.values()
+      |> Enum.map(&Map.keys(&1))
+      |> List.flatten()
+
+    Map.put(draft_structure_note, :_diff, diff)
+  end
+
+  defp maybe_add_structure_note_diff(structure_note, _allowed_structure_notes), do: structure_note
 
   defp is_available(:draft, :published, claims, data_structure),
     do: permit?(StructureNotes, :publish_draft, claims, data_structure)
