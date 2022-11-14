@@ -57,10 +57,27 @@ defmodule TdDdWeb.Router do
 
     post("/data_structure_links", DataStructureLinkController, :create)
     get("/data_structure_links/search_all", DataStructureLinkController, :index_by_external_id)
-    get("/data_structures/structure_links/source/:source_id/target/:target_id", DataStructureLinkController, :show)
-    delete("/data_structures/structure_links/source/:source_id/target/:target_id", DataStructureLinkController, :delete)
+
+    get(
+      "/data_structures/structure_links/source/:source_id/target/:target_id",
+      DataStructureLinkController,
+      :show
+    )
+
+    delete(
+      "/data_structures/structure_links/source/:source_id/target/:target_id",
+      DataStructureLinkController,
+      :delete
+    )
+
     get("/data_structure_links/search_one", DataStructureLinkController, :show_by_external_ids)
-    delete("/data_structure_links/search_delete_one", DataStructureLinkController, :delete_by_external_ids)
+
+    delete(
+      "/data_structure_links/search_delete_one",
+      DataStructureLinkController,
+      :delete_by_external_ids
+    )
+
     delete("/labels/search_delete_one", LabelController, :delete_by_name)
     resources("/labels", LabelController)
 

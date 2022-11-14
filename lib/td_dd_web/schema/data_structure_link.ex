@@ -21,5 +21,4 @@ defmodule TdDdWeb.Schema.DataStructureLinks do
     field :id, non_null(:id)
     field :name, :string
   end
-
 end

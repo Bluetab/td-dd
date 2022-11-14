@@ -38,7 +38,7 @@ defmodule TdDd.DataStructures.DataStructureLinks do
     DataStructureLink
     |> where([dsl], dsl.source_id == ^data_structure_id or dsl.target_id == ^data_structure_id)
     |> select([dsl], count(dsl.source_id))
-    |> Repo.one
+    |> Repo.one()
   end
 
   def get_by(%{
@@ -114,8 +114,7 @@ defmodule TdDd.DataStructures.DataStructureLinks do
             } ->
               %{
                 grouped_links
-                | valid:
-                    MapSet.put(valid, changes)
+                | valid: MapSet.put(valid, changes)
               }
 
             %{valid?: false} = changeset ->
@@ -272,17 +271,20 @@ defmodule TdDd.DataStructures.DataStructureLinks do
 
   defp reduce_columns({_key, [%DataStructureLink{id: link_id}, %{label_names: label_names}]}, acc) do
     Enum.reduce(
-      label_names, acc, fn label_name,
-      %{
-        label_names: acc_label_names,
-        data_structure_link_ids: acc_data_structure_link_ids
-       } ->
-      %{
-        acc
-        | label_names: [label_name | acc_label_names],
-          data_structure_link_ids: [link_id | acc_data_structure_link_ids]
-      }
-    end)
+      label_names,
+      acc,
+      fn label_name,
+         %{
+           label_names: acc_label_names,
+           data_structure_link_ids: acc_data_structure_link_ids
+         } ->
+        %{
+          acc
+          | label_names: [label_name | acc_label_names],
+            data_structure_link_ids: [link_id | acc_data_structure_link_ids]
+        }
+      end
+    )
   end
 
   defp reduce_columns(_missing_link_or_label, acc), do: acc
@@ -290,7 +292,7 @@ defmodule TdDd.DataStructures.DataStructureLinks do
   def create_label(params \\ %{}) do
     %Label{}
     |> Label.changeset(params)
-    |> Repo.insert
+    |> Repo.insert()
   end
 
   def list_labels do

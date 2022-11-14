@@ -143,7 +143,10 @@ defmodule TdDdWeb.Schema.DataStructureQueryTest do
 
       assert %{"data" => data, "errors" => errors} =
                conn
-               |> post("/api/v2", %{"query" => @structure_structure_links_query, "variables" => %{"id" => id}})
+               |> post("/api/v2", %{
+                 "query" => @structure_structure_links_query,
+                 "variables" => %{"id" => id}
+               })
                |> json_response(:ok)
 
       assert data == %{"dataStructure" => nil}

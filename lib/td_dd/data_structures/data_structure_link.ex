@@ -24,7 +24,6 @@ defmodule TdDd.DataStructures.DataStructureLink do
       on_delete: :delete_all,
       on_replace: :delete
     )
-
   end
 
   def changeset(%{} = params) do
@@ -33,7 +32,13 @@ defmodule TdDd.DataStructures.DataStructureLink do
 
   def changeset(%__MODULE__{} = data_structure_link, params) do
     data_structure_link
-    |> cast(params, [:source_id, :target_id, :source_external_id, :target_external_id, :label_names])
+    |> cast(params, [
+      :source_id,
+      :target_id,
+      :source_external_id,
+      :target_external_id,
+      :label_names
+    ])
     |> validate_required([:source_external_id, :target_external_id])
     |> foreign_key_constraint(:source_id)
     |> foreign_key_constraint(:target_id)

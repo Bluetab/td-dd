@@ -1121,6 +1121,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
           properties do
             source_external_id(:string, "Relation source data structure external ID")
             target_external_id(:string, "Relation target data structure external ID")
+
             label_names(
               Schema.new do
                 type(:array)
@@ -1143,6 +1144,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
         swagger_schema do
           title("Inserted Data Structure Links")
           type(:array)
+
           items(
             Schema.new do
               properties do

@@ -44,28 +44,27 @@ defmodule TdDdWeb.DataStructureLinkControllerTest do
       label3: %{name: label3_name}
     } do
       assert %{"data" => data} =
-              conn
-              |> get(
-                "/api/data_structure_links/search_all",
-                %{
-                  "external_id" => ds1_external_id
-                }
-              )
-              |> json_response(:ok)
+               conn
+               |> get(
+                 "/api/data_structure_links/search_all",
+                 %{
+                   "external_id" => ds1_external_id
+                 }
+               )
+               |> json_response(:ok)
 
       assert [
-        %{
-          "labels" => [^label1_name, ^label2_name],
-          "source" => %{"external_id" => ^ds1_external_id},
-          "target" => %{"external_id" => ^ds2_external_id}
-        },
-        %{
-          "labels" => [^label3_name],
-          "source" => %{"external_id" => ^ds3_external_id},
-          "target" => %{"external_id" => ^ds1_external_id}
-        },
-
-      ] = data
+               %{
+                 "labels" => [^label1_name, ^label2_name],
+                 "source" => %{"external_id" => ^ds1_external_id},
+                 "target" => %{"external_id" => ^ds2_external_id}
+               },
+               %{
+                 "labels" => [^label3_name],
+                 "source" => %{"external_id" => ^ds3_external_id},
+                 "target" => %{"external_id" => ^ds1_external_id}
+               }
+             ] = data
     end
 
     @tag authentication: [role: "service"]
@@ -79,27 +78,23 @@ defmodule TdDdWeb.DataStructureLinkControllerTest do
       label3: %{name: label3_name}
     } do
       assert %{"data" => data} =
-              conn
-              |> get(
-                Routes.data_structure_data_structure_link_path(conn, :index, ds1_id)
-              )
-              |> json_response(:ok)
+               conn
+               |> get(Routes.data_structure_data_structure_link_path(conn, :index, ds1_id))
+               |> json_response(:ok)
 
       assert [
-        %{
-          "labels" => [^label1_name, ^label2_name],
-          "source" => %{"id" => ^ds1_id},
-          "target" => %{"id" => ^ds2_id}
-        },
-        %{
-          "labels" => [^label3_name],
-          "source" => %{"id" => ^ds3_id},
-          "target" => %{"id" => ^ds1_id}
-        },
-
-      ] = data
+               %{
+                 "labels" => [^label1_name, ^label2_name],
+                 "source" => %{"id" => ^ds1_id},
+                 "target" => %{"id" => ^ds2_id}
+               },
+               %{
+                 "labels" => [^label3_name],
+                 "source" => %{"id" => ^ds3_id},
+                 "target" => %{"id" => ^ds1_id}
+               }
+             ] = data
     end
-
   end
 
   describe "search" do
@@ -118,24 +113,24 @@ defmodule TdDdWeb.DataStructureLinkControllerTest do
       ds1: %{external_id: ds1_external_id},
       ds2: %{external_id: ds2_external_id},
       label1: %{name: label1_name},
-      label2: %{name: label2_name},
+      label2: %{name: label2_name}
     } do
       assert %{"data" => data} =
-              conn
-              |> get(
-                "/api/data_structure_links/search_one",
-                %{
-                  "source_external_id" => ds1_external_id,
-                  "target_external_id" => ds2_external_id
-                }
-              )
-              |> json_response(:ok)
+               conn
+               |> get(
+                 "/api/data_structure_links/search_one",
+                 %{
+                   "source_external_id" => ds1_external_id,
+                   "target_external_id" => ds2_external_id
+                 }
+               )
+               |> json_response(:ok)
 
       assert %{
-              "labels" => [^label1_name, ^label2_name],
-              "source" => %{"external_id" => ^ds1_external_id},
-              "target" => %{"external_id" => ^ds2_external_id}
-            } = data
+               "labels" => [^label1_name, ^label2_name],
+               "source" => %{"external_id" => ^ds1_external_id},
+               "target" => %{"external_id" => ^ds2_external_id}
+             } = data
     end
 
     @tag authentication: [role: "service"]
@@ -144,23 +139,19 @@ defmodule TdDdWeb.DataStructureLinkControllerTest do
       ds1: %{id: ds1_id},
       ds2: %{id: ds2_id},
       label1: %{name: label1_name},
-      label2: %{name: label2_name},
+      label2: %{name: label2_name}
     } do
-
       assert %{"data" => data} =
-              conn
-              |> get(
-                "/api/data_structures/structure_links/source/#{ds1_id}/target/#{ds2_id}"
-              )
-              |> json_response(:ok)
+               conn
+               |> get("/api/data_structures/structure_links/source/#{ds1_id}/target/#{ds2_id}")
+               |> json_response(:ok)
 
       assert %{
-              "labels" => [^label1_name, ^label2_name],
-              "source" => %{"id" => ^ds1_id},
-              "target" => %{"id" => ^ds2_id}
-            } = data
+               "labels" => [^label1_name, ^label2_name],
+               "source" => %{"id" => ^ds1_id},
+               "target" => %{"id" => ^ds2_id}
+             } = data
     end
-
   end
 
   describe "delete" do
@@ -179,17 +170,12 @@ defmodule TdDdWeb.DataStructureLinkControllerTest do
       ds1: %{id: ds1_id},
       ds2: %{id: ds2_id}
     } do
-
       assert conn
-            |> delete(
-              "/api/data_structures/structure_links/source/#{ds1_id}/target/#{ds2_id}"
-            )
-            |> response(:no_content)
+             |> delete("/api/data_structures/structure_links/source/#{ds1_id}/target/#{ds2_id}")
+             |> response(:no_content)
 
       conn
-      |> get(
-        "/api/data_structures/structure_links/source/#{ds1_id}/target/#{ds2_id}"
-      )
+      |> get("/api/data_structures/structure_links/source/#{ds1_id}/target/#{ds2_id}")
       |> json_response(:not_found)
     end
 
@@ -200,14 +186,14 @@ defmodule TdDdWeb.DataStructureLinkControllerTest do
       ds2: %{external_id: ds2_external_id}
     } do
       assert conn
-            |> delete(
-              "/api/data_structure_links/search_delete_one",
-              %{
-                "source_external_id" => ds1_external_id,
-                "target_external_id" => ds2_external_id
-              }
-            )
-            |> response(:no_content)
+             |> delete(
+               "/api/data_structure_links/search_delete_one",
+               %{
+                 "source_external_id" => ds1_external_id,
+                 "target_external_id" => ds2_external_id
+               }
+             )
+             |> response(:no_content)
 
       conn
       |> get(
@@ -219,7 +205,6 @@ defmodule TdDdWeb.DataStructureLinkControllerTest do
       )
       |> json_response(:not_found)
     end
-
   end
 
   @tag authentication: [role: "service"]

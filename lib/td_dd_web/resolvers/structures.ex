@@ -68,7 +68,8 @@ defmodule TdDdWeb.Resolvers.Structures do
       id
       |> ds_path
       |> Enum.map(&CollectionUtils.atomize_keys(&1))
-    {:ok,  path}
+
+    {:ok, path}
   end
 
   defp ds_path(id) do

@@ -84,7 +84,9 @@ defmodule TdDdWeb.Schema.Structures do
     field :metadata, :json
     field :data_structure, :data_structure, resolve: dataloader(TdDd.DataStructures)
     field :path, list_of(:string), resolve: &Resolvers.Structures.data_structure_version_path/3
-    field :path_with_ids, list_of(:path_with_id), resolve: &Resolvers.Structures.data_structure_version_path_with_ids/3
+
+    field :path_with_ids, list_of(:path_with_id),
+      resolve: &Resolvers.Structures.data_structure_version_path_with_ids/3
 
     field :parents, list_of(:data_structure_version) do
       arg(:deleted, :boolean, default_value: false)

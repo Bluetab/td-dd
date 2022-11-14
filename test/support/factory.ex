@@ -685,9 +685,10 @@ defmodule TdDd.Factory do
   end
 
   def data_structure_link_factory(attrs) do
-    attrs = default_assoc(attrs, :source_id, :source)
-    |> default_assoc(:target_id, :target)
-    |> default_assoc(:labels, :labels)
+    attrs =
+      default_assoc(attrs, :source_id, :source)
+      |> default_assoc(:target_id, :target)
+      |> default_assoc(:labels, :labels)
 
     %DataStructureLink{}
     |> merge_attributes(attrs)

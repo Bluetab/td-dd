@@ -1,5 +1,4 @@
 defmodule TdDdWeb.LabelController do
-
   use TdDdWeb, :controller
   use PhoenixSwagger
 
@@ -59,9 +58,7 @@ defmodule TdDdWeb.LabelController do
   end
 
   swagger_path :delete do
-    description(
-      "Delete a label by ID"
-    )
+    description("Delete a label by ID")
 
     parameters do
       id(:path, :integer, "Label ID", required: true)
@@ -83,9 +80,8 @@ defmodule TdDdWeb.LabelController do
   end
 
   swagger_path :delete_by_name do
-    description(
-      "Delete a label by name"
-    )
+    description("Delete a label by name")
+
     parameters do
       name(:query, :string, "Label name", required: true)
     end
@@ -104,5 +100,4 @@ defmodule TdDdWeb.LabelController do
       send_resp(conn, :no_content, "")
     end
   end
-
 end

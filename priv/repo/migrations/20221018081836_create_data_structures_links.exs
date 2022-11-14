@@ -11,6 +11,5 @@ defmodule TdDd.Repo.Migrations.CreateDataStructuresLinks do
     end
 
     create unique_index("data_structures_links", [:source_id, :target_id])
-
   end
 end
