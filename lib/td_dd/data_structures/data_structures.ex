@@ -15,6 +15,7 @@ defmodule TdDd.DataStructures do
   alias TdCx.Sources.Source
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureLinks
   alias TdDd.DataStructures.DataStructureQueries
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
@@ -257,6 +258,7 @@ defmodule TdDd.DataStructures do
     |> enrich(opts, :degree, &get_degree/1)
     |> enrich(opts, :profile, &get_profile!/1)
     |> enrich(opts, :links, &get_structure_links/1)
+    |> enrich(opts, :data_structure_link_count, &get_data_structure_link_count/1)
     |> enrich(opts, :source, &get_source!/1)
     |> enrich(
       opts,
@@ -787,6 +789,10 @@ defmodule TdDd.DataStructures do
 
   defp get_field_links(%{data_fields: data_fields}) do
     Enum.map(data_fields, &Map.put(&1, :links, get_structure_links(&1)))
+  end
+
+  def get_data_structure_link_count(%{data_structure_id: this_ds_id} = _dsv) do
+    DataStructureLinks.link_count(this_ds_id)
   end
 
   def get_structure_links(%{data_structure_id: id}) do
