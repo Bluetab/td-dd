@@ -1097,4 +1097,84 @@ defmodule TdDdWeb.SwaggerDefinitions do
         end
     }
   end
+
+  def data_structure_link_swagger_definitions do
+    %{
+      BulkCreateDataStructureLinksRequest:
+        swagger_schema do
+          title("Bulk Data Structure Link request")
+          description("A data_structure_links list to create")
+
+          properties do
+            data_structure_links(Schema.ref(:BulkCreateDataStructureLinks))
+          end
+        end,
+      BulkCreateDataStructureLinks:
+        swagger_schema do
+          title("Bulk creation of Data Structure Links")
+          description("A collection of Data Structure Links")
+          type(:array)
+          items(Schema.ref(:BulkCreateDataStructureLink))
+        end,
+      BulkCreateDataStructureLink:
+        swagger_schema do
+          properties do
+            source_external_id(:string, "Relation source data structure external ID")
+            target_external_id(:string, "Relation target data structure external ID")
+
+            label_names(
+              Schema.new do
+                type(:array)
+                items(Schema.array(:string))
+                example(["label1", "label2"])
+              end
+            )
+          end
+        end,
+      BulkCreateDataStructureLinksResponse:
+        swagger_schema do
+          title("Data Structure Link bulk creation summary")
+
+          properties do
+            inserted(Schema.ref(:BulkCreateInserted))
+            not_inserted(Schema.ref(:BulkCreateNotInserted))
+          end
+        end,
+      BulkCreateInserted:
+        swagger_schema do
+          title("Inserted Data Structure Links")
+          type(:array)
+
+          items(
+            Schema.new do
+              properties do
+                source_external_id(:string, "Relation source data structure external ID")
+                target_external_id(:string, "Relation target data structure external ID")
+              end
+            end
+          )
+        end,
+      BulkCreateNotInserted:
+        swagger_schema do
+          title("Bulk creation changeset invalid links")
+          description("Cast validation changeset errors")
+          type(:array)
+          items(Schema.ref(:ChangetsetInvalidLinks))
+        end,
+      ChangetsetInvalidLinks:
+        swagger_schema do
+          properties do
+            field(:string, "Invalid field")
+            value(:object, "Invalid field value")
+            message(:string, "Invalidity reason")
+          end
+        end,
+      Label:
+        swagger_schema do
+          properties do
+            name(:string, "Label name")
+          end
+        end
+    }
+  end
 end

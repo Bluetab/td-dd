@@ -4,6 +4,7 @@
 
 ### Added
 
+- [TD-5038] Links between structures
 - [TD-5037] Added diff information for draft and pending_aproval structure notes
   in API response
 

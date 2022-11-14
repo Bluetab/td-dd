@@ -60,9 +60,10 @@ defmodule TdDdWeb.DataStructureView do
     |> maybe_put_note(data_structure)
   end
 
-  def render("implementation_data_structure.json", %{
+  def render(name, %{
         data_structure: %{current_version: current_version} = data_structure
-      }) do
+      })
+      when name in ["with_current_version.json", "implementation_data_structure.json"] do
     data_structure
     |> data_structure_json()
     |> add_system_with_keys(data_structure, [:external_id, :id, :name])
