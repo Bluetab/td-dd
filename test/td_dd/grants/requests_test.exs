@@ -116,7 +116,7 @@ defmodule TdDd.Grants.RequestsTest do
       assert {:ok, %{group: _group, statuses: statuses, requests: {_count, [request_id]}}} =
                Requests.create_grant_request_group(params, claims)
 
-      assert %{status: "approved"} = Repo.get_by!(GrantRequestStatus, grant_request_id: request_id)
+      assert %{current_status: "approved"} = Requests.get_grant_request!(request_id, claims)
     end
 
     test "creates grant_request_group requests" do

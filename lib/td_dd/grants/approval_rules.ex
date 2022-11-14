@@ -99,10 +99,11 @@ defmodule TdDd.Grants.ApprovalRules do
   end
 
   def get_rules_for_request(%GrantRequest{domain_ids: [domain_id]} = grant_request) do
-    ApprovalRule
+    rules = ApprovalRule
     |> where([ar], ^domain_id in ar.domain_ids)
     |> Repo.all()
     |> Enum.filter(&match_conditions(&1, grant_request))
+    {grant_request, rules}
   end
 
   defp match_conditions(_rule, _grant_request) do

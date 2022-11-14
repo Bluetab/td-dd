@@ -71,16 +71,20 @@ defmodule TdDd.Grants.Requests do
   end
 
   defp maybe_apply_approval_rules(_, %{requests: requests}, claims) do
-    IO.inspect(claims, label: "claims")
     requests
     |> case do
       {_, requests} -> requests
       _ -> []
     end
-    |> Enum.map(&(Repo.get!(GrantRequest, &1)))
+    |> Enum.map(&get_grant_request!(&1, claims))
     |> Enum.map(&ApprovalRules.get_rules_for_request/1)
-    # |> Enum.flat_map()
-    # |> Enum.each(create_approval)
+    |> Enum.flat_map(fn {request, rules} ->
+        Enum.map(rules,
+        fn %{action: action, role: role} ->
+          {request, %{is_rejection: action == "reject", role: role}}
+        end)
+      end)
+    |> Enum.each(fn {request, params} -> create_approval(claims, request, params) end)
 
     {:ok, nil}
   end
