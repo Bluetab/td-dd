@@ -76,7 +76,7 @@ defmodule TdDdWeb.LabelController do
     claims = conn.assigns[:current_resource]
 
     with %Label{} = label <- DataStructureLinks.get_label_by(params),
-         :ok <- Bodyguard.permit(DataStructureLinks, :view, claims, Label),
+         :ok <- Bodyguard.permit(DataStructureLinks, :delete_label, claims, Label),
          {:ok, %Label{}} <- DataStructureLinks.delete_label(label) do
       send_resp(conn, :no_content, "")
     end
@@ -99,7 +99,7 @@ defmodule TdDdWeb.LabelController do
     claims = conn.assigns[:current_resource]
 
     with %Label{} = label <- DataStructureLinks.get_label_by(params),
-         :ok <- Bodyguard.permit(DataStructureLinks, :view, claims, Label),
+         :ok <- Bodyguard.permit(DataStructureLinks, :delete_label, claims, Label),
          {:ok, %Label{}} <- DataStructureLinks.delete_label(label) do
       send_resp(conn, :no_content, "")
     end

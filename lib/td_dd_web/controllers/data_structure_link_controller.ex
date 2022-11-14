@@ -127,7 +127,7 @@ defmodule TdDdWeb.DataStructureLinkController do
     claims = conn.assigns[:current_resource]
 
     with %DataStructureLink{} = link <- DataStructureLinks.get_by(params),
-         :ok <- Bodyguard.permit(DataStructureLinks, :view, claims, link),
+         :ok <- Bodyguard.permit(DataStructureLinks, :delete, claims, link),
          {:ok, %DataStructureLink{}} <- DataStructureLinks.delete(link) do
       send_resp(conn, :no_content, "")
     end

@@ -110,20 +110,12 @@ defmodule TdDd.DataStructures.DataStructureLinks do
           case DataStructureLink.changeset(link) do
             %{
               valid?: true,
-              changes: %{
-                source_external_id: source_external_id,
-                target_external_id: target_external_id,
-                label_names: label_names
-              }
+              changes: changes
             } ->
               %{
                 grouped_links
                 | valid:
-                    MapSet.put(valid, %{
-                      source_external_id: source_external_id,
-                      target_external_id: target_external_id,
-                      label_names: label_names
-                    })
+                    MapSet.put(valid, changes)
               }
 
             %{valid?: false} = changeset ->
