@@ -42,7 +42,7 @@ defmodule TdDd.Grants.RequestsTest do
 
     test "create_grant_request_group/2 with valid data creates a grant_request_group" do
       %{id: data_structure_id} = insert(:data_structure)
-      %{user_id: user_id} = build(:claims)
+      %{user_id: user_id} = claims = build(:claims)
 
       params = %{
         type: @template_name,
@@ -52,7 +52,7 @@ defmodule TdDd.Grants.RequestsTest do
       }
 
       assert {:ok, %{group: group, statuses: statuses, requests: {_count, [request_id]}}} =
-               Requests.create_grant_request_group(params)
+               Requests.create_grant_request_group(params, claims)
 
       assert %{
                type: @template_name,
@@ -86,10 +86,43 @@ defmodule TdDd.Grants.RequestsTest do
              } = group
     end
 
+    test "create_grant_request_group/2 apply approval rules if there are any" do
+      %{id: domain_id} = CacheHelpers.insert_domain()
+      %{user_id: approver_user_id} = build(:claims)
+      approver_role =  "approver_role"
+      CacheHelpers.put_grant_request_approvers([
+        %{user_id: approver_user_id, domain_id: domain_id, role: approver_role}
+      ])
+
+      domain_ids = [domain_id]
+      %{id: data_structure_id } = insert(:data_structure, domain_ids: domain_ids)
+      %{user_id: user_id} = claims = build(:claims)
+
+      approval_rule = insert(:approval_rule,
+        role: approver_role,
+        domain_ids: domain_ids,
+        conditions: [%{field: "request.string", operator: "eq", value: "bar"}])
+
+      params = %{
+        type: @template_name,
+        requests: [%{
+          data_structure_id: data_structure_id,
+          metadata: @valid_metadata
+        }],
+        user_id: user_id,
+        created_by_id: user_id
+      }
+
+      assert {:ok, %{group: _group, statuses: statuses, requests: {_count, [request_id]}}} =
+               Requests.create_grant_request_group(params, claims)
+
+      assert %{status: "approved"} = Repo.get_by!(GrantRequestStatus, grant_request_id: request_id)
+    end
+
     test "creates grant_request_group requests" do
       %{id: ds_id_1} = insert(:data_structure)
       %{id: ds_id_2} = insert(:data_structure)
-      %{user_id: user_id} = build(:claims)
+      %{user_id: user_id} = claims = build(:claims)
 
       requests = [
         %{
@@ -107,7 +140,7 @@ defmodule TdDd.Grants.RequestsTest do
         created_by_id: user_id
       }
 
-      assert {:ok, %{group: %{requests: requests}}} = Requests.create_grant_request_group(params)
+      assert {:ok, %{group: %{requests: requests}}} = Requests.create_grant_request_group(params, claims)
 
       assert [
                %{

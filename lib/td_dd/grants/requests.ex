@@ -11,6 +11,7 @@ defmodule TdDd.Grants.Requests do
   alias TdCache.UserCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.Grants.ApprovalRules
   alias TdDd.Grants.Audit
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestApproval
@@ -45,6 +46,7 @@ defmodule TdDd.Grants.Requests do
 
   def create_grant_request_group(
         %{} = params,
+        claims,
         modification_grant \\ nil
       ) do
     changeset =
@@ -63,8 +65,24 @@ defmodule TdDd.Grants.Requests do
         &%{grant_request_id: &1, status: "pending", inserted_at: DateTime.utc_now()}
       )
     end)
+    |> Multi.run(:approval_rules, &maybe_apply_approval_rules(&1, &2, claims))
     |> Multi.run(:audit, Audit, :grant_request_group_created, [])
     |> Repo.transaction()
+  end
+
+  defp maybe_apply_approval_rules(_, %{requests: requests}, claims) do
+    IO.inspect(claims, label: "claims")
+    requests
+    |> case do
+      {_, requests} -> requests
+      _ -> []
+    end
+    |> Enum.map(&(Repo.get!(GrantRequest, &1)))
+    |> Enum.map(&ApprovalRules.get_rules_for_request/1)
+    # |> Enum.flat_map()
+    # |> Enum.each(create_approval)
+
+    {:ok, nil}
   end
 
   defp update_domain_ids(%{group: %{id: id}}) do

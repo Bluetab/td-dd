@@ -6,6 +6,7 @@ defmodule TdDd.Grants.ApprovalRules do
   import Ecto.Query
 
   alias TdDd.Grants.ApprovalRule
+  alias TdDd.Grants.GrantRequest
   alias TdDd.Repo
   alias Truedat.Auth.Claims
 
@@ -95,5 +96,16 @@ defmodule TdDd.Grants.ApprovalRules do
   """
   def delete(%ApprovalRule{} = approval_rule) do
     Repo.delete(approval_rule)
+  end
+
+  def get_rules_for_request(%GrantRequest{domain_ids: [domain_id]} = grant_request) do
+    ApprovalRule
+    |> where([ar], ^domain_id in ar.domain_ids)
+    |> Repo.all()
+    |> Enum.filter(&match_conditions(&1, grant_request))
+  end
+
+  defp match_conditions(_rule, _grant_request) do
+    true
   end
 end
