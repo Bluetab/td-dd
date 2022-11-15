@@ -1,4 +1,4 @@
-defmodule TdDd.Grants.RequestsTest do
+defmodule TdDd.Grants.RequestsApprovalRulesTest do
   use TdDd.DataCase
 
   alias TdDd.Grants.Requests
@@ -65,9 +65,201 @@ defmodule TdDd.Grants.RequestsTest do
       assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
                Requests.create_grant_request_group(params, claims)
 
-      assert %{current_status: "approved", approvals: [
-        %{user_id: ^approver_user_id}
-      ]} = Requests.get_grant_request!(request_id, claims)
+      assert %{
+               current_status: "approved",
+               approvals: [
+                 %{user_id: ^approver_user_id}
+               ]
+             } = Requests.get_grant_request!(request_id, claims)
+    end
+
+    test "approve rule with request metadata with more than one condition", %{
+      approver_user_id: approver_user_id,
+      domain_ids: domain_ids
+    } do
+      data_structure = insert(:data_structure, domain_ids: domain_ids)
+
+      insert(:data_structure_version,
+        data_structure: data_structure,
+        metadata: %{"field" => "foo", "other" => "baz"}
+      )
+
+      insert(:approval_rule,
+        role: @approver_role,
+        user_id: approver_user_id,
+        domain_ids: domain_ids,
+        conditions: [
+          %{field: "request.string", operator: "eq", value: "bar"},
+          %{field: "metadata.field", operator: "eq", value: "foo"},
+          %{field: "metadata.other", operator: "neq", value: "not_baz"}
+        ]
+      )
+
+      %{user_id: user_id} = claims = build(:claims)
+
+      params = %{
+        type: @template_name,
+        requests: [
+          %{
+            data_structure_id: data_structure.id,
+            metadata: @valid_metadata
+          }
+        ],
+        user_id: user_id,
+        created_by_id: user_id
+      }
+
+      assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
+               Requests.create_grant_request_group(params, claims)
+
+      assert %{
+               current_status: "approved",
+               approvals: [
+                 %{user_id: ^approver_user_id}
+               ]
+             } = Requests.get_grant_request!(request_id, claims)
+    end
+
+    test "do not match rule if one condition is not met", %{
+      approver_user_id: approver_user_id,
+      domain_ids: domain_ids,
+      data_structure: data_structure
+    } do
+      insert(:approval_rule,
+        role: @approver_role,
+        user_id: approver_user_id,
+        domain_ids: domain_ids,
+        conditions: [
+          %{field: "request.string", operator: "eq", value: "foo"},
+          %{field: "request.string", operator: "eq", value: "bar"}
+        ]
+      )
+
+      %{user_id: user_id} = claims = build(:claims)
+
+      params = %{
+        type: @template_name,
+        requests: [
+          %{
+            data_structure_id: data_structure.id,
+            metadata: @valid_metadata
+          }
+        ],
+        user_id: user_id,
+        created_by_id: user_id
+      }
+
+      assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
+               Requests.create_grant_request_group(params, claims)
+
+      assert %{
+               current_status: "pending",
+               approvals: []
+             } = Requests.get_grant_request!(request_id, claims)
+    end
+
+    test "not equal condition requires the field to exist", %{
+      approver_user_id: approver_user_id,
+      domain_ids: domain_ids,
+      data_structure: data_structure
+    } do
+      insert(:approval_rule,
+        role: @approver_role,
+        user_id: approver_user_id,
+        domain_ids: domain_ids,
+        conditions: [%{field: "request.non_existing_field", operator: "eq", value: "bar"}]
+      )
+
+      %{user_id: user_id} = claims = build(:claims)
+
+      params = %{
+        type: @template_name,
+        requests: [
+          %{
+            data_structure_id: data_structure.id,
+            metadata: @valid_metadata
+          }
+        ],
+        user_id: user_id,
+        created_by_id: user_id
+      }
+
+      assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
+               Requests.create_grant_request_group(params, claims)
+
+      assert %{
+               current_status: "pending",
+               approvals: []
+             } = Requests.get_grant_request!(request_id, claims)
+    end
+
+    test "will not create an approval of a role that is not pending approval", %{
+      domain_ids: domain_ids,
+      data_structure: data_structure
+    } do
+      %{id: admin_user_id} = CacheHelpers.insert_user(role: "admin")
+      insert(:approval_rule,
+        role: "invalid_role",
+        user_id: admin_user_id,
+        domain_ids: domain_ids,
+        conditions: [%{field: "request.string", operator: "eq", value: "bar"}]
+      )
+
+      %{user_id: user_id} = claims = build(:claims)
+
+      params = %{
+        type: @template_name,
+        requests: [
+          %{
+            data_structure_id: data_structure.id,
+            metadata: @valid_metadata
+          }
+        ],
+        user_id: user_id,
+        created_by_id: user_id
+      }
+
+      assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
+               Requests.create_grant_request_group(params, claims)
+
+      assert %{
+               current_status: "pending",
+               approvals: []
+             } = Requests.get_grant_request!(request_id, claims)
+    end
+
+    test "approval will not be create if rule creator does not exist", %{
+      domain_ids: domain_ids,
+      data_structure: data_structure
+    } do
+      insert(:approval_rule,
+        role: @approver_role,
+        user_id: "-1",
+        domain_ids: domain_ids,
+        conditions: [%{field: "request.string", operator: "eq", value: "bar"}]
+      )
+
+      %{user_id: user_id} = claims = build(:claims)
+
+      params = %{
+        type: @template_name,
+        requests: [
+          %{
+            data_structure_id: data_structure.id,
+            metadata: @valid_metadata
+          }
+        ],
+        user_id: user_id,
+        created_by_id: user_id
+      }
+
+      assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
+               Requests.create_grant_request_group(params, claims)
+
+      assert %{
+               current_status: "pending",
+               approvals: []
+             } = Requests.get_grant_request!(request_id, claims)
     end
 
     test "does nothing if rule does not match", %{
@@ -188,6 +380,7 @@ defmodule TdDd.Grants.RequestsTest do
         domain_ids: domain_ids,
         conditions: [%{field: "request.string", operator: "eq", value: "bar"}]
       )
+
       insert(:approval_rule,
         role: @approver_role,
         user_id: approver_user_id,

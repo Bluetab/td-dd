@@ -76,25 +76,30 @@ defmodule TdDd.Grants.Requests do
       {_, requests} -> requests
       _ -> []
     end
-    |> Enum.map(&get_grant_request_for_rule!(&1, claims))
+    |> Enum.map(&get_grant_request_for_rules!(&1, claims))
     |> Enum.map(&ApprovalRules.get_rules_for_request/1)
-    |> Enum.flat_map(fn {request, rules} ->
-      Enum.map(
-        rules,
-        fn %{action: action, role: role, comment: comment, user_id: user_id} ->
-          {:ok, %{role: user_role}} = UserCache.get(user_id)
-
-          {%{user_id: user_id, role: user_role}, request,
-           %{is_rejection: action == "reject", role: role, comment: comment}}
-        end
-      )
-    end)
+    |> Enum.flat_map(&flatten_request_rules/1)
     |> Enum.each(fn {claims, request, params} -> create_approval(claims, request, params) end)
 
     {:ok, nil}
   end
 
-  defp get_grant_request_for_rule!(id, claims) do
+  defp flatten_request_rules({request, rules}) do
+    rules
+    |> Enum.map(
+      fn %{action: action, role: role, comment: comment, user_id: user_id} ->
+        case UserCache.get(user_id) do
+          {:ok, nil} -> nil
+          {:ok, %{role: user_role}} ->
+            {%{user_id: user_id, role: user_role}, request,
+            %{is_rejection: action == "reject", role: role, comment: comment}}
+        end
+      end
+    )
+    |> Enum.reject(&is_nil/1)
+  end
+
+  defp get_grant_request_for_rules!(id, claims) do
     required = required_approvals()
     user_roles = get_user_roles(claims)
 
@@ -102,6 +107,7 @@ defmodule TdDd.Grants.Requests do
       %{}
       |> grant_request_query()
       |> Repo.get!(id)
+      |> Repo.preload([:approvals])
       |> with_missing_roles(required, user_roles)
 
     request

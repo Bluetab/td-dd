@@ -98,12 +98,17 @@ defmodule TdDd.Grants.ApprovalRules do
     Repo.delete(approval_rule)
   end
 
-  def get_rules_for_request(%GrantRequest{domain_ids: [domain_id]} = grant_request) do
+  def get_rules_for_request(
+        %GrantRequest{domain_ids: [domain_id], pending_roles: pending_roles} = grant_request
+      ) do
     rules =
       ApprovalRule
       |> where([ar], ^domain_id in ar.domain_ids)
       |> Repo.all()
-      |> Enum.filter(&match_conditions(&1, grant_request))
+      |> Enum.filter(
+        &(&1.role in pending_roles and
+            match_conditions(&1, grant_request))
+      )
       |> Enum.group_by(& &1.action)
       |> maybe_get_reject_rules()
       |> Enum.uniq_by(& &1.role)

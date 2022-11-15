@@ -7,17 +7,17 @@ defmodule TdDd.Grants.ApprovalRulesTest do
   alias TdDd.Grants.ApprovalRules
   alias TdDd.Grants.Condition
 
-  @role "role1"
+  @approval_role "approval_role"
 
   setup do
     %{id: user_id} = CacheHelpers.insert_user()
     %{id: domain_id} = CacheHelpers.insert_domain()
-    CacheHelpers.insert_acl(domain_id, @role, [user_id])
+    CacheHelpers.insert_acl(domain_id, @approval_role, [user_id])
 
     [
       user_id: user_id,
       domain_id: domain_id,
-      claims: build(:claims, user_id: user_id, role: @role)
+      claims: build(:claims, user_id: user_id, role: @approval_role)
     ]
   end
 
@@ -46,7 +46,7 @@ defmodule TdDd.Grants.ApprovalRulesTest do
     } do
       params = %{
         name: "rule_name",
-        role: @role,
+        role: @approval_role,
         domain_ids: [domain_id],
         action: "approve",
         conditions: [%{field: "bar", operator: "is", value: "foo"}],
@@ -111,11 +111,17 @@ defmodule TdDd.Grants.ApprovalRulesTest do
     test "filters ApprovalRule by request metadata field", %{domain_id: domain_id} do
       %{id: id} =
         insert(:approval_rule,
+          role: @approval_role,
           domain_ids: [domain_id],
           conditions: [%{field: "request.foo", operator: "eq", value: "bar"}]
         )
 
-      grant_request = insert(:grant_request, domain_ids: [domain_id], metadata: %{"foo" => "bar"})
+      grant_request =
+        insert(:grant_request,
+          domain_ids: [domain_id],
+          metadata: %{"foo" => "bar"},
+          pending_roles: [@approval_role]
+        )
 
       assert {_, rules} = ApprovalRules.get_rules_for_request(grant_request)
       assert [%{id: ^id}] = rules
@@ -123,12 +129,17 @@ defmodule TdDd.Grants.ApprovalRulesTest do
 
     test "rejects ApprovalRule by request metadata field", %{domain_id: domain_id} do
       insert(:approval_rule,
+        role: @approval_role,
         domain_ids: [domain_id],
         conditions: [%{field: "request.foo", operator: "eq", value: "bar"}]
       )
 
       grant_request =
-        insert(:grant_request, domain_ids: [domain_id], metadata: %{"foo" => "not bar"})
+        insert(:grant_request,
+          domain_ids: [domain_id],
+          metadata: %{"foo" => "not bar"},
+          pending_roles: [@approval_role]
+        )
 
       assert {_, []} = ApprovalRules.get_rules_for_request(grant_request)
     end
@@ -152,6 +163,7 @@ defmodule TdDd.Grants.ApprovalRulesTest do
 
       %{id: id} =
         insert(:approval_rule,
+          role: @approval_role,
           domain_ids: domain_ids,
           conditions: [%{field: "note.foo", operator: "eq", value: "bar"}]
         )
@@ -160,7 +172,8 @@ defmodule TdDd.Grants.ApprovalRulesTest do
         insert(:grant_request,
           data_structure: data_structure,
           domain_ids: domain_ids,
-          metadata: %{"foo" => "bar"}
+          metadata: %{"foo" => "bar"},
+          pending_roles: [@approval_role]
         )
 
       assert {_, rules} = ApprovalRules.get_rules_for_request(grant_request)
@@ -181,6 +194,7 @@ defmodule TdDd.Grants.ApprovalRulesTest do
 
       %{id: id} =
         insert(:approval_rule,
+          role: @approval_role,
           domain_ids: domain_ids,
           conditions: [%{field: "metadata.foo", operator: "eq", value: "bar"}]
         )
@@ -189,7 +203,8 @@ defmodule TdDd.Grants.ApprovalRulesTest do
         insert(:grant_request,
           data_structure: data_structure,
           domain_ids: domain_ids,
-          metadata: %{"foo" => "bar"}
+          metadata: %{"foo" => "bar"},
+          pending_roles: [@approval_role]
         )
 
       assert {_, rules} = ApprovalRules.get_rules_for_request(grant_request)
@@ -214,6 +229,7 @@ defmodule TdDd.Grants.ApprovalRulesTest do
 
       %{id: id} =
         insert(:approval_rule,
+          role: @approval_role,
           domain_ids: domain_ids,
           conditions: [%{field: "metadata.foo", operator: "eq", value: "bar"}]
         )
@@ -222,7 +238,8 @@ defmodule TdDd.Grants.ApprovalRulesTest do
         insert(:grant_request,
           data_structure: data_structure,
           domain_ids: domain_ids,
-          metadata: %{"foo" => "bar"}
+          metadata: %{"foo" => "bar"},
+          pending_roles: [@approval_role]
         )
 
       assert {_, rules} = ApprovalRules.get_rules_for_request(grant_request)
