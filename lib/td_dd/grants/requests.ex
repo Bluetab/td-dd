@@ -81,18 +81,20 @@ defmodule TdDd.Grants.Requests do
     |> Enum.flat_map(fn {request, rules} ->
       Enum.map(
         rules,
-        fn %{action: action, role: role} ->
-          {request, %{is_rejection: action == "reject", role: role}}
+        fn %{action: action, role: role, comment: comment, user_id: user_id} ->
+          {:ok, %{role: user_role}} = UserCache.get(user_id)
+
+          {%{user_id: user_id, role: user_role}, request,
+           %{is_rejection: action == "reject", role: role, comment: comment}}
         end
       )
     end)
-    |> Enum.each(fn {request, params} -> create_approval(claims, request, params) end)
+    |> Enum.each(fn {claims, request, params} -> create_approval(claims, request, params) end)
 
     {:ok, nil}
   end
 
   defp get_grant_request_for_rule!(id, claims) do
-    # IO.inspect(claims, label: "claims ->")
     required = required_approvals()
     user_roles = get_user_roles(claims)
 
@@ -101,10 +103,6 @@ defmodule TdDd.Grants.Requests do
       |> grant_request_query()
       |> Repo.get!(id)
       |> with_missing_roles(required, user_roles)
-
-    # %{current_version: current_version} = Map.get(request, :data_structure)
-
-    # IO.inspect(current_version, label: "CURRENT VERSION ===========>")
 
     request
   end

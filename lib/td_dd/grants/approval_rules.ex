@@ -104,6 +104,7 @@ defmodule TdDd.Grants.ApprovalRules do
       |> where([ar], ^domain_id in ar.domain_ids)
       |> Repo.all()
       |> Enum.filter(&match_conditions(&1, grant_request))
+      |> Enum.uniq_by(& &1.role)
 
     {grant_request, rules}
   end
