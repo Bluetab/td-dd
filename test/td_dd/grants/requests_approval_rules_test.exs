@@ -65,7 +65,9 @@ defmodule TdDd.Grants.RequestsTest do
       assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
                Requests.create_grant_request_group(params, claims)
 
-      assert %{current_status: "approved"} = Requests.get_grant_request!(request_id, claims)
+      assert %{current_status: "approved", approvals: [
+        %{user_id: ^approver_user_id}
+      ]} = Requests.get_grant_request!(request_id, claims)
     end
 
     test "does nothing if rule does not match", %{
@@ -140,6 +142,78 @@ defmodule TdDd.Grants.RequestsTest do
 
       assert %{current_status: "approved", approvals: [%{comment: "RULE1"}]} =
                Requests.get_grant_request!(request_id, claims)
+    end
+
+    test "reject rule will reject the request", %{
+      approver_user_id: approver_user_id,
+      domain_ids: domain_ids,
+      data_structure: data_structure
+    } do
+      insert(:approval_rule,
+        role: @approver_role,
+        user_id: approver_user_id,
+        domain_ids: domain_ids,
+        action: "reject",
+        conditions: [%{field: "request.string", operator: "eq", value: "bar"}]
+      )
+
+      %{user_id: user_id} = claims = build(:claims)
+
+      params = %{
+        type: @template_name,
+        requests: [
+          %{
+            data_structure_id: data_structure.id,
+            metadata: @valid_metadata
+          }
+        ],
+        user_id: user_id,
+        created_by_id: user_id
+      }
+
+      assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
+               Requests.create_grant_request_group(params, claims)
+
+      assert %{current_status: "rejected"} = Requests.get_grant_request!(request_id, claims)
+    end
+
+    test "reject rule will overcome any approval", %{
+      approver_user_id: approver_user_id,
+      domain_ids: domain_ids,
+      data_structure: data_structure
+    } do
+      insert(:approval_rule,
+        role: @approver_role,
+        user_id: approver_user_id,
+        domain_ids: domain_ids,
+        conditions: [%{field: "request.string", operator: "eq", value: "bar"}]
+      )
+      insert(:approval_rule,
+        role: @approver_role,
+        user_id: approver_user_id,
+        domain_ids: domain_ids,
+        action: "reject",
+        conditions: [%{field: "request.string", operator: "eq", value: "bar"}]
+      )
+
+      %{user_id: user_id} = claims = build(:claims)
+
+      params = %{
+        type: @template_name,
+        requests: [
+          %{
+            data_structure_id: data_structure.id,
+            metadata: @valid_metadata
+          }
+        ],
+        user_id: user_id,
+        created_by_id: user_id
+      }
+
+      assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
+               Requests.create_grant_request_group(params, claims)
+
+      assert %{current_status: "rejected"} = Requests.get_grant_request!(request_id, claims)
     end
   end
 end

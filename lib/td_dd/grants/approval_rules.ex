@@ -104,10 +104,16 @@ defmodule TdDd.Grants.ApprovalRules do
       |> where([ar], ^domain_id in ar.domain_ids)
       |> Repo.all()
       |> Enum.filter(&match_conditions(&1, grant_request))
+      |> Enum.group_by(& &1.action)
+      |> maybe_get_reject_rules()
       |> Enum.uniq_by(& &1.role)
 
     {grant_request, rules}
   end
+
+  defp maybe_get_reject_rules(%{"reject" => [_ | _] = rules}), do: rules
+  defp maybe_get_reject_rules(%{"approve" => [_ | _] = rules}), do: rules
+  defp maybe_get_reject_rules(_), do: []
 
   defp match_conditions(%{conditions: conditions}, grant_request) do
     Enum.all?(conditions, &match_condition(&1, grant_request))
