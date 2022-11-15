@@ -86,16 +86,16 @@ defmodule TdDd.Grants.Requests do
 
   defp flatten_request_rules({request, rules}) do
     rules
-    |> Enum.map(
-      fn %{action: action, role: role, comment: comment, user_id: user_id} ->
-        case UserCache.get(user_id) do
-          {:ok, nil} -> nil
-          {:ok, %{role: user_role}} ->
-            {%{user_id: user_id, role: user_role}, request,
-            %{is_rejection: action == "reject", role: role, comment: comment}}
-        end
+    |> Enum.map(fn %{action: action, role: role, comment: comment, user_id: user_id} ->
+      case UserCache.get(user_id) do
+        {:ok, nil} ->
+          nil
+
+        {:ok, %{role: user_role}} ->
+          {%{user_id: user_id, role: user_role}, request,
+           %{is_rejection: action == "reject", role: role, comment: comment}}
       end
-    )
+    end)
     |> Enum.reject(&is_nil/1)
   end
 

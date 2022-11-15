@@ -198,6 +198,7 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
       data_structure: data_structure
     } do
       %{id: admin_user_id} = CacheHelpers.insert_user(role: "admin")
+
       insert(:approval_rule,
         role: "invalid_role",
         user_id: admin_user_id,
