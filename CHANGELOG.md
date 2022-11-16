@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [TD-5289] Elasticsearch 7 compatibility
+
+## [4.55.0] 2022-11-14
+
+### Added
+
+- [TD-5038] Links between structures
+- [TD-5037] Added diff information for draft and pending_aproval structure notes
+  in API response
+
 ### Fixed
 
 - [TD-5279] Fixed some inconsistencies in implementation bulk upload

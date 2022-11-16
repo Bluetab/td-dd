@@ -9,6 +9,7 @@ defmodule TdDdWeb.Schema do
 
   import_types(Absinthe.Plug.Types)
   import_types(Absinthe.Type.Custom)
+  import_types(TdDdWeb.Schema.DataStructureLinks)
   import_types(TdDdWeb.Schema.Domains)
   import_types(TdDdWeb.Schema.Executions)
   import_types(TdDdWeb.Schema.Functions)

@@ -10,6 +10,7 @@ defmodule Truedat.Search do
   require Logger
 
   def search(%{page_size: page_size, max_results: max_results}, body, index, opts) do
+    # TODO: Refactor to use scroll (TD-5342)
     alias_name = Cluster.alias_name(index)
 
     results =
@@ -29,7 +30,7 @@ defmodule Truedat.Search do
 
           acc_results = results ++ page_results
 
-          if Enum.count(page_results) < page_size || Enum.count(acc_results) == total do
+          if Enum.count(page_results) < page_size || Enum.count(acc_results) == get_total(total) do
             {:halt, acc_results}
           else
             {:cont, acc_results}
@@ -43,6 +44,7 @@ defmodule Truedat.Search do
   def search(body, index, opts \\ [])
 
   def search(%{size: :infinity} = body, index, opts) when is_atom(index) do
+    # TODO: Refactor to use scroll (TD-5342)
     %{"max_result_window" => page_size} = Cluster.setting(index)
     max_results = Application.get_env(:td_dd, __MODULE__)[:max_result_window_total]
     search(%{page_size: page_size, max_results: max_results}, body, index, opts)
@@ -79,9 +81,7 @@ defmodule Truedat.Search do
     [params: Map.take(query_params, ["scroll"])]
   end
 
-  defp search_opts(_params) do
-    []
-  end
+  defp search_opts(_params), do: [params: %{"track_total_hits" => "true"}]
 
   defp format_response(response, format \\ nil)
 
@@ -109,7 +109,7 @@ defmodule Truedat.Search do
       {"hits", %{"hits" => hits, "total" => total}}, acc ->
         acc
         |> Map.put(:results, hits)
-        |> Map.put(:total, total)
+        |> Map.put(:total, get_total(total))
     end)
   end
 
@@ -151,4 +151,7 @@ defmodule Truedat.Search do
 
   defp get_domain(id) when is_integer(id), do: TaxonomyCache.get_domain(id)
   defp get_domain(_), do: nil
+
+  defp get_total(value) when is_integer(value), do: value
+  defp get_total(%{"relation" => "eq", "value" => value}) when is_integer(value), do: value
 end

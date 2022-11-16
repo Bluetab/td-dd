@@ -75,7 +75,7 @@ defmodule TdDd.DataStructures.Search do
 
   defp do_search(query, _params) do
     query
-    |> Search.search(@index)
+    |> Search.search(@index, params: %{"track_total_hits" => "true"})
     |> transform_response()
   end
 

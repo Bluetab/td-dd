@@ -43,6 +43,7 @@ defmodule TdDdWeb.DataStructureVersionView do
     |> add_tags(assigns)
     |> add_grant()
     |> add_grants()
+    |> add_data_structure_links()
     |> Map.take([
       :alias,
       :ancestry,
@@ -62,6 +63,7 @@ defmodule TdDdWeb.DataStructureVersionView do
       :id,
       :implementation_count,
       :links,
+      :data_structure_link_count,
       :metadata,
       :name,
       :note,
@@ -349,6 +351,16 @@ defmodule TdDdWeb.DataStructureVersionView do
   end
 
   defp add_note(dsv), do: dsv
+
+  defp add_data_structure_links(%{data_structure_links: data_structure_link_count} = ds) do
+    Map.put(
+      ds,
+      :data_structure_link_count,
+      data_structure_link_count
+    )
+  end
+
+  defp add_data_structure_links(ds), do: ds
 
   defp add_tags(ds, %{tags: tags}) when is_list(tags) do
     Map.put(ds, :tags, render_many(tags, StructureTagView, "structure_tag.json"))

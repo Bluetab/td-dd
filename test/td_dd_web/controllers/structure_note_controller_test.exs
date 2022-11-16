@@ -155,6 +155,86 @@ defmodule TdDdWeb.StructureNoteControllerTest do
       assert ["draft"] == Map.keys(actions)
     end
 
+    @tag authentication: [role: "admin"]
+    test "diff from a structure with a published and draft note", %{conn: conn} do
+      %{id: data_structure_id} = data_structure = insert(:data_structure)
+
+      insert(
+        :structure_note,
+        data_structure: data_structure,
+        status: :published,
+        version: 1,
+        df_content: %{
+          "foo" => "bar",
+          "baz" => "xyz",
+          "old" => "value_to_remove"
+        }
+      )
+
+      insert(
+        :structure_note,
+        data_structure: data_structure,
+        status: :draft,
+        version: 2,
+        df_content: %{
+          "foo" => "bar",
+          "baz" => "qux",
+          "new" => "value"
+        }
+      )
+
+      %{
+        "data" => [
+          %{"status" => "published", "version" => 1},
+          %{"_diff" => diff, "status" => "draft", "version" => 2}
+        ]
+      } =
+        conn
+        |> get(Routes.data_structure_note_path(conn, :index, data_structure_id))
+        |> json_response(:ok)
+
+      assert ["old", "baz", "new"] == diff
+    end
+
+    @tag authentication: [role: "admin"]
+    test "diff from a structure with a published and pending_approval note", %{conn: conn} do
+      %{id: data_structure_id} = data_structure = insert(:data_structure)
+
+      insert(
+        :structure_note,
+        data_structure: data_structure,
+        status: :published,
+        version: 1,
+        df_content: %{
+          "foo" => "bar",
+          "baz" => "xyz"
+        }
+      )
+
+      insert(
+        :structure_note,
+        data_structure: data_structure,
+        status: :pending_approval,
+        version: 2,
+        df_content: %{
+          "foo" => "bar",
+          "baz" => "qux"
+        }
+      )
+
+      %{
+        "data" => [
+          %{"status" => "published", "version" => 1},
+          %{"_diff" => diff, "status" => "pending_approval", "version" => 2}
+        ]
+      } =
+        conn
+        |> get(Routes.data_structure_note_path(conn, :index, data_structure_id))
+        |> json_response(:ok)
+
+      assert ["baz"] == diff
+    end
+
     @tag authentication: [
            user_name: "non_admin_user",
            permissions: [:view_data_structure]

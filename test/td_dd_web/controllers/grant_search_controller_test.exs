@@ -20,7 +20,7 @@ defmodule TdDdWeb.GrantSearchControllerTest do
     @tag authentication: [role: "admin"]
     test "admin can search all grants without deleted_at", %{conn: conn, grant: grant} do
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/grants/_search", %{query: query, size: 20}, [] ->
+      |> expect(:request, fn _, :post, "/grants/_search", %{query: query, size: 20}, _ ->
         assert query == %{
                  bool: %{
                    filter: %{match_all: %{}},
@@ -43,7 +43,7 @@ defmodule TdDdWeb.GrantSearchControllerTest do
       grant: grant
     } do
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/grants/_search", %{query: query, size: 20}, [] ->
+      |> expect(:request, fn _, :post, "/grants/_search", %{query: query, size: 20}, _ ->
         assert %{
                  bool: %{
                    filter: %{
@@ -70,7 +70,7 @@ defmodule TdDdWeb.GrantSearchControllerTest do
     @tag authentication: [user_name: "non_admin_user"]
     test "user without permissions filters by user_id and deleted_at", %{conn: conn, grant: grant} do
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/grants/_search", %{query: query, size: 20}, [] ->
+      |> expect(:request, fn _, :post, "/grants/_search", %{query: query, size: 20}, _ ->
         assert %{
                  bool: %{
                    filter: %{term: %{"user_id" => _}},
@@ -96,7 +96,7 @@ defmodule TdDdWeb.GrantSearchControllerTest do
       grant: grant
     } do
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/grants/_search", %{query: query, size: 20}, [] ->
+      |> expect(:request, fn _, :post, "/grants/_search", %{query: query, size: 20}, _ ->
         assert query == %{
                  bool: %{
                    filter: %{term: %{"user_id" => user_id}},
