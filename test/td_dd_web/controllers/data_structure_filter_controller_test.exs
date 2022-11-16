@@ -21,7 +21,7 @@ defmodule TdDdWeb.DataStructureFilterControllerTest do
     @tag authentication: [role: "admin"]
     test "lists all filters (admin user)", %{conn: conn} do
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, [] ->
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
         assert query == %{bool: %{filter: %{match_all: %{}}}}
         SearchHelpers.aggs_response(@aggregations)
       end)
@@ -37,7 +37,7 @@ defmodule TdDdWeb.DataStructureFilterControllerTest do
     @tag authentication: [user_name: "non_admin_user"]
     test "lists all filters (non-admin user)", %{conn: conn} do
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, [] ->
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
         assert query == %{bool: %{filter: %{match_none: %{}}}}
         SearchHelpers.aggs_response(%{})
       end)

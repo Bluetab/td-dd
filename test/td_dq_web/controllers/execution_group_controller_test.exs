@@ -93,7 +93,7 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/implementations/_search", %{from: 0, size: 10_000, query: query}, [] ->
+        _, :post, "/implementations/_search", %{from: 0, size: 10_000, query: query}, _ ->
           assert %{
                    bool: %{
                      filter: [

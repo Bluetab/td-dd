@@ -394,6 +394,7 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   defp search_all_structures(claims, permission, params) do
+    # TODO: refactor to use scroll (TD-5342)
     params
     |> Map.put("without", "deleted_at")
     |> Map.drop(["page", "size"])

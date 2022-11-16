@@ -72,7 +72,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
           data_structure_version = insert(:data_structure_version)
 
         ElasticsearchMock
-        |> expect(:request, fn _, :post, "/structures/_search", _, [] ->
+        |> expect(:request, fn _, :post, "/structures/_search", _, _ ->
           SearchHelpers.hits_response([data_structure_version])
         end)
 
@@ -91,7 +91,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
         data_structure_version = insert(:data_structure_version, domain_ids: [domain_id])
 
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", _, [] ->
+      |> expect(:request, fn _, :post, "/structures/_search", _, _ ->
         SearchHelpers.hits_response([data_structure_version])
       end)
 
@@ -113,7 +113,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
         )
 
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", _, [] ->
+      |> expect(:request, fn _, :post, "/structures/_search", _, _ ->
         SearchHelpers.hits_response([data_structure_version])
       end)
 
@@ -134,7 +134,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       %{data_structure_id: id} = dsv = insert(:data_structure_version)
 
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, [] ->
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
         assert query == %{
                  bool: %{
                    filter: %{match_all: %{}},
@@ -156,7 +156,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       %{data_structure_id: id} = dsv = insert(:data_structure_version)
 
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, [] ->
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
         assert %{bool: %{must: %{multi_match: _}}} = query
         SearchHelpers.hits_response([dsv])
       end)
@@ -578,7 +578,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
         dsv = insert(:data_structure_version, domain_ids: [domain_id], type: @template_name)
 
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", _, [] ->
+      |> expect(:request, fn _, :post, "/structures/_search", _, _ ->
         SearchHelpers.hits_response([dsv])
       end)
 
@@ -610,7 +610,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       dsv = insert(:data_structure_version, data_structure_id: id, type: @template_name)
 
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, [] ->
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
         assert query == %{
                  bool: %{
                    filter: %{term: %{"note_id" => 123}},
@@ -909,7 +909,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       dsv = insert(:data_structure_version)
 
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", _, [] ->
+      |> expect(:request, fn _, :post, "/structures/_search", _, _ ->
         SearchHelpers.hits_response([dsv])
       end)
 
@@ -930,7 +930,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       )
 
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", _, [] ->
+      |> expect(:request, fn _, :post, "/structures/_search", _, _ ->
         SearchHelpers.hits_response([data_structure_version])
       end)
 
