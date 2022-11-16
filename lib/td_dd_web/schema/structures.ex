@@ -53,7 +53,7 @@ defmodule TdDdWeb.Schema.Structures do
     field :confidential, non_null(:boolean)
     field :domain_id, :integer, resolve: &Resolvers.Structures.domain_id/3
     field :domain_ids, list_of(:integer)
-    field :domains, list_of(:domain), resolve: &Resolvers.Structures.domains/3
+    field :domains, list_of(:domain), resolve: &Resolvers.Domains.domains/3
     field :external_id, non_null(:string)
     field :inserted_at, :datetime
     field :updated_at, :datetime
