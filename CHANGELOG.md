@@ -6,6 +6,10 @@
 
 - [TD-5289] Elasticsearch 7 compatibility
 
+### Added
+
+- [TD-5258] Approve grants request rules
+
 ## [4.55.0] 2022-11-14
 
 ### Added
