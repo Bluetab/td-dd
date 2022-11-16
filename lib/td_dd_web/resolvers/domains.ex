@@ -12,8 +12,16 @@ defmodule TdDdWeb.Resolvers.Domains do
   end
 
   def domains(_parent, %{ids: ids}, _resolution) do
+    get_cache_domains(ids)
+  end
+
+  def domains(%{domain_ids: domain_ids}, _args, _resolution) do
+    get_cache_domains(domain_ids)
+  end
+
+  defp get_cache_domains(domain_ids) do
     domains =
-      ids
+      domain_ids
       |> Enum.map(&TaxonomyCache.get_domain/1)
       |> Enum.reject(&is_nil/1)
 
@@ -58,6 +66,9 @@ defmodule TdDdWeb.Resolvers.Domains do
   defp permitted_domain_ids(%{role: role}, _action) when role in ["admin", "service"] do
     TaxonomyCache.reachable_domain_ids(0)
   end
+
+  defp permitted_domain_ids(%{role: "user", jti: jti}, "approveGrantRequests"),
+    do: Permissions.permitted_domain_ids(jti, :approve_grant_request)
 
   defp permitted_domain_ids(%{role: "user", jti: jti}, "manageConcept"),
     do: Permissions.permitted_domain_ids(jti, :update_business_concept)

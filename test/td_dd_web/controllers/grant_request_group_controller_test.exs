@@ -6,7 +6,8 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
 
   setup do
     CacheHelpers.insert_template(name: @template_name)
-    %{id: data_structure_id} = data_structure = insert(:data_structure)
+    %{id: domain_id} = CacheHelpers.insert_domain()
+    %{id: data_structure_id} = data_structure = insert(:data_structure, domain_ids: [domain_id])
 
     create_params = %{
       "requests" => [

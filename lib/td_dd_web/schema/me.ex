@@ -12,6 +12,13 @@ defmodule TdDdWeb.Schema.Me do
     field :me, :me do
       resolve(&Resolvers.Me.me/3)
     end
+
+    @desc "Get current user roles"
+    field :current_roles, list_of(:string) do
+      arg(:domain_id, :id)
+      arg(:permission, :string)
+      resolve(&Resolvers.Me.roles/3)
+    end
   end
 
   object :me do
