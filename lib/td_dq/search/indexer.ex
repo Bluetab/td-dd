@@ -71,7 +71,9 @@ defmodule TdDq.Search.Indexer do
   end
 
   defp put_template(template, name) do
-    Elasticsearch.put(Cluster, "/_template/#{name}", template)
+    Elasticsearch.put(Cluster, "/_template/#{name}", template,
+      params: %{"include_type_name" => "false"}
+    )
   end
 
   defp delete(ids, index) do
