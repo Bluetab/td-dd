@@ -13,5 +13,9 @@ defmodule TdDd.Repo.Migrations.GrantRequestApprovalRules do
 
       timestamps(type: :utc_datetime_usec)
     end
+
+    alter table("grant_request_approvals") do
+      add :approval_rule_id, references("approval_rules", on_delete: :nilify_all), null: true
+    end
   end
 end

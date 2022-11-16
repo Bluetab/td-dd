@@ -1,6 +1,7 @@
 defmodule TdDd.Grants.RequestsApprovalRulesTest do
   use TdDd.DataCase
 
+  alias TdDd.Grants.ApprovalRules
   alias TdDd.Grants.Requests
 
   @moduletag sandbox: :shared
@@ -41,12 +42,13 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
       domain_ids: domain_ids,
       data_structure: data_structure
     } do
-      insert(:approval_rule,
-        role: @approver_role,
-        user_id: approver_user_id,
-        domain_ids: domain_ids,
-        conditions: [%{field: "request.string", operator: "eq", value: "bar"}]
-      )
+      %{id: approval_rule_id} =
+        insert(:approval_rule,
+          role: @approver_role,
+          user_id: approver_user_id,
+          domain_ids: domain_ids,
+          conditions: [%{field: "request.string", operator: "eq", value: "bar"}]
+        )
 
       %{user_id: user_id} = claims = build(:claims)
 
@@ -68,7 +70,10 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
       assert %{
                current_status: "approved",
                approvals: [
-                 %{user_id: ^approver_user_id}
+                 %{
+                   user_id: ^approver_user_id,
+                   approval_rule_id: ^approval_rule_id
+                 }
                ]
              } = Requests.get_grant_request!(request_id, claims)
     end
@@ -408,6 +413,49 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
                Requests.create_grant_request_group(params, claims)
 
       assert %{current_status: "rejected"} = Requests.get_grant_request!(request_id, claims)
+    end
+
+    test "deleting approval rule will nilify approval_rule_id", %{
+      approver_user_id: approver_user_id,
+      domain_ids: domain_ids,
+      data_structure: data_structure
+    } do
+      %{id: approval_rule_id} =
+        insert(:approval_rule,
+          role: @approver_role,
+          user_id: approver_user_id,
+          domain_ids: domain_ids,
+          conditions: [%{field: "request.string", operator: "eq", value: "bar"}]
+        )
+
+      %{user_id: user_id} = claims = build(:claims)
+
+      params = %{
+        type: @template_name,
+        requests: [
+          %{
+            data_structure_id: data_structure.id,
+            metadata: @valid_metadata
+          }
+        ],
+        user_id: user_id,
+        created_by_id: user_id
+      }
+
+      assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
+               Requests.create_grant_request_group(params, claims)
+
+      assert %{
+               approvals: [%{approval_rule_id: ^approval_rule_id}]
+             } = Requests.get_grant_request!(request_id, claims)
+
+      approval_rule_id
+      |> ApprovalRules.get!()
+      |> ApprovalRules.delete()
+
+      assert %{
+               approvals: [%{approval_rule_id: nil}]
+             } = Requests.get_grant_request!(request_id, claims)
     end
   end
 end

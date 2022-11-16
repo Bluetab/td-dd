@@ -79,21 +79,29 @@ defmodule TdDd.Grants.Requests do
     |> Enum.map(&get_grant_request_for_rules!(&1, claims))
     |> Enum.map(&ApprovalRules.get_rules_for_request/1)
     |> Enum.flat_map(&flatten_request_rules/1)
-    |> Enum.each(fn {claims, request, params} -> create_approval(claims, request, params) end)
+    |> Enum.each(fn {claims, request, params, approval_rule_id} ->
+      create_approval(claims, request, params, approval_rule_id)
+    end)
 
     {:ok, nil}
   end
 
   defp flatten_request_rules({request, rules}) do
     rules
-    |> Enum.map(fn %{action: action, role: role, comment: comment, user_id: user_id} ->
+    |> Enum.map(fn %{
+                     action: action,
+                     role: role,
+                     comment: comment,
+                     user_id: user_id,
+                     id: approval_rule_id
+                   } ->
       case UserCache.get(user_id) do
         {:ok, nil} ->
           nil
 
         {:ok, %{role: user_role}} ->
           {%{user_id: user_id, role: user_role}, request,
-           %{is_rejection: action == "reject", role: role, comment: comment}}
+           %{is_rejection: action == "reject", role: role, comment: comment}, approval_rule_id}
       end
     end)
     |> Enum.reject(&is_nil/1)
@@ -302,7 +310,8 @@ defmodule TdDd.Grants.Requests do
   def create_approval(
         %{user_id: user_id} = claims,
         %GrantRequest{id: id, domain_ids: domain_ids, current_status: status} = grant_request,
-        params
+        params,
+        approval_rule_id \\ nil
       ) do
     changeset =
       GrantRequestApproval.changeset(
@@ -310,7 +319,8 @@ defmodule TdDd.Grants.Requests do
           grant_request_id: id,
           user_id: user_id,
           domain_ids: domain_ids,
-          current_status: status
+          current_status: status,
+          approval_rule_id: approval_rule_id
         },
         params,
         claims
