@@ -394,11 +394,10 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   defp search_all_structures(claims, permission, params) do
-    # TODO: refactor to use scroll (TD-5342)
     params
     |> Map.put("without", "deleted_at")
     |> Map.drop(["page", "size"])
-    |> Search.search_data_structures(claims, permission, 0, :infinity)
+    |> Search.scroll_data_structures(claims, permission)
   end
 
   swagger_path :csv do
