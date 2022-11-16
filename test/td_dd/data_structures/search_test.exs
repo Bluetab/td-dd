@@ -25,7 +25,7 @@ defmodule TdDd.DataStructures.SearchTest do
         for permission <- ["link_data_structure", "view_data_structure"] do
           ElasticsearchMock
           |> expect(:request, fn
-            _, :post, "/structures/_search", %{size: 0, query: query, aggs: _}, [] ->
+            _, :post, "/structures/_search", %{size: 0, query: query, aggs: _}, _ ->
               assert %{bool: %{filter: %{match_all: %{}}}} = query
               SearchHelpers.aggs_response(@aggregations)
           end)
@@ -41,7 +41,7 @@ defmodule TdDd.DataStructures.SearchTest do
       for permission <- ["link_data_structure", "view_data_structure"] do
         ElasticsearchMock
         |> expect(:request, fn
-          _, :post, "/structures/_search", %{size: 0, query: query, aggs: _}, [] ->
+          _, :post, "/structures/_search", %{size: 0, query: query, aggs: _}, _ ->
             assert %{bool: %{filter: %{match_none: %{}}}} = query
             SearchHelpers.aggs_response()
         end)
@@ -58,7 +58,7 @@ defmodule TdDd.DataStructures.SearchTest do
       for permission <- ["link_data_structure", "view_data_structure"] do
         ElasticsearchMock
         |> expect(:request, fn
-          _, :post, "/structures/_search", %{size: 0, query: query, aggs: _}, [] ->
+          _, :post, "/structures/_search", %{size: 0, query: query, aggs: _}, _ ->
             assert %{
                      bool: %{
                        filter: [

@@ -23,7 +23,7 @@ defmodule TdDqWeb.RuleSearchControllerTest do
     test "admin can search rules", %{conn: conn, rule: rule} do
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/rules/_search", %{query: query, size: 20}, [] ->
+        _, :post, "/rules/_search", %{query: query, size: 20}, _ ->
           assert query == %{bool: %{filter: %{match_all: %{}}}}
           SearchHelpers.hits_response([rule])
       end)
@@ -38,7 +38,7 @@ defmodule TdDqWeb.RuleSearchControllerTest do
     test "user with no permissions cannot search rules", %{conn: conn} do
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/rules/_search", %{query: query, size: 20}, [] ->
+        _, :post, "/rules/_search", %{query: query, size: 20}, _ ->
           assert query == %{bool: %{filter: %{match_none: %{}}}}
           SearchHelpers.hits_response([])
       end)
@@ -53,7 +53,7 @@ defmodule TdDqWeb.RuleSearchControllerTest do
     test "user with permissions can search rules", %{conn: conn, rule: rule} do
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/rules/_search", %{query: query, size: 20}, [] ->
+        _, :post, "/rules/_search", %{query: query, size: 20}, _ ->
           assert %{
                    bool: %{
                      filter: [_not_confidential, %{term: %{"domain_ids" => _}}],
@@ -76,7 +76,7 @@ defmodule TdDqWeb.RuleSearchControllerTest do
     } do
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/rules/_search", _, [] -> SearchHelpers.hits_response([])
+        _, :post, "/rules/_search", _, _ -> SearchHelpers.hits_response([])
       end)
 
       assert %{"user_permissions" => %{"manage_quality_rules" => true}} =
@@ -91,7 +91,7 @@ defmodule TdDqWeb.RuleSearchControllerTest do
     } do
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/rules/_search", _, [] -> SearchHelpers.hits_response([])
+        _, :post, "/rules/_search", _, _ -> SearchHelpers.hits_response([])
       end)
 
       assert %{"user_permissions" => %{"manage_quality_rules" => false}} =

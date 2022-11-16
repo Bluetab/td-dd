@@ -27,12 +27,16 @@ defmodule SearchHelpers do
 
   def hits_response(hits, total \\ nil) when is_list(hits) do
     hits = Enum.map(hits, &encode/1)
-    total = total || Enum.count(hits)
+    total = total || %{"relation" => "eq", "value" => Enum.count(hits)}
     {:ok, %{"hits" => %{"hits" => hits, "total" => total}}}
   end
 
   def aggs_response(aggs \\ %{}, total \\ 0) do
-    {:ok, %{"aggregations" => aggs, "hits" => %{"hits" => [], "total" => total}}}
+    {:ok,
+     %{
+       "aggregations" => aggs,
+       "hits" => %{"hits" => [], "total" => %{"relation" => "eq", "value" => total}}
+     }}
   end
 
   def scroll_response(hits, total \\ nil) do

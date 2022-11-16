@@ -30,7 +30,7 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
     @tag authentication: [role: "admin"]
     test "admin can search implementations", %{conn: conn, implementation: implementation} do
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/implementations/_search", _, [] ->
+      |> expect(:request, fn _, :post, "/implementations/_search", _, _ ->
         SearchHelpers.hits_response([implementation])
       end)
 
@@ -63,7 +63,7 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
       implementation: implementation
     } do
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/implementations/_search", %{query: query}, [] ->
+      |> expect(:request, fn _, :post, "/implementations/_search", %{query: query}, _ ->
         assert %{
                  bool: %{
                    filter: [
