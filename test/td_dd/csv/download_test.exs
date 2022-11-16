@@ -65,6 +65,64 @@ defmodule TdDd.CSV.DownloadTest do
                """
     end
 
+    test "to_csv/1 return csv content to download with domain paths" do
+      template_name = "Table"
+      field_name = "add_info1"
+      field_label = "Add Info 1"
+      template_id = 1
+      type = "Column"
+
+      CacheHelpers.insert_template(%{
+        id: template_id,
+        name: template_name,
+        label: "label",
+        scope: "dd",
+        content: [
+          %{
+            "name" => "group",
+            "fields" => [
+              %{
+                "name" => field_name,
+                "type" => "list",
+                "label" => field_label
+              }
+            ]
+          }
+        ]
+      })
+
+      insert(:data_structure_type, name: type, template_id: template_id)
+
+      %{id: domain_id, name: domain_name} = CacheHelpers.insert_domain(%{name: "domain_1"})
+
+      %{id: subdomain_id, name: subdomain_name} =
+        CacheHelpers.insert_domain(%{name: "subdomain_1", parent_id: domain_id})
+
+      structure_1 = %{
+        name: "1. 4. 4 Primas Bajas (grafico)",
+        description: "Gráfico de evolución mensual de la prima",
+        template: %{"name" => template_name},
+        note: %{field_name => ["field_value"]},
+        domain_ids: [domain_id, subdomain_id],
+        domain: %{"external_id" => "ex_id_1", "name" => domain_name},
+        inserted_at: "2018-05-05",
+        external_id: "myext_292929",
+        group: "gr",
+        path: ["CMC", "Objetos Públicos", "Informes", "Cuadro de Mando Integral"],
+        type: type,
+        system: %{"external_id" => "sys", "name" => "sys_name"}
+      }
+
+      structures = [structure_1]
+      csv = Download.to_csv(structures)
+
+      assert csv ==
+               """
+               type;name;group;domain;system;path;description;external_id;inserted_at;Add Info 1\r
+               #{structure_1.type};#{structure_1.name};#{structure_1.group};#{domain_name}|#{domain_name}/#{subdomain_name};#{Map.get(structure_1.system, "name")};CMC > Objetos Públicos > Informes > Cuadro de Mando Integral;#{structure_1.description};#{structure_1.external_id};#{structure_1.inserted_at};field_value\r
+               """
+    end
+
     test "to_editable_csv/1 return csv content to download" do
       CacheHelpers.insert_template(%{
         id: 42,
