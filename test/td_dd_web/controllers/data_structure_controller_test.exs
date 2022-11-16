@@ -573,16 +573,71 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
   describe "bulk_update" do
     @tag authentication: [role: "admin"]
-    test "bulk update of data structures", %{conn: conn, domain_id: domain_id} do
-      %{data_structure_id: id} =
-        dsv = insert(:data_structure_version, domain_ids: [domain_id], type: @template_name)
+    test "bulk update of data structures with no initial matches", %{conn: conn} do
+      ElasticsearchMock
+      |> expect(
+        :request,
+        fn _, :post, "/structures/_search", %{query: query, size: 10_000}, opts ->
+          assert opts == [params: %{"scroll" => "1m"}]
+
+          assert query == %{
+                   bool: %{
+                     filter: %{term: %{"type.raw" => "Field"}},
+                     must_not: %{exists: %{field: "deleted_at"}}
+                   }
+                 }
+
+          SearchHelpers.hits_response([])
+        end
+      )
+
+      assert %{"errors" => [], "ids" => []} =
+               conn
+               |> post(Routes.data_structure_path(conn, :bulk_update), %{
+                 "bulk_update_request" => %{
+                   "update_attributes" => %{
+                     "df_content" => %{
+                       "list" => "one",
+                       "string" => "hola soy un string"
+                     },
+                     "otra_cosa" => 2
+                   },
+                   "search_params" => %{
+                     "filters" => %{"type.raw" => ["Field"]}
+                   }
+                 }
+               })
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "bulk update of data structures uses scroll to search", %{conn: conn} do
+      %{data_structure_id: id1} = dsv1 = insert(:data_structure_version, type: @template_name)
+      %{data_structure_id: id2} = dsv2 = insert(:data_structure_version, type: @template_name)
 
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", _, _ ->
-        SearchHelpers.hits_response([dsv])
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, opts ->
+        assert opts == [params: %{"scroll" => "1m"}]
+
+        assert query == %{
+                 bool: %{
+                   filter: %{terms: %{"id" => [id1, id2]}},
+                   must_not: %{exists: %{field: "deleted_at"}}
+                 }
+               }
+
+        SearchHelpers.scroll_response([dsv1])
+      end)
+      |> expect(:request, fn _, :post, "/_search/scroll", body, [] ->
+        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
+        SearchHelpers.scroll_response([dsv2])
+      end)
+      |> expect(:request, fn _, :post, "/_search/scroll", body, [] ->
+        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
+        SearchHelpers.scroll_response([])
       end)
 
-      assert data =
+      assert %{"errors" => [], "ids" => [^id1, ^id2]} =
                conn
                |> post(Routes.data_structure_path(conn, :bulk_update), %{
                  "bulk_update_request" => %{
@@ -593,15 +648,11 @@ defmodule TdDdWeb.DataStructureControllerTest do
                      }
                    },
                    "search_params" => %{
-                     "filters" => %{
-                       "id" => [id]
-                     }
+                     "filters" => %{"id" => [id1, id2]}
                    }
                  }
                })
                |> json_response(:ok)
-
-      assert %{"errors" => [], "ids" => [^id]} = data
     end
 
     @tag authentication: [role: "admin"]
@@ -610,7 +661,9 @@ defmodule TdDdWeb.DataStructureControllerTest do
       dsv = insert(:data_structure_version, data_structure_id: id, type: @template_name)
 
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, opts ->
+        assert opts == [params: %{"scroll" => "1m"}]
+
         assert query == %{
                  bool: %{
                    filter: %{term: %{"note_id" => 123}},
@@ -618,7 +671,11 @@ defmodule TdDdWeb.DataStructureControllerTest do
                  }
                }
 
-        SearchHelpers.hits_response([dsv])
+        SearchHelpers.scroll_response([dsv])
+      end)
+      |> expect(:request, fn _, :post, "/_search/scroll", body, [] ->
+        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
+        SearchHelpers.scroll_response([])
       end)
 
       assert %{"errors" => errors, "ids" => []} =
@@ -897,20 +954,25 @@ defmodule TdDdWeb.DataStructureControllerTest do
   end
 
   describe "csv" do
+    setup :create_data_structure
+
     setup do
       start_supervised!({TdDd.DataStructures.BulkUpdater, notify: notify_callback()})
       :ok
     end
 
-    setup :create_data_structure
-
     @tag authentication: [role: "admin"]
-    test "gets csv content", %{conn: conn} do
+    test "gets csv content using scroll to search", %{conn: conn} do
       dsv = insert(:data_structure_version)
 
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", _, _ ->
-        SearchHelpers.hits_response([dsv])
+      |> expect(:request, fn _, :post, "/structures/_search", _, opts ->
+        assert opts == [params: %{"scroll" => "1m"}]
+        SearchHelpers.scroll_response([dsv])
+      end)
+      |> expect(:request, fn _, :post, "/_search/scroll", body, [] ->
+        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
+        SearchHelpers.scroll_response([])
       end)
 
       assert %{resp_body: resp_body} = post(conn, data_structure_path(conn, :csv, %{}))
@@ -918,10 +980,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "gets editable csv content", %{
+    test "gets editable csv content using scroll to search", %{
       conn: conn,
       data_structure: data_structure,
-      data_structure_version: data_structure_version
+      data_structure_version: dsv
     } do
       insert(:structure_note,
         data_structure: data_structure,
@@ -930,14 +992,19 @@ defmodule TdDdWeb.DataStructureControllerTest do
       )
 
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", _, _ ->
-        SearchHelpers.hits_response([data_structure_version])
+      |> expect(:request, fn _, :post, "/structures/_search", _, opts ->
+        assert opts == [params: %{"scroll" => "1m"}]
+        SearchHelpers.scroll_response([dsv])
+      end)
+      |> expect(:request, fn _, :post, "/_search/scroll", body, [] ->
+        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
+        SearchHelpers.scroll_response([])
       end)
 
       assert %{resp_body: body} = post(conn, data_structure_path(conn, :editable_csv, %{}))
 
       %{external_id: external_id} = data_structure
-      %{name: name, type: type, path: path} = data_structure_version
+      %{name: name, type: type, path: path} = dsv
 
       assert body == """
              external_id;name;type;path;string;list\r
