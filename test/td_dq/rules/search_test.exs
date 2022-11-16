@@ -20,7 +20,7 @@ defmodule TdDq.Rules.SearchTest do
       test "searches and returns filters for #{role} account", %{claims: claims} do
         ElasticsearchMock
         |> expect(:request, fn
-          _, :post, "/rules/_search", %{aggs: _, query: _, size: 0}, [] ->
+          _, :post, "/rules/_search", %{aggs: _, query: _, size: 0}, _ ->
             SearchHelpers.aggs_response(@aggs)
         end)
 
@@ -33,7 +33,7 @@ defmodule TdDq.Rules.SearchTest do
     test "filters by domain_ids and not confidential", %{claims: claims} do
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/rules/_search", %{aggs: _, query: query, size: 0}, [] ->
+        _, :post, "/rules/_search", %{aggs: _, query: query, size: 0}, _ ->
           assert %{
                    bool: %{
                      filter: [
@@ -56,7 +56,7 @@ defmodule TdDq.Rules.SearchTest do
     test "filters by domain_ids or confidential", %{claims: claims} do
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/rules/_search", %{aggs: _, query: query, size: 0}, [] ->
+        _, :post, "/rules/_search", %{aggs: _, query: query, size: 0}, _ ->
           assert %{
                    bool: %{
                      filter: [
@@ -93,7 +93,7 @@ defmodule TdDq.Rules.SearchTest do
 
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/implementations/_search", %{query: query, size: 0}, [] ->
+        _, :post, "/implementations/_search", %{query: query, size: 0}, _ ->
           assert %{
                    bool: %{
                      filter: [
@@ -106,7 +106,7 @@ defmodule TdDq.Rules.SearchTest do
           SearchHelpers.aggs_response(@aggs)
       end)
       |> expect(:request, fn
-        _, :post, "/implementations/_search", %{query: query, size: 0}, [] ->
+        _, :post, "/implementations/_search", %{query: query, size: 0}, _ ->
           assert %{
                    bool: %{
                      filter: [
@@ -135,7 +135,7 @@ defmodule TdDq.Rules.SearchTest do
     test "aggregations for rules", %{claims: claims} do
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/rules/_search", %{aggs: aggs, query: _, size: 0}, [] ->
+        _, :post, "/rules/_search", %{aggs: aggs, query: _, size: 0}, _ ->
           assert %{"active.raw" => _, "taxonomy" => _} = aggs
           SearchHelpers.aggs_response(@aggs)
       end)
@@ -148,7 +148,7 @@ defmodule TdDq.Rules.SearchTest do
     test "aggregations for implementations", %{claims: claims} do
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/implementations/_search", %{aggs: aggs, query: _, size: 0}, [] ->
+        _, :post, "/implementations/_search", %{aggs: aggs, query: _, size: 0}, _ ->
           assert %{"source_external_id" => _, "rule" => _} = aggs
           SearchHelpers.aggs_response(@aggs)
       end)
@@ -165,12 +165,12 @@ defmodule TdDq.Rules.SearchTest do
 
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/implementations/_search", %{query: query, size: 0}, [] ->
+        _, :post, "/implementations/_search", %{query: query, size: 0}, _ ->
           assert query == %{bool: %{filter: %{term: %{"status" => "published"}}}}
           SearchHelpers.aggs_response(@aggs)
       end)
       |> expect(:request, fn
-        _, :post, "/implementations/_search", %{query: query, size: 0}, [] ->
+        _, :post, "/implementations/_search", %{query: query, size: 0}, _ ->
           assert query == %{bool: %{filter: %{term: %{"status" => "foo"}}}}
           SearchHelpers.aggs_response(@aggs)
       end)
@@ -194,7 +194,7 @@ defmodule TdDq.Rules.SearchTest do
       test "searches and returns hits for #{role} account", %{claims: claims, rule: rule} do
         ElasticsearchMock
         |> expect(:request, fn
-          _, :post, "/rules/_search", %{from: 30, size: 10, query: _} = search, [] ->
+          _, :post, "/rules/_search", %{from: 30, size: 10, query: _} = search, _ ->
             refute Map.has_key?(search, :aggs)
             SearchHelpers.hits_response([rule], 11)
         end)
@@ -207,7 +207,7 @@ defmodule TdDq.Rules.SearchTest do
     test "filters by domain_ids and not confidential", %{claims: claims, rule: rule} do
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/rules/_search", %{from: 0, size: 50, query: query}, [] ->
+        _, :post, "/rules/_search", %{from: 0, size: 50, query: query}, _ ->
           assert %{
                    bool: %{
                      filter: [
@@ -230,7 +230,7 @@ defmodule TdDq.Rules.SearchTest do
     test "filters by domain_ids or confidential", %{claims: claims, rule: rule} do
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/rules/_search", %{query: query}, [] ->
+        _, :post, "/rules/_search", %{query: query}, _ ->
           assert %{
                    bool: %{
                      filter: [
@@ -277,7 +277,7 @@ defmodule TdDq.Rules.SearchTest do
       } do
         ElasticsearchMock
         |> expect(:request, fn
-          _, :post, "/implementations/_search", %{from: 30, size: 10, query: _} = search, [] ->
+          _, :post, "/implementations/_search", %{from: 30, size: 10, query: _} = search, _ ->
             refute Map.has_key?(search, :aggs)
             SearchHelpers.hits_response([implementation], 11)
         end)
@@ -294,7 +294,7 @@ defmodule TdDq.Rules.SearchTest do
     } do
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/implementations/_search", %{from: 0, size: 50, query: query}, [] ->
+        _, :post, "/implementations/_search", %{from: 0, size: 50, query: query}, _ ->
           assert %{
                    bool: %{
                      filter: [
@@ -320,7 +320,7 @@ defmodule TdDq.Rules.SearchTest do
     } do
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/implementations/_search", %{query: query}, [] ->
+        _, :post, "/implementations/_search", %{query: query}, _ ->
           assert %{
                    bool: %{
                      filter: [
@@ -358,7 +358,7 @@ defmodule TdDq.Rules.SearchTest do
 
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/implementations/_search", %{query: query}, [] ->
+        _, :post, "/implementations/_search", %{query: query}, _ ->
           assert %{
                    bool: %{
                      filter: [
