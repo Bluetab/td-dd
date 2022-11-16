@@ -1,5 +1,10 @@
 import Config
 
+config :td_dd, TdDd.DataStructures.Search,
+  es_scroll_size: 10_000,
+  es_scroll_ttl: "1m",
+  max_bulk_results: 100_000
+
 config :td_dd, TdDd.Search.Cluster,
   # The default URL where Elasticsearch is hosted on your system.
   # Will be overridden by the `ES_URL` environment variable if set.

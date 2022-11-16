@@ -4,51 +4,11 @@ defmodule Truedat.Search do
   """
 
   alias TdCache.TaxonomyCache
-  alias TdDd.DataStructures.Search.Query
   alias TdDd.Search.Cluster
 
   require Logger
 
-  def search(%{page_size: page_size, max_results: max_results}, body, index, opts) do
-    # TODO: Refactor to use scroll (TD-5342)
-    alias_name = Cluster.alias_name(index)
-
-    results =
-      Enum.reduce_while(
-        1..max_results//page_size,
-        [],
-        fn _, results ->
-          Logger.info(
-            "Truedat.Search.post current results #{Enum.count(results)}}, getting #{page_size} more"
-          )
-
-          {:ok, %{results: page_results, total: total}} =
-            body
-            |> Query.maybe_add_search_after(results)
-            |> Map.put(:size, page_size)
-            |> post(alias_name, opts)
-
-          acc_results = results ++ page_results
-
-          if Enum.count(page_results) < page_size || Enum.count(acc_results) == get_total(total) do
-            {:halt, acc_results}
-          else
-            {:cont, acc_results}
-          end
-        end
-      )
-
-    {:ok, %{results: results}}
-  end
-
   def search(body, index, opts \\ [])
-
-  def search(%{size: :infinity} = body, index, opts) when is_atom(index) do
-    # TODO: Refactor to use scroll (TD-5342)
-    %{"max_result_window" => page_size} = Cluster.setting(index)
-    max_results = Application.get_env(:td_dd, __MODULE__)[:max_result_window_total]
-    search(%{page_size: page_size, max_results: max_results}, body, index, opts)
-  end
 
   def search(body, index, opts) when is_atom(index) do
     alias_name = Cluster.alias_name(index)
