@@ -111,14 +111,11 @@ defmodule TdDd.Grants.Requests do
     required = required_approvals()
     user_roles = get_user_roles(claims)
 
-    request =
-      %{}
-      |> grant_request_query()
-      |> Repo.get!(id)
-      |> Repo.preload([:approvals])
-      |> with_missing_roles(required, user_roles)
-
-    request
+    %{}
+    |> grant_request_query()
+    |> Repo.get!(id)
+    |> Repo.preload([:approvals])
+    |> with_missing_roles(required, user_roles)
   end
 
   defp update_domain_ids(%{group: %{id: id}}) do
