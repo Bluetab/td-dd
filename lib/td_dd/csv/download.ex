@@ -339,8 +339,9 @@ defmodule TdDd.CSV.Download do
   defp get_domain(%{domain: %{"name" => name}}), do: name
   defp get_domain(_), do: nil
 
-  defp make_domain_path(nil), do: ""
-  defp make_domain_path(domain), do: make_domain_path(domain, [])
+  defp make_domain_path(domain, domain_path \\ [])
+
+  defp make_domain_path(nil, _), do: ""
 
   defp make_domain_path(%{parent_id: nil, name: name}, domain_path),
     do: Enum.join([name | domain_path], "/")
