@@ -2,6 +2,7 @@ defmodule TdDd.Grants.Policy do
   @moduledoc "Authorization rules for Grants"
 
   alias TdDd.DataStructures
+  alias TdDd.Grants.ApprovalRule
   alias TdDd.Grants.Grant
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestGroup
@@ -12,6 +13,9 @@ defmodule TdDd.Grants.Policy do
   @behaviour Bodyguard.Policy
 
   def authorize(_action, %{role: "admin"}, _params), do: true
+
+  def authorize(:mutation, %{} = claims, _params),
+    do: Permissions.authorized?(claims, :approve_grant_request)
 
   def authorize(:query, %{} = claims, :latest_grant_request),
     do: Permissions.authorized?(claims, :view_data_structure)
@@ -41,6 +45,10 @@ defmodule TdDd.Grants.Policy do
     Bodyguard.permit?(DataStructures, :manage_grants, claims, data_structure)
   end
 
+  def authorize(:view, %{} = claims, %ApprovalRule{domain_ids: domain_ids}) do
+    Permissions.authorized?(claims, :approve_grant_request, domain_ids)
+  end
+
   def authorize(:view, %{user_id: user_id} = _claims, %GrantRequestGroup{user_id: user_id}),
     do: true
 
@@ -62,6 +70,17 @@ defmodule TdDd.Grants.Policy do
   def authorize(:cancel, %{} = claims, %GrantRequest{domain_ids: domain_ids}) do
     Permissions.authorized?(claims, :approve_grant_request, domain_ids)
   end
+
+  def authorize(:create_approval_rule, %{} = claims, domain_ids) do
+    integer_domain_ids = Enum.map(domain_ids, &String.to_integer/1)
+    Permissions.authorized?(claims, :approve_grant_request, integer_domain_ids)
+  end
+
+  def authorize(:update_approval_rule, %{user_id: user_id}, %ApprovalRule{user_id: user_id}),
+    do: true
+
+  def authorize(:delete_approval_rule, %{user_id: user_id}, %ApprovalRule{user_id: user_id}),
+    do: true
 
   def authorize(:create_grant_request_group, %{}, %{"user_id" => id, "created_by_id" => id}),
     do: true

@@ -11,6 +11,7 @@ defmodule TdDd.Grants.Requests do
   alias TdCache.UserCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.Grants.ApprovalRules
   alias TdDd.Grants.Audit
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestApproval
@@ -45,6 +46,7 @@ defmodule TdDd.Grants.Requests do
 
   def create_grant_request_group(
         %{} = params,
+        claims,
         modification_grant \\ nil
       ) do
     changeset =
@@ -63,8 +65,57 @@ defmodule TdDd.Grants.Requests do
         &%{grant_request_id: &1, status: "pending", inserted_at: DateTime.utc_now()}
       )
     end)
+    |> Multi.run(:approval_rules, &maybe_apply_approval_rules(&1, &2, claims))
     |> Multi.run(:audit, Audit, :grant_request_group_created, [])
     |> Repo.transaction()
+  end
+
+  defp maybe_apply_approval_rules(_, %{requests: requests}, claims) do
+    requests
+    |> case do
+      {_, requests} -> requests
+      _ -> []
+    end
+    |> Enum.map(&get_grant_request_for_rules!(&1, claims))
+    |> Enum.map(&ApprovalRules.get_rules_for_request/1)
+    |> Enum.flat_map(&flatten_request_rules/1)
+    |> Enum.each(fn {claims, request, params, approval_rule_id} ->
+      create_approval(claims, request, params, approval_rule_id)
+    end)
+
+    {:ok, nil}
+  end
+
+  defp flatten_request_rules({request, rules}) do
+    rules
+    |> Enum.map(fn %{
+                     action: action,
+                     role: role,
+                     comment: comment,
+                     user_id: user_id,
+                     id: approval_rule_id
+                   } ->
+      case UserCache.get(user_id) do
+        {:ok, nil} ->
+          nil
+
+        {:ok, %{role: user_role}} ->
+          {%{user_id: user_id, role: user_role}, request,
+           %{is_rejection: action == "reject", role: role, comment: comment}, approval_rule_id}
+      end
+    end)
+    |> Enum.reject(&is_nil/1)
+  end
+
+  defp get_grant_request_for_rules!(id, claims) do
+    required = required_approvals()
+    user_roles = get_user_roles(claims)
+
+    %{}
+    |> grant_request_query()
+    |> Repo.get!(id)
+    |> Repo.preload([:approvals])
+    |> with_missing_roles(required, user_roles)
   end
 
   defp update_domain_ids(%{group: %{id: id}}) do
@@ -256,7 +307,8 @@ defmodule TdDd.Grants.Requests do
   def create_approval(
         %{user_id: user_id} = claims,
         %GrantRequest{id: id, domain_ids: domain_ids, current_status: status} = grant_request,
-        params
+        params,
+        approval_rule_id \\ nil
       ) do
     changeset =
       GrantRequestApproval.changeset(
@@ -264,7 +316,8 @@ defmodule TdDd.Grants.Requests do
           grant_request_id: id,
           user_id: user_id,
           domain_ids: domain_ids,
-          current_status: status
+          current_status: status,
+          approval_rule_id: approval_rule_id
         },
         params,
         claims
