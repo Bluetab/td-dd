@@ -586,6 +586,21 @@ defmodule TdDd.Factory do
     |> merge_attributes(attrs)
   end
 
+  def approval_rule_factory do
+    %TdDd.Grants.ApprovalRule{
+      name: sequence("rule_name"),
+      user_id: sequence(:user_id, &"#{&1}"),
+      role: "role1",
+      domain_ids: [123],
+      action: "approve",
+      conditions: [build(:approval_rule_condition)]
+    }
+  end
+
+  def approval_rule_condition_factory do
+    %TdDd.Grants.Condition{field: "foo", operator: "is", value: "bar"}
+  end
+
   def regex_filter_factory(attrs) do
     attrs = default_assoc(attrs, :classifier_id, :classifier)
 

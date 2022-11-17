@@ -69,13 +69,13 @@ defmodule TdDd.Search.Mappings do
     settings = Cluster.setting(:structures)
 
     %{
-      mappings: %{_doc: %{properties: properties, dynamic_templates: dynamic_templates}},
+      mappings: %{properties: properties, dynamic_templates: dynamic_templates},
       settings: settings
     }
   end
 
   def get_grant_mappings do
-    %{mappings: %{_doc: %{properties: dsv_properties}}, settings: _settings} = get_mappings()
+    %{mappings: %{properties: dsv_properties}, settings: _settings} = get_mappings()
 
     properties = %{
       data_structure_id: %{type: "long"},
@@ -98,7 +98,7 @@ defmodule TdDd.Search.Mappings do
     }
 
     settings = Cluster.setting(:grants)
-    %{mappings: %{_doc: %{properties: properties}}, settings: settings}
+    %{mappings: %{properties: properties}, settings: settings}
   end
 
   def get_dynamic_mappings(scope) do

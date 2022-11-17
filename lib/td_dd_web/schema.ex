@@ -13,6 +13,7 @@ defmodule TdDdWeb.Schema do
   import_types(TdDdWeb.Schema.Domains)
   import_types(TdDdWeb.Schema.Executions)
   import_types(TdDdWeb.Schema.Functions)
+  import_types(TdDdWeb.Schema.GrantApprovalRules)
   import_types(TdDdWeb.Schema.GrantRequests)
   import_types(TdDdWeb.Schema.ImplementationResults)
   import_types(TdDdWeb.Schema.Implementations)
@@ -33,6 +34,7 @@ defmodule TdDdWeb.Schema do
     import_fields(:domain_queries)
     import_fields(:function_queries)
     import_fields(:grant_request_queries)
+    import_fields(:grant_approval_rules_queries)
     import_fields(:implementation_queries)
     import_fields(:implementation_results_queries)
     import_fields(:me_queries)
@@ -46,6 +48,7 @@ defmodule TdDdWeb.Schema do
   end
 
   mutation do
+    import_fields(:grant_approval_rules_mutations)
     import_fields(:implementation_mutations)
     import_fields(:reference_data_mutations)
     import_fields(:source_mutations)

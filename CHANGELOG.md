@@ -6,6 +6,12 @@
 
 - [TD-5289] Elasticsearch 7 compatibility
 - [TD-5342] Refactor bulk operations to use Elasticsearch scroll API
+- [TD-5136] Download of structures include all structure domains with complete
+  path
+
+### Added
+
+- [TD-5258] Approve grants request rules
 
 ## [4.55.0] 2022-11-14
 
