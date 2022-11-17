@@ -74,7 +74,9 @@ defmodule TdCx.Search.Indexer do
   end
 
   defp put_template(template, name) do
-    case Elasticsearch.put(Cluster, "/_template/#{name}", template) do
+    case Elasticsearch.put(Cluster, "/_template/#{name}", template,
+           params: %{"include_type_name" => "false"}
+         ) do
       {:ok, res} ->
         {:ok, res}
 
