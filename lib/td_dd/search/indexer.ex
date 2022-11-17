@@ -115,7 +115,9 @@ defmodule TdDd.Search.Indexer do
   end
 
   def put_template(template, name) do
-    Elasticsearch.put(Cluster, "/_template/#{name}", template)
+    Elasticsearch.put(Cluster, "/_template/#{name}", template,
+      params: %{"include_type_name" => "false"}
+    )
   end
 
   defp log({:ok, %{"errors" => false, "items" => items, "took" => took}}, _action) do

@@ -54,7 +54,7 @@ defmodule TdDq.Search.Mappings do
 
     settings = Cluster.setting(:rules)
 
-    %{mappings: %{_doc: %{properties: properties}}, settings: settings}
+    %{mappings: %{properties: properties}, settings: settings}
   end
 
   def get_implementation_mappings do
@@ -162,7 +162,7 @@ defmodule TdDq.Search.Mappings do
 
     settings = Cluster.setting(:implementations)
 
-    %{mappings: %{_doc: %{properties: properties}}, settings: settings}
+    %{mappings: %{properties: properties}, settings: settings}
   end
 
   def get_dynamic_mappings(scope, type \\ nil) do

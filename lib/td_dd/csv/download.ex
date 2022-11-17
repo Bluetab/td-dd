@@ -328,6 +328,29 @@ defmodule TdDd.CSV.Download do
   defp build_empty_list(acc, l) when l < 1, do: acc
   defp build_empty_list(acc, l), do: ["" | build_empty_list(acc, l - 1)]
 
+  defp get_domain(%{domain_ids: [_ | _] = domain_ids}) do
+    Enum.map_join(domain_ids, "|", fn id ->
+      id
+      |> DomainCache.get!()
+      |> make_domain_path()
+    end)
+  end
+
   defp get_domain(%{domain: %{"name" => name}}), do: name
   defp get_domain(_), do: nil
+
+  defp make_domain_path(domain, domain_path \\ [])
+
+  defp make_domain_path(nil, _), do: ""
+
+  defp make_domain_path(%{parent_id: nil, name: name}, domain_path),
+    do: Enum.join([name | domain_path], "/")
+
+  defp make_domain_path(%{parent_id: parent_id, name: name}, domain_path) do
+    new_domain_path = [name | domain_path]
+
+    parent_id
+    |> DomainCache.get!()
+    |> make_domain_path(new_domain_path)
+  end
 end
