@@ -18,12 +18,20 @@ defmodule TdDq.Rules.RuleResults do
   require Logger
 
   @index_worker Application.compile_env(:td_dd, :dq_index_worker)
+  @pagination_params [:order_by, :limit, :before, :after]
 
   defdelegate authorize(action, user, params), to: __MODULE__.Policy
 
   def get_rule_result(id, options \\ []) do
     Repo.get_by(RuleResult, id: id)
     |> Repo.preload(options[:preload] || [])
+  end
+
+  def list_rule_results_no_pagination(params \\ %{}) do
+    params
+    |> rule_results_query()
+    |> select([rr, _ri], rr)
+    |> Repo.all()
   end
 
   def list_rule_results(params \\ %{}) do
@@ -43,6 +51,7 @@ defmodule TdDq.Rules.RuleResults do
     |> paginate_all(params)
   end
 
+  @spec list_segment_results_by_parent_id(any, any) :: any
   def list_segment_results_by_parent_id(parent_id, _params \\ %{}) do
     RuleResult
     |> where([rr], rr.parent_id == ^parent_id)
@@ -299,6 +308,11 @@ defmodule TdDq.Rules.RuleResults do
     |> where([rr, _, _], rr.date >= ^ts)
   end
 
+  defp add_filters(query, %{ref: ref}) do
+    query
+    |> where([_rr, ri, _], ri.implementation_ref == ^ref)
+  end
+
   defp add_filters(query, _params), do: query
 
   defp where_cursor(query, %{cursor: %{offset: offset}}) when is_integer(offset) do
@@ -341,5 +355,40 @@ defmodule TdDq.Rules.RuleResults do
     |> Multi.all(:all, cursor_query)
     |> Multi.one(:total, total_query)
     |> Repo.transaction()
+  end
+
+  def rule_results_query(params) do
+    Enum.reduce(params, RuleResult, fn
+      {:implementation_ref, implementation_ref}, q ->
+        q
+        |> join(:inner, [rr], ri in assoc(rr, :implementation))
+        |> where([_rr, ri], ri.implementation_ref == ^implementation_ref)
+
+      {:limit, lim}, q ->
+        limit(q, ^lim)
+
+      {:order_by, order}, q ->
+        order_by(q, ^order)
+
+      {:preload, preloads}, q ->
+        preload(q, ^preloads)
+
+      {:before, id}, q ->
+        where(q, [g], g.id < type(^id, :integer))
+
+      {:after, id}, q ->
+        where(q, [g], g.id > type(^id, :integer))
+
+      _, q ->
+        q
+    end)
+  end
+
+  def min_max_count(params) do
+    params
+    |> Map.drop(@pagination_params)
+    |> rule_results_query
+    |> select([rr, _ri], %{count: count(rr.id), min_id: min(rr.id), max_id: max(rr.id)})
+    |> Repo.one()
   end
 end
