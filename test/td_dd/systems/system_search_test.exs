@@ -14,14 +14,14 @@ defmodule TdDD.Systems.SystemSearchTest do
 
   describe "get_systems_with_count/3" do
     @tag authentication: [role: "user", permissions: ["view_data_structure"]]
-    test "bar", %{claims: claims} do
+    test "returns structures_count aggregations", %{claims: claims} do
       %{id: id1} = insert(:system, name: "sys1")
       %{id: id2} = insert(:system, name: "sys2")
       insert(:system, name: "sys3")
 
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/structures/_search", %{aggs: aggs, query: query, size: 0}, [] ->
+        _, :post, "/structures/_search", %{aggs: aggs, query: query, size: 0}, _ ->
           assert aggs == %{
                    "system_id" => %{
                      terms: %{field: "system_id", size: 50},

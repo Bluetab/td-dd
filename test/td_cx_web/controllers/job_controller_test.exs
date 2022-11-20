@@ -22,7 +22,7 @@ defmodule TdCxWeb.JobControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/jobs/_search", %{from: 0, query: query, size: 10_000}, [] ->
+        _, :post, "/jobs/_search", %{from: 0, query: query, size: 10_000}, _ ->
           assert query == %{
                    bool: %{
                      filter: %{term: %{"source.external_id" => source_external_id}}
@@ -52,7 +52,7 @@ defmodule TdCxWeb.JobControllerTest do
     } do
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/jobs/_search", _, [] -> SearchHelpers.hits_response([job])
+        _, :post, "/jobs/_search", _, _ -> SearchHelpers.hits_response([job])
       end)
 
       assert %{"data" => data} =

@@ -163,27 +163,29 @@ defmodule TdDd.CSV.Download do
   defp structures_to_list(structures, content_fields \\ []) do
     {:ok, domain_name_map} = DomainCache.id_to_name_map()
 
-    Enum.map(structures, fn structure ->
-      content = structure.note
+    Enum.map(structures, &structure_to_row(&1, content_fields, domain_name_map))
+  end
 
-      values = [
-        structure.type,
-        structure.name,
-        structure.group,
-        get_domain(structure),
-        Map.get(structure.system, "name"),
-        Enum.join(structure.path, " > "),
-        structure.description,
-        structure.external_id,
-        structure.inserted_at
-      ]
+  defp structure_to_row(structure, content_fields, domain_name_map) do
+    content = structure.note
 
-      Enum.reduce(
-        content_fields,
-        values,
-        &(&2 ++ [get_content_field(&1, content, domain_name_map)])
-      )
-    end)
+    values = [
+      structure.type,
+      structure.name,
+      structure.group,
+      get_domain(structure),
+      Map.get(structure.system, "name"),
+      Enum.join(structure.path, " > "),
+      structure.description,
+      structure.external_id,
+      structure.inserted_at
+    ]
+
+    Enum.reduce(
+      content_fields,
+      values,
+      &(&2 ++ [get_content_field(&1, content, domain_name_map)])
+    )
   end
 
   defp grants_to_list(grants) do
@@ -254,7 +256,7 @@ defmodule TdDd.CSV.Download do
     |> Map.get(name, [])
     |> content_to_list()
     |> Enum.map(&Map.get(&1, "url_value"))
-    |> Enum.filter(&(not is_nil(&1)))
+    |> Enum.reject(&is_nil/1)
     |> Enum.join(", ")
   end
 
@@ -288,9 +290,8 @@ defmodule TdDd.CSV.Download do
     content
     |> Map.get(name, [])
     |> content_to_list()
-    |> Enum.map(fn map_value ->
-      Enum.find(values, fn %{"value" => value} -> value == map_value end)
-    end)
+    |> Enum.map(&Enum.find(values, fn %{"value" => value} -> value == &1 end))
+    |> Enum.reject(&is_nil/1)
     |> Enum.map_join(", ", &Map.get(&1, "text", ""))
   end
 
@@ -311,7 +312,7 @@ defmodule TdDd.CSV.Download do
     |> Enum.join("|")
   end
 
-  defp get_content_field(%{"name" => name}, content, _domain_map) do
+  defp get_content_field(%{"name" => name}, %{} = content, _domain_map) do
     Map.get(content, name, "")
   end
 
@@ -328,6 +329,29 @@ defmodule TdDd.CSV.Download do
   defp build_empty_list(acc, l) when l < 1, do: acc
   defp build_empty_list(acc, l), do: ["" | build_empty_list(acc, l - 1)]
 
+  defp get_domain(%{domain_ids: [_ | _] = domain_ids}) do
+    Enum.map_join(domain_ids, "|", fn id ->
+      id
+      |> DomainCache.get!()
+      |> make_domain_path()
+    end)
+  end
+
   defp get_domain(%{domain: %{"name" => name}}), do: name
   defp get_domain(_), do: nil
+
+  defp make_domain_path(domain, domain_path \\ [])
+
+  defp make_domain_path(nil, _), do: ""
+
+  defp make_domain_path(%{parent_id: nil, name: name}, domain_path),
+    do: Enum.join([name | domain_path], "/")
+
+  defp make_domain_path(%{parent_id: parent_id, name: name}, domain_path) do
+    new_domain_path = [name | domain_path]
+
+    parent_id
+    |> DomainCache.get!()
+    |> make_domain_path(new_domain_path)
+  end
 end

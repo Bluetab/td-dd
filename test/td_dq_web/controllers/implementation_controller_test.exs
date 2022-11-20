@@ -2683,7 +2683,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
         ElasticsearchMock
         |> expect(:request, fn
-          _, :post, "/implementations/_search", %{from: 0, size: 1000, query: query}, [] ->
+          _, :post, "/implementations/_search", %{from: 0, size: 1000, query: query}, _ ->
             assert query == %{
                      bool: %{
                        filter: [%{term: %{"status" => "published"}}, %{term: %{"rule_id" => 123}}],
@@ -2713,7 +2713,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/implementations/_search", %{from: 0, size: 1000, query: _}, [] ->
+        _, :post, "/implementations/_search", %{from: 0, size: 1000, query: _}, _ ->
           SearchHelpers.hits_response([implementation])
       end)
 
@@ -2734,7 +2734,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/implementations/_search", %{from: 0, size: 1000, query: query}, [] ->
+        _, :post, "/implementations/_search", %{from: 0, size: 1000, query: query}, _ ->
           assert query == %{
                    bool: %{
                      filter: [
@@ -2790,7 +2790,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
         :post,
         "/implementations/_search",
         %{from: 0, size: 10_000, sort: sort, query: query},
-        [] ->
+        _ ->
           assert query == %{
                    bool: %{
                      filter: %{match_all: %{}},

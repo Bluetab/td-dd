@@ -8,6 +8,7 @@ defmodule TdDd.DataStructures.DataStructure do
   import Ecto.Changeset
 
   alias TdCx.Sources.Source
+  alias TdDd.DataStructures.DataStructureLink
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.DataStructures.StructureNote
@@ -52,6 +53,13 @@ defmodule TdDd.DataStructures.DataStructure do
     has_many(:implementations, ImplementationStructure, where: [deleted_at: nil])
     has_many(:nodes, Node, foreign_key: :structure_id)
     has_many(:units, through: [:nodes, :units])
+
+    many_to_many(:linked_data_structures, __MODULE__,
+      join_through: DataStructureLink,
+      join_keys: [source_id: :id, target_id: :id]
+    )
+
+    has_many(:data_structure_links, DataStructureLink, foreign_key: :source_id)
 
     timestamps(type: :utc_datetime_usec)
   end

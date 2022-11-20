@@ -18,7 +18,7 @@ defmodule TdDqWeb.RuleFilterControllerTest do
     test "maps filters from request parameters", %{conn: conn} do
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/rules/_search", %{query: query, size: 0}, [] ->
+        _, :post, "/rules/_search", %{query: query, size: 0}, _ ->
           assert query == %{bool: %{filter: %{term: %{"domain_id" => "1"}}}}
           SearchHelpers.aggs_response(@aggs)
       end)
@@ -37,7 +37,7 @@ defmodule TdDqWeb.RuleFilterControllerTest do
     test "user with permissions filters by domain_id and not confidential", %{conn: conn} do
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/rules/_search", %{query: query, size: 0}, [] ->
+        _, :post, "/rules/_search", %{query: query, size: 0}, _ ->
           assert %{
                    bool: %{
                      filter: [
@@ -72,7 +72,7 @@ defmodule TdDqWeb.RuleFilterControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/rules/_search", %{query: query, size: 0}, [] ->
+        _, :post, "/rules/_search", %{query: query, size: 0}, _ ->
           assert %{
                    bool: %{
                      filter: [
@@ -103,7 +103,7 @@ defmodule TdDqWeb.RuleFilterControllerTest do
     test "user without permissions includes match_none", %{conn: conn} do
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/rules/_search", %{query: query, size: 0}, [] ->
+        _, :post, "/rules/_search", %{query: query, size: 0}, _ ->
           assert query == %{bool: %{filter: %{match_none: %{}}}}
           SearchHelpers.aggs_response()
       end)

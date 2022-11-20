@@ -13,9 +13,9 @@ defmodule TdDdWeb.Schema.ImplementationResultsTest do
       errors
       records
       result
-      result_type
-      has_segments
-      has_remediation
+      resultType
+      hasSegments
+      hasRemediation
     }
   }
   """
@@ -84,8 +84,8 @@ defmodule TdDdWeb.Schema.ImplementationResultsTest do
                |> json_response(:ok)
 
       assert %{
-               "has_remediation" => false,
-               "has_segments" => false,
+               "hasRemediation" => false,
+               "hasSegments" => false,
                "id" => ^str_result_id,
                "result" => "50.00"
              } = implementation_result
@@ -114,8 +114,8 @@ defmodule TdDdWeb.Schema.ImplementationResultsTest do
                |> json_response(:ok)
 
       assert %{
-               "has_remediation" => false,
-               "has_segments" => false,
+               "hasRemediation" => false,
+               "hasSegments" => false,
                "date" => result_date,
                "id" => ^str_result_id,
                "result" => "50.00"
@@ -157,13 +157,13 @@ defmodule TdDdWeb.Schema.ImplementationResultsTest do
                |> json_response(:ok)
 
       assert %{
-               "has_segments" => true,
+               "hasSegments" => true,
                "id" => ^str_result_id
              } = implementation_result
     end
 
     @tag authentication: [role: "admin"]
-    test "get results of an implementation with has_remediation boolean", %{conn: conn} do
+    test "get results of an implementation with hasRemediation boolean", %{conn: conn} do
       %{id: result_id} = insert(:rule_result)
 
       insert(:remediation, rule_result_id: result_id)
@@ -178,8 +178,8 @@ defmodule TdDdWeb.Schema.ImplementationResultsTest do
                |> json_response(:ok)
 
       assert %{
-               "has_remediation" => true,
-               "has_segments" => false,
+               "hasRemediation" => true,
+               "hasSegments" => false,
                "id" => ^str_result_id
              } = implementation_result
     end

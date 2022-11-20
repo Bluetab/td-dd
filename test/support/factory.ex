@@ -11,9 +11,11 @@ defmodule TdDd.Factory do
   alias TdCx.Jobs.Job
   alias TdCx.Sources.Source
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureLink
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.Label
   alias TdDd.DataStructures.MetadataField
   alias TdDd.DataStructures.MetadataView
   alias TdDd.DataStructures.RelationType
@@ -584,6 +586,21 @@ defmodule TdDd.Factory do
     |> merge_attributes(attrs)
   end
 
+  def approval_rule_factory do
+    %TdDd.Grants.ApprovalRule{
+      name: sequence("rule_name"),
+      user_id: sequence(:user_id, &"#{&1}"),
+      role: "role1",
+      domain_ids: [123],
+      action: "approve",
+      conditions: [build(:approval_rule_condition)]
+    }
+  end
+
+  def approval_rule_condition_factory do
+    %TdDd.Grants.Condition{field: "foo", operator: "is", value: "bar"}
+  end
+
   def regex_filter_factory(attrs) do
     attrs = default_assoc(attrs, :classifier_id, :classifier)
 
@@ -680,6 +697,23 @@ defmodule TdDd.Factory do
     %TdDq.Functions.Argument{
       type: sequence(:argument_type, ["string", "number", "any"])
     }
+  end
+
+  def data_structure_link_factory(attrs) do
+    attrs =
+      default_assoc(attrs, :source_id, :source)
+      |> default_assoc(:target_id, :target)
+      |> default_assoc(:labels, :labels)
+
+    %DataStructureLink{}
+    |> merge_attributes(attrs)
+  end
+
+  def label_factory(attrs) do
+    %Label{
+      name: sequence("label_name")
+    }
+    |> merge_attributes(attrs)
   end
 
   defp default_assoc(attrs, id_key, key, build_key \\ nil, build_params \\ %{}) do

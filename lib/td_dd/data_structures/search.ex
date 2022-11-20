@@ -36,6 +36,43 @@ defmodule TdDd.DataStructures.Search do
     |> transform_response()
   end
 
+  def scroll_data_structures(params, %Claims{} = claims, permission) do
+    query = build_query(claims, permission, params, _aggs = %{})
+    sort = Map.get(params, "sort", ["_score", "name.raw", "id"])
+
+    %{limit: limit, size: size, ttl: ttl} = scroll_opts!()
+
+    %{query: query, sort: sort, size: size}
+    |> do_search(%{"scroll" => ttl})
+    |> do_scroll(ttl, limit, [])
+  end
+
+  defp scroll_opts! do
+    opts = Application.fetch_env!(:td_dd, __MODULE__)
+
+    %{
+      limit: Keyword.fetch!(opts, :max_bulk_results),
+      size: Keyword.fetch!(opts, :es_scroll_size),
+      ttl: Keyword.fetch!(opts, :es_scroll_ttl)
+    }
+  end
+
+  defp do_scroll(%{results: []} = response, _ttl, _limit, acc) do
+    %{response | results: acc}
+  end
+
+  defp do_scroll(%{results: results} = response, _ttl, limit, acc)
+       when length(results) + length(acc) >= limit do
+    %{response | results: acc ++ results}
+  end
+
+  defp do_scroll(%{results: results, scroll_id: scroll_id} = _response, ttl, limit, acc) do
+    %{"scroll_id" => scroll_id, "scroll" => ttl}
+    |> Search.scroll()
+    |> transform_response()
+    |> do_scroll(ttl, limit, acc ++ results)
+  end
+
   def search_data_structures(params, claims, permission, page \\ 0, size \\ 50)
 
   def search_data_structures(params, %Claims{} = claims, permission, page, size) do
@@ -44,21 +81,7 @@ defmodule TdDd.DataStructures.Search do
     query = build_query(claims, permission, params, aggs)
     sort = Map.get(params, "sort", ["_score", "name.raw"])
 
-    # id as tiebreaker in case several hits have the same _score and name
-    # otherwise search_after will skip some hits
-    %{
-      query: query,
-      sort: sort ++ [%{"id" => "asc"}]
-    }
-    |> Map.put(:size, size)
-    |> maybe_add_from(page, size)
-    |> do_search(params)
-  end
-
-  defp maybe_add_from(query, _page, :infinity), do: query
-
-  defp maybe_add_from(query, page, size) do
-    Map.put(query, :from, page * size)
+    do_search(%{query: query, sort: sort, from: page * size, size: size}, params)
   end
 
   defp build_query(%Claims{} = claims, permission, %{} = params, %{} = aggs) do
@@ -75,7 +98,7 @@ defmodule TdDd.DataStructures.Search do
 
   defp do_search(query, _params) do
     query
-    |> Search.search(@index)
+    |> Search.search(@index, params: %{"track_total_hits" => "true"})
     |> transform_response()
   end
 

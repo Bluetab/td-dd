@@ -3,10 +3,11 @@ defmodule TdDdWeb.Resolvers.Structures do
   Absinthe resolvers for data structures and related entities
   """
 
-  alias TdCache.TaxonomyCache
   alias TdDd.DataStructures
+  alias TdDd.DataStructures.DataStructureLinks
   alias TdDd.DataStructures.Relations
   alias TdDd.DataStructures.Tags
+  alias TdDd.Utils.CollectionUtils
 
   def data_structures(_parent, args, _resolution) do
     {:ok, DataStructures.list_data_structures(args)}
@@ -43,24 +44,29 @@ defmodule TdDdWeb.Resolvers.Structures do
     {:ok, domain_id}
   end
 
-  def domains(%{domain_ids: domain_ids}, _args, _resolution) do
-    domains =
-      domain_ids
-      |> Enum.map(&TaxonomyCache.get_domain/1)
-      |> Enum.reject(&is_nil/1)
-
-    {:ok, domains}
-  end
-
   def data_structure_version_path(%{id: id}, _args, _resolution) do
     path =
-      [ids: [id]]
-      |> DataStructures.enriched_structure_versions()
-      |> hd()
-      |> Map.get(:path)
+      id
+      |> ds_path
       |> Enum.map(&Map.get(&1, "name"))
 
     {:ok, path}
+  end
+
+  def data_structure_version_path_with_ids(%{id: id}, _args, _resolution) do
+    path =
+      id
+      |> ds_path
+      |> Enum.map(&CollectionUtils.atomize_keys(&1))
+
+    {:ok, path}
+  end
+
+  defp ds_path(id) do
+    [ids: [id]]
+    |> DataStructures.enriched_structure_versions()
+    |> hd()
+    |> Map.get(:path)
   end
 
   def available_tags(%{} = structure, _args, resolution) do
@@ -75,6 +81,10 @@ defmodule TdDdWeb.Resolvers.Structures do
 
   def structure_tags(%{} = data_structure, _args, _resolution) do
     {:ok, Tags.tags(data_structure)}
+  end
+
+  def data_structure_links(%{} = data_structure, _args, _resolution) do
+    {:ok, DataStructureLinks.links(data_structure)}
   end
 
   defp claims(%{context: %{claims: claims}}), do: claims

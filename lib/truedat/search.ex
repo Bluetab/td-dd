@@ -4,49 +4,11 @@ defmodule Truedat.Search do
   """
 
   alias TdCache.TaxonomyCache
-  alias TdDd.DataStructures.Search.Query
   alias TdDd.Search.Cluster
 
   require Logger
 
-  def search(%{page_size: page_size, max_results: max_results}, body, index, opts) do
-    alias_name = Cluster.alias_name(index)
-
-    results =
-      Enum.reduce_while(
-        1..max_results//page_size,
-        [],
-        fn _, results ->
-          Logger.info(
-            "Truedat.Search.post current results #{Enum.count(results)}}, getting #{page_size} more"
-          )
-
-          {:ok, %{results: page_results, total: total}} =
-            body
-            |> Query.maybe_add_search_after(results)
-            |> Map.put(:size, page_size)
-            |> post(alias_name, opts)
-
-          acc_results = results ++ page_results
-
-          if Enum.count(page_results) < page_size || Enum.count(acc_results) == total do
-            {:halt, acc_results}
-          else
-            {:cont, acc_results}
-          end
-        end
-      )
-
-    {:ok, %{results: results}}
-  end
-
   def search(body, index, opts \\ [])
-
-  def search(%{size: :infinity} = body, index, opts) when is_atom(index) do
-    %{"max_result_window" => page_size} = Cluster.setting(index)
-    max_results = Application.get_env(:td_dd, __MODULE__)[:max_result_window_total]
-    search(%{page_size: page_size, max_results: max_results}, body, index, opts)
-  end
 
   def search(body, index, opts) when is_atom(index) do
     alias_name = Cluster.alias_name(index)
@@ -79,9 +41,7 @@ defmodule Truedat.Search do
     [params: Map.take(query_params, ["scroll"])]
   end
 
-  defp search_opts(_params) do
-    []
-  end
+  defp search_opts(_params), do: [params: %{"track_total_hits" => "true"}]
 
   defp format_response(response, format \\ nil)
 
@@ -109,7 +69,7 @@ defmodule Truedat.Search do
       {"hits", %{"hits" => hits, "total" => total}}, acc ->
         acc
         |> Map.put(:results, hits)
-        |> Map.put(:total, total)
+        |> Map.put(:total, get_total(total))
     end)
   end
 
@@ -151,4 +111,7 @@ defmodule Truedat.Search do
 
   defp get_domain(id) when is_integer(id), do: TaxonomyCache.get_domain(id)
   defp get_domain(_), do: nil
+
+  defp get_total(value) when is_integer(value), do: value
+  defp get_total(%{"relation" => "eq", "value" => value}) when is_integer(value), do: value
 end
