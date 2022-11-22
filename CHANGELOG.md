@@ -8,6 +8,7 @@
 - [TD-5342] Refactor bulk operations to use Elasticsearch scroll API
 - [TD-5136] Download of structures include all structure domains with complete
   path
+- [TD-4179] Implementation indexing uses inserted_at of original ref
 
 ### Added
 
