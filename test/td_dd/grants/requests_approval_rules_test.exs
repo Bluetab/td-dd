@@ -125,6 +125,158 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
              } = Requests.get_grant_request!(request_id, claims)
     end
 
+    test "approve rule with structure metadata in a subdomain", %{
+      approver_user_id: approver_user_id,
+      domain_ids: [domain_id] = domain_ids
+    } do
+      %{id: subdomain_id} = CacheHelpers.insert_domain(%{parent_id: domain_id})
+
+      %{data_structure: data_structure} =
+        insert(:data_structure_version,
+          data_structure:
+            build(:data_structure,
+              domain_ids: [subdomain_id]
+            ),
+          metadata: %{"field" => "foo", "other" => "baz"}
+        )
+
+      insert(:approval_rule,
+        role: @approver_role,
+        user_id: approver_user_id,
+        domain_ids: domain_ids,
+        conditions: [
+          %{field: "metadata.field", operator: "eq", value: "foo"}
+        ]
+      )
+
+      %{user_id: user_id} = claims = build(:claims)
+
+      params = %{
+        type: @template_name,
+        requests: [
+          %{
+            data_structure_id: data_structure.id,
+            metadata: @valid_metadata
+          }
+        ],
+        user_id: user_id,
+        created_by_id: user_id
+      }
+
+      assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
+               Requests.create_grant_request_group(params, claims)
+
+      assert %{
+               current_status: "approved",
+               approvals: [
+                 %{user_id: ^approver_user_id}
+               ]
+             } = Requests.get_grant_request!(request_id, claims)
+    end
+
+    test "approve rule with structure mutable metadata in a subdomain", %{
+      approver_user_id: approver_user_id,
+      domain_ids: [domain_id] = domain_ids
+    } do
+      %{id: subdomain_id} = CacheHelpers.insert_domain(%{parent_id: domain_id})
+
+      %{data_structure: data_structure} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, domain_ids: [subdomain_id])
+        )
+
+      insert(:structure_metadata,
+        data_structure: data_structure,
+        fields: %{"foo" => "bar"}
+      )
+
+      insert(:approval_rule,
+        role: @approver_role,
+        user_id: approver_user_id,
+        domain_ids: domain_ids,
+        conditions: [
+          %{field: "metadata.foo", operator: "eq", value: "bar"}
+        ]
+      )
+
+      %{user_id: user_id} = claims = build(:claims)
+
+      params = %{
+        type: @template_name,
+        requests: [
+          %{
+            data_structure_id: data_structure.id,
+            metadata: @valid_metadata
+          }
+        ],
+        user_id: user_id,
+        created_by_id: user_id
+      }
+
+      assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
+               Requests.create_grant_request_group(params, claims)
+
+      assert %{
+               current_status: "approved",
+               approvals: [
+                 %{user_id: ^approver_user_id}
+               ]
+             } = Requests.get_grant_request!(request_id, claims)
+    end
+
+    test "approve rule with structure note in a subdomain", %{
+      approver_user_id: approver_user_id,
+      domain_ids: [domain_id] = domain_ids
+    } do
+      %{id: subdomain_id} = CacheHelpers.insert_domain(%{parent_id: domain_id})
+
+      %{data_structure: data_structure} =
+        insert(:data_structure_version,
+          data_structure:
+            build(:data_structure,
+              domain_ids: [subdomain_id]
+            ),
+          metadata: %{"field" => "foo", "other" => "baz"}
+        )
+
+      insert(:structure_note,
+        data_structure: data_structure,
+        df_content: %{"foo" => "bar"},
+        status: :published
+      )
+
+      insert(:approval_rule,
+        role: @approver_role,
+        user_id: approver_user_id,
+        domain_ids: domain_ids,
+        conditions: [%{field: "note.foo", operator: "eq", value: "bar"}]
+      )
+
+      %{user_id: user_id} = claims = build(:claims)
+
+      params = %{
+        type: @template_name,
+        requests: [
+          %{
+            data_structure_id: data_structure.id,
+            metadata: @valid_metadata
+          }
+        ],
+        user_id: user_id,
+        created_by_id: user_id
+      }
+
+      assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
+               Requests.create_grant_request_group(params, claims)
+
+      assert %{
+               current_status: "approved",
+               approvals: [
+                 %{user_id: ^approver_user_id}
+               ]
+             } = Requests.get_grant_request!(request_id, claims)
+    end
+
     test "do not match rule if one condition is not met", %{
       approver_user_id: approver_user_id,
       domain_ids: domain_ids,
@@ -300,7 +452,7 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
       assert %{current_status: "pending"} = Requests.get_grant_request!(request_id, claims)
     end
 
-    test "duplicated rule for the same role will only create approal for the first", %{
+    test "duplicated rule for the same role will only create approval for the first", %{
       approver_user_id: approver_user_id,
       domain_ids: domain_ids,
       data_structure: data_structure

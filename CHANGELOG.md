@@ -13,6 +13,10 @@
 
 - [TD-5258] Approve grants request rules
 
+### Added
+
+- [TD-5258] Approve grants request rules
+
 ## [4.55.0] 2022-11-14
 
 ### Added
