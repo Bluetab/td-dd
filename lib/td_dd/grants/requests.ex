@@ -114,7 +114,10 @@ defmodule TdDd.Grants.Requests do
     %{}
     |> grant_request_query()
     |> Repo.get!(id)
-    |> Repo.preload([:approvals])
+    |> Repo.preload([
+      :approvals,
+      data_structure: [current_version: [:current_metadata, :published_note]]
+    ])
     |> with_missing_roles(required, user_roles)
   end
 

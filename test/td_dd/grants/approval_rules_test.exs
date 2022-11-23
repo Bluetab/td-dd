@@ -203,7 +203,6 @@ defmodule TdDd.Grants.ApprovalRulesTest do
         insert(:grant_request,
           data_structure: data_structure,
           domain_ids: domain_ids,
-          metadata: %{"foo" => "bar"},
           pending_roles: [@approval_role]
         )
 
@@ -238,7 +237,6 @@ defmodule TdDd.Grants.ApprovalRulesTest do
         insert(:grant_request,
           data_structure: data_structure,
           domain_ids: domain_ids,
-          metadata: %{"foo" => "bar"},
           pending_roles: [@approval_role]
         )
 
