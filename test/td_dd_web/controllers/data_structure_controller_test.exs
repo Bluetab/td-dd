@@ -4,6 +4,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
   import Mox
   import Routes
+  import TdDd.TestOperators
 
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
@@ -977,6 +978,43 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert %{resp_body: resp_body} = post(conn, data_structure_path(conn, :csv, %{}))
       assert [_header, _row, ""] = String.split(resp_body, "\r\n")
+    end
+
+    @tag authentication: [role: "user", permissions: [:manage_structures_domain]]
+    test "gets csv content using scroll to search, filter by taxonomy", %{conn: conn} do
+      %{id: parent_domain_id} = CacheHelpers.insert_domain(name: "domain_1")
+      %{id: child_domain_id} = CacheHelpers.insert_domain(name: "domain_2", parent_id: parent_domain_id)
+      data_structure = insert(:data_structure, domain_ids: [parent_domain_id])
+      dsv = insert(:data_structure_version, data_structure: data_structure, name: "dsv_in_parent_domain_id")
+      insert(:data_structure_version, name: "dsv_not_in_parent_domain_id")
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, opts ->
+        assert %{
+          bool: %{
+            # The query taxonomy filter gets converted to the field "domain_ids"
+            filter: [%{terms: %{"domain_ids" => domain_ids}}, %{match_none: %{}}],
+            must_not: %{exists: %{field: "deleted_at"}}
+          }
+        } = query
+        assert domain_ids <|> [parent_domain_id, child_domain_id]
+        assert opts == [params: %{"scroll" => "1m"}]
+        SearchHelpers.scroll_response([dsv])
+      end)
+      |> expect(:request, fn _, :post, "/_search/scroll", body, [] ->
+        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
+        SearchHelpers.scroll_response([])
+      end)
+
+      assert %{resp_body: resp_body} = post(conn, data_structure_path(conn, :csv), %{
+        filters: %{
+          taxonomy: [
+            parent_domain_id
+          ]
+        }
+      })
+      assert resp_body =~ "dsv_in_parent_domain_id"
+      refute resp_body =~ "dsv_not_in_parent_domain_id"
     end
 
     @tag authentication: [role: "admin"]
