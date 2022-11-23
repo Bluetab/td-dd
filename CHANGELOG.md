@@ -13,6 +13,10 @@
 
 - [TD-5258] Approve grants request rules
 
+### Fixed
+
+- [TD-5355] Get aggregations in scroll_data_structures
+
 ## [4.55.0] 2022-11-14
 
 ### Added
