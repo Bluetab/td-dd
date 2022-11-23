@@ -7,6 +7,7 @@ defmodule TdDdWeb.Resolvers.Domains do
   alias TdCache.TaxonomyCache
   alias TdDd.Lineage.Units
 
+  @spec domains(any, any, any) :: {:ok, list}
   def domains(_parent, %{action: action}, resolution) do
     {:ok, permitted_domains(action, resolution)}
   end
@@ -97,6 +98,19 @@ defmodule TdDdWeb.Resolvers.Domains do
     |> intersection()
   end
 
+  defp permitted_domain_ids(
+         %{role: "user", jti: jti},
+         "manageRawRulelessImplementationsWithLinkConcept"
+       ) do
+    jti
+    |> Permissions.permitted_domain_ids([
+      :manage_raw_quality_rule_implementations,
+      :manage_ruleless_implementations,
+      :link_implementation_business_concept
+    ])
+    |> intersection()
+  end
+
   defp permitted_domain_ids(%{role: "user", jti: jti}, "manageRule"),
     do: Permissions.permitted_domain_ids(jti, :manage_quality_rule)
 
@@ -105,6 +119,19 @@ defmodule TdDdWeb.Resolvers.Domains do
     |> Permissions.permitted_domain_ids([
       :manage_quality_rule_implementations,
       :manage_ruleless_implementations
+    ])
+    |> intersection()
+  end
+
+  defp permitted_domain_ids(
+         %{role: "user", jti: jti},
+         "manageRulelessImplementationsWithLinkConcept"
+       ) do
+    jti
+    |> Permissions.permitted_domain_ids([
+      :manage_quality_rule_implementations,
+      :manage_ruleless_implementations,
+      :link_implementation_business_concept
     ])
     |> intersection()
   end
