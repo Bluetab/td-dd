@@ -15,7 +15,7 @@
 
 ### Fixed
 
-- [TD-5355] Get aggregations in scroll_data_structures
+- [TD-5355] Include aggregations in `DataStructures.scroll_data_structures/3`
 
 ## [4.55.0] 2022-11-14
 
