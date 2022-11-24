@@ -33,14 +33,13 @@ defmodule TdDdWeb.Resolvers.ImplementationResults do
         args,
         _resolution
       ) do
-    args =
-      args
-      |> Map.take([:first, :last, :after, :before, :filters])
-      |> Map.new(&connection_param/1)
-      |> Map.put(:implementation_ref, implementation_ref)
-      |> put_order_by(args)
-
-    {:ok, results_connection(args)}
+    args
+    |> Map.take([:first, :last, :after, :before, :filters])
+    |> Map.new(&connection_param/1)
+    |> Map.put(:implementation_ref, implementation_ref)
+    |> put_order_by(args)
+    |> results_connection()
+    |> then(&{:ok, &1})
   end
 
   defp connection_param({:after, cursor}), do: {:after, cursor}
@@ -48,15 +47,15 @@ defmodule TdDdWeb.Resolvers.ImplementationResults do
   defp connection_param({:first, first}), do: {:limit, first}
   defp connection_param({:last, last}), do: {:limit, last}
 
-  defp put_order_by(args, %{after: _}), do: Map.put(args, :order_by, :id)
-  defp put_order_by(args, %{last: _}), do: Map.put(args, :order_by, desc: :id)
-  defp put_order_by(args, %{}), do: Map.put(args, :order_by, desc: :id)
+  defp put_order_by(conn_params, %{after: _}), do: Map.put(conn_params, :order_by, :id)
+  defp put_order_by(conn_params, %{last: _}), do: Map.put(conn_params, :order_by, desc: :id)
+  defp put_order_by(conn_params, %{}), do: Map.put(conn_params, :order_by, desc: :id)
 
-  defp results_connection(args) do
-    args
+  defp results_connection(conn_params) do
+    conn_params
     |> RuleResults.min_max_count()
     |> read_page(fn ->
-      RuleResults.list_rule_results_no_pagination(Map.put(args, :preload, :implementation))
+      RuleResults.list_rule_results(Map.put(conn_params, :preload, :implementation))
     end)
   end
 

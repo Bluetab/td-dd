@@ -50,7 +50,8 @@ defmodule TdDqWeb.RuleResultController do
   def index(conn, params) do
     with claims <- conn.assigns[:current_resource],
          :ok <- Bodyguard.permit(RuleResults, :list_rule_results, claims),
-         {:ok, %{all: rule_results, total: total}} <- RuleResults.list_rule_results(params) do
+         {:ok, %{all: rule_results, total: total}} <-
+           RuleResults.list_rule_results_paginate(params) do
       conn
       |> put_resp_header("x-total-count", "#{total}")
       |> render("index.json", rule_results: rule_results)

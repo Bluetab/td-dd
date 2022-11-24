@@ -27,14 +27,14 @@ defmodule TdDq.Rules.RuleResults do
     |> Repo.preload(options[:preload] || [])
   end
 
-  def list_rule_results_no_pagination(params \\ %{}) do
+  def list_rule_results(params \\ %{}) do
     params
     |> rule_results_query()
     |> select([rr, _ri], rr)
     |> Repo.all()
   end
 
-  def list_rule_results(params \\ %{}) do
+  def list_rule_results_paginate(params \\ %{}) do
     RuleResult
     |> join(:inner, [rr, ri], ri in Implementation, on: rr.implementation_id == ri.id)
     |> where([_, ri, _], is_nil(ri.deleted_at))
@@ -51,7 +51,6 @@ defmodule TdDq.Rules.RuleResults do
     |> paginate_all(params)
   end
 
-  @spec list_segment_results_by_parent_id(any, any) :: any
   def list_segment_results_by_parent_id(parent_id, _params \\ %{}) do
     RuleResult
     |> where([rr], rr.parent_id == ^parent_id)
