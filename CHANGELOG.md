@@ -13,9 +13,9 @@
 
 - [TD-5258] Approve grants request rules
 
-### Added
+### Fixed
 
-- [TD-5258] Approve grants request rules
+- [TD-5355] Include aggregations in `DataStructures.scroll_data_structures/3`
 
 ## [4.55.0] 2022-11-14
 
