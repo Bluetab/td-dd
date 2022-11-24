@@ -66,7 +66,11 @@ defmodule TdDqWeb.RuleUploadControllerTest do
                |> post(Routes.rule_upload_path(conn, :create), attrs)
                |> json_response(:unprocessable_entity)
 
-      assert %{"error" => "misssing_required_columns"} = error
+      assert error == %{
+               "error" => "missing_required_columns",
+               "expected" => "name, domain_external_id",
+               "found" => "with_no_required_headers, foo, bar"
+             }
     end
   end
 end

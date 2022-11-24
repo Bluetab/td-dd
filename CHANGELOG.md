@@ -8,6 +8,7 @@
 - [TD-5342] Refactor bulk operations to use Elasticsearch scroll API
 - [TD-5136] Download of structures include all structure domains with complete
   path
+- [TD-4711] Improved user feedback for errors in implementation upload
 
 ### Added
 

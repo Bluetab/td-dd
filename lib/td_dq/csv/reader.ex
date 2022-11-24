@@ -29,7 +29,12 @@ defmodule TdDq.CSV.Reader do
     if Enum.all?(required_headers, &Enum.member?(headers, &1)) do
       {:ok, headers}
     else
-      {:error, %{error: :misssing_required_columns, expected: required_headers, found: headers}}
+      {:error,
+       %{
+         error: :missing_required_columns,
+         expected: Enum.join(required_headers, ", "),
+         found: Enum.join(headers, ", ")
+       }}
     end
   end
 

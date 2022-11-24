@@ -277,7 +277,11 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
                |> post(Routes.implementation_upload_path(conn, :create), attrs)
                |> json_response(:unprocessable_entity)
 
-      assert %{"error" => "misssing_required_columns"} = error
+      assert error == %{
+               "error" => "missing_required_columns",
+               "expected" => "implementation_key, result_type, goal, minimum",
+               "found" => "with_no_required_headers, foo, bar"
+             }
     end
   end
 end
