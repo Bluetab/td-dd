@@ -8,6 +8,8 @@
 - [TD-5342] Refactor bulk operations to use Elasticsearch scroll API
 - [TD-5136] Download of structures include all structure domains with complete
   path
+- [TD-5341] Created indices on foreign key constraints to improve performance
+  when physically deleting data structures
 
 ### Added
 
