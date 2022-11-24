@@ -37,7 +37,8 @@ defmodule TdDd.DataStructures.Search do
   end
 
   def scroll_data_structures(params, %Claims{} = claims, permission) do
-    query = build_query(claims, permission, params, _aggs = %{})
+    aggs = Aggregations.aggregations()
+    query = build_query(claims, permission, params, aggs)
     sort = Map.get(params, "sort", ["_score", "name.raw", "id"])
 
     %{limit: limit, size: size, ttl: ttl} = scroll_opts!()
