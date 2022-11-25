@@ -8,11 +8,18 @@
 - [TD-5342] Refactor bulk operations to use Elasticsearch scroll API
 - [TD-5136] Download of structures include all structure domains with complete
   path
+- [TD-5341] Created indices on foreign key constraints to improve performance
+  when physically deleting data structures
 - [TD-4179] Implementation indexing uses inserted_at of original ref
 
 ### Added
 
 - [TD-5258] Approve grants request rules
+- [TD-5286] Implementation results pagination
+
+### Fixed
+
+- [TD-5355] Include aggregations in `DataStructures.scroll_data_structures/3`
 
 ## [4.55.0] 2022-11-14
 

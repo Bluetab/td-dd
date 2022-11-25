@@ -5,6 +5,7 @@ defmodule TdDd.Grants.ApprovalRules do
 
   import Ecto.Query
 
+  alias TdCache.TaxonomyCache
   alias TdDd.Grants.ApprovalRule
   alias TdDd.Grants.GrantRequest
   alias TdDd.Repo
@@ -101,9 +102,11 @@ defmodule TdDd.Grants.ApprovalRules do
   def get_rules_for_request(
         %GrantRequest{domain_ids: [domain_id], pending_roles: pending_roles} = grant_request
       ) do
+    domain_ids = TaxonomyCache.reaching_domain_ids(domain_id)
+
     rules =
       ApprovalRule
-      |> where([ar], ^domain_id in ar.domain_ids)
+      |> where([ar], fragment("? && ?", ar.domain_ids, ^domain_ids))
       |> Repo.all()
       |> Enum.filter(
         &(&1.role in pending_roles and
@@ -167,7 +170,9 @@ defmodule TdDd.Grants.ApprovalRules do
   defp get_request_metadata(_), do: nil
 
   defp get_data_structure_note(%{
-         data_structure: %{current_version: %{published_note: %{df_content: metadata}}}
+         data_structure: %{
+           current_version: %{data_structure: %{published_note: %{df_content: metadata}}}
+         }
        }),
        do: metadata
 

@@ -979,6 +979,58 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert [_header, _row, ""] = String.split(resp_body, "\r\n")
     end
 
+    @tag authentication: [
+           role: "user",
+           permissions: [:manage_structures_domain, :view_data_structure]
+         ]
+    test "gets csv content using scroll to search, filter by taxonomy", %{
+      conn: conn,
+      domain: %{id: domain_id}
+    } do
+      %{id: child_domain_id} = CacheHelpers.insert_domain(parent_id: domain_id)
+
+      %{name: name} =
+        dsv =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, domain_ids: [child_domain_id])
+        )
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, opts ->
+        assert opts == [params: %{"scroll" => "1m"}]
+
+        assert %{
+                 bool: %{
+                   filter: [
+                     # The query taxonomy filter gets converted to the field "domain_ids"
+                     %{terms: %{"domain_ids" => [_domain_id, _child_domain_id]}},
+                     %{term: %{"confidential" => false}}
+                   ],
+                   must_not: %{exists: %{field: "deleted_at"}}
+                 }
+               } = query
+
+        SearchHelpers.scroll_response([dsv])
+      end)
+      |> expect(:request, fn _, :post, "/_search/scroll", body, opts ->
+        assert opts == []
+        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
+        SearchHelpers.scroll_response([])
+      end)
+
+      params = %{"filters" => %{"taxonomy" => [domain_id]}}
+
+      assert [row] =
+               post(conn, data_structure_path(conn, :csv), params)
+               |> response(:ok)
+               |> String.split("\r\n")
+               |> Enum.reject(&(&1 == ""))
+               |> CSV.decode!(headers: true, separator: ?;)
+               |> Enum.to_list()
+
+      assert %{"name" => ^name} = row
+    end
+
     @tag authentication: [role: "admin"]
     test "gets editable csv content using scroll to search", %{
       conn: conn,
