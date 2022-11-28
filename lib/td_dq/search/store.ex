@@ -21,9 +21,9 @@ defmodule TdDq.Search.Store do
   @impl true
   def stream(Implementation = schema) do
     schema
-    # |> where([ri], is_nil(ri.deleted_at))
     |> Repo.stream()
     |> Repo.stream_preload(1000, :rule)
+    |> Repo.stream_preload(1000, :implementation_ref_struct)
   end
 
   def stream(Rule = schema, ids) do
@@ -35,10 +35,10 @@ defmodule TdDq.Search.Store do
 
   def stream(Implementation = schema, ids) do
     schema
-    # |> where([ri], is_nil(ri.deleted_at))
     |> where([ri], ri.id in ^ids)
     |> Repo.stream()
     |> Repo.stream_preload(1000, :rule)
+    |> Repo.stream_preload(1000, :implementation_ref_struct)
   end
 
   @impl true

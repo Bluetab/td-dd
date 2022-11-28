@@ -1,6 +1,7 @@
 defmodule TdDq.Implementations.ImplementationTest do
   use TdDd.DataCase
 
+  alias TdDd.Repo
   alias Ecto.Changeset
   alias Elasticsearch.Document
   alias TdDq.Implementations.Implementation
@@ -406,6 +407,7 @@ defmodule TdDq.Implementations.ImplementationTest do
           rule: rule,
           validation: creation_attrs.validation
         )
+        |> Repo.preload(:implementation_ref_struct)
 
       assert %{
                validations: [
@@ -473,6 +475,7 @@ defmodule TdDq.Implementations.ImplementationTest do
           rule: rule,
           populations: creation_attrs.populations
         )
+        |> Repo.preload(:implementation_ref_struct)
 
       assert %{
                populations: [
@@ -551,6 +554,7 @@ defmodule TdDq.Implementations.ImplementationTest do
           rule: rule,
           populations: creation_attrs.populations
         )
+        |> Repo.preload(:implementation_ref_struct)
 
       assert %{
                population: [
@@ -616,6 +620,7 @@ defmodule TdDq.Implementations.ImplementationTest do
           rule: rule,
           validation: creation_attrs.validation
         )
+        |> Repo.preload(:implementation_ref_struct)
 
       assert %{
                validation: [
@@ -699,6 +704,7 @@ defmodule TdDq.Implementations.ImplementationTest do
           rule: rule,
           validation: creation_attrs.validation
         )
+        |> Repo.preload(:implementation_ref_struct)
 
       assert %{
                validations: [
@@ -758,6 +764,7 @@ defmodule TdDq.Implementations.ImplementationTest do
           rule: rule,
           segments: creation_attrs.segments
         )
+        |> Repo.preload(:implementation_ref_struct)
 
       assert %{
                segments: [
@@ -811,11 +818,12 @@ defmodule TdDq.Implementations.ImplementationTest do
 
       implementation_key = "rik1"
 
-      rule_implementation =
-        insert(:ruleless_implementation,
-          implementation_key: implementation_key,
-          populations: creation_attrs.populations
-        )
+      rule_implementation = :ruleless_implementation
+        |> insert(
+            implementation_key: implementation_key,
+            populations: creation_attrs.populations
+          )
+        |> Repo.preload(:implementation_ref_struct)
 
       assert %{
                population: [

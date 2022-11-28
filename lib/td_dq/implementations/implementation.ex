@@ -62,7 +62,7 @@ defmodule TdDq.Implementations.Implementation do
 
     field(:version, :integer)
 
-    field :implementation_ref, :integer
+    belongs_to(:implementation_ref_struct, Implementation, foreign_key: :implementation_ref)
 
     has_many :versions, Implementation,
       foreign_key: :implementation_ref,
@@ -432,7 +432,7 @@ defmodule TdDq.Implementations.Implementation do
       structure_names = get_structure_names(structures)
       structure_aliases = Implementations.get_sources(implementation)
 
-      %Implementation{inserted_at: ref_inserted_at} = Implementations.get_implementation(implementation.implementation_ref)
+      %Implementation{inserted_at: ref_inserted_at} = Map.get(implementation, :implementation_ref_struct)
 
       template = TemplateCache.get_by_name!(implementation.df_name) || %{content: []}
 
