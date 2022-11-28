@@ -11,6 +11,7 @@
 - [TD-5341] Created indices on foreign key constraints to improve performance
   when physically deleting data structures
 - [TD-4179] Implementation indexing uses inserted_at of original ref
+- [TD-4711] Improved user feedback for errors in implementation upload
 
 ### Added
 
