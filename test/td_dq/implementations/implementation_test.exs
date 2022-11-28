@@ -1,9 +1,9 @@
 defmodule TdDq.Implementations.ImplementationTest do
   use TdDd.DataCase
 
-  alias TdDd.Repo
   alias Ecto.Changeset
   alias Elasticsearch.Document
+  alias TdDd.Repo
   alias TdDq.Implementations.Implementation
 
   @implementation %Implementation{domain_id: 123}
