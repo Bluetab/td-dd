@@ -1,10 +1,9 @@
 # Changelog
 
-## [Unreleased]
+## [4.56.0] 2022-11-28
 
 ### Changed
 
-- [TD-5289] Elasticsearch 7 compatibility
 - [TD-5342] Refactor bulk operations to use Elasticsearch scroll API
 - [TD-5136] Download of structures include all structure domains with complete
   path
@@ -15,12 +14,9 @@
 
 ### Added
 
+- [TD-5289] Elasticsearch 7 compatibility
 - [TD-5258] Approve grants request rules
 - [TD-5286] Implementation results pagination
-
-### Fixed
-
-- [TD-5355] Include aggregations in `DataStructures.scroll_data_structures/3`
 
 ## [4.55.0] 2022-11-14
 
