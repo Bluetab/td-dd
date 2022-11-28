@@ -88,7 +88,7 @@ defmodule SearchHelpers do
   end
 
   defp maybe_enrich(%Implementation{} = implementation) do
-    Repo.preload(implementation, :rule)
+    Repo.preload(implementation, [:rule, :implementation_ref_struct])
   end
 
   defp maybe_enrich(other), do: other
