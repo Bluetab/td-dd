@@ -100,9 +100,10 @@ defmodule TdDd.Grants.ApprovalRules do
   end
 
   def get_rules_for_request(
-        %GrantRequest{domain_ids: [domain_id], pending_roles: pending_roles} = grant_request
+        %GrantRequest{domain_ids: request_domain_ids, pending_roles: pending_roles} =
+          grant_request
       ) do
-    domain_ids = TaxonomyCache.reaching_domain_ids(domain_id)
+    domain_ids = TaxonomyCache.reaching_domain_ids(request_domain_ids)
 
     rules =
       ApprovalRule
