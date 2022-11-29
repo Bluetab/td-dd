@@ -818,11 +818,12 @@ defmodule TdDq.Implementations.ImplementationTest do
 
       implementation_key = "rik1"
 
-      rule_implementation = :ruleless_implementation
+      rule_implementation =
+        :ruleless_implementation
         |> insert(
-            implementation_key: implementation_key,
-            populations: creation_attrs.populations
-          )
+          implementation_key: implementation_key,
+          populations: creation_attrs.populations
+        )
         |> Repo.preload(:implementation_ref_struct)
 
       assert %{

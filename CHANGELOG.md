@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.56.1] 2022-11-29
+
+### Fixed
+
+- [TD-5374] Approve rule grant request for a structure with multiple domains
+
 ## [4.56.0] 2022-11-28
 
 ### Changed
