@@ -432,7 +432,8 @@ defmodule TdDq.Implementations.Implementation do
       structure_names = get_structure_names(structures)
       structure_aliases = Implementations.get_sources(implementation)
 
-      %Implementation{inserted_at: ref_inserted_at} = Map.get(implementation, :implementation_ref_struct)
+      %Implementation{inserted_at: ref_inserted_at} =
+        Map.get(implementation, :implementation_ref_struct)
 
       template = TemplateCache.get_by_name!(implementation.df_name) || %{content: []}
 
