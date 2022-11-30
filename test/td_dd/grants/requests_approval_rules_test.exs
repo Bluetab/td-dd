@@ -277,6 +277,57 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
              } = Requests.get_grant_request!(request_id, claims)
     end
 
+    test "approve rule for structure with multiple domains", %{
+      approver_user_id: approver_user_id,
+      domain_ids: [domain_id_1]
+    } do
+      %{id: domain_id_2} = CacheHelpers.insert_domain()
+
+      domain_ids = [domain_id_1, domain_id_2]
+
+      %{data_structure: data_structure} =
+        insert(:data_structure_version,
+          data_structure:
+            build(:data_structure,
+              domain_ids: domain_ids
+            ),
+          metadata: %{"field" => "foo", "other" => "baz"}
+        )
+
+      insert(:approval_rule,
+        role: @approver_role,
+        user_id: approver_user_id,
+        domain_ids: domain_ids,
+        conditions: [
+          %{field: "metadata.field", operator: "eq", value: "foo"}
+        ]
+      )
+
+      %{user_id: user_id} = claims = build(:claims)
+
+      params = %{
+        type: @template_name,
+        requests: [
+          %{
+            data_structure_id: data_structure.id,
+            metadata: @valid_metadata
+          }
+        ],
+        user_id: user_id,
+        created_by_id: user_id
+      }
+
+      assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
+               Requests.create_grant_request_group(params, claims)
+
+      assert %{
+               current_status: "approved",
+               approvals: [
+                 %{user_id: ^approver_user_id}
+               ]
+             } = Requests.get_grant_request!(request_id, claims)
+    end
+
     test "do not match rule if one condition is not met", %{
       approver_user_id: approver_user_id,
       domain_ids: domain_ids,
