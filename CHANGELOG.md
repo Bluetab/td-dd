@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-5161] Get specific domains along with their children for `api/v2`
+
 ## [4.56.1] 2022-11-29
 
 ### Fixed
