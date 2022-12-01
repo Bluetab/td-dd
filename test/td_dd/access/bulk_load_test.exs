@@ -108,31 +108,31 @@ defmodule TdDd.Access.BulkLoadTest do
     test "mixed good and bad accesses", %{
       accesses: accesses,
       bad_accesses: bad_accesses,
-      ds_external_id: ds_external_id,
+      data_structure_id: data_structure_id,
       user: %{id: user_id}
     } do
       {entries_count, invalid_changesets, inexistent_external_ids} =
         BulkLoad.bulk_load(accesses ++ bad_accesses)
 
-      inserted_accesses = Repo.all(Access) |> Repo.preload(:data_structure)
+      inserted_accesses = Repo.all(Access)
 
       assert Enum.count(inserted_accesses) == entries_count
 
       assert [
                %TdDd.Access{
-                 data_structure: %{external_id: ^ds_external_id},
+                 data_structure_id: ^data_structure_id,
                  details: %{"db" => "some_db_1", "table" => "some_table_1"},
                  source_user_name: "tld.domain.oracle",
                  user_id: ^user_id
                },
                %TdDd.Access{
-                 data_structure: %{external_id: ^ds_external_id},
+                 data_structure_id: ^data_structure_id,
                  details: %{"db" => "some_db_2", "table" => "some_table_2"},
                  source_user_name: "tld.domain.postgres",
                  user_id: ^user_id
                },
                %TdDd.Access{
-                 data_structure: %{external_id: ^ds_external_id},
+                 data_structure_id: ^data_structure_id,
                  details: %{"db" => "some_db_3", "table" => "some_table_3"},
                  source_user_name: "tld.domain.postgres",
                  user_id: nil
@@ -141,45 +141,24 @@ defmodule TdDd.Access.BulkLoadTest do
 
       assert [
                %Ecto.Changeset{
-                 changes: %{
-                   user_id: ^user_id
-                 },
-                 errors: [
-                   source_user_name: {
-                     "can't be blank",
-                     [
-                       validation: :required
-                     ]
-                   }
-                 ],
+                 changes: %{user_id: ^user_id},
+                 errors: [source_user_name: {"can't be blank", [validation: :required]}],
                  valid?: false
                },
                %Ecto.Changeset{
-                 changes: %{
-                   user_id: ^user_id
-                 },
-                 errors: [
-                   source_user_name: {
-                     "is invalid",
-                     [
-                       type: :string,
-                       validation: :cast
-                     ]
-                   }
-                 ],
+                 changes: %{user_id: ^user_id},
+                 errors: [source_user_name: {"is invalid", [type: :string, validation: :cast]}],
                  valid?: false
                }
              ] = invalid_changesets
 
-      assert [
-               "inexistent_id_1",
-               "inexistent_id_2"
-             ] = inexistent_external_ids
+      assert ["inexistent_id_1", "inexistent_id_2"] = inexistent_external_ids
     end
   end
 
-  test "update user_id when access records exists",
-       %{user: %{id: user_id, user_name: user_name}, ds_external_id: ds_external_id} do
+  test "update user_id when access records exists", %{user: user, ds_external_id: ds_external_id} do
+    %{id: user_id, user_name: user_name} = user
+
     access = %{
       "data_structure_external_id" => ds_external_id,
       "source_user_name" => "tld.domain.oracle",
