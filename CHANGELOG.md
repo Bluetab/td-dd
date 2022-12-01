@@ -1,17 +1,28 @@
 # Changelog
 
-## [Unreleased]
+## [4.56.1] 2022-11-29
+
+### Fixed
+
+- [TD-5374] Approve rule grant request for a structure with multiple domains
+
+## [4.56.0] 2022-11-28
 
 ### Changed
 
-- [TD-5289] Elasticsearch 7 compatibility
 - [TD-5342] Refactor bulk operations to use Elasticsearch scroll API
 - [TD-5136] Download of structures include all structure domains with complete
   path
+- [TD-5341] Created indices on foreign key constraints to improve performance
+  when physically deleting data structures
+- [TD-4179] Implementation indexing uses inserted_at of original ref
+- [TD-4711] Improved user feedback for errors in implementation upload
 
 ### Added
 
+- [TD-5289] Elasticsearch 7 compatibility
 - [TD-5258] Approve grants request rules
+- [TD-5286] Implementation results pagination
 
 ## [4.55.0] 2022-11-14
 

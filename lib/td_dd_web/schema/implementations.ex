@@ -75,6 +75,14 @@ defmodule TdDdWeb.Schema.Implementations do
     field :execution_filters, list_of(:execution_filter),
       resolve: &Resolvers.Executions.executions_filters/3
 
+    field :results_connection, :results_connection do
+      arg(:first, :integer)
+      arg(:last, :integer)
+      arg(:after, :cursor)
+      arg(:before, :cursor)
+      resolve(&Resolvers.ImplementationResults.results_connection/3)
+    end
+
     field :executions_connection, :executions_connection do
       arg(:first, :integer)
       arg(:last, :integer)

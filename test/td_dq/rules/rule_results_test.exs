@@ -75,7 +75,7 @@ defmodule TdDq.RuleResultsTest do
       insert(:rule_result, implementation: implementation1)
       result = insert(:rule_result, implementation: implementation2)
 
-      {:ok, %{all: rule_results}} = RuleResults.list_rule_results()
+      {:ok, %{all: rule_results}} = RuleResults.list_rule_results_paginate()
       assert rule_results <|> [result]
     end
 
@@ -87,7 +87,7 @@ defmodule TdDq.RuleResultsTest do
       result = insert(:rule_result, implementation: implementation2, date: "2000-02-01T11:11:11")
 
       {:ok, %{all: rule_results}} =
-        RuleResults.list_rule_results(%{"since" => "2000-01-11T11:11:11"})
+        RuleResults.list_rule_results_paginate(%{"since" => "2000-01-11T11:11:11"})
 
       assert rule_results <|> [result]
     end

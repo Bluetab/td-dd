@@ -26,5 +26,12 @@ defmodule TdDdWeb.Schema.ImplementationResults do
     field :records, :integer
     field :result_type, :string
     field :result, :string
+    field :implementation, :implementation
+  end
+
+  object :results_connection do
+    field :total_count, non_null(:integer)
+    field :page, list_of(:implementation_result)
+    field :page_info, :page_info
   end
 end
