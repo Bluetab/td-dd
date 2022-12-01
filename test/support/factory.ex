@@ -709,9 +709,16 @@ defmodule TdDd.Factory do
     |> merge_attributes(attrs)
   end
 
-  def label_factory(attrs) do
-    %Label{
-      name: sequence("label_name")
+  def label_factory do
+    %Label{name: sequence("label_name")}
+  end
+
+  def access_factory(attrs) do
+    attrs = default_assoc(attrs, :data_structure_external_id, :data_structure)
+
+    %TdDd.Access{
+      source_user_name: sequence("access_source_user_name"),
+      details: %{}
     }
     |> merge_attributes(attrs)
   end
