@@ -61,14 +61,14 @@ defmodule TdDd.Lineage.GraphData.Nodes do
   end
 
   defp get_nodes(children, claims, domain_id) do
-      %{external_id: children}
-      |> Units.list_nodes(preload: [:units, :structure])
-      |> Enum.map(&domain_ids/1)
-      |> Enum.map(&parent_domain_ids/1)
-      |> Enum.filter(fn %{parent_ids: parent_ids} -> domain_id in parent_ids end)
-      #credo:disable-for-lines:2
-      |> Enum.filter(&Bodyguard.permit?(Units, :view_lineage, claims, &1))
-      |> Enum.filter(&Bodyguard.permit?(Units, :view_lineage, claims, &1.structure))
+    %{external_id: children}
+    |> Units.list_nodes(preload: [:units, :structure])
+    |> Enum.map(&domain_ids/1)
+    |> Enum.map(&parent_domain_ids/1)
+    |> Enum.filter(fn %{parent_ids: parent_ids} -> domain_id in parent_ids end)
+    # credo:disable-for-lines:2
+    |> Enum.filter(&Bodyguard.permit?(Units, :view_lineage, claims, &1))
+    |> Enum.filter(&Bodyguard.permit?(Units, :view_lineage, claims, &1.structure))
   end
 
   defp hidden?(%Graph{} = t, id) do
