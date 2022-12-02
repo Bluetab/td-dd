@@ -6,6 +6,7 @@
 
 - [TD-5365] Foreign key from `accesses` to `data_structures` now uses `id`
   (primary key) instead of `external_id`
+- [TD-5367] Enrich grant details with actions and user
 
 ## [4.56.1] 2022-11-29
 

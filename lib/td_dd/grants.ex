@@ -6,6 +6,7 @@ defmodule TdDd.Grants do
   import Ecto.Query
 
   alias Ecto.Multi
+  alias TdCache.UserCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
   alias TdDd.Grants.Grant
@@ -19,6 +20,7 @@ defmodule TdDd.Grants do
     Grant
     |> Repo.get!(id)
     |> Repo.preload(opts[:preload] || [])
+    |> maybe_put_user()
   end
 
   def create_grant(
@@ -40,22 +42,6 @@ defmodule TdDd.Grants do
     |> Multi.run(:audit, Audit, :grant_created, [user_id])
     |> Repo.transaction()
     |> reindex_grants(is_bulk)
-  end
-
-  defp reindex_grants(result, is_bulk \\ false)
-
-  defp reindex_grants({:ok, %{grant: %Grant{id: id}} = multi}, false) do
-    IndexWorker.reindex_grants(id)
-    {:ok, multi}
-  end
-
-  defp reindex_grants({:ok, %{grant: _grant} = multi}, true), do: {:ok, multi}
-
-  defp reindex_grants(error, _), do: error
-
-  defp on_delete({:ok, %{grant: %Grant{id: id}} = multi}) do
-    IndexWorker.delete_grants(id)
-    {:ok, multi}
   end
 
   def update_grant(%Grant{} = grant, params, %Claims{user_id: user_id}) do
@@ -101,5 +87,29 @@ defmodule TdDd.Grants do
         preload(q, ^preloads)
     end)
     |> Repo.all()
+  end
+
+  defp reindex_grants(result, is_bulk \\ false)
+
+  defp reindex_grants({:ok, %{grant: %Grant{id: id}} = multi}, false) do
+    IndexWorker.reindex_grants(id)
+    {:ok, multi}
+  end
+
+  defp reindex_grants({:ok, %{grant: _grant} = multi}, true), do: {:ok, multi}
+
+  defp reindex_grants(error, _), do: error
+
+  defp on_delete({:ok, %{grant: %Grant{id: id}} = multi}) do
+    IndexWorker.delete_grants(id)
+    {:ok, multi}
+  end
+
+  defp maybe_put_user(%Grant{user_id: user_id} = grant) do
+    with {:ok, user} <- UserCache.get(user_id) do
+      Map.put(grant, :user, user)
+    else
+      _ -> grant
+    end
   end
 end
