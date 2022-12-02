@@ -1,6 +1,7 @@
 defmodule TdDd.Lineage.Policy do
   @moduledoc "Authorization rules for Lineage"
 
+  alias TdDd.DataStructures.DataStructure
   alias TdDd.Lineage.LineageEvent
   alias TdDd.Lineage.Units.Node
   alias TdDd.Permissions
@@ -23,8 +24,15 @@ defmodule TdDd.Lineage.Policy do
     Permissions.authorized?(claims, :view_lineage, domain_ids)
   end
 
-  def authorize(:view_lineage, %{} = claims, %Node{}),
-    do: Permissions.authorized?(claims, :view_lineage)
+  def authorize(:view_lineage, %{} = claims, %Node{}) do
+    Permissions.authorized?(claims, :view_lineage)
+  end
+
+  def authorize(_action, %{}, %DataStructure{domain_ids: nil}), do: false
+
+  def authorize(:view_lineage, %{} = claims, %DataStructure{domain_ids: domain_ids}) do
+    Permissions.authorized?(claims, :view_lineage, domain_ids)
+  end
 
   def authorize(_action, _claims, _params), do: false
 end
