@@ -47,7 +47,7 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
           role: @approver_role,
           user_id: approver_user_id,
           domain_ids: domain_ids,
-          conditions: [%{field: "request.string", operator: "eq", value: "bar"}]
+          conditions: [%{field: "request.list", operator: "subset", values: ["one"]}]
         )
 
       %{user_id: user_id} = claims = build(:claims)

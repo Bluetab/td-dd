@@ -54,7 +54,7 @@ defmodule TdDdWeb.Schema.GrantApprovalRules do
   input_object :condition_input do
     field :field, non_null(:string)
     field :operator, non_null(:string)
-    field :value, non_null(:string)
+    field :values, non_null(list_of(non_null(:string)))
   end
 
   input_object :update_grant_approval_rule_input do
@@ -84,6 +84,6 @@ defmodule TdDdWeb.Schema.GrantApprovalRules do
   object :condition do
     field :field, non_null(:string)
     field :operator, non_null(:string)
-    field :value, non_null(:string)
+    field :values, list_of(:string)
   end
 end

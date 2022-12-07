@@ -598,7 +598,7 @@ defmodule TdDd.Factory do
   end
 
   def approval_rule_condition_factory do
-    %TdDd.Grants.Condition{field: "foo", operator: "is", value: "bar"}
+    %TdDd.Grants.Condition{field: "foo", operator: "is", values: ["bar"]}
   end
 
   def regex_filter_factory(attrs) do
