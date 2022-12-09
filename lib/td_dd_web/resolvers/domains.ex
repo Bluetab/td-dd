@@ -44,8 +44,8 @@ defmodule TdDdWeb.Resolvers.Domains do
     |> permitted_domain_ids(action)
     |> maybe_filter(action)
     |> Enum.map(&TaxonomyCache.get_domain/1)
-    |> maybe_filter_by_domain_ids(domain_ids)
     |> Enum.reject(&is_nil/1)
+    |> maybe_filter_by_domain_ids(domain_ids)
   end
 
   def maybe_filter_by_domain_ids(domains, []), do: domains
