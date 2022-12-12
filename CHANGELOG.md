@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-5161] Get specific domains along with their children for `api/v2`
+
 ### Changed
 
 - [TD-5365] Foreign key from `accesses` to `data_structures` now uses `id`
