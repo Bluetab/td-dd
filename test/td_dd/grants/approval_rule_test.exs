@@ -1,10 +1,10 @@
 defmodule TdDd.Grants.ApprovalRuleTest do
-  alias TdDd.Grants.ApprovalRule
-
   use TdDd.DataCase
 
+  alias TdDd.Grants.ApprovalRule
+
   @role "test role"
-  @conditions [%{"field" => "foo", "operator" => "is", "value" => "bar"}]
+  @conditions [%{"field" => "foo", "operator" => "is", "values" => ["bar"]}]
 
   setup do
     %{id: user_id} = CacheHelpers.insert_user()

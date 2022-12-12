@@ -23,7 +23,7 @@ defmodule TdDdWeb.Schema.GrantApprovalRulesTest do
       conditions {
         field
         operator
-        value
+        values
       }
       comment
     }
@@ -54,7 +54,7 @@ defmodule TdDdWeb.Schema.GrantApprovalRulesTest do
       conditions {
         field
         operator
-        value
+        values
       }
     }
   }
@@ -161,7 +161,7 @@ defmodule TdDdWeb.Schema.GrantApprovalRulesTest do
                "action" => "reject",
                "comment" => "bla",
                "conditions" => [
-                 %{"field" => "foo", "operator" => "is", "value" => "bar"}
+                 %{"field" => "foo", "operator" => "is", "values" => ["bar"]}
                ],
                "domainIds" => [^string_domain_id],
                "id" => ^string_approval_id,
@@ -309,7 +309,7 @@ defmodule TdDdWeb.Schema.GrantApprovalRulesTest do
         "comment" => "new_comment",
         "action" => "reject",
         "conditions" => [
-          %{"field" => "new", "operator" => "is not", "value" => "condition"}
+          %{"field" => "new", "operator" => "is not", "values" => ["condition"]}
         ]
       }
 
@@ -331,7 +331,7 @@ defmodule TdDdWeb.Schema.GrantApprovalRulesTest do
                "comment" => "new_comment",
                "action" => "reject",
                "conditions" => [
-                 %{"field" => "new", "operator" => "is not", "value" => "condition"}
+                 %{"field" => "new", "operator" => "is not", "values" => ["condition"]}
                ],
                "domainIds" => [^string_domain_id],
                "id" => ^string_approval_id,

@@ -128,42 +128,57 @@ defmodule TdDd.Grants.ApprovalRules do
     Enum.all?(conditions, &match_condition(&1, grant_request))
   end
 
-  defp match_condition(
-         %{field: "request." <> field, operator: operator, value: value},
-         grant_request
-       ) do
-    metadata = get_request_metadata(grant_request)
-    match_condition(field, operator, value, metadata)
+  defp match_condition(%{value: value, values: nil} = condition, grant_request)
+       when is_binary(value) do
+    # TD-5391 value is deprecated - use values instead
+    match_condition(%{condition | values: [value], value: nil}, grant_request)
   end
 
   defp match_condition(
-         %{field: "metadata." <> field, operator: operator, value: value},
+         %{field: "request." <> field, operator: operator, values: values},
+         grant_request
+       ) do
+    metadata = get_request_metadata(grant_request)
+    match_condition(field, operator, values, metadata)
+  end
+
+  defp match_condition(
+         %{field: "metadata." <> field, operator: operator, values: values},
          grant_request
        ) do
     metadata = get_data_structure_metadata(grant_request)
     mutable = get_data_structure_mutable_metadata(grant_request)
 
-    match_condition(field, operator, value, metadata) or
-      match_condition(field, operator, value, mutable)
+    match_condition(field, operator, values, metadata) or
+      match_condition(field, operator, values, mutable)
   end
 
   defp match_condition(
-         %{field: "note." <> field, operator: operator, value: value},
+         %{field: "note." <> field, operator: operator, values: values},
          grant_request
        ) do
     metadata = get_data_structure_note(grant_request)
-    match_condition(field, operator, value, metadata)
+    match_condition(field, operator, values, metadata)
   end
 
   defp match_condition(_, _), do: false
 
   defp match_condition(_, _, _, nil), do: false
 
-  defp match_condition(field, "eq", value, metadata),
-    do: Map.has_key?(metadata, field) and value == Map.get(metadata, field)
+  defp match_condition(field, "eq", [value], metadata) when is_map_key(metadata, field),
+    do: value == Map.get(metadata, field)
 
-  defp match_condition(field, "neq", value, metadata),
-    do: Map.has_key?(metadata, field) and value != Map.get(metadata, field)
+  defp match_condition(field, "neq", [value], metadata) when is_map_key(metadata, field),
+    do: value != Map.get(metadata, field)
+
+  defp match_condition(field, "subset", values, metadata)
+       when is_map_key(metadata, field) and is_list(values) do
+    metadata
+    |> Map.get(field)
+    |> List.wrap()
+    |> MapSet.new()
+    |> MapSet.subset?(MapSet.new(values))
+  end
 
   defp match_condition(_, _, _, _), do: false
 
