@@ -70,12 +70,8 @@ defmodule TdDd.Grants.Requests do
     |> Repo.transaction()
   end
 
-  defp maybe_apply_approval_rules(_, %{requests: requests}, claims) do
+  defp maybe_apply_approval_rules(_, %{requests: {_, requests}}, claims) do
     requests
-    |> case do
-      {_, requests} -> requests
-      _ -> []
-    end
     |> Enum.map(&get_grant_request_for_rules!(&1, claims))
     |> Enum.map(&ApprovalRules.get_rules_for_request/1)
     |> Enum.flat_map(&flatten_request_rules/1)
@@ -88,21 +84,16 @@ defmodule TdDd.Grants.Requests do
 
   defp flatten_request_rules({request, rules}) do
     rules
-    |> Enum.map(fn %{
-                     action: action,
-                     role: role,
-                     comment: comment,
-                     user_id: user_id,
-                     id: approval_rule_id
-                   } ->
-      case UserCache.get(user_id) do
-        {:ok, nil} ->
-          nil
+    |> Enum.map(fn
+      %{action: action, role: role, comment: comment, user_id: user_id, id: approval_rule_id} ->
+        case UserCache.get(user_id) do
+          {:ok, nil} ->
+            nil
 
-        {:ok, %{role: user_role}} ->
-          {%{user_id: user_id, role: user_role}, request,
-           %{is_rejection: action == "reject", role: role, comment: comment}, approval_rule_id}
-      end
+          {:ok, %{role: user_role}} ->
+            {%{user_id: user_id, role: user_role}, request,
+             %{is_rejection: action == "reject", role: role, comment: comment}, approval_rule_id}
+        end
     end)
     |> Enum.reject(&is_nil/1)
   end
