@@ -237,8 +237,8 @@ defmodule TdDdWeb.GrantControllerTest do
     end
 
     @tag authentication: [
-      role: "admin"
-    ]
+           role: "admin"
+         ]
     test "admin has only available actions based on grant pending removal",
          %{conn: conn, grant: %{id: id}} do
       assert %{"_actions" => actions} =
