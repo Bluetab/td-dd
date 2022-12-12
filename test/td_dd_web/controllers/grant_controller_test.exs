@@ -237,6 +237,18 @@ defmodule TdDdWeb.GrantControllerTest do
     end
 
     @tag authentication: [
+      role: "admin"
+    ]
+    test "admin has only available actions based on grant pending removal",
+         %{conn: conn, grant: %{id: id}} do
+      assert %{"_actions" => actions} =
+               get(conn, Routes.grant_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert actions == %{"request_removal" => %{}}
+    end
+
+    @tag authentication: [
            permissions: [:view_grants, :view_data_structure, :request_grant_removal]
          ]
     test "user with `request_grant_removal` premissions has actions to cancel grant removal on show",
