@@ -106,9 +106,8 @@ defmodule TdDd.Grants do
   end
 
   defp maybe_put_user(%Grant{user_id: user_id} = grant) do
-    with {:ok, user} <- UserCache.get(user_id) do
-      Map.put(grant, :user, user)
-    else
+    case UserCache.get(user_id) do
+      {:ok, user} -> Map.put(grant, :user, user)
       _ -> grant
     end
   end
