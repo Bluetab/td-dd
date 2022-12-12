@@ -3,9 +3,7 @@ defmodule TdDd.Grants.ApprovalRulesTest do
 
   import TdDd.TestOperators
 
-  alias TdDd.Grants.ApprovalRule
   alias TdDd.Grants.ApprovalRules
-  alias TdDd.Grants.Condition
 
   @approval_role "approval_role"
 
@@ -49,17 +47,17 @@ defmodule TdDd.Grants.ApprovalRulesTest do
         role: @approval_role,
         domain_ids: [domain_id],
         action: "approve",
-        conditions: [%{field: "bar", operator: "is", value: "foo"}],
+        conditions: [%{field: "bar", operator: "is", values: ["foo"]}],
         comment: "bar"
       }
 
-      assert {:ok, %ApprovalRule{conditions: approval_condition} = approval_rule} =
+      assert {:ok, %{conditions: conditions} = approval_rule} =
                ApprovalRules.create(params, claims)
 
       assert %{user_id: ^user_id, domain_ids: [^domain_id], action: "approve", comment: "bar"} =
                approval_rule
 
-      assert [%Condition{field: "bar", operator: "is", value: "foo"}] = approval_condition
+      assert [%{field: "bar", operator: "is", values: ["foo"]}] = conditions
     end
 
     test "return error with invalid params", %{claims: claims} do
@@ -79,7 +77,7 @@ defmodule TdDd.Grants.ApprovalRulesTest do
       params = %{
         role: new_role,
         action: "reject",
-        conditions: [%{field: "bar", operator: "is not", value: "foo"}],
+        conditions: [%{field: "bar", operator: "is not", values: ["foo"]}],
         comment: "foo"
       }
 
@@ -92,7 +90,7 @@ defmodule TdDd.Grants.ApprovalRulesTest do
                 conditions: conditions
               }} = ApprovalRules.update(approval_rule, params, claims)
 
-      assert [%Condition{field: "bar", operator: "is not", value: "foo"}] = conditions
+      assert [%{field: "bar", operator: "is not", values: ["foo"]}] = conditions
     end
   end
 
@@ -101,7 +99,7 @@ defmodule TdDd.Grants.ApprovalRulesTest do
       %{id: id} =
         approval_rule = insert(:approval_rule, user_id: user_id, domain_ids: [domain_id])
 
-      assert {:ok, %ApprovalRule{id: ^id}} = ApprovalRules.delete(approval_rule)
+      assert {:ok, %{id: ^id}} = ApprovalRules.delete(approval_rule)
 
       assert_raise Ecto.NoResultsError, fn -> ApprovalRules.get!(id) end
     end
