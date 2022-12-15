@@ -142,7 +142,7 @@ defmodule TdDd.GrantsTest do
       assert {_, [constraint: :check, constraint_name: "date_range"]} = errors[:end_date]
     end
 
-    test "will not allow two grants of same structure and user on the same period",
+    test "allow two grants of same structure and user on the same period",
          %{user_id: user_id, data_structure: data_structure, claims: claims} do
       params = %{
         end_date: "2010-04-20",
@@ -159,10 +159,7 @@ defmodule TdDd.GrantsTest do
         source_user_name: "source_user_name"
       }
 
-      assert {:error, :grant, %{errors: errors}, _} =
-               Grants.create_grant(params, data_structure, claims)
-
-      assert {_, [{:constraint, :exclusion}, {:constraint_name, "no_overlap"}]} = errors[:user_id]
+      assert {:ok, _} = Grants.create_grant(params, data_structure, claims)
 
       params = %{
         start_date: "2010-04-15",
@@ -171,10 +168,7 @@ defmodule TdDd.GrantsTest do
         source_user_name: "source_user_name"
       }
 
-      assert {:error, :grant, %{errors: errors}, _} =
-               Grants.create_grant(params, data_structure, claims)
-
-      assert {_, [{:constraint, :exclusion}, {:constraint_name, "no_overlap"}]} = errors[:user_id]
+      assert {:ok, _} = Grants.create_grant(params, data_structure, claims)
     end
 
     test "will allow two grants of same structure and user on different periods",

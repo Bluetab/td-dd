@@ -99,7 +99,7 @@ defmodule TdDd.Grants.BulkLoadTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "return error when one of the grants exist", %{
+    test "permit more than one grants exist", %{
       data_structure_1: %{external_id: data_structure_external_id_1},
       user_id_1: user_id_1,
       source_user_name_1: source_user_name_1,
@@ -117,11 +117,11 @@ defmodule TdDd.Grants.BulkLoadTest do
         }
       ]
 
-      assert assert {:ok, [_]} = BulkLoad.bulk_load(claims, grants)
+      Enum.map(1..2, fn _ ->
+        assert assert {:ok, [_]} = BulkLoad.bulk_load(claims, grants)
+      end)
 
-      assert assert {:error, %Ecto.Changeset{}} = BulkLoad.bulk_load(claims, grants)
-
-      assert length(Grants.list_grants([])) == 1
+      assert length(Grants.list_grants([])) == 2
     end
 
     @tag authentication: [role: "admin"]
