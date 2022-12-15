@@ -22,6 +22,18 @@ defmodule TdDdWeb.Schema.DomainTest do
   }
   """
 
+  @domains_with_ids """
+  query Domains($action: String!, $domainActions: [String!], $ids: [ID!]) {
+    domains(action: $action, ids: $ids) {
+      id
+      parentId
+      externalId
+      name
+      actions(actions: $domainActions)
+    }
+  }
+  """
+
   @variables %{"action" => "manageTags"}
 
   describe "domains query" do
@@ -52,6 +64,55 @@ defmodule TdDdWeb.Schema.DomainTest do
       assert %{"domains" => domains} = data
 
       assert_lists_equal(domains, [d1, d2], &(&1 == expected(&2)))
+    end
+
+    @tag authentication: [role: "user", permissions: [:nothing]]
+    test "returns specific domains queried by user with permissions", %{
+      conn: conn,
+      claims: claims
+    } do
+      %{id: domain_id_1} = CacheHelpers.insert_domain()
+      %{id: domain_id_2} = CacheHelpers.insert_domain()
+      %{id: domain_id_3} = CacheHelpers.insert_domain()
+      %{id: domain_children_2} = CacheHelpers.insert_domain(parent_id: domain_id_2)
+
+      CacheHelpers.put_session_permissions(claims, %{
+        link_data_structure_tag: [
+          domain_id_1,
+          domain_id_2,
+          domain_id_3,
+          domain_children_2
+        ]
+      })
+
+      [domain_id_2, domain_id_3, domain_children_2] =
+        Enum.map([domain_id_2, domain_id_3, domain_children_2], fn id ->
+          to_string(id)
+        end)
+
+      assert %{"data" => data} =
+               resp =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @domains_with_ids,
+                 "variables" => %{
+                   "action" => "manageTags",
+                   "domainActions" => ["manageTags"],
+                   "ids" => [domain_id_2, domain_id_3]
+                 }
+               })
+               |> json_response(:ok)
+
+      refute Map.has_key?(resp, "errors")
+
+      domains_actions =
+        Map.new(data["domains"], fn %{"actions" => actions, "id" => id} -> {id, actions} end)
+
+      assert %{
+               domain_id_2 => ["manageTags"],
+               domain_id_3 => ["manageTags"],
+               domain_children_2 => ["manageTags"]
+             } == domains_actions
     end
 
     @tag authentication: [role: "user", permissions: [:link_data_structure_tag]]
