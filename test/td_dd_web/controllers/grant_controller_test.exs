@@ -212,7 +212,7 @@ defmodule TdDdWeb.GrantControllerTest do
       conn: conn,
       data_structure: %{id: data_structure_id} = data_structure
     } do
-      name = "cualquier nombre raruno"
+      name = "foo"
       insert(:data_structure_version, data_structure_id: data_structure_id, name: name)
       %{id: id} = insert(:grant, data_structure: data_structure)
 
