@@ -7,11 +7,6 @@
 - [TD-5365] Foreign key from `accesses` to `data_structures` now uses `id`
   (primary key) instead of `external_id`
 
-### Added
-
-- [TD-5343] Use structures domain in data catalog for data lineage objects 
-  that have been linked
-
 ## [4.56.1] 2022-11-29
 
 ### Fixed
