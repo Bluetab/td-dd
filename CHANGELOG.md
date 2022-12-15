@@ -1,11 +1,17 @@
 # Changelog
 
-## [Unreleased]
+## [4.57.0] 2022-12-12
+
+### Added
+
+- [TD-5161] Get specific domains along with their children for `api/v2`
 
 ### Changed
 
 - [TD-5365] Foreign key from `accesses` to `data_structures` now uses `id`
   (primary key) instead of `external_id`
+- [TD-5391] Grant approval condition rules now use `values` instead of single
+  `value`
 
 ## [4.56.1] 2022-11-29
 

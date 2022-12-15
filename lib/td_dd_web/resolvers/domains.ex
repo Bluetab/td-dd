@@ -8,6 +8,12 @@ defmodule TdDdWeb.Resolvers.Domains do
   alias TdDd.Lineage.NodeQuery
   alias TdDd.Lineage.Units
 
+  @spec domains(any, any, any) :: {:ok, list}
+
+  def domains(_parent, %{action: action, ids: ids}, resolution) do
+    {:ok, permitted_domains(action, resolution, ids)}
+  end
+
   def domains(_parent, %{action: action}, resolution) do
     {:ok, permitted_domains(action, resolution)}
   end
@@ -33,13 +39,29 @@ defmodule TdDdWeb.Resolvers.Domains do
     {:ok, TaxonomyCache.get_domain(id)}
   end
 
-  defp permitted_domains(action, resolution) do
+  defp permitted_domains(action, resolution, domain_ids \\ []) do
     resolution
     |> claims()
     |> permitted_domain_ids(action)
     |> maybe_filter(action)
     |> Enum.map(&TaxonomyCache.get_domain/1)
     |> Enum.reject(&is_nil/1)
+    |> maybe_filter_by_domain_ids(domain_ids)
+  end
+
+  def maybe_filter_by_domain_ids(domains, []), do: domains
+
+  def maybe_filter_by_domain_ids(domains, domain_ids) do
+    domain_ids
+    |> Enum.map(fn id ->
+      String.to_integer(id)
+    end)
+    |> TaxonomyCache.reachable_domain_ids()
+    |> then(
+      &Enum.filter(domains, fn %{id: id} ->
+        Enum.member?(&1, id)
+      end)
+    )
   end
 
   def fetch_permission_domains({:actions, %{actions: actions}}, domains, %{claims: claims}) do
@@ -94,6 +116,26 @@ defmodule TdDdWeb.Resolvers.Domains do
     |> Permissions.permitted_domain_ids([
       :manage_raw_quality_rule_implementations,
       :manage_ruleless_implementations
+    ])
+    |> intersection()
+  end
+
+  defp permitted_domain_ids(%{role: "user", jti: jti}, "manageLinkedImplementations") do
+    jti
+    |> Permissions.permitted_domain_ids([
+      :manage_quality_rule_implementations,
+      :manage_ruleless_implementations,
+      :link_implementation_business_concept
+    ])
+    |> intersection()
+  end
+
+  defp permitted_domain_ids(%{role: "user", jti: jti}, "manageLinkedRawImplementations") do
+    jti
+    |> Permissions.permitted_domain_ids([
+      :manage_raw_quality_rule_implementations,
+      :manage_ruleless_implementations,
+      :link_implementation_business_concept
     ])
     |> intersection()
   end
