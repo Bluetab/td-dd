@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-5343] Use structures domain in data catalog for data lineage objects 
+  that have been linked
+
 ## [4.57.0] 2022-12-12
 
 ### Added
