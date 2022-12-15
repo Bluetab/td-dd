@@ -12,6 +12,8 @@ defmodule TdDdWeb.GrantController do
 
   action_fallback(TdDdWeb.FallbackController)
 
+  @grant_actions [:request_removal, :cancel_removal]
+
   def swagger_definitions do
     SwaggerDefinitions.grant_swagger_definitions()
   end
@@ -85,9 +87,15 @@ defmodule TdDdWeb.GrantController do
 
   def show(conn, %{"id" => id}) do
     with claims <- conn.assigns[:current_resource],
-         %Grant{} = grant <- Grants.get_grant!(id, preload: [:data_structure, :system]),
+         %Grant{} = grant <-
+           Grants.get_grant!(id, preload: [:data_structure, :data_structure_version, :system]),
          :ok <- Bodyguard.permit(Grants, :view, claims, grant) do
-      render(conn, "show.json", grant: grant)
+      actions =
+        @grant_actions
+        |> Enum.filter(&Bodyguard.permit?(Grants, &1, claims, grant))
+        |> Map.new(fn value -> {value, %{}} end)
+
+      render(conn, "show.json", grant: grant, actions: actions)
     end
   end
 
@@ -123,7 +131,7 @@ defmodule TdDdWeb.GrantController do
   def update(conn, %{"id" => id, "action" => "cancel_removal"}) do
     with claims <- conn.assigns[:current_resource],
          %Grant{} = grant <- Grants.get_grant!(id, preload: :data_structure),
-         :ok <- Bodyguard.permit(Grants, :request_removal, claims, grant),
+         :ok <- Bodyguard.permit(Grants, :cancel_removal, claims, grant),
          {:ok, %{grant: _}} <- Grants.update_grant(grant, %{pending_removal: false}, claims),
          %Grant{} = grant <- Grants.get_grant!(id, preload: [:data_structure, :system]) do
       render(conn, "show.json", grant: grant)

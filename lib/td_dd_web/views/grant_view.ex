@@ -10,6 +10,13 @@ defmodule TdDdWeb.GrantView do
     %{data: render_many(grants, __MODULE__, "grant.json")}
   end
 
+  def render("show.json", %{grant: grant, actions: actions}) do
+    %{
+      data: render_one(grant, __MODULE__, "grant.json"),
+      _actions: actions
+    }
+  end
+
   def render("show.json", %{grant: grant}) do
     %{data: render_one(grant, __MODULE__, "grant.json")}
   end

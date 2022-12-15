@@ -163,6 +163,7 @@ defmodule TdDdWeb.GrantControllerTest do
 
   describe "show grant" do
     setup :create_grant
+    setup :create_data_structure
 
     @tag authentication: [role: "admin"]
     test "can show grant", %{conn: conn, grant: %{id: id}, swagger_schema: schema} do
@@ -204,6 +205,71 @@ defmodule TdDdWeb.GrantControllerTest do
       conn = get(conn, Routes.grant_path(conn, :show, id))
 
       assert json_response(conn, :forbidden)["errors"] != %{}
+    end
+
+    @tag authentication: [permissions: [:view_grants, :view_data_structure]]
+    test "grant has current version name", %{
+      conn: conn,
+      data_structure: %{id: data_structure_id} = data_structure
+    } do
+      name = "foo"
+      insert(:data_structure_version, data_structure_id: data_structure_id, name: name)
+      %{id: id} = insert(:grant, data_structure: data_structure)
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.grant_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{"id" => ^id, "data_structure_version" => %{"name" => ^name}} = data
+    end
+
+    @tag authentication: [
+           permissions: [:view_grants, :view_data_structure, :request_grant_removal]
+         ]
+    test "user with `request_grant_removal` premissions has actions to remove grant on show",
+         %{conn: conn, grant: %{id: id}} do
+      assert %{"_actions" => actions} =
+               get(conn, Routes.grant_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert actions == %{"request_removal" => %{}}
+    end
+
+    @tag authentication: [
+           role: "admin"
+         ]
+    test "admin has only available actions based on grant pending removal",
+         %{conn: conn, grant: %{id: id}} do
+      assert %{"_actions" => actions} =
+               get(conn, Routes.grant_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert actions == %{"request_removal" => %{}}
+    end
+
+    @tag authentication: [
+           permissions: [:view_grants, :view_data_structure, :request_grant_removal]
+         ]
+    test "user with `request_grant_removal` premissions has actions to cancel grant removal on show",
+         %{conn: conn, data_structure: data_structure} do
+      %{id: id} = insert(:grant, data_structure: data_structure, pending_removal: true)
+
+      assert %{"_actions" => actions} =
+               get(conn, Routes.grant_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert actions == %{"cancel_removal" => %{}}
+    end
+
+    @tag authentication: [
+           permissions: [:view_grants, :view_data_structure]
+         ]
+    test "user withouth `request_grant_removal` premissions has not actions to remove grant on show",
+         %{conn: conn, grant: %{id: id}} do
+      assert %{"_actions" => %{}} =
+               get(conn, Routes.grant_path(conn, :show, id))
+               |> json_response(:ok)
     end
   end
 
