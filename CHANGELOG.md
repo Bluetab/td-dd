@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-5367] Enrich grant details with actions and user
+
 ## [4.57.0] 2022-12-12
 
 ### Added
