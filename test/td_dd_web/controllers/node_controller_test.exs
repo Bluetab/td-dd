@@ -11,28 +11,13 @@ defmodule TdDdWeb.NodeControllerTest do
   end
 
   setup tags do
-    nodes =
-      case tags do
-        %{contains: contains, depends: depends} ->
-          groups =
-            Enum.map(contains, fn {parent, _chidren} ->
-              insert(:node, external_id: parent, type: "Group")
-            end)
+    case tags do
+      %{contains: contains, depends: depends} ->
+        create_nodes(contains, depends)
 
-          resources =
-            depends
-            |> Enum.flat_map(fn {from, to} -> [from, to] end)
-            |> Enum.uniq()
-            |> Enum.map(&insert(:node, external_id: &1, type: "Resource"))
-
-          [nodes: groups ++ resources]
-
-        _ ->
-          []
-      end
-
-    GraphData.state(state: setup_state(tags))
-    nodes
+      _ ->
+        []
+    end
   end
 
   describe "NodeController" do
@@ -76,42 +61,86 @@ defmodule TdDdWeb.NodeControllerTest do
     end
 
     @tag authentication: [user_name: "non_admin_user", permissions: [:view_lineage]]
-    @tag contains: %{"foo" => ["bar", "baz"], "xyz" => ["x", "y"]}
-    @tag depends: [{"bar", "baz"}, {"x", "y"}]
-    test "index returns the top-level groups and parent nil filtered by domain id depending on user permissions",
+    @tag contains: %{}
+    @tag depends: []
+    test "index returns groups filtered by domain id in data_structures depending on user permissions ",
          %{
            conn: conn,
-           nodes: nodes,
-           domain: %{id: parent_domain_id}
+           domain: %{id: domain_id}
          } do
-      %{id: domain_id} = CacheHelpers.insert_domain(parent_id: parent_domain_id)
+      %{id: not_permissions_domain_id} = CacheHelpers.insert_domain()
+
+      contains = %{
+        "foo" => ["bar", "baz"],
+        "xyz" => ["x", "y"],
+        "other" => ["other_x", "other_y"]
+      }
+
+      depends = [{"bar", "baz"}, {"x", "y"}, {"other_x", "other_y"}]
+
+      groups =
+        Enum.map(contains, fn {parent, _chidren} ->
+          %{id: data_structure_id} =
+            insert(:data_structure, external_id: parent, domain_ids: [not_permissions_domain_id])
+
+          insert(:node,
+            external_id: parent,
+            type: "Group",
+            structure_id: data_structure_id
+          )
+        end)
+
+      resources =
+        depends
+        |> Enum.flat_map(fn {from, to} -> [from, to] end)
+        |> Enum.uniq()
+        |> Enum.map(fn external_id ->
+          case external_id do
+            "other_y" ->
+              %{id: data_structure_id} =
+                insert(:data_structure, external_id: external_id, domain_ids: [domain_id])
+
+              insert(:node,
+                external_id: external_id,
+                type: "Resource",
+                structure_id: data_structure_id
+              )
+
+            _ ->
+              %{id: data_structure_id} =
+                insert(:data_structure,
+                  external_id: external_id,
+                  domain_ids: [not_permissions_domain_id]
+                )
+
+              insert(:node,
+                external_id: external_id,
+                type: "Resource",
+                structure_id: data_structure_id
+              )
+          end
+        end)
+
+      nodes = groups ++ resources
 
       insert(:unit,
-        domain_id: domain_id,
-        nodes: Enum.filter(nodes, &(&1.external_id in ["foo", "bar", "baz"]))
+        domain_id: not_permissions_domain_id,
+        nodes:
+          Enum.filter(
+            nodes,
+            &(&1.external_id in ["foo", "bar", "baz"])
+          )
       )
 
-      conn = get(conn, Routes.node_path(conn, :index, domain_id: parent_domain_id))
-      assert [%{"parent" => nil, "groups" => [group]}] = json_response(conn, 200)["data"]
-      assert %{"external_id" => "foo", "name" => "foo"} = group
+      GraphData.state(state: setup_state(%{contains: contains, depends: depends}))
 
-      conn = get(conn, Routes.node_path(conn, :index, domain_id: domain_id))
-      assert [%{"parent" => nil, "groups" => [group]}] = json_response(conn, 200)["data"]
-      assert %{"external_id" => "foo", "name" => "foo"} = group
+      conn = get(conn, Routes.node_path(conn, :show, "foo"))
+      assert [%{"parent" => nil}, %{"parent" => "foo"}] = json_response(conn, 200)["data"]
 
-      %{id: domain_id} = CacheHelpers.insert_domain()
-
-      insert(:unit,
-        domain_id: domain_id,
-        nodes: Enum.filter(nodes, &(&1.external_id in ["xyz", "x", "y"]))
-      )
-
-      conn = get(conn, Routes.node_path(conn, :index, domain_id: domain_id))
-      assert [%{"parent" => nil}] = json_response(conn, 200)["data"]
-
-      conn = get(conn, Routes.node_path(conn, :index))
-      assert [%{"parent" => nil, "groups" => [group]}] = json_response(conn, 200)["data"]
-      assert %{"external_id" => "foo", "name" => "foo"} = group
+      conn = get(conn, Routes.node_path(conn, :show, "other"))
+      assert [%{"parent" => nil}, second] = json_response(conn, 200)["data"]
+      assert %{"parent" => "other", "resources" => [resource]} = second
+      assert %{"external_id" => "other_y", "name" => "other_y", "type" => "foo_type"} = resource
     end
 
     @tag authentication: [role: "admin"]
@@ -189,6 +218,40 @@ defmodule TdDdWeb.NodeControllerTest do
 
       assert [%{"parent" => nil} = first] = data
       refute Map.has_key?(first, "groups")
+    end
+
+    defp create_nodes(contains, depends, domain_ids \\ []) do
+      groups =
+        Enum.map(contains, fn {parent, _chidren} ->
+          %{id: data_structure_id} =
+            insert(:data_structure, external_id: parent, domain_ids: domain_ids)
+
+          insert(:node,
+            external_id: parent,
+            type: "Group",
+            domain_ids: domain_ids,
+            structure_id: data_structure_id
+          )
+        end)
+
+      resources =
+        depends
+        |> Enum.flat_map(fn {from, to} -> [from, to] end)
+        |> Enum.uniq()
+        |> Enum.map(fn external_id ->
+          %{id: data_structure_id} =
+            insert(:data_structure, external_id: external_id, domain_ids: domain_ids)
+
+          insert(:node,
+            external_id: external_id,
+            type: "Resource",
+            domain_ids: domain_ids,
+            structure_id: data_structure_id
+          )
+        end)
+
+      GraphData.state(state: setup_state(%{contains: contains, depends: depends}))
+      [nodes: groups ++ resources]
     end
   end
 end
