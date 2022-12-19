@@ -4,8 +4,9 @@
 
 ### Added
 
-- [TD-5343] Use structures domain in data catalog for data lineage objects 
+- [TD-5343] Use structures domain in data catalog for data lineage objects
   that have been linked
+- [TD-5367] Enrich grant details with actions and user
 
 ## [4.57.0] 2022-12-12
 

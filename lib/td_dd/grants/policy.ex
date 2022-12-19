@@ -12,6 +12,10 @@ defmodule TdDd.Grants.Policy do
 
   @behaviour Bodyguard.Policy
 
+  def authorize(:cancel_removal, _claims, %{pending_removal: false}), do: false
+
+  def authorize(:request_removal, _claims, %{pending_removal: true}), do: false
+
   def authorize(_action, %{role: "admin"}, _params), do: true
 
   def authorize(:mutation, %{} = claims, _params),
@@ -29,6 +33,13 @@ defmodule TdDd.Grants.Policy do
     do: true
 
   def authorize(:request_removal, %{} = claims, %Grant{data_structure: data_structure}) do
+    Bodyguard.permit?(DataStructures, :request_grant_removal, claims, data_structure)
+  end
+
+  def authorize(:cancel_removal, %{user_id: user_id} = _claims, %Grant{user_id: user_id}),
+    do: true
+
+  def authorize(:cancel_removal, %{} = claims, %Grant{data_structure: data_structure}) do
     Bodyguard.permit?(DataStructures, :request_grant_removal, claims, data_structure)
   end
 
