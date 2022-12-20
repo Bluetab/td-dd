@@ -21,7 +21,7 @@ defmodule TdDq.Rules.Search do
 
   def search_rules(params, %Claims{} = claims, page \\ 0, size \\ 50) do
     query = build_query(claims, params, :rules)
-    sort = Map.get(params, "sort", ["_score", "implementation_key.raw"])
+    sort = Map.get(params, "sort", ["_score", "name.raw"])
 
     %{from: page * size, size: size, query: query, sort: sort}
     |> do_search(:rules, params)

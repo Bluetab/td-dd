@@ -77,6 +77,13 @@ config :td_dd, TdDd.Search.Cluster,
       bulk_action: "index",
       settings: %{
         analysis: %{
+          analyzer: %{
+            default: %{
+              type: "pattern",
+              pattern: "\\W|_",
+              lowercase: true
+            }
+          },
           normalizer: %{
             sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
           }
@@ -105,6 +112,13 @@ config :td_dd, TdDd.Search.Cluster,
       bulk_action: "index",
       settings: %{
         analysis: %{
+          analyzer: %{
+            default: %{
+              type: "pattern",
+              pattern: "\\W|_",
+              lowercase: true
+            }
+          },
           normalizer: %{
             sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
           }
