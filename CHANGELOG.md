@@ -4,7 +4,10 @@
 
 ### Added
 
+- [TD-5243] Use structures domain in data catalog for data lineage objects
+  that have been linked
 - [TD-5367] Enrich grant details with actions and user
+- [TD-5322] Allow to have multiple grants for the same user in the same structure
 
 ### Changed
 
