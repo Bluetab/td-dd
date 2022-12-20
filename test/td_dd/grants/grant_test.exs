@@ -147,7 +147,7 @@ defmodule TdDd.Grants.GrantTest do
       assert %{start_date: ~D[2021-01-01], end_date: ~D[2021-01-01]} = grant
     end
 
-    test "captures exclusion constraint on user, data structure and date range", %{
+    test "allow more than one same user, data structure and date range", %{
       user_id: user_id,
       data_structure_id: data_structure_id
     } do
@@ -166,12 +166,10 @@ defmodule TdDd.Grants.GrantTest do
         "source_user_name" => "source_user_name"
       }
 
-      assert {:error, %{errors: errors}} =
+      assert {:ok, _} =
                %Grant{data_structure_id: data_structure_id}
                |> Grant.common_changeset(params)
                |> Repo.insert()
-
-      assert {_, [constraint: :exclusion, constraint_name: "no_overlap"]} = errors[:user_id]
     end
 
     test "can be inserted if valid", %{
@@ -209,7 +207,7 @@ defmodule TdDd.Grants.GrantTest do
       assert {_, [validation: :required]} = errors[:source_user_name]
     end
 
-    test "CSV bulk: captures exclusion constraint on source_user_name, data structure and date range",
+    test "CSV bulk: allow more than one same source_user_name, data structure and date range",
          %{
            data_structure_id: data_structure_id
          } do
@@ -229,13 +227,10 @@ defmodule TdDd.Grants.GrantTest do
         "end_date" => "2021-02-03"
       }
 
-      assert {:error, %{errors: errors}} =
+      assert {:ok, _} =
                %Grant{data_structure_id: data_structure_id}
                |> Grant.create_changeset(params, true)
                |> Repo.insert()
-
-      assert {_, [constraint: :exclusion, constraint_name: "no_overlap_source_user_name"]} =
-               errors[:source_user_name]
     end
 
     test "CSV bulk: can be inserted if valid, user absent, source_user_name present", %{
