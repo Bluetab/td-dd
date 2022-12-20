@@ -25,10 +25,10 @@ defmodule TdDq.Implementations.BulkLoad do
 
   @headers @required_headers ++ @optional_headers
 
-  @default_implementation %{
+  @basic_implementation %{
     "dataset" => [],
     "executable" => false,
-    "implementation_type" => "draft",
+    "implementation_type" => "basic",
     "population" => [],
     "validations" => []
   }
@@ -119,7 +119,7 @@ defmodule TdDq.Implementations.BulkLoad do
       end
     end)
     |> ensure_template()
-    |> Map.merge(@default_implementation)
+    |> Map.merge(@basic_implementation)
     |> then(&{:ok, &1})
   end
 
