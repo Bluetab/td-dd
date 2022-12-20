@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-5367] Enrich grant details with actions and user
+- [TD-5322] Allow to have multiple grants for the same user in the same structure
 
 ## [4.57.0] 2022-12-12
 
