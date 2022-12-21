@@ -288,6 +288,10 @@ defmodule TdDq.Implementations.Implementation do
     raw_changeset(changeset)
   end
 
+  defp custom_changeset(%Changeset{} = changeset, %__MODULE__{implementation_type: "basic"}) do
+    basic_changeset(changeset)
+  end
+
   defp custom_changeset(
          %Changeset{changes: %{implementation_type: _type}} = changeset,
          _implementation
