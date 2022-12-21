@@ -24,7 +24,11 @@ defmodule TdDq.Search.Mappings do
       },
       domain_ids: %{type: "long"},
       version: %{type: "long"},
-      name: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
+      name: %{
+        type: "text",
+        boost: 2.0,
+        fields: %{raw: %{type: "keyword", normalizer: "sortable"}}
+      },
       active: %{type: "boolean", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       description: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       deleted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
@@ -72,7 +76,7 @@ defmodule TdDq.Search.Mappings do
         properties: %{
           df_name: %{type: "text", fields: @raw},
           version: %{type: "long"},
-          name: %{type: "text", fields: @raw_sort},
+          name: %{type: "text", boost: 1.5, fields: @raw_sort},
           active: %{type: "boolean", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
           df_content: %{properties: get_dynamic_mappings("dq")}
         }
@@ -95,7 +99,7 @@ defmodule TdDq.Search.Mappings do
       },
       updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-      implementation_key: %{type: "text", fields: @raw},
+      implementation_key: %{type: "text", boost: 2.0, fields: @raw},
       implementation_type: %{type: "text", fields: @raw_sort},
       execution_result_info: %{
         properties: %{
