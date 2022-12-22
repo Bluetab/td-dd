@@ -8,13 +8,21 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
     :ok
   end
 
-  setup do
+  setup context do
     template = CacheHelpers.insert_template(scope: "dq", name: "bar_template")
-    %{id: domain_id} = domain = CacheHelpers.insert_domain()
+    rule = insert_rule(context)
 
-    rule = insert(:rule, name: "rule_foo", domain_id: domain_id)
+    [template: template, rule: rule]
+  end
 
-    [template: template, rule: rule, domain: domain]
+  # This domain comes from TdDqWeb.ConnCase setup tags if
+  # @tag authentication with permissions is used
+  defp insert_rule(%{domain: %{id: domain_id}}) do
+    insert(:rule, name: "rule_foo", domain_id: domain_id)
+  end
+
+  defp insert_rule(_context_without_domain) do
+    insert(:rule, name: "rule_foo")
   end
 
   describe "upload" do
@@ -37,7 +45,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
     end
 
     @tag authentication: [role: "user"]
-    test "return error when user not has permisssions", %{conn: conn} do
+    test "return error if user has no permisssions", %{conn: conn} do
       attrs = %{
         implementations: %Plug.Upload{
           filename: "implementations.csv",
@@ -58,11 +66,9 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
       end)
     end
 
-    @tag authentication: [role: "user"]
-    test "user can uploads implementations with permissions", %{
-      conn: conn,
-      domain: %{id: domain_id},
-      claims: claims
+    @tag authentication: [role: "user", permissions: [:manage_basic_implementations]]
+    test "user can upload implementations if it has permissions", %{
+      conn: conn
     } do
       attrs = %{
         implementations: %Plug.Upload{
@@ -70,8 +76,6 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
           path: "test/fixtures/implementations/implementations.csv"
         }
       }
-
-      CacheHelpers.put_session_permissions(claims, domain_id, [:manage_basic_implementations])
 
       assert %{"data" => data} =
                conn
@@ -275,7 +279,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
     end
 
     @tag authentication: [role: "user"]
-    test "user can uploads implementations without rules with permissions", %{
+    test "user can upload implementations without rules if it has permissions", %{
       conn: conn,
       claims: claims
     } do
