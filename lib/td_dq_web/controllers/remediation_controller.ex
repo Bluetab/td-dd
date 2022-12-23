@@ -57,7 +57,8 @@ defmodule TdDqWeb.RemediationController do
          %RuleResult{} = rule_result <-
            RuleResults.get_rule_result(rule_result_id, preload: [:rule]),
          :ok <- Bodyguard.permit(RuleResults, :manage_remediations, claims, rule_result),
-         {:ok, remediation} <- Remediations.create_remediation(rule_result_id, remediation_params) do
+         {:ok, %{remediation: remediation}} <-
+           Remediations.create_remediation(rule_result_id, remediation_params, claims) do
       conn
       |> put_status(:created)
       |> put_resp_header(

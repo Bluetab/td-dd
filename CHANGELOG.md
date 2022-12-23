@@ -9,6 +9,7 @@
 - [TD-5367] Enrich grant details with actions and user
 - [TD-5322] Allow to have multiple grants for the same user in the same structure
 - [TD-4300] Add `basic` type for implementations
+- [TD-5369] Audit events for Remediation creation
 
 ### Changed
 
