@@ -416,10 +416,7 @@ defmodule TdDq.Rules.AuditTest do
 
       domain_ids = [domain_id]
 
-      date_string =
-        date
-        |> DateTime.to_date()
-        |> Date.to_iso8601()
+      date_string = DateTime.to_iso8601(date)
 
       assert %{
                "implementation_key" => ^implementation_key,

@@ -264,7 +264,7 @@ defmodule TdDq.Rules.Audit do
       remediation
       |> with_df_content()
       |> Map.take([:content])
-      |> Map.put(:date, DateTime.to_date(date))
+      |> Map.put(:date, date)
       |> Map.put(:domain_ids, domain_ids)
       |> Map.put(:implementation_key, implementation_key)
       |> Map.put(:implementation_id, implementation_id)
