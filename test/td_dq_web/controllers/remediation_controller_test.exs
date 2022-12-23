@@ -34,7 +34,7 @@ defmodule TdDqWeb.RemediationControllerTest do
     CacheHelpers.insert_template(remediation_template)
     domain = Map.get(tags, :domain, CacheHelpers.insert_domain())
     rule = insert(:rule, domain_id: domain.id)
-    %{id: rule_result_id} = rule_result = insert(:rule_result, rule: rule)
+    %{id: rule_result_id} = rule_result = insert(:rule_result, rule: rule, implementation: build(:implementation))
 
     remediation = insert(:remediation, rule_result_id: rule_result_id)
 

@@ -36,20 +36,30 @@ defmodule TdDq.Remediations.RemediationsTest do
 
   describe "remediations" do
     test "create_remediation/2 creates a remediation" do
-      %{id: id} = insert(:rule_result)
+      %{id: id} = insert(:rule_result, implementation: build(:implementation))
+      claims = build(:claims)
 
       assert {
                :ok,
-               %Remediation{
+               %{remediation: %Remediation{
                  rule_result_id: rule_result_id,
                  df_name: df_name,
                  df_content: df_content
-               }
-             } = Remediations.create_remediation(id, @valid_attrs)
+               }}
+             } = Remediations.create_remediation(id, @valid_attrs, claims)
 
       assert rule_result_id == id
       assert df_name == @valid_attrs["df_name"]
       assert df_content == @valid_attrs["df_content"]
+    end
+
+    test "creation publishes audit event" do
+      %{id: id} = insert(:rule_result, implementation: build(:implementation))
+      claims = build(:claims)
+
+      assert {:ok, %{audit: audit}} = Remediations.create_remediation(id, @valid_attrs, claims)
+
+      refute is_nil(audit)
     end
 
     test "update_remediation/2 updates a remediation", %{template: %{name: df_name}} do
