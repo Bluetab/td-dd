@@ -14,9 +14,10 @@ defmodule TdDq.Remediations do
   end
 
   def create_remediation(rule_result_id, params, %Claims{user_id: user_id}) do
-    changeset = params
-    |> Map.put("rule_result_id", rule_result_id)
-    |> Remediation.changeset()
+    changeset =
+      params
+      |> Map.put("rule_result_id", rule_result_id)
+      |> Remediation.changeset()
 
     Multi.new()
     |> Multi.insert(:remediation, changeset)

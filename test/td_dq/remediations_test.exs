@@ -41,11 +41,13 @@ defmodule TdDq.Remediations.RemediationsTest do
 
       assert {
                :ok,
-               %{remediation: %Remediation{
-                 rule_result_id: rule_result_id,
-                 df_name: df_name,
-                 df_content: df_content
-               }}
+               %{
+                 remediation: %Remediation{
+                   rule_result_id: rule_result_id,
+                   df_name: df_name,
+                   df_content: df_content
+                 }
+               }
              } = Remediations.create_remediation(id, @valid_attrs, claims)
 
       assert rule_result_id == id

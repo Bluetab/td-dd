@@ -385,7 +385,9 @@ defmodule TdDq.Rules.AuditTest do
       %{
         id: id,
         df_content: df_content
-      } = remediation = insert(:remediation, rule_result: rule_result, df_content: %{"foo" => "bar"})
+      } =
+        remediation =
+        insert(:remediation, rule_result: rule_result, df_content: %{"foo" => "bar"})
 
       changeset = Remediation.changeset(remediation, %{})
 
@@ -413,9 +415,11 @@ defmodule TdDq.Rules.AuditTest do
              } = event
 
       domain_ids = [domain_id]
-      date_string = date
-      |> DateTime.to_date()
-      |> Date.to_iso8601()
+
+      date_string =
+        date
+        |> DateTime.to_date()
+        |> Date.to_iso8601()
 
       assert %{
                "implementation_key" => ^implementation_key,
