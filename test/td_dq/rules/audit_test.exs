@@ -5,6 +5,7 @@ defmodule TdDq.Rules.AuditTest do
   alias TdCache.Redix.Stream
   alias TdDd.Repo
   alias TdDq.Implementations.Implementation
+  alias TdDq.Remediations.Remediation
   alias TdDq.Rules.Audit
   alias TdDq.Rules.Rule
 
@@ -362,6 +363,68 @@ defmodule TdDq.Rules.AuditTest do
                "status" => "deprecated",
                "rule_id" => ^rule_id,
                "domain_id" => ^domain_id
+             } = Jason.decode!(payload)
+    end
+  end
+
+  describe "remediation_created/4" do
+    test "publishes remediation_created", %{
+      implementation: implementation,
+      claims: %{user_id: user_id}
+    } do
+      %{
+        id: rule_result_id,
+        date: date,
+        implementation: %{
+          id: implementation_id,
+          implementation_key: implementation_key,
+          domain_id: domain_id
+        }
+      } = rule_result = insert(:rule_result, implementation: implementation)
+
+      %{
+        id: id,
+        df_content: df_content
+      } =
+        remediation =
+        insert(:remediation, rule_result: rule_result, df_content: %{"foo" => "bar"})
+
+      changeset = Remediation.changeset(remediation, %{})
+
+      assert {:ok, event_id} =
+               Audit.remediation_created(
+                 Repo,
+                 %{remediation: remediation},
+                 changeset,
+                 user_id
+               )
+
+      assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+
+      user_id = "#{user_id}"
+      resource_id = "#{id}"
+
+      assert %{
+               event: "remediation_created",
+               payload: payload,
+               resource_id: ^resource_id,
+               resource_type: "remediation",
+               service: "td_dd",
+               ts: _ts,
+               user_id: ^user_id
+             } = event
+
+      domain_ids = [domain_id]
+
+      date_string = DateTime.to_iso8601(date)
+
+      assert %{
+               "implementation_key" => ^implementation_key,
+               "domain_ids" => ^domain_ids,
+               "content" => ^df_content,
+               "date" => ^date_string,
+               "rule_result_id" => ^rule_result_id,
+               "implementation_id" => ^implementation_id
              } = Jason.decode!(payload)
     end
   end
