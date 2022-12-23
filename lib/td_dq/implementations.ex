@@ -481,6 +481,8 @@ defmodule TdDq.Implementations do
       "download",
       "execute",
       "create",
+      "createBasic",
+      "createBasicRuleLess",
       "createRaw",
       "createRawRuleLess",
       "createRuleLess",
@@ -489,7 +491,16 @@ defmodule TdDq.Implementations do
   end
 
   defp get_available_actions(_params, Implementation) do
-    ["create", "createRaw", "createRawRuleLess", "createRuleLess", "download", "load"]
+    [
+      "create",
+      "createBasic",
+      "createBasicRuleLess",
+      "createRaw",
+      "createRawRuleLess",
+      "createRuleLess",
+      "download",
+      "load"
+    ]
   end
 
   def build_actions(claims), do: build_actions(claims, %{}, Implementation)

@@ -11,6 +11,8 @@ defmodule TdDq.Implementations.Policy do
   @media_actions [
     "execute",
     "create",
+    "createBasic",
+    "createBasicRuleLess",
     "createRaw",
     "createRawRuleLess",
     "createRuleLess",
@@ -53,6 +55,16 @@ defmodule TdDq.Implementations.Policy do
 
   def authorize("create", %{} = claims, _params),
     do: Permissions.authorized?(claims, :manage_quality_rule_implementations)
+
+  def authorize("createBasic", %{} = claims, _params),
+    do: Permissions.authorized?(claims, :manage_basic_implementations)
+
+  def authorize("createBasicRuleLess", %{} = claims, _params),
+    do:
+      Permissions.authorized?(claims, [
+        :manage_basic_implementations,
+        :manage_ruleless_implementations
+      ])
 
   def authorize("createRaw", %{} = claims, _params),
     do: Permissions.authorized?(claims, :manage_raw_quality_rule_implementations)
@@ -208,7 +220,8 @@ defmodule TdDq.Implementations.Policy do
     |> Map.take([:rule_id, :segments, :implementation_type])
     |> Enum.flat_map(fn
       {:implementation_type, "raw"} -> [:manage_raw_quality_rule_implementations]
-      {:implementation_type, _} -> [:manage_quality_rule_implementations]
+      {:implementation_type, "basic"} -> [:manage_basic_implementations]
+      {:implementation_type, "default"} -> [:manage_quality_rule_implementations]
       {:rule_id, nil} -> [:manage_ruleless_implementations]
       {:segments, [_ | _]} -> [:manage_segments]
       _ -> []

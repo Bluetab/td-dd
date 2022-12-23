@@ -111,6 +111,21 @@ defmodule TdDdWeb.Resolvers.Domains do
   defp permitted_domain_ids(%{role: "user", jti: jti}, "manageRawImplementations"),
     do: Permissions.permitted_domain_ids(jti, :manage_raw_quality_rule_implementations)
 
+  defp permitted_domain_ids(%{role: "user", jti: jti}, "manageBasicImplementations"),
+    do: Permissions.permitted_domain_ids(jti, :manage_basic_implementations)
+
+  defp permitted_domain_ids(
+         %{role: "user", jti: jti},
+         "manageBasicRulelessImplementations"
+       ) do
+    jti
+    |> Permissions.permitted_domain_ids([
+      :manage_basic_implementations,
+      :manage_ruleless_implementations
+    ])
+    |> intersection()
+  end
+
   defp permitted_domain_ids(%{role: "user", jti: jti}, "manageRawRulelessImplementations") do
     jti
     |> Permissions.permitted_domain_ids([

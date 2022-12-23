@@ -8,15 +8,68 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
     :ok
   end
 
-  setup do
+  setup context do
     template = CacheHelpers.insert_template(scope: "dq", name: "bar_template")
-    rule = insert(:rule, name: "rule_foo")
+    rule = insert_rule(context)
+
     [template: template, rule: rule]
+  end
+
+  # This domain comes from TdDqWeb.ConnCase setup tags if
+  # @tag authentication with permissions is used
+  defp insert_rule(%{domain: %{id: domain_id}}) do
+    insert(:rule, name: "rule_foo", domain_id: domain_id)
+  end
+
+  defp insert_rule(_context_without_domain) do
+    insert(:rule, name: "rule_foo")
   end
 
   describe "upload" do
     @tag authentication: [role: "admin"]
     test "uploads implementations", %{conn: conn} do
+      attrs = %{
+        implementations: %Plug.Upload{
+          filename: "implementations.csv",
+          path: "test/fixtures/implementations/implementations.csv"
+        }
+      }
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.implementation_upload_path(conn, :create), attrs)
+               |> json_response(:ok)
+
+      assert %{"ids" => ids, "errors" => []} = data
+      assert length(ids) == 3
+    end
+
+    @tag authentication: [role: "user"]
+    test "return error if user has no permisssions", %{conn: conn} do
+      attrs = %{
+        implementations: %Plug.Upload{
+          filename: "implementations.csv",
+          path: "test/fixtures/implementations/implementations.csv"
+        }
+      }
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.implementation_upload_path(conn, :create), attrs)
+               |> json_response(:ok)
+
+      assert %{"ids" => [], "errors" => errors} = data
+      assert length(errors) == 3
+
+      Enum.each(errors, fn %{"message" => message} ->
+        assert ^message = %{"implementation" => ["forbidden"]}
+      end)
+    end
+
+    @tag authentication: [role: "user", permissions: [:manage_basic_implementations]]
+    test "user can upload implementations if it has permissions", %{
+      conn: conn
+    } do
       attrs = %{
         implementations: %Plug.Upload{
           filename: "implementations.csv",
@@ -215,6 +268,34 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
           path: "test/fixtures/implementations/implementations_without_rules.csv"
         }
       }
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.implementation_upload_path(conn, :create), attrs)
+               |> json_response(:ok)
+
+      assert %{"ids" => ids, "errors" => []} = data
+      assert length(ids) == 3
+    end
+
+    @tag authentication: [role: "user"]
+    test "user can upload implementations without rules if it has permissions", %{
+      conn: conn,
+      claims: claims
+    } do
+      %{id: domain_id} = CacheHelpers.insert_domain(external_id: "some_domain_id")
+
+      attrs = %{
+        implementations: %Plug.Upload{
+          filename: "implementations_without_rules.csv",
+          path: "test/fixtures/implementations/implementations_without_rules.csv"
+        }
+      }
+
+      CacheHelpers.put_session_permissions(claims, domain_id, [
+        :manage_basic_implementations,
+        :manage_ruleless_implementations
+      ])
 
       assert %{"data" => data} =
                conn
