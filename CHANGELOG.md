@@ -10,6 +10,7 @@
 - [TD-5322] Allow to have multiple grants for the same user in the same structure
 - [TD-4300] Add `basic` type for implementations
 - [TD-5369] Audit events for Remediation creation
+- [TD-5348] Add update action to grant controller
 
 ### Changed
 

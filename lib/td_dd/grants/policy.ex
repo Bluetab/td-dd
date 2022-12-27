@@ -43,6 +43,23 @@ defmodule TdDd.Grants.Policy do
     Bodyguard.permit?(DataStructures, :request_grant_removal, claims, data_structure)
   end
 
+  def authorize(:update, claims, %Grant{
+        data_structure: %{domain_ids: domain_ids},
+        user_id: user_id
+      }) do
+    if Permissions.authorized?(claims, :create_foreign_grant_request, domain_ids) do
+      allow_domain_ids =
+        user_id
+        |> permitted_domain_ids_by_user_id(:allow_foreign_grant_request)
+        |> MapSet.new()
+
+      intersection = MapSet.intersection(MapSet.new(domain_ids), allow_domain_ids)
+      !Enum.empty?(intersection)
+    else
+      false
+    end
+  end
+
   def authorize(:view, %{} = _claims, nil), do: true
 
   def authorize(:view, %{user_id: user_id}, %Grant{user_id: user_id}), do: true

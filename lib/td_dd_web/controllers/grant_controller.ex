@@ -12,7 +12,7 @@ defmodule TdDdWeb.GrantController do
 
   action_fallback(TdDdWeb.FallbackController)
 
-  @grant_actions [:request_removal, :cancel_removal]
+  @grant_actions [:request_removal, :cancel_removal, :update]
 
   def swagger_definitions do
     SwaggerDefinitions.grant_swagger_definitions()
