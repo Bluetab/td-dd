@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [4.58.0] 2022-12-27
 
 ### Added
 
