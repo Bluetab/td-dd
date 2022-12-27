@@ -245,7 +245,7 @@ defmodule TdDdWeb.GrantControllerTest do
                get(conn, Routes.grant_path(conn, :show, id))
                |> json_response(:ok)
 
-      assert actions == %{"request_removal" => %{}}
+      assert actions == %{"request_removal" => %{}, "update" => %{}}
     end
 
     @tag authentication: [
@@ -270,6 +270,78 @@ defmodule TdDdWeb.GrantControllerTest do
       assert %{"_actions" => %{}} =
                get(conn, Routes.grant_path(conn, :show, id))
                |> json_response(:ok)
+    end
+
+    @tag authentication: [
+           permissions: [:view_grants, :view_data_structure, :create_foreign_grant_request]
+         ]
+    test "user with create_foreign_grant_request permission in grant domain can update a grant
+          where granted user has allow_foreign_grant_request permission on the same domain",
+         %{conn: conn, domain: %{id: domain_id}} do
+      %{id: granted_user_id} = CacheHelpers.insert_user()
+      grant_receiver_role = "granted_role"
+      CacheHelpers.put_permission_on_role("allow_foreign_grant_request", grant_receiver_role)
+      CacheHelpers.insert_acl(domain_id, grant_receiver_role, [granted_user_id])
+
+      data_structure = insert(:data_structure, domain_ids: [domain_id])
+
+      %{id: grant_id} = insert(:grant, data_structure: data_structure, user_id: granted_user_id)
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.grant_path(conn, :show, grant_id))
+               |> json_response(:ok)
+
+      assert actions == %{"update" => %{}}
+    end
+
+    @tag authentication: [
+           permissions: [:create_foreign_grant_request]
+         ]
+    test "user without create_foreign_grant_request permission in grant domain can't update a grant
+        where granted user has allow_foreign_grant_request permission on the same domain",
+         %{conn: conn, claims: claims} do
+      %{id: domain_id} = CacheHelpers.insert_domain()
+      %{id: granted_user_id} = CacheHelpers.insert_user()
+      grant_receiver_role = "granted_role"
+      CacheHelpers.put_permission_on_role("allow_foreign_grant_request", grant_receiver_role)
+      CacheHelpers.insert_acl(domain_id, grant_receiver_role, [granted_user_id])
+
+      CacheHelpers.put_session_permissions(claims, domain_id, [
+        "view_data_structure",
+        "view_grants"
+      ])
+
+      data_structure = insert(:data_structure, domain_ids: [domain_id])
+
+      %{id: grant_id} = insert(:grant, data_structure: data_structure, user_id: granted_user_id)
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.grant_path(conn, :show, grant_id))
+               |> json_response(:ok)
+
+      assert actions == %{}
+    end
+
+    @tag authentication: [
+           permissions: [:view_grants, :view_data_structure, :create_foreign_grant_request]
+         ]
+    test "user with create_foreign_grant_request permission in grant domain can not update a grant
+        where granted user has not allow_foreign_grant_request permission on the same domain",
+         %{conn: conn, domain: %{id: domain_id}} do
+      %{id: granted_user_id} = CacheHelpers.insert_user()
+
+      data_structure = insert(:data_structure, domain_ids: [domain_id])
+
+      %{id: grant_id} = insert(:grant, data_structure: data_structure, user_id: granted_user_id)
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.grant_path(conn, :show, grant_id))
+               |> json_response(:ok)
+
+      assert actions == %{}
     end
   end
 
