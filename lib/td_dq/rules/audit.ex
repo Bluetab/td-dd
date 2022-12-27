@@ -10,6 +10,7 @@ defmodule TdDq.Rules.Audit do
   alias TdCache.ConceptCache
   alias TdCache.TaxonomyCache
   alias TdDq.Rules
+  alias TdDq.Rules.RuleResults
 
   @doc """
   Publishes a `:rule_created` event. Should be called using `Ecto.Multi.run/5`.
@@ -238,6 +239,38 @@ defmodule TdDq.Rules.Audit do
       user_id: user_id,
       payload: payload
     }
+  end
+
+  @doc """
+  Publishes an `:remediation_created` event. Should be called using
+  `Ecto.Multi.run/5`.
+  """
+  def remediation_created(
+        _repo,
+        %{remediation: %{id: id, rule_result_id: rule_result_id} = remediation},
+        _changeset,
+        user_id
+      ) do
+    %{
+      id: rule_result_id,
+      date: date,
+      implementation:
+        %{implementation_key: implementation_key, id: implementation_id} = implementation
+    } = RuleResults.get_rule_result(rule_result_id, preload: [:rule, :implementation])
+
+    domain_ids = get_domain_ids(implementation)
+
+    payload =
+      remediation
+      |> with_df_content()
+      |> Map.take([:content])
+      |> Map.put(:date, date)
+      |> Map.put(:domain_ids, domain_ids)
+      |> Map.put(:implementation_key, implementation_key)
+      |> Map.put(:implementation_id, implementation_id)
+      |> Map.put(:rule_result_id, rule_result_id)
+
+    publish("remediation_created", "remediation", id, user_id, payload)
   end
 
   defp with_domain_ids(payload) do
