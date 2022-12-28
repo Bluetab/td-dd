@@ -21,7 +21,8 @@ defmodule TdDd.Cache.StructureEntry do
   end
 
   def cache_entry(
-        %DataStructureVersion{data_structure_id: id, data_structure: ds} = dsv,
+        %DataStructureVersion{data_structure_id: id, data_structure: ds, name: original_name} =
+          dsv,
         opts
       ) do
     %{external_id: external_id, system_id: system_id, domain_ids: domain_ids, alias: alias_name} =
@@ -37,6 +38,7 @@ defmodule TdDd.Cache.StructureEntry do
       |> Map.put(:domain_ids, domain_ids)
       |> Map.put(:parent_id, get_first_parent_id(dsv))
       |> Map.put(:updated_at, max_updated_at(dsv))
+      |> Map.put(:original_name, original_name)
       |> maybe_put_alias(alias_name)
 
     Enum.reduce(opts, acc, &put_cache_opt(ds, &1, &2))

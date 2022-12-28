@@ -557,6 +557,7 @@ defmodule TdDq.Implementations.Implementation do
 
     defp get_structure_fields(structure) do
       Map.take(structure, [
+        :alias,
         :external_id,
         :id,
         :name,
