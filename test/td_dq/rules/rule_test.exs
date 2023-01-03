@@ -272,16 +272,27 @@ defmodule TdDq.Rules.RuleTest do
   end
 
   describe "delete_changeset/1" do
-    test "validates a rule has no implementations" do
+    test "validate rule can delete with deprecated implementation associate" do
+      %{rule: rule} = insert(:implementation, deleted_at: DateTime.utc_now(), status: :deprecated)
+
+      assert {:ok, rule} =
+               rule
+               |> Rule.delete_changeset()
+               |> Repo.update()
+      assert %{active: false, deleted_at: deleted_at} = rule
+      assert deleted_at !== nil
+    end
+
+    test "validate rule can't delete with active implementation associate" do
       %{rule: rule} = insert(:implementation)
 
       assert {:error, changeset} =
                rule
                |> Rule.delete_changeset()
-               |> Repo.delete()
+               |> Repo.update()
 
       assert %{valid?: false, errors: errors} = changeset
-      assert {_, [constraint: :no_assoc, constraint_name: _]} = errors[:rule_implementations]
+      assert {_, []} = errors[:rule_implementations]
     end
   end
 end

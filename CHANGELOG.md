@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-5199] Soft delete for rule
+
 ## [4.58.0] 2022-12-27
 
 ### Added

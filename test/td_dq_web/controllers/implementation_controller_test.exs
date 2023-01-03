@@ -487,6 +487,87 @@ defmodule TdDqWeb.ImplementationControllerTest do
              } == actions
     end
 
+    ## deprecated rule implementation with actions
+    @tag authentication: [
+      user_name: "non_admin",
+      permissions: @rule_implementation_permissions
+    ]
+    test "renders non admin actions for deprecated rule implementation with active rule", %{
+      conn: conn,
+      domain: domain
+    } do
+      rule = insert(:rule, domain: domain.id)
+      %{id: id} = insert(
+        :implementation,
+        domain_id: domain.id,
+        rule_id: rule.id,
+        deleted_at: DateTime.utc_now(),
+        status: :deprecated
+      )
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{} == actions
+    end
+
+    @tag authentication: [role: "admin"]
+    test "renders actions for deprecated rule implementation with active rule", %{
+      conn: conn
+    } do
+      domain = build(:domain)
+      rule = insert(:rule)
+      %{id: id} = insert(
+        :implementation,
+        domain_id: domain.id,
+        rule_id: rule.id,
+        deleted_at: DateTime.utc_now(),
+        status: :deprecated
+      )
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "restore" => %{"method" => "POST"},
+               "delete" => %{"method" => "POST"},
+               "clone" => %{"method" => "POST"},
+               "link_concept" => %{"method" => "POST"},
+               "link_structure" => %{"method" => "POST"},
+             } == actions
+    end
+
+    @tag authentication: [role: "admin"]
+    test "renders actions for deprecated rule implementation with deleted rule", %{
+      conn: conn
+    } do
+      domain = build(:domain)
+      rule = insert(:rule, deleted_at: DateTime.utc_now(), active: false)
+      %{id: id} = insert(
+        :implementation,
+        domain_id: domain.id,
+        rule_id: rule.id,
+        deleted_at: DateTime.utc_now(),
+        status: :deprecated
+      )
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "delete" => %{"method" => "POST"},
+               "clone" => %{"method" => "POST"},
+               "link_concept" => %{"method" => "POST"},
+               "link_structure" => %{"method" => "POST"},
+             } == actions
+    end
+
     ## rule implementation without actions
     for {permission_type, permissions} <- [
           # {"raw implementation", @imp_raw_permissions},
@@ -545,6 +626,34 @@ defmodule TdDqWeb.ImplementationControllerTest do
       end
     end
 
+    @tag authentication: [
+      user_name: "non_admin",
+      permissions: @imp_raw_permissions
+    ]
+    test "renders non admin actions for deprecated raw rule implementation with active rule", %{
+      conn: conn,
+      domain: domain
+    } do
+      rule = insert(:rule, domain: domain.id)
+      %{id: id} = insert(
+        :raw_implementation,
+        domain_id: domain.id,
+        rule_id: rule.id,
+        deleted_at: DateTime.utc_now(),
+        status: :deprecated
+      )
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+        "clone" => %{"method" => "POST"},
+        "delete" => %{"method" => "POST"}
+      } == actions
+    end
+
     ## Raw rule with admin actions
     @tag authentication: [role: "admin"]
     test "renders admin actions for raw implementations ", %{
@@ -574,6 +683,61 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "link_structure" => %{"method" => "POST"},
                "move" => %{"method" => "POST"},
                "publish" => %{"method" => "POST"}
+             } == actions
+    end
+
+    @tag authentication: [role: "admin"]
+    test "renders actions for deprecated raw rule implementation with active rule", %{
+      conn: conn
+    } do
+      domain = build(:domain)
+      rule = insert(:rule)
+      %{id: id} = insert(
+        :raw_implementation,
+        domain_id: domain.id,
+        rule_id: rule.id,
+        deleted_at: DateTime.utc_now(),
+        status: :deprecated
+      )
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "restore" => %{"method" => "POST"},
+               "delete" => %{"method" => "POST"},
+               "clone" => %{"method" => "POST"},
+               "link_concept" => %{"method" => "POST"},
+               "link_structure" => %{"method" => "POST"},
+             } == actions
+    end
+
+    @tag authentication: [role: "admin"]
+    test "renders actions for deprecated raw rule implementation with deleted rule", %{
+      conn: conn
+    } do
+      domain = build(:domain)
+      rule = insert(:rule, deleted_at: DateTime.utc_now(), active: false)
+      %{id: id} = insert(
+        :raw_implementation,
+        domain_id: domain.id,
+        rule_id: rule.id,
+        deleted_at: DateTime.utc_now(),
+        status: :deprecated
+      )
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "delete" => %{"method" => "POST"},
+               "clone" => %{"method" => "POST"},
+               "link_concept" => %{"method" => "POST"},
+               "link_structure" => %{"method" => "POST"},
              } == actions
     end
 

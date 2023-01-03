@@ -931,5 +931,28 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
 
       assert [%{"message" => "forbidden"}] = errors
     end
+
+    @tag authentication: [role: "admin"]
+    test "returns an error when try to restore an implementation with a deleted rule", %{
+      conn: conn,
+    } do
+      rule = insert(:rule, deleted_at: DateTime.utc_now(), active: false)
+      %{id: implementation_id} = insert(
+        :implementation,
+        rule_id: rule.id,
+        deleted_at: DateTime.utc_now(),
+        status: :deprecated
+      )
+
+      assert %{"data" => nil, "errors" => errors} =
+        conn
+        |> post("/api/v2", %{
+          "query" => @restore_implementation,
+          "variables" => %{"id" => implementation_id}
+        })
+        |> json_response(:ok)
+
+      assert [%{"message" => "forbidden"}] = errors
+    end
   end
 end
