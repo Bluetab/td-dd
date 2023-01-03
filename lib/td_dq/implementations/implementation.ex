@@ -361,7 +361,8 @@ defmodule TdDq.Implementations.Implementation do
 
   def publishable?(%__MODULE__{status: status}), do: status in [:draft, :pending_approval]
 
-  def restorable?(%__MODULE__{status: status, rule: %{deleted_at: nil}}), do: status == :deprecated
+  def restorable?(%__MODULE__{status: status, rule: %{deleted_at: nil}}),
+    do: status == :deprecated
 
   def restorable?(%__MODULE__{status: status, rule: nil}), do: status == :deprecated
 

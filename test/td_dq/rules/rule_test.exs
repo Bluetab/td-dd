@@ -279,6 +279,7 @@ defmodule TdDq.Rules.RuleTest do
                rule
                |> Rule.delete_changeset()
                |> Repo.update()
+
       assert %{active: false, deleted_at: deleted_at} = rule
       assert deleted_at !== nil
     end

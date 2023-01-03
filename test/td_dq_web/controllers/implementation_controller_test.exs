@@ -489,21 +489,23 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
     ## deprecated rule implementation with actions
     @tag authentication: [
-      user_name: "non_admin",
-      permissions: @rule_implementation_permissions
-    ]
+           user_name: "non_admin",
+           permissions: @rule_implementation_permissions
+         ]
     test "renders non admin actions for deprecated rule implementation with active rule", %{
       conn: conn,
       domain: domain
     } do
       rule = insert(:rule, domain: domain.id)
-      %{id: id} = insert(
-        :implementation,
-        domain_id: domain.id,
-        rule_id: rule.id,
-        deleted_at: DateTime.utc_now(),
-        status: :deprecated
-      )
+
+      %{id: id} =
+        insert(
+          :implementation,
+          domain_id: domain.id,
+          rule_id: rule.id,
+          deleted_at: DateTime.utc_now(),
+          status: :deprecated
+        )
 
       assert %{"_actions" => actions} =
                conn
@@ -519,13 +521,15 @@ defmodule TdDqWeb.ImplementationControllerTest do
     } do
       domain = build(:domain)
       rule = insert(:rule)
-      %{id: id} = insert(
-        :implementation,
-        domain_id: domain.id,
-        rule_id: rule.id,
-        deleted_at: DateTime.utc_now(),
-        status: :deprecated
-      )
+
+      %{id: id} =
+        insert(
+          :implementation,
+          domain_id: domain.id,
+          rule_id: rule.id,
+          deleted_at: DateTime.utc_now(),
+          status: :deprecated
+        )
 
       assert %{"_actions" => actions} =
                conn
@@ -537,7 +541,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "delete" => %{"method" => "POST"},
                "clone" => %{"method" => "POST"},
                "link_concept" => %{"method" => "POST"},
-               "link_structure" => %{"method" => "POST"},
+               "link_structure" => %{"method" => "POST"}
              } == actions
     end
 
@@ -547,13 +551,15 @@ defmodule TdDqWeb.ImplementationControllerTest do
     } do
       domain = build(:domain)
       rule = insert(:rule, deleted_at: DateTime.utc_now(), active: false)
-      %{id: id} = insert(
-        :implementation,
-        domain_id: domain.id,
-        rule_id: rule.id,
-        deleted_at: DateTime.utc_now(),
-        status: :deprecated
-      )
+
+      %{id: id} =
+        insert(
+          :implementation,
+          domain_id: domain.id,
+          rule_id: rule.id,
+          deleted_at: DateTime.utc_now(),
+          status: :deprecated
+        )
 
       assert %{"_actions" => actions} =
                conn
@@ -564,7 +570,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "delete" => %{"method" => "POST"},
                "clone" => %{"method" => "POST"},
                "link_concept" => %{"method" => "POST"},
-               "link_structure" => %{"method" => "POST"},
+               "link_structure" => %{"method" => "POST"}
              } == actions
     end
 
@@ -627,21 +633,23 @@ defmodule TdDqWeb.ImplementationControllerTest do
     end
 
     @tag authentication: [
-      user_name: "non_admin",
-      permissions: @imp_raw_permissions
-    ]
+           user_name: "non_admin",
+           permissions: @imp_raw_permissions
+         ]
     test "renders non admin actions for deprecated raw rule implementation with active rule", %{
       conn: conn,
       domain: domain
     } do
       rule = insert(:rule, domain: domain.id)
-      %{id: id} = insert(
-        :raw_implementation,
-        domain_id: domain.id,
-        rule_id: rule.id,
-        deleted_at: DateTime.utc_now(),
-        status: :deprecated
-      )
+
+      %{id: id} =
+        insert(
+          :raw_implementation,
+          domain_id: domain.id,
+          rule_id: rule.id,
+          deleted_at: DateTime.utc_now(),
+          status: :deprecated
+        )
 
       assert %{"_actions" => actions} =
                conn
@@ -649,9 +657,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> json_response(:ok)
 
       assert %{
-        "clone" => %{"method" => "POST"},
-        "delete" => %{"method" => "POST"}
-      } == actions
+               "clone" => %{"method" => "POST"},
+               "delete" => %{"method" => "POST"}
+             } == actions
     end
 
     ## Raw rule with admin actions
@@ -692,13 +700,15 @@ defmodule TdDqWeb.ImplementationControllerTest do
     } do
       domain = build(:domain)
       rule = insert(:rule)
-      %{id: id} = insert(
-        :raw_implementation,
-        domain_id: domain.id,
-        rule_id: rule.id,
-        deleted_at: DateTime.utc_now(),
-        status: :deprecated
-      )
+
+      %{id: id} =
+        insert(
+          :raw_implementation,
+          domain_id: domain.id,
+          rule_id: rule.id,
+          deleted_at: DateTime.utc_now(),
+          status: :deprecated
+        )
 
       assert %{"_actions" => actions} =
                conn
@@ -710,7 +720,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "delete" => %{"method" => "POST"},
                "clone" => %{"method" => "POST"},
                "link_concept" => %{"method" => "POST"},
-               "link_structure" => %{"method" => "POST"},
+               "link_structure" => %{"method" => "POST"}
              } == actions
     end
 
@@ -720,13 +730,15 @@ defmodule TdDqWeb.ImplementationControllerTest do
     } do
       domain = build(:domain)
       rule = insert(:rule, deleted_at: DateTime.utc_now(), active: false)
-      %{id: id} = insert(
-        :raw_implementation,
-        domain_id: domain.id,
-        rule_id: rule.id,
-        deleted_at: DateTime.utc_now(),
-        status: :deprecated
-      )
+
+      %{id: id} =
+        insert(
+          :raw_implementation,
+          domain_id: domain.id,
+          rule_id: rule.id,
+          deleted_at: DateTime.utc_now(),
+          status: :deprecated
+        )
 
       assert %{"_actions" => actions} =
                conn
@@ -737,7 +749,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "delete" => %{"method" => "POST"},
                "clone" => %{"method" => "POST"},
                "link_concept" => %{"method" => "POST"},
-               "link_structure" => %{"method" => "POST"},
+               "link_structure" => %{"method" => "POST"}
              } == actions
     end
 
