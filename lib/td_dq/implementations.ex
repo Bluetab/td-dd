@@ -947,16 +947,23 @@ defmodule TdDq.Implementations do
       structure_map
       |> Map.Helpers.atomize_keys()
       |> Map.put(:external_id, Map.get(cached_info, :external_id))
-      |> Map.put(:name, Map.get(cached_info, :name, Map.get(structure_map, :name, "")))
+      |> Map.put(:name, Map.get(cached_info, :original_name, Map.get(structure_map, :name, "")))
       |> Map.put(:path, Map.get(cached_info, :path, []))
       |> Map.put(:system, Map.get(cached_info, :system))
       |> Map.put(:type, Map.get(cached_info, :type))
+      |> maybe_put_alias(cached_info)
 
     case Map.get(cached_info, :metadata) do
       nil -> structure_map
       metadata -> Map.put(structure_map, :metadata, metadata)
     end
   end
+
+  defp maybe_put_alias(%{} = map, %{name: alias_name, original_name: original_name})
+       when original_name != alias_name,
+       do: Map.put(map, :alias, alias_name)
+
+  defp maybe_put_alias(%{} = map, _), do: map
 
   defp structure([_ | _] = values), do: Enum.flat_map(values, &structure/1)
 

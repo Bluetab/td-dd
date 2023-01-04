@@ -298,15 +298,8 @@ defmodule TdDqWeb.Implementation.StructureView do
   defp with_headers(structure_json, _), do: structure_json
 
   def render("structure.json", %{structure: structure}) do
-    %{
-      id: Map.get(structure, :id),
-      name: Map.get(structure, :name),
-      path: Map.get(structure, :path),
-      system: Map.get(structure, :system),
-      external_id: Map.get(structure, :external_id),
-      type: Map.get(structure, :type),
-      metadata: Map.get(structure, :metadata)
-    }
+    structure
+    |> Map.take([:alias, :external_id, :id, :metadata, :name, :path, :system, :type])
     |> with_parent_index(structure)
     |> with_headers(structure)
   end
