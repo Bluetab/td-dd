@@ -53,7 +53,7 @@ defmodule TdDd.Factory do
   end
 
   def data_structure_version_factory(attrs) do
-    {structure_attrs, attrs} = Map.split(attrs, [:domain_ids])
+    {structure_attrs, attrs} = Map.split(attrs, [:domain_ids, :alias])
 
     attrs =
       default_assoc(attrs, :data_structure_id, :data_structure, :data_structure, structure_attrs)
@@ -140,7 +140,7 @@ defmodule TdDd.Factory do
       dataset: build(:dataset),
       populations: build(:populations),
       validation: build(:validation),
-      segments: build(:segments),
+      segments: [build(:segments_row)],
       version: 1,
       status: "draft"
     }
@@ -411,8 +411,8 @@ defmodule TdDd.Factory do
     ]
   end
 
-  def segments_factory(_attrs) do
-    [%TdDq.Implementations.SegmentsRow{structure: build(:dataset_structure)}]
+  def segments_row_factory do
+    %TdDq.Implementations.SegmentsRow{structure: build(:dataset_structure)}
   end
 
   def segment_result_factory do
