@@ -98,6 +98,16 @@ defmodule TdDq.Rules.RuleTest do
                {"unique_constraint", [constraint: :unique, constraint_name: "rules_name_index"]}
     end
 
+    test "does not validate unique constraint on name when a colliding rule has been deleted, both having a nil business_concept_id", %{domain: domain} do
+      %{name: name} = insert(:rule, business_concept_id: nil, deleted_at: DateTime.utc_now())
+
+      assert {:ok, _rule} =
+               :rule
+               |> params_for(name: name, business_concept_id: nil, domain_id: domain.id)
+               |> Rule.changeset()
+               |> Repo.insert()
+    end
+
     test "validates description is safe" do
       params = params_for(:rule, description: %{"doc" => @unsafe})
       assert %{valid?: false, errors: errors} = Rule.changeset(params)
@@ -272,16 +282,28 @@ defmodule TdDq.Rules.RuleTest do
   end
 
   describe "delete_changeset/1" do
-    test "validates a rule has no implementations" do
+    test "validates rule with a related deprecated implementation can be deleted" do
+      %{rule: rule} = insert(:implementation, deleted_at: DateTime.utc_now(), status: :deprecated)
+
+      assert {:ok, rule} =
+               rule
+               |> Rule.delete_changeset()
+               |> Repo.update()
+
+      assert %{active: false, deleted_at: deleted_at} = rule
+      assert deleted_at !== nil
+    end
+
+    test "validate rule with a related active implementation cannot be deleted" do
       %{rule: rule} = insert(:implementation)
 
       assert {:error, changeset} =
                rule
                |> Rule.delete_changeset()
-               |> Repo.delete()
+               |> Repo.update()
 
       assert %{valid?: false, errors: errors} = changeset
-      assert {_, [constraint: :no_assoc, constraint_name: _]} = errors[:rule_implementations]
+      assert {_, []} = errors[:rule_implementations]
     end
   end
 end
