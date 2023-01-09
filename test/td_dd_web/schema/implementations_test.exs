@@ -955,14 +955,13 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
                |> json_response(:ok)
 
       implementation_id_string = "#{implementation_id}"
-
       assert %{
-               "restoreImplementation" => %{
-                 "id" => ^implementation_id_string,
-                 "status" => "published",
-                 "version" => 1
-               }
-             } = data
+        "restoreImplementation" => %{
+          "id" => ^implementation_id_string,
+          "status" => "published",
+          "version" => 1
+        }
+      } = data
     end
 
     @tag authentication: [role: "admin"]
