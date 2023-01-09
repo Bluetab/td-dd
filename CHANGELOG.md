@@ -4,6 +4,9 @@
 
 ### Changed
 
+- [TD-5344] Embedded structures in rule implementations are now indexed with
+  their original `name` regardless of whether they have an alias or not. `alias`
+  is indexed as an independent property if present.
 - [TD-5199] Soft delete for rule
 
 ## [4.58.0] 2022-12-27
