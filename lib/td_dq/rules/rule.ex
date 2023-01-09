@@ -76,8 +76,8 @@ defmodule TdDq.Rules.Rule do
 
   def delete_changeset(%__MODULE__{} = rule) do
     rule
-    |> change()
-    |> no_assoc_constraint(:rule_implementations, message: "rule.delete.existing.implementations")
+    |> changeset(%{active: false, deleted_at: DateTime.utc_now()})
+    |> validate_inactive_implementations()
   end
 
   defp validate_content(%{valid?: true} = changeset, rule) do
@@ -96,6 +96,20 @@ defmodule TdDq.Rules.Rule do
   end
 
   defp validate_content(changeset, _), do: changeset
+
+  defp validate_inactive_implementations(%{data: rule} = changeset) do
+    active_implementations? =
+      rule
+      |> TdDd.Repo.preload(:rule_implementations)
+      |> Map.get(:rule_implementations)
+      |> Enum.any?(&(&1.status != :deprecated))
+
+    if active_implementations? do
+      add_error(changeset, :rule_implementations, "active_implementations")
+    else
+      changeset
+    end
+  end
 
   defp maybe_put_identifier(
          changeset,

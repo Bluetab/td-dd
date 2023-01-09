@@ -915,11 +915,68 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "return error when try restore implementation different for deprecated",
+    test "return error when trying to restore an implementation with a status other than deprecated",
          %{
            conn: conn
          } do
       %{id: implementation_id} = insert(:implementation, status: "rejected")
+
+      assert %{"data" => nil, "errors" => errors} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @restore_implementation,
+                 "variables" => %{"id" => implementation_id}
+               })
+               |> json_response(:ok)
+
+      assert [%{"message" => "forbidden"}] = errors
+    end
+
+    @tag authentication: [role: "admin"]
+    test "restore an implementation related to an active rule", %{
+      conn: conn
+    } do
+      rule = insert(:rule, active: true)
+
+      %{id: implementation_id} =
+        insert(
+          :implementation,
+          rule_id: rule.id,
+          deleted_at: DateTime.utc_now(),
+          status: :deprecated
+        )
+
+      assert %{"data" => data} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @restore_implementation,
+                 "variables" => %{"id" => implementation_id}
+               })
+               |> json_response(:ok)
+
+      implementation_id_string = "#{implementation_id}"
+      assert %{
+        "restoreImplementation" => %{
+          "id" => ^implementation_id_string,
+          "status" => "published",
+          "version" => 1
+        }
+      } = data
+    end
+
+    @tag authentication: [role: "admin"]
+    test "returns an error when trying to restore an implementation related to a deleted rule", %{
+      conn: conn
+    } do
+      rule = insert(:rule, deleted_at: DateTime.utc_now(), active: false)
+
+      %{id: implementation_id} =
+        insert(
+          :implementation,
+          rule_id: rule.id,
+          deleted_at: DateTime.utc_now(),
+          status: :deprecated
+        )
 
       assert %{"data" => nil, "errors" => errors} =
                conn

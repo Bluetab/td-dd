@@ -228,7 +228,7 @@ defmodule TdDq.Rules do
 
     with :ok <- Bodyguard.permit(__MODULE__, :delete, claims, changeset) do
       Multi.new()
-      |> Multi.delete(:rule, changeset)
+      |> Multi.update(:rule, changeset)
       |> Multi.run(:audit, Audit, :rule_deleted, [user_id])
       |> Repo.transaction()
       |> on_delete()

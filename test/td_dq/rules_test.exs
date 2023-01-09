@@ -139,7 +139,8 @@ defmodule TdDq.RulesTest do
     test "delete_rule/1 deletes the rule", %{claims: claims} do
       rule = insert(:rule)
       assert {:ok, %{rule: rule}} = Rules.delete_rule(rule, claims)
-      assert %{__meta__: %{state: :deleted}} = rule
+      assert %{active: false, deleted_at: deleted_at} = rule
+      assert deleted_at !== nil
     end
 
     test "soft_deletion modifies field deleted_at of rule and associated implementations with the current timestamp" do
