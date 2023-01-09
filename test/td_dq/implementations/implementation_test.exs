@@ -6,10 +6,13 @@ defmodule TdDq.Implementations.ImplementationTest do
   alias TdDd.Repo
   alias TdDq.Implementations.Implementation
 
+  @moduletag sandbox: :shared
+
   @implementation %Implementation{domain_id: 123}
   @unsafe "javascript:alert(document)"
 
   setup do
+    start_supervised!(TdDd.Search.StructureEnricher)
     identifier_name = "identifier"
 
     with_identifier = %{
@@ -723,59 +726,59 @@ defmodule TdDq.Implementations.ImplementationTest do
     end
 
     test "encoded implementation includes segments" do
-      rule = insert(:rule)
-
-      structure_1 = %{
-        id: 9,
-        name: "s9",
-        external_id: nil,
-        parent_index: nil,
-        path: [],
-        system: nil,
-        type: nil
-      }
-
-      structure_2 = %{
-        id: 10,
-        name: "s10",
-        external_id: nil,
-        parent_index: nil,
-        path: [],
-        system: nil,
-        type: nil
-      }
-
-      creation_attrs = %{
-        segments: [
-          %{
-            structure: structure_1
-          },
-          %{
-            structure: structure_2
-          }
-        ]
-      }
-
-      implementation_key = "seg1"
-
-      rule_implementation =
-        insert(:implementation,
-          implementation_key: implementation_key,
-          rule: rule,
-          segments: creation_attrs.segments
+      %{data_structure_id: id1} =
+        dsv1 =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, alias: nil)
         )
-        |> Repo.preload(:implementation_ref_struct)
 
-      assert %{
-               segments: [
-                 %{
-                   structure: ^structure_1
-                 },
-                 %{
-                   structure: ^structure_2
-                 }
-               ]
-             } = Document.encode(rule_implementation)
+      %{data_structure_id: id2} =
+        dsv2 =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, alias: "some_alias")
+        )
+
+      structure_1 = build(:dataset_structure, id: id1)
+      structure_2 = build(:dataset_structure, id: id2)
+
+      %{id: id} =
+        insert(:implementation,
+          segments: [%{structure: structure_1}, %{structure: structure_2}]
+        )
+
+      assert %{segments: [%{structure: s1}, %{structure: s2}]} =
+               Implementation
+               |> Repo.get(id)
+               |> Repo.preload(:implementation_ref_struct)
+               |> Document.encode()
+
+      assert_maps_equal(s1, dsv1, &structures_equal/2)
+      assert_maps_equal(s2, dsv2, &structures_equal/2)
+    end
+
+    test "encoded implementation includes alias and original name of aliased structure" do
+      %{name: name, data_structure_id: id} = insert(:data_structure_version, alias: "some_alias")
+      dataset_row = build(:dataset_row, structure: build(:dataset_structure, id: id))
+
+      implementation = insert(:implementation, dataset: [dataset_row])
+
+      assert %{dataset: [%{structure: structure}]} =
+               implementation |> Repo.preload(:implementation_ref_struct) |> Document.encode()
+
+      assert %{alias: "some_alias", name: ^name} = structure
+    end
+
+    test "encoded implementation includes alias and original name of unaliased structure" do
+      %{name: name, data_structure_id: id} = insert(:data_structure_version)
+      dataset_row = build(:dataset_row, structure: build(:dataset_structure, id: id))
+
+      implementation = insert(:implementation, dataset: [dataset_row])
+
+      assert %{dataset: [%{structure: structure}]} =
+               implementation |> Repo.preload(:implementation_ref_struct) |> Document.encode()
+
+      assert %{name: ^name} = structure
+      refute Map.has_key?(structure, :alias)
     end
 
     test "encodes ruleless implementations" do
@@ -842,4 +845,55 @@ defmodule TdDq.Implementations.ImplementationTest do
              } = Document.encode(rule_implementation)
     end
   end
+
+  defp structures_equal(
+         %{
+           alias: alias_name,
+           external_id: external_id,
+           id: id,
+           metadata: metadata,
+           name: name,
+           system: %{external_id: system_external_id, id: system_id, name: system_name},
+           type: type
+         },
+         %{
+           data_structure: %{
+             alias: alias_name,
+             external_id: external_id,
+             id: id,
+             system: %{external_id: system_external_id, id: system_id, name: system_name}
+           },
+           metadata: metadata,
+           name: name,
+           type: type
+         }
+       )
+       when is_binary(alias_name),
+       do: true
+
+  defp structures_equal(
+         %{
+           external_id: external_id,
+           id: id,
+           metadata: metadata,
+           name: name,
+           system: %{external_id: system_external_id, id: system_id, name: system_name},
+           type: type
+         } = map,
+         %{
+           data_structure: %{
+             alias: nil,
+             external_id: external_id,
+             id: id,
+             system: %{external_id: system_external_id, id: system_id, name: system_name}
+           },
+           metadata: metadata,
+           name: name,
+           type: type
+         }
+       )
+       when not is_map_key(map, :alias),
+       do: true
+
+  defp structures_equal(_, _), do: false
 end

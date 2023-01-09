@@ -1538,10 +1538,9 @@ defmodule TdDq.ImplementationsTest do
       %{id: id2} = insert(:implementation, rule: build(:rule), deleted_at: deleted_at)
       %{id: id3} = insert(:implementation, rule: build(:rule))
 
-      assert {:ok, %{deprecated: deprecated}} = Implementations.deprecate([id1, id2, id3])
+      assert {:ok, %{deprecated: {2, deprecated}}} = Implementations.deprecate([id1, id2, id3])
 
-      assert {2, [%{id: ^id1, status: :deprecated}, %{id: ^id3, status: :deprecated}]} =
-               deprecated
+      assert_lists_equal(deprecated, [id1, id3], &(&1.id == &2 and &1.status == :deprecated))
     end
 
     test "publishes audit events" do

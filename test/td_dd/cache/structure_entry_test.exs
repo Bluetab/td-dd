@@ -59,5 +59,15 @@ defmodule TdDd.Cache.StructureEntryTest do
 
       assert %{parent_id: ^parent_structure_id} = StructureEntry.cache_entry(id)
     end
+
+    test "includes original name and replaces name with alias if defined" do
+      %{id: id} = insert(:data_structure, alias: nil)
+      %{name: name} = insert(:data_structure_version, data_structure_id: id)
+      assert %{original_name: ^name, name: ^name} = StructureEntry.cache_entry(id)
+
+      %{id: id} = insert(:data_structure, alias: "some_alias")
+      %{name: name} = insert(:data_structure_version, data_structure_id: id)
+      assert %{original_name: ^name, name: "some_alias"} = StructureEntry.cache_entry(id)
+    end
   end
 end

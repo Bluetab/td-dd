@@ -253,6 +253,7 @@ defmodule TdDq.Search.Mappings do
 
   defp get_structure_mappings do
     %{
+      alias: %{type: "text"},
       external_id: %{type: "text"},
       id: %{type: "long"},
       name: %{type: "text"},
