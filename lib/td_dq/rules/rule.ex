@@ -14,6 +14,10 @@ defmodule TdDq.Rules.Rule do
   alias TdDq.Rules.RuleResult
 
   @type t :: %__MODULE__{}
+  @inactive_implementation_status [
+    :deprecated,
+    :versioned
+  ]
 
   schema "rules" do
     field(:business_concept_id, :integer)
@@ -102,7 +106,7 @@ defmodule TdDq.Rules.Rule do
       rule
       |> TdDd.Repo.preload(:rule_implementations)
       |> Map.get(:rule_implementations)
-      |> Enum.any?(&(&1.status != :deprecated))
+      |> Enum.any?(&(!Enum.member?(@inactive_implementation_status, &1.status)))
 
     if active_implementations? do
       add_error(changeset, :rule_implementations, "active_implementations")
