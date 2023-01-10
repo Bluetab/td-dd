@@ -18,7 +18,7 @@ defmodule TdDq.Rules.RuleResults do
   require Logger
 
   @index_worker Application.compile_env(:td_dd, :dq_index_worker)
-  @pagination_params [:order_by, :limit, :before, :after]
+  @pagination_params [:limit, :before, :after]
 
   defdelegate authorize(action, user, params), to: __MODULE__.Policy
 
@@ -29,11 +29,14 @@ defmodule TdDq.Rules.RuleResults do
 
   def list_rule_results(params \\ %{}) do
     params
+    # |> IO.inspect(label: " params -> list rule result ->")
     |> rule_results_query()
     |> select([rr, _ri], rr)
+    # |> IO.inspect(label: "result query ->")
     |> Repo.all()
   end
 
+  @spec list_rule_results_paginate(any) :: any
   def list_rule_results_paginate(params \\ %{}) do
     RuleResult
     |> join(:inner, [rr, ri], ri in Implementation, on: rr.implementation_id == ri.id)
@@ -193,9 +196,14 @@ defmodule TdDq.Rules.RuleResults do
   defp on_create(result), do: result
 
   @spec get_latest_rule_result(Implementation.t()) :: RuleResult.t() | nil
-  def get_latest_rule_result(%Implementation{id: id}) do
+  def get_latest_rule_result(%Implementation{implementation_ref: implementation_ref}) do
+    implementation_ids =
+      Implementation
+      |> where(implementation_ref: ^implementation_ref)
+      |> select([i], i.id)
+
     RuleResult
-    |> where([rr], rr.implementation_id == ^id)
+    |> where([rr], rr.implementation_id in subquery(implementation_ids))
     |> limit(1)
     |> order_by([rr], desc: rr.date)
     |> Repo.one()
@@ -342,6 +350,7 @@ defmodule TdDq.Rules.RuleResults do
 
   defp paginate_all(query, params) do
     cursor_params = get_cursor_params(params)
+    # |> IO.inspect(label: "cursor params ->")
 
     cursor_query =
       query
@@ -366,17 +375,20 @@ defmodule TdDq.Rules.RuleResults do
       {:limit, lim}, q ->
         limit(q, ^lim)
 
-      {:order_by, order}, q ->
-        order_by(q, ^order)
+      {:order_by, [:desc, :imp_version, :result_date, :result_id]}, q ->
+        order_by(q, [rr, ri], desc: ri.version, desc: rr.date, desc: rr.id)
+
+      {:order_by, [:asc, :imp_version, :result_date, :result_id]}, q ->
+        order_by(q, [rr, ri], asc: ri.version, asc: rr.date, asc: rr.id)
 
       {:preload, preloads}, q ->
         preload(q, ^preloads)
 
-      {:before, id}, q ->
-        where(q, [g], g.id < type(^id, :integer))
+      {:before, {version, date, id}}, q ->
+        where(q, [rr, ri], ri.version < ^version and rr.date < ^date and rr.id < ^id)
 
-      {:after, id}, q ->
-        where(q, [g], g.id > type(^id, :integer))
+      {:after, {version, date, id}}, q ->
+        where(q, [rr, ri], ri.version > ^version and rr.date > ^date and rr.id > ^id)
 
       _, q ->
         q
@@ -384,10 +396,42 @@ defmodule TdDq.Rules.RuleResults do
   end
 
   def min_max_count(params) do
+    first_cursor = first_result(params)
+    last_cursor = last_result(params)
+
+    count =
+      params
+      |> Map.drop(@pagination_params)
+      |> Map.drop([:order_by])
+      |> rule_results_query
+      |> select([rr, _ri], count(rr.id))
+      |> Repo.one()
+
+    %{count: count, last_cursor: last_cursor, first_cursor: first_cursor}
+  end
+
+  defp first_result(params) do
     params
     |> Map.drop(@pagination_params)
     |> rule_results_query
-    |> select([rr, _ri], %{count: count(rr.id), min_id: min(rr.id), max_id: max(rr.id)})
+    |> select([rr, ri], {ri.version, rr.date, rr.id})
+    |> limit(1)
     |> Repo.one()
+
+    # |> IO.inspect(label: "first ->")
+  end
+
+  defp last_result(params) do
+    [:desc | order_by] = Map.get(params, :order_by)
+
+    params
+    |> Map.drop(@pagination_params)
+    |> Map.put(:order_by, [:asc, order_by])
+    |> rule_results_query
+    |> select([rr, ri], {ri.version, rr.date, rr.id})
+    |> limit(1)
+    |> Repo.one()
+
+    # |> IO.inspect(label: "last ->")
   end
 end

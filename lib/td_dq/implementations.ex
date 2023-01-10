@@ -23,6 +23,7 @@ defmodule TdDq.Implementations do
   alias TdDq.Rules
   alias TdDq.Rules.Audit
   alias TdDq.Rules.Rule
+  alias TdDq.Rules.RuleResults
   alias TdDq.Search.Helpers
   alias Truedat.Auth.Claims
 
@@ -1041,8 +1042,10 @@ defmodule TdDq.Implementations do
   defp enrich(%Implementation{} = implementation, :execution_result_info) do
     quality_event = QualityEvents.get_event_by_imp(implementation.id)
 
+    result = RuleResults.get_latest_rule_result(implementation)
+
     execution_result_info =
-      Implementation.get_execution_result_info(implementation, quality_event)
+      Implementation.get_execution_result_info(implementation, result, quality_event)
 
     Map.put(implementation, :execution_result_info, execution_result_info)
   end
