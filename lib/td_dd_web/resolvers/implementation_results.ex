@@ -93,7 +93,8 @@ defmodule TdDdWeb.Resolvers.ImplementationResults do
       |> Enum.map(&{&1.implementation.version, &1.date, &1.id})
       # |> IO.inspect(label: "page version date->")
       |> Enum.min_max(fn -> {0, nil} end)
-      # |> IO.inspect(label: "{end, start}")
+
+    # |> IO.inspect(label: "{end, start}")
 
     # IO.inspect({last_cursor, first_cursor}, label: "{last_cursor, first_cursor}")
     # IO.inspect(not is_nil(end_cursor) and end_cursor > last_cursor, label: "has_next_page")
