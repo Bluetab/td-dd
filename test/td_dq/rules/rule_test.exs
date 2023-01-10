@@ -282,8 +282,14 @@ defmodule TdDq.Rules.RuleTest do
   end
 
   describe "delete_changeset/1" do
-    test "validates rule with a related deprecated implementation can be deleted" do
-      %{rule: rule} = insert(:implementation, deleted_at: DateTime.utc_now(), status: :deprecated)
+    test "validates rule with a related inactive implementation can be deleted" do
+      %{rule: rule} = insert(:implementation, status: :versioned)
+
+      insert(:implementation,
+        deleted_at: DateTime.utc_now(),
+        status: :deprecated,
+        rule_id: rule.id
+      )
 
       assert {:ok, rule} =
                rule
