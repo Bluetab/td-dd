@@ -9,6 +9,12 @@
   is indexed as an independent property if present.
 - [TD-5199] Soft delete for rule
 
+### Added
+
+- [TD-5282]
+  - field `all_pending_roles` on `GrantRequest` that doesn't depend on the requesting user
+  - `GrantRequestApprovalRules` checks on `all_pending_roles` 
+
 ## [4.58.0] 2022-12-27
 
 ### Added
