@@ -9,6 +9,10 @@
   is indexed as an independent property if present.
 - [TD-5199] Soft delete for rule
 
+### Fixed
+
+- [TD-5402] Reference data info is not showed in implementation details
+
 ## [4.58.0] 2022-12-27
 
 ### Added
