@@ -98,7 +98,8 @@ defmodule TdDq.Rules.RuleTest do
                {"unique_constraint", [constraint: :unique, constraint_name: "rules_name_index"]}
     end
 
-    test "does not validate unique constraint on name when a colliding rule has been deleted, both having a nil business_concept_id", %{domain: domain} do
+    test "does not validate unique constraint on name when a colliding rule has been deleted, both having a nil business_concept_id",
+         %{domain: domain} do
       %{name: name} = insert(:rule, business_concept_id: nil, deleted_at: DateTime.utc_now())
 
       assert {:ok, _rule} =
