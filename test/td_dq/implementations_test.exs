@@ -447,6 +447,33 @@ defmodule TdDq.ImplementationsTest do
       assert implementation.rule_id == params["rule_id"]
     end
 
+    test "with valid data with reference data creates a implementation", %{rule: rule} do
+      operator = build(:operator, name: "eq", value_type: "field")
+
+      validation_value = %{
+        id: 1,
+        name: "foo_reference_dataset",
+        parent_index: 2,
+        type: "reference_dataset_field"
+      }
+
+      validation = build(:condition_row, value: [validation_value], operator: operator)
+
+      params =
+        string_params_for(:implementation,
+          validation: [[validation]],
+          rule_id: rule.id,
+          domain_id: rule.domain_id
+        )
+
+      claims = build(:claims)
+
+      assert {:ok, %{implementation: %{validation: [%{conditions: [%{value: [value]}]}]}}} =
+               Implementations.create_implementation(rule, params, claims)
+
+      assert [[%{"value" => [^value]}]] = params["validation"]
+    end
+
     test "with population in validations", %{rule: rule} do
       %{
         "operator" => %{"name" => name, "value_type" => type},
