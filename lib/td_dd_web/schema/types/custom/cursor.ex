@@ -22,14 +22,7 @@ defmodule TdDdWeb.Schema.Types.Custom.Cursor do
   def decode(_), do: :error
 
   def encode(nil), do: nil
-
-  def encode({version, date, id}),
-    do:
-      Base.encode64(
-        to_string(version) <> "_" <> DateTime.to_iso8601(date) <> "_" <> to_string(id),
-        padding: false
-      )
-
+  def encode({value}), do: encode(value)
   def encode(value) when is_binary(value), do: Base.encode64(value, padding: false)
   def encode(value) when is_integer(value), do: Base.encode64(to_string(value), padding: false)
 end

@@ -27,12 +27,53 @@ defmodule TdDq.Rules.RuleResults do
     |> Repo.preload(options[:preload] || [])
   end
 
+  def get_expected_offset(params) do
+    before_id = Map.get(params, :before)
+    after_id = Map.get(params, :after)
+    implementation_ref = Map.get(params, :implementation_ref)
+
+    cursor_id =
+      case {before_id, after_id} do
+        {id, _} when is_binary(id) ->
+          String.to_integer(id)
+
+        {_, id} when is_binary(id) ->
+          String.to_integer(id)
+
+        _ ->
+          0
+      end
+
+    offset =
+      RuleResult
+      |> join(:inner, [rr], ri in Implementation, on: ri.id == rr.implementation_id)
+      |> where([_rr, ri], ri.implementation_ref == ^implementation_ref)
+      |> order_by([rr, ri], desc: ri.version, desc: rr.date, desc: rr.id)
+      |> select([rr, ri], %{
+        id: rr.id,
+        version: ri.version,
+        row: row_number() |> over(order_by: [desc: ri.version, desc: rr.date, desc: rr.id])
+      })
+      |> subquery()
+      |> where([rr], rr.id == ^cursor_id)
+      |> select([rr], {rr.row - 1})
+      |> limit(1)
+      |> Repo.one()
+
+    if cursor_id == 0 or offset == nil do
+      {0}
+    else
+      offset
+    end
+  end
+
   def list_rule_results(params \\ %{}) do
+    expected_offset = get_expected_offset(params)
+
     params
-    # |> IO.inspect(label: " params -> list rule result ->")
+    |> Map.put(:offset, expected_offset)
     |> rule_results_query()
     |> select([rr, _ri], rr)
-    # |> IO.inspect(label: "result query ->")
     |> Repo.all()
   end
 
@@ -350,7 +391,6 @@ defmodule TdDq.Rules.RuleResults do
 
   defp paginate_all(query, params) do
     cursor_params = get_cursor_params(params)
-    # |> IO.inspect(label: "cursor params ->")
 
     cursor_query =
       query
@@ -384,11 +424,15 @@ defmodule TdDq.Rules.RuleResults do
       {:preload, preloads}, q ->
         preload(q, ^preloads)
 
-      {:before, {version, date, id}}, q ->
-        where(q, [rr, ri], ri.version < ^version and rr.date < ^date and rr.id < ^id)
+      {:after, _}, q ->
+        {temporal_offset} = Map.get(params, :offset, {0})
+        limit = Map.get(params, :limit, :infinity)
+        offset_value = max(0, temporal_offset - limit)
+        offset(q, ^offset_value)
 
-      {:after, {version, date, id}}, q ->
-        where(q, [rr, ri], ri.version > ^version and rr.date > ^date and rr.id > ^id)
+      {:before, _}, q ->
+        {offset_value} = Map.get(params, :offset, {0})
+        offset(q, ^offset_value + 1)
 
       _, q ->
         q
@@ -414,11 +458,9 @@ defmodule TdDq.Rules.RuleResults do
     params
     |> Map.drop(@pagination_params)
     |> rule_results_query
-    |> select([rr, ri], {ri.version, rr.date, rr.id})
+    |> select([:id])
     |> limit(1)
     |> Repo.one()
-
-    # |> IO.inspect(label: "first ->")
   end
 
   defp last_result(params) do
@@ -428,10 +470,8 @@ defmodule TdDq.Rules.RuleResults do
     |> Map.drop(@pagination_params)
     |> Map.put(:order_by, [:asc, order_by])
     |> rule_results_query
-    |> select([rr, ri], {ri.version, rr.date, rr.id})
+    |> select([:id])
     |> limit(1)
     |> Repo.one()
-
-    # |> IO.inspect(label: "last ->")
   end
 end
