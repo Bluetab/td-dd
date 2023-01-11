@@ -9,6 +9,11 @@
   is indexed as an independent property if present.
 - [TD-5199] Soft delete for rule
 
+### Fixed
+
+- [TD-5455] Fixed Lineage selection is not displaying any domain in case that no
+  lineage structure is in the data catalog
+
 ## [4.58.0] 2022-12-27
 
 ### Added
