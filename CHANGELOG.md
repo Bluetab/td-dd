@@ -12,6 +12,8 @@
 ### Fixed
 
 - [TD-5402] Reference data info is not showed in implementation details
+- [TD-5455] Fixed Lineage selection is not displaying any domain in case that no
+  lineage structure is in the data catalog
 
 ## [4.58.0] 2022-12-27
 
