@@ -186,7 +186,7 @@ defmodule TdDdWeb.Resolvers.Domains do
 
   defp maybe_filter(domain_ids, "viewLineage") do
     with [_ | _] = unit_domain_ids <- Units.list_domain_ids(),
-         [_ | _] = structure_domain_ids <- NodeQuery.list_structure_domain_ids(),
+         structure_domain_ids <- NodeQuery.list_structure_domain_ids(),
          [_ | _] = reaching_ids <-
            TaxonomyCache.reaching_domain_ids(unit_domain_ids ++ structure_domain_ids) do
       intersection([domain_ids, reaching_ids])
