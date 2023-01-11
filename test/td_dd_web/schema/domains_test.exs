@@ -236,6 +236,58 @@ defmodule TdDdWeb.Schema.DomainTest do
              } == domains_actions
     end
 
+    @tag authentication: [role: "admin"]
+    test "returns list of domains for action viewLinage", %{
+      conn: conn
+    } do
+      %{id: domain_id} = CacheHelpers.insert_domain()
+      CacheHelpers.insert_domain()
+
+      domain_str_id = to_string(domain_id)
+
+      contains = %{"foo" => ["bar", "baz"], "xyz" => ["x", "y"]}
+      depends = [{"bar", "baz"}, {"x", "y"}]
+
+      groups =
+        Enum.map(contains, fn {parent, _chidren} ->
+          insert(:node,
+            external_id: parent,
+            type: "Group"
+          )
+        end)
+
+      resources =
+        depends
+        |> Enum.flat_map(fn {from, to} -> [from, to] end)
+        |> Enum.uniq()
+        |> Enum.map(fn external_id ->
+          insert(:node,
+            external_id: external_id,
+            type: "Resource"
+          )
+        end)
+
+      nodes = groups ++ resources
+
+      insert(:unit,
+        domain_id: domain_id,
+        nodes: Enum.filter(nodes, &(&1.external_id in ["foo", "bar", "baz"]))
+      )
+
+      assert %{"data" => %{"domains" => domains}} =
+               resp =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @domains,
+                 "variables" => %{"action" => "viewLineage"}
+               })
+               |> json_response(:ok)
+
+      refute Map.has_key?(resp, "errors")
+      assert Enum.count(domains) == 1
+      assert [%{"id" => ^domain_str_id}] = domains
+    end
+
     @tag authentication: [
            role: "user",
            permissions: [
