@@ -118,7 +118,7 @@ defmodule TdDd.Grants.ApprovalRulesTest do
         insert(:grant_request,
           domain_ids: [domain_id],
           metadata: %{"foo" => "bar"},
-          pending_roles: [@approval_role]
+          all_pending_roles: [@approval_role]
         )
 
       assert {_, rules} = ApprovalRules.get_rules_for_request(grant_request)
@@ -136,7 +136,7 @@ defmodule TdDd.Grants.ApprovalRulesTest do
         insert(:grant_request,
           domain_ids: [domain_id],
           metadata: %{"foo" => "not bar"},
-          pending_roles: [@approval_role]
+          all_pending_roles: [@approval_role]
         )
 
       assert {_, []} = ApprovalRules.get_rules_for_request(grant_request)
@@ -171,7 +171,7 @@ defmodule TdDd.Grants.ApprovalRulesTest do
           data_structure: data_structure,
           domain_ids: domain_ids,
           metadata: %{"foo" => "bar"},
-          pending_roles: [@approval_role]
+          all_pending_roles: [@approval_role]
         )
 
       assert {_, rules} = ApprovalRules.get_rules_for_request(grant_request)
@@ -201,7 +201,7 @@ defmodule TdDd.Grants.ApprovalRulesTest do
         insert(:grant_request,
           data_structure: data_structure,
           domain_ids: domain_ids,
-          pending_roles: [@approval_role]
+          all_pending_roles: [@approval_role]
         )
 
       assert {_, rules} = ApprovalRules.get_rules_for_request(grant_request)
@@ -235,7 +235,7 @@ defmodule TdDd.Grants.ApprovalRulesTest do
         insert(:grant_request,
           data_structure: data_structure,
           domain_ids: domain_ids,
-          pending_roles: [@approval_role]
+          all_pending_roles: [@approval_role]
         )
 
       assert {_, rules} = ApprovalRules.get_rules_for_request(grant_request)

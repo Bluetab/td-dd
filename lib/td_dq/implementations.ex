@@ -914,6 +914,16 @@ defmodule TdDq.Implementations do
     |> Map.put(:right, enrich_implementation_structure(right))
   end
 
+  defp enrich_value_structure(%{"id" => id, "type" => "reference_dataset_field"} = value_map) do
+    value_map_atom = for {key, val} <- value_map, into: %{}, do: {String.to_atom(key), val}
+
+    ReferenceData.Dataset
+    |> Repo.get!(id)
+    |> Map.from_struct()
+    |> Map.take([:name, :id])
+    |> Map.merge(value_map_atom)
+  end
+
   defp enrich_value_structure(%{"id" => id} = value_map) do
     cached_structure = StructureEntry.cache_entry(id, system: true)
     put_structure_cached_attributes(value_map, cached_structure)

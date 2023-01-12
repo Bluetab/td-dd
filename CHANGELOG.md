@@ -7,6 +7,19 @@
 - [TD-5344] Embedded structures in rule implementations are now indexed with
   their original `name` regardless of whether they have an alias or not. `alias`
   is indexed as an independent property if present.
+- [TD-5199] Soft delete for rule
+
+### Added
+
+- [TD-5382]
+  - field `all_pending_roles` on `GrantRequest` that doesn't depend on the requesting user
+  - `GrantRequestApprovalRules` checks on `all_pending_roles`
+
+### Fixed
+
+- [TD-5402] Reference data info is not showed in implementation details
+- [TD-5455] Fixed Lineage selection is not displaying any domain in case that no
+  lineage structure is in the data catalog
 
 ## [4.58.0] 2022-12-27
 

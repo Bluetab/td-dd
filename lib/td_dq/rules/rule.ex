@@ -8,12 +8,19 @@ defmodule TdDq.Rules.Rule do
   import Ecto.Changeset
 
   alias TdCache.TaxonomyCache
+  alias TdDd.Repo
   alias TdDfLib.Validation
   alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleResult
 
+  import Ecto.Query
+
   @type t :: %__MODULE__{}
+  @inactive_implementation_status [
+    :deprecated,
+    :versioned
+  ]
 
   schema "rules" do
     field(:business_concept_id, :integer)
@@ -76,8 +83,8 @@ defmodule TdDq.Rules.Rule do
 
   def delete_changeset(%__MODULE__{} = rule) do
     rule
-    |> change()
-    |> no_assoc_constraint(:rule_implementations, message: "rule.delete.existing.implementations")
+    |> changeset(%{active: false, deleted_at: DateTime.utc_now()})
+    |> validate_inactive_implementations()
   end
 
   defp validate_content(%{valid?: true} = changeset, rule) do
@@ -96,6 +103,20 @@ defmodule TdDq.Rules.Rule do
   end
 
   defp validate_content(changeset, _), do: changeset
+
+  defp validate_inactive_implementations(%{data: %{id: rule_id}} = changeset) do
+    %{active_implementations?: active_implementations?} =
+      Implementation
+      |> where([ri], ri.rule_id == ^rule_id and ri.status not in ^@inactive_implementation_status)
+      |> select([ri], %{active_implementations?: count(ri) > 0})
+      |> Repo.one()
+
+    if active_implementations? do
+      add_error(changeset, :rule_implementations, "active_implementations")
+    else
+      changeset
+    end
+  end
 
   defp maybe_put_identifier(
          changeset,
