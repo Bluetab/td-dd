@@ -8,6 +8,7 @@
   their original `name` regardless of whether they have an alias or not. `alias`
   is indexed as an independent property if present.
 - [TD-5199] Soft delete for rule
+- [TD-5433] ignore ReferenceData enrich in Implementation if it doesn't exists
 
 ### Fixed
 
