@@ -29,6 +29,7 @@ defmodule TdDd.Grants.GrantRequest do
     has_many(:status, GrantRequestStatus)
     has_many(:approvals, GrantRequestApproval)
     field(:pending_roles, {:array, :string}, virtual: true)
+    field(:all_pending_roles, {:array, :string}, virtual: true)
 
     timestamps(type: :utc_datetime_usec, updated_at: false)
   end

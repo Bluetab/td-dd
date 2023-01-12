@@ -129,7 +129,7 @@ defmodule TdDd.Grants.AuditTest do
               %{
                 audit: event_id,
                 group: %{id: grant_request_group_id, requests: _grant_requests}
-              }} = Requests.create_grant_request_group(params, claims, nil)
+              }} = Requests.create_grant_request_group(params, nil)
 
       resource_id = "#{grant_request_group_id}"
 

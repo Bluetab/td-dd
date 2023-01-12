@@ -43,7 +43,7 @@ defmodule TdDd.Grants.RequestsTest do
     test "create_grant_request_group/2 with valid data creates a grant_request_group" do
       %{id: domain_id} = CacheHelpers.insert_domain()
       %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain_id])
-      %{user_id: user_id} = claims = build(:claims)
+      %{user_id: user_id} = build(:claims)
 
       params = %{
         type: @template_name,
@@ -53,7 +53,7 @@ defmodule TdDd.Grants.RequestsTest do
       }
 
       assert {:ok, %{group: group, statuses: statuses, requests: {_count, [request_id]}}} =
-               Requests.create_grant_request_group(params, claims)
+               Requests.create_grant_request_group(params)
 
       assert %{
                type: @template_name,
@@ -68,7 +68,7 @@ defmodule TdDd.Grants.RequestsTest do
     test "create_grant_request_group/2 with modification_grant" do
       %{id: domain_id} = CacheHelpers.insert_domain()
       %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain_id])
-      %{user_id: user_id} = claims = build(:claims)
+      %{user_id: user_id} = build(:claims)
       %{id: grant_id} = modification_grant = insert(:grant, data_structure_id: data_structure_id)
 
       params = %{
@@ -79,7 +79,7 @@ defmodule TdDd.Grants.RequestsTest do
       }
 
       assert {:ok, %{group: group}} =
-               Requests.create_grant_request_group(params, claims, modification_grant)
+               Requests.create_grant_request_group(params, modification_grant)
 
       assert %{
                type: @template_name,
@@ -93,7 +93,7 @@ defmodule TdDd.Grants.RequestsTest do
       domain_ids = [domain_id]
       %{id: ds_id_1} = insert(:data_structure, domain_ids: domain_ids)
       %{id: ds_id_2} = insert(:data_structure, domain_ids: domain_ids)
-      %{user_id: user_id} = claims = build(:claims)
+      %{user_id: user_id} = build(:claims)
 
       requests = [
         %{
@@ -111,8 +111,7 @@ defmodule TdDd.Grants.RequestsTest do
         created_by_id: user_id
       }
 
-      assert {:ok, %{group: %{requests: requests}}} =
-               Requests.create_grant_request_group(params, claims)
+      assert {:ok, %{group: %{requests: requests}}} = Requests.create_grant_request_group(params)
 
       assert [
                %{
@@ -128,7 +127,7 @@ defmodule TdDd.Grants.RequestsTest do
       invalid_params = %{type: nil}
 
       assert {:error, :group, %Ecto.Changeset{}, _} =
-               Requests.create_grant_request_group(invalid_params, build(:claims))
+               Requests.create_grant_request_group(invalid_params)
     end
 
     test "delete_grant_request_group/1 deletes the grant_request_group" do

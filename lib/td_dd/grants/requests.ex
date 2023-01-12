@@ -46,7 +46,6 @@ defmodule TdDd.Grants.Requests do
 
   def create_grant_request_group(
         %{} = params,
-        claims,
         modification_grant \\ nil
       ) do
     changeset =
@@ -65,14 +64,14 @@ defmodule TdDd.Grants.Requests do
         &%{grant_request_id: &1, status: "pending", inserted_at: DateTime.utc_now()}
       )
     end)
-    |> Multi.run(:approval_rules, &maybe_apply_approval_rules(&1, &2, claims))
+    |> Multi.run(:approval_rules, &maybe_apply_approval_rules(&1, &2))
     |> Multi.run(:audit, Audit, :grant_request_group_created, [])
     |> Repo.transaction()
   end
 
-  defp maybe_apply_approval_rules(_, %{requests: {_, requests}}, claims) do
+  defp maybe_apply_approval_rules(_, %{requests: {_, requests}}) do
     requests
-    |> Enum.map(&get_grant_request_for_rules!(&1, claims))
+    |> Enum.map(&get_grant_request_for_rules!/1)
     |> Enum.map(&ApprovalRules.get_rules_for_request/1)
     |> Enum.flat_map(&flatten_request_rules/1)
     |> Enum.each(fn {claims, request, params, approval_rule_id} ->
@@ -98,9 +97,8 @@ defmodule TdDd.Grants.Requests do
     |> Enum.reject(&is_nil/1)
   end
 
-  defp get_grant_request_for_rules!(id, claims) do
+  defp get_grant_request_for_rules!(id) do
     required = required_approvals()
-    user_roles = get_user_roles(claims)
 
     %{}
     |> grant_request_query()
@@ -109,7 +107,7 @@ defmodule TdDd.Grants.Requests do
       :approvals,
       data_structure: [current_version: [:current_metadata, :published_note]]
     ])
-    |> with_missing_roles(required, user_roles)
+    |> with_all_pending_roles(required)
   end
 
   defp update_domain_ids(%{group: %{id: id}}) do
@@ -180,6 +178,7 @@ defmodule TdDd.Grants.Requests do
               grant_requests
               |> Repo.preload([:approvals])
               |> Enum.map(&with_missing_roles(&1, required, user_roles))
+              |> Enum.map(&with_all_pending_roles(&1, required))
               |> Enum.reject(&Enum.empty?(Map.get(&1, :pending_roles, [])))
 
             _ ->
@@ -214,6 +213,7 @@ defmodule TdDd.Grants.Requests do
     |> Repo.get!(id)
     |> Repo.preload([:approvals, :group])
     |> with_missing_roles(required, user_roles)
+    |> with_all_pending_roles(required)
     |> enrich()
   end
 
@@ -496,5 +496,17 @@ defmodule TdDd.Grants.Requests do
 
   defp with_missing_roles(grant_request, _, _) do
     grant_request
+  end
+
+  defp with_all_pending_roles(%{approvals: approvals} = grant_request, required_roles)
+       when is_list(approvals) do
+    approved_roles = MapSet.new(approvals, & &1.role)
+
+    pending_roles =
+      required_roles
+      |> MapSet.difference(approved_roles)
+      |> MapSet.to_list()
+
+    %{grant_request | all_pending_roles: pending_roles}
   end
 end
