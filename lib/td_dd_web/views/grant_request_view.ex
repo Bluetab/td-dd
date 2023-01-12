@@ -32,6 +32,7 @@ defmodule TdDdWeb.GrantRequestView do
       :inserted_at,
       :updated_at,
       :pending_roles,
+      :all_pending_roles,
       :domain_ids
     ])
     |> Map.put(:status, status)
