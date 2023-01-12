@@ -22,7 +22,6 @@ defmodule TdDdWeb.Schema.Types.Custom.Cursor do
   def decode(_), do: :error
 
   def encode(nil), do: nil
-  def encode({value}), do: encode(value)
   def encode(value) when is_binary(value), do: Base.encode64(value, padding: false)
   def encode(value) when is_integer(value), do: Base.encode64(to_string(value), padding: false)
 end

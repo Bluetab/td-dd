@@ -25,14 +25,6 @@ defmodule TdDdWeb.Resolvers.ImplementationResults do
     {:ok, RuleResults.has_remediation?(rule_result)}
   end
 
-  def results_connection(conn_params) do
-    conn_params
-    |> RuleResults.min_max_count()
-    |> read_page(fn ->
-      RuleResults.list_rule_results(Map.put(conn_params, :preload, :implementation))
-    end)
-  end
-
   def results_connection(
         %{implementation_ref: implementation_ref} = _implementation,
         args,
@@ -42,8 +34,8 @@ defmodule TdDdWeb.Resolvers.ImplementationResults do
     |> Map.take([:first, :last, :after, :before, :filters])
     |> Map.new(&connection_param/1)
     |> Map.put(:implementation_ref, implementation_ref)
-    |> put_order_by()
-    |> results_connection()
+    |> Map.put(:order_by, [:desc, :imp_version, :result_date, :result_id])
+    |> read_page()
     |> then(&{:ok, &1})
   end
 
@@ -55,26 +47,17 @@ defmodule TdDdWeb.Resolvers.ImplementationResults do
   defp connection_param({:first, first}), do: {:limit, first}
   defp connection_param({:last, last}), do: {:limit, last}
 
-  defp put_order_by(conn_params),
-    do: Map.put(conn_params, :order_by, [:desc, :imp_version, :result_date, :result_id])
+  defp read_page(conn_params) do
+    page =
+      conn_params
+      |> Map.put(:preload, :implementation)
+      |> RuleResults.list_rule_results()
 
-  defp read_page(%{count: 0}, _fun) do
-    %{
-      total_count: 0,
-      page: [],
-      page_info: %{
-        start_cursor: nil,
-        end_cursor: nil,
-        has_next_page: false,
-        has_previous_page: false
-      }
-    }
-  end
+    [start_cursor, end_cursor] =
+      [List.last(page, %{}), List.first(page, %{})] |> Enum.map(&Map.get(&1, :id))
 
-  defp read_page(%{count: count, last_cursor: last_cursor, first_cursor: first_cursor}, fun) do
-    page = fun.()
-
-    [{start_cursor}, {end_cursor}] = [List.last(page), List.first(page)] |> Enum.map(&{&1.id})
+    %{count: count, last_cursor: last_cursor, first_cursor: first_cursor} =
+      RuleResults.min_max_count(conn_params)
 
     %{
       page: page,

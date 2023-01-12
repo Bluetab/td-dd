@@ -27,57 +27,42 @@ defmodule TdDq.Rules.RuleResults do
     |> Repo.preload(options[:preload] || [])
   end
 
-  def get_expected_offset(params) do
-    before_id = Map.get(params, :before)
-    after_id = Map.get(params, :after)
-    implementation_ref = Map.get(params, :implementation_ref)
+  def add_offset(%{before: id} = params) when is_binary(id), do: add_offset(params, id)
+  def add_offset(%{after: id} = params) when is_binary(id), do: add_offset(params, id)
+  def add_offset(params), do: Map.put(params, :offset, 0)
 
-    cursor_id =
-      case {before_id, after_id} do
-        {id, _} when is_binary(id) ->
-          String.to_integer(id)
-
-        {_, id} when is_binary(id) ->
-          String.to_integer(id)
-
-        _ ->
-          0
-      end
-
-    offset =
-      RuleResult
-      |> join(:inner, [rr], ri in Implementation, on: ri.id == rr.implementation_id)
-      |> where([_rr, ri], ri.implementation_ref == ^implementation_ref)
-      |> order_by([rr, ri], desc: ri.version, desc: rr.date, desc: rr.id)
-      |> select([rr, ri], %{
-        id: rr.id,
-        version: ri.version,
-        row: row_number() |> over(order_by: [desc: ri.version, desc: rr.date, desc: rr.id])
-      })
-      |> subquery()
-      |> where([rr], rr.id == ^cursor_id)
-      |> select([rr], {rr.row - 1})
-      |> limit(1)
-      |> Repo.one()
-
-    if cursor_id == 0 or offset == nil do
-      {0}
-    else
-      offset
+  def add_offset(%{implementation_ref: implementation_ref} = params, rule_result_id) do
+    case get_offset(implementation_ref, rule_result_id) do
+      nil -> Map.put(params, :offset, 0)
+      offset -> Map.put(params, :offset, offset)
     end
   end
 
-  def list_rule_results(params \\ %{}) do
-    expected_offset = get_expected_offset(params)
+  defp get_offset(implementation_ref, rule_result_id) do
+    RuleResult
+    |> join(:inner, [rr], ri in Implementation, on: ri.id == rr.implementation_id)
+    |> where([_rr, ri], ri.implementation_ref == ^implementation_ref)
+    |> order_by([rr, ri], desc: ri.version, desc: rr.date, desc: rr.id)
+    |> select([rr, ri], %{
+      id: rr.id,
+      version: ri.version,
+      row: row_number() |> over(order_by: [desc: ri.version, desc: rr.date, desc: rr.id])
+    })
+    |> subquery()
+    |> where([rr], rr.id == ^rule_result_id)
+    |> select([rr], rr.row - 1)
+    |> limit(1)
+    |> Repo.one()
+  end
 
+  def list_rule_results(params \\ %{}) do
     params
-    |> Map.put(:offset, expected_offset)
+    |> add_offset()
     |> rule_results_query()
     |> select([rr, _ri], rr)
     |> Repo.all()
   end
 
-  @spec list_rule_results_paginate(any) :: any
   def list_rule_results_paginate(params \\ %{}) do
     RuleResult
     |> join(:inner, [rr, ri], ri in Implementation, on: rr.implementation_id == ri.id)
@@ -425,13 +410,13 @@ defmodule TdDq.Rules.RuleResults do
         preload(q, ^preloads)
 
       {:after, _}, q ->
-        {temporal_offset} = Map.get(params, :offset, {0})
+        temporal_offset = Map.get(params, :offset, 0)
         limit = Map.get(params, :limit, :infinity)
         offset_value = max(0, temporal_offset - limit)
         offset(q, ^offset_value)
 
       {:before, _}, q ->
-        {offset_value} = Map.get(params, :offset, {0})
+        offset_value = Map.get(params, :offset, 0)
         offset(q, ^offset_value + 1)
 
       _, q ->
@@ -440,23 +425,25 @@ defmodule TdDq.Rules.RuleResults do
   end
 
   def min_max_count(params) do
-    first_cursor = first_result(params)
-    last_cursor = last_result(params)
+    params = Map.drop(params, @pagination_params)
 
-    count =
-      params
-      |> Map.drop(@pagination_params)
-      |> Map.drop([:order_by])
-      |> rule_results_query
-      |> select([rr, _ri], count(rr.id))
-      |> Repo.one()
+    %{
+      count: count_results(params),
+      last_cursor: last_result(params),
+      first_cursor: first_result(params)
+    }
+  end
 
-    %{count: count, last_cursor: last_cursor, first_cursor: first_cursor}
+  defp count_results(params) do
+    params
+    |> Map.drop([:order_by])
+    |> rule_results_query
+    |> select([rr, _ri], count(rr.id))
+    |> Repo.one()
   end
 
   defp first_result(params) do
     params
-    |> Map.drop(@pagination_params)
     |> rule_results_query
     |> select([:id])
     |> limit(1)
@@ -467,7 +454,6 @@ defmodule TdDq.Rules.RuleResults do
     [:desc | order_by] = Map.get(params, :order_by)
 
     params
-    |> Map.drop(@pagination_params)
     |> Map.put(:order_by, [:asc, order_by])
     |> rule_results_query
     |> select([:id])
