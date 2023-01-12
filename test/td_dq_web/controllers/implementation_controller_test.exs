@@ -1084,6 +1084,88 @@ defmodule TdDqWeb.ImplementationControllerTest do
     end
 
     @tag authentication: [role: "admin"]
+    test "renders implementation with refence data", %{conn: conn, swagger_schema: schema} do
+      rule = insert(:rule)
+      %{id: rd_id} = insert(:reference_dataset, name: "foo_reference_dataset")
+
+      creation_attrs =
+        %{
+          implementation_key: "rf1",
+          rule_id: rule.id,
+          dataset: @valid_dataset,
+          validation: [
+            [
+              %{
+                operator: %{
+                  name: "eq",
+                  value_type: "field"
+                },
+                structure: %{id: 12_554, name: "foo_structure"},
+                value: [
+                  %{
+                    id: rd_id,
+                    name: "foo_reference_dataset",
+                    parent_index: 2,
+                    type: "reference_dataset_field"
+                  }
+                ]
+              }
+            ]
+          ],
+          result_type: "percentage",
+          minimum: 50,
+          goal: 100
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.implementation_path(conn, :create),
+                 rule_implementation: creation_attrs
+               )
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:created)
+
+      assert %{"id" => id} = data
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
+
+      assert [
+               [
+                 %{
+                   "value" => [
+                     %{
+                       "id" => validation_id,
+                       "parent_index" => validation_parent_index,
+                       "name" => validation_name,
+                       "type" => validation_type
+                     }
+                   ]
+                 }
+               ]
+             ] = Map.get(data, "validation")
+
+      assert [
+               [
+                 %{
+                   "value" => [
+                     %{
+                       "id" => ^validation_id,
+                       "parent_index" => ^validation_parent_index,
+                       "name" => ^validation_name,
+                       "type" => ^validation_type
+                     }
+                   ]
+                 }
+               ]
+             ] = Map.get(creation_attrs, "validation")
+    end
+
+    @tag authentication: [role: "admin"]
     test "return error when try to create more than one draft", %{
       conn: conn,
       swagger_schema: schema

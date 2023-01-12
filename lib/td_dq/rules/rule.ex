@@ -109,7 +109,7 @@ defmodule TdDq.Rules.Rule do
       Implementation
       |> where([ri], ri.rule_id == ^rule_id and ri.status not in ^@inactive_implementation_status)
       |> select([ri], %{active_implementations?: count(ri) > 0})
-      |> Repo.one
+      |> Repo.one()
 
     if active_implementations? do
       add_error(changeset, :rule_implementations, "active_implementations")
