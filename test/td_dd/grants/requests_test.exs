@@ -111,8 +111,7 @@ defmodule TdDd.Grants.RequestsTest do
         created_by_id: user_id
       }
 
-      assert {:ok, %{group: %{requests: requests}}} =
-               Requests.create_grant_request_group(params)
+      assert {:ok, %{group: %{requests: requests}}} = Requests.create_grant_request_group(params)
 
       assert [
                %{
