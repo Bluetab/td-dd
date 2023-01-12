@@ -25,9 +25,6 @@ defmodule TdDdWeb.Resolvers.ImplementationResults do
     {:ok, RuleResults.has_remediation?(rule_result)}
   end
 
-  defp claims(%{context: %{claims: claims}}), do: claims
-  defp claims(_), do: nil
-
   def results_connection(
         %{implementation_ref: implementation_ref} = _implementation,
         args,
@@ -37,57 +34,39 @@ defmodule TdDdWeb.Resolvers.ImplementationResults do
     |> Map.take([:first, :last, :after, :before, :filters])
     |> Map.new(&connection_param/1)
     |> Map.put(:implementation_ref, implementation_ref)
-    |> put_order_by(args)
-    |> results_connection()
+    |> Map.put(:order_by, [:desc, :imp_version, :result_date, :result_id])
+    |> read_page()
     |> then(&{:ok, &1})
   end
+
+  defp claims(%{context: %{claims: claims}}), do: claims
+  defp claims(_), do: nil
 
   defp connection_param({:after, cursor}), do: {:after, cursor}
   defp connection_param({:before, cursor}), do: {:before, cursor}
   defp connection_param({:first, first}), do: {:limit, first}
   defp connection_param({:last, last}), do: {:limit, last}
 
-  defp put_order_by(conn_params, %{after: _}), do: Map.put(conn_params, :order_by, :id)
-  defp put_order_by(conn_params, %{last: _}), do: Map.put(conn_params, :order_by, desc: :id)
-  defp put_order_by(conn_params, %{}), do: Map.put(conn_params, :order_by, desc: :id)
+  defp read_page(conn_params) do
+    page =
+      conn_params
+      |> Map.put(:preload, :implementation)
+      |> RuleResults.list_rule_results()
 
-  defp results_connection(conn_params) do
-    conn_params
-    |> RuleResults.min_max_count()
-    |> read_page(fn ->
-      RuleResults.list_rule_results(Map.put(conn_params, :preload, :implementation))
-    end)
-  end
+    [start_cursor, end_cursor] =
+      [List.last(page, %{}), List.first(page, %{})] |> Enum.map(&Map.get(&1, :id))
 
-  defp read_page(%{count: 0}, _fun) do
-    %{
-      total_count: 0,
-      page: [],
-      page_info: %{
-        start_cursor: nil,
-        end_cursor: nil,
-        has_next_page: false,
-        has_previous_page: false
-      }
-    }
-  end
-
-  defp read_page(%{count: count, min_id: min_id, max_id: max_id}, fun) do
-    page = fun.()
-
-    {start_cursor, end_cursor} =
-      page
-      |> Enum.map(& &1.id)
-      |> Enum.min_max(fn -> {0, nil} end)
+    %{count: count, last_cursor: last_cursor, first_cursor: first_cursor} =
+      RuleResults.min_max_count(conn_params)
 
     %{
-      page: Enum.sort_by(page, & &1.id, :desc),
+      page: page,
       total_count: count,
       page_info: %{
         start_cursor: start_cursor,
         end_cursor: end_cursor,
-        has_next_page: not is_nil(end_cursor) and end_cursor < max_id,
-        has_previous_page: not is_nil(start_cursor) and start_cursor > min_id
+        has_next_page: not is_nil(start_cursor) and end_cursor != first_cursor.id,
+        has_previous_page: not is_nil(end_cursor) and start_cursor != last_cursor.id
       }
     }
   end
