@@ -636,6 +636,16 @@ defmodule TdDq.ImplementationsTest do
                Implementations.enrich_implementation_structures(implementation)
     end
 
+    test "implementation with invalid reference_dataset will simply return the invalid structure withou enriching" do
+      implementation =
+        insert(:implementation,
+          dataset: [%{structure: %{id: 1, type: "reference_dataset"}}]
+        )
+
+      assert %{dataset: [%{structure: %{type: "reference_dataset"}}]} =
+               Implementations.enrich_implementation_structures(implementation)
+    end
+
     test "enriches implementation dataset clauses with reference_dataset_field" do
       %{id: id, name: dataset_name} = insert(:reference_dataset)
 
@@ -722,6 +732,34 @@ defmodule TdDq.ImplementationsTest do
                  }
                ]
              } = Implementations.enrich_implementation_structures(implementation)
+    end
+
+    test "implementation with invalida reference_dataset_field validation value
+          will simply return the invalid structure withou enriching" do
+      operator = build(:operator, name: "eq", value_type: "field")
+
+      validation_value = %{
+        "id" => 1,
+        "name" => "foo_reference_dataset",
+        "parent_index" => 2,
+        "type" => "reference_dataset_field"
+      }
+
+      condition = build(:condition_row, value: [validation_value], operator: operator)
+
+      implementation =
+        insert(
+          :implementation,
+          dataset: [%{structure: %{id: 1, type: "reference_dataset"}}],
+          populations: [],
+          segments: [],
+          validation: [
+            %{conditions: [condition]}
+          ]
+        )
+
+      assert %{validation: [%{conditions: [%{value: [_]}]}]} =
+               Implementations.enrich_implementation_structures(implementation)
     end
 
     test "enriches implementation populations" do
