@@ -65,7 +65,7 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
       }
 
       assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
-               Requests.create_grant_request_group(params, claims)
+               Requests.create_grant_request_group(params)
 
       assert %{
                current_status: "approved",
@@ -115,7 +115,7 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
       }
 
       assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
-               Requests.create_grant_request_group(params, claims)
+               Requests.create_grant_request_group(params)
 
       assert %{
                current_status: "approved",
@@ -164,7 +164,7 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
       }
 
       assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
-               Requests.create_grant_request_group(params, claims)
+               Requests.create_grant_request_group(params)
 
       assert %{
                current_status: "approved",
@@ -214,7 +214,7 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
       }
 
       assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
-               Requests.create_grant_request_group(params, claims)
+               Requests.create_grant_request_group(params)
 
       assert %{
                current_status: "approved",
@@ -267,7 +267,7 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
       }
 
       assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
-               Requests.create_grant_request_group(params, claims)
+               Requests.create_grant_request_group(params)
 
       assert %{
                current_status: "approved",
@@ -318,7 +318,7 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
       }
 
       assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
-               Requests.create_grant_request_group(params, claims)
+               Requests.create_grant_request_group(params)
 
       assert %{
                current_status: "approved",
@@ -358,7 +358,7 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
       }
 
       assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
-               Requests.create_grant_request_group(params, claims)
+               Requests.create_grant_request_group(params)
 
       assert %{
                current_status: "pending",
@@ -393,7 +393,7 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
       }
 
       assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
-               Requests.create_grant_request_group(params, claims)
+               Requests.create_grant_request_group(params)
 
       assert %{
                current_status: "pending",
@@ -429,7 +429,7 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
       }
 
       assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
-               Requests.create_grant_request_group(params, claims)
+               Requests.create_grant_request_group(params)
 
       assert %{
                current_status: "pending",
@@ -463,7 +463,7 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
       }
 
       assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
-               Requests.create_grant_request_group(params, claims)
+               Requests.create_grant_request_group(params)
 
       assert %{
                current_status: "pending",
@@ -498,7 +498,7 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
       }
 
       assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
-               Requests.create_grant_request_group(params, claims)
+               Requests.create_grant_request_group(params)
 
       assert %{current_status: "pending"} = Requests.get_grant_request!(request_id, claims)
     end
@@ -539,7 +539,7 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
       }
 
       assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
-               Requests.create_grant_request_group(params, claims)
+               Requests.create_grant_request_group(params)
 
       assert %{current_status: "approved", approvals: [%{comment: "RULE1"}]} =
                Requests.get_grant_request!(request_id, claims)
@@ -573,7 +573,7 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
       }
 
       assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
-               Requests.create_grant_request_group(params, claims)
+               Requests.create_grant_request_group(params)
 
       assert %{current_status: "rejected"} = Requests.get_grant_request!(request_id, claims)
     end
@@ -613,7 +613,7 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
       }
 
       assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
-               Requests.create_grant_request_group(params, claims)
+               Requests.create_grant_request_group(params)
 
       assert %{current_status: "rejected"} = Requests.get_grant_request!(request_id, claims)
     end
@@ -646,7 +646,7 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
       }
 
       assert {:ok, %{group: _group, requests: {_count, [request_id]}}} =
-               Requests.create_grant_request_group(params, claims)
+               Requests.create_grant_request_group(params)
 
       assert %{
                approvals: [%{approval_rule_id: ^approval_rule_id}]

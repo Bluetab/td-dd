@@ -328,16 +328,20 @@ defmodule TdDq.Implementations.Implementation do
     end
   end
 
-  def get_execution_result_info(_implementation, %{type: "FAILED", inserted_at: inserted_at}) do
-    %{result_text: "quality_result.failed", date: inserted_at}
-  end
-
-  def get_execution_result_info(%Implementation{} = implementation, _quality_event) do
-    case RuleResults.get_latest_rule_result(implementation) do
-      nil -> %{result_text: nil}
-      result -> build_result_info(implementation, result)
+  def get_execution_result_info(implementation, %{date: result_date} = result, %{
+        type: "FAILED",
+        inserted_at: event_date
+      }) do
+    case Date.compare(result_date, event_date) do
+      :lt -> %{result_text: "quality_result.failed", date: event_date}
+      _ -> get_execution_result_info(implementation, result, nil)
     end
   end
+
+  def get_execution_result_info(_, nil, _), do: %{result_text: nil}
+
+  def get_execution_result_info(implementation, result, _),
+    do: build_result_info(implementation, result)
 
   defp build_result_info(
          %Implementation{minimum: minimum, goal: goal, result_type: result_type},
@@ -427,13 +431,15 @@ defmodule TdDq.Implementations.Implementation do
     def routing(_), do: false
 
     @impl Elasticsearch.Document
-    def encode(%Implementation{id: implementation_id, domain_id: domain_id} = implementation) do
+    def encode(%Implementation{domain_id: domain_id} = implementation) do
       rule = Map.get(implementation, :rule)
       implementation = Implementations.enrich_implementation_structures(implementation)
-      quality_event = QualityEvents.get_event_by_imp(implementation_id)
+      quality_event = QualityEvents.get_last_event_by_imp(implementation)
+
+      result = RuleResults.get_latest_rule_result(implementation)
 
       execution_result_info =
-        Implementation.get_execution_result_info(implementation, quality_event)
+        Implementation.get_execution_result_info(implementation, result, quality_event)
 
       domain_ids = List.wrap(domain_id)
       structures = Implementations.get_structures(implementation)
