@@ -40,7 +40,9 @@ defmodule TdDq.Events.QualityEvents do
       message: Map.get(event, :message, "Quality execution error"),
       status: "error",
       domain_id: implementation.domain_id,
-      implementation_id: implementation.id,
+      # rule_results event payload uses implementation_ref instead of ID.
+      # to track multiple implementation versions.
+      implementation_ref: implementation.implementation_ref,
       implementation_key: implementation.implementation_key,
       rule_id: implementation.rule_id
     }

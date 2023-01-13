@@ -225,7 +225,7 @@ defmodule TdDq.Rules.Audit do
     |> publish()
   end
 
-  defp rule_result_created(%{id: id} = payload, user_id) do
+  defp rule_result_created(%{implementation_ref: implementation_ref} = payload, user_id) do
     payload =
       payload
       |> with_domain_ids()
@@ -235,7 +235,7 @@ defmodule TdDq.Rules.Audit do
     %{
       event: "rule_result_created",
       resource_type: "rule_result",
-      resource_id: id,
+      resource_id: implementation_ref,
       user_id: user_id,
       payload: payload
     }
