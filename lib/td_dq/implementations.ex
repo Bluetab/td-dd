@@ -821,12 +821,16 @@ defmodule TdDq.Implementations do
     |> Map.put(:data_structures, enriched_data_structures)
   end
 
-  defp enrich_implementation_structure(%{id: id, type: "reference_dataset"})
+  defp enrich_implementation_structure(%{id: id, type: "reference_dataset"} = structure)
        when not is_nil(id) do
-    id
-    |> ReferenceData.get!()
-    |> Map.take([:id, :name, :headers])
-    |> Map.put(:type, "reference_dataset")
+    if ReferenceData.exists?(id) do
+      id
+      |> ReferenceData.get!()
+      |> Map.take([:id, :name, :headers])
+      |> Map.put(:type, "reference_dataset")
+    else
+      structure
+    end
   end
 
   defp enrich_implementation_structure(%{id: id} = structure) when not is_nil(id) do
@@ -917,11 +921,15 @@ defmodule TdDq.Implementations do
   defp enrich_value_structure(%{"id" => id, "type" => "reference_dataset_field"} = value_map) do
     value_map_atom = for {key, val} <- value_map, into: %{}, do: {String.to_atom(key), val}
 
-    ReferenceData.Dataset
-    |> Repo.get!(id)
-    |> Map.from_struct()
-    |> Map.take([:name, :id])
-    |> Map.merge(value_map_atom)
+    if ReferenceData.exists?(id) do
+      ReferenceData.Dataset
+      |> Repo.get!(id)
+      |> Map.from_struct()
+      |> Map.take([:name, :id])
+      |> Map.merge(value_map_atom)
+    else
+      value_map
+    end
   end
 
   defp enrich_value_structure(%{"id" => id} = value_map) do
