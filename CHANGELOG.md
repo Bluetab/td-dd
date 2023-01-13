@@ -9,6 +9,8 @@
   is indexed as an independent property if present.
 - [TD-5199] Soft delete for rule
 - [TD-5433] ignore ReferenceData enrich in Implementation if it doesn't exists
+- [TD-5432] Publish rule_result_created event using implementation_ref as
+  resource_id instead of implementation_id.
 
 ### Added
 
