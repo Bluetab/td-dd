@@ -16,7 +16,7 @@ defmodule TdDqWeb.QualityEventControllerTest do
 
   describe "POST /api/executions/:execution_id/quality_events" do
     @tag authentication: [role: "admin"]
-    test "creates an event when the user is an admin", %{
+    test "creates an event as an admin user", %{
       conn: conn,
       swagger_schema: schema,
       execution: execution
@@ -36,7 +36,7 @@ defmodule TdDqWeb.QualityEventControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "creates a failed event when the user is an admin", %{
+    test "creates a failed event as an admin user", %{
       conn: conn,
       swagger_schema: schema,
       execution: execution
@@ -56,7 +56,7 @@ defmodule TdDqWeb.QualityEventControllerTest do
     end
 
     @tag authentication: [role: "service"]
-    test "create an avent when the user is service", %{
+    test "creates an avent as a service user", %{
       conn: conn,
       swagger_schema: schema,
       execution: execution
@@ -76,7 +76,7 @@ defmodule TdDqWeb.QualityEventControllerTest do
     end
 
     @tag authentication: [user_name: "user_without_permission"]
-    test "Gets forbidden when user is not service nor admin", %{
+    test "Gets forbidden as a non service or admin user", %{
       conn: conn,
       execution: execution
     } do
