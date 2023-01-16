@@ -11,6 +11,7 @@ defmodule TdDq.Cache.ImplementationLoader do
   alias TdDq.Events.QualityEvents
   alias TdDq.Implementations
   alias TdDq.Implementations.Implementation
+  alias TdDq.Rules.RuleResults
 
   require Logger
 
@@ -157,8 +158,10 @@ defmodule TdDq.Cache.ImplementationLoader do
       %{id: implementation_id} = implementation ->
         quality_event = QualityEvents.get_event_by_imp(implementation_id)
 
+        result = RuleResults.get_latest_rule_result(implementation)
+
         execution_result_info =
-          Implementation.get_execution_result_info(implementation, quality_event)
+          Implementation.get_execution_result_info(implementation, result, quality_event)
 
         Map.put(implementation, :execution_result_info, execution_result_info)
     end

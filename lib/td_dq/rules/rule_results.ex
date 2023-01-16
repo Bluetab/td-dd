@@ -18,7 +18,7 @@ defmodule TdDq.Rules.RuleResults do
   require Logger
 
   @index_worker Application.compile_env(:td_dd, :dq_index_worker)
-  @pagination_params [:order_by, :limit, :before, :after]
+  @pagination_params [:limit, :before, :after]
 
   defdelegate authorize(action, user, params), to: __MODULE__.Policy
 
@@ -27,8 +27,37 @@ defmodule TdDq.Rules.RuleResults do
     |> Repo.preload(options[:preload] || [])
   end
 
+  def add_offset(%{before: id} = params) when is_binary(id), do: add_offset(params, id)
+  def add_offset(%{after: id} = params) when is_binary(id), do: add_offset(params, id)
+  def add_offset(params), do: Map.put(params, :offset, 0)
+
+  def add_offset(%{implementation_ref: implementation_ref} = params, rule_result_id) do
+    case get_offset(implementation_ref, rule_result_id) do
+      nil -> Map.put(params, :offset, 0)
+      offset -> Map.put(params, :offset, offset)
+    end
+  end
+
+  defp get_offset(implementation_ref, rule_result_id) do
+    RuleResult
+    |> join(:inner, [rr], ri in Implementation, on: ri.id == rr.implementation_id)
+    |> where([_rr, ri], ri.implementation_ref == ^implementation_ref)
+    |> order_by([rr, ri], desc: ri.version, desc: rr.date, desc: rr.id)
+    |> select([rr, ri], %{
+      id: rr.id,
+      version: ri.version,
+      row: row_number() |> over(order_by: [desc: ri.version, desc: rr.date, desc: rr.id])
+    })
+    |> subquery()
+    |> where([rr], rr.id == ^rule_result_id)
+    |> select([rr], rr.row - 1)
+    |> limit(1)
+    |> Repo.one()
+  end
+
   def list_rule_results(params \\ %{}) do
     params
+    |> add_offset()
     |> rule_results_query()
     |> select([rr, _ri], rr)
     |> Repo.all()
@@ -193,9 +222,14 @@ defmodule TdDq.Rules.RuleResults do
   defp on_create(result), do: result
 
   @spec get_latest_rule_result(Implementation.t()) :: RuleResult.t() | nil
-  def get_latest_rule_result(%Implementation{id: id}) do
+  def get_latest_rule_result(%Implementation{implementation_ref: implementation_ref}) do
+    implementation_ids =
+      Implementation
+      |> where(implementation_ref: ^implementation_ref)
+      |> select([i], i.id)
+
     RuleResult
-    |> where([rr], rr.implementation_id == ^id)
+    |> where([rr], rr.implementation_id in subquery(implementation_ids))
     |> limit(1)
     |> order_by([rr], desc: rr.date)
     |> Repo.one()
@@ -366,17 +400,24 @@ defmodule TdDq.Rules.RuleResults do
       {:limit, lim}, q ->
         limit(q, ^lim)
 
-      {:order_by, order}, q ->
-        order_by(q, ^order)
+      {:order_by, [:desc, :imp_version, :result_date, :result_id]}, q ->
+        order_by(q, [rr, ri], desc: ri.version, desc: rr.date, desc: rr.id)
+
+      {:order_by, [:asc, :imp_version, :result_date, :result_id]}, q ->
+        order_by(q, [rr, ri], asc: ri.version, asc: rr.date, asc: rr.id)
 
       {:preload, preloads}, q ->
         preload(q, ^preloads)
 
-      {:before, id}, q ->
-        where(q, [g], g.id < type(^id, :integer))
+      {:after, _}, q ->
+        temporal_offset = Map.get(params, :offset, 0)
+        limit = Map.get(params, :limit, :infinity)
+        offset_value = max(0, temporal_offset - limit)
+        offset(q, ^offset_value)
 
-      {:after, id}, q ->
-        where(q, [g], g.id > type(^id, :integer))
+      {:before, _}, q ->
+        offset_value = Map.get(params, :offset, 0)
+        offset(q, ^offset_value + 1)
 
       _, q ->
         q
@@ -384,10 +425,39 @@ defmodule TdDq.Rules.RuleResults do
   end
 
   def min_max_count(params) do
+    params = Map.drop(params, @pagination_params)
+
+    %{
+      count: count_results(params),
+      last_cursor: last_result(params),
+      first_cursor: first_result(params)
+    }
+  end
+
+  defp count_results(params) do
     params
-    |> Map.drop(@pagination_params)
+    |> Map.drop([:order_by])
     |> rule_results_query
-    |> select([rr, _ri], %{count: count(rr.id), min_id: min(rr.id), max_id: max(rr.id)})
+    |> select([rr, _ri], count(rr.id))
+    |> Repo.one()
+  end
+
+  defp first_result(params) do
+    params
+    |> rule_results_query
+    |> select([:id])
+    |> limit(1)
+    |> Repo.one()
+  end
+
+  defp last_result(params) do
+    [:desc | order_by] = Map.get(params, :order_by)
+
+    params
+    |> Map.put(:order_by, [:asc, order_by])
+    |> rule_results_query
+    |> select([:id])
+    |> limit(1)
     |> Repo.one()
   end
 end

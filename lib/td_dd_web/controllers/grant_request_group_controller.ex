@@ -27,7 +27,7 @@ defmodule TdDdWeb.GrantRequestGroupController do
          :ok <- Bodyguard.permit(Requests, :create_grant_request_group, claims, params),
          modification_grant <- with_modification_grant(params),
          {:ok, %{group: %{id: id}}} <-
-           Requests.create_grant_request_group(params, claims, modification_grant),
+           Requests.create_grant_request_group(params, modification_grant),
          %{} = group <- Requests.get_grant_request_group!(id) do
       conn
       |> put_status(:created)

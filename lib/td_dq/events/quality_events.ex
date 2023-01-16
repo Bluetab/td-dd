@@ -8,6 +8,7 @@ defmodule TdDq.Events.QualityEvents do
   alias TdDd.Repo
   alias TdDq.Events.QualityEvent
   alias TdDq.Executions.Execution
+  alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Audit
   alias TdDq.Search.IndexWorker
 
@@ -69,6 +70,20 @@ defmodule TdDq.Events.QualityEvents do
     QualityEvent
     |> join(:left, [qe], e in Execution, on: qe.execution_id == e.id)
     |> where([_, e], e.implementation_id == ^implementation_id)
+    |> order_by(desc: :inserted_at)
+    |> limit(1)
+    |> Repo.one()
+  end
+
+  def get_last_event_by_imp(%{implementation_ref: ref}) do
+    implementation_ids =
+      Implementation
+      |> where(implementation_ref: ^ref)
+      |> select([i], i.id)
+
+    QualityEvent
+    |> join(:left, [qe], e in Execution, on: qe.execution_id == e.id)
+    |> where([_, e], e.implementation_id in subquery(implementation_ids))
     |> order_by(desc: :inserted_at)
     |> limit(1)
     |> Repo.one()
