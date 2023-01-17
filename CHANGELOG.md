@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-5472] Enrich template fields of type `domain` for Quality filters
+
 ## [4.59.0] 2023-01-16
 
 ### Changed
