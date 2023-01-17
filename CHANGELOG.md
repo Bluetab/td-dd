@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-5407] Aggregate `must_not` param on Elasticsearch filter
+
 ## [4.59.0] 2023-01-16
 
 ### Changed
