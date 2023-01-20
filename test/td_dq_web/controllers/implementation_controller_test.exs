@@ -909,6 +909,285 @@ defmodule TdDqWeb.ImplementationControllerTest do
         assert Enum.empty?(actions)
       end
     end
+
+    ## Basic implementation actions
+    @tag authentication: [role: "admin"]
+    test "render actions for basic rule implementation as admin", %{conn: conn} do
+      domain = build(:domain)
+      %{id: id} = insert(:basic_implementation, domain_id: domain.id)
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "delete" => %{"method" => "POST"},
+               "edit" => %{"method" => "POST"},
+               "submit" => %{"method" => "POST"},
+               "clone" => %{"method" => "POST"},
+               "link_concept" => %{"method" => "POST"},
+               "link_structure" => %{"method" => "POST"},
+               "move" => %{"method" => "POST"},
+               "publish" => %{"method" => "POST"},
+               "convert_raw" => %{"method" => "POST"},
+               "convert_default" => %{"method" => "POST"}
+             } == actions
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: @rule_implementation_permissions ++ [:manage_basic_implementations]
+         ]
+    test "render actions for basic rule implementation with rule implementation permissions", %{
+      conn: conn,
+      domain: domain
+    } do
+      %{id: id} = insert(:basic_implementation, domain_id: domain.id)
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "edit" => %{"method" => "POST"},
+               "delete" => %{"method" => "POST"},
+               "submit" => %{"method" => "POST"},
+               "clone" => %{"method" => "POST"},
+               "convert_default" => %{"method" => "POST"}
+             } == actions
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: @imp_raw_permissions ++ [:manage_basic_implementations]
+         ]
+    test "render actions for basic rule implementation with raw rule implementation permissions",
+         %{
+           conn: conn,
+           domain: domain
+         } do
+      %{id: rule_id} = insert(:rule, domain_id: domain.id)
+
+      %{id: id} =
+        insert(:basic_implementation,
+          domain_id: domain.id,
+          rule_id: rule_id
+        )
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "edit" => %{"method" => "POST"},
+               "delete" => %{"method" => "POST"},
+               "submit" => %{"method" => "POST"},
+               "clone" => %{"method" => "POST"},
+               "convert_raw" => %{"method" => "POST"}
+             } == actions
+    end
+
+    @tag authentication: [role: "admin"]
+    test "render actions for deprecated basic rule implementation deprecated as admin", %{
+      conn: conn
+    } do
+      domain = build(:domain)
+
+      %{id: id} =
+        insert(
+          :basic_implementation,
+          domain_id: domain.id,
+          deleted_at: DateTime.utc_now(),
+          status: :deprecated
+        )
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "delete" => %{"method" => "POST"},
+               "clone" => %{"method" => "POST"},
+               "link_concept" => %{"method" => "POST"},
+               "link_structure" => %{"method" => "POST"},
+               "restore" => %{"method" => "POST"}
+             } == actions
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions:
+             @rule_implementation_permissions ++
+               @imp_raw_permissions ++ [:manage_basic_implementations]
+         ]
+    test "render actions for deprecated basic rule implementation with rule
+        implementation permissions and raw rule implementation permissions",
+         %{
+           conn: conn,
+           domain: domain
+         } do
+      %{id: id} =
+        insert(
+          :basic_implementation,
+          domain_id: domain.id,
+          deleted_at: DateTime.utc_now(),
+          status: :deprecated
+        )
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "delete" => %{"method" => "POST"},
+               "clone" => %{"method" => "POST"}
+             } == actions
+    end
+
+    ## Basic ruleless implementation actions
+    @tag authentication: [role: "admin"]
+    test "render actions for basic ruleless implementation as admin", %{conn: conn} do
+      domain = build(:domain)
+
+      %{id: id} = insert(:basic_ruleless_implementation, domain_id: domain.id)
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "edit" => %{"method" => "POST"},
+               "delete" => %{"method" => "POST"},
+               "submit" => %{"method" => "POST"},
+               "clone" => %{"method" => "POST"},
+               "link_concept" => %{"method" => "POST"},
+               "link_structure" => %{"method" => "POST"},
+               "move" => %{"method" => "POST"},
+               "publish" => %{"method" => "POST"},
+               "convert_raw" => %{"method" => "POST"},
+               "convert_default" => %{"method" => "POST"}
+             } == actions
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: @imp_ruleless_permissions ++ [:manage_basic_implementations]
+         ]
+    test "render actions for basic ruleless implementation with ruleless implementation permissions",
+         %{
+           conn: conn,
+           domain: domain
+         } do
+      %{id: id} = insert(:basic_ruleless_implementation, domain_id: domain.id)
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "edit" => %{"method" => "POST"},
+               "delete" => %{"method" => "POST"},
+               "submit" => %{"method" => "POST"},
+               "clone" => %{"method" => "POST"},
+               "convert_default" => %{"method" => "POST"}
+             } == actions
+    end
+
+    ## Basic ruleless implementation to raw ruleless implementation
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: @imp_raw_ruleless_permissions ++ [:manage_basic_implementations]
+         ]
+    test "render actions for basic ruleless implementation with raw rule implementation permissions",
+         %{
+           conn: conn,
+           domain: domain
+         } do
+      %{id: id} =
+        insert(:basic_ruleless_implementation,
+          domain_id: domain.id
+        )
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "edit" => %{"method" => "POST"},
+               "delete" => %{"method" => "POST"},
+               "submit" => %{"method" => "POST"},
+               "clone" => %{"method" => "POST"},
+               "convert_raw" => %{"method" => "POST"},
+               "convert_default" => %{"method" => "POST"}
+             } == actions
+    end
+
+    @tag authentication: [role: "admin"]
+    test "render actions for deprecated basic ruleless implementation deprecated as admin", %{
+      conn: conn
+    } do
+      domain = build(:domain)
+
+      %{id: id} =
+        insert(
+          :basic_ruleless_implementation,
+          domain_id: domain.id,
+          deleted_at: DateTime.utc_now(),
+          status: :deprecated
+        )
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "delete" => %{"method" => "POST"},
+               "clone" => %{"method" => "POST"},
+               "link_concept" => %{"method" => "POST"},
+               "link_structure" => %{"method" => "POST"},
+               "restore" => %{"method" => "POST"}
+             } == actions
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions:
+             @imp_ruleless_permissions ++
+               @imp_raw_ruleless_permissions ++ [:manage_basic_implementations]
+         ]
+    test "render actions for deprecated basic ruleless implementation with ruleless
+        implementation permissions and raw ruleless implementation permissions",
+         %{
+           conn: conn,
+           domain: domain
+         } do
+      %{id: id} =
+        insert(
+          :basic_ruleless_implementation,
+          domain_id: domain.id,
+          deleted_at: DateTime.utc_now(),
+          status: :deprecated
+        )
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "delete" => %{"method" => "POST"},
+               "clone" => %{"method" => "POST"}
+             } == actions
+    end
   end
 
   describe "index" do
