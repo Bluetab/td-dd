@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-5493] Improve specific grant(s) reindex performance
+
 ## [4.59.0] 2023-01-16
 
 ### Changed
