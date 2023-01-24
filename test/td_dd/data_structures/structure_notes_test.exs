@@ -4,10 +4,12 @@ defmodule TdDd.DataStructures.StructureNotesTest do
   import TdDd.TestOperators
 
   alias Ecto.Changeset
+  alias TdCache.Redix.Stream
   alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.StructureNotes
 
   @moduletag sandbox: :shared
+  @stream TdCache.Audit.stream()
   @user_id 1
 
   setup do
@@ -121,7 +123,7 @@ defmodule TdDd.DataStructures.StructureNotesTest do
       assert StructureNotes.get_latest_structure_note(data_structure.id) <~> latest_structure_note
     end
 
-    test "create_structure_note/3 with valid data creates a structure_note and publishes event" do
+    test "create_structure_note/3 with valid data creates a structure_note" do
       data_structure = insert(:data_structure)
 
       params = %{"df_content" => %{}, "status" => "draft", "version" => 42}
@@ -177,6 +179,84 @@ defmodule TdDd.DataStructures.StructureNotesTest do
                StructureNotes.update_structure_note(structure_note, params, @user_id)
 
       assert %{alias: "foo"} = structure
+    end
+
+    test "update_structure_note/3 publishes Audit structure_note_updated event", %{
+      data_structure_type: type
+    } do
+      [
+        %{data_structure_id: parent_id},
+        %{data_structure: %{id: data_structure_id}}
+      ] =
+        create_hierarchy(["PARENT_DS", "CHILD_DS"],
+          class_map: %{"CHILD_DS" => "field"},
+          type_map: %{"CHILD_DS" => type.name}
+        )
+
+      %{id: note_id} = structure_note = insert(:structure_note, data_structure_id: data_structure_id)
+      params = %{"df_content" => %{"alias" => "foo_baz"}}
+
+      assert {:ok, %{audit: event_id}} =
+               StructureNotes.update_structure_note(structure_note, params, @user_id)
+
+      assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+
+      user_id = "#{@user_id}"
+      resource_id = "#{note_id}"
+
+      assert %{
+              event: "structure_note_updated",
+              payload: payload,
+              resource_id: ^resource_id,
+              resource_type: "data_structure_note",
+              service: "td_dd",
+              ts: _ts,
+              user_id: ^user_id
+            } = event
+      assert %{
+              "data_structure_id" => ^data_structure_id,
+              "field_parent_id" => ^parent_id
+            } = Jason.decode!(payload)
+    end
+
+    test "update_structure_note/3 publishes Audit structure_note_published event", %{
+      data_structure_type: type
+    } do
+      [
+        _,
+        %{data_structure_id: parent_id},
+        %{data_structure: %{id: data_structure_id}}
+      ] =
+        create_hierarchy(["GRAMPA_DS", "PARENT_DS", "CHILD_DS"],
+          class_map: %{"CHILD_DS" => "field"},
+          type_map: %{"CHILD_DS" => type.name}
+        )
+
+      %{id: note_id} = structure_note = insert(:structure_note, data_structure_id: data_structure_id)
+      params = %{"df_content" => %{"alias" => "foo"}, "status" => "published"}
+
+      assert {:ok, %{audit: event_id}} =
+               StructureNotes.update_structure_note(structure_note, params, @user_id)
+
+      assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+
+      user_id = "#{@user_id}"
+      resource_id = "#{note_id}"
+
+      assert %{
+              event: "structure_note_published",
+              payload: payload,
+              resource_id: ^resource_id,
+              resource_type: "data_structure_note",
+              service: "td_dd",
+              ts: _ts,
+              user_id: ^user_id
+            } = event
+      assert %{
+              "resource" => %{"path" => ["GRAMPA_DS", "PARENT_DS"]},
+              "data_structure_id" => ^data_structure_id,
+              "field_parent_id" => ^parent_id
+            } = Jason.decode!(payload)
     end
 
     test "delete_structure_note/1 deletes the structure_note" do
