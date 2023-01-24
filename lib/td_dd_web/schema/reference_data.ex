@@ -49,6 +49,8 @@ defmodule TdDdWeb.Schema.ReferenceData do
     field :headers, list_of(:string)
     field :rows, list_of(list_of(:string))
     field :row_count, :integer
+    field :domains, list_of(:domain), resolve: &Resolvers.Domains.domains/3
+    field :domain_ids, list_of(:integer)
     field :inserted_at, :datetime
     field :updated_at, :datetime
   end
@@ -56,11 +58,17 @@ defmodule TdDdWeb.Schema.ReferenceData do
   input_object :create_reference_dataset_input do
     field :name, non_null(:string)
     field :data, :data_url
+
+    @desc "List of Domains"
+    field :domain_ids, list_of(:id)
   end
 
   input_object :update_reference_dataset_input do
     field :id, non_null(:id)
     field :name, non_null(:string)
     field :data, :data_url
+
+    @desc "List of Domains"
+    field :domain_ids, list_of(:id)
   end
 end

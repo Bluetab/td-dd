@@ -12,7 +12,7 @@ defmodule TdDdWeb.ReferenceDataView do
   end
 
   def render("show.json", %{dataset: dataset}) do
-    data = Map.take(dataset, [:id, :name, :headers, :rows, :row_count, :inserted_at, :updated_at])
+    data = Map.take(dataset, [:id, :name, :headers, :rows, :row_count, :domain_ids, :inserted_at, :updated_at])
     %{data: data}
   end
 end
