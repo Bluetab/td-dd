@@ -1223,7 +1223,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
       conn: conn
     } do
       domain = build(:domain)
-      %{id: rule_id} = insert(:rule, domain_id: domain.id)
+      insert(:rule, domain_id: domain.id)
 
       %{id: id} =
         insert(:basic_ruleless_implementation,

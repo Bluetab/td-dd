@@ -190,10 +190,6 @@ defmodule TdDq.Implementations.Policy do
       Permissions.authorized?(claims, :view_published_business_concepts, domain_id)
   end
 
-  def authorize(action, _claims, %Implementation{status: :draft})
-      when action in [:convert_default, :convert_raw],
-      do: false
-
   def authorize(action, %{role: "admin"}, imp) when action in [:convert_raw, :convert_default],
     do: valid_action?(action, imp)
 
