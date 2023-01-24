@@ -29,21 +29,21 @@ defmodule TdDd.ReferenceData do
   end
 
   @spec create(map()) :: {:ok, Dataset.t()} | {:error, Ecto.Changeset.t()}
-  def create(%{name: name} = args) do
+  def create(%{name: name, domain_ids: domain_ids} = args) do
     case read_data(args) do
-      :none -> %{name: name}
-      data -> %{name: name, data: data}
+      :none -> %{name: name, domain_ids: domain_ids}
+      data -> %{name: name, domain_ids: domain_ids, data: data}
     end
     |> Dataset.changeset()
     |> Repo.insert()
   end
 
   @spec update(Dataset.t(), map()) :: {:ok, Dataset.t()} | {:error, Ecto.Changeset.t()}
-  def update(%Dataset{} = dataset, %{name: name} = args) do
+  def update(%Dataset{} = dataset, %{name: name, domain_ids: domain_ids} = args) do
     params =
       case read_data(args) do
-        :none -> %{name: name}
-        data -> %{name: name, data: data}
+        :none -> %{name: name, domain_ids: domain_ids}
+        data -> %{name: name, domain_ids: domain_ids, data: data}
       end
 
     dataset
@@ -89,6 +89,8 @@ defmodule TdDd.ReferenceData do
 
     Enum.reduce(args, queryable, fn
       {:id, id}, q -> where(q, [ds], ds.id == ^id)
+      {:domain_ids, :all}, q -> q
+      {:domain_ids, domain_ids}, q -> where(q, [ds], fragment("? && ?", ds.domain_ids, ^domain_ids))
     end)
   end
 end
