@@ -190,6 +190,10 @@ defmodule TdDq.Implementations.Policy do
       Permissions.authorized?(claims, :view_published_business_concepts, domain_id)
   end
 
+  def authorize(action, _claims, %Implementation{status: :draft})
+      when action in [:convert_default, :convert_raw],
+      do: false
+
   def authorize(action, %{role: "admin"}, imp) when action in [:convert_raw, :convert_default],
     do: valid_action?(action, imp)
 
@@ -198,10 +202,11 @@ defmodule TdDq.Implementations.Policy do
         %{} = claims,
         %Implementation{domain_id: domain_id, rule_id: nil} = implementation
       ) do
-    valid_action?(:convert_default, implementation) && Enum.all?(
-      [:manage_ruleless_implementations, :manage_basic_implementations],
-      &Permissions.authorized?(claims, &1, domain_id)
-    )
+    valid_action?(:convert_default, implementation) &&
+      Enum.all?(
+        [:manage_ruleless_implementations, :manage_basic_implementations],
+        &Permissions.authorized?(claims, &1, domain_id)
+      )
   end
 
   def authorize(
@@ -209,14 +214,15 @@ defmodule TdDq.Implementations.Policy do
         %{} = claims,
         %Implementation{domain_id: domain_id, rule_id: nil} = implementation
       ) do
-    valid_action?(:convert_raw, implementation) && Enum.all?(
-      [
-        :manage_raw_quality_rule_implementations,
-        :manage_ruleless_implementations,
-        :manage_basic_implementations
-      ],
-      &Permissions.authorized?(claims, &1, domain_id)
-    )
+    valid_action?(:convert_raw, implementation) &&
+      Enum.all?(
+        [
+          :manage_raw_quality_rule_implementations,
+          :manage_ruleless_implementations,
+          :manage_basic_implementations
+        ],
+        &Permissions.authorized?(claims, &1, domain_id)
+      )
   end
 
   def authorize(
@@ -224,10 +230,11 @@ defmodule TdDq.Implementations.Policy do
         %{} = claims,
         %Implementation{domain_id: domain_id} = implementation
       ) do
-    valid_action?(:convert_default, implementation) && Enum.all?(
-      [:manage_quality_rule_implementations, :manage_basic_implementations],
-      &Permissions.authorized?(claims, &1, domain_id)
-    )
+    valid_action?(:convert_default, implementation) &&
+      Enum.all?(
+        [:manage_quality_rule_implementations, :manage_basic_implementations],
+        &Permissions.authorized?(claims, &1, domain_id)
+      )
   end
 
   def authorize(
@@ -235,13 +242,15 @@ defmodule TdDq.Implementations.Policy do
         %{} = claims,
         %Implementation{domain_id: domain_id} = implementation
       ) do
-    valid_action?(:convert_raw, implementation) && Enum.all?(
-      [
-        :manage_raw_quality_rule_implementations,
-        :manage_basic_implementations
-      ],
-      &Permissions.authorized?(claims, &1, domain_id)
-    )
+    valid_action?(:convert_raw, implementation) &&
+      Enum.all?(
+        [
+          :manage_quality_rule_implementations,
+          :manage_raw_quality_rule_implementations,
+          :manage_basic_implementations
+        ],
+        &Permissions.authorized?(claims, &1, domain_id)
+      )
   end
 
   def authorize(_action, _claims, _params), do: false

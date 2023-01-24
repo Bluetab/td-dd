@@ -271,6 +271,13 @@ defmodule TdDq.Implementations.Implementation do
   end
 
   defp custom_changeset(
+         %Changeset{changes: %{implementation_type: "default"}} = changeset,
+         _implementation
+       ) do
+    default_changeset(changeset)
+  end
+
+  defp custom_changeset(
          %Changeset{changes: %{implementation_type: "raw"}} = changeset,
          _implementation
        ) do

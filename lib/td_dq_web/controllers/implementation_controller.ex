@@ -196,15 +196,15 @@ defmodule TdDqWeb.ImplementationController do
   def update(conn, %{"id" => id, "rule_implementation" => implementation_params}) do
     claims = conn.assigns[:current_resource]
 
-    update_params =
-      implementation_params
-      |> Map.delete("implementation_type")
-
     implementation = Implementations.get_implementation!(id)
 
     with :ok <- Bodyguard.permit(Implementations, :edit, claims, implementation),
          {:ok, %{implementation: %{id: id}} = update_info} <-
-           Implementations.maybe_update_implementation(implementation, update_params, claims),
+           Implementations.maybe_update_implementation(
+             implementation,
+             implementation_params,
+             claims
+           ),
          error <- Map.get(update_info, :error, :nothing),
          implementation <-
            Implementations.get_implementation!(id, enrich: :source, preload: [:rule, :results]) do
