@@ -116,7 +116,7 @@ defmodule Truedat.Search.QueryTest do
       assert Query.build_query(filters, params) == %{
                bool: %{
                  must_not: [
-                   [%{term: %{"baz" => "xyz"}}],
+                   %{term: %{"baz" => "xyz"}},
                    %{term: %{"foo" => "bar"}}
                  ]
                }
