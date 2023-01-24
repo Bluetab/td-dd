@@ -22,7 +22,10 @@ defmodule TdDdWeb.ReferenceDataDownloadControllerTest do
     end
 
     @tag authentication: [role: "user", permissions: ["view_data_structure"]]
-    test "returns forbidden for user without permission in domain", %{conn: conn, domain: %{id: domain_id}} do
+    test "returns forbidden for user without permission in domain", %{
+      conn: conn,
+      domain: %{id: domain_id}
+    } do
       %{id: id} = insert(:reference_dataset, domain_ids: [domain_id + 1])
 
       assert conn
