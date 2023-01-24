@@ -15,10 +15,13 @@ defmodule TdDd.ReferenceDataTest do
       assert {:ok, dataset} =
                ReferenceData.create(%{
                  name: "Countries",
-                 path: "test/fixtures/reference_data/dataset1.csv"
+                 path: "test/fixtures/reference_data/dataset1.csv",
+                 domain_ids: [1]
                })
 
-      assert %{name: "Countries", headers: headers, rows: rows, row_count: 5} = dataset
+      assert %{name: "Countries", headers: headers, rows: rows, row_count: 5, domain_ids: [1]} =
+               dataset
+
       assert headers == ["CODE", "DESC_ES", "DESC_EN"]
 
       assert rows == [
@@ -38,10 +41,11 @@ defmodule TdDd.ReferenceDataTest do
       assert {:ok, dataset} =
                ReferenceData.update(dataset, %{
                  name: name,
-                 path: "test/fixtures/reference_data/dataset1.csv"
+                 path: "test/fixtures/reference_data/dataset1.csv",
+                 domain_ids: [1]
                })
 
-      assert %{name: ^name, headers: headers, rows: rows, row_count: 5} = dataset
+      assert %{name: ^name, headers: headers, rows: rows, row_count: 5, domain_ids: [1]} = dataset
       assert headers == ["CODE", "DESC_ES", "DESC_EN"]
 
       assert rows == [

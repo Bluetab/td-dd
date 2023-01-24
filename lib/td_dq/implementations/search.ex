@@ -33,6 +33,7 @@ defmodule TdDq.Implementations.Search do
       |> filter_deleted()
       |> Map.drop(["page", "size"])
       |> RulesSearch.search_implementations(claims, page, size)
+
     implementations
   end
 
