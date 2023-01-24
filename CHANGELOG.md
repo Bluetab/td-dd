@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- [TD-5472] Enrich template fields of type `domain` for Quality filters
 ### Changed
 
 - [TD-5300] ReferenceDatasets user management
