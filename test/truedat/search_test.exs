@@ -103,5 +103,31 @@ defmodule Truedat.SearchTest do
       assert {:ok, %{aggregations: %{"taxonomy" => values}}} = Search.search(%{}, "foo")
       assert [%{id: _, external_id: _, parent_id: _, name: _}, %{id: _}] = values
     end
+
+    test "enriches template fields of type domain for Quality filters" do
+      %{id: domain_1_id, name: domain_1_name} = CacheHelpers.insert_domain()
+      %{id: domain_2_id, name: domain_2_name} = CacheHelpers.insert_domain()
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/foo/_search", _, _ ->
+        SearchHelpers.aggs_response(%{
+          "implementation_template_domain_field" => %{
+            "meta" => %{"type" => "domain"},
+            "buckets" => [
+              %{"doc_count" => 4, "key" => domain_1_id},
+              %{"doc_count" => 4, "key" => domain_2_id}
+            ]
+          }
+        })
+      end)
+
+      assert {:ok, %{aggregations: %{"implementation_template_domain_field" => values}}} =
+               Search.search(%{}, "foo")
+
+      assert [
+               %{id: ^domain_1_id, name: ^domain_1_name},
+               %{id: ^domain_2_id, name: ^domain_2_name}
+             ] = values
+    end
   end
 end

@@ -12,6 +12,12 @@ defmodule Truedat.Search.Filters do
     |> Enum.reduce(acc, &merge/2)
   end
 
+  defp merge({key, [value]}, %{} = acc) do
+    Map.update(acc, key, [value], fn existing ->
+      [value | List.wrap(existing)]
+    end)
+  end
+
   defp merge({key, value}, %{} = acc) do
     Map.update(acc, key, value, fn existing ->
       [value | List.wrap(existing)]

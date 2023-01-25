@@ -2,11 +2,16 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- [TD-5472] Enrich template fields of type `domain` for Quality filters
+- [TD-5407] Aggregate `must_not` param on Elasticsearch filter
+
 ### Changed
 
 - [TD-5300] ReferenceDatasets user management
   - Added `domain_ids` fields
-  - Users with `view_data_structure` permission on domain can show, index and 
+  - Users with `view_data_structure` permission on domain can show, index and
     download ReferenceDataset
   - ReferenceDataset without domain_ids is only visible to `admins`
 
