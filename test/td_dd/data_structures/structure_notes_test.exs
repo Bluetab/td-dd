@@ -193,7 +193,9 @@ defmodule TdDd.DataStructures.StructureNotesTest do
           type_map: %{"CHILD_DS" => type.name}
         )
 
-      %{id: note_id} = structure_note = insert(:structure_note, data_structure_id: data_structure_id)
+      %{id: note_id} =
+        structure_note = insert(:structure_note, data_structure_id: data_structure_id)
+
       params = %{"df_content" => %{"alias" => "foo_baz"}}
 
       assert {:ok, %{audit: event_id}} =
@@ -205,18 +207,19 @@ defmodule TdDd.DataStructures.StructureNotesTest do
       resource_id = "#{note_id}"
 
       assert %{
-              event: "structure_note_updated",
-              payload: payload,
-              resource_id: ^resource_id,
-              resource_type: "data_structure_note",
-              service: "td_dd",
-              ts: _ts,
-              user_id: ^user_id
-            } = event
+               event: "structure_note_updated",
+               payload: payload,
+               resource_id: ^resource_id,
+               resource_type: "data_structure_note",
+               service: "td_dd",
+               ts: _ts,
+               user_id: ^user_id
+             } = event
+
       assert %{
-              "data_structure_id" => ^data_structure_id,
-              "field_parent_id" => ^parent_id
-            } = Jason.decode!(payload)
+               "data_structure_id" => ^data_structure_id,
+               "field_parent_id" => ^parent_id
+             } = Jason.decode!(payload)
     end
 
     test "update_structure_note/3 publishes Audit structure_note_published event", %{
@@ -232,7 +235,9 @@ defmodule TdDd.DataStructures.StructureNotesTest do
           type_map: %{"CHILD_DS" => type.name}
         )
 
-      %{id: note_id} = structure_note = insert(:structure_note, data_structure_id: data_structure_id)
+      %{id: note_id} =
+        structure_note = insert(:structure_note, data_structure_id: data_structure_id)
+
       params = %{"df_content" => %{"alias" => "foo"}, "status" => "published"}
 
       assert {:ok, %{audit: event_id}} =
@@ -244,19 +249,20 @@ defmodule TdDd.DataStructures.StructureNotesTest do
       resource_id = "#{note_id}"
 
       assert %{
-              event: "structure_note_published",
-              payload: payload,
-              resource_id: ^resource_id,
-              resource_type: "data_structure_note",
-              service: "td_dd",
-              ts: _ts,
-              user_id: ^user_id
-            } = event
+               event: "structure_note_published",
+               payload: payload,
+               resource_id: ^resource_id,
+               resource_type: "data_structure_note",
+               service: "td_dd",
+               ts: _ts,
+               user_id: ^user_id
+             } = event
+
       assert %{
-              "resource" => %{"path" => ["GRAMPA_DS", "PARENT_DS"]},
-              "data_structure_id" => ^data_structure_id,
-              "field_parent_id" => ^parent_id
-            } = Jason.decode!(payload)
+               "resource" => %{"path" => ["GRAMPA_DS", "PARENT_DS"]},
+               "data_structure_id" => ^data_structure_id,
+               "field_parent_id" => ^parent_id
+             } = Jason.decode!(payload)
     end
 
     test "delete_structure_note/1 deletes the structure_note" do

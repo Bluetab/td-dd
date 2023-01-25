@@ -20,7 +20,6 @@ defmodule TdDd.DataStructures.Audit do
         %{} = changeset,
         user_id
       ) do
-    #changeset = with_domain_ids(changeset, structure_note)
     payload =
       structure_note
       |> with_resource(latest)
@@ -332,15 +331,21 @@ defmodule TdDd.DataStructures.Audit do
 
   defp build_resource(_payload, _latest), do: %{}
 
-  defp maybe_field_parent(payload, %{latest: %{class: "field", parent_relations: [_ | _] = parent_relations}}) do
+  defp maybe_field_parent(payload, %{
+         latest: %{class: "field", parent_relations: [_ | _] = parent_relations}
+       }) do
     relation_type_id = RelationTypes.default_id!()
-    field_parent_id = parent_relations
-    |> Enum.find(&(&1.relation_type_id == relation_type_id))
-    |> case do
-      %{parent: %{data_structure_id: parent_id}} -> parent_id
-      _ -> nil
-    end
+
+    field_parent_id =
+      parent_relations
+      |> Enum.find(&(&1.relation_type_id == relation_type_id))
+      |> case do
+        %{parent: %{data_structure_id: parent_id}} -> parent_id
+        _ -> nil
+      end
+
     Map.put(payload, :field_parent_id, field_parent_id)
   end
+
   defp maybe_field_parent(payload, _), do: payload
 end

@@ -83,7 +83,8 @@ defmodule TdDd.DataStructures.AuditTest do
         %{data_structure: %{id: data_structure_id} = data_structure}
       ] = create_hierarchy(["PARENT_DS", "CHILD_DS"], class_map: %{"CHILD_DS" => "field"})
 
-      data_structure_version = DataStructures.get_latest_version(data_structure, [:parent_relations])
+      data_structure_version =
+        DataStructures.get_latest_version(data_structure, [:parent_relations])
 
       %{id: note_id} =
         note =
@@ -175,11 +176,10 @@ defmodule TdDd.DataStructures.AuditTest do
     test "publishes an event with field_parent_id", %{claims: %{user_id: user_id}} do
       [
         %{data_structure_id: parent_id},
-        %{data_structure: %{id: data_structure_id} = data_structure} =
-          data_structure_version
+        %{data_structure: %{id: data_structure_id} = data_structure} = data_structure_version
       ] = create_hierarchy(["PARENT_DS", "CHILD_DS"], class_map: %{"CHILD_DS" => "field"})
 
-      data_structure_version = Repo.preload(data_structure_version, [parent_relations: :parent])
+      data_structure_version = Repo.preload(data_structure_version, parent_relations: :parent)
 
       %{id: note_id} =
         note =
@@ -264,11 +264,10 @@ defmodule TdDd.DataStructures.AuditTest do
     test "publishes an event with field_parent_id", %{claims: %{user_id: user_id}} do
       [
         %{data_structure_id: parent_id},
-        %{data_structure: %{id: data_structure_id} = data_structure} =
-          data_structure_version
+        %{data_structure: %{id: data_structure_id} = data_structure} = data_structure_version
       ] = create_hierarchy(["PARENT_DS", "CHILD_DS"], class_map: %{"CHILD_DS" => "field"})
 
-      data_structure_version = Repo.preload(data_structure_version, [parent_relations: :parent])
+      data_structure_version = Repo.preload(data_structure_version, parent_relations: :parent)
 
       %{id: note_id} =
         note =

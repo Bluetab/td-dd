@@ -191,7 +191,9 @@ defmodule TdDd.DataStructures.StructureNotes do
 
   @doc "Updates a structure_note with bulk_update behaviour"
   def bulk_update_structure_note(%StructureNote{} = structure_note, attrs, user_id) do
-    %{data_structure: data_structure} = structure_note = Repo.preload(structure_note, :data_structure)
+    %{data_structure: data_structure} =
+      structure_note = Repo.preload(structure_note, :data_structure)
+
     changeset = StructureNote.bulk_update_changeset(structure_note, attrs)
 
     if changeset.changes == %{} do
@@ -248,7 +250,9 @@ defmodule TdDd.DataStructures.StructureNotes do
   end
 
   def update_structure_note(%StructureNote{} = structure_note, attrs, user_id, opts) do
-    %{data_structure: data_structure} = structure_note = Repo.preload(structure_note, :data_structure)
+    %{data_structure: data_structure} =
+      structure_note = Repo.preload(structure_note, :data_structure)
+
     changeset = StructureNote.changeset(structure_note, attrs)
 
     Multi.new()
