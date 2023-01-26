@@ -196,6 +196,7 @@ defmodule TdDd.DataStructures do
     |> enrich(with_protected_metadata, :defaults)
     |> enrich(opts, :classifications, &get_classifications!/1)
     |> enrich(opts, :system, &get_system!/1)
+    |> enrich(opts, :parent_relations, &get_parent_relations!/1)
     |> enrich(
       opts,
       :parents,
@@ -310,6 +311,12 @@ defmodule TdDd.DataStructures do
   defp get_profile!(%DataStructureVersion{} = dsv) do
     case Repo.preload(dsv, data_structure: :profile) do
       %{data_structure: %{profile: profile}} -> profile
+    end
+  end
+
+  defp get_parent_relations!(%DataStructureVersion{} = dsv) do
+    case Repo.preload(dsv, parent_relations: :parent) do
+      %{parent_relations: parent_relations} -> parent_relations
     end
   end
 

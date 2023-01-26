@@ -15,6 +15,10 @@
     download ReferenceDataset
   - ReferenceDataset without domain_ids is only visible to `admins`
 
+### Added
+
+- [TD-5473] `field_parent_id` for `StructureNote` events 
+
 ## [4.59.0] 2023-01-16
 
 ### Changed

@@ -9,17 +9,29 @@ defmodule TdDd.DataStructures.Audit do
 
   alias Ecto.Changeset
   alias TdCache.TaxonomyCache
+  alias TdDd.DataStructures.RelationTypes
 
   @doc """
   Publishes a `:structure_note_updated` event when modifying a StructureNote. Should be called using `Ecto.Multi.run/5`.
   """
   def structure_note_updated(
         _repo,
-        %{structure_note: %{id: id, data_structure_id: data_structure_id} = structure_note},
+        %{structure_note: %{id: id} = structure_note, latest: latest} = multi,
         %{} = changeset,
         user_id
       ) do
-    changeset = with_domain_ids(changeset, structure_note)
+    payload =
+      structure_note
+      |> with_resource(latest)
+      |> with_domain_ids(structure_note)
+      |> with_structure_id(structure_note)
+      |> maybe_field_parent(multi)
+      |> Map.take([
+        :data_structure_id,
+        :domain_ids,
+        :resource,
+        :field_parent_id
+      ])
 
     publish(
       "structure_note_updated",
@@ -27,7 +39,7 @@ defmodule TdDd.DataStructures.Audit do
       id,
       user_id,
       changeset,
-      data_structure_id
+      payload
     )
   end
 
@@ -36,7 +48,7 @@ defmodule TdDd.DataStructures.Audit do
   """
   def structure_note_status_updated(
         _repo,
-        %{structure_note: %{id: id} = structure_note, latest: latest},
+        %{structure_note: %{id: id} = structure_note, latest: latest} = multi,
         status,
         user_id
       ) do
@@ -45,10 +57,12 @@ defmodule TdDd.DataStructures.Audit do
       |> with_resource(latest)
       |> with_domain_ids(structure_note)
       |> with_structure_id(structure_note)
+      |> maybe_field_parent(multi)
       |> Map.take([
         :data_structure_id,
         :domain_ids,
-        :resource
+        :resource,
+        :field_parent_id
       ])
 
     publish("structure_note_" <> status, "data_structure_note", id, user_id, payload)
@@ -59,7 +73,7 @@ defmodule TdDd.DataStructures.Audit do
   """
   def structure_note_deleted(
         _repo,
-        %{structure_note: %{id: id} = structure_note, latest: latest},
+        %{structure_note: %{id: id} = structure_note, latest: latest} = multi,
         user_id
       ) do
     payload =
@@ -67,10 +81,12 @@ defmodule TdDd.DataStructures.Audit do
       |> with_resource(latest)
       |> with_domain_ids(structure_note)
       |> with_structure_id(structure_note)
+      |> maybe_field_parent(multi)
       |> Map.take([
         :data_structure_id,
         :domain_ids,
-        :resource
+        :resource,
+        :field_parent_id
       ])
 
     publish("structure_note_deleted", "data_structure_note", id, user_id, payload)
@@ -314,4 +330,22 @@ defmodule TdDd.DataStructures.Audit do
   end
 
   defp build_resource(_payload, _latest), do: %{}
+
+  defp maybe_field_parent(payload, %{
+         latest: %{class: "field", parent_relations: [_ | _] = parent_relations}
+       }) do
+    relation_type_id = RelationTypes.default_id!()
+
+    field_parent_id =
+      parent_relations
+      |> Enum.find(&(&1.relation_type_id == relation_type_id))
+      |> case do
+        %{parent: %{data_structure_id: parent_id}} -> parent_id
+        _ -> nil
+      end
+
+    Map.put(payload, :field_parent_id, field_parent_id)
+  end
+
+  defp maybe_field_parent(payload, _), do: payload
 end
