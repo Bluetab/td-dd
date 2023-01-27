@@ -190,6 +190,65 @@ defmodule TdDq.Implementations.Policy do
       Permissions.authorized?(claims, :view_published_business_concepts, domain_id)
   end
 
+  def authorize(action, %{role: "admin"}, imp) when action in [:convert_raw, :convert_default],
+    do: valid_action?(action, imp)
+
+  def authorize(
+        :convert_default,
+        %{} = claims,
+        %Implementation{domain_id: domain_id, rule_id: nil} = implementation
+      ) do
+    valid_action?(:convert_default, implementation) &&
+      Enum.all?(
+        [:manage_ruleless_implementations, :manage_basic_implementations],
+        &Permissions.authorized?(claims, &1, domain_id)
+      )
+  end
+
+  def authorize(
+        :convert_raw,
+        %{} = claims,
+        %Implementation{domain_id: domain_id, rule_id: nil} = implementation
+      ) do
+    valid_action?(:convert_raw, implementation) &&
+      Enum.all?(
+        [
+          :manage_raw_quality_rule_implementations,
+          :manage_ruleless_implementations,
+          :manage_basic_implementations
+        ],
+        &Permissions.authorized?(claims, &1, domain_id)
+      )
+  end
+
+  def authorize(
+        :convert_default,
+        %{} = claims,
+        %Implementation{domain_id: domain_id} = implementation
+      ) do
+    valid_action?(:convert_default, implementation) &&
+      Enum.all?(
+        [:manage_quality_rule_implementations, :manage_basic_implementations],
+        &Permissions.authorized?(claims, &1, domain_id)
+      )
+  end
+
+  def authorize(
+        :convert_raw,
+        %{} = claims,
+        %Implementation{domain_id: domain_id} = implementation
+      ) do
+    valid_action?(:convert_raw, implementation) &&
+      Enum.all?(
+        [
+          :manage_quality_rule_implementations,
+          :manage_raw_quality_rule_implementations,
+          :manage_basic_implementations
+        ],
+        &Permissions.authorized?(claims, &1, domain_id)
+      )
+  end
+
   def authorize(_action, _claims, _params), do: false
 
   defp valid_action?(:delete, %{status: :published} = imp), do: Implementation.versionable?(imp)
@@ -201,6 +260,8 @@ defmodule TdDq.Implementations.Policy do
   defp valid_action?(:restore, imp), do: Implementation.restorable?(imp)
   defp valid_action?(:reject, imp), do: Implementation.rejectable?(imp)
   defp valid_action?(:submit, imp), do: Implementation.submittable?(imp)
+  defp valid_action?(:convert_default, imp), do: Implementation.convertible?(imp)
+  defp valid_action?(:convert_raw, imp), do: Implementation.convertible?(imp)
   defp valid_action?(:move, imp), do: valid_action?(:edit, imp)
 
   defp permissions(%Changeset{} = changeset) do

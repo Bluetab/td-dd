@@ -271,6 +271,13 @@ defmodule TdDq.Implementations.Implementation do
   end
 
   defp custom_changeset(
+         %Changeset{changes: %{implementation_type: "default"}} = changeset,
+         _implementation
+       ) do
+    default_changeset(changeset)
+  end
+
+  defp custom_changeset(
          %Changeset{changes: %{implementation_type: "raw"}} = changeset,
          _implementation
        ) do
@@ -387,6 +394,11 @@ defmodule TdDq.Implementations.Implementation do
   def submittable?(%__MODULE__{status: status}), do: status == :draft
 
   def rejectable?(%__MODULE__{status: status}), do: status == :pending_approval
+
+  def convertible?(%__MODULE__{status: status})
+    when status in [:deprecated, :draft, :versioned], do: false
+
+  def convertible?(%__MODULE__{implementation_type: type}), do: type == "basic"
 
   defimpl Elasticsearch.Document do
     alias TdCache.TemplateCache
