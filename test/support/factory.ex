@@ -147,6 +147,24 @@ defmodule TdDd.Factory do
     |> merge_attributes(attrs)
   end
 
+  def basic_implementation_factory(attrs) do
+    attrs =
+      attrs
+      |> default_assoc(:rule_id, :rule)
+      |> merge_attrs_with_ref()
+
+    %TdDq.Implementations.Implementation{
+      implementation_key: sequence("implementation_key"),
+      implementation_type: "basic",
+      goal: 30,
+      minimum: 12,
+      domain_id: 2,
+      version: 1,
+      status: "draft"
+    }
+    |> merge_attributes(attrs)
+  end
+
   defp merge_attrs_with_ref(attrs) do
     id = Map.get(attrs, :id, System.unique_integer([:positive]))
 
@@ -171,6 +189,21 @@ defmodule TdDd.Factory do
       dataset: build(:dataset),
       populations: build(:populations),
       validation: build(:validation),
+      version: 1,
+      status: "draft"
+    }
+    |> merge_attributes(attrs)
+  end
+
+  def basic_ruleless_implementation_factory(attrs) do
+    attrs = merge_attrs_with_ref(attrs)
+
+    %TdDq.Implementations.Implementation{
+      implementation_key: sequence("implementation_key"),
+      implementation_type: "basic",
+      goal: 30,
+      minimum: 12,
+      domain_id: 2,
       version: 1,
       status: "draft"
     }
