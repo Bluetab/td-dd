@@ -95,13 +95,14 @@ defmodule TdDd.DataStructures.DataStructureQueriesTest do
     %{id: grant_id} = grant = insert(:grant, data_structure_id: dsv_a_ds_id)
 
     assert [
-      %{
-        dsv_children: dsv_children,
-        grant: ^grant
-      }
-    ] =
-    DataStructureQueries.children(%{grant_ids: [grant_id]})
-    |> Repo.all()
+             %{
+               dsv_children: dsv_children,
+               grant: ^grant
+             }
+           ] =
+             DataStructureQueries.children(%{grant_ids: [grant_id]})
+             |> Repo.all()
+
     assert dsv_children <|> [dsv_a_id, dsv_b_id, dsv_c_id]
   end
 
