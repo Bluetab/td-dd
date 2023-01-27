@@ -15,6 +15,7 @@ defmodule TdDd.ReferenceData.Dataset do
     field(:data, {:array, {:array, :string}}, virtual: true)
     field(:rows, {:array, {:array, :string}})
     field(:row_count, :integer, virtual: true)
+    field(:domain_ids, {:array, :integer}, default: [])
 
     timestamps(type: :utc_datetime_usec)
   end
@@ -23,11 +24,12 @@ defmodule TdDd.ReferenceData.Dataset do
 
   def changeset(%__MODULE__{} = struct, %{} = params) do
     struct
-    |> cast(params, [:name, :data])
+    |> cast(params, [:name, :data, :domain_ids])
     |> update_change(:data, &remove_empty/1)
     |> validate_change(:data, &validate_data/2)
     |> maybe_split_headers()
     |> validate_required([:name, :headers, :rows])
+    |> unique_domain_ids()
     |> unique_constraint(:name)
   end
 
@@ -73,5 +75,13 @@ defmodule TdDd.ReferenceData.Dataset do
       :error ->
         changeset
     end
+  end
+
+  defp unique_domain_ids(changeset) do
+    update_change(changeset, :domain_ids, fn domain_ids ->
+      domain_ids
+      |> Enum.sort()
+      |> Enum.uniq()
+    end)
   end
 end

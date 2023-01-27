@@ -8,6 +8,7 @@ defmodule TdDdWeb.Schema.ReferenceDataTest do
       headers
       name
       rowCount
+      domain_ids
     }
   }
   """
@@ -24,6 +25,22 @@ defmodule TdDdWeb.Schema.ReferenceDataTest do
   }
   """
 
+  @dataset_with_domains """
+  query ReferenceDataset($id: ID!) {
+    referenceDataset(id: $id) {
+      id
+      headers
+      name
+      rowCount
+      rows
+      domain_ids
+      domains {
+        name
+      }
+    }
+  }
+  """
+
   @create_dataset """
   mutation CreateReferenceDataset($dataset: CreateReferenceDatasetInput!) {
     createReferenceDataset(dataset: $dataset) {
@@ -32,6 +49,7 @@ defmodule TdDdWeb.Schema.ReferenceDataTest do
       name
       rowCount
       rows
+      domain_ids
     }
   }
   """
@@ -44,6 +62,7 @@ defmodule TdDdWeb.Schema.ReferenceDataTest do
       name
       rowCount
       rows
+      domain_ids
     }
   }
   """
@@ -86,6 +105,28 @@ defmodule TdDdWeb.Schema.ReferenceDataTest do
         assert %{"name" => ^name, "rowCount" => 2} = dataset
       end
     end
+
+    @tag authentication: [
+           role: "user",
+           permissions: ["view_data_structure"]
+         ]
+    test "returns reference datasets permitted list when queried by user with permissions", %{
+      conn: conn,
+      domain: %{id: domain_id}
+    } do
+      %{name: name} = insert(:reference_dataset, domain_ids: [domain_id, domain_id + 1])
+      insert(:reference_dataset)
+
+      assert %{"data" => data} =
+               resp =
+               conn
+               |> post("/api/v2", %{"query" => @datasets})
+               |> json_response(:ok)
+
+      refute Map.has_key?(resp, "errors")
+      assert %{"referenceDatasets" => [dataset]} = data
+      assert %{"name" => ^name, "rowCount" => 2, "domain_ids" => [^domain_id]} = dataset
+    end
   end
 
   describe "referenceDataset query" do
@@ -104,40 +145,50 @@ defmodule TdDdWeb.Schema.ReferenceDataTest do
 
     @tag authentication: [
            role: "user",
-           permissions: ["manage_quality_rule_implementations"]
+           permissions: ["view_data_structure"]
          ]
-    test "returns reference dataset when queried by user with permissions", %{conn: conn} do
-      %{id: id, name: name} = insert(:reference_dataset)
+    test "returns reference permitted dataset when queried by user with permissions", %{
+      conn: conn,
+      domain: %{id: domain_id, name: domain_name}
+    } do
+      %{id: id, name: name} = insert(:reference_dataset, domain_ids: [domain_id, domain_id + 1])
 
       variables = %{"id" => "#{id}"}
 
       assert %{"data" => data} =
                resp =
                conn
-               |> post("/api/v2", %{"query" => @dataset, "variables" => variables})
+               |> post("/api/v2", %{"query" => @dataset_with_domains, "variables" => variables})
                |> json_response(:ok)
 
       refute Map.has_key?(resp, "errors")
       assert %{"referenceDataset" => dataset} = data
-      assert %{"name" => ^name, "rowCount" => 2, "rows" => [_, _]} = dataset
+
+      assert %{
+               "name" => ^name,
+               "rowCount" => 2,
+               "rows" => [_, _],
+               "domain_ids" => [^domain_id],
+               "domains" => [%{"name" => ^domain_name}]
+             } = dataset
     end
 
     @tag authentication: [
            role: "user",
-           permissions: ["manage_quality_rule_implementations"]
+           permissions: ["view_data_structure"]
          ]
-    test "returns reference datasets list when queried by user with permissions", %{conn: conn} do
-      %{name: name} = insert(:reference_dataset)
+    test "returns forbidden when queried by user with permissions on domain", %{conn: conn} do
+      %{id: id} = insert(:reference_dataset)
 
-      assert %{"data" => data} =
-               resp =
+      variables = %{"id" => "#{id}"}
+
+      assert %{"data" => data, "errors" => errors} =
                conn
-               |> post("/api/v2", %{"query" => @datasets})
+               |> post("/api/v2", %{"query" => @dataset, "variables" => variables})
                |> json_response(:ok)
 
-      refute Map.has_key?(resp, "errors")
-      assert %{"referenceDatasets" => [dataset]} = data
-      assert %{"name" => ^name, "rowCount" => 2} = dataset
+      assert %{"referenceDataset" => nil} = data
+      assert [%{"message" => "forbidden", "path" => ["referenceDataset"]}] = errors
     end
 
     for role <- ["admin", "service"] do
@@ -178,7 +229,7 @@ defmodule TdDdWeb.Schema.ReferenceDataTest do
 
     @tag authentication: [role: "admin"]
     test "creates dataset when sent by an admin user", %{conn: conn} do
-      variables = %{"dataset" => %{"name" => "foo", "data" => @data}}
+      variables = %{"dataset" => %{"name" => "foo", "data" => @data, "domain_ids" => [1]}}
 
       assert %{"data" => data} =
                resp =
@@ -194,7 +245,8 @@ defmodule TdDdWeb.Schema.ReferenceDataTest do
                "id" => _,
                "name" => "foo",
                "rowCount" => 1,
-               "rows" => [_]
+               "rows" => [_],
+               "domain_ids" => [1]
              } = dataset
     end
   end
@@ -217,8 +269,11 @@ defmodule TdDdWeb.Schema.ReferenceDataTest do
 
     @tag authentication: [role: "admin"]
     test "updates dataset when sent by an admin user", %{conn: conn} do
-      %{id: id} = insert(:reference_dataset)
-      variables = %{"dataset" => %{"id" => "#{id}", "name" => "bar", "data" => @data}}
+      %{id: id} = insert(:reference_dataset, domain_ids: [1])
+
+      variables = %{
+        "dataset" => %{"id" => "#{id}", "name" => "bar", "data" => @data, "domain_ids" => [2]}
+      }
 
       assert %{"data" => data} =
                resp =
@@ -234,7 +289,8 @@ defmodule TdDdWeb.Schema.ReferenceDataTest do
                "id" => _,
                "name" => "bar",
                "rowCount" => 1,
-               "rows" => [_]
+               "rows" => [_],
+               "domain_ids" => [2]
              } = dataset
     end
   end

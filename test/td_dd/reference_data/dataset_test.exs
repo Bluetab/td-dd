@@ -68,5 +68,15 @@ defmodule TdDd.ReferenceData.DatasetTest do
       assert %{valid?: false, errors: errors} = Dataset.changeset(params)
       assert errors[:data] == {"maximum 2 columns", []}
     end
+
+    test "validates cast unique domain_ids" do
+      params = %{
+        name: "dataset1",
+        data: [["foo", "bar"], ["foo1", "bar1"]],
+        domain_ids: [1, 1]
+      }
+
+      assert %{valid?: true, changes: %{domain_ids: [1]}} = Dataset.changeset(params)
+    end
   end
 end
