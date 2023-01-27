@@ -88,9 +88,14 @@ defmodule TdDd.ReferenceData do
     queryable = select_merge(Dataset, [ds], %{row_count: fragment("array_length(?, 1)", ds.rows)})
 
     Enum.reduce(args, queryable, fn
-      {:id, id}, q -> where(q, [ds], ds.id == ^id)
-      {:domain_ids, :all}, q -> q
-      {:domain_ids, domain_ids}, q -> where(q, [ds], fragment("? && ?", ds.domain_ids, ^domain_ids))
+      {:id, id}, q ->
+        where(q, [ds], ds.id == ^id)
+
+      {:domain_ids, :all}, q ->
+        q
+
+      {:domain_ids, domain_ids}, q ->
+        where(q, [ds], fragment("? && ?", ds.domain_ids, ^domain_ids))
     end)
   end
 end

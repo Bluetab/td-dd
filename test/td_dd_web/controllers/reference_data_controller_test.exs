@@ -25,15 +25,18 @@ defmodule TdDdWeb.ReferenceDataControllerTest do
     end
 
     @tag authentication: [role: "user", permissions: ["view_data_structure"]]
-    test "returns only reference datasets for which user has permission", %{conn: conn, domain: %{id: domain_id}} do
+    test "returns only reference datasets for which user has permission", %{
+      conn: conn,
+      domain: %{id: domain_id}
+    } do
       %{id: id} = insert(:reference_dataset, domain_ids: [domain_id, domain_id + 1])
       insert(:reference_dataset)
       insert(:reference_dataset, domain_ids: [domain_id + 1])
 
       assert %{"data" => data} =
-              conn
-              |> get(Routes.reference_data_path(conn, :index))
-              |> json_response(:ok)
+               conn
+               |> get(Routes.reference_data_path(conn, :index))
+               |> json_response(:ok)
 
       assert [%{"id" => ^id, "row_count" => 2}] = data
     end
@@ -52,9 +55,9 @@ defmodule TdDdWeb.ReferenceDataControllerTest do
       %{id: id} = insert(:reference_dataset, domain_ids: [domain_id])
 
       assert %{"data" => data} =
-        conn
-        |> get(Routes.reference_data_path(conn, :show, "#{id}"))
-        |> json_response(:ok)
+               conn
+               |> get(Routes.reference_data_path(conn, :show, "#{id}"))
+               |> json_response(:ok)
 
       assert %{"id" => ^id, "name" => _, "headers" => _, "rows" => _, "row_count" => 2} = data
     end
@@ -64,8 +67,8 @@ defmodule TdDdWeb.ReferenceDataControllerTest do
       %{id: id} = insert(:reference_dataset)
 
       assert conn
-        |> get(Routes.reference_data_path(conn, :show, "#{id}"))
-        |> response(:forbidden)
+             |> get(Routes.reference_data_path(conn, :show, "#{id}"))
+             |> response(:forbidden)
     end
 
     @tag authentication: [role: "service"]
@@ -156,6 +159,7 @@ defmodule TdDdWeb.ReferenceDataControllerTest do
     @tag authentication: [role: "admin"]
     test "updates an existing reference dataset", %{conn: conn} do
       %{id: id} = insert(:reference_dataset, domain_ids: [2])
+
       params = %{
         "dataset" => %Plug.Upload{path: @path},
         "name" => "foo",

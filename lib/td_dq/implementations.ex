@@ -473,7 +473,9 @@ defmodule TdDq.Implementations do
       :publish,
       :restore,
       :reject,
-      :submit
+      :submit,
+      :convert_raw,
+      :convert_default
     ]
   end
 

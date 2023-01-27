@@ -14,6 +14,8 @@
   - Users with `view_data_structure` permission on domain can show, index and
     download ReferenceDataset
   - ReferenceDataset without domain_ids is only visible to `admins`
+- [TD-5478] Add `convert_raw` and `convert_default` action for basic
+  implementations
 
 ### Added
 
