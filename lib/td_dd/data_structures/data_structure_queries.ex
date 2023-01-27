@@ -13,6 +13,7 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.DataStructures.Tags.StructureTag
+  alias TdDd.Grants.Grant
   alias TdDd.Profiles.Profile
 
   @paths_by_child_id """
@@ -27,17 +28,6 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   FROM data_structures_hierarchy dsh
   JOIN data_structure_versions dsv on dsv.id = dsh.ancestor_dsv_id
   WHERE dsh.ds_id = ANY (?) and ancestor_level > 0
-  """
-
-  @dsv_children_without_fields """
-  select ancestor_ds_id as dsid, count(dsv_id), ARRAY_AGG (dsv_id) from
-  (
-    SELECT dsh.dsv_id, ancestor_ds_id FROM data_structures_hierarchy dsh
-    join (select id as dsv_id, version as child_version, deleted_at as child_deleted_at, class as child_class from data_structure_versions) dsvc on dsh.dsv_id = dsvc.dsv_id
-    join (select id as dsv_id, version as ancestor_version, deleted_at as ancestor_deleted_at from data_structure_versions) dsva on dsh.ancestor_dsv_id = dsva.dsv_id
-    where ancestor_deleted_at is null and child_deleted_at is null and (child_class is null or child_class != 'field')
-  ) as foo
-  group by ancestor_ds_id
   """
 
   @structure_descendents """
@@ -55,19 +45,31 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   def children(opts \\ []) do
     opts_map = Enum.into(opts, %{grant_ids: []})
 
-    TdDd.Grants.Grant
-    |> with_cte("children", as: fragment(@dsv_children_without_fields))
-    |> join(:inner, [g], c in "children", on: c.dsid == g.data_structure_id)
-    |> select([g, c], %{grant: g, dsv_children: c.array_agg})
-    |> where_grant_ids(opts_map)
+    "data_structures_hierarchy"
+    |> join(:inner, [dsh], dsv_child in DataStructureVersion, on: dsh.dsv_id == dsv_child.id)
+    |> join(:inner, [dsh, dsv_child], dsv_ancestor in DataStructureVersion,
+      on: dsh.ancestor_dsv_id == dsv_ancestor.id
+    )
+    |> join(:inner, [dsh, dsv_child, dsv_ancestor], grant in Grant,
+      on: dsh.ancestor_ds_id == grant.data_structure_id
+    )
+    |> group_by([dsh, _dsv_child, _dsv_ancestor, grant], [dsh.ancestor_ds_id, grant.id])
+    |> where(
+      [dsh, dsv_child, dsv_ancestor],
+      is_nil(dsv_child.deleted_at) and is_nil(dsv_ancestor.deleted_at) and
+        (is_nil(dsv_child.class) or dsv_child.class != "field")
+    )
+    |> where_grant_id_in(opts_map)
+    |> select([dsh, dsv_child, dsv_ancestor, grant], %{
+      dsv_children: fragment("array_agg(?)", dsh.dsv_id),
+      grant: grant
+    })
   end
 
-  defp where_grant_ids(query, %{grant_ids: []}) do
-    query
-  end
+  defp where_grant_id_in(query, %{grant_ids: []}), do: query
 
-  defp where_grant_ids(query, %{grant_ids: grant_ids}) do
-    where(query, [g], g.id in ^grant_ids)
+  defp where_grant_id_in(query, %{grant_ids: grant_ids}) do
+    where(query, [_dsh, _dsv_child, _dsv_ancestor, grant], grant.id in ^grant_ids)
   end
 
   @spec data_structure_version_ids(keyword) :: Ecto.Query.t()

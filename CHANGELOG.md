@@ -16,10 +16,11 @@
   - ReferenceDataset without domain_ids is only visible to `admins`
 - [TD-5478] Add `convert_raw` and `convert_default` action for basic
   implementations
+- [TD-5493] Improve specific grant(s) reindex performance
 
 ### Added
 
-- [TD-5473] `field_parent_id` for `StructureNote` events 
+- [TD-5473] `field_parent_id` for `StructureNote` events
 
 ## [4.59.0] 2023-01-16
 
