@@ -8,6 +8,7 @@ defmodule TdDq.Functions.Policy do
   def authorize(:query, %{role: "user"} = claims, _params) do
     Permissions.authorized_any?(claims, [
       :manage_quality_rule_implementations,
+      :manage_raw_quality_rule_implementations,
       :create_grant_request
     ])
   end
