@@ -241,7 +241,6 @@ defmodule TdDq.Implementations.Policy do
     valid_action?(:convert_raw, implementation) &&
       Enum.all?(
         [
-          :manage_quality_rule_implementations,
           :manage_raw_quality_rule_implementations,
           :manage_basic_implementations
         ],
@@ -260,8 +259,13 @@ defmodule TdDq.Implementations.Policy do
   defp valid_action?(:restore, imp), do: Implementation.restorable?(imp)
   defp valid_action?(:reject, imp), do: Implementation.rejectable?(imp)
   defp valid_action?(:submit, imp), do: Implementation.submittable?(imp)
-  defp valid_action?(:convert_default, imp), do: Implementation.convertible?(imp)
-  defp valid_action?(:convert_raw, imp), do: Implementation.convertible?(imp)
+
+  defp valid_action?(:convert_default, imp),
+    do: Implementation.convertible?(imp) && valid_action?(:edit, imp)
+
+  defp valid_action?(:convert_raw, imp),
+    do: Implementation.convertible?(imp) && valid_action?(:edit, imp)
+
   defp valid_action?(:move, imp), do: valid_action?(:edit, imp)
 
   defp permissions(%Changeset{} = changeset) do
