@@ -1021,7 +1021,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "render actions for deprecated basic rule implementation versioned as admin", %{conn: conn} do
+    test "render actions for deprecated basic rule implementation versioned as admin", %{
+      conn: conn
+    } do
       domain = build(:domain)
       %{id: id} = insert(:basic_implementation, domain_id: domain.id, status: :versioned)
 
@@ -1033,7 +1035,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert %{
                "clone" => %{"method" => "POST"},
                "link_concept" => %{"method" => "POST"},
-               "link_structure" => %{"method" => "POST"},
+               "link_structure" => %{"method" => "POST"}
              } == actions
     end
 

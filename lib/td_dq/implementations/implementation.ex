@@ -396,7 +396,8 @@ defmodule TdDq.Implementations.Implementation do
   def rejectable?(%__MODULE__{status: status}), do: status == :pending_approval
 
   def convertible?(%__MODULE__{status: status})
-    when status in [:deprecated, :draft, :versioned], do: false
+      when status in [:deprecated, :draft, :versioned],
+      do: false
 
   def convertible?(%__MODULE__{implementation_type: type}), do: type == "basic"
 
