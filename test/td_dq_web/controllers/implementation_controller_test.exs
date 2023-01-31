@@ -958,12 +958,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
     @tag authentication: [
            user_name: "non_admin",
-           permissions:
-             @imp_raw_permissions ++
-               [
-                 :manage_basic_implementations,
-                 :manage_quality_rule_implementations
-               ]
+           permissions: @imp_raw_permissions ++ [:manage_basic_implementations]
          ]
     test "render actions for basic rule implementation with raw rule implementation permissions",
          %{
@@ -987,8 +982,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert %{
                "edit" => %{"method" => "POST"},
                "clone" => %{"method" => "POST"},
-               "convert_raw" => %{"method" => "POST"},
-               "convert_default" => %{"method" => "POST"}
+               "convert_raw" => %{"method" => "POST"}
              } == actions
     end
 
@@ -1098,6 +1092,43 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "link_structure" => %{"method" => "POST"},
                "publish" => %{"method" => "POST"},
                "move" => %{"method" => "POST"}
+             } == actions
+    end
+
+    @tag authentication: [role: "admin"]
+    test "render actions for published basic rule implementation with new draft version", %{
+      conn: conn
+    } do
+      domain = build(:domain)
+      %{id: rule_id} = insert(:rule, domain_id: domain.id)
+
+      %{id: published_id, implementation_ref: ref} =
+        insert(:basic_implementation,
+          domain_id: domain.id,
+          rule_id: rule_id,
+          version: 1,
+          status: :published
+        )
+
+      %{id: _id} =
+        insert(:basic_implementation,
+          domain_id: domain.id,
+          rule_id: rule_id,
+          version: 2,
+          status: :draft,
+          implementation_ref: ref
+        )
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, published_id))
+               |> json_response(:ok)
+
+      assert %{
+               "clone" => %{"method" => "POST"},
+               "execute" => %{"method" => "POST"},
+               "link_concept" => %{"method" => "POST"},
+               "link_structure" => %{"method" => "POST"}
              } == actions
     end
 
@@ -1264,6 +1295,40 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "link_structure" => %{"method" => "POST"},
                "publish" => %{"method" => "POST"},
                "move" => %{"method" => "POST"}
+             } == actions
+    end
+
+    @tag authentication: [role: "admin"]
+    test "render actions for published basic ruleless implementation with new draft version", %{
+      conn: conn
+    } do
+      domain = build(:domain)
+
+      %{id: published_id, implementation_ref: ref} =
+        insert(:basic_ruleless_implementation,
+          domain_id: domain.id,
+          version: 1,
+          status: :published
+        )
+
+      %{id: _id} =
+        insert(:basic_ruleless_implementation,
+          domain_id: domain.id,
+          version: 2,
+          status: :draft,
+          implementation_ref: ref
+        )
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, published_id))
+               |> json_response(:ok)
+
+      assert %{
+               "clone" => %{"method" => "POST"},
+               "execute" => %{"method" => "POST"},
+               "link_concept" => %{"method" => "POST"},
+               "link_structure" => %{"method" => "POST"}
              } == actions
     end
   end
