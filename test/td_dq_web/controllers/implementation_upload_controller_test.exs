@@ -1,6 +1,9 @@
 defmodule TdDdWeb.ImplementationUploadControllerTest do
   use TdDqWeb.ConnCase
 
+  alias TdDq.Implementations
+  alias TdDq.Implementations.Implementation
+
   @moduletag sandbox: :shared
 
   setup_all do
@@ -45,7 +48,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
     end
 
     @tag authentication: [role: "user"]
-    test "return error if user has no permisssions", %{conn: conn} do
+    test "return error if user has no permissions", %{conn: conn} do
       attrs = %{
         implementations: %Plug.Upload{
           filename: "implementations.csv",
@@ -67,9 +70,26 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
     end
 
     @tag authentication: [role: "user", permissions: [:manage_basic_implementations]]
-    test "user can upload implementations if it has permissions", %{
-      conn: conn
+    test "user with permissions: update and create implementations with rule", %{
+      conn: conn,
+      rule: rule
     } do
+      # Override factory with:
+      #   segments empty list so that :manage_segments is not needed
+      #   basic implementation type so that :manage_quality_rule_implementations is not needed
+      # Implementation to be updated in the CSV upload
+      insert(
+        :implementation,
+        implementation_key: "boo_key_1",
+        implementation_type: "basic",
+        rule_id: rule.id,
+        domain_id: rule.domain_id,
+        status: :draft,
+        version: 1,
+        minimum: 10,
+        goal: 20,
+        segments: []
+      )
       attrs = %{
         implementations: %Plug.Upload{
           filename: "implementations.csv",
@@ -84,6 +104,193 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
 
       assert %{"ids" => ids, "errors" => []} = data
       assert length(ids) == 3
+    end
+
+    @tag authentication: [role: "user", permissions: [:manage_basic_implementations]]
+    test "user cannot publish implementations with rule if it lacks publish permission", %{
+      conn: conn
+    } do
+      attrs = %{
+        "implementations" => %Plug.Upload{
+          filename: "implementations.csv",
+          path: "test/fixtures/implementations/implementations.csv",
+        },
+        "auto_publish" => "true",
+      }
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.implementation_upload_path(conn, :create), attrs)
+               |> json_response(:ok)
+
+      assert %{"ids" => [], "errors" => errors} = data
+      assert length(errors) == 3
+
+      Enum.each(errors, fn %{"message" => message} ->
+        assert ^message = %{"implementation" => ["forbidden"]}
+      end)
+    end
+
+    @tag authentication: [role: "user", permissions: [:manage_basic_implementations, :manage_ruleless_implementations, :publish_implementation], domain_params: %{external_id: "some_domain_id"}]
+    test "user with permissions: update and create implementations with rule, publish", %{
+      conn: conn,
+      rule: rule,
+      domain: %{id: domain_id},
+    } do
+      assert rule.domain_id == domain_id
+
+      # Override factory with:
+      #   segments empty list so that :manage_segments is not needed
+      #   basic implementation type so that :manage_quality_rule_implementations is not needed
+      # Implementations to be updated in the CSV upload
+
+      # Implementations with rules
+      # One in draft status
+      %{id: implementation_boo_key_1_id} = insert(
+        :implementation,
+        implementation_key: "boo_key_1",
+        implementation_type: "basic",
+        rule_id: rule.id,
+        domain_id: rule.domain_id,
+        status: :draft,
+        version: 1,
+        minimum: 10,
+        goal: 20,
+        segments: []
+      )
+      # The other one in published status
+      %{id: implementation_boo_key_2_id} = insert(
+        :implementation,
+        implementation_key: "boo_key_2",
+        implementation_type: "basic",
+        rule_id: rule.id,
+        domain_id: rule.domain_id,
+        status: :published,
+        version: 1,
+        minimum: 10,
+        goal: 20,
+        segments: []
+      )
+
+      # Implementations without rules
+      %{id: implementation_boo_key_4_id} = insert(
+        :implementation,
+        implementation_key: "boo_key_4",
+        implementation_type: "basic",
+        domain_id: domain_id,
+        status: :draft,
+        version: 1,
+        minimum: 10,
+        goal: 20,
+        segments: []
+      )
+      # The other one in published status
+      %{id: implementation_boo_key_5_id} = insert(
+        :implementation,
+        implementation_key: "boo_key_5",
+        implementation_type: "basic",
+        domain_id: domain_id,
+        status: :published,
+        version: 1,
+        minimum: 10,
+        goal: 20,
+        segments: []
+      )
+
+      attrs = %{
+        "implementations" => %Plug.Upload{
+          filename: "implementations_with_and_without_rules.csv",
+          path: "test/fixtures/implementations/implementations_with_and_without_rules.csv"
+        },
+        "auto_publish" => "true",
+      }
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.implementation_upload_path(conn, :create), attrs)
+               |> json_response(:ok)
+
+      assert %{"ids" => ids, "errors" => errors} = data
+      assert length(ids) == 6
+      assert [
+        %{
+          "implementation_key" => "boo_key_7",
+          "message" => %{
+            "domain_external_id" => ["Domain with external id other_domain_id doesn't exist"]
+          }
+        }
+      ] == errors
+
+      uploaded_implementations = TdDq.Implementations.get_implementations(ids)
+      # This one was in draft and has been updated, so it still has the same id
+      assert %Implementation{
+        id: ^implementation_boo_key_1_id,
+        implementation_key: "boo_key_1",
+        status: :published,
+        minimum: 11.0,
+        goal: 12.0
+      } = Enum.find(uploaded_implementations, & &1.implementation_key == "boo_key_1")
+
+      # This one was already published and has been updated, so:
+      #   New Implemementation inserted as "published"...
+      assert %Implementation{
+        implementation_key: "boo_key_2",
+        status: :published,
+        minimum: 22.0,
+        goal: 23.0,
+      } = Enum.find(uploaded_implementations, & &1.implementation_key == "boo_key_2")
+      #   ...and previously published one is now versioned
+      assert %Implementation{
+        id: ^implementation_boo_key_2_id,
+        implementation_key: "boo_key_2",
+        status: :versioned,
+        version: 1,
+        minimum: 10.0,
+        goal: 20.0,
+      } = Implementations.get_implementation(implementation_boo_key_2_id)
+
+      # This one is new
+      assert %Implementation{
+        implementation_key: "boo_key_3",
+        status: :published,
+        minimum: 33.0,
+        goal: 34.0
+      } = Enum.find(uploaded_implementations, & &1.implementation_key == "boo_key_3")
+
+      # This one was in draft and has been updated, so it still has the same id
+      assert %Implementation{
+        id: ^implementation_boo_key_4_id,
+        implementation_key: "boo_key_4",
+        status: :published,
+        minimum: 145.0,
+        goal: 144.0,
+      } = Enum.find(uploaded_implementations, & &1.implementation_key == "boo_key_4")
+
+      # This one was already published and has been updated, so:
+      #   New Implemementation inserted as "published"...
+      assert %Implementation{
+        implementation_key: "boo_key_5",
+        status: :published,
+        minimum: 156.0,
+        goal: 155.0,
+      } = Enum.find(uploaded_implementations, & &1.implementation_key == "boo_key_5")
+      #   ...and previously published one is now versioned
+      assert %Implementation{
+        id: ^implementation_boo_key_5_id,
+        implementation_key: "boo_key_5",
+        status: :versioned,
+        version: 1,
+        minimum: 10.0,
+        goal: 20.0,
+      } = Implementations.get_implementation(implementation_boo_key_5_id)
+
+      # This one is new
+      assert %Implementation{
+        implementation_key: "boo_key_6",
+        status: :published,
+        minimum: 167.0,
+        goal: 166.0
+      } = Enum.find(uploaded_implementations, & &1.implementation_key == "boo_key_6")
     end
 
     @tag authentication: [role: "admin"]
@@ -322,8 +529,16 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
                |> post(Routes.implementation_upload_path(conn, :create), attrs)
                |> json_response(:ok)
 
-      assert %{"ids" => ids, "errors" => []} = data
-      assert length(ids) == 3
+      assert %{"ids" => ids, "errors" => errors} = data
+      assert [
+        %{
+          "implementation_key" => "boo_key_7",
+          "message" => %{
+            "domain_external_id" => ["Domain with external id other_domain_id doesn't exist"]
+          }
+        }
+      ] == errors
+      assert length(ids) == 6
     end
 
     @tag authentication: [role: "admin"]

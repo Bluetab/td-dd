@@ -62,6 +62,12 @@ defmodule TdDq.Implementations do
     Repo.get(Implementation, id)
   end
 
+  def get_implementations([_ | _] = ids) do
+    Implementation
+    |> where([i], i.id in ^ids)
+    |> Repo.all()
+  end
+
   ## used only for migrations
   def get_implementations_ref(ids) do
     Implementation
@@ -133,7 +139,8 @@ defmodule TdDq.Implementations do
         params
       )
 
-    if Bodyguard.permit?(__MODULE__, :create, claims, changeset) do
+    if Bodyguard.permit?(__MODULE__, :create, claims, changeset) and
+       permit_by_changeset_status?(claims, changeset) do
       Multi.new()
       |> Multi.run(:implementation, fn _, _ -> insert_implementation(changeset) end)
       |> Multi.run(:data_structures, &create_implementation_structures/2)
@@ -159,7 +166,8 @@ defmodule TdDq.Implementations do
         params
       )
 
-    if Bodyguard.permit?(__MODULE__, :create, claims, changeset) do
+    if Bodyguard.permit?(__MODULE__, :create, claims, changeset) and
+       permit_by_changeset_status?(claims, changeset) do
       Multi.new()
       |> Multi.run(:implementation, fn _, _ -> insert_implementation(changeset) end)
       |> Multi.run(:data_structures, &create_implementation_structures/2)
@@ -170,6 +178,18 @@ defmodule TdDq.Implementations do
       {:error, {Changeset.fetch_field!(changeset, :implementation_key), :forbidden}}
     end
   end
+
+  def permit_by_changeset_status(claims, %Ecto.Changeset{changes: %{status: _status_change}} = changeset) do
+    Bodyguard.permit(__MODULE__, :publish, claims, changeset)
+  end
+
+  def permit_by_changeset_status(_claims, %Ecto.Changeset{}), do: :ok
+
+  def permit_by_changeset_status?(claims, %Ecto.Changeset{changes: %{status: _status_change}} = changeset) do
+    Bodyguard.permit?(__MODULE__, :publish, claims, changeset)
+  end
+
+  def permit_by_changeset_status?(_claims, %Ecto.Changeset{}), do: true
 
   def maybe_update_implementation(%Implementation{} = implementation, params, %Claims{} = claims) do
     if need_update?(implementation, params) do
@@ -187,7 +207,9 @@ defmodule TdDq.Implementations do
       when rule_id != new_rule_id do
     changeset = upsert_changeset(implementation, params)
 
-    with :ok <- Bodyguard.permit(__MODULE__, :move, claims, changeset) do
+    with :ok <- Bodyguard.permit(__MODULE__, :move, claims, changeset),
+         :ok <- permit_by_changeset_status(claims, changeset)
+     do
       Multi.new()
       |> upsert(changeset)
       |> Multi.run(:implementation, fn _repo, _changes -> {:ok, implementation} end)
@@ -205,7 +227,9 @@ defmodule TdDq.Implementations do
       ) do
     changeset = upsert_changeset(implementation, params)
 
-    with :ok <- Bodyguard.permit(__MODULE__, :update, claims, changeset) do
+    with :ok <- Bodyguard.permit(__MODULE__, :update, claims, changeset),
+         :ok <- permit_by_changeset_status(claims, changeset)
+     do
       Multi.new()
       |> upsert(changeset, status, user_id)
       |> Multi.run(:data_structures, &create_implementation_structures/2)
@@ -214,6 +238,9 @@ defmodule TdDq.Implementations do
       |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
       |> Repo.transaction()
       |> on_upsert()
+    else
+      {:error, :forbidden} -> {:error, {Changeset.fetch_field!(changeset, :implementation_key), :forbidden}}
+      error -> error
     end
   end
 
@@ -227,16 +254,20 @@ defmodule TdDq.Implementations do
     |> Map.get(:changes) != %{}
   end
 
-  defp upsert(multi, %{data: implementation} = changeset, status, user_id) do
+  defp upsert(multi, %{data: implementation} = changeset, curr_status, user_id) do
     new_multi =
       case Changeset.get_change(changeset, :status) do
-        :published -> Workflow.maybe_version_existing(multi, implementation, "published", user_id)
-        _ -> multi
+        :published ->
+          Workflow.maybe_version_existing(multi, implementation, "published", user_id)
+        _ ->
+          multi
       end
 
-    case status do
-      :published -> Multi.insert(new_multi, :implementation, changeset)
-      _ -> Multi.update(new_multi, :implementation, changeset)
+    case curr_status do
+      :published ->
+        Multi.insert(new_multi, :implementation, changeset)
+      _ ->
+        Multi.update(new_multi, :implementation, changeset)
     end
   end
 
@@ -459,64 +490,6 @@ defmodule TdDq.Implementations do
   end
 
   defp on_upsert(result, _), do: result
-
-  defp get_available_actions(_params, %Implementation{}) do
-    [
-      :clone,
-      :delete,
-      :edit,
-      :execute,
-      :link_concept,
-      :link_structure,
-      :manage_segments,
-      :move,
-      :publish,
-      :restore,
-      :reject,
-      :submit
-    ]
-  end
-
-  defp get_available_actions(%{"filters" => %{"status" => ["published"]}}, Implementation) do
-    [
-      "download",
-      "execute",
-      "create",
-      "createBasic",
-      "createBasicRuleLess",
-      "createRaw",
-      "createRawRuleLess",
-      "createRuleLess",
-      "uploadResults"
-    ]
-  end
-
-  defp get_available_actions(_params, Implementation) do
-    [
-      "create",
-      "createBasic",
-      "createBasicRuleLess",
-      "createRaw",
-      "createRawRuleLess",
-      "createRuleLess",
-      "download",
-      "load"
-    ]
-  end
-
-  def build_actions(claims), do: build_actions(claims, %{}, Implementation)
-
-  def build_actions(claims, %Implementation{} = implementation),
-    do: build_actions(claims, %{}, implementation)
-
-  def build_actions(claims, params), do: build_actions(claims, params, Implementation)
-
-  def build_actions(claims, params, implementation) do
-    params
-    |> get_available_actions(implementation)
-    |> Enum.filter(&Bodyguard.permit?(__MODULE__, &1, claims, implementation))
-    |> Enum.reduce(%{}, &Map.put(&2, &1, %{method: "POST"}))
-  end
 
   def get_sources(%Implementation{implementation_type: "raw", raw_content: %{source_id: nil}}) do
     []

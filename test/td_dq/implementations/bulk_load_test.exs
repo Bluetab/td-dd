@@ -236,7 +236,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
       assert {:ok, %{ids: [], errors: [_e1, _e2]}} = BulkLoad.bulk_load(imp, claims)
     end
 
-    test "return errors when some field doesn't exists and not template defined", %{
+    test "return errors when some field doesn't exist and not template defined", %{
       claims: claims,
       domain: %{external_id: external_id}
     } do
@@ -257,7 +257,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
               }} = BulkLoad.bulk_load(imp, claims)
     end
 
-    test "return errors when some template field doesn't exists", %{
+    test "return errors when some template field doesn't exist", %{
       claims: claims,
       domain: %{external_id: external_id},
       template_name: template_name
@@ -280,7 +280,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
               }} = BulkLoad.bulk_load(imp, claims)
     end
 
-    test "return errors when domain_external_id doesn't exists", %{
+    test "return errors when domain_external_id doesn't exist", %{
       claims: claims
     } do
       imp =
@@ -299,7 +299,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
               }} = BulkLoad.bulk_load(imp, claims)
     end
 
-    test "return errors when template doesn't exists", %{
+    test "return errors when template doesn't exist", %{
       claims: claims,
       domain: %{external_id: external_id}
     } do
@@ -321,7 +321,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
               }} = BulkLoad.bulk_load(imp, claims)
     end
 
-    test "return errors when domain field of template doesn't exists", %{
+    test "return errors when domain field of template doesn't exist", %{
       claims: claims,
       rule: %{name: rule_name}
     } do

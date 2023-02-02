@@ -429,7 +429,13 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> get(Routes.implementation_path(conn, :show, id))
                |> json_response(:ok)
 
-      assert %{"delete" => %{"method" => "POST"}} == actions
+      assert %{
+        "delete" => %{"method" => "POST"},
+        "autoPublish" => %{
+          "href" => "/api/rule_implementations/upload",
+          "method" => "POST"
+        }
+      } == actions
     end
 
     ## rule implementation with actions
@@ -483,7 +489,11 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "link_concept" => %{"method" => "POST"},
                "link_structure" => %{"method" => "POST"},
                "move" => %{"method" => "POST"},
-               "publish" => %{"method" => "POST"}
+               "publish" => %{"method" => "POST"},
+               "autoPublish" => %{
+                 "href" => "/api/rule_implementations/upload",
+                 "method" => "POST"
+               }
              } == actions
     end
 
@@ -541,7 +551,11 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "delete" => %{"method" => "POST"},
                "clone" => %{"method" => "POST"},
                "link_concept" => %{"method" => "POST"},
-               "link_structure" => %{"method" => "POST"}
+               "link_structure" => %{"method" => "POST"},
+               "autoPublish" => %{
+                 "href" => "/api/rule_implementations/upload",
+                 "method" => "POST"
+               }
              } == actions
     end
 
@@ -570,7 +584,11 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "delete" => %{"method" => "POST"},
                "clone" => %{"method" => "POST"},
                "link_concept" => %{"method" => "POST"},
-               "link_structure" => %{"method" => "POST"}
+               "link_structure" => %{"method" => "POST"},
+               "autoPublish" => %{
+                 "href" => "/api/rule_implementations/upload",
+                 "method" => "POST"
+               }
              } == actions
     end
 
@@ -690,7 +708,11 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "link_concept" => %{"method" => "POST"},
                "link_structure" => %{"method" => "POST"},
                "move" => %{"method" => "POST"},
-               "publish" => %{"method" => "POST"}
+               "publish" => %{"method" => "POST"},
+               "autoPublish" => %{
+                "href" => "/api/rule_implementations/upload",
+                "method" => "POST"
+               }
              } == actions
     end
 
@@ -720,7 +742,11 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "delete" => %{"method" => "POST"},
                "clone" => %{"method" => "POST"},
                "link_concept" => %{"method" => "POST"},
-               "link_structure" => %{"method" => "POST"}
+               "link_structure" => %{"method" => "POST"},
+               "autoPublish" => %{
+                 "href" => "/api/rule_implementations/upload",
+                 "method" => "POST"
+               }
              } == actions
     end
 
@@ -749,7 +775,11 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "delete" => %{"method" => "POST"},
                "clone" => %{"method" => "POST"},
                "link_concept" => %{"method" => "POST"},
-               "link_structure" => %{"method" => "POST"}
+               "link_structure" => %{"method" => "POST"},
+               "autoPublish" => %{
+                 "href" => "/api/rule_implementations/upload",
+                 "method" => "POST"
+               }
              } == actions
     end
 
@@ -816,7 +846,11 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "link_concept" => %{"method" => "POST"},
                "link_structure" => %{"method" => "POST"},
                "move" => %{"method" => "POST"},
-               "publish" => %{"method" => "POST"}
+               "publish" => %{"method" => "POST"},
+               "autoPublish" => %{
+                 "href" => "/api/rule_implementations/upload",
+                 "method" => "POST"
+               }
              } == actions
     end
 
@@ -886,7 +920,11 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "link_concept" => %{"method" => "POST"},
                "link_structure" => %{"method" => "POST"},
                "move" => %{"method" => "POST"},
-               "publish" => %{"method" => "POST"}
+               "publish" => %{"method" => "POST"},
+               "autoPublish" => %{
+                 "href" => "/api/rule_implementations/upload",
+                 "method" => "POST"
+               }
              } == actions
     end
 
@@ -1406,7 +1444,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
     @tag authentication: [
            role: "user",
-           permissions: @imp_ruleless_permissions ++ [:manage_segments]
+           permissions: @imp_ruleless_permissions ++ [:manage_segments, :publish_implementation]
          ]
     test "return 200 and create a new published when editing published implementation with different information",
          %{
