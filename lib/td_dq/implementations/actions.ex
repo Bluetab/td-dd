@@ -20,7 +20,9 @@ defmodule TdDq.Implementations.Actions do
       :publish,
       :restore,
       :reject,
-      :submit
+      :submit,
+      :convert_raw,
+      :convert_default
     ]
   end
 

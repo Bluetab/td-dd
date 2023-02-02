@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [5.0.0] 2023-01-30
 
 ### Fixed
 
@@ -14,6 +14,13 @@
   - Users with `view_data_structure` permission on domain can show, index and
     download ReferenceDataset
   - ReferenceDataset without domain_ids is only visible to `admins`
+- [TD-5478] Add `convert_raw` and `convert_default` action for basic
+  implementations
+- [TD-5493] Improve specific grant(s) reindex performance
+
+### Added
+
+- [TD-5473] `field_parent_id` for `StructureNote` events
 
 ## [4.59.0] 2023-01-16
 

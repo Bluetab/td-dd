@@ -1340,6 +1340,70 @@ defmodule TdDq.ImplementationsTest do
                ]
              } = Implementations.get_implementation!(id, preload: :data_structures)
     end
+
+    test "update basic implementation to default implementation" do
+      implementation = insert(:basic_implementation, status: "published")
+      claims = build(:claims, role: "admin")
+      %{id: dataset_data_structure_id} = insert(:data_structure)
+      %{id: validation_data_structure_id} = insert(:data_structure)
+
+      validations = [
+        %{
+          conditions: [
+            %{
+              operator: %{
+                name: "gt",
+                value_type: "timestamp"
+              },
+              structure: %{id: validation_data_structure_id},
+              value: [%{raw: "2019-12-30 05:35:00"}]
+            }
+          ]
+        }
+      ]
+
+      update_attrs =
+        %{
+          dataset: [%{structure: %{id: dataset_data_structure_id}}],
+          validation: validations,
+          implementation_type: "default",
+          executable: true,
+          implementation_key: implementation.implementation_key,
+          goal: implementation.goal,
+          minimum: implementation.minimum,
+          status: :published
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert {:ok, %{implementation: updated_implementation}} =
+               Implementations.update_implementation(implementation, update_attrs, claims)
+
+      assert %Implementation{} = updated_implementation
+      assert updated_implementation.rule_id == implementation.rule_id
+
+      assert updated_implementation.implementation_key ==
+               implementation.implementation_key
+
+      assert updated_implementation.implementation_type == "default"
+      assert updated_implementation.version == implementation.version + 1
+
+      assert [_ | _] = updated_implementation.dataset
+
+      assert updated_implementation.validation == [
+               %TdDq.Implementations.Conditions{
+                 conditions: [
+                   %TdDq.Implementations.ConditionRow{
+                     operator: %TdDq.Implementations.Operator{
+                       name: "gt",
+                       value_type: "timestamp"
+                     },
+                     structure: %TdDq.Implementations.Structure{id: validation_data_structure_id},
+                     value: [%{"raw" => "2019-12-30 05:35:00"}]
+                   }
+                 ]
+               }
+             ]
+    end
   end
 
   describe "delete_implementation/2" do

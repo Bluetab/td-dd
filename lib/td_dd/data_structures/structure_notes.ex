@@ -143,6 +143,9 @@ defmodule TdDd.DataStructures.StructureNotes do
       )
 
     Multi.new()
+    |> Multi.run(:latest, fn _, _ ->
+      {:ok, DataStructures.get_latest_version(data_structure, [:path, :parent_relations])}
+    end)
     |> Multi.insert(:structure_note, changeset)
     |> Multi.run(:audit, Audit, :structure_note_updated, [changeset, user_id])
     |> Repo.transaction()
@@ -172,6 +175,9 @@ defmodule TdDd.DataStructures.StructureNotes do
       )
 
     Multi.new()
+    |> Multi.run(:latest, fn _, _ ->
+      {:ok, DataStructures.get_latest_version(data_structure, [:path, :parent_relations])}
+    end)
     |> Multi.insert(:structure_note, changeset)
     |> Multi.run(:audit, Audit, :structure_note_updated, [changeset, user_id])
     |> Repo.transaction()
@@ -185,13 +191,18 @@ defmodule TdDd.DataStructures.StructureNotes do
 
   @doc "Updates a structure_note with bulk_update behaviour"
   def bulk_update_structure_note(%StructureNote{} = structure_note, attrs, user_id) do
-    structure_note = Repo.preload(structure_note, :data_structure)
+    %{data_structure: data_structure} =
+      structure_note = Repo.preload(structure_note, :data_structure)
+
     changeset = StructureNote.bulk_update_changeset(structure_note, attrs)
 
     if changeset.changes == %{} do
       {:ok, structure_note}
     else
       Multi.new()
+      |> Multi.run(:latest, fn _, _ ->
+        {:ok, DataStructures.get_latest_version(data_structure, [:path, :parent_relations])}
+      end)
       |> Multi.update(:structure_note, changeset)
       |> Multi.run(:audit, Audit, :structure_note_updated, [changeset, user_id])
       |> Repo.transaction()
@@ -228,7 +239,7 @@ defmodule TdDd.DataStructures.StructureNotes do
 
     Multi.new()
     |> Multi.run(:latest, fn _, _ ->
-      {:ok, DataStructures.get_latest_version(data_structure, [:path])}
+      {:ok, DataStructures.get_latest_version(data_structure, [:path, :parent_relations])}
     end)
     |> Multi.run(:structure_note, fn _, _ -> {:ok, structure_note} end)
     |> Multi.update(:structure_note_update, changeset)
@@ -239,10 +250,15 @@ defmodule TdDd.DataStructures.StructureNotes do
   end
 
   def update_structure_note(%StructureNote{} = structure_note, attrs, user_id, opts) do
-    structure_note = Repo.preload(structure_note, :data_structure)
+    %{data_structure: data_structure} =
+      structure_note = Repo.preload(structure_note, :data_structure)
+
     changeset = StructureNote.changeset(structure_note, attrs)
 
     Multi.new()
+    |> Multi.run(:latest, fn _, _ ->
+      {:ok, DataStructures.get_latest_version(data_structure, [:path, :parent_relations])}
+    end)
     |> Multi.update(:structure_note, changeset)
     |> Multi.run(:audit, Audit, :structure_note_updated, [changeset, user_id])
     |> Repo.transaction()
