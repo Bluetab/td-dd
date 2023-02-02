@@ -1,4 +1,7 @@
 defmodule TdDq.Implementations.Actions do
+  @moduledoc """
+  The Implementations Actions context.
+  """
 
   use TdDqWeb, :controller
 

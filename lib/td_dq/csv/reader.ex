@@ -13,9 +13,8 @@ defmodule TdDq.CSV.Reader do
   def parse_csv(stream, required_headers) do
     with {:ok, csv} <- parse_stream(stream),
          headers <- Enum.at(csv, 0),
-         {:ok, headers} <- validate_headers(required_headers, headers),
-         {:ok, parsed_file} <- parse_file(csv, headers) do
-      {:ok, parsed_file}
+         {:ok, headers} <- validate_headers(required_headers, headers) do
+      parse_file(csv, headers)
     end
   end
 
