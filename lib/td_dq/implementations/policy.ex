@@ -274,20 +274,11 @@ defmodule TdDq.Implementations.Policy do
   defp valid_action?(:move, imp), do: valid_action?(:edit, imp)
 
   defp permissions(%Changeset{} = changeset) do
-    perms =
-      changeset
-      |> Changeset.apply_changes()
-      |> permissions()
-
-    perms = case Changeset.fetch_change(changeset, :segments) do
-      :error -> perms
-      {:ok, _} -> [:manage_segments | perms]
-    end
-    case Changeset.fetch_change(changeset, :status) do
-      :error -> perms
-      {:ok, :published} -> [:publish_implementation | perms]
-      {:ok, _} -> perms
-    end
+    changeset
+    |> Changeset.apply_changes()
+    |> permissions()
+    |> maybe_add_segments_permission(changeset)
+    |> maybe_add_publish_permission(changeset)
   end
 
   defp permissions(%Implementation{} = impl) do
@@ -301,5 +292,20 @@ defmodule TdDq.Implementations.Policy do
       {:segments, [_ | _]} -> [:manage_segments]
       _ -> []
     end)
+  end
+
+  defp maybe_add_segments_permission(perms, changeset) do
+    case Changeset.fetch_change(changeset, :segments) do
+      :error -> perms
+      {:ok, _} -> [:manage_segments | perms]
+    end
+  end
+
+  defp maybe_add_publish_permission(perms, changeset) do
+    case Changeset.fetch_change(changeset, :status) do
+      :error -> perms
+      {:ok, :published} -> [:publish_implementation | perms]
+      {:ok, _} -> perms
+    end
   end
 end
