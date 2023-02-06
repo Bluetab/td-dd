@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+- [TD-5444] Added `system/:id/structures/search` endpoint to search system root
+  strucutures
+
 ## [5.0.0] 2023-01-30
 
 ### Fixed
