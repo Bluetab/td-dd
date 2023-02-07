@@ -34,7 +34,7 @@ defmodule TdDd.Lineage.GraphData do
 
   @doc "Returns nodes in the graph"
   def nodes(id \\ nil, opts \\ [], claims) do
-    GenServer.call(__MODULE__, {:nodes, id, opts, claims})
+    GenServer.call(__MODULE__, {:nodes, id, opts, claims}, 10_000)
   end
 
   @doc """
