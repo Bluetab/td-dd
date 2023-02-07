@@ -22,6 +22,7 @@ defmodule TdDd.Grants.Grant do
     field(:user, :map, virtual: true)
     field(:resource, :map, virtual: true, default: %{})
     field(:domain_ids, {:array, :integer}, virtual: true, default: [])
+    field(:external_ref, :string)
 
     belongs_to(:data_structure, DataStructure)
     has_one(:system, through: [:data_structure, :system])
@@ -61,7 +62,8 @@ defmodule TdDd.Grants.Grant do
       :user_name,
       :user_external_id,
       :pending_removal,
-      :source_user_name
+      :source_user_name,
+      :external_ref
     ])
     |> check_user_params(params)
     |> maybe_put_user_id(params)
@@ -70,7 +72,6 @@ defmodule TdDd.Grants.Grant do
     |> validate_change(:detail, &Validation.validate_safe/2)
     |> foreign_key_constraint(:data_structure_id)
     |> check_constraint(:end_date, name: :date_range)
-    |> exclusion_constraint(:user_id, name: :no_overlap)
     |> exclusion_constraint(:source_user_name, name: :no_overlap_source_user_name)
   end
 
