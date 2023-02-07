@@ -32,7 +32,8 @@ defmodule TdDdWeb.GrantView do
       :user_id,
       :source_user_name,
       :inserted_at,
-      :updated_at
+      :updated_at,
+      :external_ref
     ])
     |> add_structure(grant)
     |> add_structure_version(grant)
