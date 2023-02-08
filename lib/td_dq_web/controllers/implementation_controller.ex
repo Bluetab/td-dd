@@ -3,13 +3,12 @@ defmodule TdDqWeb.ImplementationController do
 
   alias TdDq.Events.QualityEvents
   alias TdDq.Implementations
+  alias TdDq.Implementations.Actions
   alias TdDq.Implementations.Download
   alias TdDq.Implementations.Implementation
-  alias TdDq.Implementations.Actions
   alias TdDq.Implementations.Search
   alias TdDq.Rules
   alias TdDq.Rules.RuleResults
-  alias TdDq.Implementations.Actions
 
   action_fallback(TdDqWeb.FallbackController)
 

@@ -1,8 +1,8 @@
 defmodule TdDq.CSV.ImplementationsReaderTest do
   use TdDd.DataCase
 
-  alias TdDq.CSV.ImplementationsReader
   alias TdDd.Search.MockIndexWorker
+  alias TdDq.CSV.ImplementationsReader
 
   setup_all do
     start_supervised(MockIndexWorker)

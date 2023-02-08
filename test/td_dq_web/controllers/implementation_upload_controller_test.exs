@@ -131,7 +131,15 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
       end)
     end
 
-    @tag authentication: [role: "user", permissions: [:manage_basic_implementations, :manage_ruleless_implementations, :publish_implementation], domain_params: %{external_id: "some_domain_id"}]
+    @tag authentication: [
+      role: "user",
+      permissions: [
+        :manage_basic_implementations,
+        :manage_ruleless_implementations,
+        :publish_implementation
+      ],
+      domain_params: %{external_id: "some_domain_id"}
+    ]
     test "user with permissions: update and create implementations with rule, publish", %{
       conn: conn,
       rule: rule,
@@ -149,6 +157,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
       %{id: implementation_boo_key_1_id} = insert(
         :implementation,
         implementation_key: "boo_key_1",
+        df_content: %{string: "boo_1"},
         implementation_type: "basic",
         rule_id: rule.id,
         domain_id: rule.domain_id,
@@ -162,6 +171,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
       %{id: implementation_boo_key_2_id} = insert(
         :implementation,
         implementation_key: "boo_key_2",
+        df_content: %{string: "boo_2"},
         implementation_type: "basic",
         rule_id: rule.id,
         domain_id: rule.domain_id,
@@ -178,6 +188,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
         implementation_key: "boo_key_4",
         implementation_type: "basic",
         domain_id: domain_id,
+        df_content: %{string: "boo_4"},
         status: :draft,
         version: 1,
         minimum: 10,
@@ -189,6 +200,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
         :implementation,
         implementation_key: "boo_key_5",
         implementation_type: "basic",
+        df_content: %{string: "boo_5"},
         domain_id: domain_id,
         status: :published,
         version: 1,
@@ -226,6 +238,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
       assert %Implementation{
         id: ^implementation_boo_key_1_id,
         implementation_key: "boo_key_1",
+        df_content: %{"string" => "boo_1_from_csv"},
         status: :published,
         minimum: 11.0,
         goal: 12.0
@@ -235,6 +248,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
       #   New Implemementation inserted as "published"...
       assert %Implementation{
         implementation_key: "boo_key_2",
+        df_content: %{"string" => "boo_2_from_csv"},
         status: :published,
         minimum: 22.0,
         goal: 23.0,
@@ -243,6 +257,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
       assert %Implementation{
         id: ^implementation_boo_key_2_id,
         implementation_key: "boo_key_2",
+        df_content: %{"string" => "boo_2"},
         status: :versioned,
         version: 1,
         minimum: 10.0,
@@ -252,6 +267,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
       # This one is new
       assert %Implementation{
         implementation_key: "boo_key_3",
+        df_content: %{"string" => "boo_3_from_csv"},
         status: :published,
         minimum: 33.0,
         goal: 34.0
@@ -261,6 +277,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
       assert %Implementation{
         id: ^implementation_boo_key_4_id,
         implementation_key: "boo_key_4",
+        df_content: %{"string" => "boo_4_from_csv"},
         status: :published,
         minimum: 145.0,
         goal: 144.0,
@@ -270,6 +287,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
       #   New Implemementation inserted as "published"...
       assert %Implementation{
         implementation_key: "boo_key_5",
+        df_content: %{"string" => "boo_5_from_csv"},
         status: :published,
         minimum: 156.0,
         goal: 155.0,
@@ -278,6 +296,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
       assert %Implementation{
         id: ^implementation_boo_key_5_id,
         implementation_key: "boo_key_5",
+        df_content: %{"string" => "boo_5"},
         status: :versioned,
         version: 1,
         minimum: 10.0,
@@ -287,6 +306,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
       # This one is new
       assert %Implementation{
         implementation_key: "boo_key_6",
+        df_content: %{"string" => "boo_6_from_csv"},
         status: :published,
         minimum: 167.0,
         goal: 166.0

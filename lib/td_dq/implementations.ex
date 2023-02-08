@@ -221,7 +221,7 @@ defmodule TdDq.Implementations do
   end
 
   def update_implementation(
-        %Implementation{status: status} = implementation,
+        %Implementation{status: status_before_upsert} = implementation,
         params,
         %Claims{user_id: user_id} = claims
       ) do
@@ -231,7 +231,7 @@ defmodule TdDq.Implementations do
          :ok <- permit_by_changeset_status(claims, changeset)
      do
       Multi.new()
-      |> upsert(changeset, status, user_id)
+      |> upsert(changeset, status_before_upsert, user_id)
       |> Multi.run(:data_structures, &create_implementation_structures/2)
       |> Multi.run(:audit_status, Audit, :implementation_status_updated, [changeset, user_id])
       |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
@@ -254,21 +254,13 @@ defmodule TdDq.Implementations do
     |> Map.get(:changes) != %{}
   end
 
-  defp upsert(multi, %{data: implementation} = changeset, curr_status, user_id) do
-    new_multi =
-      case Changeset.get_change(changeset, :status) do
-        :published ->
-          Workflow.maybe_version_existing(multi, implementation, "published", user_id)
-        _ ->
-          multi
-      end
+  defp upsert(multi, %{data: _implementation, changes: _} = changeset, :draft, _user_id) do
+    Multi.update(multi, :implementation, changeset)
+  end
 
-    case curr_status do
-      :published ->
-        Multi.insert(new_multi, :implementation, changeset)
-      _ ->
-        Multi.update(new_multi, :implementation, changeset)
-    end
+  defp upsert(multi, %{data: implementation, changes: %{status: _}} = changeset, :published, user_id) do
+    Workflow.maybe_version_existing(multi, implementation, "published", user_id)
+    |> Multi.insert(:implementation, changeset)
   end
 
   defp upsert(multi, %{data: implementation, changes: %{rule_id: rule_id}}) do
@@ -289,25 +281,14 @@ defmodule TdDq.Implementations do
 
   defp upsert_changeset(
          %Implementation{
-           domain_id: domain_id,
-           implementation_type: type,
-           rule: rule,
-           rule_id: rule_id,
            status: :published,
            version: v,
-           implementation_ref: implementation_ref
-         },
+         } = implementation,
          %{} = params
        ) do
+
     Implementation.changeset(
-      %Implementation{
-        domain_id: domain_id,
-        implementation_type: type,
-        rule: rule,
-        rule_id: rule_id,
-        version: v + 1,
-        implementation_ref: implementation_ref
-      },
+      %{implementation | status: nil, id: nil, version: v + 1},
       params
     )
   end

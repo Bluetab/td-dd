@@ -1,8 +1,8 @@
 rule_name;implementation_key;template;string;list;result_type;goal;minimum;domain_external_id
-rule_foo;boo_key_1;bar_template;boo_1;one;percentage;12;11;
-rule_foo;boo_key_2;bar_template;boo_1;one;percentage;23;22;
-rule_foo;boo_key_3;bar_template;boo_1;one;percentage;34;33;
-;boo_key_4;bar_template;boo_2;two;errors_number;144;145;some_domain_id
-;boo_key_5;bar_template;boo_2;two;errors_number;155;156;some_domain_id
-;boo_key_6;bar_template;boo_2;two;errors_number;166;167;some_domain_id
-;boo_key_7;bar_template;boo_2;two;errors_number;177;178;other_domain_id
+rule_foo;boo_key_1;bar_template;boo_1_from_csv;one;percentage;12;11;
+rule_foo;boo_key_2;bar_template;boo_2_from_csv;one;percentage;23;22;
+rule_foo;boo_key_3;bar_template;boo_3_from_csv;one;percentage;34;33;
+;boo_key_4;bar_template;boo_4_from_csv;two;errors_number;144;145;some_domain_id
+;boo_key_5;bar_template;boo_5_from_csv;two;errors_number;155;156;some_domain_id
+;boo_key_6;bar_template;boo_6_from_csv;two;errors_number;166;167;some_domain_id
+;boo_key_7;bar_template;boo_7_from_csv;two;errors_number;177;178;other_domain_id
