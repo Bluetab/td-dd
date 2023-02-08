@@ -144,7 +144,7 @@ defmodule TdDq.Implementations.BulkLoad do
         results_so_far,
         fn %{implementation_key: impl_key} = existing_implementation, acc ->
           existing_implementation
-          |> Implementations.update_implementation(params_by_impl_key[impl_key], claims)
+          |> Implementations.maybe_update_implementation(params_by_impl_key[impl_key], claims)
           |> make_implementations_errors(acc)
         end
       )
