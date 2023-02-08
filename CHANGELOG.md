@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-5479] External_ref in grants to avoid duplicates in grant table
+- [TD-5471] Bulk update of quality implementations via csv
+
 ## [5.0.0] 2023-01-30
 
 ### Fixed

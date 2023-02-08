@@ -42,7 +42,8 @@ defmodule TdDd.Grants.BulkLoadTest do
           "start_date" => "2010-04-17",
           "data_structure_external_id" => data_structure_external_id_1,
           "user_id" => user_id_1,
-          "source_user_name" => source_user_name_1
+          "source_user_name" => source_user_name_1,
+          "external_ref" => "foo"
         },
         %{
           "op" => "add",
@@ -51,7 +52,8 @@ defmodule TdDd.Grants.BulkLoadTest do
           "start_date" => "2010-04-17",
           "data_structure_external_id" => data_structure_external_id_2,
           "user_id" => user_id_2,
-          "source_user_name" => source_user_name_2
+          "source_user_name" => source_user_name_2,
+          "external_ref" => "bar"
         }
       ]
 
@@ -99,12 +101,13 @@ defmodule TdDd.Grants.BulkLoadTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "permit more than one grants exist", %{
-      data_structure_1: %{external_id: data_structure_external_id_1},
-      user_id_1: user_id_1,
-      source_user_name_1: source_user_name_1,
-      claims: claims
-    } do
+    test "return error when external_ref exists with same source_user_name, data_structure_external_id and date",
+         %{
+           data_structure_1: %{external_id: data_structure_external_id_1},
+           user_id_1: user_id_1,
+           source_user_name_1: source_user_name_1,
+           claims: claims
+         } do
       grants = [
         %{
           "op" => "add",
@@ -113,15 +116,21 @@ defmodule TdDd.Grants.BulkLoadTest do
           "start_date" => "2010-04-17",
           "data_structure_external_id" => data_structure_external_id_1,
           "user_id" => user_id_1,
-          "source_user_name" => source_user_name_1
+          "source_user_name" => source_user_name_1,
+          "external_ref" => "foo"
         }
       ]
 
-      Enum.map(1..2, fn _ ->
-        assert assert {:ok, [_]} = BulkLoad.bulk_load(claims, grants)
-      end)
+      assert {:ok, [_]} = BulkLoad.bulk_load(claims, grants)
+      assert {:error, %Ecto.Changeset{errors: errors}} = BulkLoad.bulk_load(claims, grants)
 
-      assert length(Grants.list_grants([])) == 2
+      assert [
+               source_user_name:
+                 {"violates an exclusion constraint",
+                  [constraint: :exclusion, constraint_name: "no_overlap_source_user_name"]}
+             ] = errors
+
+      assert length(Grants.list_grants([])) == 1
     end
 
     @tag authentication: [role: "admin"]
