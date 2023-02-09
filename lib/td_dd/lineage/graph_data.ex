@@ -34,7 +34,14 @@ defmodule TdDd.Lineage.GraphData do
 
   @doc "Returns nodes in the graph"
   def nodes(id \\ nil, opts \\ [], claims) do
-    GenServer.call(__MODULE__, {:nodes, id, opts, claims})
+    request = {:nodes, id, opts, claims}
+    case Application.get_env(:td_dd, TdDd.Lineage)[:nodes_timeout] do
+      nil ->
+        GenServer.call(__MODULE__, request)
+      # milliseconds or :infinity
+      nodes_timeout ->
+        GenServer.call(__MODULE__, request, nodes_timeout)
+    end
   end
 
   @doc """
