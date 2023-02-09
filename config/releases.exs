@@ -173,6 +173,13 @@ config :td_dd, TdDdWeb.CustomParsersPlug,
   max_payload_length: System.get_env("MAX_PAYLOAD_LENGTH", "100000000") |> String.to_integer()
 
 config :td_dd, TdDd.Lineage,
+  nodes_timeout:
+    System.get_env("LINEAGE_NODES_TIMEOUT")
+    |> (case do
+      nil -> nil
+      "infinity" -> :infinity
+      nodes_timeout when is_binary(nodes_timeout) -> String.to_integer(nodes_timeout)
+    end),
   timeout: System.get_env("LINEAGE_TIMEOUT_MILLIS", "90000") |> String.to_integer()
 
 config :td_dd, TdDd.ReferenceData,
