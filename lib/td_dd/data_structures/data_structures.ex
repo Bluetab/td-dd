@@ -483,7 +483,7 @@ defmodule TdDd.DataStructures do
     clauses
     |> Map.put(:data_structure_ids, ids)
     |> Map.put(:preload, [:system, :data_structure, data_structure_version: dsv_preloader])
-    |> Grants.list_active_grants()
+    |> Grants.list_active_grants
     |> Enum.map(fn %{user_id: user_id} = grant ->
       case UserCache.get(user_id) do
         {:ok, %{} = user} -> %{grant | user: user}
