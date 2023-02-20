@@ -19,13 +19,6 @@ defmodule TdDdWeb.Schema.Executions do
     field :page_info, :page_info
   end
 
-  object :page_info do
-    field :end_cursor, :cursor
-    field :start_cursor, :cursor
-    field :has_next_page, non_null(:boolean)
-    field :has_previous_page, non_null(:boolean)
-  end
-
   object :execution_group do
     field :id, non_null(:id)
     field :df_content, :json
