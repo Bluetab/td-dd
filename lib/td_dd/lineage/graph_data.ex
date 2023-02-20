@@ -35,9 +35,11 @@ defmodule TdDd.Lineage.GraphData do
   @doc "Returns nodes in the graph"
   def nodes(id \\ nil, opts \\ [], claims) do
     request = {:nodes, id, opts, claims}
+
     case Application.get_env(:td_dd, TdDd.Lineage)[:nodes_timeout] do
       nil ->
         GenServer.call(__MODULE__, request)
+
       # milliseconds or :infinity
       nodes_timeout ->
         GenServer.call(__MODULE__, request, nodes_timeout)
@@ -45,8 +47,7 @@ defmodule TdDd.Lineage.GraphData do
   end
 
   @doc """
-  Returns `true` if the external id exists in the graph, `false`
-  otherwise.
+  Returns graph degree %{in: x, out: y}
   """
   def degree(external_id) do
     case Process.whereis(__MODULE__) do
