@@ -14,6 +14,8 @@ defmodule TdDd.Grants do
   alias TdDd.Search.IndexWorker
   alias Truedat.Auth.Claims
 
+  @pagination_params [:order_by, :limit, :before, :after]
+
   defdelegate authorize(action, user, params), to: __MODULE__.Policy
 
   def get_grant!(id, opts \\ []) do
@@ -65,28 +67,87 @@ defmodule TdDd.Grants do
     |> on_delete
   end
 
-  def list_grants(clauses) do
-    clauses
-    |> Map.new()
-    |> Map.put_new(:date, Date.utc_today())
-    |> Enum.reduce(Grant, fn
-      {:data_structure_ids, ids}, q ->
-        where(q, [g], g.data_structure_id in ^ids)
+  def min_max_count(params) do
+    params
+    |> Map.drop(@pagination_params)
+    |> grants_query
+    |> select([e], %{count: count(e), min_id: min(e.id), max_id: max(e.id)})
+    |> Repo.one()
+  end
 
-      {:user_id, user_id}, q ->
-        where(q, [g], g.user_id == ^user_id)
+  def list_active_grants(%{preload: preload} = clauses) do
+    filters =
+      clauses
+      |> Map.new()
+      |> Map.drop([:preload])
+      |> Map.put_new(:date, Date.utc_today())
 
-      {:date, date}, q ->
-        where(
-          q,
-          [g],
-          fragment("daterange(?, ?, '[)') @> ?::date", g.start_date, g.end_date, ^date)
-        )
+    list_grants(%{filters: filters, preload: preload})
+  end
 
-      {:preload, preloads}, q ->
-        preload(q, ^preloads)
-    end)
+  def list_active_grants(clauses) do
+    filters =
+      clauses
+      |> Map.new()
+      |> Map.put_new(:date, Date.utc_today())
+
+    list_grants(%{filters: filters})
+  end
+
+  def list_grants(params) do
+    params
+    |> grants_query
     |> Repo.all()
+  end
+
+  defp grants_query(params) do
+    Enum.reduce(params, Grant, fn
+      {:filters, filters}, q ->
+        Enum.reduce(filters, q, fn
+          {:ids, ids}, q ->
+            where(q, [g], g.id in ^ids)
+
+          {:data_structure_ids, ids}, q ->
+            where(q, [g], g.data_structure_id in ^ids)
+
+          {:user_id, user_id}, q ->
+            where(q, [g], g.user_id == ^user_id)
+
+          {:date, date}, q ->
+            where(
+              q,
+              [g],
+              fragment("daterange(?, ?, '[)') @> ?::date", g.start_date, g.end_date, ^date)
+            )
+
+          {:start_date, start_date}, q -> date_filter_clause(start_date, :start_date, q)
+
+          {:end_date, end_date}, q -> date_filter_clause(end_date, :end_date, q)
+
+          {:inserted_at, inserted_at}, q -> date_filter_clause(inserted_at, :inserted_at, q)
+
+          {:updated_at, updated_at}, q -> date_filter_clause(updated_at, :updated_at, q)
+
+          {:pending_removal, pr}, q -> where(q, [g], g.pending_removal == ^pr)
+        end)
+        {:preload, preloads}, q ->
+          preload(q, ^preloads)
+
+        {:order_by, order}, q ->
+          order_by(q, ^order)
+
+        {:limit, lim}, q ->
+          limit(q, ^lim)
+
+        {:before, id}, q ->
+          where(q, [e], e.id < type(^id, :integer))
+
+        {:after, id}, q ->
+          where(q, [e], e.id > type(^id, :integer))
+
+        _, q ->
+          q
+      end)
   end
 
   defp reindex_grants(result, is_bulk \\ false)
@@ -110,5 +171,42 @@ defmodule TdDd.Grants do
       {:ok, user} -> Map.put(grant, :user, user)
       _ -> grant
     end
+  end
+
+  defp date_filter_clause(%{"eq" => eq}, column, q) do
+    eq_date = Date.from_iso8601!(eq)
+    where(
+      q,
+      [g],
+      fragment("?::date = ?::date", ^eq_date, field(g, ^column))
+    )
+  end
+
+  defp date_filter_clause(%{"gt" => gt, "lt" => lt}, column, q) do
+    lt_date = Date.from_iso8601!(lt)
+    gt_date = Date.from_iso8601!(gt)
+    where(
+      q,
+      [g],
+      fragment("daterange(?, ?, '[]') @> ?::date", ^gt_date, ^lt_date, field(g, ^column))
+    )
+  end
+
+  defp date_filter_clause(%{"gt" => gt}, column, q) do
+    gt_date = Date.from_iso8601!(gt)
+    where(
+      q,
+      [g],
+      fragment("?::date < ?::date", ^gt_date, field(g, ^column))
+    )
+  end
+
+  defp date_filter_clause(%{"lt" => lt}, column, q) do
+    lt_date = Date.from_iso8601!(lt)
+    where(
+      q,
+      [g],
+      fragment("?::date > ?::date", ^lt_date, field(g, ^column))
+    )
   end
 end
