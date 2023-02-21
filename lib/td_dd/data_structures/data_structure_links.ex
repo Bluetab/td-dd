@@ -113,7 +113,7 @@ defmodule TdDd.DataStructures.DataStructureLinks do
         end
       )
     |> Multi.insert_all(
-      :insert_tags,
+      :insert_labels,
       DataStructureLinkLabel,
       fn %{
         data_structure_link: %{
@@ -259,7 +259,7 @@ defmodule TdDd.DataStructures.DataStructureLinks do
         end
       )
       |> Multi.insert_all(
-        :insert_tags,
+        :insert_labels,
         DataStructureLinkLabel,
         fn %{
              columns_dsls_labels: %{
