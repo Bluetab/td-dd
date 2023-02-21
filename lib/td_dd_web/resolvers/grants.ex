@@ -5,20 +5,14 @@ defmodule TdDdWeb.Resolvers.Grants do
 
   alias TdDd.Grants
 
-  def grants(_parent, args, resolution) do
-    with {:claims, %{} = claims} <- {:claims, claims(resolution)},
-         :ok <- Bodyguard.permit(Grants, :query, claims) do
-      args =
-        args
-        |> Map.take([:first, :last, :after, :before, :filters])
-        |> Map.new(&connection_param/1)
-        |> put_order_by(args)
+  def grants(_parent, args, _resolution) do
+    args =
+      args
+      |> Map.take([:first, :last, :after, :before, :filters])
+      |> Map.new(&connection_param/1)
+      |> put_order_by(args)
 
-      {:ok, get_grants(args)}
-    else
-      {:claims, nil} -> {:error, :unauthorized}
-      {:error, :forbidden} -> {:error, :forbidden}
-    end
+    {:ok, get_grants(args)}
   end
 
   defp connection_param({:after, cursor}), do: {:after, cursor}
