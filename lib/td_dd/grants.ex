@@ -120,34 +120,40 @@ defmodule TdDd.Grants do
               fragment("daterange(?, ?, '[)') @> ?::date", g.start_date, g.end_date, ^date)
             )
 
-          {:start_date, start_date}, q -> date_filter_clause(start_date, :start_date, q)
+          {:start_date, start_date}, q ->
+            date_filter_clause(start_date, :start_date, q)
 
-          {:end_date, end_date}, q -> date_filter_clause(end_date, :end_date, q)
+          {:end_date, end_date}, q ->
+            date_filter_clause(end_date, :end_date, q)
 
-          {:inserted_at, inserted_at}, q -> date_filter_clause(inserted_at, :inserted_at, q)
+          {:inserted_at, inserted_at}, q ->
+            date_filter_clause(inserted_at, :inserted_at, q)
 
-          {:updated_at, updated_at}, q -> date_filter_clause(updated_at, :updated_at, q)
+          {:updated_at, updated_at}, q ->
+            date_filter_clause(updated_at, :updated_at, q)
 
-          {:pending_removal, pr}, q -> where(q, [g], g.pending_removal == ^pr)
+          {:pending_removal, pr}, q ->
+            where(q, [g], g.pending_removal == ^pr)
         end)
-        {:preload, preloads}, q ->
-          preload(q, ^preloads)
 
-        {:order_by, order}, q ->
-          order_by(q, ^order)
+      {:preload, preloads}, q ->
+        preload(q, ^preloads)
 
-        {:limit, lim}, q ->
-          limit(q, ^lim)
+      {:order_by, order}, q ->
+        order_by(q, ^order)
 
-        {:before, id}, q ->
-          where(q, [e], e.id < type(^id, :integer))
+      {:limit, lim}, q ->
+        limit(q, ^lim)
 
-        {:after, id}, q ->
-          where(q, [e], e.id > type(^id, :integer))
+      {:before, id}, q ->
+        where(q, [e], e.id < type(^id, :integer))
 
-        _, q ->
-          q
-      end)
+      {:after, id}, q ->
+        where(q, [e], e.id > type(^id, :integer))
+
+      _, q ->
+        q
+    end)
   end
 
   defp reindex_grants(result, is_bulk \\ false)
@@ -175,6 +181,7 @@ defmodule TdDd.Grants do
 
   defp date_filter_clause(%{"eq" => eq}, column, q) do
     eq_date = Date.from_iso8601!(eq)
+
     where(
       q,
       [g],
@@ -185,6 +192,7 @@ defmodule TdDd.Grants do
   defp date_filter_clause(%{"gt" => gt, "lt" => lt}, column, q) do
     lt_date = Date.from_iso8601!(lt)
     gt_date = Date.from_iso8601!(gt)
+
     where(
       q,
       [g],
@@ -194,6 +202,7 @@ defmodule TdDd.Grants do
 
   defp date_filter_clause(%{"gt" => gt}, column, q) do
     gt_date = Date.from_iso8601!(gt)
+
     where(
       q,
       [g],
@@ -203,6 +212,7 @@ defmodule TdDd.Grants do
 
   defp date_filter_clause(%{"lt" => lt}, column, q) do
     lt_date = Date.from_iso8601!(lt)
+
     where(
       q,
       [g],

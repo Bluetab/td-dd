@@ -11,5 +11,4 @@ defmodule TdDdWeb.Schema.Commond do
     field :has_next_page, non_null(:boolean)
     field :has_previous_page, non_null(:boolean)
   end
-
 end
