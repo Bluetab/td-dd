@@ -63,8 +63,4 @@ defmodule TdDdWeb.Resolvers.Grants do
       }
     }
   end
-
-  defp claims(%{context: %{claims: claims}}), do: claims
-  defp claims(_), do: nil
-
 end

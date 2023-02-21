@@ -110,8 +110,8 @@ defmodule TdDd.Grants do
           {:data_structure_ids, ids}, q ->
             where(q, [g], g.data_structure_id in ^ids)
 
-          {:user_id, user_id}, q ->
-            where(q, [g], g.user_id == ^user_id)
+          {:user_ids, user_ids}, q ->
+            where(q, [g], g.user_id in ^user_ids)
 
           {:date, date}, q ->
             where(
