@@ -124,17 +124,33 @@ defmodule TdDdWeb.DataStructureVersionController do
         data_structure_version: dsv,
         tags: tags,
         user_permissions: user_permissions,
-        actions: actions(claims, dsv)
+        actions: actions(conn, claims, dsv)
       )
     else
       render_error(conn, :forbidden)
     end
   end
 
-  defp actions(claims, %{data_structure: data_structure} = _dsv) do
-    if permit?(DataStructures, :link_data_structure, claims, data_structure) do
-      %{create_link: true}
-    end
+  defp actions(conn, claims, %{data_structure: data_structure} = _dsv) do
+    [:link_data_structure, :link_structure_to_structure]
+    |> Enum.filter(&Bodyguard.permit?(DataStructures, &1, claims, data_structure))
+    |> Enum.reduce(
+      %{},
+      fn
+        :link_data_structure, acc ->
+          Map.put(acc, :create_link, %{})
+
+        :link_structure_to_structure, acc ->
+          Map.put(
+            acc,
+            :link_structure_to_structure,
+            %{
+              href: Routes.data_structure_link_path(conn, :create),
+              method: "POST"
+            }
+          )
+      end
+    )
   end
 
   defp can_request_grant?(claims, data_structure) do

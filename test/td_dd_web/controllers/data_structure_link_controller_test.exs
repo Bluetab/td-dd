@@ -207,6 +207,109 @@ defmodule TdDdWeb.DataStructureLinkControllerTest do
     end
   end
 
+  @tag authentication: [role: "user", permissions: [:link_structure_to_structure]]
+  test "create: one link, returns forbidden if there are no permissions in source structure", %{
+    conn: conn,
+    domain: domain
+  } do
+    %{id: no_permissions_domain_id} = CacheHelpers.insert_domain()
+
+    %{id: structure_1_id} =
+      insert(:data_structure,
+        external_id: "ds1_external_id",
+        domain_ids: [no_permissions_domain_id]
+      )
+
+    %{id: structure_2_id} =
+      insert(:data_structure, external_id: "ds2_external_id", domain_ids: [domain.id])
+
+    %{id: label_1_id} = insert(:label, name: "label1")
+    %{id: label_2_id} = insert(:label, name: "label2")
+    insert(:label, name: "label3")
+
+    link = %{
+      "source_id" => structure_1_id,
+      "target_id" => structure_2_id,
+      "label_ids" => [label_1_id, label_2_id]
+    }
+
+    assert %{"errors" => %{"detail" => "Invalid authorization"}} =
+             conn
+             |> post(
+               Routes.data_structure_link_path(conn, :create),
+               %{"data_structure_link" => link}
+             )
+             |> json_response(:forbidden)
+  end
+
+  @tag authentication: [role: "user", permissions: [:link_structure_to_structure]]
+  test "create: create one link, returns forbidden if there are no permissions in target structure",
+       %{
+         conn: conn,
+         domain: domain
+       } do
+    %{id: no_permissions_domain_id} = CacheHelpers.insert_domain()
+
+    %{id: structure_1_id} =
+      insert(:data_structure, external_id: "ds1_external_id", domain_ids: [domain.id])
+
+    %{id: structure_2_id} =
+      insert(:data_structure,
+        external_id: "ds2_external_id",
+        domain_ids: [no_permissions_domain_id]
+      )
+
+    %{id: label_1_id} = insert(:label, name: "label1")
+    %{id: label_2_id} = insert(:label, name: "label2")
+    insert(:label, name: "label3")
+
+    link = %{
+      "source_id" => structure_1_id,
+      "target_id" => structure_2_id,
+      "label_ids" => [label_1_id, label_2_id]
+    }
+
+    assert %{"errors" => %{"detail" => "Invalid authorization"}} =
+             conn
+             |> post(
+               Routes.data_structure_link_path(conn, :create),
+               %{"data_structure_link" => link}
+             )
+             |> json_response(:forbidden)
+  end
+
+  @tag authentication: [role: "user", permissions: [:link_structure_to_structure]]
+  test "create: create one link", %{
+    conn: conn,
+    domain: domain
+  } do
+    %{id: structure_1_id} =
+      insert(:data_structure, external_id: "ds1_external_id", domain_ids: [domain.id])
+
+    %{id: structure_2_id} =
+      insert(:data_structure, external_id: "ds2_external_id", domain_ids: [domain.id])
+
+    %{id: label_1_id} = insert(:label, name: "label1")
+    %{id: label_2_id} = insert(:label, name: "label2")
+    insert(:label, name: "label3")
+
+    link = %{
+      "source_id" => structure_1_id,
+      "target_id" => structure_2_id,
+      "label_ids" => [label_1_id, label_2_id]
+    }
+
+    assert %{"data" => data} =
+             conn
+             |> post(
+               Routes.data_structure_link_path(conn, :create),
+               %{"data_structure_link" => link}
+             )
+             |> json_response(:created)
+
+    assert %{"source_id" => ^structure_1_id, "target_id" => ^structure_2_id} = data
+  end
+
   @tag authentication: [role: "service"]
   test "create: bulk load", %{conn: conn, swagger_schema: schema} do
     insert(:data_structure, external_id: "ds1_external_id")

@@ -8,6 +8,7 @@ defmodule TdDdWeb.Schema.DataStructureLinks do
   import Absinthe.Resolution.Helpers, only: [dataloader: 1]
 
   object :data_structure_link do
+    field :id, non_null(:id)
     field :source_id, non_null(:id)
     field :target_id, non_null(:id)
     field :source, :data_structure, resolve: dataloader(TdDd.DataStructures)
