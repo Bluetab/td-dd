@@ -430,12 +430,12 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> json_response(:ok)
 
       assert %{
-        "delete" => %{"method" => "POST"},
-        "autoPublish" => %{
-          "href" => "/api/rule_implementations/upload",
-          "method" => "POST"
-        }
-      } == actions
+               "delete" => %{"method" => "POST"},
+               "autoPublish" => %{
+                 "href" => "/api/rule_implementations/upload",
+                 "method" => "POST"
+               }
+             } == actions
     end
 
     ## rule implementation with actions
@@ -710,8 +710,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "move" => %{"method" => "POST"},
                "publish" => %{"method" => "POST"},
                "autoPublish" => %{
-                "href" => "/api/rule_implementations/upload",
-                "method" => "POST"
+                 "href" => "/api/rule_implementations/upload",
+                 "method" => "POST"
                }
              } == actions
     end

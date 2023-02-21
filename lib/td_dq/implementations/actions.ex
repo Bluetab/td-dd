@@ -69,13 +69,16 @@ defmodule TdDq.Implementations.Actions do
     params
     |> get_available_actions(implementation)
     |> Enum.filter(&Bodyguard.permit?(TdDq.Implementations, &1, claims, implementation))
-    |> Enum.reduce(%{}, fn
-      :auto_publish, acc ->
-        Map.put(acc, "autoPublish", %{
-          href: Routes.implementation_upload_path(conn, :create),
-          method: "POST"
-        })
-      camel_case_string_action, acc -> Map.put(acc, camel_case_string_action, %{method: "POST"})
+    |> Map.new(fn
+      :auto_publish ->
+        {"autoPublish",
+         %{
+           href: Routes.implementation_upload_path(conn, :create),
+           method: "POST"
+         }}
+
+      action ->
+        {action, %{method: "POST"}}
     end)
     |> then(&assign(conn, :actions, &1))
   end

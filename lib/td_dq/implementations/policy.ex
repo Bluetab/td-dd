@@ -174,7 +174,7 @@ defmodule TdDq.Implementations.Policy do
 
   def authorize(action, %{} = claims, %Implementation{domain_id: domain_id} = implementation)
       when action in [:publish, :reject, :restore] do
-    valid_action?(action, implementation)  and
+    valid_action?(action, implementation) and
       Permissions.authorized?(claims, :publish_implementation, domain_id)
   end
 

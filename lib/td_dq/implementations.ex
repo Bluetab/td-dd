@@ -62,12 +62,6 @@ defmodule TdDq.Implementations do
     Repo.get(Implementation, id)
   end
 
-  def get_implementations([_ | _] = ids) do
-    Implementation
-    |> where([i], i.id in ^ids)
-    |> Repo.all()
-  end
-
   ## used only for migrations
   def get_implementations_ref(ids) do
     Implementation
@@ -117,6 +111,20 @@ defmodule TdDq.Implementations do
     |> Kernel.!=(false)
   end
 
+  def last_by_keys([%{"implementation_key" => _} | _] = implementations_params) do
+    implementations_params
+    |> Enum.map(&Map.get(&1, "implementation_key"))
+    |> last_by_keys()
+  end
+
+  def last_by_keys(implementation_keys) when is_list(implementation_keys) do
+    Implementation
+    |> where([i], i.implementation_key in ^implementation_keys)
+    |> distinct([i], i.implementation_key)
+    |> order_by([i], desc: i.version)
+    |> TdDd.Repo.all()
+  end
+
   @spec create_implementation(Rule.t(), map, Claims.t(), boolean) ::
           multi_result | {:error, :forbidden}
   def create_implementation(rule, params, claims, is_bulk \\ false)
@@ -140,7 +148,7 @@ defmodule TdDq.Implementations do
       )
 
     if Bodyguard.permit?(__MODULE__, :create, claims, changeset) and
-       permit_by_changeset_status?(claims, changeset) do
+         permit_by_changeset_status?(claims, changeset) do
       Multi.new()
       |> Multi.run(:implementation, fn _, _ -> insert_implementation(changeset) end)
       |> Multi.run(:data_structures, &create_implementation_structures/2)
@@ -167,7 +175,7 @@ defmodule TdDq.Implementations do
       )
 
     if Bodyguard.permit?(__MODULE__, :create, claims, changeset) and
-       permit_by_changeset_status?(claims, changeset) do
+         permit_by_changeset_status?(claims, changeset) do
       Multi.new()
       |> Multi.run(:implementation, fn _, _ -> insert_implementation(changeset) end)
       |> Multi.run(:data_structures, &create_implementation_structures/2)
@@ -179,13 +187,19 @@ defmodule TdDq.Implementations do
     end
   end
 
-  def permit_by_changeset_status(claims, %Ecto.Changeset{changes: %{status: _status_change}} = changeset) do
+  def permit_by_changeset_status(
+        claims,
+        %Ecto.Changeset{changes: %{status: _status_change}} = changeset
+      ) do
     Bodyguard.permit(__MODULE__, :publish, claims, changeset)
   end
 
   def permit_by_changeset_status(_claims, %Ecto.Changeset{}), do: :ok
 
-  def permit_by_changeset_status?(claims, %Ecto.Changeset{changes: %{status: _status_change}} = changeset) do
+  def permit_by_changeset_status?(
+        claims,
+        %Ecto.Changeset{changes: %{status: _status_change}} = changeset
+      ) do
     Bodyguard.permit?(__MODULE__, :publish, claims, changeset)
   end
 
@@ -199,48 +213,53 @@ defmodule TdDq.Implementations do
     end
   end
 
+  def update_implementation(implementation, params, claims, is_bulk \\ false)
+
   def update_implementation(
         %Implementation{rule_id: rule_id} = implementation,
         %{"rule_id" => new_rule_id} = params,
-        %Claims{user_id: user_id} = claims
+        %Claims{user_id: user_id} = claims,
+        is_bulk
       )
       when rule_id != new_rule_id do
     changeset = upsert_changeset(implementation, params)
 
     with :ok <- Bodyguard.permit(__MODULE__, :move, claims, changeset),
-         :ok <- permit_by_changeset_status(claims, changeset)
-     do
+         :ok <- permit_by_changeset_status(claims, changeset) do
       Multi.new()
       |> upsert(changeset)
       |> Multi.run(:implementation, fn _repo, _changes -> {:ok, implementation} end)
       |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
       |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
       |> Repo.transaction()
-      |> on_upsert()
+      |> on_upsert(is_bulk)
     end
   end
 
   def update_implementation(
-        %Implementation{status: status_before_upsert} = implementation,
+        %Implementation{status: status} = implementation,
         params,
-        %Claims{user_id: user_id} = claims
+        %Claims{user_id: user_id} = claims,
+        is_bulk
       ) do
     changeset = upsert_changeset(implementation, params)
 
     with :ok <- Bodyguard.permit(__MODULE__, :update, claims, changeset),
-         :ok <- permit_by_changeset_status(claims, changeset)
-     do
+         :ok <- permit_by_changeset_status(claims, changeset) do
       Multi.new()
-      |> upsert(changeset, status_before_upsert, user_id)
+      |> upsert(changeset, status, user_id)
       |> Multi.run(:data_structures, &create_implementation_structures/2)
       |> Multi.run(:audit_status, Audit, :implementation_status_updated, [changeset, user_id])
       |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
       |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
       |> Repo.transaction()
-      |> on_upsert()
+      |> on_upsert(is_bulk)
     else
-      {:error, :forbidden} -> {:error, {Changeset.fetch_field!(changeset, :implementation_key), :forbidden}}
-      error -> error
+      {:error, :forbidden} ->
+        {:error, {Changeset.fetch_field!(changeset, :implementation_key), :forbidden}}
+
+      error ->
+        error
     end
   end
 
@@ -258,7 +277,12 @@ defmodule TdDq.Implementations do
     Multi.update(multi, :implementation, changeset)
   end
 
-  defp upsert(multi, %{data: implementation, changes: %{status: _}} = changeset, :published, user_id) do
+  defp upsert(
+         multi,
+         %{data: implementation, changes: %{status: _}} = changeset,
+         :published,
+         user_id
+       ) do
     Workflow.maybe_version_existing(multi, implementation, "published", user_id)
     |> Multi.insert(:implementation, changeset)
   end
@@ -282,11 +306,10 @@ defmodule TdDq.Implementations do
   defp upsert_changeset(
          %Implementation{
            status: :published,
-           version: v,
+           version: v
          } = implementation,
          %{} = params
        ) do
-
     Implementation.changeset(
       %{implementation | status: nil, id: nil, version: v + 1},
       params

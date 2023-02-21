@@ -3,8 +3,6 @@ defmodule TdDq.Implementations.BulkLoad do
   Bulk Load Implementations
   """
 
-  import Ecto.Query
-
   alias Ecto.Changeset
   alias TdCache.DomainCache
   alias TdCache.TemplateCache
@@ -23,7 +21,7 @@ defmodule TdDq.Implementations.BulkLoad do
     "minimum"
   ]
 
-  @optional_headers ["template", "rule_name", "domain_external_id", "domain_id"]
+  @optional_headers ["template", "rule_name", "domain_external_id", "domain_id", "status"]
 
   @headers @required_headers ++ @optional_headers
 
@@ -51,70 +49,48 @@ defmodule TdDq.Implementations.BulkLoad do
   end
 
   defp do_bulk_load(implementations, claims, auto_publish) do
-    %{ids: ids} = result = upsert_implementations(implementations, claims, auto_publish)
+    %{ids_to_reindex: ids} =
+      result = upsert_implementations(implementations, claims, auto_publish)
+
     @index_worker.reindex_implementations(ids)
     {:ok, result}
   end
 
   defp upsert_implementations(implementations_params, claims, auto_publish) do
-    new_status = if auto_publish, do: "published", else: "draft"
+    to_status = if auto_publish, do: "published", else: "draft"
 
-    %{reversed_impl_keys: reversed_impl_keys, params_by_impl_key: params_by_impl_key, errors: errors} = Enum.reduce(
-      implementations_params,
-      %{reversed_impl_keys: [], params_by_impl_key: %{}, errors: []},
-      fn
-        %{"implementation_key" => implementation_key} = ip,
-        %{reversed_impl_keys: reversed_impl_keys, params_by_impl_key: params_by_impl_key, errors: errors} = acc ->
-          ip
-          |> process_params()
-          |> case do
-            {:ok, processed_params} ->
-              %{
-                acc |
-                  params_by_impl_key:
-                    processed_params
-                    |> Map.put("status", new_status)
-                    |> then(&Map.put(params_by_impl_key, implementation_key, &1)),
-                  reversed_impl_keys: [implementation_key | reversed_impl_keys]
-              }
-            {:error, %{message: _message} = error} ->
-              Kernel.put_in(acc[:errors], [error | errors])
-            {:error, error_without_enclosing_message} ->
-              Kernel.put_in(acc[:errors], [%{message: error_without_enclosing_message} | errors])
-          end
+    {processed_params, errors} =
+      implementations_params
+      |> Enum.map(&Map.put(&1, "status", to_status))
+      |> Enum.map(&process_params(&1))
+      |> Enum.split_with(fn {v, _} -> v == :ok end)
+
+    errors = Enum.map(errors, fn {:error, v} -> v end)
+
+    processed_params
+    |> Enum.map(fn {:ok, v} -> v end)
+    |> Enum.map(fn params ->
+      case Implementations.last_by_keys([params]) do
+        [] ->
+          create_implementation(params, claims)
+
+        [implementation] ->
+          Implementations.maybe_update_implementation(implementation, params, claims)
+      end
     end)
-
-    ordered_impl_keys = Enum.reverse(reversed_impl_keys)
-    %{existing_implementations_struct: existing_implementations_struct, update_results: results_so_far} =
-    Implementations.Implementation
-    |> where([i], i.implementation_key in ^ordered_impl_keys)
-    |> select(
-      [i],
-      %{
-        i |
-        highest_version_rank: fragment(
-          "rank() over (partition by implementation_key order by version desc)"
-        )
-      }
+    |> Enum.reduce(
+      %{ids: [], ids_to_reindex: [], errors: errors},
+      &make_implementations_errors(&1, &2)
     )
-    |> subquery()
-    |> where([i_with_rank], i_with_rank.highest_version_rank == 1)
-    |> TdDd.Repo.all()
-    |> update_implementations(%{ids: [], errors: errors}, params_by_impl_key, claims)
-
-    existing_implementations_keys = Enum.map(existing_implementations_struct, & &1.implementation_key)
-    ordered_impl_keys -- existing_implementations_keys
-    # Take values from params_by_impl_key in order
-    |> Enum.map(&params_by_impl_key[&1])
-    |> create_implementations(results_so_far, claims)
-    |> Map.update!(:ids, &Enum.reverse/1)
-    |> Map.update!(:errors, &Enum.reverse/1)
   end
 
   defp make_implementations_errors(result, acc) do
     case result do
-      {:ok, %{implementation: %{id: id}}} ->
+      {:ok, %{implementation: %{id: id}, error: :implementation_unchanged}} ->
         %{acc | ids: [id | acc.ids]}
+
+      {:ok, %{implementation: %{id: id}}} ->
+        %{acc | ids: [id | acc.ids], ids_to_reindex: [id | acc.ids_to_reindex]}
 
       {:error, _, changeset, _} ->
         error = Changeset.traverse_errors(changeset, &ErrorHelpers.translate_error/1)
@@ -136,38 +112,17 @@ defmodule TdDq.Implementations.BulkLoad do
     end
   end
 
-  defp update_implementations(existing_implementations_struct, results_so_far, params_by_impl_key, claims) do
-    results =
-      existing_implementations_struct
-      |> Enum.filter(& &1.status not in [:versioned, :pending_approval, :rejected])
-      |> Enum.reduce(
-        results_so_far,
-        fn %{implementation_key: impl_key} = existing_implementation, acc ->
-          existing_implementation
-          |> Implementations.maybe_update_implementation(params_by_impl_key[impl_key], claims)
-          |> make_implementations_errors(acc)
-        end
-      )
-    %{update_results: results, existing_implementations_struct: existing_implementations_struct}
-  end
-
   defp process_params(%{"implementation_key" => imp_key} = params) do
     with {:ok, imp} <- enrich_implementation(params),
-           {:ok, imp} <- maybe_put_domain_id(imp) do
-      format_df_content(imp)
+         {:ok, imp} <- maybe_put_domain_id(imp) do
+      case format_df_content(imp) do
+        {:error, error} -> {:error, %{implementation_key: imp_key, message: error}}
+        imp -> imp
+      end
     else
       {:error, error} ->
         {:error, %{implementation_key: imp_key, message: error}}
     end
-  end
-
-  defp create_implementations(processed_params_imps, results_so_far, claims) do
-    Enum.reduce(processed_params_imps, results_so_far, fn processed_params, acc ->
-      processed_params
-      |> Map.put("version", 1)
-      |> create_implementation(claims)
-      |> make_implementations_errors(acc)
-    end)
   end
 
   defp create_implementation(%{"rule_name" => rule_name} = imp, claims)
@@ -219,9 +174,7 @@ defmodule TdDq.Implementations.BulkLoad do
     {:ok, Map.put(params, "domain_id", String.to_integer(domain_id))}
   end
 
-  defp maybe_put_domain_id(params) do
-    {:ok, params}
-  end
+  defp maybe_put_domain_id(params), do: {:ok, params}
 
   defp get_domain_id_by_external_id(external_id) do
     case DomainCache.external_id_to_id(external_id) do

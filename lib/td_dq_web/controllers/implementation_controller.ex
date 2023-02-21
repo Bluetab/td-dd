@@ -254,7 +254,6 @@ defmodule TdDqWeb.ImplementationController do
 
     with :ok <- Bodyguard.permit(Implementations, :query, claims),
          implementations <- Search.search_by_rule_id(params, claims, rule_id, 0, 1000) do
-      #actions = Actions.build_actions(conn, claims)
       conn
       |> Actions.put_actions(claims)
       |> render("index.json", implementations: implementations)

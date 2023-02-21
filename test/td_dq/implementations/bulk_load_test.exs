@@ -38,7 +38,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
           Map.put(imp, "rule_name", rule_name)
         end)
 
-      assert {:ok, %{ids: [id1, id2], errors: []}} = BulkLoad.bulk_load(imp, claims)
+      assert {:ok, %{ids: [id2, id1], errors: []}} = BulkLoad.bulk_load(imp, claims)
 
       assert %{implementation_key: "boo"} = Implementations.get_implementation!(id1)
       assert %{implementation_key: "bar"} = Implementations.get_implementation!(id2)
@@ -52,7 +52,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
           Map.put(imp, "domain_external_id", domain_external_id)
         end)
 
-      assert {:ok, %{ids: [id1, id2], errors: []}} = BulkLoad.bulk_load(imp, claims)
+      assert {:ok, %{ids: [id2, id1], errors: []}} = BulkLoad.bulk_load(imp, claims)
 
       assert %{implementation_key: "boo"} = Implementations.get_implementation!(id1)
       assert %{implementation_key: "bar"} = Implementations.get_implementation!(id2)
@@ -365,6 +365,22 @@ defmodule TdDq.Implementations.BulkLoadTest do
                   %{message: %{"df_content.my_domain" => [_e2]}}
                 ]
               }} = BulkLoad.bulk_load(imp, claims)
+    end
+
+    test "avoid mark as reindexable id unchanged implementations", %{
+      rule: %{name: rule_name},
+      claims: claims
+    } do
+      imp =
+        Enum.map(@valid_implementation, fn imp ->
+          Map.put(imp, "rule_name", rule_name)
+        end)
+
+      assert {:ok, %{ids: [_, _] = ids, ids_to_reindex: ids_to_reindex, errors: []}} =
+               BulkLoad.bulk_load(imp, claims)
+
+      assert ids == ids_to_reindex
+      assert {:ok, %{ids: ^ids, ids_to_reindex: [], errors: []}} = BulkLoad.bulk_load(imp, claims)
     end
   end
 end
