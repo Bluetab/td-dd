@@ -188,7 +188,7 @@ defmodule TdDd.Grants do
     where(
       q,
       [g],
-      fragment("daterange(?, ?, '[]') @> ?::date", ^gt_date, ^lt_date, field(g, ^column))
+      fragment("daterange(?, ?, '()') @> ?::date", ^gt_date, ^lt_date, field(g, ^column))
     )
   end
 
