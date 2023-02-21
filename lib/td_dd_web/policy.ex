@@ -69,6 +69,10 @@ defmodule TdDdWeb.Policy do
   def authorize(:query, %{} = claims, :tags),
     do: Bodyguard.permit(TdDd.DataStructures.Tags, :query, claims, :tags)
 
+  def authorize(:query, %{} = claims, :labels) do
+    Bodyguard.permit(TdDd.DataStructures.Labels, :query, claims, :labels)
+  end
+
   def authorize(:query, _claims, _params), do: false
 
   # Mutations

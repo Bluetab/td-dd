@@ -208,6 +208,93 @@ defmodule TdDdWeb.DataStructureLinkControllerTest do
   end
 
   @tag authentication: [role: "user", permissions: [:link_structure_to_structure]]
+  test "delete by structure IDs, returns forbidden if there are no permissions in source structure",
+       %{
+         conn: conn,
+         domain: domain
+       } do
+    %{id: no_permissions_domain_id} = CacheHelpers.insert_domain()
+
+    %{id: source_ds_id} =
+      source_ds =
+      insert(:data_structure,
+        external_id: "ds1_external_id",
+        domain_ids: [no_permissions_domain_id]
+      )
+
+    %{id: target_ds_id} =
+      target_ds = insert(:data_structure, external_id: "ds2_external_id", domain_ids: [domain.id])
+
+    label1 = insert(:label, name: "label1")
+    label2 = insert(:label, name: "label2")
+
+    insert(:data_structure_link, source: source_ds, target: target_ds, labels: [label1, label2])
+
+    assert %{"errors" => %{"detail" => "Invalid authorization"}} =
+             conn
+             |> delete(Routes.data_structure_link_path(conn, :delete, source_ds_id, target_ds_id))
+             |> json_response(:forbidden)
+  end
+
+  @tag authentication: [role: "user", permissions: [:link_structure_to_structure]]
+  test "delete by structure IDs, returns forbidden if there are no permissions in target structure",
+       %{
+         conn: conn,
+         domain: domain
+       } do
+    %{id: no_permissions_domain_id} = CacheHelpers.insert_domain()
+
+    %{id: source_ds_id} =
+      source_ds =
+      insert(:data_structure,
+        external_id: "ds1_external_id",
+        domain_ids: [domain.id]
+      )
+
+    %{id: target_ds_id} =
+      target_ds =
+      insert(:data_structure,
+        external_id: "ds2_external_id",
+        domain_ids: [no_permissions_domain_id]
+      )
+
+    label1 = insert(:label, name: "label1")
+    label2 = insert(:label, name: "label2")
+
+    insert(:data_structure_link, source: source_ds, target: target_ds, labels: [label1, label2])
+
+    assert %{"errors" => %{"detail" => "Invalid authorization"}} =
+             conn
+             |> delete(Routes.data_structure_link_path(conn, :delete, source_ds_id, target_ds_id))
+             |> json_response(:forbidden)
+  end
+
+  @tag authentication: [role: "user", permissions: [:link_structure_to_structure]]
+  test "delete by structure IDs", %{
+    conn: conn,
+    domain: domain
+  } do
+    %{id: source_ds_id} =
+      source_ds =
+      insert(:data_structure,
+        external_id: "ds1_external_id",
+        domain_ids: [domain.id]
+      )
+
+    %{id: target_ds_id} =
+      target_ds = insert(:data_structure, external_id: "ds2_external_id", domain_ids: [domain.id])
+
+    label1 = insert(:label, name: "label1")
+    label2 = insert(:label, name: "label2")
+
+    insert(:data_structure_link, source: source_ds, target: target_ds, labels: [label1, label2])
+
+    assert conn
+           |> delete(Routes.data_structure_link_path(conn, :delete, source_ds_id, target_ds_id))
+           |> response(:no_content)
+  end
+
+  @tag authentication: [role: "user", permissions: [:link_structure_to_structure]]
   test "create: one link, returns forbidden if there are no permissions in source structure", %{
     conn: conn,
     domain: domain

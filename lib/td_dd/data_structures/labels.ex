@@ -7,6 +7,8 @@ defmodule TdDd.DataStructures.Labels do
 
   alias TdDd.DataStructures.Label
 
+  defdelegate authorize(action, user, params), to: __MODULE__.Policy
+
   def list_labels do
     Repo.all(Label)
   end
