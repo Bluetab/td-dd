@@ -29,6 +29,8 @@ defmodule TdDdWeb.Schema.Domains do
     field :parent_id, :id
     field :external_id, :string
     field :name, :string
+    field :parents, list_of(:domain)
+    # field :updated_at, :datetime
 
     field :actions, list_of(:string) do
       arg(:actions, list_of(:string), default_value: [])

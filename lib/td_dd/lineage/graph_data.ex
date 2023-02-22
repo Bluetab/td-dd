@@ -47,8 +47,7 @@ defmodule TdDd.Lineage.GraphData do
   end
 
   @doc """
-  Returns `true` if the external id exists in the graph, `false`
-  otherwise.
+  Returns graph degree %{in: x, out: y}
   """
   def degree(external_id) do
     case Process.whereis(__MODULE__) do

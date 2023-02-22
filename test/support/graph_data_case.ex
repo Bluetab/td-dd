@@ -30,6 +30,8 @@ defmodule TdDd.GraphDataCase do
         %State{contains: c, depends: d, roots: Graph.source_vertices(c)}
       end
 
+      defp setup_state(_), do: nil
+
       defp setup_graph(nodes) do
         Enum.reduce(nodes, Graph.new(), &add_node/2)
       end
