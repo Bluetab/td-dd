@@ -5,6 +5,7 @@ defmodule TdDdWeb.Resolvers.Structures do
 
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructureLinks
+  alias TdDd.DataStructures.DataStructureVersions
   alias TdDd.DataStructures.Relations
   alias TdDd.DataStructures.Tags
   alias TdDd.Utils.CollectionUtils
@@ -34,6 +35,40 @@ defmodule TdDdWeb.Resolvers.Structures do
     {:ok, Relations.list_data_structure_relations(args)}
   end
 
+  def data_structure_version(
+        _parent,
+        %{data_structure_id: data_structure_id, version: version},
+        resolution
+      ) do
+    query_fields =
+      resolution
+      |> Map.get(:definition)
+      |> Map.get(:selections)
+      |> Enum.map(fn %{schema_node: %{identifier: identifier}} -> identifier end)
+
+    with {:claims, claims} when not is_nil(claims) <- {:claims, claims(resolution)},
+         {:enriched_dsv, [_ | _] = enriched_dsv} <-
+           {:enriched_dsv,
+            DataStructureVersions.enriched_data_structure_version(
+              claims,
+              data_structure_id,
+              version,
+              query_fields
+            )},
+         dsv <- enriched_dsv[:data_structure_version],
+         actions <- enriched_dsv[:actions],
+         user_permissions <- enriched_dsv[:user_permissions] do
+      {:ok,
+       dsv
+       |> Map.put(:actions, actions)
+       |> Map.put(:user_permissions, user_permissions)}
+    else
+      {:claims, nil} -> {:error, :unauthorized}
+      {:enriched_dsv, nil} -> {:error, :not_found}
+      {:enriched_dsv, :forbidden} -> {:error, :forbidden}
+    end
+  end
+
   def domain_id(%{domain_ids: domain_ids}, _args, _resolution) do
     domain_id =
       case domain_ids do
@@ -60,6 +95,80 @@ defmodule TdDdWeb.Resolvers.Structures do
       |> Enum.map(&CollectionUtils.atomize_keys(&1))
 
     {:ok, path}
+  end
+
+  def note(
+        %{data_structure: %{published_note: %{df_content: %{} = content}}} = dsv,
+        %{select_fields: select_fields},
+        _resolution
+      ) do
+    {:ok, handle_note_select(content, dsv, select_fields)}
+  end
+
+  def note(
+        %{published_note: %{df_content: %{} = content}} = dsv,
+        %{select_fields: select_fields},
+        _resolution
+      ) do
+    {:ok, handle_note_select(content, dsv, select_fields)}
+  end
+
+  def note(
+        %{data_structure: %{published_note: %{df_content: %{} = content}}} = dsv,
+        _args,
+        _resolution
+      ) do
+    {:ok, handle_note_select(content, dsv)}
+  end
+
+  def note(%{published_note: %{df_content: %{} = content}} = dsv, _args, _resolution) do
+    {:ok, handle_note_select(content, dsv)}
+  end
+
+  def note(_dsv, _args, _resolution), do: {:ok, nil}
+
+  defp handle_note_select(content, dsv, select_fields \\ nil)
+
+  defp handle_note_select(content, dsv, [_ | _] = select_fields) do
+    content
+    |> DataStructures.get_cached_content(dsv)
+    |> Map.take(select_fields)
+  end
+
+  defp handle_note_select(content, dsv, nil), do: DataStructures.get_cached_content(content, dsv)
+  defp handle_note_select(_content, _dsv, _), do: nil
+
+  def ancestry(%{path: [_ | _] = path}, _args, _resolution), do: {:ok, path}
+
+  def ancestry(_, _args, _resolution), do: {:ok, []}
+
+  def actions(%{actions: %{create_link: true}}, _args, _resolution) do
+    {:ok, %{create_link: %{}}}
+  end
+
+  def actions(_, _, _), do: {:ok, nil}
+
+  def relations(%{relations: %{children: children, parents: parents}}, _args, _resolution) do
+    {:ok,
+     %{
+       children: Enum.map(children, &embedded_relation/1),
+       parents: Enum.map(parents, &embedded_relation/1)
+     }}
+  end
+
+  defp embedded_relation(%{links: links} = struct) do
+    struct
+    |> Map.delete(:links)
+    |> embedded_relation()
+    |> Map.put(:links, links)
+  end
+
+  defp embedded_relation(%{version: version, relation: relation, relation_type: relation_type}) do
+    %{
+      id: relation.id,
+      structure: version,
+      relation_type: relation_type
+    }
   end
 
   defp ds_path(id) do

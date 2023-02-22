@@ -21,7 +21,7 @@ defmodule TdDq.Implementations.BulkLoad do
     "minimum"
   ]
 
-  @optional_headers ["template", "rule_name", "domain_external_id", "domain_id"]
+  @optional_headers ["template", "rule_name", "domain_external_id", "domain_id", "status"]
 
   @headers @required_headers ++ @optional_headers
 
@@ -36,65 +36,93 @@ defmodule TdDq.Implementations.BulkLoad do
   def required_headers, do: @required_headers
 
   def bulk_load(implementations, claims) do
+    bulk_load(implementations, claims, false)
+  end
+
+  def bulk_load(implementations, claims, auto_publish) do
     Logger.info("Loading Implementations...")
 
     Timer.time(
-      fn -> do_bulk_load(implementations, claims) end,
+      fn -> do_bulk_load(implementations, claims, auto_publish) end,
       fn millis, _ -> Logger.info("Implementation loaded in #{millis}ms") end
     )
   end
 
-  defp do_bulk_load(implementations, claims) do
-    %{ids: ids} = result = create_implementations(implementations, claims)
+  defp do_bulk_load(implementations, claims, auto_publish) do
+    %{ids_to_reindex: ids} =
+      result = upsert_implementations(implementations, claims, auto_publish)
+
     @index_worker.reindex_implementations(ids)
     {:ok, result}
   end
 
-  defp create_implementations(implementations, claims) do
-    implementations
-    |> Enum.reduce(%{ids: [], errors: []}, fn imp, acc ->
-      with {:ok, imp} <- enrich_implementation(imp),
-           {:ok, imp} <- maybe_put_domain_id(imp),
-           {:ok, imp} <- format_df_content(imp) do
-        imp =
-          imp
-          |> Map.put("status", "draft")
-          |> Map.put("version", 1)
+  defp upsert_implementations(implementations_params, claims, auto_publish) do
+    to_status = if auto_publish, do: "published", else: "draft"
 
-        case create_implementation(imp, claims) do
-          {:ok, %{implementation: %{id: id}}} ->
-            %{acc | ids: [id | acc.ids]}
+    {processed_params, errors} =
+      implementations_params
+      |> Enum.map(&Map.put(&1, "status", to_status))
+      |> Enum.map(&process_params(&1))
+      |> Enum.split_with(fn {v, _} -> v == :ok end)
 
-          {:error, _, changeset, _} ->
-            error = Changeset.traverse_errors(changeset, &ErrorHelpers.translate_error/1)
-            implementation_key = Changeset.get_field(changeset, :implementation_key)
+    errors = Enum.map(errors, fn {:error, v} -> v end)
 
-            %{
-              acc
-              | errors: [%{implementation_key: implementation_key, message: error} | acc.errors]
-            }
+    processed_params
+    |> Enum.map(fn {:ok, v} -> v end)
+    |> Enum.map(fn params ->
+      case Implementations.last_by_keys([params]) do
+        [] ->
+          create_implementation(params, claims)
 
-          {:error, {implementation_key, error}} ->
-            %{
-              acc
-              | errors: [
-                  %{implementation_key: implementation_key, message: %{implementation: [error]}}
-                  | acc.errors
-                ]
-            }
-        end
-      else
-        {:error, error} ->
-          %{
-            acc
-            | errors: [
-                %{implementation_key: imp["implementation_key"], message: error} | acc.errors
-              ]
-          }
+        [implementation] ->
+          Implementations.maybe_update_implementation(implementation, params, claims)
       end
     end)
-    |> Map.update!(:ids, &Enum.reverse/1)
-    |> Map.update!(:errors, &Enum.reverse/1)
+    |> Enum.reduce(
+      %{ids: [], ids_to_reindex: [], errors: errors},
+      &make_implementations_errors(&1, &2)
+    )
+  end
+
+  defp make_implementations_errors(result, acc) do
+    case result do
+      {:ok, %{implementation: %{id: id}, error: :implementation_unchanged}} ->
+        %{acc | ids: [id | acc.ids]}
+
+      {:ok, %{implementation: %{id: id}}} ->
+        %{acc | ids: [id | acc.ids], ids_to_reindex: [id | acc.ids_to_reindex]}
+
+      {:error, _, changeset, _} ->
+        error = Changeset.traverse_errors(changeset, &ErrorHelpers.translate_error/1)
+        implementation_key = Changeset.get_field(changeset, :implementation_key)
+
+        %{
+          acc
+          | errors: [%{implementation_key: implementation_key, message: error} | acc.errors]
+        }
+
+      {:error, {implementation_key, error}} ->
+        %{
+          acc
+          | errors: [
+              %{implementation_key: implementation_key, message: %{implementation: [error]}}
+              | acc.errors
+            ]
+        }
+    end
+  end
+
+  defp process_params(%{"implementation_key" => imp_key} = params) do
+    with {:ok, imp} <- enrich_implementation(params),
+         {:ok, imp} <- maybe_put_domain_id(imp) do
+      case format_df_content(imp) do
+        {:error, error} -> {:error, %{implementation_key: imp_key, message: error}}
+        imp -> imp
+      end
+    else
+      {:error, error} ->
+        {:error, %{implementation_key: imp_key, message: error}}
+    end
   end
 
   defp create_implementation(%{"rule_name" => rule_name} = imp, claims)
@@ -150,7 +178,7 @@ defmodule TdDq.Implementations.BulkLoad do
 
   defp get_domain_id_by_external_id(external_id) do
     case DomainCache.external_id_to_id(external_id) do
-      :error -> {:error, "Domain with external id #{external_id} doesn't exists"}
+      :error -> {:error, "Domain with external id #{external_id} doesn't exist"}
       domain_id -> domain_id
     end
   end
@@ -159,7 +187,7 @@ defmodule TdDq.Implementations.BulkLoad do
        when is_binary(template_name) do
     case TemplateCache.get_by_name!(template_name) do
       nil ->
-        {:error, %{"template" => ["Template #{template_name} doesn't exists"]}}
+        {:error, %{"template" => ["Template #{template_name} doesn't exist"]}}
 
       template ->
         template
