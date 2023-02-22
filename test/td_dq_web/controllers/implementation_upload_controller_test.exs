@@ -546,7 +546,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
     end
 
     @tag authentication: [role: "user"]
-    test "reviewing test functionality", %{
+    test "keep published implementations on update without auto_publish", %{
       conn: conn,
       claims: claims
     } do
@@ -557,7 +557,6 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
           filename: "implementations_without_rules.csv",
           path: "test/fixtures/implementations/implementations_without_rules.csv"
         }
-        # "auto_publish" => "true",
       }
 
       %{id: _implementation_boo_key_2_id} =
@@ -574,9 +573,9 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
           segments: []
         )
 
-      [{_, _, _id, _}] =
-        Implementations.list_implementations()
-        |> Enum.map(&{&1.implementation_key, &1.version, &1.id, &1.status})
+      assert [{_, version, id, :published}] =
+               Implementations.list_implementations()
+               |> Enum.map(&{&1.implementation_key, &1.version, &1.id, &1.status})
 
       CacheHelpers.put_session_permissions(claims, domain_id, [
         :manage_basic_implementations,
@@ -588,8 +587,9 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
                |> post(Routes.implementation_upload_path(conn, :create), attrs)
                |> json_response(:ok)
 
-      Implementations.list_implementations()
-      |> Enum.map(&{&1.implementation_key, &1.version, &1.id, &1.status})
+      assert [{_, ^version, ^id, :published}, {_, _, _, :draft}] =
+               Implementations.list_implementations()
+               |> Enum.map(&{&1.implementation_key, &1.version, &1.id, &1.status})
 
       assert %{"ids" => ids, "errors" => []} = data
       assert length(ids) == 3

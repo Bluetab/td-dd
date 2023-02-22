@@ -273,18 +273,31 @@ defmodule TdDq.Implementations do
     |> Map.get(:changes) != %{}
   end
 
-  defp upsert(multi, %{data: _implementation, changes: _} = changeset, :draft, _user_id) do
+  defp upsert(multi, %{changes: %{status: :published}} = changeset, :published, user_id) do
+    multi
+    |> Workflow.maybe_version_existing(changeset.data, "published", user_id)
+    |> Multi.insert(:implementation, changeset)
+  end
+
+  defp upsert(multi, changeset, :draft, _user_id) do
     Multi.update(multi, :implementation, changeset)
   end
 
-  defp upsert(
-         multi,
-         %{data: implementation, changes: %{status: _}} = changeset,
-         :published,
-         user_id
-       ) do
-    Workflow.maybe_version_existing(multi, implementation, "published", user_id)
-    |> Multi.insert(:implementation, changeset)
+  defp upsert(multi, %{changes: %{status: :draft}} = changeset, :published, _user_id) do
+    Multi.insert(multi, :implementation, changeset)
+  end
+
+  defp upsert(multi, %{data: implementation} = changeset, status, user_id) do
+    new_multi =
+      case Changeset.get_change(changeset, :status) do
+        :published -> Workflow.maybe_version_existing(multi, implementation, "published", user_id)
+        _ -> multi
+      end
+
+    case status do
+      :published -> Multi.insert(new_multi, :implementation, changeset)
+      _ -> Multi.update(new_multi, :implementation, changeset)
+    end
   end
 
   defp upsert(multi, %{data: implementation, changes: %{rule_id: rule_id}}) do
