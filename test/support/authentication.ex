@@ -34,13 +34,15 @@ defmodule AuthenticationSupport do
     }
   end
 
-  def assign_permissions({:ok, %{claims: claims} = state}, [_ | _] = permissions) do
-    %{id: domain_id} = domain = CacheHelpers.insert_domain()
+  def assign_permissions(state, permissions, domain_params \\ %{})
+
+  def assign_permissions({:ok, %{claims: claims} = state}, [_ | _] = permissions, domain_params) do
+    %{id: domain_id} = domain = CacheHelpers.insert_domain(domain_params || %{})
     CacheHelpers.put_session_permissions(claims, domain_id, permissions)
     {:ok, Map.put(state, :domain, domain)}
   end
 
-  def assign_permissions(state, _), do: state
+  def assign_permissions(state, _, _), do: state
 
   defp authenticate(%{role: role} = claims) do
     {:ok, jwt, %{"jti" => jti, "exp" => exp} = full_claims} =
