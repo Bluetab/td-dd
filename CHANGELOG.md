@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- [TD-5471] Bulk update of quality implementations via csv
+
 ## [5.1.0] 2023-02-13
 
 ### Added
@@ -7,7 +12,6 @@
 - [TD-5479] External_ref in grants to avoid duplicates in grant table
 - [TD-5560] LINEAGE_NODES_TIMEOUT releases environment variable for
   TdDd.Lineage.GraphData nodes GenServer call
-- [TD-5471] Bulk update of quality implementations via csv
 
 ## [5.0.0] 2023-01-30
 
