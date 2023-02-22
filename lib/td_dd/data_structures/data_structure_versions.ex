@@ -155,9 +155,18 @@ defmodule TdDd.DataStructures.DataStructureVersions do
   end
 
   defp actions(claims, %{data_structure: data_structure} = _dsv) do
-    if permit?(DataStructures, :link_data_structure, claims, data_structure) do
-      %{create_link: true}
-    end
+    [:link_data_structure, :link_structure_to_structure]
+    |> Enum.filter(&Bodyguard.permit?(DataStructures, &1, claims, data_structure))
+    |> Map.new(fn
+      :link_data_structure -> {:link_data_structure, %{}}
+      :link_structure_to_structure -> {
+        :link_structure_to_structure,
+        %{
+          href: "/api/v2",
+          method: "POST"
+        }
+      }
+    end)
   end
 
   defp can_request_grant?(claims, data_structure) do
