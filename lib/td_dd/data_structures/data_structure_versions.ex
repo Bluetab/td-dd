@@ -158,7 +158,7 @@ defmodule TdDd.DataStructures.DataStructureVersions do
     [:link_data_structure, :link_structure_to_structure]
     |> Enum.filter(&Bodyguard.permit?(DataStructures, &1, claims, data_structure))
     |> Map.new(fn
-      :link_data_structure -> {:link_data_structure, %{}}
+      :link_data_structure -> {:create_link, true}
       :link_structure_to_structure -> {
         :link_structure_to_structure,
         %{

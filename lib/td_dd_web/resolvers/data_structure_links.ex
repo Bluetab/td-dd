@@ -16,4 +16,10 @@ defmodule TdDdWeb.Resolvers.DataStructureLinks do
   def data_structure_link(_data_structure_link, %{external_id: external_id}, _resolution) do
     {:ok, DataStructureLinks.all_by_external_id(external_id)}
   end
+
+  def actions(dsl, args, %{context: %{claims: claims}}) do
+    {:ok, %{
+      delete: Bodyguard.permit?(DataStructureLinks, :delete, claims, dsl)
+    }}
+  end
 end

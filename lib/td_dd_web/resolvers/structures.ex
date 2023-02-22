@@ -142,9 +142,12 @@ defmodule TdDdWeb.Resolvers.Structures do
 
   def ancestry(_, _args, _resolution), do: {:ok, []}
 
-  def actions(%{actions: %{create_link: true}}, _args, _resolution) do
-    {:ok, %{create_link: %{}}}
+  def actions(%{actions: actions}, _args, _resolution) do
+    {:ok, transform_create_link(actions)}
   end
+
+  defp transform_create_link(%{create_link: true} = actions), do: %{actions | create_link: %{}}
+  defp transform_create_link(actions), do: actions
 
   def actions(_, _, _), do: {:ok, nil}
 

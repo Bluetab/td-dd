@@ -6,6 +6,7 @@ defmodule TdDdWeb.Schema.DataStructureLinks do
   use Absinthe.Schema.Notation
 
   import Absinthe.Resolution.Helpers, only: [dataloader: 1]
+  alias TdDdWeb.Resolvers
 
   object :data_structure_link do
     field :id, non_null(:id)
@@ -16,6 +17,7 @@ defmodule TdDdWeb.Schema.DataStructureLinks do
     field :inserted_at, :date
     field :updated_at, :date
     field :labels, list_of(:label)
+    field :_actions, :json, resolve: &Resolvers.DataStructureLinks.actions/3
   end
 
   object :label do

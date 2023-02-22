@@ -385,6 +385,9 @@ defmodule TdDdWeb.DataStructureVersionView do
   defp add_grants(ds), do: ds
 
   defp put_actions(ds, actions) do
-    Map.update(ds, "_actions", actions, &Map.merge(&1, actions))
+    Map.update(ds, "_actions", transform_create_link(actions), &Map.merge(&1, actions))
   end
+
+  defp transform_create_link(%{create_link: true} = actions), do: %{actions | create_link: %{}}
+  defp transform_create_link(actions), do: actions
 end
