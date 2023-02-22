@@ -3,7 +3,9 @@
 ## [Unreleased]
 
 ### Added
+
 - [TD-5471] Bulk update of quality implementations via csv
+- [TD-3541] Get data_structure_versions for `api/v2`
 
 ## [5.1.0] 2023-02-13
 

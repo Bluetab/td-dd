@@ -47,5 +47,21 @@ defmodule TdDdWeb.Schema.GrantRequests do
     field :user_id, :id
     field :source_user_name, :string
     field :pending_removal, :boolean
+    field :data_structure_version, :data_structure_version
+    field :data_structure, :data_structure
+
+    field :external_ref, :string
+    field :system, :system
+    field :user, :user
+
+    field :inserted_at, :datetime
+    field :updated_at, :datetime
+  end
+
+  object :user do
+    field :id, :id
+    field :email, :string
+    field :full_name, :string
+    field :user_name, :string
   end
 end
