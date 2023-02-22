@@ -68,8 +68,7 @@ defmodule TdDq.Implementations.BulkLoad do
     errors = Enum.map(errors, fn {:error, v} -> v end)
 
     processed_params
-    |> Enum.map(fn {:ok, v} -> v end)
-    |> Enum.map(fn params ->
+    |> Enum.map(fn {:ok, params} ->
       case Implementations.last_by_keys([params]) do
         [] ->
           create_implementation(params, claims)
