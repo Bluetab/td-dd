@@ -479,37 +479,7 @@ defmodule TdDdWeb.Schema.StructuresTest do
       ### Graph
       contains = %{"foo" => [external_id, "baz"]}
       depends = [{external_id, "baz"}]
-
-      groups =
-        Enum.map(contains, fn {parent, _chidren} ->
-          insert(:node,
-            external_id: parent,
-            type: "Group",
-            domain_ids: [domain_id]
-          )
-        end)
-
-      resources = [
-        insert(:node,
-          external_id: external_id,
-          type: "Resource",
-          domain_ids: [domain_id],
-          structure_id: data_structure_id
-        ),
-        insert(:node,
-          external_id: "baz",
-          type: "Resource",
-          domain_ids: [domain_id]
-        )
-      ]
-
-      nodes = groups ++ resources
       GraphData.state(state: setup_state(%{contains: contains, depends: depends}))
-
-      insert(:unit,
-        domain_id: domain_id,
-        nodes: Enum.filter(nodes, &(&1.external_id in [external_id, "bar", "baz"]))
-      )
 
       ## Hierarchy
       Hierarchy.update_hierarchy([id, parent_dsv_id])

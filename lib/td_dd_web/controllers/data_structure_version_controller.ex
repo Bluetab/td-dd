@@ -34,7 +34,7 @@ defmodule TdDdWeb.DataStructureVersionController do
 
   def show(conn, %{"id" => data_structure_version_id}) do
     conn.assigns[:current_resource]
-    |> DataStructureVersions.enriched_data_structure_version(data_structure_version_id)
+    |> DataStructureVersions.enriched_data_structure_version_by_id(data_structure_version_id)
     |> render_data_structure_version(conn)
   end
 

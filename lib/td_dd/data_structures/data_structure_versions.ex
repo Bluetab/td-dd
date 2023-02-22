@@ -8,55 +8,102 @@ defmodule TdDd.DataStructures.DataStructureVersions do
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Tags
 
-  @enrich_attrs [
-    :children,
-    :classifications,
+  @controller_enrich_attrs [
+    :data_fields,
     :data_field_degree,
     :data_field_links,
-    :data_fields,
-    :data_structure_type,
-    :degree,
-    :domain,
-    :external_id,
-    :links,
-    :data_structure_link_count,
-    :with_protected_metadata,
-    :metadata_versions,
+    :children,
     :parents,
-    :profile,
-    :relation_links,
-    :relations,
+    :data_structure_type,
     :siblings,
+    :versions,
+    :classifications,
+    :implementation_count,
+    :data_structure_link_count,
+    :degree,
+    :profile,
     :source,
     :system,
-    :tags,
-    :versions,
-    :with_confidential,
     :grant,
     :grants,
-    :implementation_count,
+    :links,
+    :relations,
+    :relation_links,
+    :tags,
+    :metadata_versions,
     :published_note
   ]
 
-  def enriched_data_structure_version(claims, data_structure_id, version) do
+  @base_enrich_attrs [
+    :domain,
+    :external_id,
+    :with_confidential,
+    :with_protected_metadata
+  ]
+
+  def enriched_data_structure_version(
+        claims,
+        data_structure_id,
+        version,
+        query_fields \\ nil
+      ) do
+    enriches = query_fields_to_enrich_opts(query_fields)
+
     data_structure_id
     |> DataStructures.get_data_structure!()
-    |> enrich_opts(claims)
+    |> enrich_opts(claims, enriches)
     |> get_data_structure_version(data_structure_id, version)
     |> with_permissions(claims)
   end
 
-  def enriched_data_structure_version(claims, data_structure_version_id) do
+  def enriched_data_structure_version_by_id(
+        claims,
+        data_structure_version_id,
+        query_fields \\ nil
+      ) do
+    enriches = query_fields_to_enrich_opts(query_fields)
+
     data_structure_version_id
     |> DataStructures.get_data_structure_version!()
     |> Map.get(:data_structure)
-    |> enrich_opts(claims)
+    |> enrich_opts(claims, enriches)
     |> get_data_structure_version(data_structure_version_id)
     |> with_permissions(claims)
   end
 
-  defp enrich_opts(data_structure, %{user_id: user_id} = claims) do
-    Enum.filter(@enrich_attrs, fn
+  defp query_fields_to_enrich_opts(nil), do: @controller_enrich_attrs
+
+  defp query_fields_to_enrich_opts(query_fields),
+    do: Enum.flat_map(query_fields, &field_to_enrich_opt/1)
+
+  defp field_to_enrich_opt(:siblings), do: [:siblings]
+  defp field_to_enrich_opt(:versions), do: [:versions]
+  defp field_to_enrich_opt(:implementation_count), do: [:implementation_count]
+  defp field_to_enrich_opt(:data_structure_link_count), do: [:data_structure_link_count]
+  defp field_to_enrich_opt(:degree), do: [:degree]
+  defp field_to_enrich_opt(:profile), do: [:profile]
+  defp field_to_enrich_opt(:source), do: [:source]
+  defp field_to_enrich_opt(:system), do: [:system]
+  defp field_to_enrich_opt(:grant), do: [:grant]
+  defp field_to_enrich_opt(:grants), do: [:grants]
+  defp field_to_enrich_opt(:links), do: [:links]
+  defp field_to_enrich_opt(:note), do: [:published_note]
+  defp field_to_enrich_opt(:relations), do: [:relations, :relation_links]
+
+  defp field_to_enrich_opt(:metadata),
+    do: [:with_protected_metadata, :metadata_versions]
+
+  defp field_to_enrich_opt(:data_fields),
+    do: [
+      :data_fields,
+      :data_field_degree,
+      :data_field_links
+    ]
+
+  defp field_to_enrich_opt(_), do: []
+
+  defp enrich_opts(data_structure, %{user_id: user_id} = claims, enriches) do
+    Enum.filter(@base_enrich_attrs ++ enriches, fn
       :profile ->
         permit?(DataStructures, :view_data_structures_profile, claims, data_structure)
 

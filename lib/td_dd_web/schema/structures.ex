@@ -133,10 +133,6 @@ defmodule TdDdWeb.Schema.Structures do
     field :profile, :profile
     field :source, :source
     field :system, :system
-
-    # TODO CHANGE IN FRONT EXPECTED VARIABLE NAME
-    # FROM data_structure_type to structure_type
-    # field :data_structure_type, :data_structure_type
     field :structure_type, :data_structure_type, resolve: dataloader(TdDd.DataStructures)
 
     field :grants, list_of(:grants)
@@ -197,6 +193,7 @@ defmodule TdDdWeb.Schema.Structures do
   object :relation_type do
     field :id, non_null(:id)
     field :name, :string
+    field :description, :string
   end
 
   object :system do

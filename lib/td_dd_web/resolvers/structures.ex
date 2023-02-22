@@ -40,13 +40,20 @@ defmodule TdDdWeb.Resolvers.Structures do
         %{data_structure_id: data_structure_id, version: version},
         resolution
       ) do
+    query_fields =
+      resolution
+      |> Map.get(:definition)
+      |> Map.get(:selections)
+      |> Enum.map(fn %{schema_node: %{identifier: identifier}} -> identifier end)
+
     with {:claims, claims} when not is_nil(claims) <- {:claims, claims(resolution)},
          {:enriched_dsv, [_ | _] = enriched_dsv} <-
            {:enriched_dsv,
             DataStructureVersions.enriched_data_structure_version(
               claims,
               data_structure_id,
-              version
+              version,
+              query_fields
             )},
          dsv <- enriched_dsv[:data_structure_version],
          actions <- enriched_dsv[:actions],
@@ -120,7 +127,7 @@ defmodule TdDdWeb.Resolvers.Structures do
 
   def note(_dsv, _args, _resolution), do: {:ok, nil}
 
-  defp handle_note_select(content, dsv, select_fields \\ [])
+  defp handle_note_select(content, dsv, select_fields \\ nil)
 
   defp handle_note_select(content, dsv, [_ | _] = select_fields) do
     content
@@ -128,7 +135,8 @@ defmodule TdDdWeb.Resolvers.Structures do
     |> Map.take(select_fields)
   end
 
-  defp handle_note_select(content, dsv, _), do: DataStructures.get_cached_content(content, dsv)
+  defp handle_note_select(content, dsv, nil), do: DataStructures.get_cached_content(content, dsv)
+  defp handle_note_select(_content, _dsv, _), do: nil
 
   def ancestry(%{path: [_ | _] = path}, _args, _resolution), do: {:ok, path}
 
