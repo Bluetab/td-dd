@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-3541] Get data_structure_versions for `api/v2`
+
 ## [5.1.0] 2023-02-13
 
 ### Added
