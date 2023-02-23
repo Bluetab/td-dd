@@ -279,25 +279,22 @@ defmodule TdDq.Implementations do
     |> Multi.insert(:implementation, changeset)
   end
 
-  defp upsert(multi, changeset, :draft, _user_id) do
-    Multi.update(multi, :implementation, changeset)
+  defp upsert(multi, %{changes: %{status: :published}} = changeset, :draft, user_id) do
+    # Also need to version any remaining published versions before publishing
+    # current draft or else duplicate error.
+    multi
+    |> Workflow.maybe_version_existing(changeset.data, "published", user_id)
+    |> Multi.update(:implementation, changeset)
   end
 
   defp upsert(multi, %{changes: %{status: :draft}} = changeset, :published, _user_id) do
+    # Keep published as it is and insert new draft implementation
     Multi.insert(multi, :implementation, changeset)
   end
 
-  defp upsert(multi, %{data: implementation} = changeset, status, user_id) do
-    new_multi =
-      case Changeset.get_change(changeset, :status) do
-        :published -> Workflow.maybe_version_existing(multi, implementation, "published", user_id)
-        _ -> multi
-      end
-
-    case status do
-      :published -> Multi.insert(new_multi, :implementation, changeset)
-      _ -> Multi.update(new_multi, :implementation, changeset)
-    end
+  # Draft to draft, regular update.
+  defp upsert(multi, changeset, :draft, _user_id) do
+    Multi.update(multi, :implementation, changeset)
   end
 
   defp upsert(multi, %{data: implementation, changes: %{rule_id: rule_id}}) do
