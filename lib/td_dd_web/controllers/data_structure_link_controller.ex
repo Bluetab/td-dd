@@ -6,6 +6,7 @@ defmodule TdDdWeb.DataStructureLinkController do
   alias TdDd.DataStructures.DataStructureLink
   alias TdDd.DataStructures.DataStructureLinks
   alias TdDdWeb.SwaggerDefinitions
+  alias Truedat.Auth.Claims
 
   def swagger_definitions do
     SwaggerDefinitions.data_structure_link_swagger_definitions()
@@ -164,6 +165,22 @@ defmodule TdDdWeb.DataStructureLinkController do
     end
   end
 
+  # Cannot add multiple swagger definitions for create, need OpenAPI 3.0 "oneOf"
+  def create(conn, %{"data_structure_link" => link}) do
+    %Claims{user_id: user_id} = claims = conn.assigns[:current_resource]
+
+    with {:ok, %{data_structure_link: data_structure_link}} <-
+           DataStructureLinks.create(
+             link,
+             &Bodyguard.permit(DataStructureLinks, :link_structure_to_structure, claims, &1),
+             user_id
+           ) do
+      conn
+      |> put_status(:created)
+      |> render("show.json", %{data_structure_link: data_structure_link})
+    end
+  end
+
   swagger_path :create do
     description("Data Structure Links bulk creation")
     produces("application/json")
@@ -184,7 +201,7 @@ defmodule TdDdWeb.DataStructureLinkController do
   def create(conn, %{"data_structure_links" => links}) do
     claims = conn.assigns[:current_resource]
 
-    with :ok <- Bodyguard.permit(DataStructureLinks, :create, claims),
+    with :ok <- Bodyguard.permit(DataStructureLinks, :link_structure_to_structure, claims),
          {:ok, result} <-
            DataStructureLinks.bulk_load(links) do
       conn

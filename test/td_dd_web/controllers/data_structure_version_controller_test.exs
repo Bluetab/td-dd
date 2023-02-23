@@ -525,7 +525,13 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                  |> get(Routes.data_structure_data_structure_version_path(conn, :show, id, v))
                  |> json_response(:ok)
 
-        assert actions == %{"create_link" => %{}}
+        assert actions == %{
+                 "create_link" => %{},
+                 "link_structure_to_structure" => %{
+                   "href" => "/api/v2",
+                   "method" => "POST"
+                 }
+               }
       end
     end
   end
