@@ -247,7 +247,8 @@ defmodule TdDq.Implementations do
     with :ok <- Bodyguard.permit(__MODULE__, :update, claims, changeset),
          :ok <- permit_by_changeset_status(claims, changeset) do
       Multi.new()
-      |> upsert(changeset, status, user_id)
+      |> Workflow.maybe_version_existing(changeset, user_id)
+      |> upsert(changeset, status)
       |> Multi.run(:data_structures, &create_implementation_structures/2)
       |> Multi.run(:audit_status, Audit, :implementation_status_updated, [changeset, user_id])
       |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
@@ -273,29 +274,8 @@ defmodule TdDq.Implementations do
     |> Map.get(:changes) != %{}
   end
 
-  defp upsert(multi, %{changes: %{status: :published}} = changeset, :published, user_id) do
-    multi
-    |> Workflow.maybe_version_existing(changeset.data, "published", user_id)
-    |> Multi.insert(:implementation, changeset)
-  end
-
-  defp upsert(multi, %{changes: %{status: :published}} = changeset, :draft, user_id) do
-    # Also need to version any remaining published versions before publishing
-    # current draft or else duplicate error.
-    multi
-    |> Workflow.maybe_version_existing(changeset.data, "published", user_id)
-    |> Multi.update(:implementation, changeset)
-  end
-
-  defp upsert(multi, %{changes: %{status: :draft}} = changeset, :published, _user_id) do
-    # Keep published as it is and insert new draft implementation
-    Multi.insert(multi, :implementation, changeset)
-  end
-
-  # Draft to draft, regular update.
-  defp upsert(multi, changeset, :draft, _user_id) do
-    Multi.update(multi, :implementation, changeset)
-  end
+  defp upsert(multi, changeset, :published), do: Multi.insert(multi, :implementation, changeset)
+  defp upsert(multi, changeset, :draft), do: Multi.update(multi, :implementation, changeset)
 
   defp upsert(multi, %{data: implementation, changes: %{rule_id: rule_id}}) do
     %{domain_id: new_domain_id} = Repo.get!(Rule, rule_id)
