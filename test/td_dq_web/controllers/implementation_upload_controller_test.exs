@@ -133,19 +133,21 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
     end
 
     @tag authentication: [
-      role: "user",
-      permissions: [
-        :manage_basic_implementations,
-        :manage_ruleless_implementations,
-        :publish_implementation
-      ],
-      domain_params: %{external_id: "some_domain_id"}
-    ]
+           role: "user",
+           permissions: [
+             :manage_basic_implementations,
+             :manage_ruleless_implementations,
+             :publish_implementation
+           ],
+           domain_params: %{external_id: "some_domain_id"}
+         ]
     test "should version previously published versions before publishing current draft", %{
       conn: conn,
       rule: rule,
       domain: %{id: domain_id}
     } do
+      assert rule.domain_id == domain_id
+
       %{id: implementation_boo_key_version_1_id, implementation_ref: implementation_ref} =
         insert(
           :implementation,
@@ -160,6 +162,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
           goal: 11,
           segments: []
         )
+
       %{id: implementation_boo_key_version_2_id} =
         insert(
           :implementation,
@@ -185,33 +188,33 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
       }
 
       assert %{"data" => data} =
-        conn
-        |> post(Routes.implementation_upload_path(conn, :create), attrs)
-        |> json_response(:ok) |> IO.inspect(label: "DATA")
+               conn
+               |> post(Routes.implementation_upload_path(conn, :create), attrs)
+               |> json_response(:ok)
 
-      assert %{"ids" => ids, "errors" => errors} = data
+      assert %{"ids" => ids, "errors" => []} = data
 
       assert %Implementation{
-        id: ^implementation_boo_key_version_1_id,
-        implementation_key: "boo_key_1",
-        df_content: %{"string" => "boo_1"},
-        status: :versioned,
-        minimum: 10.0,
-        goal: 11.0
-      } = TdDq.Implementations.get_implementation(implementation_boo_key_version_1_id)
+               id: ^implementation_boo_key_version_1_id,
+               implementation_key: "boo_key_1",
+               df_content: %{"string" => "boo_1"},
+               status: :versioned,
+               minimum: 10.0,
+               goal: 11.0
+             } = TdDq.Implementations.get_implementation(implementation_boo_key_version_1_id)
 
       uploaded_implementations = Enum.map(ids, &TdDq.Implementations.get_implementation(&1))
 
       assert [
-        %Implementation{
-        id: ^implementation_boo_key_version_2_id,
-        implementation_key: "boo_key_1",
-        df_content: %{"string" => "boo_1_from_csv"},
-        status: :published,
-        minimum: 14.0,
-        goal: 15.0
-      }
-      ]= uploaded_implementations
+               %Implementation{
+                 id: ^implementation_boo_key_version_2_id,
+                 implementation_key: "boo_key_1",
+                 df_content: %{"string" => "boo_1_from_csv"},
+                 status: :published,
+                 minimum: 14.0,
+                 goal: 15.0
+               }
+             ] = uploaded_implementations
     end
 
     @tag authentication: [
