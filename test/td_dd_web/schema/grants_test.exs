@@ -1,6 +1,11 @@
 defmodule TdDdWeb.Schema.GrantsTest do
   use TdDdWeb.ConnCase
 
+  import TdDd.TestOperators
+
+  alias TdDd.DataStructures.Hierarchy
+  alias TdDd.DataStructures.RelationTypes
+
   @grant_query """
   query Grants($filters: GrantsFilter) {
     grants(filters: $filters) {
@@ -19,6 +24,9 @@ defmodule TdDdWeb.Schema.GrantsTest do
           userId
           dataStructureId
           dataStructure {
+            id
+          }
+          dsvChildren {
             id
           }
           insertedAt
@@ -144,6 +152,92 @@ defmodule TdDdWeb.Schema.GrantsTest do
 
       assert %{"grants" => %{"page" => grants, "totalCount" => 2}} = data
       assert length(grants) == 2
+    end
+
+    @tag authentication: [
+           role: "user",
+           permissions: [:approve_grant_request, :view_data_structure]
+         ]
+    test "list grants with dsv_children correctly", %{conn: conn} do
+      %{id: user_id} = CacheHelpers.insert_user()
+
+      [dsv, parent, child] =
+        ["structure", "parent", "child"]
+        |> Enum.map(&insert(:data_structure, external_id: &1))
+        |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id))
+
+      fields =
+        ["field1", "field2", "field3"]
+        |> Enum.map(&insert(:data_structure, external_id: &1))
+        |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id, class: "field"))
+
+      relation_type_id = RelationTypes.default_id!()
+
+      Enum.map(
+        fields,
+        &insert(:data_structure_relation,
+          parent_id: child.id,
+          child_id: &1.id,
+          relation_type_id: relation_type_id
+        )
+      )
+
+      insert(:data_structure_relation,
+        parent_id: parent.id,
+        child_id: dsv.id,
+        relation_type_id: relation_type_id
+      )
+
+      insert(:data_structure_relation,
+        parent_id: dsv.id,
+        child_id: child.id,
+        relation_type_id: relation_type_id
+      )
+
+      Hierarchy.update_hierarchy([dsv.id, parent.id])
+
+      start_date = Date.utc_today() |> Date.add(-1)
+      end_date = Date.utc_today() |> Date.add(2)
+
+      %{id: grant_id} =
+        insert(
+          :grant,
+          data_structure_id: parent.data_structure_id,
+          user_id: user_id,
+          start_date: start_date,
+          end_date: end_date
+        )
+
+      assert %{"data" => data} =
+               conn
+               |> post(
+                 "/api/v2",
+                 %{
+                   "query" => @grant_query,
+                   "variables" => %{
+                     "filters" => %{
+                       "ids" => [grant_id]
+                     }
+                   }
+                 }
+               )
+               |> json_response(:ok)
+
+      assert %{
+               "grants" => %{
+                 "page" => [
+                   %{
+                     "dsvChildren" => dsv_children
+                   }
+                 ],
+                 "totalCount" => 1
+               }
+             } = data
+
+      dsv_id_str = "#{dsv.id}"
+      child_id_str = "#{child.id}"
+
+      assert [%{"id" => child_id_str}, %{"id" => dsv_id_str}] <|> dsv_children
     end
 
     @tag authentication: [

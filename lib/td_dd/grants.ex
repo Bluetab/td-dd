@@ -9,6 +9,7 @@ defmodule TdDd.Grants do
   alias TdCache.UserCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
+  alias TdDd.DataStructures.DataStructureQueries
   alias TdDd.Grants.Grant
   alias TdDd.Repo
   alias TdDd.Search.IndexWorker
@@ -94,10 +95,11 @@ defmodule TdDd.Grants do
     list_grants(%{filters: filters})
   end
 
-  def list_grants(params) do
+  def list_grants(params, opts \\ []) do
     params
     |> grants_query
     |> Repo.all()
+    |> enrich(opts)
   end
 
   defp grants_query(params) do
@@ -112,6 +114,9 @@ defmodule TdDd.Grants do
 
           {:user_ids, user_ids}, q ->
             where(q, [g], g.user_id in ^user_ids)
+
+          {:user_id, user_id}, q ->
+            where(q, [g], g.user_id == ^user_id)
 
           {:date, date}, q ->
             where(
@@ -218,5 +223,29 @@ defmodule TdDd.Grants do
       [g],
       fragment("?::date > ?::date", ^lt_date, field(g, ^column))
     )
+  end
+
+  defp enrich(grants, enrich: enrich_fields) when is_list(grants),
+    do: Enum.reduce(enrich_fields, grants, &enrich(&1, &2))
+
+  defp enrich(grants, _) when is_list(grants), do: grants
+
+  defp enrich(:dsv_children, grants) do
+    grant_ids = Enum.map(grants, &Map.get(&1, :id))
+
+    dsv_grant_childrens =
+      DataStructureQueries.dsv_grant_children(grant_ids: grant_ids)
+      |> Repo.all()
+      |> Enum.map(fn %{dsv_children: dsv_children} = dsv_grant_children ->
+        dsv_children =
+          Enum.map(dsv_children, &Map.new(&1, fn {k, v} -> {String.to_atom(k), v} end))
+
+        Map.put(dsv_grant_children, :dsv_children, dsv_children)
+      end)
+      |> Enum.reduce(%{}, &Map.put(&2, &1.grant_id, &1.dsv_children))
+
+    Enum.map(grants, fn grant ->
+      Map.put(grant, :dsv_children, Map.get(dsv_grant_childrens, grant.id))
+    end)
   end
 end

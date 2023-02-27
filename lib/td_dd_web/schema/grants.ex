@@ -26,13 +26,14 @@ defmodule TdDdWeb.Schema.Grants do
     field :end_date, :date
     field :user_id, :id
     field :data_structure_id, :id
-    field :data_structure, :data_structure, resolve: &Resolvers.Structures.data_structure/3
+    field :data_structure, :data_structure
+    field :data_structure_version, :data_structure_version
     field :inserted_at, :datetime
     field :updated_at, :datetime
     field :source_user_name, :string
     field :pending_removal, :boolean
     field :external_ref, :string
-    field :inherited, :boolean
+    field :dsv_children, list_of(:data_structure_version)
   end
 
   object :paginated_grants do

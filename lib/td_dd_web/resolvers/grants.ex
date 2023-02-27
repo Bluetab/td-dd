@@ -28,7 +28,11 @@ defmodule TdDdWeb.Resolvers.Grants do
   defp get_grants(args) do
     args
     |> Grants.min_max_count()
-    |> read_page(fn -> Grants.list_grants(args) end)
+    |> read_page(fn ->
+      args
+      |> Map.put(:preload, [:data_structure, :data_structure_version])
+      |> Grants.list_grants(enrich: [:dsv_children])
+    end)
   end
 
   defp read_page(%{count: 0}, _fun) do

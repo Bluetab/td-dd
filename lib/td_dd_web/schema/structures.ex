@@ -82,6 +82,7 @@ defmodule TdDdWeb.Schema.Structures do
     field :inserted_at, :datetime
     field :updated_at, :datetime
     field :metadata, :json
+    field :data_structure_id, :id
     field :data_structure, :data_structure, resolve: dataloader(TdDd.DataStructures)
     field :path, list_of(:string), resolve: &Resolvers.Structures.data_structure_version_path/3
 
