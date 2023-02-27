@@ -5,14 +5,38 @@ defmodule TdDdWeb.Resolvers.Grants do
 
   alias TdDd.Grants
 
-  def grants(_parent, args, _resolution) do
-    args =
+  @enrich_fields [:dsv_children]
+  @preload_fields [:data_structure, :data_structure_version]
+
+  def grants(_parent, args, resolution) do
+    opts =
+      resolution
+      |> Map.get(:definition)
+      |> Map.get(:selections)
+      |> Enum.find(fn field -> field.name === "page" end)
+      |> Map.get(:selections)
+      |> Enum.map(fn %{schema_node: %{identifier: identifier}} -> identifier end)
+      |> Enum.reduce(
+        [preload: [], enrich: []],
+        fn
+          field, acc when field in @preload_fields ->
+            Keyword.put(acc, :preload, acc[:preload] ++ [field])
+
+          field, acc when field in @enrich_fields ->
+            Keyword.put(acc, :enrich, acc[:enrich] ++ [field])
+
+          _, acc ->
+            acc
+        end
+      )
+
+    cursor_args =
       args
       |> Map.take([:first, :last, :after, :before, :filters])
       |> Map.new(&connection_param/1)
       |> put_order_by(args)
 
-    {:ok, get_grants(args)}
+    {:ok, get_grants(cursor_args, opts)}
   end
 
   defp connection_param({:after, cursor}), do: {:after, cursor}
@@ -25,14 +49,20 @@ defmodule TdDdWeb.Resolvers.Grants do
   defp put_order_by(args, %{last: _}), do: Map.put(args, :order_by, desc: :id)
   defp put_order_by(args, %{}), do: Map.put(args, :order_by, :id)
 
-  defp get_grants(args) do
+  defp get_grants(args, opts) do
     args
     |> Grants.min_max_count()
     |> read_page(fn ->
       args
-      |> Map.put(:preload, [:data_structure, :data_structure_version])
-      |> Grants.list_grants(enrich: [:dsv_children])
+      |> maybe_preload(opts)
+      |> Grants.list_grants(opts)
     end)
+  end
+
+  defp maybe_preload(args, []), do: args
+
+  defp maybe_preload(args, opts) do
+    Map.put(args, :preload, opts[:preload])
   end
 
   defp read_page(%{count: 0}, _fun) do

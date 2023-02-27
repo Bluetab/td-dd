@@ -225,7 +225,7 @@ defmodule TdDd.Grants do
     )
   end
 
-  defp enrich(grants, enrich: enrich_fields) when is_list(grants),
+  defp enrich(grants, [{:enrich, enrich_fields} | _]) when is_list(grants),
     do: Enum.reduce(enrich_fields, grants, &enrich(&1, &2))
 
   defp enrich(grants, _) when is_list(grants), do: grants
