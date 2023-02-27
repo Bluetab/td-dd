@@ -66,6 +66,30 @@ defmodule TdDd.DataStructures.DataStructureQueries do
     })
   end
 
+  def dsv_grant_children(opts \\ []) do
+    opts_map = Enum.into(opts, %{grant_ids: []})
+
+    "data_structures_hierarchy"
+    |> join(:inner, [dsh], dsv_child in DataStructureVersion, on: dsh.dsv_id == dsv_child.id)
+    |> join(:inner, [dsh, dsv_child], dsv_ancestor in DataStructureVersion,
+      on: dsh.ancestor_dsv_id == dsv_ancestor.id
+    )
+    |> join(:inner, [dsh, dsv_child, dsv_ancestor], grant in Grant,
+      on: dsh.ancestor_ds_id == grant.data_structure_id
+    )
+    |> where(
+      [dsh, dsv_child, dsv_ancestor],
+      is_nil(dsv_child.deleted_at) and is_nil(dsv_ancestor.deleted_at) and
+        dsh.ancestor_level != 0 and (is_nil(dsv_child.class) or dsv_child.class != "field")
+    )
+    |> where_grant_id_in(opts_map)
+    |> group_by([_dsh, _dsv_child, _dsv_ancestor, grant], grant.id)
+    |> select([dsh, dsv_child, dsv_ancestor, grant], %{
+      dsv_children: fragment("jsonb_agg(?)", dsv_child),
+      grant_id: grant.id
+    })
+  end
+
   defp where_grant_id_in(query, %{grant_ids: []}), do: query
 
   defp where_grant_id_in(query, %{grant_ids: grant_ids}) do

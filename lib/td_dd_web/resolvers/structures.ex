@@ -27,6 +27,9 @@ defmodule TdDdWeb.Resolvers.Structures do
     end
   end
 
+  def data_structure(%{data_structure_id: id}, _args, resolution),
+    do: data_structure(%{}, %{id: id}, resolution)
+
   def data_structure_versions(_parent, args, _resolution) do
     {:ok, DataStructures.list_data_structure_versions(args)}
   end
