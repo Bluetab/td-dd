@@ -38,4 +38,11 @@ defmodule TdDdWeb.Schema.GrantRequests do
     field :status, :string
     field :reason, :string
   end
+
+  object :user do
+    field :id, :id
+    field :email, :string
+    field :full_name, :string
+    field :user_name, :string
+  end
 end

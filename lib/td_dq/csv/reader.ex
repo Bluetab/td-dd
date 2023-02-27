@@ -5,19 +5,16 @@ defmodule TdDq.CSV.Reader do
 
   alias Codepagex
   alias NimbleCSV
-  alias Truedat.Auth.Claims
 
   NimbleCSV.define(ReaderCsvParser, separator: ";", escape: "\"")
 
   @csv_parse_chunk_size 10_000
 
-  @spec read_csv(Claims.t(), Enumerable.t(), [binary], function) :: {:ok, map} | {:error, any}
-  def read_csv(claims, stream, required_headers, bulk_create) do
+  def parse_csv(stream, required_headers) do
     with {:ok, csv} <- parse_stream(stream),
          headers <- Enum.at(csv, 0),
-         {:ok, headers} <- validate_headers(required_headers, headers),
-         {:ok, parsed_file} <- parse_file(csv, headers) do
-      bulk_create.(parsed_file, claims)
+         {:ok, headers} <- validate_headers(required_headers, headers) do
+      parse_file(csv, headers)
     end
   end
 

@@ -3,6 +3,7 @@ defmodule TdDqWeb.ImplementationController do
 
   alias TdDq.Events.QualityEvents
   alias TdDq.Implementations
+  alias TdDq.Implementations.Actions
   alias TdDq.Implementations.Download
   alias TdDq.Implementations.Implementation
   alias TdDq.Implementations.Search
@@ -34,7 +35,9 @@ defmodule TdDqWeb.ImplementationController do
         |> Implementations.list_implementations(preload: [:rule, :results], enrich: :source)
         |> Enum.map(&Implementations.enrich_implementation_structures/1)
 
-      render(conn, "index.json", implementations: implementations)
+      conn
+      |> Actions.put_actions(claims, Implementation)
+      |> render("index.json", implementations: implementations)
     end
   end
 
@@ -142,10 +145,10 @@ defmodule TdDqWeb.ImplementationController do
       |> filter_links_by_permission(claims)
       |> filter_data_structures_by_permission(claims)
 
-    actions = Implementations.build_actions(claims, implementation)
-
     with :ok <- Bodyguard.permit(Implementations, :view, claims, implementation) do
-      render(conn, "show.json", implementation: implementation, actions: actions)
+      conn
+      |> Actions.put_actions(claims, implementation)
+      |> render("show.json", implementation: implementation)
     end
   end
 
@@ -251,8 +254,9 @@ defmodule TdDqWeb.ImplementationController do
 
     with :ok <- Bodyguard.permit(Implementations, :query, claims),
          implementations <- Search.search_by_rule_id(params, claims, rule_id, 0, 1000) do
-      actions = Implementations.build_actions(claims)
-      render(conn, "index.json", implementations: implementations, actions: actions)
+      conn
+      |> Actions.put_actions(claims)
+      |> render("index.json", implementations: implementations)
     end
   end
 

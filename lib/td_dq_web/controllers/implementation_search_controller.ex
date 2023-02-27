@@ -2,6 +2,7 @@ defmodule TdDqWeb.ImplementationSearchController do
   use TdDqWeb, :controller
 
   alias TdDq.Implementations
+  alias TdDq.Implementations.Actions
   alias TdDq.Rules.Search
 
   action_fallback(TdDqWeb.FallbackController)
@@ -31,7 +32,7 @@ defmodule TdDqWeb.ImplementationSearchController do
       response = search_assigns(response)
 
       conn
-      |> assign(:actions, Implementations.build_actions(claims, params))
+      |> Actions.put_actions(claims, params)
       |> put_view(TdDqWeb.SearchView)
       |> put_resp_header("x-total-count", "#{total}")
       |> render("search.json", response)

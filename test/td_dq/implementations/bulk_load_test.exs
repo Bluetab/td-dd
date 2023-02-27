@@ -38,7 +38,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
           Map.put(imp, "rule_name", rule_name)
         end)
 
-      assert {:ok, %{ids: [id1, id2], errors: []}} = BulkLoad.bulk_load(imp, claims)
+      assert {:ok, %{ids: [id2, id1], errors: []}} = BulkLoad.bulk_load(imp, claims)
 
       assert %{implementation_key: "boo"} = Implementations.get_implementation!(id1)
       assert %{implementation_key: "bar"} = Implementations.get_implementation!(id2)
@@ -52,7 +52,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
           Map.put(imp, "domain_external_id", domain_external_id)
         end)
 
-      assert {:ok, %{ids: [id1, id2], errors: []}} = BulkLoad.bulk_load(imp, claims)
+      assert {:ok, %{ids: [id2, id1], errors: []}} = BulkLoad.bulk_load(imp, claims)
 
       assert %{implementation_key: "boo"} = Implementations.get_implementation!(id1)
       assert %{implementation_key: "bar"} = Implementations.get_implementation!(id2)
@@ -236,7 +236,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
       assert {:ok, %{ids: [], errors: [_e1, _e2]}} = BulkLoad.bulk_load(imp, claims)
     end
 
-    test "return errors when some field doesn't exists and not template defined", %{
+    test "return errors when some field doesn't exist and not template defined", %{
       claims: claims,
       domain: %{external_id: external_id}
     } do
@@ -257,7 +257,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
               }} = BulkLoad.bulk_load(imp, claims)
     end
 
-    test "return errors when some template field doesn't exists", %{
+    test "return errors when some template field doesn't exist", %{
       claims: claims,
       domain: %{external_id: external_id},
       template_name: template_name
@@ -280,7 +280,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
               }} = BulkLoad.bulk_load(imp, claims)
     end
 
-    test "return errors when domain_external_id doesn't exists", %{
+    test "return errors when domain_external_id doesn't exist", %{
       claims: claims
     } do
       imp =
@@ -299,7 +299,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
               }} = BulkLoad.bulk_load(imp, claims)
     end
 
-    test "return errors when template doesn't exists", %{
+    test "return errors when template doesn't exist", %{
       claims: claims,
       domain: %{external_id: external_id}
     } do
@@ -321,7 +321,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
               }} = BulkLoad.bulk_load(imp, claims)
     end
 
-    test "return errors when domain field of template doesn't exists", %{
+    test "return errors when domain field of template doesn't exist", %{
       claims: claims,
       rule: %{name: rule_name}
     } do
@@ -365,6 +365,22 @@ defmodule TdDq.Implementations.BulkLoadTest do
                   %{message: %{"df_content.my_domain" => [_e2]}}
                 ]
               }} = BulkLoad.bulk_load(imp, claims)
+    end
+
+    test "avoid mark as reindexable id unchanged implementations", %{
+      rule: %{name: rule_name},
+      claims: claims
+    } do
+      imp =
+        Enum.map(@valid_implementation, fn imp ->
+          Map.put(imp, "rule_name", rule_name)
+        end)
+
+      assert {:ok, %{ids: [_, _] = ids, ids_to_reindex: ids_to_reindex, errors: []}} =
+               BulkLoad.bulk_load(imp, claims)
+
+      assert ids == ids_to_reindex
+      assert {:ok, %{ids: ^ids, ids_to_reindex: [], errors: []}} = BulkLoad.bulk_load(imp, claims)
     end
   end
 end

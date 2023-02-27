@@ -32,7 +32,11 @@ defmodule TdDdWeb.Schema.Grants do
     field :updated_at, :datetime
     field :source_user_name, :string
     field :pending_removal, :boolean
+
     field :external_ref, :string
+    field :system, :system
+    field :user, :user
+
     field :dsv_children, list_of(:data_structure_version)
   end
 

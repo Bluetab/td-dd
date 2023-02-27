@@ -9,6 +9,7 @@ defmodule TdDq.Implementations.Policy do
 
   @workflow_actions [:delete, :edit, :move, :execute, :publish, :restore, :reject, :submit]
   @media_actions [
+    :auto_publish,
     "execute",
     "create",
     "createBasic",
@@ -53,6 +54,10 @@ defmodule TdDq.Implementations.Policy do
   def authorize("execute", %{} = claims, _params),
     do: Permissions.authorized?(claims, :execute_quality_rule_implementations)
 
+  def authorize(:auto_publish, %{} = claims, _params) do
+    Permissions.authorized?(claims, :publish_implementation)
+  end
+
   def authorize("create", %{} = claims, _params),
     do: Permissions.authorized?(claims, :manage_quality_rule_implementations)
 
@@ -93,11 +98,11 @@ defmodule TdDq.Implementations.Policy do
     do: Permissions.authorized?(claims, :manage_rule_results)
 
   def authorize(action, %{role: "admin"}, %Changeset{})
-      when action in [:create, :delete, :update, :move, :clone],
+      when action in [:create, :delete, :update, :move, :clone, :publish],
       do: true
 
   def authorize(action, %{} = claims, %Changeset{} = changeset)
-      when action in [:create, :delete, :update] do
+      when action in [:create, :delete, :update, :publish] do
     domain_id = Changeset.fetch_field!(changeset, :domain_id)
     Enum.all?(permissions(changeset), &Permissions.authorized?(claims, &1, domain_id))
   end
@@ -269,20 +274,16 @@ defmodule TdDq.Implementations.Policy do
   defp valid_action?(:move, imp), do: valid_action?(:edit, imp)
 
   defp permissions(%Changeset{} = changeset) do
-    perms =
-      changeset
-      |> Changeset.apply_changes()
-      |> permissions()
-
-    case Changeset.fetch_change(changeset, :segments) do
-      :error -> perms
-      {:ok, _} -> [:manage_segments | perms]
-    end
+    changeset
+    |> Changeset.apply_changes()
+    |> permissions()
+    |> maybe_add_segments_permission(changeset)
+    |> maybe_add_publish_permission(changeset)
   end
 
   defp permissions(%Implementation{} = impl) do
     impl
-    |> Map.take([:rule_id, :segments, :implementation_type])
+    |> Map.take([:rule_id, :segments, :implementation_type, :status])
     |> Enum.flat_map(fn
       {:implementation_type, "raw"} -> [:manage_raw_quality_rule_implementations]
       {:implementation_type, "basic"} -> [:manage_basic_implementations]
@@ -291,5 +292,20 @@ defmodule TdDq.Implementations.Policy do
       {:segments, [_ | _]} -> [:manage_segments]
       _ -> []
     end)
+  end
+
+  defp maybe_add_segments_permission(perms, changeset) do
+    case Changeset.fetch_change(changeset, :segments) do
+      :error -> perms
+      {:ok, _} -> [:manage_segments | perms]
+    end
+  end
+
+  defp maybe_add_publish_permission(perms, changeset) do
+    case Changeset.fetch_change(changeset, :status) do
+      :error -> perms
+      {:ok, :published} -> [:publish_implementation | perms]
+      {:ok, _} -> perms
+    end
   end
 end
