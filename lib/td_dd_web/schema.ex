@@ -9,10 +9,12 @@ defmodule TdDdWeb.Schema do
 
   import_types(Absinthe.Plug.Types)
   import_types(Absinthe.Type.Custom)
+  import_types(TdDdWeb.Schema.Commond)
   import_types(TdDdWeb.Schema.DataStructureLinks)
   import_types(TdDdWeb.Schema.Domains)
   import_types(TdDdWeb.Schema.Executions)
   import_types(TdDdWeb.Schema.Functions)
+  import_types(TdDdWeb.Schema.Grants)
   import_types(TdDdWeb.Schema.GrantApprovalRules)
   import_types(TdDdWeb.Schema.GrantRequests)
   import_types(TdDdWeb.Schema.ImplementationResults)
@@ -29,10 +31,12 @@ defmodule TdDdWeb.Schema do
   import_types(TdDdWeb.Schema.Types.Custom.Cursor)
   import_types(TdDdWeb.Schema.Types.Custom.DataURL)
   import_types(TdDdWeb.Schema.Types.Custom.JSON)
+  import_types(TdDdWeb.Schema.Types.Custom.DateFilter)
 
   query do
     import_fields(:domain_queries)
     import_fields(:function_queries)
+    import_fields(:grant_queries)
     import_fields(:grant_request_queries)
     import_fields(:grant_approval_rules_queries)
     import_fields(:implementation_queries)

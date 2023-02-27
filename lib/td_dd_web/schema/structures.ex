@@ -95,7 +95,7 @@ defmodule TdDdWeb.Schema.Structures do
     field :inserted_at, :datetime
     field :updated_at, :datetime
     field :metadata, :json
-    field :data_structure_id, :integer
+    field :data_structure_id, :id
     field :data_structure, :data_structure, resolve: dataloader(TdDd.DataStructures)
     field :path, list_of(:string), resolve: &Resolvers.Structures.data_structure_version_path/3
 
@@ -135,8 +135,8 @@ defmodule TdDdWeb.Schema.Structures do
     field :system, :system
     field :structure_type, :data_structure_type, resolve: dataloader(TdDd.DataStructures)
 
-    field :grants, list_of(:grants)
-    field :grant, :grants
+    field :grants, list_of(:grant)
+    field :grant, :grant
 
     field :links, list_of(:json)
     field :_actions, :json, resolve: &Resolvers.Structures.actions/3
