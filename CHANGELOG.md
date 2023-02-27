@@ -2,6 +2,8 @@
 
 [Unreleased]
 
+### Added
+
 - [TD-5507] Grants API v2
 
 ## [5.1.0] 2023-02-13
