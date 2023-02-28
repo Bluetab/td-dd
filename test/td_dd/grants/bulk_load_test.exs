@@ -59,7 +59,7 @@ defmodule TdDd.Grants.BulkLoadTest do
 
       assert {:ok, [id1, id2]} = BulkLoad.bulk_load(claims, grants)
 
-      assert length(Grants.list_grants([])) == 2
+      assert length(Grants.list_active_grants([])) == 2
 
       assert %Grant{id: ^id1, data_structure_id: ^structure_id_1} = Grants.get_grant!(id1)
       assert %Grant{id: ^id2, data_structure_id: ^structure_id_2} = Grants.get_grant!(id2)
@@ -97,7 +97,7 @@ defmodule TdDd.Grants.BulkLoadTest do
 
       assert {:error, {:not_found, "DataStructure"}} = BulkLoad.bulk_load(claims, grants)
 
-      assert [] = Grants.list_grants([])
+      assert [] = Grants.list_active_grants([])
     end
 
     @tag authentication: [role: "admin"]
@@ -130,7 +130,7 @@ defmodule TdDd.Grants.BulkLoadTest do
                   [constraint: :exclusion, constraint_name: "no_overlap_source_user_name"]}
              ] = errors
 
-      assert length(Grants.list_grants([])) == 1
+      assert length(Grants.list_active_grants([])) == 1
     end
 
     @tag authentication: [role: "admin"]
@@ -163,7 +163,7 @@ defmodule TdDd.Grants.BulkLoadTest do
 
       assert {:error, %Ecto.Changeset{}} = BulkLoad.bulk_load(claims, grants)
 
-      assert [] == Grants.list_grants([])
+      assert [] == Grants.list_active_grants([])
     end
   end
 

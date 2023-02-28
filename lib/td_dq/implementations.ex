@@ -247,7 +247,8 @@ defmodule TdDq.Implementations do
     with :ok <- Bodyguard.permit(__MODULE__, :update, claims, changeset),
          :ok <- permit_by_changeset_status(claims, changeset) do
       Multi.new()
-      |> upsert(changeset, status, user_id)
+      |> Workflow.maybe_version_existing(changeset, user_id)
+      |> upsert(changeset, status)
       |> Multi.run(:data_structures, &create_implementation_structures/2)
       |> Multi.run(:audit_status, Audit, :implementation_status_updated, [changeset, user_id])
       |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
@@ -273,32 +274,8 @@ defmodule TdDq.Implementations do
     |> Map.get(:changes) != %{}
   end
 
-  defp upsert(multi, %{changes: %{status: :published}} = changeset, :published, user_id) do
-    multi
-    |> Workflow.maybe_version_existing(changeset.data, "published", user_id)
-    |> Multi.insert(:implementation, changeset)
-  end
-
-  defp upsert(multi, changeset, :draft, _user_id) do
-    Multi.update(multi, :implementation, changeset)
-  end
-
-  defp upsert(multi, %{changes: %{status: :draft}} = changeset, :published, _user_id) do
-    Multi.insert(multi, :implementation, changeset)
-  end
-
-  defp upsert(multi, %{data: implementation} = changeset, status, user_id) do
-    new_multi =
-      case Changeset.get_change(changeset, :status) do
-        :published -> Workflow.maybe_version_existing(multi, implementation, "published", user_id)
-        _ -> multi
-      end
-
-    case status do
-      :published -> Multi.insert(new_multi, :implementation, changeset)
-      _ -> Multi.update(new_multi, :implementation, changeset)
-    end
-  end
+  defp upsert(multi, changeset, :published), do: Multi.insert(multi, :implementation, changeset)
+  defp upsert(multi, changeset, :draft), do: Multi.update(multi, :implementation, changeset)
 
   defp upsert(multi, %{data: implementation, changes: %{rule_id: rule_id}}) do
     %{domain_id: new_domain_id} = Repo.get!(Rule, rule_id)

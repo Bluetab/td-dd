@@ -30,32 +30,13 @@ defmodule TdDdWeb.Schema.GrantRequests do
     field :id, :id
     field :type, :string
     field :modification_grant_id, :id
-    field :grant, :grants, resolve: &Resolvers.GrantRequests.grant/3
+    field :grant, :grant, resolve: &Resolvers.GrantRequests.grant/3
   end
 
   object :grant_request_status do
     field :id, :id
     field :status, :string
     field :reason, :string
-  end
-
-  object :grants do
-    field :id, non_null(:id)
-    field :detail, :json
-    field :start_date, :date
-    field :end_date, :date
-    field :user_id, :id
-    field :source_user_name, :string
-    field :pending_removal, :boolean
-    field :data_structure_version, :data_structure_version
-    field :data_structure, :data_structure
-
-    field :external_ref, :string
-    field :system, :system
-    field :user, :user
-
-    field :inserted_at, :datetime
-    field :updated_at, :datetime
   end
 
   object :user do

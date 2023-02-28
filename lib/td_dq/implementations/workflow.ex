@@ -51,7 +51,7 @@ defmodule TdDq.Implementations.Workflow do
     changeset = status_changeset(implementation, status)
 
     Multi.new()
-    |> maybe_version_existing(implementation, status, user_id)
+    |> maybe_version_existing(changeset, user_id)
     |> Multi.update(:implementation, changeset)
     |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
     |> Multi.run(:audit, Audit, :implementation_status_updated, [changeset, user_id])
@@ -116,8 +116,10 @@ defmodule TdDq.Implementations.Workflow do
 
   def maybe_version_existing(
         multi,
-        %{implementation_ref: implementation_ref} = implementation,
-        "published",
+        %{
+          data: %{implementation_ref: implementation_ref} = implementation,
+          changes: %{status: :published}
+        },
         user_id
       ) do
     queryable =
@@ -132,7 +134,7 @@ defmodule TdDq.Implementations.Workflow do
     |> Multi.run(:audit_versioned, Audit, :implementation_versioned, [implementation, user_id])
   end
 
-  def maybe_version_existing(multi, _, _not_published, _user_id), do: multi
+  def maybe_version_existing(multi, _changeset, _user_id), do: multi
 
   defp on_upsert({:ok, %{versioned: {_count, ids}, implementation: %{id: id}}} = result) do
     @index_worker.reindex_implementations([id | ids])
