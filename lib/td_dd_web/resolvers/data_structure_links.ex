@@ -17,9 +17,12 @@ defmodule TdDdWeb.Resolvers.DataStructureLinks do
     {:ok, DataStructureLinks.all_by_external_id(external_id)}
   end
 
-  def actions(dsl, args, %{context: %{claims: claims}}) do
-    {:ok, %{
-      delete: Bodyguard.permit?(DataStructureLinks, :delete, claims, dsl)
-    }}
+  ## REVIEW TD-5509: comprobar el permiso a donde va??
+  ## Se utiliza o no??
+  def actions(dsl, _args, %{context: %{claims: claims}}) do
+    {:ok,
+     %{
+       delete: Bodyguard.permit?(DataStructureLinks, :delete, claims, dsl)
+     }}
   end
 end

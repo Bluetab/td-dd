@@ -6,6 +6,7 @@ defmodule TdDd.DataStructures.AuditTest do
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureLink
   alias TdDd.DataStructures.StructureNote
   alias TdDd.Repo
 
@@ -354,6 +355,39 @@ defmodule TdDd.DataStructures.AuditTest do
 
       assert {:ok, event_id} =
                Audit.data_structure_deleted(Repo, %{data_structure: data_structure}, user_id)
+
+      assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+
+      user_id = "#{user_id}"
+      resource_id = "#{data_structure_id}"
+
+      assert %{
+               event: "data_structure_deleted",
+               payload: "{}",
+               resource_id: ^resource_id,
+               resource_type: "data_structure",
+               service: "td_dd",
+               ts: _ts,
+               user_id: ^user_id
+             } = event
+    end
+  end
+
+  describe "data_structure_link_created/3" do
+    test "publishes an event", %{claims: %{user_id: user_id}} do
+      %{id: source_id} = data_structure = insert(:data_structure)
+      %{id: target_id} = data_structure = insert(:data_structure)
+
+      params = %{"label_ids" => [], "source_id" => source_id, "target_id" => target_id}
+
+      changeset = DataStructureLink.changeget(params)
+
+      assert {:ok, event_id} =
+               Audit.data_structure_link_created(
+                 Repo,
+                 %{data_structure_link: data_structure},
+                 user_id
+               )
 
       assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
 

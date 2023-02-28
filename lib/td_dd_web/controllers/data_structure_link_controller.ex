@@ -167,18 +167,30 @@ defmodule TdDdWeb.DataStructureLinkController do
 
   # Cannot add multiple swagger definitions for create, need OpenAPI 3.0 "oneOf"
   def create(conn, %{"data_structure_link" => link}) do
-    %Claims{user_id: user_id} = claims = conn.assigns[:current_resource]
+    IO.inspect(link, label: "link ->")
 
-    with {:ok, %{data_structure_link: data_structure_link}} <-
-           DataStructureLinks.create(
-             link,
-             &Bodyguard.permit(DataStructureLinks, :link_structure_to_structure, claims, &1),
-             user_id
-           ) do
-      conn
-      |> put_status(:created)
-      |> render("show.json", %{data_structure_link: data_structure_link})
-    end
+    %Claims{user_id: user_id} = claims = conn.assigns[:current_resource]
+    ## REVIEW TD-5509: Por que no se comprueban los permisos aqui???
+    ## por que se tiene que validar primero el chhnageset???
+    ## Si eso es así primero
+    # with {:ok, changeset} <- DataStructureLinks.changeset()
+    # with {:ok, structure_1} <- get_strucute(source),
+    # {:ok, structure_2} <- get_strucute(target)
+    # Bodyguard.permit(DataStructureLinks, :link_structure_to_structure, claims, structure_1, structure_2),
+
+    {:ok, %{data_structure_link: data_structure_link}} <-
+      DataStructureLinks.create link,
+                                &Bodyguard.permit(
+                                  DataStructureLinks,
+                                  :link_structure_to_structure,
+                                  claims,
+                                  &1
+                                ),
+                                user_id do
+        conn
+        |> put_status(:created)
+        |> render("show.json", %{data_structure_link: data_structure_link})
+      end
   end
 
   swagger_path :create do

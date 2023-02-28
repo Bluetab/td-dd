@@ -20,6 +20,8 @@ defmodule TdDdWeb.Schema.DataStructureLinks do
     field :_actions, :json, resolve: &Resolvers.DataStructureLinks.actions/3
   end
 
+  ## REVIEW TD-5509: Si ya se tiene un schema de labels este objeto debería de pasar
+  ## al schema
   object :label do
     field :id, non_null(:id)
     field :name, :string

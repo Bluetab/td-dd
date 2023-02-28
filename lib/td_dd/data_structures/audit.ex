@@ -283,6 +283,24 @@ defmodule TdDd.DataStructures.Audit do
     publish("grant_deleted", "grant", id, user_id, payload)
   end
 
+  @doc """
+  Publishes a `:link_created` event. Should be called using `Ecto.Multi.run/5`.
+  """
+  def data_structure_link_created(
+        _repo,
+        %{data_structure_link: %{id: id}},
+        ## REVIEW TD-5509: por que se utiliza el changeset, cuando se tiene
+        ## la información dentro del data_structure_link???
+        ## Se le puede construir un payload directamente.
+        %{} = changeset,
+        user_id
+      ) do
+    ## REVIEW TD-5509:
+    ## Que tipo  de resource type debe de ser??
+    ### data_structure o data_structure_link ????
+    publish("link_created", "data_structure", id, user_id, changeset)
+  end
+
   defp with_domain_ids(%Changeset{} = changeset, %{data_structure: %{domain_ids: domain_ids}}) do
     Changeset.put_change(changeset, :domain_ids, get_domain_ids(domain_ids))
   end

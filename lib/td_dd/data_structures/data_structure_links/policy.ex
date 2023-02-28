@@ -7,6 +7,9 @@ defmodule TdDd.DataStructures.DataStructureLinks.Policy do
 
   def authorize(_action, %{role: role}, _params) when role in ["admin", "service"], do: true
 
+  ## REVIEW TD-5509: No debería de revisarse los actions????
+  ## por que se verifica una vez el target y el source con el autorize???
+  ## Y no en el controlador
   def authorize(
         _action,
         claims,
@@ -49,6 +52,8 @@ defmodule TdDd.DataStructures.DataStructureLinks.Policy do
       any_domain_id_authorized?(target_structure_domain_ids, claims)
   end
 
+  ## REVIEW TD-5509: Creo recordar que ya existe una funcionalidad que revisa si hay alguno de los permisos
+  ## directamente en  Permissions
   defp any_domain_id_authorized?(structure_domain_ids, claims) do
     structure_domain_ids
     |> Enum.map(&Permissions.authorized?(claims, :link_structure_to_structure, &1))

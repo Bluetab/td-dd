@@ -12,7 +12,7 @@ defmodule TdDd.DataStructures.DataStructureLinks do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureLink
   alias TdDd.DataStructures.DataStructureLinkLabel
-  alias TdDd.DataStructures.DataStructureLinks.Audit
+  alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.Label
   alias TdDd.Repo
   alias TdDd.Utils.ChangesetUtils
@@ -87,7 +87,7 @@ defmodule TdDd.DataStructures.DataStructureLinks do
 
   def create(params, bodyguard_permit_fn, user_id) do
     changeset = DataStructureLink.changeset_from_ids(params)
-
+    ## REVIEW TD-5509: No debería de comprobarse por permisos aqui
     with :ok <- bodyguard_permit_fn.(changeset) do
       create_transaction(changeset, user_id)
     end
@@ -102,30 +102,31 @@ defmodule TdDd.DataStructures.DataStructureLinks do
       conflict_target: [:source_id, :target_id]
     )
     |> Multi.delete_all(
-        :delete_old_dsl_label,
-        fn %{
-             data_structure_link: %{
-               id: data_structure_link_id
-             }
-           } ->
-          DataStructureLinkLabel
-          |> where([dsl], dsl.data_structure_link_id == ^data_structure_link_id)
-        end
-      )
+      :delete_old_dsl_label,
+      fn %{
+           data_structure_link: %{
+             id: data_structure_link_id
+           }
+         } ->
+        DataStructureLinkLabel
+        |> where([dsl], dsl.data_structure_link_id == ^data_structure_link_id)
+      end
+    )
     |> Multi.insert_all(
       :insert_labels,
       DataStructureLinkLabel,
       fn %{
-        data_structure_link: %{
-          id: data_structure_link_id
-        }
-          } ->
+           data_structure_link: %{
+             id: data_structure_link_id
+           }
+         } ->
         Enum.map(
           label_ids,
-          fn label_id -> %{
-            data_structure_link_id: data_structure_link_id,
-            label_id: label_id
-          }
+          fn label_id ->
+            %{
+              data_structure_link_id: data_structure_link_id,
+              label_id: label_id
+            }
           end
         )
       end,
@@ -140,6 +141,7 @@ defmodule TdDd.DataStructures.DataStructureLinks do
   end
 
   def delete(source_id, target_id) do
+    ## REVIEW TD-5509: Añadir Audit delete
     Repo.delete(%DataStructureLink{source_id: source_id, target_id: target_id})
   end
 

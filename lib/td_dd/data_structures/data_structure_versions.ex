@@ -158,14 +158,19 @@ defmodule TdDd.DataStructures.DataStructureVersions do
     [:link_data_structure, :link_structure_to_structure]
     |> Enum.filter(&Bodyguard.permit?(DataStructures, &1, claims, data_structure))
     |> Map.new(fn
-      :link_data_structure -> {:create_link, true}
-      :link_structure_to_structure -> {
-        :link_structure_to_structure,
-        %{
-          href: "/api/v2",
-          method: "POST"
+      :link_data_structure ->
+        {:create_link, true}
+
+      :link_structure_to_structure ->
+        {
+          ## REVIEW TD-5509 No se puede llamar la acción de la misma manera que el permiso
+          # :link_to_structures,
+          :link_structure_to_structure,
+          %{
+            href: "/api/v2",
+            method: "POST"
+          }
         }
-      }
     end)
   end
 
