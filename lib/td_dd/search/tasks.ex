@@ -1,0 +1,158 @@
+defmodule TdDd.Search.Tasks do
+  @moduledoc """
+  GenServer to storing Indexing stats.
+  """
+
+  use GenServer
+
+  @impl true
+  def init(stack) do
+    {:ok, stack}
+  end
+
+  def start_link(_),
+    do:
+      GenServer.start_link(
+        __MODULE__,
+        {:ets.new(:td_dd_tasks, [:public]), :ets.new(:td_dd_keys, [:public])},
+        name: __MODULE__
+      )
+
+  def log_start(index), do: log({:start, index})
+
+  def log_start_stream(count), do: log({:start_stream, count})
+
+  def log_progress(chunk_size), do: log({:progress, chunk_size})
+
+  def log_end, do: log(:end)
+
+  def log(message) do
+    GenServer.cast(
+      __MODULE__,
+      {:push, {self(), DateTime.utc_now(), :erlang.memory(:total)}, message}
+    )
+  end
+
+  def ets_table do
+    GenServer.call(__MODULE__, :ets_table)
+  end
+
+  defp record_from_table(tasks, key), do: record_value(:ets.lookup(tasks, key))
+
+  defp pid_key(keys, pid), do: record_value(:ets.lookup(keys, pid))
+
+  defp record_value([{_, record}]), do: record
+  defp record_value(_), do: %{}
+
+  defp put_current_stats(%{memory_trace: memory_trace} = record, ts, memory),
+    do:
+      record
+      |> Map.put(:memory_trace, memory_trace ++ [{ts, memory}])
+      |> Map.put(:last_message_at, ts)
+
+  defp put_current_stats(record, ts, memory),
+    do:
+      record
+      |> Map.put(:memory_trace, [{ts, memory}])
+      |> Map.put(:last_message_at, ts)
+
+  defp update_processed(%{processed: processed} = record, chunk_size),
+    do: Map.put(record, :processed, processed + chunk_size)
+
+  defp put_status(%{processed: value, count: value} = record),
+    do: Map.put(record, :status, :indexing)
+
+  defp put_status(record), do: Map.put(record, :status, :processing)
+
+  defp put_elapsed(%{id: id} = record),
+    do: Map.put(record, :elapsed, :os.system_time(:millisecond) - id)
+
+  @impl true
+  def handle_cast({:push, {pid, ts, memory}, {:start, index}}, {tasks, keys}) do
+    id = :os.system_time(:millisecond)
+
+    :ets.insert(
+      tasks,
+      {id,
+       %{
+         index: index,
+         status: :started,
+         started_at: ts,
+         id: id,
+         elapsed: 0
+       }
+       |> put_current_stats(ts, memory)}
+    )
+
+    :ets.insert(keys, {pid, id})
+
+    {:noreply, {tasks, keys}}
+  end
+
+  @impl true
+  def handle_cast({:push, {pid, ts, memory}, {:start_stream, count}}, {tasks, keys}) do
+    key = pid_key(keys, pid)
+
+    record =
+      tasks
+      |> record_from_table(key)
+      |> put_current_stats(ts, memory)
+      |> put_elapsed()
+      |> Map.put(:status, :started_stream)
+      |> Map.put(:count, count)
+      |> Map.put(:processed, 0)
+
+    :ets.insert(tasks, {key, record})
+
+    {:noreply, {tasks, keys}}
+  end
+
+  @impl true
+  def handle_cast({:push, {pid, ts, memory}, {:progress, chunk_size}}, {tasks, keys}) do
+    key = pid_key(keys, pid)
+
+    record =
+      tasks
+      |> record_from_table(key)
+      |> put_current_stats(ts, memory)
+      |> put_elapsed()
+      |> update_processed(chunk_size)
+      |> put_status()
+
+    :ets.insert(tasks, {key, record})
+
+    {:noreply, {tasks, keys}}
+  end
+
+  @impl true
+  def handle_cast({:push, {pid, ts, memory}, :end}, {tasks, keys}) do
+    key = pid_key(keys, pid)
+
+    record =
+      tasks
+      |> record_from_table(key)
+      |> put_current_stats(ts, memory)
+      |> put_elapsed()
+      |> Map.put(:status, :done)
+
+    :ets.insert(tasks, {key, record})
+
+    {:noreply, {tasks, keys}}
+  end
+
+  @impl true
+  def handle_call(:ets_table, _from, {tasks, keys}) do
+    {:reply, tasks, {tasks, keys}}
+  end
+
+  @impl true
+  def terminate(reason, {ets_table, _}) do
+    reason
+    |> inspect()
+    |> IO.puts()
+
+    ets_table
+    |> :ets.tab2list()
+    |> IO.puts()
+  end
+end

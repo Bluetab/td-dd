@@ -24,9 +24,10 @@ defmodule TdDdWeb.Schema do
   import_types(TdDdWeb.Schema.Rules)
   import_types(TdDdWeb.Schema.Sources)
   import_types(TdDdWeb.Schema.StructureNotes)
-  import_types(TdDdWeb.Schema.StructureTags)
   import_types(TdDdWeb.Schema.Structures)
+  import_types(TdDdWeb.Schema.StructureTags)
   import_types(TdDdWeb.Schema.Tags)
+  import_types(TdDdWeb.Schema.Tasks)
   import_types(TdDdWeb.Schema.Templates)
   import_types(TdDdWeb.Schema.Types.Custom.Cursor)
   import_types(TdDdWeb.Schema.Types.Custom.DataURL)
@@ -49,6 +50,7 @@ defmodule TdDdWeb.Schema do
     import_fields(:structure_queries)
     import_fields(:tag_queries)
     import_fields(:template_queries)
+    import_fields(:task_query)
   end
 
   mutation do
