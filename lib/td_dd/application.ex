@@ -60,7 +60,8 @@ defmodule TdDd.Application do
       TdDq.Search.IndexWorker,
       # Scheduler for periodic tasks
       TdDd.Scheduler,
-      TdDq.Cache.RuleMigrator
+      TdDq.Cache.RuleMigrator,
+      TdDd.Search.Tasks
     ]
   end
 end

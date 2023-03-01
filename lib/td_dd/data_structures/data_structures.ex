@@ -483,7 +483,7 @@ defmodule TdDd.DataStructures do
     clauses
     |> Map.put(:data_structure_ids, ids)
     |> Map.put(:preload, [:system, :data_structure, data_structure_version: dsv_preloader])
-    |> Grants.list_grants()
+    |> Grants.list_active_grants()
     |> Enum.map(fn %{user_id: user_id} = grant ->
       case UserCache.get(user_id) do
         {:ok, %{} = user} -> %{grant | user: user}
@@ -1030,8 +1030,27 @@ defmodule TdDd.DataStructures do
     |> Map.drop([:with_protected_metadata])
     |> DataStructureQueries.enriched_structure_versions()
     |> Repo.all()
-    |> Enum.map(&enrich.(&1))
-    |> protect_metadata(Keyword.get(opts, :with_protected_metadata))
+    |> Enum.map(
+      &(&1
+        |> enrich.()
+        |> protect_metadata(Keyword.get(opts, :with_protected_metadata)))
+    )
+  end
+
+  def streamed_enriched_structure_versions(opts \\ []) do
+    {enrich_opts, opts} = Keyword.split(opts, [:content, :filters])
+    enrich = StructureVersionEnricher.enricher(enrich_opts)
+
+    opts
+    |> Map.new()
+    |> Map.drop([:with_protected_metadata])
+    |> DataStructureQueries.enriched_structure_versions()
+    |> Repo.stream()
+    |> Stream.map(
+      &(&1
+        |> enrich.()
+        |> protect_metadata(Keyword.get(opts, :with_protected_metadata)))
+    )
   end
 
   ## Dataloader

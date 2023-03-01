@@ -57,6 +57,9 @@ defmodule TdDdWeb.Policy do
   def authorize(:query, %{} = claims, :grant_approval_rule),
     do: Bodyguard.permit(TdDd.Grants, :query, claims, :grant_approval_rule)
 
+  def authorize(:query, %{} = claims, :grants),
+    do: Bodyguard.permit(TdDd.Grants, :query, claims)
+
   def authorize(:query, %{} = claims, :latest_grant_request),
     do: Bodyguard.permit(TdDd.Grants, :query, claims, :latest_grant_request)
 

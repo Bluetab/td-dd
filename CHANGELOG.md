@@ -1,11 +1,13 @@
 # Changelog
 
-## [Unreleased]
+## [5.2.0] 2023-02-28
 
 ### Added
 
 - [TD-5471] Bulk update of quality implementations via csv
 - [TD-3541] Get data_structure_versions for `api/v2`
+- [TD-5599] Improve grant reindex memory usage and API for Task stats
+- [TD-5507] Grants API v2
 - [TD-5509]
   - Data structure link labels graphql query
   - Data structure link creation using source and target structure IDs

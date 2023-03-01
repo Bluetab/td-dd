@@ -64,6 +64,31 @@ defmodule TdDd.DataStructures.DataStructureQueries do
       dsv_children: fragment("array_agg(?)", dsh.dsv_id),
       grant: grant
     })
+    |> order_by([_, _, _, grant], grant.data_structure_id)
+  end
+
+  def dsv_grant_children(opts \\ []) do
+    opts_map = Enum.into(opts, %{grant_ids: []})
+
+    "data_structures_hierarchy"
+    |> join(:inner, [dsh], dsv_child in DataStructureVersion, on: dsh.dsv_id == dsv_child.id)
+    |> join(:inner, [dsh, dsv_child], dsv_ancestor in DataStructureVersion,
+      on: dsh.ancestor_dsv_id == dsv_ancestor.id
+    )
+    |> join(:inner, [dsh, dsv_child, dsv_ancestor], grant in Grant,
+      on: dsh.ancestor_ds_id == grant.data_structure_id
+    )
+    |> where(
+      [dsh, dsv_child, dsv_ancestor],
+      is_nil(dsv_child.deleted_at) and is_nil(dsv_ancestor.deleted_at) and
+        dsh.ancestor_level != 0 and (is_nil(dsv_child.class) or dsv_child.class != "field")
+    )
+    |> where_grant_id_in(opts_map)
+    |> group_by([_dsh, _dsv_child, _dsv_ancestor, grant], grant.id)
+    |> select([dsh, dsv_child, dsv_ancestor, grant], %{
+      dsv_children: fragment("jsonb_agg(?)", dsv_child),
+      grant_id: grant.id
+    })
   end
 
   defp where_grant_id_in(query, %{grant_ids: []}), do: query
@@ -187,8 +212,8 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   def enriched_structure_versions(%{} = params)
       when is_map_key(params, :ids) or is_map_key(params, :data_structure_ids) do
     %{
-      distinct: :data_structure_id,
-      preload: [data_structure: [:system, :published_note]]
+      distinct: :data_structure_id
+      # preload: [data_structure: [:system, :published_note]]
     }
     |> Map.merge(params)
     |> Enum.reduce(DataStructureVersion, fn
@@ -199,6 +224,12 @@ defmodule TdDd.DataStructures.DataStructureQueries do
       {:data_structure_ids, ids}, q -> where(q, [dsv], dsv.data_structure_id in ^ids)
       {:relation_type_id, _}, q -> q
     end)
+    |> join(:left, [dsv], ds in assoc(dsv, :data_structure), as: :ds)
+    |> join(:left, [ds: ds], s in assoc(ds, :system), as: :sys)
+    |> join(:left, [ds: ds], pn in assoc(ds, :published_note), as: :pn)
+    |> select_merge([ds: ds, sys: sys, pn: pn], %{
+      data_structure: %{ds | system: sys, published_note: pn}
+    })
     |> join(:left, [dsv], sm in StructureMetadata,
       as: :metadata,
       on:

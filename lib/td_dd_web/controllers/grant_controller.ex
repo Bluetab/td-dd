@@ -30,7 +30,7 @@ defmodule TdDdWeb.GrantController do
     claims = conn.assigns[:current_resource]
 
     with :ok <- Bodyguard.permit(Grants, :query, claims),
-         grants <- Grants.list_grants([]) do
+         grants <- Grants.list_active_grants([]) do
       render(conn, "index.json", grants: grants)
     end
   end

@@ -12,6 +12,7 @@ defmodule TdDd.Search.Indexer do
   alias TdDd.Search.Mappings
   alias TdDd.Search.Store
   alias TdDd.Search.StructureEnricher
+  alias TdDd.Search.Tasks
 
   require Logger
 
@@ -20,11 +21,13 @@ defmodule TdDd.Search.Indexer do
   @action "index"
 
   def reindex(:all) do
+    Tasks.log_start(@dsv_index)
     :ok = StructureEnricher.refresh()
     reindex_all(Mappings.get_mappings(), @dsv_index)
   end
 
   def reindex(ids) when is_list(ids) do
+    Tasks.log_start(@dsv_index)
     StructureEnricher.refresh()
     reindex(DataStructureVersion, @dsv_index, ids)
   end
@@ -32,10 +35,12 @@ defmodule TdDd.Search.Indexer do
   def reindex(id), do: reindex([id])
 
   def reindex_grants(:all) do
+    Tasks.log_start(@grant_index)
     reindex_all(Mappings.get_grant_mappings(), @grant_index)
   end
 
   def reindex_grants(ids) when is_list(ids) do
+    Tasks.log_start(@grant_index)
     reindex(GrantStructure, @grant_index, ids)
   end
 
@@ -55,6 +60,8 @@ defmodule TdDd.Search.Indexer do
         |> Index.hot_swap(alias_name)
         |> log_errors()
     end
+
+    Tasks.log_end()
   end
 
   defp reindex(schema, index, ids) when is_list(ids) do
@@ -70,6 +77,8 @@ defmodule TdDd.Search.Indexer do
       |> Stream.map(&log(&1, @action))
       |> Stream.run()
     end)
+
+    Tasks.log_end()
   end
 
   def delete(ids) when is_list(ids) do
