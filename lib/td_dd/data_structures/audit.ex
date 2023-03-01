@@ -288,17 +288,26 @@ defmodule TdDd.DataStructures.Audit do
   """
   def data_structure_link_created(
         _repo,
-        %{data_structure_link: %{id: id}},
-        ## REVIEW TD-5509: por que se utiliza el changeset, cuando se tiene
-        ## la información dentro del data_structure_link???
-        ## Se le puede construir un payload directamente.
-        %{} = changeset,
+        %{data_structure_link: %{source_id: source_id} = link},
         user_id
       ) do
-    ## REVIEW TD-5509:
-    ## Que tipo  de resource type debe de ser??
-    ### data_structure o data_structure_link ????
-    publish("link_created", "data_structure", id, user_id, changeset)
+    link
+    |> Map.take([:target_id, :label_ids])
+    |> then(
+      &publish("struct_struct_link_created", "data_structure", source_id, user_id, &1)
+    )
+  end
+
+  def data_structure_link_deleted(
+    _repo,
+    %{data_structure_link: %{source_id: source_id} = link},
+    user_id
+  ) do
+    link
+    |> Map.take([:target_id])
+    |> then(
+      &publish("struct_struct_link_deleted", "data_structure", source_id, user_id, &1)
+    )
   end
 
   defp with_domain_ids(%Changeset{} = changeset, %{data_structure: %{domain_ids: domain_ids}}) do

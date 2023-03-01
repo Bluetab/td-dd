@@ -527,7 +527,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
         assert actions == %{
                  "create_link" => %{},
-                 "link_structure_to_structure" => %{
+                 "create_struct_to_struct_link" => %{
                    "href" => "/api/v2",
                    "method" => "POST"
                  }

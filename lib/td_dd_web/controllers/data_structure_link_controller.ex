@@ -3,6 +3,8 @@ defmodule TdDdWeb.DataStructureLinkController do
   use PhoenixSwagger
 
   action_fallback(TdDdWeb.FallbackController)
+
+  alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructureLink
   alias TdDd.DataStructures.DataStructureLinks
   alias TdDdWeb.SwaggerDefinitions
@@ -124,12 +126,21 @@ defmodule TdDdWeb.DataStructureLinkController do
     response(422, "Client Error")
   end
 
-  def delete(conn, %{"source_id" => _source_id, "target_id" => _target_id} = params) do
-    claims = conn.assigns[:current_resource]
+  def delete(
+        conn,
+        %{
+          "source_id" => _non_validated_source_id,
+          "target_id" => _non_validated_target_id
+        } = params
+      ) do
+    %{user_id: user_id} = claims = conn.assigns[:current_resource]
 
-    with %DataStructureLink{} = link <- DataStructureLinks.get_by(params),
+    with {:ok, %Ecto.Changeset{changes: %{source_id: source_id, target_id: target_id}}} <-
+           DataStructureLinks.validate_params(params),
+         %DataStructureLink{} = link <-
+           DataStructureLinks.get_by(%{source_id: source_id, target_id: target_id}),
          :ok <- Bodyguard.permit(DataStructureLinks, :delete, claims, link),
-         {:ok, %DataStructureLink{}} <- DataStructureLinks.delete(link) do
+         {:ok, _} <- DataStructureLinks.delete_and_audit(link, user_id) do
       send_resp(conn, :no_content, "")
     end
   end
@@ -167,30 +178,26 @@ defmodule TdDdWeb.DataStructureLinkController do
 
   # Cannot add multiple swagger definitions for create, need OpenAPI 3.0 "oneOf"
   def create(conn, %{"data_structure_link" => link}) do
-    IO.inspect(link, label: "link ->")
-
     %Claims{user_id: user_id} = claims = conn.assigns[:current_resource]
-    ## REVIEW TD-5509: Por que no se comprueban los permisos aqui???
-    ## por que se tiene que validar primero el chhnageset???
-    ## Si eso es así primero
-    # with {:ok, changeset} <- DataStructureLinks.changeset()
-    # with {:ok, structure_1} <- get_strucute(source),
-    # {:ok, structure_2} <- get_strucute(target)
-    # Bodyguard.permit(DataStructureLinks, :link_structure_to_structure, claims, structure_1, structure_2),
 
-    {:ok, %{data_structure_link: data_structure_link}} <-
-      DataStructureLinks.create link,
-                                &Bodyguard.permit(
-                                  DataStructureLinks,
-                                  :link_structure_to_structure,
-                                  claims,
-                                  &1
-                                ),
-                                user_id do
-        conn
-        |> put_status(:created)
-        |> render("show.json", %{data_structure_link: data_structure_link})
-      end
+    with {:ok,
+          %Ecto.Changeset{changes: %{source_id: source_id, target_id: target_id}} = changeset} <-
+           DataStructureLinks.validate_params(link),
+         [source_structure, target_structure] <-
+           DataStructures.get_data_structures([source_id, target_id]),
+         :ok <-
+           Bodyguard.permit(
+             DataStructureLinks,
+             :create,
+             claims,
+             {source_structure, target_structure}
+           ),
+         {:ok, %{data_structure_link: data_structure_link}} <-
+           DataStructureLinks.create_and_audit(changeset, user_id) do
+      conn
+      |> put_status(:created)
+      |> render("show.json", %{data_structure_link: data_structure_link})
+    end
   end
 
   swagger_path :create do

@@ -19,6 +19,18 @@ defmodule TdDdWeb.Schema.LabelsTest do
   describe "labels queries" do
     setup :create_labels
 
+    @tag authentication: [role: "admin"]
+    test "returns :ok when queried by admin", %{
+      conn: conn
+    } do
+      assert %{"data" => _data} =
+               resp =
+               conn
+               |> post("/api/v2", %{"query" => @labels_query})
+               |> json_response(:ok)
+      refute Map.has_key?(resp, "errors")
+    end
+
     @tag authentication: [role: "user"]
     test "returns forbidden when queried by user role", %{conn: conn} do
       assert %{"data" => data, "errors" => errors} =

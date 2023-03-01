@@ -13,4 +13,9 @@ defmodule TdDdWeb.Schema.Labels do
       resolve(&Resolvers.Labels.labels/3)
     end
   end
+
+  object :label do
+    field :id, non_null(:id)
+    field :name, :string
+  end
 end

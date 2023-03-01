@@ -8,11 +8,12 @@ defmodule TdDd.DataStructures.DataStructureLinks do
 
   import Ecto.Query
 
+  alias Ecto.Changeset
   alias Ecto.Multi
+  alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureLink
   alias TdDd.DataStructures.DataStructureLinkLabel
-  alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.Label
   alias TdDd.Repo
   alias TdDd.Utils.ChangesetUtils
@@ -85,15 +86,18 @@ defmodule TdDd.DataStructures.DataStructureLinks do
     |> Repo.all()
   end
 
-  def create(params, bodyguard_permit_fn, user_id) do
-    changeset = DataStructureLink.changeset_from_ids(params)
-    ## REVIEW TD-5509: No debería de comprobarse por permisos aqui
-    with :ok <- bodyguard_permit_fn.(changeset) do
-      create_transaction(changeset, user_id)
+  def validate_params(link_params) do
+    case DataStructureLink.changeset_from_ids(link_params) do
+      %Ecto.Changeset{valid?: false} = changeset ->
+        {:error, changeset}
+
+      %Ecto.Changeset{valid?: true} = changeset ->
+        {:ok, changeset}
     end
   end
 
-  defp create_transaction(%{changes: %{label_ids: label_ids}} = changeset, user_id) do
+  def create_and_audit(%Changeset{} = changeset, user_id) do
+    label_ids = Changeset.get_change(changeset, :label_ids, [])
     Multi.new()
     |> Multi.insert(
       :data_structure_link,
@@ -132,7 +136,17 @@ defmodule TdDd.DataStructures.DataStructureLinks do
       end,
       on_conflict: :nothing
     )
-    |> Multi.run(:audit, Audit, :data_structure_link_created, [changeset, user_id])
+    |> Multi.run(:audit, Audit, :data_structure_link_created, [user_id])
+    |> Repo.transaction()
+  end
+
+  def delete_and_audit(%DataStructureLink{} = link, user_id) do
+    Multi.new()
+    |> Multi.delete(
+      :data_structure_link,
+      link
+    )
+    |> Multi.run(:audit, Audit, :data_structure_link_deleted, [user_id])
     |> Repo.transaction()
   end
 
@@ -141,7 +155,6 @@ defmodule TdDd.DataStructures.DataStructureLinks do
   end
 
   def delete(source_id, target_id) do
-    ## REVIEW TD-5509: Añadir Audit delete
     Repo.delete(%DataStructureLink{source_id: source_id, target_id: target_id})
   end
 

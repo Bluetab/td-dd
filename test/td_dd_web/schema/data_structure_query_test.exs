@@ -30,6 +30,7 @@ defmodule TdDdWeb.Schema.DataStructureQueryTest do
     dataStructure(id: $id) {
       id
       dataStructureLinks {
+        _actions
         labels {
           name
         }
@@ -155,7 +156,7 @@ defmodule TdDdWeb.Schema.DataStructureQueryTest do
 
     @tag authentication: [
            role: "user",
-           permissions: [:view_data_structure, :link_data_structure_tag]
+           permissions: [:view_data_structure, :link_data_structure_tag, :link_structure_to_structure]
          ]
     test "returns structure with linked structures when queried by permitted user", %{
       conn: conn,
@@ -166,11 +167,10 @@ defmodule TdDdWeb.Schema.DataStructureQueryTest do
       sys3 = insert(:system, external_id: "sys3", name: "sys3")
 
       domain2 = CacheHelpers.insert_domain()
-      domain3 = CacheHelpers.insert_domain()
 
       ds1 = insert(:data_structure, domain_ids: [domain.id], system_id: sys1.id)
-      ds2 = insert(:data_structure, domain_ids: [domain2.id], system_id: sys2.id)
-      ds3 = insert(:data_structure, domain_ids: [domain3.id], system_id: sys3.id)
+      ds2 = insert(:data_structure, domain_ids: [domain.id], system_id: sys2.id)
+      ds3 = insert(:data_structure, domain_ids: [domain2.id], system_id: sys3.id)
 
       %{data_structure_id: ds1_id, id: dsv1_id} =
         insert(:data_structure_version, data_structure: ds1, name: "dsv1")
@@ -214,7 +214,8 @@ defmodule TdDdWeb.Schema.DataStructureQueryTest do
                        "currentVersion" => %{"name" => "dsv2"},
                        "id" => "#{ds2.id}",
                        "system" => %{"id" => "#{sys2.id}", "name" => "sys2"}
-                     }
+                     },
+                     "_actions" => %{"delete_struct_to_struct_link" => true}
                    },
                    %{
                      "labels" => [%{"name" => "label3"}],
@@ -227,7 +228,8 @@ defmodule TdDdWeb.Schema.DataStructureQueryTest do
                        "currentVersion" => %{"name" => "dsv1"},
                        "id" => "#{ds1.id}",
                        "system" => %{"id" => "#{sys1.id}", "name" => "sys1"}
-                     }
+                     },
+                     "_actions" => %{"delete_struct_to_struct_link" => false}
                    }
                  ],
                  "id" => "#{ds1_id}"

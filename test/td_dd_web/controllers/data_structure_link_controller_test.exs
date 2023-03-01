@@ -270,6 +270,26 @@ defmodule TdDdWeb.DataStructureLinkControllerTest do
   end
 
   @tag authentication: [role: "user", permissions: [:link_structure_to_structure]]
+  test "failed one link deletion if invalid params", %{conn: conn} do
+    assert %{"errors" => errors} =
+             conn
+             |> delete(
+               Routes.data_structure_link_path(
+                 conn,
+                 :delete,
+                 "invalid_source_id_as_string",
+                 "invalid_target_id_as_string"
+               )
+             )
+             |> json_response(:unprocessable_entity)
+
+    assert errors == %{
+      "source_id" => ["is invalid"],
+      "target_id" => ["is invalid"]
+    }
+  end
+
+  @tag authentication: [role: "user", permissions: [:link_structure_to_structure]]
   test "delete by structure IDs", %{
     conn: conn,
     domain: domain
@@ -363,6 +383,26 @@ defmodule TdDdWeb.DataStructureLinkControllerTest do
                %{"data_structure_link" => link}
              )
              |> json_response(:forbidden)
+  end
+
+  @tag authentication: [role: "user", permissions: [:link_structure_to_structure]]
+  test "failed one link creation if missing or invalid params", %{conn: conn} do
+    link = %{
+      "source_id" => "incorrect_id_as_string"
+    }
+
+    assert %{"errors" => errors} =
+             conn
+             |> post(
+               Routes.data_structure_link_path(conn, :create),
+               %{"data_structure_link" => link}
+             )
+             |> json_response(:unprocessable_entity)
+
+    assert errors == %{
+      "source_id" => ["is invalid"],
+      "target_id" => ["can't be blank"]
+    }
   end
 
   @tag authentication: [role: "user", permissions: [:link_structure_to_structure]]

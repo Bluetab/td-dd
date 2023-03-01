@@ -163,9 +163,7 @@ defmodule TdDd.DataStructures.DataStructureVersions do
 
       :link_structure_to_structure ->
         {
-          ## REVIEW TD-5509 No se puede llamar la acción de la misma manera que el permiso
-          # :link_to_structures,
-          :link_structure_to_structure,
+          :create_struct_to_struct_link,
           %{
             href: "/api/v2",
             method: "POST"

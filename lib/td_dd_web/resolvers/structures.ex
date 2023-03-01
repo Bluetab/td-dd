@@ -146,9 +146,6 @@ defmodule TdDdWeb.Resolvers.Structures do
     {:ok, transform_create_link(actions)}
   end
 
-  ## REVIEW TD-5509: Se ha metido la funcion de transform en medio del actions
-  # warning: clauses with the same name and arity (number of arguments)
-  ## should be grouped together, "def actions/3" was previously defined (lib/td_dd_web/resolvers/structures.ex:145)
   def actions(_, _, _), do: {:ok, nil}
 
   defp transform_create_link(%{create_link: true} = actions), do: %{actions | create_link: %{}}

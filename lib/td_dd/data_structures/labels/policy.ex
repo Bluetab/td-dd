@@ -5,9 +5,13 @@ defmodule TdDd.DataStructures.Labels.Policy do
 
   @behaviour Bodyguard.Policy
 
-  ## REVIEW TD-5509: Que pasa con el admin??? por que solo se añade el user????
-  ## realizar pruebas.
+  # admin and service accounts can perform any GraphQL query
+  def authorize(:query, %{role: "admin"}, _resource), do: true
+  def authorize(:query, %{role: "service"}, _resource), do: true
+
   def authorize(:query, %{role: "user"} = claims, _params) do
     Permissions.authorized?(claims, :link_structure_to_structure)
   end
+
+  def authorize(:query, _claims, _params), do: false
 end

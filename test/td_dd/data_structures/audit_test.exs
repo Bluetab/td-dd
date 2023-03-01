@@ -6,7 +6,6 @@ defmodule TdDd.DataStructures.AuditTest do
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.DataStructures.DataStructureLink
   alias TdDd.DataStructures.StructureNote
   alias TdDd.Repo
 
@@ -373,36 +372,82 @@ defmodule TdDd.DataStructures.AuditTest do
     end
   end
 
-  describe "data_structure_link_created/3" do
-    test "publishes an event", %{claims: %{user_id: user_id}} do
-      %{id: source_id} = data_structure = insert(:data_structure)
-      %{id: target_id} = data_structure = insert(:data_structure)
+  test "data_structure_link_created/3 publishes an event", %{claims: %{user_id: user_id}} do
+    source_id = 1
+    target_id = 2
+    label_id = 1
 
-      params = %{"label_ids" => [], "source_id" => source_id, "target_id" => target_id}
+    assert {:ok, event_id} =
+              Audit.data_structure_link_created(
+                Repo,
+                %{
+                  data_structure_link: %{
+                    source_id: source_id,
+                    target_id: target_id,
+                    label_ids: [label_id]
+                  }
+                },
+                user_id
+              )
 
-      changeset = DataStructureLink.changeget(params)
+    assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
 
-      assert {:ok, event_id} =
-               Audit.data_structure_link_created(
-                 Repo,
-                 %{data_structure_link: data_structure},
-                 user_id
-               )
+    user_id = "#{user_id}"
+    resource_id = "#{source_id}"
 
-      assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+    assert %{
+              event: "struct_struct_link_created",
+              payload: payload,
+              resource_id: ^resource_id,
+              resource_type: "data_structure",
+              service: "td_dd",
+              ts: _ts,
+              user_id: ^user_id
+            } = event
 
-      user_id = "#{user_id}"
-      resource_id = "#{data_structure_id}"
+    assert %{
+      "target_id" => ^target_id,
+      "label_ids" => [^label_id]
+    } = Jason.decode!(payload)
+  end
 
-      assert %{
-               event: "data_structure_deleted",
-               payload: "{}",
-               resource_id: ^resource_id,
-               resource_type: "data_structure",
-               service: "td_dd",
-               ts: _ts,
-               user_id: ^user_id
-             } = event
-    end
+  test "data_structure_link_deleted/3 publishes an event", %{claims: %{user_id: user_id}} do
+    source_id = 1
+    target_id = 2
+    label_id = 1
+
+    assert {:ok, event_id} =
+              Audit.data_structure_link_deleted(
+                Repo,
+                %{
+                  data_structure_link: %{
+                    source_id: source_id,
+                    target_id: target_id,
+                    label_ids: [label_id]
+                  }
+                },
+                user_id
+              )
+
+    assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+
+    user_id = "#{user_id}"
+    resource_id = "#{source_id}"
+
+    assert %{
+              event: "struct_struct_link_deleted",
+              payload: payload,
+              resource_id: ^resource_id,
+              resource_type: "data_structure",
+              service: "td_dd",
+              ts: _ts,
+              user_id: ^user_id
+            } = event
+
+    decoded_payload = Jason.decode!(payload)
+    assert %{
+      "target_id" => ^target_id
+    } = decoded_payload
+    refute "label_ids" in Map.keys(decoded_payload)
   end
 end
