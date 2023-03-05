@@ -8,6 +8,7 @@
 - [TD-3541] Get data_structure_versions for `api/v2`
 - [TD-5599] Improve grant reindex memory usage and API for Task stats
 - [TD-5507] Grants API v2
+- [TD-4438] Included-in-parameters reference dataset validation
 
 ## [5.1.0] 2023-02-13
 
