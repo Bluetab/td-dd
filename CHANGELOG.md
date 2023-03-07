@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-3879] All `raw keyword` indexing mappings uses empty string as null_value 
+
 ## [5.2.0] 2023-02-28
 
 ### Added
