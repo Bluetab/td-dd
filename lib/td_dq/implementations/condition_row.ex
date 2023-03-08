@@ -155,6 +155,17 @@ defmodule TdDq.Implementations.ConditionRow do
     is_integer(parent_index) and is_binary(name) and String.trim(name) != ""
   end
 
+  defp valid_attribute(
+         %{
+           "name" => header,
+           "type" => "reference_dataset_field",
+           "referenceDataset" => %{"id" => _ref_dataset_id, "name" => _ref_dataset_name}
+         },
+         _params
+       ) do
+    is_binary(header) and String.trim(header) != ""
+  end
+
   defp valid_attribute(_, _), do: false
 
   defp is_valid_type_value("number", value) do

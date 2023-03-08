@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-4438] Included-in-parameters reference dataset validation
+
+### Changed
+
+- [TD-3879] All `raw keyword` indexing mappings uses empty string as null_value 
+
 ## [5.2.1] 2023-03-08
 
 ### Fixed
