@@ -6,11 +6,14 @@ defmodule TdDd.Search.Mappings do
   alias TdDd.Search.Cluster
   alias TdDfLib.Format
 
-  @raw %{raw: %{type: "keyword"}}
+  @raw %{raw: %{type: "keyword", null_value: ""}}
   @text %{text: %{type: "text"}}
-  @raw_sort %{raw: %{type: "keyword"}, sort: %{type: "keyword", normalizer: "sortable"}}
+  @raw_sort %{
+    raw: %{type: "keyword", null_value: ""},
+    sort: %{type: "keyword", normalizer: "sortable"}
+  }
   @raw_sort_ngram %{
-    raw: %{type: "keyword"},
+    raw: %{type: "keyword", null_value: ""},
     sort: %{type: "keyword", normalizer: "sortable"},
     ngram: %{type: "text", analyzer: "ngram"}
   }
