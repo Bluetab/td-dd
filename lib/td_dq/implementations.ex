@@ -9,11 +9,13 @@ defmodule TdDq.Implementations do
   alias Ecto.Multi
   alias TdCache.LinkCache
   alias TdCache.TaxonomyCache
+  alias TdCache.TemplateCache
   alias TdCx.Sources
   alias TdDd.Cache.StructureEntry
   alias TdDd.DataStructures
   alias TdDd.ReferenceData
   alias TdDd.Repo
+  alias TdDfLib.Format
   alias TdDq.Cache.ImplementationLoader
   alias TdDq.Cache.RuleLoader
   alias TdDq.Events.QualityEvents
@@ -1098,4 +1100,13 @@ defmodule TdDq.Implementations do
     |> ImplementationStructure.delete_changeset()
     |> Repo.update()
   end
+
+  def get_cached_content(%{} = content, type) when is_binary(type) do
+    case TemplateCache.get_by_name!(type) do
+      template = %{} -> Format.enrich_content_values(content, template, [:hierarchy])
+      _ -> content
+    end
+  end
+
+  def get_cached_content(content, _type), do: content
 end

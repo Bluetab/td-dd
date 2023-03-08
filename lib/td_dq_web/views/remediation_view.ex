@@ -1,6 +1,9 @@
 defmodule TdDqWeb.RemediationView do
   use TdDqWeb, :view
 
+  alias TdCache.TemplateCache
+  alias TdDfLib.Format
+
   def render("show.json", %{actions: actions} = assigns) do
     "show.json"
     |> render(Map.delete(assigns, :actions))
@@ -14,10 +17,21 @@ defmodule TdDqWeb.RemediationView do
   end
 
   def render("remediation.json", %{remediation: remediation}) do
+    add_cached_content(%{id: remediation.id}, remediation)
+  end
+
+  defp add_cached_content(remediation_json, %{df_name: df_name} = remediation) do
+    {:ok, template} = TemplateCache.get_by_name(df_name)
+
+    content =
+      remediation
+      |> Map.get(:df_content)
+      |> Format.enrich_content_values(template, [:hierarchy])
+
     %{
-      id: remediation.id,
-      df_name: remediation.df_name,
-      df_content: remediation.df_content
+      df_name: df_name,
+      df_content: content
     }
+    |> Map.merge(remediation_json)
   end
 end

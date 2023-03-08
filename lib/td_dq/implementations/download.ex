@@ -4,6 +4,7 @@ defmodule TdDq.Implementations.Download do
   """
 
   alias TdCache.DomainCache
+  alias TdCache.HierarchyCache
   alias TdCache.TemplateCache
   alias TdDfLib.Format
   alias TdDq.Implementations
@@ -247,6 +248,25 @@ defmodule TdDq.Implementations.Download do
     end)
     |> Enum.reject(&is_nil/1)
     |> Enum.map_join(", ", &Map.get(&1, "text", ""))
+  end
+
+  defp get_content_field(
+         %{"type" => "hierarchy", "name" => name, "values" => %{"hierarchy" => hierarchy_id}},
+         content,
+         _domain_name_map
+       ) do
+    {:ok, nodes} = HierarchyCache.get(hierarchy_id, :nodes)
+
+    content
+    |> Map.get(String.to_atom(name), [])
+    |> content_to_list()
+    |> Enum.map(
+      &Enum.find(nodes, fn %{"node_id" => node_id} ->
+        node_id === &1
+      end)
+    )
+    |> Enum.reject(&is_nil/1)
+    |> Enum.map_join(", ", fn %{"name" => name} -> name end)
   end
 
   defp get_content_field(%{"type" => "table"}, _content, _domain_map), do: ""
