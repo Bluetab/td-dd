@@ -175,13 +175,35 @@ defmodule TdDq.Implementations.ConditionRowTest do
     assert {"invalid_attribute", [validation: :invalid]} = errors[:value]
   end
 
-  test "field_list: allows valid reference_dataset_field" do
+  test "field_list: allows valid reference_dataset_field (reference dataset from parent_index)" do
     params =
       string_params_for(
         :condition_row,
         value: [
           %{
             fields: [%{name: "field", type: "reference_dataset_field", parent_index: 2}, %{id: 3}]
+          }
+        ],
+        operator: %{name: "unique", value_type: "field_list"}
+      )
+
+    assert %{valid?: true} = ConditionRow.changeset(params)
+  end
+
+  test "field_list: allows valid reference_dataset_field (reference dataset included in parameters)" do
+    params =
+      string_params_for(
+        :condition_row,
+        value: [
+          %{
+            fields: [
+              %{
+                name: "field",
+                type: "reference_dataset_field",
+                referenceDataset: %{id: 1, name: "some_reference_dataset_field"}
+              },
+              %{id: 3}
+            ]
           }
         ],
         operator: %{name: "unique", value_type: "field_list"}
