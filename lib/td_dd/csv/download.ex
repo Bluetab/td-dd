@@ -4,6 +4,7 @@ defmodule TdDd.CSV.Download do
   """
 
   alias TdCache.DomainCache
+  alias TdCache.HierarchyCache
   alias TdDd.DataStructures.DataStructureTypes
   alias TdDfLib.Format
 
@@ -96,7 +97,7 @@ defmodule TdDd.CSV.Download do
 
   defp editable_structure_values(%{note: content} = structure, type_fields, domain_name_map) do
     structure_values = Enum.map(@editable_headers, &editable_structure_value(structure, &1))
-    content_values = Enum.map(type_fields, &get_content_field(&1, content, domain_name_map))
+    content_values = Enum.map(type_fields, &get_content_field(&1, content, domain_name_map, true))
     structure_values ++ content_values
   end
 
@@ -184,7 +185,7 @@ defmodule TdDd.CSV.Download do
     Enum.reduce(
       content_fields,
       values,
-      &(&2 ++ [get_content_field(&1, content, domain_name_map)])
+      &(&2 ++ [get_content_field(&1, content, domain_name_map, false)])
     )
   end
 
@@ -249,9 +250,9 @@ defmodule TdDd.CSV.Download do
     Enum.map(headers, fn h -> Map.get(header_labels, h, h) end)
   end
 
-  defp get_content_field(_template, nil, _domain_map), do: ""
+  defp get_content_field(_template, nil, _domain_map, _editable), do: ""
 
-  defp get_content_field(%{"type" => "url", "name" => name}, content, _domain_map) do
+  defp get_content_field(%{"type" => "url", "name" => name}, content, _domain_map, _editable) do
     content
     |> Map.get(name, [])
     |> content_to_list()
@@ -260,7 +261,7 @@ defmodule TdDd.CSV.Download do
     |> Enum.join(", ")
   end
 
-  defp get_content_field(%{"type" => "domain", "name" => name}, content, domain_map) do
+  defp get_content_field(%{"type" => "domain", "name" => name}, content, domain_map, _editable) do
     content
     |> Map.get(name)
     |> List.wrap()
@@ -269,7 +270,7 @@ defmodule TdDd.CSV.Download do
     |> Enum.join(", ")
   end
 
-  defp get_content_field(%{"type" => "system", "name" => name}, content, _domain_map) do
+  defp get_content_field(%{"type" => "system", "name" => name}, content, _domain_map, _editable) do
     content
     |> Map.get(name, [])
     |> content_to_list()
@@ -279,13 +280,36 @@ defmodule TdDd.CSV.Download do
   end
 
   defp get_content_field(
+         %{"type" => "hierarchy", "name" => name, "values" => %{"hierarchy" => hierarchy_id}},
+         content,
+         _domain_name_map,
+         editable
+       ) do
+    {:ok, nodes} = HierarchyCache.get(hierarchy_id, :nodes)
+
+    content
+    |> Map.get(name, [])
+    |> content_to_list()
+    |> Enum.map(
+      &Enum.find(nodes, fn %{"node_id" => node_id} ->
+        node_id === &1
+      end)
+    )
+    |> Enum.reject(&is_nil/1)
+    |> Enum.map_join(", ", fn %{"node_id" => id, "name" => name} ->
+      if editable, do: id, else: name
+    end)
+  end
+
+  defp get_content_field(
          %{
            "type" => "string",
            "name" => name,
            "values" => %{"fixed_tuple" => values}
          },
          content,
-         _domain_map
+         _domain_map,
+         _editable
        ) do
     content
     |> Map.get(name, [])
@@ -295,7 +319,8 @@ defmodule TdDd.CSV.Download do
     |> Enum.map_join(", ", &Map.get(&1, "text", ""))
   end
 
-  defp get_content_field(%{"type" => "table"}, _content, _domain_map), do: ""
+  defp get_content_field(%{"type" => "table"}, _content, _domain_map, _editable),
+    do: ""
 
   defp get_content_field(
          %{
@@ -303,7 +328,8 @@ defmodule TdDd.CSV.Download do
            "cardinality" => cardinality
          },
          content,
-         _domain_map
+         _domain_map,
+         _editable
        )
        when cardinality in ["+", "*"] do
     content
@@ -312,7 +338,7 @@ defmodule TdDd.CSV.Download do
     |> Enum.join("|")
   end
 
-  defp get_content_field(%{"name" => name}, %{} = content, _domain_map) do
+  defp get_content_field(%{"name" => name}, %{} = content, _domain_map, _editable) do
     Map.get(content, name, "")
   end
 
