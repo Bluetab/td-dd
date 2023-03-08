@@ -71,7 +71,7 @@ defmodule TdDq.Implementations.BulkLoad do
     |> Enum.map(fn {:ok, params} ->
       case Implementations.last_by_keys([params]) do
         [] ->
-          create_implementation(params, claims)
+          create_basic_implementation(params, claims)
 
         [implementation] ->
           Implementations.maybe_update_implementation(implementation, params, claims)
@@ -124,6 +124,12 @@ defmodule TdDq.Implementations.BulkLoad do
     end
   end
 
+  defp create_basic_implementation(params, claims) do
+    params
+    |> Map.merge(@basic_implementation)
+    |> create_implementation(claims)
+  end
+
   defp create_implementation(%{"rule_name" => rule_name} = imp, claims)
        when is_binary(rule_name) and rule_name != "" do
     case Rules.get_rule_by_name(rule_name) do
@@ -146,7 +152,6 @@ defmodule TdDq.Implementations.BulkLoad do
       end
     end)
     |> ensure_template()
-    |> Map.merge(@basic_implementation)
     |> then(&{:ok, &1})
   end
 

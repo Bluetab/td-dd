@@ -1,5 +1,11 @@
 # Changelog
 
+## [5.2.1] 2023-03-08
+
+### Fixed
+
+- [TD-5645] Preserve previous implementation type on csv updates, use basic for creations
+
 ## [5.2.0] 2023-02-28
 
 ### Added

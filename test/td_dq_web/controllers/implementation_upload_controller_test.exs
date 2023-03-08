@@ -221,6 +221,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
            role: "user",
            permissions: [
              :manage_basic_implementations,
+             :manage_quality_rule_implementations,
              :manage_ruleless_implementations,
              :publish_implementation
            ],
@@ -235,7 +236,6 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
 
       # Override factory with:
       #   segments empty list so that :manage_segments is not needed
-      #   basic implementation type so that :manage_quality_rule_implementations is not needed
       # Implementations to be updated in the CSV upload
 
       # Implementations with rules
@@ -295,6 +295,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
           df_content: %{string: "boo_5"},
           domain_id: domain_id,
           status: :published,
+          implementation_type: "default",
           version: 1,
           minimum: 10,
           goal: 20,
@@ -385,6 +386,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
                implementation_key: "boo_key_5",
                df_content: %{"string" => "boo_5_from_csv"},
                status: :published,
+               implementation_type: "default",
                minimum: 156.0,
                goal: 155.0
              } = Enum.find(uploaded_implementations, &(&1.implementation_key == "boo_key_5"))
@@ -395,6 +397,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
                implementation_key: "boo_key_5",
                df_content: %{"string" => "boo_5"},
                status: :versioned,
+               implementation_type: "default",
                version: 1,
                minimum: 10.0,
                goal: 20.0
@@ -405,6 +408,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
                implementation_key: "boo_key_6",
                df_content: %{"string" => "boo_6_from_csv"},
                status: :published,
+               implementation_type: "basic",
                minimum: 167.0,
                goal: 166.0
              } = Enum.find(uploaded_implementations, &(&1.implementation_key == "boo_key_6"))
@@ -674,6 +678,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
 
       assert [{_, ^version, ^id, :published}, {_, _, _, :draft}] =
                Implementations.list_implementations()
+               |> Enum.sort(&(&1.status >= &2.status))
                |> Enum.map(&{&1.implementation_key, &1.version, &1.id, &1.status})
 
       assert %{"ids" => ids, "errors" => []} = data
