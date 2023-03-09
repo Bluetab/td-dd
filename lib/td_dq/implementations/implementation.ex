@@ -468,7 +468,8 @@ defmodule TdDq.Implementations.Implementation do
       df_content =
         implementation
         |> Map.get(:df_content)
-        |> Format.search_values(template)
+        |> Format.search_values(template, types: [:system, :hierarchy])
+        |> maybe_format_hierarchy_value(template)
 
       implementation
       |> Map.take(@implementation_keys)
@@ -612,7 +613,8 @@ defmodule TdDq.Implementations.Implementation do
       df_content =
         rule
         |> Map.get(:df_content)
-        |> Format.search_values(template)
+        |> Format.search_values(template, types: [:system, :hierarchy])
+        |> maybe_format_hierarchy_value(template)
 
       rule = Map.put(rule, :df_content, df_content)
 
@@ -644,6 +646,45 @@ defmodule TdDq.Implementations.Implementation do
       |> Enum.map(&Map.get(&1, :name))
       |> Enum.filter(& &1)
       |> Enum.uniq()
+    end
+
+    defp maybe_format_hierarchy_value(nil, _template), do: nil
+
+    defp maybe_format_hierarchy_value(content, template) do
+      hierachy_names =
+        template
+        |> Map.get(:content)
+        |> Enum.map(fn %{"fields" => fields} ->
+          Enum.reduce(fields, [], fn
+            %{"type" => "hierarchy", "name" => name}, acc ->
+              acc ++ [name]
+
+            _, acc ->
+              acc
+          end)
+        end)
+        |> List.flatten()
+
+      content
+      |> Enum.map(fn
+        {key, [%{"id" => _, "name" => _} | _] = values} ->
+          if(key in hierachy_names) do
+            {key, Enum.map(values, &Map.get(&1, "name"))}
+          else
+            values
+          end
+
+        {key, %{"id" => _, "name" => name} = value} ->
+          if(key in hierachy_names) do
+            {key, name}
+          else
+            value
+          end
+
+        field ->
+          field
+      end)
+      |> Map.new()
     end
   end
 end
