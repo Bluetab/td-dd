@@ -247,7 +247,7 @@ defmodule TdDq.Rules.Audit do
   """
   def remediation_created(
         _repo,
-        %{remediation: %{id: id, rule_result_id: rule_result_id} = remediation},
+        %{remediation: %{id: id, rule_result_id: rule_result_id}},
         _changeset,
         user_id
       ) do
@@ -261,14 +261,13 @@ defmodule TdDq.Rules.Audit do
     domain_ids = get_domain_ids(implementation)
 
     payload =
-      remediation
-      |> with_df_content()
-      |> Map.take([:content])
-      |> Map.put(:date, date)
-      |> Map.put(:domain_ids, domain_ids)
-      |> Map.put(:implementation_key, implementation_key)
-      |> Map.put(:implementation_id, implementation_id)
-      |> Map.put(:rule_result_id, rule_result_id)
+      Map.new(
+        date: date,
+        domain_ids: domain_ids,
+        implementation_key: implementation_key,
+        implementation_id: implementation_id,
+        rule_result_id: rule_result_id
+      )
 
     publish("remediation_created", "remediation", id, user_id, payload)
   end
