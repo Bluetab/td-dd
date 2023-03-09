@@ -668,18 +668,12 @@ defmodule TdDq.Implementations.Implementation do
       content
       |> Enum.map(fn
         {key, [%{"id" => _, "name" => _} | _] = values} ->
-          if(key in hierachy_names) do
-            {key, Enum.map(values, &Map.get(&1, "name"))}
-          else
-            values
-          end
+          if key in hierachy_names,
+            do: {key, Enum.map(values, &Map.get(&1, "name"))},
+            else: values
 
         {key, %{"id" => _, "name" => name} = value} ->
-          if(key in hierachy_names) do
-            {key, name}
-          else
-            value
-          end
+          if key in hierachy_names, do: {key, name}, else: value
 
         field ->
           field
