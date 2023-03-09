@@ -221,9 +221,6 @@ defmodule TdDq.Rules.Rule do
         end)
         |> List.flatten()
 
-      IO.inspect(template, label: "Template ---------------->")
-      IO.inspect(content, label: "Content ---------------->")
-
       content
       |> Enum.map(fn
         {key, [%{"id" => _, "name" => _} | _] = values} ->
