@@ -10,6 +10,10 @@
 
 - [TD-3879] All `raw keyword` indexing mappings uses empty string as null_value 
 
+### Fixed
+
+- [TD-5566] Remove template content from Remediation plan audit payload
+
 ## [5.2.1] 2023-03-08
 
 ### Fixed
