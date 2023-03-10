@@ -134,10 +134,44 @@ defmodule TdDd.Search.StructureEnricher do
 
   defp search_content(%DataStructure{} = structure, _not_searchable, _, _type), do: structure
 
-  defp search_content(content, template, domain_ids),
-    do: Format.search_values(content, template, domain_ids: domain_ids)
+  defp search_content(content, template, domain_ids) do
+    content
+    |> Format.search_values(template, domain_ids: domain_ids, types: [:system, :hierarchy])
+    |> maybe_format_hierarchy_value(template)
+  end
 
   defp enrich_links(%{id: id} = structure, links) do
     %{structure | linked_concepts: Enum.member?(links, id)}
+  end
+
+  defp maybe_format_hierarchy_value(nil, _), do: nil
+
+  defp maybe_format_hierarchy_value(content, template) do
+    hierachy_names =
+      template
+      |> Map.get(:content)
+      |> Enum.map(fn %{"fields" => fields} ->
+        Enum.reduce(fields, [], fn
+          %{"type" => "hierarchy", "name" => name}, acc ->
+            acc ++ [name]
+
+          _, acc ->
+            acc
+        end)
+      end)
+      |> List.flatten()
+
+    content
+    |> Enum.map(fn
+      {key, [%{"id" => _, "name" => _} | _] = values} ->
+        if key in hierachy_names, do: {key, Enum.map(values, &Map.get(&1, "name"))}, else: values
+
+      {key, %{"id" => _, "name" => name} = value} ->
+        if key in hierachy_names, do: {key, name}, else: value
+
+      field ->
+        field
+    end)
+    |> Map.new()
   end
 end
