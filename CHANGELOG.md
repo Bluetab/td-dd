@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-4438] Included-in-parameters reference dataset validation
+- [TD-3806] Add cached content for implementations, rules, remediations plan and structures notes
 
 ### Changed
 
