@@ -98,6 +98,7 @@ defmodule TdDd.DataStructures.DataStructureLinks do
 
   def create_and_audit(%Changeset{} = changeset, user_id) do
     label_ids = Changeset.get_change(changeset, :label_ids, [])
+
     Multi.new()
     |> Multi.insert(
       :data_structure_link,

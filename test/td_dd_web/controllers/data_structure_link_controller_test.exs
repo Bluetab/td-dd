@@ -284,9 +284,9 @@ defmodule TdDdWeb.DataStructureLinkControllerTest do
              |> json_response(:unprocessable_entity)
 
     assert errors == %{
-      "source_id" => ["is invalid"],
-      "target_id" => ["is invalid"]
-    }
+             "source_id" => ["is invalid"],
+             "target_id" => ["is invalid"]
+           }
   end
 
   @tag authentication: [role: "user", permissions: [:link_structure_to_structure]]
@@ -400,9 +400,9 @@ defmodule TdDdWeb.DataStructureLinkControllerTest do
              |> json_response(:unprocessable_entity)
 
     assert errors == %{
-      "source_id" => ["is invalid"],
-      "target_id" => ["can't be blank"]
-    }
+             "source_id" => ["is invalid"],
+             "target_id" => ["can't be blank"]
+           }
   end
 
   @tag authentication: [role: "user", permissions: [:link_structure_to_structure]]

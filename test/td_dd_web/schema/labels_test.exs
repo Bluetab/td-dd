@@ -28,6 +28,7 @@ defmodule TdDdWeb.Schema.LabelsTest do
                conn
                |> post("/api/v2", %{"query" => @labels_query})
                |> json_response(:ok)
+
       refute Map.has_key?(resp, "errors")
     end
 

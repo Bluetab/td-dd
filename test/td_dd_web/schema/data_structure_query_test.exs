@@ -156,7 +156,11 @@ defmodule TdDdWeb.Schema.DataStructureQueryTest do
 
     @tag authentication: [
            role: "user",
-           permissions: [:view_data_structure, :link_data_structure_tag, :link_structure_to_structure]
+           permissions: [
+             :view_data_structure,
+             :link_data_structure_tag,
+             :link_structure_to_structure
+           ]
          ]
     test "returns structure with linked structures when queried by permitted user", %{
       conn: conn,

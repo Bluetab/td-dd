@@ -284,30 +284,30 @@ defmodule TdDd.DataStructures.Audit do
   end
 
   @doc """
-  Publishes a `:link_created` event. Should be called using `Ecto.Multi.run/5`.
+  Publishes a `:data_structure_link_created` event. Should be called using `Ecto.Multi.run/5`.
   """
   def data_structure_link_created(
         _repo,
-        %{data_structure_link: %{source_id: source_id} = link},
+        %{data_structure_link: %{id: source_id} = link},
         user_id
       ) do
     link
     |> Map.take([:target_id, :label_ids])
-    |> then(
-      &publish("struct_struct_link_created", "data_structure", source_id, user_id, &1)
-    )
+    |> then(&publish("struct_struct_link_created", "data_structure_link", source_id, user_id, &1))
   end
 
+  @doc """
+  Publishes a `:data_structure_link_deleted` event. Should be called using `Ecto.Multi.run/5`.
+  """
+
   def data_structure_link_deleted(
-    _repo,
-    %{data_structure_link: %{source_id: source_id} = link},
-    user_id
-  ) do
+        _repo,
+        %{data_structure_link: %{id: source_id} = link},
+        user_id
+      ) do
     link
     |> Map.take([:target_id])
-    |> then(
-      &publish("struct_struct_link_deleted", "data_structure", source_id, user_id, &1)
-    )
+    |> then(&publish("struct_struct_link_deleted", "data_structure_link", source_id, user_id, &1))
   end
 
   defp with_domain_ids(%Changeset{} = changeset, %{data_structure: %{domain_ids: domain_ids}}) do

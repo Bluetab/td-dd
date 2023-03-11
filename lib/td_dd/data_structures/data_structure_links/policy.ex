@@ -14,7 +14,8 @@ defmodule TdDd.DataStructures.DataStructureLinks.Policy do
           %DataStructure{domain_ids: source_domain_ids},
           %DataStructure{domain_ids: target_domain_ids}
         }
-      ) when action in [:create, :delete] do
+      )
+      when action in [:create, :delete] do
     source_and_target_permissions?({source_domain_ids, target_domain_ids}, claims)
   end
 
@@ -25,7 +26,8 @@ defmodule TdDd.DataStructures.DataStructureLinks.Policy do
           source: %DataStructure{domain_ids: source_structure_domain_ids},
           target: %DataStructure{domain_ids: target_structure_domain_ids}
         }
-      ) when action in [:create, :delete] do
+      )
+      when action in [:create, :delete] do
     source_and_target_permissions?(
       {source_structure_domain_ids, target_structure_domain_ids},
       claims
@@ -39,6 +41,6 @@ defmodule TdDd.DataStructures.DataStructureLinks.Policy do
          claims
        ) do
     Permissions.authorized?(claims, :link_structure_to_structure, source_structure_domain_ids) and
-    Permissions.authorized?(claims, :link_structure_to_structure, target_structure_domain_ids)
+      Permissions.authorized?(claims, :link_structure_to_structure, target_structure_domain_ids)
   end
 end
