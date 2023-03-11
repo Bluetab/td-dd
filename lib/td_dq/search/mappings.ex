@@ -6,8 +6,11 @@ defmodule TdDq.Search.Mappings do
   alias TdDd.Search.Cluster
   alias TdDfLib.Format
 
-  @raw %{raw: %{type: "keyword"}}
-  @raw_sort %{raw: %{type: "keyword"}, sort: %{type: "keyword", normalizer: "sortable"}}
+  @raw %{raw: %{type: "keyword", null_value: ""}}
+  @raw_sort %{
+    raw: %{type: "keyword", null_value: ""},
+    sort: %{type: "keyword", normalizer: "sortable"}
+  }
 
   def get_rule_mappings do
     content_mappings = %{properties: get_dynamic_mappings("dq")}
