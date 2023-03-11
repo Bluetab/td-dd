@@ -1,6 +1,8 @@
 defmodule TdDdWeb.DataStructureLinkView do
   use TdDdWeb, :view
 
+  alias TdDd.DataStructures.DataStructure
+
   def render(
         "bulk_create.json",
         %{
@@ -34,7 +36,12 @@ defmodule TdDdWeb.DataStructureLinkView do
   end
 
   def render("data_structure_link.json", %{
-        data_structure_link: %{source: source, target: target, labels: labels} = link
+        data_structure_link:
+          %{
+            source: %DataStructure{} = source,
+            target: %DataStructure{} = target,
+            labels: labels
+          } = link
       }) do
     Map.take(link, [:source_external_id, :target_external_id, :inserted_at])
     |> Map.put(
@@ -48,7 +55,24 @@ defmodule TdDdWeb.DataStructureLinkView do
     |> Map.put(:labels, Enum.map(labels, &Map.get(&1, :name)))
   end
 
-  def render("data_structure_link.json", %{data_structure_link: link}) do
+  def render(
+        "data_structure_link.json",
+        %{
+          data_structure_link:
+            %{
+              source_external_id: source_external_id,
+              target_external_id: target_external_id
+            } = link
+        }
+      )
+      when is_binary(source_external_id) and is_binary(target_external_id) do
     Map.take(link, [:source_external_id, :target_external_id, :inserted_at])
+  end
+
+  def render(
+        "data_structure_link.json",
+        %{data_structure_link: link}
+      ) do
+    Map.take(link, [:source_id, :target_id, :inserted_at])
   end
 end
