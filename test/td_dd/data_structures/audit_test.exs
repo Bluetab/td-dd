@@ -371,4 +371,89 @@ defmodule TdDd.DataStructures.AuditTest do
              } = event
     end
   end
+
+  test "data_structure_link_created/3 publishes an event", %{claims: %{user_id: user_id}} do
+    source_id = 1
+    target_id = 2
+    label_id = 1
+    data_structure_link_id = 11
+
+    assert {:ok, event_id} =
+             Audit.data_structure_link_created(
+               Repo,
+               %{
+                 data_structure_link: %{
+                   id: data_structure_link_id,
+                   source_id: source_id,
+                   target_id: target_id,
+                   label_ids: [label_id]
+                 }
+               },
+               user_id
+             )
+
+    assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+
+    user_id = "#{user_id}"
+    resource_id = "#{data_structure_link_id}"
+
+    assert %{
+             event: "struct_struct_link_created",
+             payload: payload,
+             resource_id: ^resource_id,
+             resource_type: "data_structure_link",
+             service: "td_dd",
+             ts: _ts,
+             user_id: ^user_id
+           } = event
+
+    assert %{
+             "target_id" => ^target_id,
+             "label_ids" => [^label_id]
+           } = Jason.decode!(payload)
+  end
+
+  test "data_structure_link_deleted/3 publishes an event", %{claims: %{user_id: user_id}} do
+    source_id = 1
+    target_id = 2
+    label_id = 1
+    data_structure_link_id = 11
+
+    assert {:ok, event_id} =
+             Audit.data_structure_link_deleted(
+               Repo,
+               %{
+                 data_structure_link: %{
+                   id: data_structure_link_id,
+                   source_id: source_id,
+                   target_id: target_id,
+                   label_ids: [label_id]
+                 }
+               },
+               user_id
+             )
+
+    assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+
+    user_id = "#{user_id}"
+    resource_id = "#{data_structure_link_id}"
+
+    assert %{
+             event: "struct_struct_link_deleted",
+             payload: payload,
+             resource_id: ^resource_id,
+             resource_type: "data_structure_link",
+             service: "td_dd",
+             ts: _ts,
+             user_id: ^user_id
+           } = event
+
+    decoded_payload = Jason.decode!(payload)
+
+    assert %{
+             "target_id" => ^target_id
+           } = decoded_payload
+
+    refute "label_ids" in Map.keys(decoded_payload)
+  end
 end
