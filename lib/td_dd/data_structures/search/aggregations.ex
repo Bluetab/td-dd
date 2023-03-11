@@ -42,7 +42,10 @@ defmodule TdDd.DataStructures.Search.Aggregations do
     |> Format.flatten_content_fields()
     |> Enum.flat_map(fn
       %{"name" => field, "type" => "domain"} ->
-        [{field, %{terms: %{field: "content.#{field}", size: 50}, meta: %{type: "domain"}}}]
+        [{field, %{terms: %{field: "note.#{field}", size: 50}, meta: %{type: "domain"}}}]
+
+      %{"name" => field, "type" => "hierarchy"} ->
+        [{field, %{terms: %{field: "note.#{field}.raw"}, meta: %{type: "hierarchy"}}}]
 
       %{"name" => field, "type" => "system"} ->
         [{field, nested_agg(field)}]

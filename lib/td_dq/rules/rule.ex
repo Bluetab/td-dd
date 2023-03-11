@@ -180,8 +180,7 @@ defmodule TdDq.Rules.Rule do
       df_content =
         rule
         |> Map.get(:df_content)
-        |> Format.search_values(template, domain_id: domain_id, types: [:system, :hierarchy])
-        |> maybe_format_hierarchy_value(template)
+        |> Format.search_values(template, domain_id: domain_id)
 
       %{
         id: rule.id,
@@ -202,39 +201,6 @@ defmodule TdDq.Rules.Rule do
         df_label: Map.get(template, :label),
         df_content: df_content
       }
-    end
-
-    defp maybe_format_hierarchy_value(nil, _), do: nil
-
-    defp maybe_format_hierarchy_value(content, template) do
-      hierachy_names =
-        template
-        |> Map.get(:content)
-        |> Enum.map(fn %{"fields" => fields} ->
-          Enum.reduce(fields, [], fn
-            %{"type" => "hierarchy", "name" => name}, acc ->
-              acc ++ [name]
-
-            _, acc ->
-              acc
-          end)
-        end)
-        |> List.flatten()
-
-      content
-      |> Enum.map(fn
-        {key, [%{"id" => _, "name" => _} | _] = values} ->
-          if key in hierachy_names,
-            do: {key, Enum.map(values, &Map.get(&1, "name"))},
-            else: values
-
-        {key, %{"id" => _, "name" => name} = value} ->
-          if key in hierachy_names, do: {key, name}, else: value
-
-        field ->
-          field
-      end)
-      |> Map.new()
     end
   end
 end

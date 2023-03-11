@@ -78,7 +78,7 @@ defmodule TdDdWeb.StructureNoteView do
     content =
       structure_note
       |> Map.get(:df_content)
-      |> Format.enrich_content_values(template, [:hierarchy])
+      |> Format.enrich_content_values(template, [:system, :hierarchy])
 
     Map.put(note, :df_content, content)
   end

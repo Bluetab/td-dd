@@ -26,7 +26,7 @@ defmodule TdDqWeb.RemediationView do
     content =
       remediation
       |> Map.get(:df_content)
-      |> Format.enrich_content_values(template, [:hierarchy])
+      |> Format.enrich_content_values(template, [:system, :hierarchy])
 
     %{
       df_name: df_name,

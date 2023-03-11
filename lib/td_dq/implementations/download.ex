@@ -262,7 +262,8 @@ defmodule TdDq.Implementations.Download do
     |> content_to_list()
     |> Enum.map(
       &Enum.find(nodes, fn %{"node_id" => node_id} ->
-        node_id === &1
+        [_hierarchy_id, content_node_id] = String.split(&1, "_")
+        node_id === String.to_integer(content_node_id)
       end)
     )
     |> Enum.reject(&is_nil/1)
