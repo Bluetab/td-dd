@@ -64,6 +64,7 @@ defmodule TdDd.DataStructures.Policy do
              :create_foreign_grant_request,
              :delete_data_structure,
              :link_data_structure,
+             :link_structure_to_structure,
              :manage_grants,
              :request_grant_removal,
              :update_data_structure,

@@ -5,6 +5,9 @@
 ### Added
 
 - [TD-4438] Included-in-parameters reference dataset validation
+- [TD-5509]
+  - Data structure link labels graphql query
+  - Data structure link creation using source and target structure IDs
 
 ### Changed
 
