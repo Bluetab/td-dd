@@ -8,7 +8,9 @@ defmodule TdDd.DataStructures.DataStructureLinks do
 
   import Ecto.Query
 
+  alias Ecto.Changeset
   alias Ecto.Multi
+  alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureLink
   alias TdDd.DataStructures.DataStructureLinkLabel
@@ -82,6 +84,71 @@ defmodule TdDd.DataStructures.DataStructureLinks do
     )
     |> Ecto.Query.preload([[source: :system], [target: :system], :labels])
     |> Repo.all()
+  end
+
+  def validate_params(link_params) do
+    case DataStructureLink.changeset_from_ids(link_params) do
+      %Ecto.Changeset{valid?: false} = changeset ->
+        {:error, changeset}
+
+      %Ecto.Changeset{valid?: true} = changeset ->
+        {:ok, changeset}
+    end
+  end
+
+  def create_and_audit(%Changeset{} = changeset, user_id) do
+    label_ids = Changeset.get_change(changeset, :label_ids, [])
+
+    Multi.new()
+    |> Multi.insert(
+      :data_structure_link,
+      changeset,
+      on_conflict: {:replace, [:updated_at]},
+      conflict_target: [:source_id, :target_id]
+    )
+    |> Multi.delete_all(
+      :delete_old_dsl_label,
+      fn %{
+           data_structure_link: %{
+             id: data_structure_link_id
+           }
+         } ->
+        DataStructureLinkLabel
+        |> where([dsl], dsl.data_structure_link_id == ^data_structure_link_id)
+      end
+    )
+    |> Multi.insert_all(
+      :insert_labels,
+      DataStructureLinkLabel,
+      fn %{
+           data_structure_link: %{
+             id: data_structure_link_id
+           }
+         } ->
+        Enum.map(
+          label_ids,
+          fn label_id ->
+            %{
+              data_structure_link_id: data_structure_link_id,
+              label_id: label_id
+            }
+          end
+        )
+      end,
+      on_conflict: :nothing
+    )
+    |> Multi.run(:audit, Audit, :data_structure_link_created, [user_id])
+    |> Repo.transaction()
+  end
+
+  def delete_and_audit(%DataStructureLink{} = link, user_id) do
+    Multi.new()
+    |> Multi.delete(
+      :data_structure_link,
+      link
+    )
+    |> Multi.run(:audit, Audit, :data_structure_link_deleted, [user_id])
+    |> Repo.transaction()
   end
 
   def delete(%DataStructureLink{} = link) do
@@ -208,7 +275,7 @@ defmodule TdDd.DataStructures.DataStructureLinks do
         end
       )
       |> Multi.insert_all(
-        :insert_tags,
+        :insert_labels,
         DataStructureLinkLabel,
         fn %{
              columns_dsls_labels: %{

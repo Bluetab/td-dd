@@ -383,8 +383,7 @@ defmodule TdDq.Rules.AuditTest do
       } = rule_result = insert(:rule_result, implementation: implementation)
 
       %{
-        id: id,
-        df_content: df_content
+        id: id
       } =
         remediation =
         insert(:remediation, rule_result: rule_result, df_content: %{"foo" => "bar"})
@@ -421,7 +420,6 @@ defmodule TdDq.Rules.AuditTest do
       assert %{
                "implementation_key" => ^implementation_key,
                "domain_ids" => ^domain_ids,
-               "content" => ^df_content,
                "date" => ^date_string,
                "rule_result_id" => ^rule_result_id,
                "implementation_id" => ^implementation_id

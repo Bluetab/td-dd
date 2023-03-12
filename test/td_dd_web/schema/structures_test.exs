@@ -527,7 +527,13 @@ defmodule TdDdWeb.Schema.StructuresTest do
 
       assert %{
                "dataStructureVersion" => %{
-                 "_actions" => %{"create_link" => %{}},
+                 "_actions" => %{
+                   "create_link" => %{},
+                   "create_struct_to_struct_link" => %{
+                     "href" => "/api/v2",
+                     "method" => "POST"
+                   }
+                 },
                  "class" => "table",
                  "dataStructure" => %{
                    "alias" => nil,
