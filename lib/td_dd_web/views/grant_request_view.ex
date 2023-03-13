@@ -1,10 +1,12 @@
 defmodule TdDdWeb.GrantRequestView do
   use TdDdWeb, :view
 
+  alias TdCache.TemplateCache
   alias TdDdWeb.DataStructureView
   alias TdDdWeb.GrantRequestApprovalView
   alias TdDdWeb.GrantRequestGroupView
   alias TdDdWeb.GrantRequestView
+  alias TdDfLib.Format
 
   @default_embeddings [:data_structure, :group, :approvals]
 
@@ -38,6 +40,7 @@ defmodule TdDdWeb.GrantRequestView do
     |> Map.put(:status, status)
     |> Map.put(:status_reason, status_reason)
     |> put_embeddings(grant_request, Map.get(assigns, :embed, @default_embeddings))
+    |> add_cached_content()
   end
 
   defp put_embeddings(%{} = resp, grant_request, embed) do
@@ -72,4 +75,14 @@ defmodule TdDdWeb.GrantRequestView do
         acc
     end)
   end
+
+  defp add_cached_content(
+         %{metadata: metadata, _embedded: %{group: %{type: grant_request_type}}} = grant_request
+       ) do
+    template = TemplateCache.get_by_name!(grant_request_type)
+    metadata = Format.enrich_content_values(metadata, template, [:system, :hierarchy])
+    Map.put(grant_request, :metadata, metadata)
+  end
+
+  defp add_cached_content(grant_request), do: grant_request
 end

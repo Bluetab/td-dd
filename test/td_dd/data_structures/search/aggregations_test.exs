@@ -51,7 +51,7 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
       assert dynamic_aggs == %{
                "my_domain" => %{
                  meta: %{type: "domain"},
-                 terms: %{field: "content.my_domain", size: 50}
+                 terms: %{field: "note.my_domain", size: 50}
                },
                "my_list" => %{terms: %{field: "note.my_list.raw"}},
                "my_system" => %{

@@ -5,6 +5,10 @@
 ### Added
 
 - [TD-4438] Included-in-parameters reference dataset validation
+- [TD-5509]
+  - Data structure link labels graphql query
+  - Data structure link creation using source and target structure IDs
+- [TD-3806] Add cached content for implementations, rules, remediations plan and structures notes
 
 ### Changed
 
@@ -13,6 +17,7 @@
 ### Fixed
 
 - [TD-5575] Filter implementations with execution permission on execution groups creation
+- [TD-5566] Remove template content from Remediation plan audit payload
 
 ## [5.2.1] 2023-03-08
 

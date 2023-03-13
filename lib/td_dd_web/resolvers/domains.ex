@@ -179,8 +179,9 @@ defmodule TdDdWeb.Resolvers.Domains do
   defp permitted_domain_ids(%{role: "user", jti: jti}, "createForeignGrantRequest"),
     do: Permissions.permitted_domain_ids(jti, :create_foreign_grant_request)
 
-  defp permitted_domain_ids(%{role: "user", jti: jti}, action_or_permission),
-    do: Permissions.permitted_domain_ids(jti, Macro.underscore(action_or_permission))
+  defp permitted_domain_ids(%{role: "user", jti: jti}, action_or_permission) do
+    Permissions.permitted_domain_ids(jti, Macro.underscore(action_or_permission))
+  end
 
   defp permitted_domain_ids(_other, _action), do: []
 

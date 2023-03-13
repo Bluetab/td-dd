@@ -154,9 +154,11 @@ defmodule TdDqWeb.RemediationControllerTest do
       template: %{name: df_name},
       rule_result: %{id: rule_result_id}
     } do
+      fd_content = %{"texto" => "new text"}
+
       remediation_params = %{
         "df_name" => df_name,
-        "df_content" => %{"text" => "new text"}
+        "df_content" => fd_content
       }
 
       assert %{"data" => data} =
@@ -168,7 +170,7 @@ defmodule TdDqWeb.RemediationControllerTest do
 
       assert %{
                "df_name" => ^df_name,
-               "df_content" => %{"text" => "new text"}
+               "df_content" => ^fd_content
              } = data
     end
 
