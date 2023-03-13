@@ -33,7 +33,11 @@ defmodule TdDdWeb.StructureNoteController do
 
   def index(conn, %{"data_structure_id" => data_structure_id}) do
     with claims <- conn.assigns[:current_resource],
-         data_structure <- DataStructures.get_data_structure!(data_structure_id),
+         data_structure <-
+           DataStructures.get_data_structure!(data_structure_id, [
+             :system,
+             current_version: :structure_type
+           ]),
          :ok <- Bodyguard.permit(DataStructures, :view_data_structure, claims, data_structure),
          statuses <- listable_statuses(claims, data_structure) do
       allowed_structure_notes = StructureNotes.list_structure_notes(data_structure_id, statuses)
@@ -44,6 +48,7 @@ defmodule TdDdWeb.StructureNoteController do
           sn
           |> Map.put(:actions, available_actions(conn, sn, claims, data_structure))
           |> maybe_add_structure_note_diff(allowed_structure_notes)
+          |> add_template_id(data_structure)
         end)
 
       render(conn, "index.json",
@@ -358,6 +363,15 @@ defmodule TdDdWeb.StructureNoteController do
   end
 
   defp maybe_add_structure_note_diff(structure_note, _allowed_structure_notes), do: structure_note
+
+  defp add_template_id(
+         structure_note,
+         %{current_version: %{structure_type: %{template_id: template_id}}}
+       ) do
+    Map.put(structure_note, :template_id, template_id)
+  end
+
+  defp add_template_id(structure_note, _), do: structure_note
 
   defp is_available(:draft, :published, claims, data_structure),
     do: permit?(StructureNotes, :publish_draft, claims, data_structure)

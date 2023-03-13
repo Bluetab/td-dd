@@ -134,8 +134,9 @@ defmodule TdDd.Search.StructureEnricher do
 
   defp search_content(%DataStructure{} = structure, _not_searchable, _, _type), do: structure
 
-  defp search_content(content, template, domain_ids),
-    do: Format.search_values(content, template, domain_ids: domain_ids)
+  defp search_content(content, template, domain_ids) do
+    Format.search_values(content, template, domain_ids: domain_ids)
+  end
 
   defp enrich_links(%{id: id} = structure, links) do
     %{structure | linked_concepts: Enum.member?(links, id)}

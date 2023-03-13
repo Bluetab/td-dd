@@ -26,6 +26,9 @@ defmodule TdDq.Rules.Search.Aggregations do
       %{"name" => field, "type" => "domain"} ->
         [{field, %{terms: %{field: "df_content.#{field}", size: 50}, meta: %{type: "domain"}}}]
 
+      %{"name" => field, "type" => "hierarchy"} ->
+        [{field, %{terms: %{field: "df_content.#{field}.raw"}, meta: %{type: "hierarchy"}}}]
+
       %{"name" => field, "type" => "system"} ->
         [{field, nested_agg(field)}]
 

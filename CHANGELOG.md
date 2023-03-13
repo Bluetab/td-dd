@@ -8,6 +8,7 @@
 - [TD-5509]
   - Data structure link labels graphql query
   - Data structure link creation using source and target structure IDs
+- [TD-3806] Add cached content for implementations, rules, remediations plan and structures notes
 
 ### Changed
 
