@@ -280,6 +280,33 @@ defmodule TdDd.CSV.Download do
   end
 
   defp get_content_field(
+         %{
+           "type" => "hierarchy",
+           "cardinality" => cardinality,
+           "name" => name,
+           "values" => %{"hierarchy" => hierarchy_id}
+         },
+         content,
+         _domain_name_map,
+         true
+       )
+       when cardinality in ["+", "*"] do
+    {:ok, nodes} = HierarchyCache.get(hierarchy_id, :nodes)
+
+    content
+    |> Map.get(name, [])
+    |> content_to_list()
+    |> Enum.map(
+      &Enum.find(nodes, fn %{"node_id" => node_id} ->
+        [_hierarchy_id, content_node_id] = String.split(&1, "_")
+        node_id === String.to_integer(content_node_id)
+      end)
+    )
+    |> Enum.reject(&is_nil/1)
+    |> Enum.map_join("|", fn %{"key" => key} -> key end)
+  end
+
+  defp get_content_field(
          %{"type" => "hierarchy", "name" => name, "values" => %{"hierarchy" => hierarchy_id}},
          content,
          _domain_name_map,
