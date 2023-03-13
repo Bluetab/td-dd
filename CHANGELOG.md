@@ -10,6 +10,10 @@
 
 - [TD-3879] All `raw keyword` indexing mappings uses empty string as null_value 
 
+### Fixed
+
+- [TD-5575] Filter implementations with execution permission on execution groups creation
+
 ## [5.2.1] 2023-03-08
 
 ### Fixed
