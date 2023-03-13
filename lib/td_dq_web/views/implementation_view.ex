@@ -1,6 +1,7 @@
 defmodule TdDqWeb.ImplementationView do
   use TdDqWeb, :view
 
+  alias TdDq.Implementations
   alias TdDq.Rules
   alias TdDqWeb.Implementation.ConditionsView
   alias TdDqWeb.Implementation.ConditionView
@@ -9,7 +10,6 @@ defmodule TdDqWeb.ImplementationView do
   alias TdDqWeb.Implementation.SegmentsView
   alias TdDqWeb.Implementation.StructureView
   alias TdDqWeb.ImplementationStructureView
-
   alias TdDqWeb.RuleResultView
 
   def render("index.json", %{actions: %{} = actions} = assigns) when map_size(actions) > 0 do
@@ -52,7 +52,6 @@ defmodule TdDqWeb.ImplementationView do
     |> Map.take([
       :current_business_concept_version,
       :deleted_at,
-      :df_content,
       :df_name,
       :domain,
       :domain_id,
@@ -84,6 +83,7 @@ defmodule TdDqWeb.ImplementationView do
     |> add_quality_event_info(implementation)
     |> add_rule_results(implementation)
     |> maybe_render_data_structures(data_structures)
+    |> add_dynamic_content(implementation)
   end
 
   def render("implementation.json", %{implementation: implementation}) do
@@ -93,7 +93,6 @@ defmodule TdDqWeb.ImplementationView do
     |> Map.take([
       :current_business_concept_version,
       :deleted_at,
-      :df_content,
       :df_name,
       :domain,
       :domain_id,
@@ -127,6 +126,7 @@ defmodule TdDqWeb.ImplementationView do
     |> add_last_rule_results(implementation)
     |> add_rule_results(implementation)
     |> maybe_render_data_structures(data_structures)
+    |> add_dynamic_content(implementation)
   end
 
   defp add_first_population(mapping, %{populations: [%{conditions: conditions} | _]})
@@ -202,6 +202,18 @@ defmodule TdDqWeb.ImplementationView do
       |> Rules.get_cached_content(df_name)
 
     Map.put(rule, :df_content, content)
+  end
+
+  defp add_dynamic_content(json, implementation) do
+    df_name = Map.get(implementation, :df_name)
+
+    content =
+      implementation
+      |> Map.get(:df_content)
+      |> Implementations.get_cached_content(df_name)
+
+    %{df_content: content}
+    |> Map.merge(json)
   end
 
   defp add_last_rule_results(implementation_mapping, implementation) do

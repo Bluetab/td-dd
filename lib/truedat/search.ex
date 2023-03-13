@@ -3,6 +3,7 @@ defmodule Truedat.Search do
   Performs search requests in the search engine and formats responses.
   """
 
+  alias TdCache.HierarchyCache
   alias TdCache.TaxonomyCache
   alias TdDd.Search.Cluster
 
@@ -105,6 +106,15 @@ defmodule Truedat.Search do
     {name, domains}
   end
 
+  defp filter_values({name, %{"meta" => %{"type" => "hierarchy"}, "buckets" => buckets}}) do
+    node_names =
+      buckets
+      |> Enum.map(fn %{"key" => key} -> get_hierarchy(key) end)
+      |> Enum.reject(&is_nil/1)
+
+    {name, node_names}
+  end
+
   defp filter_values({name, %{"buckets" => buckets}}) do
     {name, Enum.map(buckets, &bucket_key/1)}
   end
@@ -120,6 +130,28 @@ defmodule Truedat.Search do
 
   defp get_domain(id) when is_integer(id), do: TaxonomyCache.get_domain(id)
   defp get_domain(_), do: nil
+
+  defp get_hierarchy(""), do: nil
+
+  defp get_hierarchy(key) when is_binary(key) do
+    [hierarchy_id, node_id] = String.split(key, "_")
+
+    case HierarchyCache.get(hierarchy_id) do
+      {:ok, %{nodes: nodes}} ->
+        case Enum.find(nodes, &(Map.get(&1, "node_id") === String.to_integer(node_id))) do
+          nil ->
+            nil
+
+          %{"name" => name} ->
+            %{id: key, name: name}
+        end
+
+      _ ->
+        nil
+    end
+  end
+
+  defp get_hierarchy(_), do: nil
 
   defp get_total(value) when is_integer(value), do: value
   defp get_total(%{"relation" => "eq", "value" => value}) when is_integer(value), do: value
