@@ -22,7 +22,13 @@ defmodule TdDq.Implementations.Search do
   end
 
   def search_executable(%{} = params, claims) do
+    executable_filters =
+      params
+      |> Map.get("filters", %{})
+      |> Map.put("executable", [true])
+
     params
+    |> Map.put("filters", executable_filters)
     |> Map.delete("status")
     |> search(claims)
   end
