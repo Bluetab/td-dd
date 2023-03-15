@@ -1257,7 +1257,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: %Plug.Upload{path: "test/fixtures/td3787/upload.csv"}
+        structures: %Plug.Upload{path: "test/fixtures/td3787/upload.csv", filename: "upload.csv"}
       )
       |> response(:accepted)
 
@@ -1268,6 +1268,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                  "csv_hash" => _csv_hash,
                  "status" => "COMPLETED",
                  "task_reference" => _task_reference,
+                 "filename" => "upload.csv",
                  "response" => %{"ids" => _, "errors" => []}
                }
                | _

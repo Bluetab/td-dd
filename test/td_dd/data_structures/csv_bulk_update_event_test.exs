@@ -11,7 +11,8 @@ defmodule TdDd.DataStructures.CsvBulkUpdateEventTest do
     response: %{errors: [], ids: [1, 2]},
     status: "COMPLETED",
     task_reference: "0.262460172.3388211201.119663",
-    user_id: 467
+    user_id: 467,
+    filename: "foo"
   }
 
   describe "changeset/0" do
@@ -26,7 +27,8 @@ defmodule TdDd.DataStructures.CsvBulkUpdateEventTest do
                user_id: {"can't be blank", [validation: :required]},
                csv_hash: {"can't be blank", [validation: :required]},
                task_reference: {"can't be blank", [validation: :required]},
-               status: {"can't be blank", [validation: :required]}
+               status: {"can't be blank", [validation: :required]},
+               filename: {"can't be blank", [validation: :required]}
              ]
     end
 
@@ -40,7 +42,10 @@ defmodule TdDd.DataStructures.CsvBulkUpdateEventTest do
       event = insert(:csv_bulk_update_event, user_id: 1, csv_hash: "some_hash")
 
       assert %Changeset{errors: errors} =
-               CsvBulkUpdateEvent.changeset(event, %{task_reference: nil, status: nil})
+               CsvBulkUpdateEvent.changeset(event, %{
+                 task_reference: nil,
+                 status: nil
+               })
 
       assert ^errors = [
                task_reference: {"can't be blank", [validation: :required]},

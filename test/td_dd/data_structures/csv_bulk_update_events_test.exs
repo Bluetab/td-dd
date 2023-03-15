@@ -78,7 +78,8 @@ defmodule TdDd.DataStructures.CsvBulkUpdateEventsTest do
         response: %{errors: [], ids: [1, 2]},
         status: "COMPLETED",
         task_reference: "0.262460172.3388211201.119663",
-        user_id: 467
+        user_id: 467,
+        filename: "foo"
       }
 
       assert {:error, %Changeset{errors: [csv_hash: {"can't be blank", [validation: :required]}]}} =

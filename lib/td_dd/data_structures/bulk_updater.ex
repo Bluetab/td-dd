@@ -84,7 +84,8 @@ defmodule TdDd.DataStructures.BulkUpdater do
       user_id: user_id,
       status: "STARTED",
       csv_hash: csv_hash,
-      task_reference: task.ref |> ref_to_string
+      task_reference: task.ref |> ref_to_string,
+      filename: structures_content_upload.filename
     })
 
     %{
