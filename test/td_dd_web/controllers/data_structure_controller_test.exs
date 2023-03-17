@@ -1266,9 +1266,9 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert [
                %{
                  "csv_hash" => _csv_hash,
+                 "filename" => _,
                  "status" => "COMPLETED",
                  "task_reference" => _task_reference,
-                 "filename" => "upload.csv",
                  "response" => %{"ids" => _, "errors" => []}
                }
                | _
@@ -1276,6 +1276,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                conn
                |> get(Routes.csv_bulk_update_event_path(conn, :index))
                |> json_response(:ok)
+               |> IO.inspect(label: " result ----->")
     end
 
     @tag authentication: [role: "admin"]

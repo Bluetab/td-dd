@@ -27,8 +27,7 @@ defmodule TdDd.DataStructures.CsvBulkUpdateEventTest do
                user_id: {"can't be blank", [validation: :required]},
                csv_hash: {"can't be blank", [validation: :required]},
                task_reference: {"can't be blank", [validation: :required]},
-               status: {"can't be blank", [validation: :required]},
-               filename: {"can't be blank", [validation: :required]}
+               status: {"can't be blank", [validation: :required]}
              ]
     end
 

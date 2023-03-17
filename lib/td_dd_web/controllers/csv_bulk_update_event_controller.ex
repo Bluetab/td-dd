@@ -20,7 +20,8 @@ defmodule TdDdWeb.CsvBulkUpdateEventController do
     with %{user_id: user_id} = claims <- conn.assigns[:current_resource],
          :ok <- Bodyguard.permit(BulkUpdate, :bulk_upload, claims) do
       render(conn, "index.json", %{
-        csv_bulk_update_events: CsvBulkUpdateEvents.get_by_user_id(user_id)
+        csv_bulk_update_events:
+          CsvBulkUpdateEvents.get_by_user_id(user_id) |> IO.inspect(label: "get by user ->")
       })
     end
   end
