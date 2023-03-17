@@ -1276,7 +1276,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
                conn
                |> get(Routes.csv_bulk_update_event_path(conn, :index))
                |> json_response(:ok)
-               |> IO.inspect(label: " result ----->")
     end
 
     @tag authentication: [role: "admin"]

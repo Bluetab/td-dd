@@ -41,15 +41,6 @@ defmodule TdDd.DataStructures.CsvBulkUpdateEvent do
     |> validate_length(:message, max: 1_000)
   end
 
-  ## REVIEW: TD-5481 No se ha encontrado llamada a esta funcion por ningun sitio.
-  def create_changeset(%{} = params) do
-    %__MODULE__{}
-    |> cast(params, [:user_id, :response, :csv_hash, :task_reference, :type, :message])
-    |> put_node
-    |> validate_required([:user_id, :csv_hash, :task_reference, :status, :node])
-    |> validate_length(:message, max: 1_000)
-  end
-
   defp put_node(changeset) do
     cast(changeset, %{node: Atom.to_string(Node.self())}, [:node])
   end

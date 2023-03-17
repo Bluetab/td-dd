@@ -12,7 +12,6 @@ defmodule TdDd.DataStructures.CsvBulkUpdateEvents do
   def create_event(attrs \\ %{}) do
     %CsvBulkUpdateEvent{}
     |> CsvBulkUpdateEvent.changeset(attrs)
-    |> IO.inspect(label: "before insert ->")
     |> Repo.insert()
   end
 

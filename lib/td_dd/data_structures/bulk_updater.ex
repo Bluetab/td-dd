@@ -54,7 +54,6 @@ defmodule TdDd.DataStructures.BulkUpdater do
       ) do
     %{reply: update_state, state: new_state} =
       csv_hash
-      ## Obtiene el stuatus
       |> pending_update()
       |> launch_task(csv_hash, state, structures_content_upload, user_id, auto_publish)
 
@@ -68,38 +67,13 @@ defmodule TdDd.DataStructures.BulkUpdater do
       Task.Supervisor.async_nolink(
         TdDd.TaskSupervisor,
         fn ->
-          with [_ | _] = contents <-
-                 BulkUpdate.from_csv(structures_content_upload)
-                 |> IO.inspect(label: "contents inside task"),
-               {:ok, %{updates: updates, update_notes: update_notes}} <-
-                 BulkUpdate.do_csv_bulk_update(contents, user_id, auto_publish)
-                 |> IO.inspect(label: "bulkupdate insede task"),
-               [updated_notes, not_updated_notes] <-
-                 BulkUpdate.split_succeeded_errors(update_notes)
-                 |> IO.inspect(label: "split errors"),
-               summary <-
-                 make_summary(updates, updated_notes, not_updated_notes)
-                 |> IO.inspect(label: "make summary ->") do
-            summary
-          else
-            # {:error, reason} -> reason
-            something -> IO.inspect(something, label: "error something ->")
-          end
+          contents = BulkUpdate.from_csv(structures_content_upload)
 
-          # contents =
-          #   BulkUpdate.from_csv(structures_content_upload)
-          #   |> IO.inspect(label: "contents inside task")
+          {:ok, %{updates: updates, update_notes: update_notes}} =
+            BulkUpdate.do_csv_bulk_update(contents, user_id, auto_publish)
 
-          # {:ok, %{updates: updates, update_notes: update_notes}} =
-          #   BulkUpdate.do_csv_bulk_update(contents, user_id, auto_publish)
-          #   |> IO.inspect(label: "bulkupdate insede task")
-
-          # [updated_notes, not_updated_notes] =
-          #   BulkUpdate.split_succeeded_errors(update_notes)
-          #   |> IO.inspect(label: "split errors")
-
-          # make_summary(updates, updated_notes, not_updated_notes)
-          # |> IO.inspect(label: "make summary ->")
+          [updated_notes, not_updated_notes] = BulkUpdate.split_succeeded_errors(update_notes)
+          make_summary(updates, updated_notes, not_updated_notes)
         end
       )
 
@@ -139,8 +113,6 @@ defmodule TdDd.DataStructures.BulkUpdater do
         _user_id,
         _auto_publish
       ) do
-    ## TD-5481  Debeería de comprobar si el proceso sigue vivo
-
     %{reply: update_state, state: state}
   end
 
