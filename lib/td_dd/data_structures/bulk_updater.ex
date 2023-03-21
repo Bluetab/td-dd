@@ -53,13 +53,14 @@ defmodule TdDd.DataStructures.BulkUpdater do
         state
       ) do
     %{reply: update_state, state: new_state} =
-      pending_update(csv_hash)
+      csv_hash
+      |> pending_update()
       |> launch_task(csv_hash, state, structures_content_upload, user_id, auto_publish)
 
     {:reply, update_state, new_state}
   end
 
-  def launch_task(:not_pending, csv_hash, state, structures_content_upload, user_id, auto_publish) do
+  def launch_task(:not_pending, csv_hash, state, %{filename: filename} = structures_content_upload, user_id, auto_publish) do
     Task.Supervisor.children(TdDd.TaskSupervisor)
 
     task =
@@ -84,7 +85,8 @@ defmodule TdDd.DataStructures.BulkUpdater do
       user_id: user_id,
       status: "STARTED",
       csv_hash: csv_hash,
-      task_reference: task.ref |> ref_to_string
+      task_reference: task.ref |> ref_to_string,
+      filename: filename
     })
 
     %{
@@ -96,6 +98,7 @@ defmodule TdDd.DataStructures.BulkUpdater do
             task: task,
             task_timer: task_timer,
             csv_hash: csv_hash,
+            filename: filename,
             user_id: user_id,
             auto_publish: auto_publish
           }
@@ -194,23 +197,25 @@ defmodule TdDd.DataStructures.BulkUpdater do
   end
 
   def create_event(summary, task_info) do
-    %{csv_hash: csv_hash, user_id: user_id, task: %{ref: ref}} = task_info
+    %{csv_hash: csv_hash, filename: filename, user_id: user_id, task: %{ref: ref}} = task_info
 
     CsvBulkUpdateEvents.create_event(%{
       response: summary,
       user_id: user_id,
       csv_hash: csv_hash,
+      filename: filename,
       status: "COMPLETED",
       task_reference: ref_to_string(ref)
     })
   end
 
   def create_event(task_info, fail_type, message) do
-    %{csv_hash: csv_hash, user_id: user_id, task: %{ref: ref}} = task_info
+    %{csv_hash: csv_hash, filename: filename, user_id: user_id, task: %{ref: ref}} = task_info
 
     CsvBulkUpdateEvents.create_event(%{
       user_id: user_id,
       csv_hash: csv_hash,
+      filename: filename,
       status: fail_type_to_str(fail_type),
       task_reference: ref_to_string(ref),
       message: "#{fail_type}, #{inspect(message)}"
@@ -224,7 +229,7 @@ defmodule TdDd.DataStructures.BulkUpdater do
     end
   end
 
-  def make_summary(updates, updated_notes, not_updated_notes) do
+  defp make_summary(updates, updated_notes, not_updated_notes) do
     %{
       ids: Enum.uniq(Map.keys(updates) ++ Map.keys(updated_notes)),
       errors:

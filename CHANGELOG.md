@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-5481] Add filename for bulk update events for structure notes
+
 ## [5.3.0] 2023-03-13
 
 ### Added
