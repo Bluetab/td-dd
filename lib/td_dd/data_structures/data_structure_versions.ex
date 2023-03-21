@@ -53,6 +53,7 @@ defmodule TdDd.DataStructures.DataStructureVersions do
     |> DataStructures.get_data_structure!()
     |> enrich_opts(claims, enriches)
     |> get_data_structure_version(data_structure_id, version)
+    |> add_data_fields()
     |> with_permissions(claims)
   end
 
@@ -70,6 +71,26 @@ defmodule TdDd.DataStructures.DataStructureVersions do
     |> get_data_structure_version(data_structure_version_id)
     |> with_permissions(claims)
   end
+
+  def with_profile_attrs(dsv, %{} = profile) when profile !== %{} do
+    profile =
+      profile
+      |> Map.take([
+        :max,
+        :min,
+        :most_frequent,
+        :null_count,
+        :patterns,
+        :total_count,
+        :unique_count
+      ])
+      |> Enum.reject(fn {_k, v} -> is_nil(v) end)
+      |> Map.new()
+
+    Map.put(dsv, :profile, profile)
+  end
+
+  def with_profile_attrs(dsv, _), do: Map.put(dsv, :profile, nil)
 
   defp query_fields_to_enrich_opts(nil), do: @controller_enrich_attrs
 
@@ -189,5 +210,39 @@ defmodule TdDd.DataStructures.DataStructureVersions do
 
   defp get_data_structure_version(opts, data_structure_id, version) do
     DataStructures.get_data_structure_version!(data_structure_id, version, opts)
+  end
+
+  defp add_data_fields(%{data_fields: data_fields} = dsv) do
+    field_structures = Enum.map(data_fields, &field_structure_json/1)
+    Map.put(dsv, :data_fields, field_structures)
+  end
+
+  defp add_data_fields(dsv) do
+    Map.put(dsv, :data_fields, [])
+  end
+
+  defp field_structure_json(
+         %{
+           class: "field",
+           data_structure: %{profile: profile, alias: alias_name}
+         } = dsv
+       ) do
+    dsv
+    |> Map.take([
+      :id,
+      :classes,
+      :data_structure_id,
+      :degree,
+      :deleted_at,
+      :description,
+      :inserted_at,
+      :links,
+      :notes,
+      :metadata,
+      :name,
+      :type,
+    ])
+    |> with_profile_attrs(profile)
+    |> Map.put(:alias, alias_name)
   end
 end

@@ -2,6 +2,7 @@ defmodule TdDdWeb.DataStructureVersionView do
   use TdDdWeb, :view
 
   alias TdDd.DataStructures
+  alias TdDd.DataStructures.DataStructureVersions
   alias TdDdWeb.GrantView
   alias TdDdWeb.StructureTagView
 
@@ -27,7 +28,6 @@ defmodule TdDdWeb.DataStructureVersionView do
     dsv
     |> add_classes()
     |> add_data_structure()
-    |> add_data_fields()
     |> add_parents()
     |> add_siblings()
     |> add_children()
@@ -199,42 +199,11 @@ defmodule TdDdWeb.DataStructureVersionView do
     end
   end
 
-  defp add_data_fields(%{data_fields: data_fields} = dsv) do
-    field_structures = Enum.map(data_fields, &field_structure_json/1)
-    Map.put(dsv, :data_fields, field_structures)
-  end
-
-  defp add_data_fields(dsv) do
-    Map.put(dsv, :data_fields, [])
-  end
-
   defp add_profile(%{class: "field", profile: profile} = dsv) do
-    with_profile_attrs(dsv, profile)
+    DataStructureVersions.with_profile_attrs(dsv, profile)
   end
 
   defp add_profile(dsv), do: Map.delete(dsv, :profile)
-
-  defp field_structure_json(
-         %{
-           class: "field",
-           data_structure: %{profile: profile, alias: alias_name}
-         } = dsv
-       ) do
-    dsv
-    |> Map.take([
-      :data_structure_id,
-      :degree,
-      :deleted_at,
-      :description,
-      :inserted_at,
-      :links,
-      :metadata,
-      :name,
-      :type
-    ])
-    |> with_profile_attrs(profile)
-    |> Map.put(:alias, alias_name)
-  end
 
   defp add_versions(dsv) do
     versions =
@@ -273,30 +242,6 @@ defmodule TdDdWeb.DataStructureVersionView do
   def add_ancestry(%{path: [_ | _] = path} = dsv), do: Map.put(dsv, :ancestry, path)
 
   def add_ancestry(dsv), do: Map.put(dsv, :ancestry, [])
-
-  defp with_profile_attrs(dsv, %{} = profile) do
-    profile =
-      profile
-      |> Map.take([
-        :max,
-        :min,
-        :most_frequent,
-        :null_count,
-        :patterns,
-        :total_count,
-        :unique_count
-      ])
-      |> Enum.reject(fn {_k, v} -> is_nil(v) end)
-      |> Map.new()
-
-    if profile != %{} do
-      Map.put(dsv, :profile, profile)
-    else
-      Map.delete(dsv, :profile)
-    end
-  end
-
-  defp with_profile_attrs(dsv, _), do: Map.delete(dsv, :profile)
 
   defp merge_metadata(%{metadata_versions: [_ | _] = metadata_versions} = dsv) do
     %{fields: mutable_metadata} =
