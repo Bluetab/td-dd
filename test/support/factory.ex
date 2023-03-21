@@ -548,7 +548,8 @@ defmodule TdDd.Factory do
       response: %{errors: [], ids: [1, 2]},
       status: "COMPLETED",
       task_reference: "0.262460172.3388211201.119663",
-      user_id: 467
+      user_id: 467,
+      filename: sequence("foo_file")
     }
   end
 
