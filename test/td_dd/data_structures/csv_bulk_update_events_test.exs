@@ -9,12 +9,14 @@ defmodule TdDd.DataStructures.CsvBulkUpdateEventsTest do
     insert(:csv_bulk_update_event,
       user_id: 1,
       csv_hash: "hash_1",
+      filename: "file_1.csv",
       inserted_at: ~U[2020-01-01 00:00:01Z]
     )
 
     insert(:csv_bulk_update_event,
       user_id: 1,
       csv_hash: "hash_1",
+      filename: "file_1.csv",
       inserted_at: ~U[2020-01-02 00:00:01Z],
       status: "STARTED"
     )
@@ -22,12 +24,14 @@ defmodule TdDd.DataStructures.CsvBulkUpdateEventsTest do
     insert(:csv_bulk_update_event,
       user_id: 2,
       csv_hash: "hash_2",
+      filename: "file_2.csv",
       inserted_at: ~U[2020-01-01 00:00:01Z]
     )
 
     insert(:csv_bulk_update_event,
       user_id: 2,
       csv_hash: "hash_2",
+      filename: "file_2.csv",
       inserted_at: DateTime.utc_now(),
       status: "STARTED"
     )
@@ -35,12 +39,14 @@ defmodule TdDd.DataStructures.CsvBulkUpdateEventsTest do
     insert(:csv_bulk_update_event,
       user_id: 2,
       csv_hash: "hash_3",
+      filename: "file_3.csv",
       inserted_at: ~U[2020-01-01 00:00:01Z]
     )
 
     insert(:csv_bulk_update_event,
       user_id: 2,
       csv_hash: "hash_3",
+      filename: "file_3.csv",
       inserted_at: ~U[2020-01-02 00:00:01Z],
       status: "STARTED"
     )
@@ -56,18 +62,27 @@ defmodule TdDd.DataStructures.CsvBulkUpdateEventsTest do
   end
 
   test "last_event_by hash gets last event by hash" do
-    assert %CsvBulkUpdateEvent{csv_hash: "hash_1", inserted_at: ~U[2020-01-02 00:00:01.000000Z]} =
-             CsvBulkUpdateEvents.last_event_by_hash("hash_1")
+    assert %CsvBulkUpdateEvent{
+      csv_hash: "hash_1",
+      filename: "file_1.csv",
+      inserted_at: ~U[2020-01-02 00:00:01.000000Z]
+    } = CsvBulkUpdateEvents.last_event_by_hash("hash_1")
   end
 
   test "last_event_by hash check_timeout inserts ALREADY_STARTED if timeout has not yet elapsed" do
-    assert %CsvBulkUpdateEvent{csv_hash: "hash_2", status: "ALREADY_STARTED"} =
-             CsvBulkUpdateEvents.last_event_by_hash("hash_2")
+    assert %CsvBulkUpdateEvent{
+      csv_hash: "hash_2",
+      filename: "file_2.csv",
+      status: "ALREADY_STARTED"
+    } = CsvBulkUpdateEvents.last_event_by_hash("hash_2")
   end
 
   test "last_event_by hash check_timeout inserts TIMED_OUT if timeout has already elapsed" do
-    assert %CsvBulkUpdateEvent{csv_hash: "hash_3", status: "TIMED_OUT"} =
-             CsvBulkUpdateEvents.last_event_by_hash("hash_3")
+    assert %CsvBulkUpdateEvent{
+      csv_hash: "hash_3",
+      filename: "file_3.csv",
+      status: "TIMED_OUT"
+    } = CsvBulkUpdateEvents.last_event_by_hash("hash_3")
   end
 
   describe "CsvBulkUpdateEvents.create_event/2" do
@@ -79,11 +94,16 @@ defmodule TdDd.DataStructures.CsvBulkUpdateEventsTest do
         status: "COMPLETED",
         task_reference: "0.262460172.3388211201.119663",
         user_id: 467,
-        filename: "foo"
       }
 
-      assert {:error, %Changeset{errors: [csv_hash: {"can't be blank", [validation: :required]}]}} =
-               CsvBulkUpdateEvents.create_event(params)
+      assert {
+        :error,
+        %Changeset{
+          errors: [
+            csv_hash: {"can't be blank", [validation: :required]},
+            filename: {"can't be blank", [validation: :required]}
+          ]}
+      } = CsvBulkUpdateEvents.create_event(params)
     end
   end
 end

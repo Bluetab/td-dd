@@ -36,7 +36,7 @@ defmodule TdDd.DataStructures.CsvBulkUpdateEvent do
       :filename
     ])
     |> put_node
-    |> validate_required([:user_id, :csv_hash, :task_reference, :status, :node])
+    |> validate_required([:user_id, :csv_hash, :filename, :task_reference, :status, :node])
     |> validate_change(:response, &Validation.validate_safe/2)
     |> validate_length(:message, max: 1_000)
   end
