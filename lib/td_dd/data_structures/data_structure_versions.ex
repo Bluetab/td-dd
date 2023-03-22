@@ -41,6 +41,8 @@ defmodule TdDd.DataStructures.DataStructureVersions do
     :with_protected_metadata
   ]
 
+  @protected DataStructures.protected()
+
   def enriched_data_structure_version(
         claims,
         data_structure_id,
@@ -54,6 +56,7 @@ defmodule TdDd.DataStructures.DataStructureVersions do
     |> enrich_opts(claims, enriches)
     |> get_data_structure_version(data_structure_id, version)
     |> add_data_fields()
+    |> merge_metadata()
     |> with_permissions(claims)
   end
 
@@ -245,4 +248,37 @@ defmodule TdDd.DataStructures.DataStructureVersions do
     |> with_profile_attrs(profile)
     |> Map.put(:alias, alias_name)
   end
+
+  defp merge_metadata(%{metadata_versions: [_ | _] = metadata_versions} = dsv) do
+    %{fields: mutable_metadata} =
+      Enum.max_by(metadata_versions, & &1.version)
+      |> case do
+        %{deleted_at: deleted_at} = _version when deleted_at != nil ->
+          %{fields: %{}}
+
+        version ->
+          version
+      end
+
+    Map.update(dsv, :metadata, mutable_metadata, fn
+      nil ->
+        mutable_metadata
+
+      %{} = metadata ->
+        Map.merge(
+          metadata,
+          mutable_metadata,
+          fn
+            # Merge metadata and mutable_metadata @protected fields.
+            # If there is a conflict in the @protected content, the one from
+            # mutable metadata (rightmost in the Map.merge) will prevail.
+            @protected, mp, mmp -> Map.merge(mp, mmp)
+            _key, _mp, mmp -> mmp
+          end
+        )
+    end)
+  end
+
+  defp merge_metadata(dsv), do: dsv
+
 end

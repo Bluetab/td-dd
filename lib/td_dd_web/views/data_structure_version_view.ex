@@ -6,8 +6,6 @@ defmodule TdDdWeb.DataStructureVersionView do
   alias TdDdWeb.GrantView
   alias TdDdWeb.StructureTagView
 
-  @protected DataStructures.protected()
-
   def render("show.json", %{actions: actions} = assigns) do
     "show.json"
     |> render(Map.delete(assigns, :actions))
@@ -37,7 +35,6 @@ defmodule TdDdWeb.DataStructureVersionView do
     |> add_ancestry()
     |> add_profile()
     |> add_embedded_relations(dsv)
-    |> merge_metadata()
     |> add_data_structure_type()
     |> add_note()
     |> add_tags(assigns)
@@ -242,38 +239,6 @@ defmodule TdDdWeb.DataStructureVersionView do
   def add_ancestry(%{path: [_ | _] = path} = dsv), do: Map.put(dsv, :ancestry, path)
 
   def add_ancestry(dsv), do: Map.put(dsv, :ancestry, [])
-
-  defp merge_metadata(%{metadata_versions: [_ | _] = metadata_versions} = dsv) do
-    %{fields: mutable_metadata} =
-      Enum.max_by(metadata_versions, & &1.version)
-      |> case do
-        %{deleted_at: deleted_at} = _version when deleted_at != nil ->
-          %{fields: %{}}
-
-        version ->
-          version
-      end
-
-    Map.update(dsv, :metadata, mutable_metadata, fn
-      nil ->
-        mutable_metadata
-
-      %{} = metadata ->
-        Map.merge(
-          metadata,
-          mutable_metadata,
-          fn
-            # Merge metadata and mutable_metadata @protected fields.
-            # If there is a conflict in the @protected content, the one from
-            # mutable metadata (rightmost in the Map.merge) will prevail.
-            @protected, mp, mmp -> Map.merge(mp, mmp)
-            _key, _mp, mmp -> mmp
-          end
-        )
-    end)
-  end
-
-  defp merge_metadata(dsv), do: dsv
 
   defp add_data_structure_type(%{data_structure_type: nil} = dsv),
     do: Map.put(dsv, :data_structure_type, %{})
