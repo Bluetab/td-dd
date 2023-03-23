@@ -3,7 +3,6 @@ defmodule TdDq.Implementations.Download do
   Helper module to download implementations.
   """
 
-  alias TdCache.DomainCache
   alias TdCache.TemplateCache
   alias TdDfLib.Format
   alias TdDfLib.Parser
