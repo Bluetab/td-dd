@@ -60,7 +60,14 @@ defmodule TdDd.DataStructures.BulkUpdater do
     {:reply, update_state, new_state}
   end
 
-  def launch_task(:not_pending, csv_hash, state, %{filename: filename} = structures_content_upload, user_id, auto_publish) do
+  def launch_task(
+        :not_pending,
+        csv_hash,
+        state,
+        %{filename: filename} = structures_content_upload,
+        user_id,
+        auto_publish
+      ) do
     Task.Supervisor.children(TdDd.TaskSupervisor)
 
     task =
