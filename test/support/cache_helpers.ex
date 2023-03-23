@@ -8,6 +8,7 @@ defmodule CacheHelpers do
 
   alias TdCache.AclCache
   alias TdCache.ConceptCache
+  alias TdCache.HierarchyCache
   alias TdCache.ImplementationCache
   alias TdCache.LinkCache
   alias TdCache.Permissions
@@ -85,6 +86,14 @@ defmodule CacheHelpers do
     AclCache.set_acl_roles("domain", domain_id, [role])
     AclCache.set_acl_role_users("domain", domain_id, role, user_ids)
     :ok
+  end
+
+  def insert_hierarchy(params) do
+    %{id: hierarchy_id} = hierarchy = build(:hierarchy, params)
+
+    {:ok, _} = HierarchyCache.put(hierarchy, publish: false)
+    on_exit(fn -> HierarchyCache.delete(hierarchy_id) end)
+    hierarchy
   end
 
   def put_grant_request_approvers(entries) when is_list(entries) do

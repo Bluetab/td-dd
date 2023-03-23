@@ -552,24 +552,14 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
 
       assert %{
                "enriched_field" => %{
-                 "object" => "value",
                  "document" => %{
-                   "data" => %{},
                    "nodes" => [
                      %{
-                       "data" => %{},
-                       "type" => "paragraph",
+                       "nodes" => [%{"object" => "text", "leaves" => [%{"text" => "foo"}]}],
                        "object" => "block",
-                       "nodes" => [
-                         %{
-                           "text" => "foo",
-                           "marks" => [],
-                           "object" => "text"
-                         }
-                       ]
+                       "type" => "paragraph"
                      }
-                   ],
-                   "object" => "document"
+                   ]
                  }
                }
              } = df_content

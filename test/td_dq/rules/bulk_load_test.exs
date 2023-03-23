@@ -53,6 +53,45 @@ defmodule TdDq.Rules.BulkLoadTest do
       assert %{df_content: ^df_content} = Rules.get_rule(id2)
     end
 
+    test "returns ids with valid template with multiple field", %{
+      external_id: domain_external_id,
+      claims: claims
+    } do
+      template_content = [
+        %{
+          "fields" => [
+            %{
+              "name" => "multi_string",
+              "type" => "string",
+              "cardinality" => "*"
+            }
+          ],
+          "name" => "group_name0"
+        }
+      ]
+
+      %{name: template_name} =
+        CacheHelpers.insert_template(
+          scope: "dq",
+          content: template_content
+        )
+
+      rules =
+        Enum.map(@rules, fn rule ->
+          rule
+          |> Map.put("domain_external_id", domain_external_id)
+          |> Map.put("template", template_name)
+          |> Map.put("multi_string", "a|b|c")
+        end)
+
+      assert {:ok, %{ids: [id1, id2], errors: []}} = BulkLoad.bulk_load(rules, claims)
+
+      df_content = %{"multi_string" => ["a", "b", "c"]}
+
+      assert %{df_content: ^df_content} = Rules.get_rule(id1)
+      assert %{df_content: ^df_content} = Rules.get_rule(id2)
+    end
+
     test "return error when domain_external_id not exit", %{
       external_id: domain_external_id,
       claims: claims
@@ -68,7 +107,7 @@ defmodule TdDq.Rules.BulkLoadTest do
       assert %{rule_name: ^name, message: _} = error
     end
 
-    test "return error with invalid df_contet", %{
+    test "return error with invalid df_content", %{
       external_id: domain_external_id,
       template_name: template_name,
       claims: claims

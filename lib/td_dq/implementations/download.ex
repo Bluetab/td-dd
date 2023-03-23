@@ -4,9 +4,9 @@ defmodule TdDq.Implementations.Download do
   """
 
   alias TdCache.DomainCache
-  alias TdCache.HierarchyCache
   alias TdCache.TemplateCache
   alias TdDfLib.Format
+  alias TdDfLib.Parser
   alias TdDq.Implementations
 
   def to_csv([], _, _), do: ""
@@ -14,11 +14,6 @@ defmodule TdDq.Implementations.Download do
   def to_csv(implementations, header_labels, content_labels) do
     implementations
     |> enrich_templates()
-    |> build_csv(header_labels, content_labels)
-  end
-
-  defp build_csv(implementations, header_labels, content_labels) do
-    implementations
     |> csv_format(header_labels, content_labels)
     |> to_string()
   end
@@ -59,56 +54,43 @@ defmodule TdDq.Implementations.Download do
     number_of_dataset_external_ids = count_implementations_items(implementations, :datasets)
     number_of_validations_fields = count_implementations_items(implementations, :validations)
     time_zone = Application.get_env(:td_dd, :time_zone)
-    {:ok, domain_name_map} = DomainCache.id_to_name_map()
 
     Enum.map(implementations, fn implementation ->
       rule = Map.get(implementation, :rule, %{})
       rule_content = Map.get(rule, :df_content, %{})
       implementation_content = Map.get(implementation, :df_content)
 
-      values =
-        [
-          implementation.implementation_key,
-          implementation.implementation_type,
-          translate("executable.#{implementation.executable}", content_labels),
-          Map.get(rule, :name, ""),
-          Map.get(rule, :df_name, ""),
-          implementation.df_name,
-          implementation.goal,
-          implementation.minimum,
-          get_in(implementation, [:current_business_concept_version, :name]),
-          get_in(implementation, [:execution_result_info, :date])
-          |> TdDd.Helpers.shift_zone(time_zone),
-          get_in(implementation, [:execution_result_info, :records]),
-          get_in(implementation, [:execution_result_info, :errors]),
-          get_in(implementation, [:execution_result_info, :result]),
-          get_in(implementation, [:execution_result_info, :result_text])
-          |> translate(content_labels),
-          TdDd.Helpers.shift_zone(implementation.inserted_at, time_zone)
-        ] ++
-          fill_with(
-            get_implementation_fields(implementation, :datasets),
-            number_of_dataset_external_ids,
-            nil
-          ) ++
-          fill_with(
-            get_implementation_fields(implementation, :validations),
-            number_of_validations_fields,
-            nil
-          )
-
-      values_with_rule_content =
-        Enum.reduce(
-          rule_fields,
-          values,
-          &(&2 ++ [get_content_field(&1, rule_content, domain_name_map)])
-        )
-
-      Enum.reduce(
-        implementation_fields,
-        values_with_rule_content,
-        &(&2 ++ [get_content_field(&1, implementation_content, domain_name_map)])
-      )
+      ([
+         implementation.implementation_key,
+         implementation.implementation_type,
+         translate("executable.#{implementation.executable}", content_labels),
+         Map.get(rule, :name, ""),
+         Map.get(rule, :df_name, ""),
+         implementation.df_name,
+         implementation.goal,
+         implementation.minimum,
+         get_in(implementation, [:current_business_concept_version, :name]),
+         get_in(implementation, [:execution_result_info, :date])
+         |> TdDd.Helpers.shift_zone(time_zone),
+         get_in(implementation, [:execution_result_info, :records]),
+         get_in(implementation, [:execution_result_info, :errors]),
+         get_in(implementation, [:execution_result_info, :result]),
+         get_in(implementation, [:execution_result_info, :result_text])
+         |> translate(content_labels),
+         TdDd.Helpers.shift_zone(implementation.inserted_at, time_zone)
+       ] ++
+         fill_with(
+           get_implementation_fields(implementation, :datasets),
+           number_of_dataset_external_ids,
+           nil
+         ) ++
+         fill_with(
+           get_implementation_fields(implementation, :validations),
+           number_of_validations_fields,
+           nil
+         ))
+      |> Parser.append_parsed_fields(rule_fields, rule_content)
+      |> Parser.append_parsed_fields(implementation_fields, implementation_content)
     end)
   end
 
@@ -201,97 +183,6 @@ defmodule TdDq.Implementations.Download do
       len -> list ++ List.duplicate(item, len)
     end
   end
-
-  defp get_content_field(_template, nil, _domain_map), do: ""
-
-  defp get_content_field(%{"type" => "url", "name" => name}, content, _domain_map) do
-    content
-    |> Map.get(String.to_atom(name), [])
-    |> content_to_list()
-    |> Enum.map(&get_url_value/1)
-    |> Enum.reject(&is_nil/1)
-    |> Enum.join(", ")
-  end
-
-  defp get_content_field(%{"type" => "domain", "name" => name}, content, domain_map) do
-    content
-    |> Map.get(String.to_atom(name), [])
-    |> content_to_list()
-    |> Enum.map(&Map.get(domain_map, &1))
-    |> Enum.reject(&is_nil/1)
-    |> Enum.join(", ")
-  end
-
-  defp get_content_field(%{"type" => "system", "name" => name}, content, _domain_map) do
-    content
-    |> Map.get(String.to_atom(name), [])
-    |> content_to_list()
-    |> Enum.map(&Map.get(&1, :name, ""))
-    |> Enum.reject(&is_nil/1)
-    |> Enum.join(", ")
-  end
-
-  defp get_content_field(
-         %{
-           "type" => "string",
-           "name" => name,
-           "values" => %{"fixed_tuple" => values}
-         },
-         content,
-         _domain_map
-       ) do
-    content
-    |> Map.get(String.to_atom(name), [])
-    |> content_to_list()
-    |> Enum.map(fn map_value ->
-      Enum.find(values, fn %{"value" => value} -> value == map_value end)
-    end)
-    |> Enum.reject(&is_nil/1)
-    |> Enum.map_join(", ", &Map.get(&1, "text", ""))
-  end
-
-  defp get_content_field(
-         %{"type" => "hierarchy", "name" => name, "values" => %{"hierarchy" => hierarchy_id}},
-         content,
-         _domain_name_map
-       ) do
-    {:ok, nodes} = HierarchyCache.get(hierarchy_id, :nodes)
-
-    content
-    |> Map.get(String.to_atom(name), [])
-    |> content_to_list()
-    |> Enum.map(
-      &Enum.find(nodes, fn %{"node_id" => node_id} ->
-        [_hierarchy_id, content_node_id] = String.split(&1, "_")
-        node_id === String.to_integer(content_node_id)
-      end)
-    )
-    |> Enum.reject(&is_nil/1)
-    |> Enum.map_join(", ", fn %{"name" => name} -> name end)
-  end
-
-  defp get_content_field(%{"type" => "table"}, _content, _domain_map), do: ""
-
-  defp get_content_field(%{"name" => "tags"}, %{tags: tags}, _domain_map) when is_list(tags) do
-    Enum.join(tags, ", ")
-  end
-
-  defp get_content_field(%{"name" => name}, content, _domain_map) do
-    Map.get(content, String.to_atom(name), "")
-  end
-
-  defp get_url_value(%{url_value: url_value}), do: url_value
-  defp get_url_value(_), do: nil
-
-  defp content_to_list(nil), do: []
-
-  defp content_to_list([""]), do: []
-
-  defp content_to_list(""), do: []
-
-  defp content_to_list(content) when is_list(content), do: content
-
-  defp content_to_list(content), do: [content]
 
   defp translate(nil, _content_labels), do: nil
 
