@@ -5,7 +5,10 @@ defmodule TdDq.Rules.BulkLoad do
 
   alias Ecto.Changeset
   alias TdCache.DomainCache
+  alias TdCache.TemplateCache
   alias TdDdWeb.ErrorHelpers
+  alias TdDfLib.Format
+  alias TdDfLib.Parser
   alias TdDq.Cache.RuleLoader
   alias TdDq.Rules
 
@@ -75,9 +78,9 @@ defmodule TdDq.Rules.BulkLoad do
         Map.put(acc, "df_content", df_content)
       end
     end)
+    |> maybe_put_domain_id(rule)
     |> ensure_template()
     |> convert_description()
-    |> maybe_put_domain_id(rule)
     |> Map.merge(@default_rule)
   end
 
@@ -106,14 +109,34 @@ defmodule TdDq.Rules.BulkLoad do
     end
   end
 
-  defp ensure_template(%{"df_content" => df_content} = rule) do
-    if Enum.empty?(df_content) or
-         (!Enum.empty?(df_content) && Map.has_key?(rule, "template")) do
+  defp ensure_template(%{"df_content" => df_content, "domain_id" => domain_id} = rule) do
+    template = Map.get(rule, "template")
+
+    rule =
       rule
-      |> Map.put("df_name", rule["template"])
+      |> Map.put("df_name", template)
       |> Map.delete("template")
-    else
-      rule
+
+    case TemplateCache.get_by_name!(template) do
+      nil ->
+        rule
+
+      template ->
+        content_schema =
+          template
+          |> Map.get(:content)
+          |> Format.flatten_content_fields()
+
+        content =
+          Parser.format_content(%{
+            content: df_content,
+            content_schema: content_schema,
+            domain_ids: [domain_id]
+          })
+
+        Map.put(rule, "df_content", content)
     end
   end
+
+  defp ensure_template(rule), do: rule
 end

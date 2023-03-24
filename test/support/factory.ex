@@ -311,6 +311,28 @@ defmodule TdDd.Factory do
     %Units.Edge{type: "DEPENDS"}
   end
 
+  def hierarchy_factory(attrs) do
+    %{
+      id: System.unique_integer([:positive]),
+      name: sequence("family_"),
+      description: sequence("description_"),
+      nodes: [],
+      updated_at: DateTime.utc_now()
+    }
+    |> merge_attributes(attrs)
+  end
+
+  def hierarchy_node_factory(attrs) do
+    %{
+      node_id: System.unique_integer([:positive]),
+      hierarchy_id: System.unique_integer([:positive]),
+      parent_id: System.unique_integer([:positive]),
+      name: sequence("node_"),
+      description: sequence("description_")
+    }
+    |> merge_attributes(attrs)
+  end
+
   def user_search_filter_factory do
     %UserSearchFilter{
       id: sequence(:user_search_filter, & &1),
@@ -548,7 +570,8 @@ defmodule TdDd.Factory do
       response: %{errors: [], ids: [1, 2]},
       status: "COMPLETED",
       task_reference: "0.262460172.3388211201.119663",
-      user_id: 467
+      user_id: 467,
+      filename: sequence("foo_file")
     }
   end
 

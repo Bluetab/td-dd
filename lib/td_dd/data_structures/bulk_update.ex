@@ -13,7 +13,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
   alias TdDd.DataStructures.StructureNotesWorkflow
   alias TdDd.Repo
   alias TdDd.Search.IndexWorker
-  alias TdDfLib.Format
+  alias TdDfLib.Parser
   alias TdDfLib.Templates
   alias Truedat.Auth.Claims
 
@@ -278,7 +278,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
         content_schema = Enum.filter(template_fields, &(Map.get(&1, "name") in fields))
 
         content =
-          format_content(%{
+          Parser.format_content(%{
             content: content,
             content_schema: content_schema,
             domain_ids: domain_ids
@@ -286,35 +286,6 @@ defmodule TdDd.DataStructures.BulkUpdate do
 
         {%{"df_content" => content}, %{data_structure: data_structure, row_index: row_index}}
     end
-  end
-
-  defp format_content(%{content: content, content_schema: content_schema, domain_ids: domain_ids})
-       when not is_nil(content) do
-    content = Format.apply_template(content, content_schema, domain_ids: domain_ids)
-
-    content_schema
-    |> Enum.filter(fn %{"type" => schema_type, "cardinality" => cardinality} ->
-      schema_type in ["url", "enriched_text", "integer", "float"] or
-        (schema_type in ["string", "user"] and cardinality in ["*", "+"])
-    end)
-    # credo:disable-for-next-line
-    |> Enum.filter(fn %{"name" => name} ->
-      field_content = Map.get(content, name)
-      not is_nil(field_content) and is_binary(field_content) and field_content != ""
-    end)
-    |> Enum.into(content, &format_field(&1, content))
-  end
-
-  defp format_content(params), do: params
-
-  defp format_field(schema, content) do
-    {Map.get(schema, "name"),
-     Format.format_field(%{
-       "content" => Map.get(content, Map.get(schema, "name")),
-       "type" => Map.get(schema, "type"),
-       "cardinality" => Map.get(schema, "cardinality"),
-       "values" => Map.get(schema, "values")
-     })}
   end
 
   defp do_update(ids, %{} = params, %Claims{user_id: user_id}, auto_publish) do

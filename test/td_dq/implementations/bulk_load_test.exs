@@ -180,6 +180,40 @@ defmodule TdDq.Implementations.BulkLoadTest do
       assert {:ok, %{ids: [_id1, _id2], errors: []}} = BulkLoad.bulk_load(imp, claims)
     end
 
+    test "return ids with valid df_content that include field with multiple values", %{
+      rule: %{name: rule_name},
+      claims: claims
+    } do
+      template_content = [
+        %{
+          "fields" => [
+            %{
+              "name" => "multi_string",
+              "type" => "string",
+              "cardinality" => "*"
+            }
+          ],
+          "name" => "group_name0"
+        }
+      ]
+
+      %{name: template_name} =
+        CacheHelpers.insert_template(
+          scope: "ri",
+          content: template_content
+        )
+
+      imp =
+        Enum.map(@valid_implementation, fn imp ->
+          imp
+          |> Map.put("rule_name", rule_name)
+          |> Map.put("template", template_name)
+          |> Map.put("multi_string", "a|b|c")
+        end)
+
+      assert {:ok, %{ids: [_id1, _id2], errors: []}} = BulkLoad.bulk_load(imp, claims)
+    end
+
     test "return error when rule not exist", %{
       rule: %{name: rule_name},
       claims: claims,
@@ -274,8 +308,8 @@ defmodule TdDq.Implementations.BulkLoadTest do
               %{
                 ids: [],
                 errors: [
-                  %{message: %{"df_content" => [_e1]}},
-                  %{message: %{"df_content" => [_e2]}}
+                  %{message: %{df_content: [_e1]}},
+                  %{message: %{df_content: [_e2]}}
                 ]
               }} = BulkLoad.bulk_load(imp, claims)
     end
@@ -335,7 +369,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
               "values" => nil,
               "widget" => "dropdown",
               "default" => "",
-              "cardinality" => "?",
+              "cardinality" => "1",
               "subscribable" => false
             }
           ],
@@ -361,8 +395,8 @@ defmodule TdDq.Implementations.BulkLoadTest do
               %{
                 ids: [],
                 errors: [
-                  %{message: %{"df_content.my_domain" => [_e1]}},
-                  %{message: %{"df_content.my_domain" => [_e2]}}
+                  %{message: %{df_content: [_e1]}},
+                  %{message: %{df_content: [_e2]}}
                 ]
               }} = BulkLoad.bulk_load(imp, claims)
     end

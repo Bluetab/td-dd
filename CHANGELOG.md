@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-5481] Add filename for bulk update events for structure notes
+
+### Changed
+
+- [TD-4870] Implementations and Rule csv download and upload uses unified df_content parsing
+
 ## [5.3.0] 2023-03-13
 
 ### Added

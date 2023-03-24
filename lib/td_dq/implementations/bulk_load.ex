@@ -7,6 +7,8 @@ defmodule TdDq.Implementations.BulkLoad do
   alias TdCache.DomainCache
   alias TdCache.TemplateCache
   alias TdDdWeb.ErrorHelpers
+  alias TdDfLib.Format
+  alias TdDfLib.Parser
   alias TdDq.Implementations
   alias TdDq.Rules
 
@@ -187,6 +189,9 @@ defmodule TdDq.Implementations.BulkLoad do
     end
   end
 
+  defp domain_ids(%{"domain_id" => domain_id}), do: [domain_id]
+  defp domain_ids(_), do: nil
+
   defp format_df_content(%{"df_name" => template_name, "df_content" => df_content} = params)
        when is_binary(template_name) do
     case TemplateCache.get_by_name!(template_name) do
@@ -194,83 +199,21 @@ defmodule TdDq.Implementations.BulkLoad do
         {:error, %{"template" => ["Template #{template_name} doesn't exist"]}}
 
       template ->
-        template
-        |> Map.get(:content)
-        |> Enum.reduce([], fn %{"fields" => fields}, acc -> acc ++ fields end)
-        |> Enum.filter(fn %{"name" => field_name} -> Map.has_key?(df_content, field_name) end)
-        |> then(&format_df_content(params, &1))
+        content_schema =
+          template
+          |> Map.get(:content)
+          |> Format.flatten_content_fields()
+
+        content =
+          Parser.format_content(%{
+            content: df_content,
+            content_schema: content_schema,
+            domain_ids: domain_ids(params)
+          })
+
+        {:ok, Map.put(params, "df_content", content)}
     end
   end
 
   defp format_df_content(params), do: {:ok, params}
-
-  defp format_df_content(%{"df_content" => df_content} = params, template_fields) do
-    df_content
-    |> Enum.reduce_while(
-      {:ok, df_content},
-      fn {df_field_name, _} = entity, {:ok, df_content_aux} ->
-        field_meta =
-          Enum.find(
-            template_fields,
-            fn field_meta -> Map.get(field_meta, "name") == df_field_name end
-          )
-
-        case field_meta do
-          nil ->
-            {:halt,
-             {:error, %{"df_content" => ["The field #{df_field_name} doesn't exist in template"]}}}
-
-          field_meta ->
-            format_df_field(df_content_aux, entity, field_meta)
-        end
-      end
-    )
-    |> case do
-      {:ok, df_content} -> {:ok, Map.put(params, "df_content", df_content)}
-      error -> error
-    end
-  end
-
-  defp format_df_field(df_content, {df_field_name, domain_external_id}, %{"type" => "domain"}) do
-    if domain_external_id == "" do
-      {:cont, {:ok, Map.put(df_content, df_field_name, nil)}}
-    else
-      case get_domain_id_by_external_id(domain_external_id) do
-        {:error, msg} -> {:halt, {:error, %{"df_content.#{df_field_name}" => [msg]}}}
-        {:ok, domain_id} -> {:cont, {:ok, Map.put(df_content, df_field_name, domain_id)}}
-      end
-    end
-  end
-
-  defp format_df_field(df_content, {df_field_name, df_field_value}, %{"type" => "enriched_text"}) do
-    if df_field_value == "" do
-      {:cont, {:ok, Map.put(df_content, df_field_name, %{})}}
-    else
-      enriched_structure = %{
-        "object" => "value",
-        "document" => %{
-          "data" => %{},
-          "nodes" => [
-            %{
-              "data" => %{},
-              "type" => "paragraph",
-              "object" => "block",
-              "nodes" => [
-                %{
-                  "text" => df_field_value,
-                  "marks" => [],
-                  "object" => "text"
-                }
-              ]
-            }
-          ],
-          "object" => "document"
-        }
-      }
-
-      {:cont, {:ok, Map.put(df_content, df_field_name, enriched_structure)}}
-    end
-  end
-
-  defp format_df_field(df_content, _entity, _template_fields), do: {:cont, {:ok, df_content}}
 end
