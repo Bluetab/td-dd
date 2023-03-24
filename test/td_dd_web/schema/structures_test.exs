@@ -528,7 +528,7 @@ defmodule TdDdWeb.Schema.StructuresTest do
 
       variables = %{
         "dataStructureId" => data_structure_id,
-        "version" => "latest",
+        "version" => "latest"
       }
 
       assert %{"data" => data} =
@@ -646,29 +646,29 @@ defmodule TdDdWeb.Schema.StructuresTest do
                      "id" => "#{child_id}",
                      "type" => "Table",
                      "profile" => %{
-                        "max" => "5",
-                        "min" => "3",
-                        "most_frequent" => [%{"k" => "A", "v" => 22}],
-                        "null_count" => 0,
-                      },
-                      "links" => [
-                        %{
-                          "concept_count" => 0,
-                          "content" => %{},
-                          "domain" => nil,
-                          "domain_id" => nil,
-                          "id" => "#{child_link_id}",
-                          "link_count" => 1,
-                          "link_tags" => [],
-                          "name" => "#{child_concept_name}",
-                          "resource_id" => "#{child_concept_id}",
-                          "resource_type" => "concept",
-                          "rule_count" => 0,
-                          "shared_to" => [],
-                          "shared_to_ids" => [],
-                          "tags" => []
-                        }
-                      ],
+                       "max" => "5",
+                       "min" => "3",
+                       "most_frequent" => [%{"k" => "A", "v" => 22}],
+                       "null_count" => 0
+                     },
+                     "links" => [
+                       %{
+                         "concept_count" => 0,
+                         "content" => %{},
+                         "domain" => nil,
+                         "domain_id" => nil,
+                         "id" => "#{child_link_id}",
+                         "link_count" => 1,
+                         "link_tags" => [],
+                         "name" => "#{child_concept_name}",
+                         "resource_id" => "#{child_concept_id}",
+                         "resource_type" => "concept",
+                         "rule_count" => 0,
+                         "shared_to" => [],
+                         "shared_to_ids" => [],
+                         "tags" => []
+                       }
+                     ]
                    },
                    %{
                      "data_structure_id" => "#{nodef_child_ds_id}",
@@ -676,7 +676,7 @@ defmodule TdDdWeb.Schema.StructuresTest do
                      "type" => "Table",
                      "profile" => nil,
                      "links" => []
-                   },
+                   }
                  ],
                  "user_permissions" => %{
                    "confidential" => true,

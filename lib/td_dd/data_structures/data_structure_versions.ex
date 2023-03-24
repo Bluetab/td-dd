@@ -243,7 +243,7 @@ defmodule TdDd.DataStructures.DataStructureVersions do
       :notes,
       :metadata,
       :name,
-      :type,
+      :type
     ])
     |> with_profile_attrs(profile)
     |> Map.put(:alias, alias_name)
@@ -280,5 +280,4 @@ defmodule TdDd.DataStructures.DataStructureVersions do
   end
 
   defp merge_metadata(dsv), do: dsv
-
 end
