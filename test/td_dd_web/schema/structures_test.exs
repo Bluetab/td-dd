@@ -136,6 +136,13 @@ defmodule TdDdWeb.Schema.StructuresTest do
         data_structure_id
         id
         type
+        profile {
+          max
+          min
+          most_frequent
+          null_count
+        }
+        links
       }
       relations {
         parents {
@@ -461,6 +468,14 @@ defmodule TdDdWeb.Schema.StructuresTest do
         most_frequent: ~s([["A", "76"]])
       )
 
+      insert(:profile,
+        data_structure_id: child_ds_id,
+        min: "3",
+        max: "5",
+        null_count: 0,
+        most_frequent: ~s([["A", "22"]])
+      )
+
       test_label = insert(:label, name: "test_label")
 
       ## Structure link
@@ -489,6 +504,16 @@ defmodule TdDdWeb.Schema.StructuresTest do
           concept_id
         )
 
+      %{id: child_concept_id, name: child_concept_name} = CacheHelpers.insert_concept()
+
+      %{id: child_link_id} =
+        CacheHelpers.insert_link(
+          child_ds_id,
+          "data_structure",
+          "business_concept",
+          child_concept_id
+        )
+
       ## Grants
       start_date = Date.utc_today() |> Date.add(-1)
       end_date = Date.utc_today() |> Date.add(2)
@@ -504,7 +529,6 @@ defmodule TdDdWeb.Schema.StructuresTest do
       variables = %{
         "dataStructureId" => data_structure_id,
         "version" => "latest",
-        "note_fields" => ["foo", "child_field"]
       }
 
       assert %{"data" => data} =
@@ -620,12 +644,38 @@ defmodule TdDdWeb.Schema.StructuresTest do
                    %{
                      "data_structure_id" => "#{child_ds_id}",
                      "id" => "#{child_id}",
-                     "type" => "Table"
+                     "type" => "Table",
+                     "profile" => %{
+                        "max" => "5",
+                        "min" => "3",
+                        "most_frequent" => [%{"k" => "A", "v" => 22}],
+                        "null_count" => 0,
+                      },
+                      "links" => [
+                        %{
+                          "concept_count" => 0,
+                          "content" => %{},
+                          "domain" => nil,
+                          "domain_id" => nil,
+                          "id" => "#{child_link_id}",
+                          "link_count" => 1,
+                          "link_tags" => [],
+                          "name" => "#{child_concept_name}",
+                          "resource_id" => "#{child_concept_id}",
+                          "resource_type" => "concept",
+                          "rule_count" => 0,
+                          "shared_to" => [],
+                          "shared_to_ids" => [],
+                          "tags" => []
+                        }
+                      ],
                    },
                    %{
                      "data_structure_id" => "#{nodef_child_ds_id}",
                      "id" => "#{nodef_child_dsv_id}",
-                     "type" => "Table"
+                     "type" => "Table",
+                     "profile" => nil,
+                     "links" => []
                    },
                  ],
                  "user_permissions" => %{
