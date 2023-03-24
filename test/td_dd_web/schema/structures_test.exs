@@ -64,7 +64,7 @@ defmodule TdDdWeb.Schema.StructuresTest do
   """
 
   @version_query """
-  query DataStructureVersion($dataStructureId: ID!, $version: String!, $note_fields: [String]) {
+  query DataStructureVersion($dataStructureId: ID!, $version: String!) {
     dataStructureVersion(dataStructureId: $dataStructureId, version: $version) {
       id
       version
@@ -132,7 +132,11 @@ defmodule TdDdWeb.Schema.StructuresTest do
       grants { id }
       grant { id }
 
-      data_fields { note(select_fields: $note_fields) }
+      data_fields {
+        data_structure_id
+        id
+        type
+      }
       relations {
         parents {
           id
@@ -402,10 +406,10 @@ defmodule TdDdWeb.Schema.StructuresTest do
       ## Structure relations
       [
         %{id: parent_dsv_id, name: parent_dsv_name, data_structure_id: parent_ds_id} = parent,
-        %{data_structure_id: child_ds_id} = child,
+        %{data_structure_id: child_ds_id, id: child_id} = child,
         sibling,
         %{id: nodef_parent_dsv_id} = non_default_parent,
-        %{id: nodef_child_dsv_id} = non_default_child
+        %{data_structure_id: nodef_child_ds_id, id: nodef_child_dsv_id} = non_default_child
       ] =
         ["parent", "child", "sibling", "non_default_parent", "non_default_child"]
         |> Enum.map(&insert(:data_structure, external_id: &1))
@@ -445,16 +449,6 @@ defmodule TdDdWeb.Schema.StructuresTest do
       insert(:structure_note,
         data_structure_id: data_structure_id,
         df_content: %{"foo" => "bar"},
-        status: :published
-      )
-
-      insert(:structure_note,
-        data_structure_id: child_ds_id,
-        df_content: %{
-          "foo" => "bar",
-          "child_field" => "value1",
-          "not_selected_field" => "value2"
-        },
         status: :published
       )
 
@@ -624,12 +618,15 @@ defmodule TdDdWeb.Schema.StructuresTest do
                  "grants" => [%{"id" => "#{grant_id}"}],
                  "data_fields" => [
                    %{
-                     "note" => %{
-                       "child_field" => "value1",
-                       "foo" => "bar"
-                     }
+                     "data_structure_id" => "#{child_ds_id}",
+                     "id" => "#{child_id}",
+                     "type" => "Table"
                    },
-                   %{"note" => nil}
+                   %{
+                     "data_structure_id" => "#{nodef_child_ds_id}",
+                     "id" => "#{nodef_child_dsv_id}",
+                     "type" => "Table"
+                   },
                  ],
                  "user_permissions" => %{
                    "confidential" => true,
