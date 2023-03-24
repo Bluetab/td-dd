@@ -65,6 +65,71 @@ defmodule TdDd.CSV.DownloadTest do
                """
     end
 
+    test "to_csv/1 return csv content to download with hierarchy" do
+      template_name = "column"
+      field_name = "hierarchy_field"
+      field_label = "Hierarchy Field"
+      template_id = 1
+      type = "Column"
+
+      CacheHelpers.insert_hierarchy(
+        id: 1927,
+        nodes: [
+          build(:hierarchy_node, %{node_id: 50, parent_id: nil, hierarchy_id: 1927}),
+          build(:hierarchy_node, %{node_id: 51, parent_id: nil, hierarchy_id: 1927})
+        ]
+      )
+
+      CacheHelpers.insert_template(%{
+        id: template_id,
+        name: template_name,
+        label: "label",
+        scope: "dd",
+        content: [
+          %{
+            "name" => "group",
+            "fields" => [
+              %{
+                "type" => "hierarchy",
+                "name" => field_name,
+                "label" => field_label,
+                "values" => %{"hierarchy" => 1927},
+                "cardinality" => "*"
+              }
+            ]
+          }
+        ]
+      })
+
+      insert(:data_structure_type, name: type, template_id: template_id)
+      domain_name = "domain_1"
+
+      structure_1 = %{
+        name: "1. 4. 4 Primas Bajas (grafico)",
+        description: "Gráfico de evolución mensual de la prima",
+        template: %{"name" => template_name},
+        note: %{field_name => ["1927_50", "1927_51"]},
+        domain: %{"external_id" => "ex_id_1", "name" => domain_name},
+        inserted_at: "2018-05-05",
+        external_id: "myext_292929",
+        group: "gr",
+        path: ["CMC", "Objetos Públicos", "Informes", "Cuadro de Mando Integral"],
+        type: type,
+        system: %{"external_id" => "sys", "name" => "sys_name"}
+      }
+
+      structures = [structure_1]
+      csv = Download.to_csv(structures)
+
+      expected_hierarchy_value = "node_0|node_1"
+
+      assert csv ==
+               """
+               type;name;group;domain;system;path;description;external_id;inserted_at;#{field_label}\r
+               #{structure_1.type};#{structure_1.name};#{structure_1.group};#{domain_name};#{Map.get(structure_1.system, "name")};CMC > Objetos Públicos > Informes > Cuadro de Mando Integral;#{structure_1.description};#{structure_1.external_id};#{structure_1.inserted_at};#{expected_hierarchy_value}\r
+               """
+    end
+
     test "to_csv/1 return csv content to download with domain paths" do
       template_name = "Table"
       field_name = "add_info1"
@@ -205,8 +270,8 @@ defmodule TdDd.CSV.DownloadTest do
       })
 
       insert(:data_structure_type, name: "type", template_id: 42)
-      %{id: domain_id_1} = CacheHelpers.insert_domain(name: "domain_1")
-      %{id: domain_id_2} = CacheHelpers.insert_domain(name: "domain_2")
+      %{id: domain_id_1} = CacheHelpers.insert_domain(external_id: "domain_1")
+      %{id: domain_id_2} = CacheHelpers.insert_domain(external_id: "domain_2")
 
       structures = [
         %{
@@ -227,7 +292,7 @@ defmodule TdDd.CSV.DownloadTest do
       assert Download.to_editable_csv(structures) ==
                """
                external_id;name;type;path;field_numbers;field_texts;field_text;field_domains\r
-               ext_id;name;type;foo > bar;1|2;multi|field;field;domain_1, domain_2\r
+               ext_id;name;type;foo > bar;1|2;multi|field;field;domain_1|domain_2\r
                """
     end
 
