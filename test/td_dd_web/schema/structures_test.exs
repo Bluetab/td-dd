@@ -64,7 +64,7 @@ defmodule TdDdWeb.Schema.StructuresTest do
   """
 
   @version_query """
-  query DataStructureVersion($dataStructureId: ID!, $version: String!) {
+  query DataStructureVersion($dataStructureId: ID!, $version: String!, $note_fields: [String]) {
     dataStructureVersion(dataStructureId: $dataStructureId, version: $version) {
       id
       version
@@ -133,6 +133,7 @@ defmodule TdDdWeb.Schema.StructuresTest do
       grant { id }
 
       data_fields {
+        note(select_fields: $note_fields)
         data_structure_id
         id
         type
@@ -459,6 +460,16 @@ defmodule TdDdWeb.Schema.StructuresTest do
         status: :published
       )
 
+      insert(:structure_note,
+        data_structure_id: child_ds_id,
+        df_content: %{
+          "foo" => "bar",
+          "child_field" => "value1",
+          "not_selected_field" => "value2"
+        },
+        status: :published
+      )
+
       ## Structure Profile
       insert(:profile,
         data_structure_id: data_structure_id,
@@ -528,6 +539,7 @@ defmodule TdDdWeb.Schema.StructuresTest do
 
       variables = %{
         "dataStructureId" => data_structure_id,
+        "note_fields" => ["foo", "child_field"],
         "version" => "latest"
       }
 
@@ -642,6 +654,10 @@ defmodule TdDdWeb.Schema.StructuresTest do
                  "grants" => [%{"id" => "#{grant_id}"}],
                  "data_fields" => [
                    %{
+                     "note" => %{
+                       "child_field" => "value1",
+                       "foo" => "bar"
+                     },
                      "data_structure_id" => "#{child_ds_id}",
                      "id" => "#{child_id}",
                      "type" => "Table",
@@ -671,6 +687,7 @@ defmodule TdDdWeb.Schema.StructuresTest do
                      ]
                    },
                    %{
+                     "note" => nil,
                      "data_structure_id" => "#{nodef_child_ds_id}",
                      "id" => "#{nodef_child_dsv_id}",
                      "type" => "Table",

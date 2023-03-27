@@ -243,7 +243,8 @@ defmodule TdDd.DataStructures.DataStructureVersions do
       :notes,
       :metadata,
       :name,
-      :type
+      :type,
+      :published_note
     ])
     |> with_profile_attrs(profile)
     |> Map.put(:alias, alias_name)

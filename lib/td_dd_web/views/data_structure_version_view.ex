@@ -26,6 +26,7 @@ defmodule TdDdWeb.DataStructureVersionView do
     dsv
     |> add_classes()
     |> add_data_structure()
+    |> add_data_fields()
     |> add_parents()
     |> add_siblings()
     |> add_children()
@@ -296,6 +297,32 @@ defmodule TdDdWeb.DataStructureVersionView do
 
   defp put_actions(ds, actions) do
     Map.update(ds, "_actions", transform_create_link(actions), &Map.merge(&1, actions))
+  end
+
+  defp add_data_fields(%{data_fields: data_fields} = dsv) do
+    field_structures =
+      Enum.map(
+        data_fields,
+        &Map.take(&1, [
+          :data_structure_id,
+          :degree,
+          :deleted_at,
+          :description,
+          :inserted_at,
+          :links,
+          :metadata,
+          :name,
+          :type,
+          :profile,
+          :alias
+        ])
+      )
+
+    Map.put(dsv, :data_fields, field_structures)
+  end
+
+  defp add_data_fields(dsv) do
+    Map.put(dsv, :data_fields, [])
   end
 
   defp transform_create_link(%{create_link: true} = actions), do: %{actions | create_link: %{}}
