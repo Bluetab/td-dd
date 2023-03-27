@@ -12,6 +12,7 @@
 
 ### Fixed
 
+- [TD-5685] Implementation df_content was being cleaned on cache enriching
 - [TD-5644] Added omitted data in v2 dataStructureVersion endpoint
 
 ## [5.3.0] 2023-03-13
