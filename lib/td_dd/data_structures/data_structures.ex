@@ -235,7 +235,7 @@ defmodule TdDd.DataStructures do
         preload:
           if(Enum.member?(opts, :profile),
             do: [:published_note, data_structure: :profile],
-            else: []
+            else: [:published_note]
           ),
         with_confidential: with_confidential,
         with_protected_metadata: with_protected_metadata

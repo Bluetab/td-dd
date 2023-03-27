@@ -132,7 +132,19 @@ defmodule TdDdWeb.Schema.StructuresTest do
       grants { id }
       grant { id }
 
-      data_fields { note(select_fields: $note_fields) }
+      data_fields {
+        note(select_fields: $note_fields)
+        data_structure_id
+        id
+        type
+        profile {
+          max
+          min
+          most_frequent
+          null_count
+        }
+        links
+      }
       relations {
         parents {
           id
@@ -402,10 +414,10 @@ defmodule TdDdWeb.Schema.StructuresTest do
       ## Structure relations
       [
         %{id: parent_dsv_id, name: parent_dsv_name, data_structure_id: parent_ds_id} = parent,
-        %{data_structure_id: child_ds_id} = child,
+        %{data_structure_id: child_ds_id, id: child_id} = child,
         sibling,
         %{id: nodef_parent_dsv_id} = non_default_parent,
-        %{id: nodef_child_dsv_id} = non_default_child
+        %{data_structure_id: nodef_child_ds_id, id: nodef_child_dsv_id} = non_default_child
       ] =
         ["parent", "child", "sibling", "non_default_parent", "non_default_child"]
         |> Enum.map(&insert(:data_structure, external_id: &1))
@@ -467,6 +479,14 @@ defmodule TdDdWeb.Schema.StructuresTest do
         most_frequent: ~s([["A", "76"]])
       )
 
+      insert(:profile,
+        data_structure_id: child_ds_id,
+        min: "3",
+        max: "5",
+        null_count: 0,
+        most_frequent: ~s([["A", "22"]])
+      )
+
       test_label = insert(:label, name: "test_label")
 
       ## Structure link
@@ -495,6 +515,16 @@ defmodule TdDdWeb.Schema.StructuresTest do
           concept_id
         )
 
+      %{id: child_concept_id, name: child_concept_name} = CacheHelpers.insert_concept()
+
+      %{id: child_link_id} =
+        CacheHelpers.insert_link(
+          child_ds_id,
+          "data_structure",
+          "business_concept",
+          child_concept_id
+        )
+
       ## Grants
       start_date = Date.utc_today() |> Date.add(-1)
       end_date = Date.utc_today() |> Date.add(2)
@@ -509,8 +539,8 @@ defmodule TdDdWeb.Schema.StructuresTest do
 
       variables = %{
         "dataStructureId" => data_structure_id,
-        "version" => "latest",
-        "note_fields" => ["foo", "child_field"]
+        "note_fields" => ["foo", "child_field"],
+        "version" => "latest"
       }
 
       assert %{"data" => data} =
@@ -627,9 +657,43 @@ defmodule TdDdWeb.Schema.StructuresTest do
                      "note" => %{
                        "child_field" => "value1",
                        "foo" => "bar"
-                     }
+                     },
+                     "data_structure_id" => "#{child_ds_id}",
+                     "id" => "#{child_id}",
+                     "type" => "Table",
+                     "profile" => %{
+                       "max" => "5",
+                       "min" => "3",
+                       "most_frequent" => [%{"k" => "A", "v" => 22}],
+                       "null_count" => 0
+                     },
+                     "links" => [
+                       %{
+                         "concept_count" => 0,
+                         "content" => %{},
+                         "domain" => nil,
+                         "domain_id" => nil,
+                         "id" => "#{child_link_id}",
+                         "link_count" => 1,
+                         "link_tags" => [],
+                         "name" => "#{child_concept_name}",
+                         "resource_id" => "#{child_concept_id}",
+                         "resource_type" => "concept",
+                         "rule_count" => 0,
+                         "shared_to" => [],
+                         "shared_to_ids" => [],
+                         "tags" => []
+                       }
+                     ]
                    },
-                   %{"note" => nil}
+                   %{
+                     "note" => nil,
+                     "data_structure_id" => "#{nodef_child_ds_id}",
+                     "id" => "#{nodef_child_dsv_id}",
+                     "type" => "Table",
+                     "profile" => nil,
+                     "links" => []
+                   }
                  ],
                  "user_permissions" => %{
                    "confidential" => true,

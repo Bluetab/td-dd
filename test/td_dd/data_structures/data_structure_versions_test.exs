@@ -101,7 +101,7 @@ defmodule TdDd.DataStructures.DataStructureVersionsTest do
                  []
                )
 
-      refute Map.has_key?(dsv, :data_fields)
+      assert [] = dsv.data_fields
     end
 
     test "enriches versions" do

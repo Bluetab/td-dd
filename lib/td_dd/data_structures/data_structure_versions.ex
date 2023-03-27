@@ -41,6 +41,8 @@ defmodule TdDd.DataStructures.DataStructureVersions do
     :with_protected_metadata
   ]
 
+  @protected DataStructures.protected()
+
   def enriched_data_structure_version(
         claims,
         data_structure_id,
@@ -53,6 +55,8 @@ defmodule TdDd.DataStructures.DataStructureVersions do
     |> DataStructures.get_data_structure!()
     |> enrich_opts(claims, enriches)
     |> get_data_structure_version(data_structure_id, version)
+    |> add_data_fields()
+    |> merge_metadata()
     |> with_permissions(claims)
   end
 
@@ -70,6 +74,26 @@ defmodule TdDd.DataStructures.DataStructureVersions do
     |> get_data_structure_version(data_structure_version_id)
     |> with_permissions(claims)
   end
+
+  def with_profile_attrs(dsv, %{} = profile) when profile !== %{} do
+    profile =
+      profile
+      |> Map.take([
+        :max,
+        :min,
+        :most_frequent,
+        :null_count,
+        :patterns,
+        :total_count,
+        :unique_count
+      ])
+      |> Enum.reject(fn {_k, v} -> is_nil(v) end)
+      |> Map.new()
+
+    Map.put(dsv, :profile, profile)
+  end
+
+  def with_profile_attrs(dsv, _), do: Map.put(dsv, :profile, nil)
 
   defp query_fields_to_enrich_opts(nil), do: @controller_enrich_attrs
 
@@ -190,4 +214,71 @@ defmodule TdDd.DataStructures.DataStructureVersions do
   defp get_data_structure_version(opts, data_structure_id, version) do
     DataStructures.get_data_structure_version!(data_structure_id, version, opts)
   end
+
+  defp add_data_fields(%{data_fields: data_fields} = dsv) do
+    field_structures = Enum.map(data_fields, &field_structure_json/1)
+    Map.put(dsv, :data_fields, field_structures)
+  end
+
+  defp add_data_fields(dsv) do
+    Map.put(dsv, :data_fields, [])
+  end
+
+  defp field_structure_json(
+         %{
+           class: "field",
+           data_structure: %{profile: profile, alias: alias_name}
+         } = dsv
+       ) do
+    dsv
+    |> Map.take([
+      :id,
+      :classes,
+      :data_structure_id,
+      :degree,
+      :deleted_at,
+      :description,
+      :inserted_at,
+      :links,
+      :notes,
+      :metadata,
+      :name,
+      :type,
+      :published_note
+    ])
+    |> with_profile_attrs(profile)
+    |> Map.put(:alias, alias_name)
+  end
+
+  defp merge_metadata(%{metadata_versions: [_ | _] = metadata_versions} = dsv) do
+    %{fields: mutable_metadata} =
+      Enum.max_by(metadata_versions, & &1.version)
+      |> case do
+        %{deleted_at: deleted_at} = _version when deleted_at != nil ->
+          %{fields: %{}}
+
+        version ->
+          version
+      end
+
+    Map.update(dsv, :metadata, mutable_metadata, fn
+      nil ->
+        mutable_metadata
+
+      %{} = metadata ->
+        Map.merge(
+          metadata,
+          mutable_metadata,
+          fn
+            # Merge metadata and mutable_metadata @protected fields.
+            # If there is a conflict in the @protected content, the one from
+            # mutable metadata (rightmost in the Map.merge) will prevail.
+            @protected, mp, mmp -> Map.merge(mp, mmp)
+            _key, _mp, mmp -> mmp
+          end
+        )
+    end)
+  end
+
+  defp merge_metadata(dsv), do: dsv
 end
