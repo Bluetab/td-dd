@@ -10,6 +10,10 @@
 
 - [TD-4870] Implementations and Rule csv download and upload uses unified df_content parsing
 
+### Fixed
+
+- [TD-5685] Implementation df_content was being cleaned on cache enriching
+
 ## [5.3.0] 2023-03-13
 
 ### Added
