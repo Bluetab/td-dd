@@ -10,6 +10,11 @@
 
 - [TD-4870] Implementations and Rule csv download and upload uses unified df_content parsing
 
+### Fixed
+
+- [TD-5685] Implementation df_content was being cleaned on cache enriching
+- [TD-5644] Added omitted data in v2 dataStructureVersion endpoint
+
 ## [5.3.0] 2023-03-13
 
 ### Added
@@ -22,7 +27,7 @@
 
 ### Changed
 
-- [TD-3879] All `raw keyword` indexing mappings uses empty string as null_value 
+- [TD-3879] All `raw keyword` indexing mappings uses empty string as null_value
 
 ### Fixed
 
