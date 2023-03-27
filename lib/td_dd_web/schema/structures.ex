@@ -174,6 +174,7 @@ defmodule TdDdWeb.Schema.Structures do
     field :id, non_null(:id)
     field :relation_type, :relation_type
     field :structure, :data_structure_version
+    field :links, list_of(:json)
   end
 
   object :data_structure_type do
