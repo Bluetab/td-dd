@@ -2,10 +2,9 @@ defmodule TdDdWeb.DataStructureVersionView do
   use TdDdWeb, :view
 
   alias TdDd.DataStructures
+  alias TdDd.DataStructures.DataStructureVersions
   alias TdDdWeb.GrantView
   alias TdDdWeb.StructureTagView
-
-  @protected DataStructures.protected()
 
   def render("show.json", %{actions: actions} = assigns) do
     "show.json"
@@ -37,7 +36,6 @@ defmodule TdDdWeb.DataStructureVersionView do
     |> add_ancestry()
     |> add_profile()
     |> add_embedded_relations(dsv)
-    |> merge_metadata()
     |> add_data_structure_type()
     |> add_note()
     |> add_tags(assigns)
@@ -199,42 +197,11 @@ defmodule TdDdWeb.DataStructureVersionView do
     end
   end
 
-  defp add_data_fields(%{data_fields: data_fields} = dsv) do
-    field_structures = Enum.map(data_fields, &field_structure_json/1)
-    Map.put(dsv, :data_fields, field_structures)
-  end
-
-  defp add_data_fields(dsv) do
-    Map.put(dsv, :data_fields, [])
-  end
-
   defp add_profile(%{class: "field", profile: profile} = dsv) do
-    with_profile_attrs(dsv, profile)
+    DataStructureVersions.with_profile_attrs(dsv, profile)
   end
 
   defp add_profile(dsv), do: Map.delete(dsv, :profile)
-
-  defp field_structure_json(
-         %{
-           class: "field",
-           data_structure: %{profile: profile, alias: alias_name}
-         } = dsv
-       ) do
-    dsv
-    |> Map.take([
-      :data_structure_id,
-      :degree,
-      :deleted_at,
-      :description,
-      :inserted_at,
-      :links,
-      :metadata,
-      :name,
-      :type
-    ])
-    |> with_profile_attrs(profile)
-    |> Map.put(:alias, alias_name)
-  end
 
   defp add_versions(dsv) do
     versions =
@@ -273,62 +240,6 @@ defmodule TdDdWeb.DataStructureVersionView do
   def add_ancestry(%{path: [_ | _] = path} = dsv), do: Map.put(dsv, :ancestry, path)
 
   def add_ancestry(dsv), do: Map.put(dsv, :ancestry, [])
-
-  defp with_profile_attrs(dsv, %{} = profile) do
-    profile =
-      profile
-      |> Map.take([
-        :max,
-        :min,
-        :most_frequent,
-        :null_count,
-        :patterns,
-        :total_count,
-        :unique_count
-      ])
-      |> Enum.reject(fn {_k, v} -> is_nil(v) end)
-      |> Map.new()
-
-    if profile != %{} do
-      Map.put(dsv, :profile, profile)
-    else
-      Map.delete(dsv, :profile)
-    end
-  end
-
-  defp with_profile_attrs(dsv, _), do: Map.delete(dsv, :profile)
-
-  defp merge_metadata(%{metadata_versions: [_ | _] = metadata_versions} = dsv) do
-    %{fields: mutable_metadata} =
-      Enum.max_by(metadata_versions, & &1.version)
-      |> case do
-        %{deleted_at: deleted_at} = _version when deleted_at != nil ->
-          %{fields: %{}}
-
-        version ->
-          version
-      end
-
-    Map.update(dsv, :metadata, mutable_metadata, fn
-      nil ->
-        mutable_metadata
-
-      %{} = metadata ->
-        Map.merge(
-          metadata,
-          mutable_metadata,
-          fn
-            # Merge metadata and mutable_metadata @protected fields.
-            # If there is a conflict in the @protected content, the one from
-            # mutable metadata (rightmost in the Map.merge) will prevail.
-            @protected, mp, mmp -> Map.merge(mp, mmp)
-            _key, _mp, mmp -> mmp
-          end
-        )
-    end)
-  end
-
-  defp merge_metadata(dsv), do: dsv
 
   defp add_data_structure_type(%{data_structure_type: nil} = dsv),
     do: Map.put(dsv, :data_structure_type, %{})
@@ -386,6 +297,32 @@ defmodule TdDdWeb.DataStructureVersionView do
 
   defp put_actions(ds, actions) do
     Map.update(ds, "_actions", transform_create_link(actions), &Map.merge(&1, actions))
+  end
+
+  defp add_data_fields(%{data_fields: data_fields} = dsv) do
+    field_structures =
+      Enum.map(
+        data_fields,
+        &Map.take(&1, [
+          :data_structure_id,
+          :degree,
+          :deleted_at,
+          :description,
+          :inserted_at,
+          :links,
+          :metadata,
+          :name,
+          :type,
+          :profile,
+          :alias
+        ])
+      )
+
+    Map.put(dsv, :data_fields, field_structures)
+  end
+
+  defp add_data_fields(dsv) do
+    Map.put(dsv, :data_fields, [])
   end
 
   defp transform_create_link(%{create_link: true} = actions), do: %{actions | create_link: %{}}
