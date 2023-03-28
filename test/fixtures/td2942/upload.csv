@@ -1,10 +1,11 @@
-external_id;text;critical;enriched_text;urls_one_or_none;role;key_value;integer
-ex_id1;text;Yes;;;Role;Elemento 1;
-ex_id2;text2;Yes;;;Role;;
-ex_id3;;No;;;Role;;
-ex_id6;;;I’m 6;;;;
-ex_id7;;;Enriched text;https://www.google.es;;;3
-ex_id8;;;;https://www.google.es;Miss This;;2
-ex_id4;;No;;;Role 1;;
-ex_id5;;No;;;Role 2;Elemento 2;
-ex_id9;;;I’m 9;;;;9
+external_id;text;critical;enriched_text;urls_one_or_none;role;key_value;integer;hierarchy_name_1;hierarchy_name_2
+ex_id1;text;Yes;;;Role;Elemento 1;;;
+ex_id2;text2;Yes;;;Role;;;;
+ex_id3;;No;;;Role;;;;
+ex_id6;;;I’m 6;;;;;;
+ex_id7;;;Enriched text;https://www.google.es;;;3;;
+ex_id8;;;;https://www.google.es;Miss This;;2;;
+ex_id4;;No;;;Role 1;;;;
+ex_id5;;No;;;Role 2;Elemento 2;;;
+ex_id9;;;I’m 9;;;;9;;
+ex_id10;;;;;;;;children_1;children_1|father
