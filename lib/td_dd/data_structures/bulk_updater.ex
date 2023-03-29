@@ -74,16 +74,13 @@ defmodule TdDd.DataStructures.BulkUpdater do
       Task.Supervisor.async_nolink(
         TdDd.TaskSupervisor,
         fn ->
-          with [_ | _] = contents <- BulkUpdate.from_csv(structures_content_upload),
-               {:ok, %{updates: updates, update_notes: update_notes}} <-
-                 BulkUpdate.do_csv_bulk_update(contents, user_id, auto_publish),
-               [updated_notes, not_updated_notes] <-
-                 BulkUpdate.split_succeeded_errors(update_notes) do
-            make_summary(updates, updated_notes, not_updated_notes)
-          else
-            {:error, error} -> error
-            error -> error
-          end
+          contents = BulkUpdate.from_csv(structures_content_upload)
+
+          {:ok, %{updates: updates, update_notes: update_notes}} =
+            BulkUpdate.do_csv_bulk_update(contents, user_id, auto_publish)
+
+          [updated_notes, not_updated_notes] = BulkUpdate.split_succeeded_errors(update_notes)
+          make_summary(updates, updated_notes, not_updated_notes)
         end
       )
 
@@ -95,12 +92,12 @@ defmodule TdDd.DataStructures.BulkUpdater do
       user_id: user_id,
       status: "STARTED",
       csv_hash: csv_hash,
-      task_reference: ref_to_string(task.ref),
+      task_reference: task.ref |> ref_to_string,
       filename: filename
     })
 
     %{
-      reply: {:just_started, csv_hash, ref_to_string(task.ref)},
+      reply: {:just_started, csv_hash, task.ref |> ref_to_string},
       state:
         put_in(
           state.tasks[task.ref],
@@ -163,18 +160,6 @@ defmodule TdDd.DataStructures.BulkUpdater do
   end
 
   # If the task succeeds...
-  @impl true
-  def handle_info({ref, {:error, error}}, state) do
-    # The task succeed so we can cancel the monitoring and discard the DOWN message
-    Process.demonitor(ref, [:flush])
-    {task_info, state} = pop_in(state.tasks[ref])
-
-    Process.cancel_timer(task_info.task_timer)
-
-    create_event(task_info, :DOWN, error)
-    {:noreply, state}
-  end
-
   @impl true
   def handle_info({ref, summary} = msg, %{notify: notify} = state) when is_reference(ref) do
     # The task succeed so we can cancel the monitoring and discard the DOWN message
@@ -288,11 +273,15 @@ defmodule TdDd.DataStructures.BulkUpdater do
   end
 
   defp get_message_from_nested_errors(k, nested_errors) do
-    Enum.map(nested_errors, fn {field, {_, [{_, e} | _]}} ->
-      %{
-        field: field,
-        message: "#{k}.#{e}"
-      }
+    Enum.map(nested_errors, fn
+      {field, {_, [{_, e} | _]}} ->
+        %{field: field, message: "#{k}.#{e}"}
+
+      {field, {e}} ->
+        %{field: field, message: "#{k}.#{e}"}
+
+      {field, e} ->
+        %{field: field, message: e}
     end)
   end
 end
