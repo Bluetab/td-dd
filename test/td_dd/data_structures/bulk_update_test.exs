@@ -88,6 +88,20 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
           "type" => "integer",
           "values" => nil,
           "widget" => "number"
+        },
+        %{
+          "cardinality" => "?",
+          "name" => "hierarchy_name_1",
+          "type" => "hierarchy",
+          "values" => %{"hierarchy" => 1},
+          "widget" => "dropdown"
+        },
+        %{
+          "cardinality" => "*",
+          "name" => "hierarchy_name_2",
+          "type" => "hierarchy",
+          "values" => %{"hierarchy" => 1},
+          "widget" => "dropdown"
         }
       ]
     }
@@ -106,8 +120,9 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   setup do
     %{id: template_id, name: template_name} = template = CacheHelpers.insert_template()
     CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
-
-    [template: template, type: template_name]
+    hierarchy = create_hierarchy()
+    CacheHelpers.insert_hierarchy(hierarchy)
+    [template: template, type: template_name, hierarchy: hierarchy]
   end
 
   describe "parse_file/1" do
@@ -484,7 +499,9 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       |> Map.get(:df_content)
     end
 
-    test "update all data structures content", %{sts: sts} do
+    test "update all data structures content", %{sts: sts, hierarchy: %{nodes: nodes}} do
+      [%{key: key_node_1}, %{key: key_node_2} | _] = nodes
+
       expect_bulk_index()
 
       %{user_id: user_id} = build(:claims)
@@ -509,7 +526,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert :ok = IndexWorker.quiesce()
 
       ids = Map.keys(update_notes)
-      assert length(ids) == 9
+      assert length(ids) == 10
       assert Enum.all?(ids, fn id -> id in structure_ids end)
 
       assert %{"text" => "text", "critical" => "Yes", "role" => ["Role"], "key_value" => ["1"]} =
@@ -544,6 +561,12 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert %{"enriched_text" => ^text, "integer" => 9} = get_df_content_from_ext_id("ex_id9")
 
       assert %{} = get_df_content_from_ext_id("ex_id9")
+
+      assert %{
+               "hierarchy_name_1" => ^key_node_2,
+               "hierarchy_name_2" => [^key_node_2, ^key_node_1],
+               "urls_one_or_none" => _
+             } = get_df_content_from_ext_id("ex_id10")
     end
 
     test "returns error on content" do
@@ -570,6 +593,36 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert Keyword.get(validation, :enum) == ["Yes", "No"]
 
       assert %{"text" => "foo"} = get_df_content_from_ext_id("ex_id1")
+    end
+
+    test "returns error on hierarchy invalid content" do
+      expect_bulk_index()
+
+      %{user_id: user_id} = build(:claims)
+      upload = %{path: "test/fixtures/hierarchy/upload_invalid_hierarchy.csv"}
+
+      {:ok, %{update_notes: update_notes}} =
+        upload
+        |> BulkUpdate.from_csv()
+        |> BulkUpdate.do_csv_bulk_update(user_id)
+
+      assert :ok = IndexWorker.quiesce()
+
+      [_, errored_notes] = BulkUpdate.split_succeeded_errors(update_notes)
+
+      [first_errored_note | _] = Enum.map(errored_notes, fn {_k, v} -> v end)
+
+      assert {:error,
+              {%{
+                 errors: [
+                   df_content:
+                     {_,
+                      [
+                        hierarchy_name_1: {"has more than one node children_2"},
+                        hierarchy_name_2: {"has more than one node children_2"}
+                      ]}
+                 ]
+               }, _}} = first_errored_note
     end
 
     test "accept file utf8 with bom" do
@@ -749,5 +802,44 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     |> expect(:request, n, fn _, :post, "/structures/_doc/_bulk", _, [] ->
       SearchHelpers.bulk_index_response()
     end)
+  end
+
+  defp create_hierarchy do
+    hierarchy_id = 1
+
+    %{
+      id: hierarchy_id,
+      name: "name_#{hierarchy_id}",
+      nodes: [
+        build(:hierarchy_node, %{
+          node_id: 1,
+          parent_id: nil,
+          name: "father",
+          path: "/father",
+          hierarchy_id: hierarchy_id
+        }),
+        build(:hierarchy_node, %{
+          node_id: 2,
+          parent_id: 1,
+          name: "children_1",
+          path: "/father/children_1",
+          hierarchy_id: hierarchy_id
+        }),
+        build(:hierarchy_node, %{
+          node_id: 3,
+          parent_id: 1,
+          name: "children_2",
+          path: "/father/children_2",
+          hierarchy_id: hierarchy_id
+        }),
+        build(:hierarchy_node, %{
+          node_id: 4,
+          parent_id: nil,
+          name: "children_2",
+          path: "/children_2",
+          hierarchy_id: hierarchy_id
+        })
+      ]
+    }
   end
 end

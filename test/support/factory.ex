@@ -323,12 +323,18 @@ defmodule TdDd.Factory do
   end
 
   def hierarchy_node_factory(attrs) do
+    name = sequence("node_")
+    hierarchy_id = System.unique_integer([:positive])
+    node_id = System.unique_integer([:positive])
+
     %{
-      node_id: System.unique_integer([:positive]),
-      hierarchy_id: System.unique_integer([:positive]),
+      node_id: node_id,
+      hierarchy_id: hierarchy_id,
       parent_id: System.unique_integer([:positive]),
-      name: sequence("node_"),
-      description: sequence("description_")
+      name: name,
+      description: sequence("description_"),
+      path: "/#{name}",
+      key: "#{hierarchy_id}_#{node_id}"
     }
     |> merge_attributes(attrs)
   end

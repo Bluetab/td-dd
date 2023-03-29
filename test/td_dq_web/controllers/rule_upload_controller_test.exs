@@ -3,6 +3,28 @@ defmodule TdDqWeb.RuleUploadControllerTest do
 
   @moduletag sandbox: :shared
 
+  @hierarchy_template [
+    %{
+      "name" => "group",
+      "fields" => [
+        %{
+          "cardinality" => "?",
+          "name" => "hierarchy_name_1",
+          "type" => "hierarchy",
+          "values" => %{"hierarchy" => 1},
+          "widget" => "dropdown"
+        },
+        %{
+          "cardinality" => "*",
+          "name" => "hierarchy_name_2",
+          "type" => "hierarchy",
+          "values" => %{"hierarchy" => 1},
+          "widget" => "dropdown"
+        }
+      ]
+    }
+  ]
+
   setup_all do
     start_supervised!(TdDq.Cache.RuleLoader)
     start_supervised!(TdDd.Search.MockIndexWorker)
@@ -10,9 +32,16 @@ defmodule TdDqWeb.RuleUploadControllerTest do
   end
 
   setup do
-    template = CacheHelpers.insert_template(scope: "dq", name: "bar_template")
-    domain = CacheHelpers.insert_domain(%{external_id: "zoo_domain"})
-    [template: template, domain: domain]
+    CacheHelpers.insert_template(scope: "dq", name: "bar_template")
+
+    CacheHelpers.insert_template(scope: "dq", name: "hierarchies", content: @hierarchy_template)
+
+    CacheHelpers.insert_domain(%{external_id: "zoo_domain"})
+
+    hierarchy = create_hierarchy()
+    CacheHelpers.insert_hierarchy(hierarchy)
+
+    :ok
   end
 
   describe "upload" do
@@ -31,7 +60,7 @@ defmodule TdDqWeb.RuleUploadControllerTest do
                |> json_response(:ok)
 
       assert %{"ids" => ids, "errors" => []} = data
-      assert length(ids) == 3
+      assert length(ids) == 4
     end
 
     @tag authentication: [role: "admin"]
@@ -49,7 +78,7 @@ defmodule TdDqWeb.RuleUploadControllerTest do
                |> json_response(:ok)
 
       assert %{"errors" => errors, "ids" => []} = data
-      assert length(errors) == 3
+      assert length(errors) == 4
     end
 
     @tag authentication: [role: "admin"]
@@ -72,5 +101,44 @@ defmodule TdDqWeb.RuleUploadControllerTest do
                "found" => "with_no_required_headers, foo, bar"
              }
     end
+  end
+
+  defp create_hierarchy do
+    hierarchy_id = 1
+
+    %{
+      id: hierarchy_id,
+      name: "name_#{hierarchy_id}",
+      nodes: [
+        build(:hierarchy_node, %{
+          node_id: 1,
+          parent_id: nil,
+          name: "father",
+          path: "/father",
+          hierarchy_id: hierarchy_id
+        }),
+        build(:hierarchy_node, %{
+          node_id: 2,
+          parent_id: 1,
+          name: "children_1",
+          path: "/father/children_1",
+          hierarchy_id: hierarchy_id
+        }),
+        build(:hierarchy_node, %{
+          node_id: 3,
+          parent_id: 1,
+          name: "children_2",
+          path: "/father/children_2",
+          hierarchy_id: hierarchy_id
+        }),
+        build(:hierarchy_node, %{
+          node_id: 4,
+          parent_id: nil,
+          name: "children_2",
+          path: "/children_2",
+          hierarchy_id: hierarchy_id
+        })
+      ]
+    }
   end
 end

@@ -21,12 +21,55 @@ defmodule TdDq.Implementations.BulkLoadTest do
     }
   ]
 
+  @hierarchy_template [
+    %{
+      "name" => "group",
+      "fields" => [
+        %{
+          "cardinality" => "?",
+          "label" => "Numeric",
+          "name" => "integer",
+          "type" => "integer",
+          "values" => nil,
+          "widget" => "number"
+        },
+        %{
+          "cardinality" => "?",
+          "name" => "hierarchy_name_1",
+          "type" => "hierarchy",
+          "values" => %{"hierarchy" => 1},
+          "widget" => "dropdown"
+        },
+        %{
+          "cardinality" => "*",
+          "name" => "hierarchy_name_2",
+          "type" => "hierarchy",
+          "values" => %{"hierarchy" => 1},
+          "widget" => "dropdown"
+        }
+      ]
+    }
+  ]
+
   setup do
     start_supervised!(TdDd.Search.MockIndexWorker)
     %{name: template_name} = CacheHelpers.insert_template(scope: "dq")
+
+    %{name: hierarchy_template_name} =
+      CacheHelpers.insert_template(scope: "ri", content: @hierarchy_template)
+
+    hierarchy = create_hierarchy()
+    CacheHelpers.insert_hierarchy(hierarchy)
     domain = CacheHelpers.insert_domain()
 
-    [rule: insert(:rule), claims: build(:claims), template_name: template_name, domain: domain]
+    [
+      rule: insert(:rule),
+      claims: build(:claims),
+      template_name: template_name,
+      domain: domain,
+      hierarchy: hierarchy,
+      hierarchy_template_name: hierarchy_template_name
+    ]
   end
 
   describe "bulk_load/2" do
@@ -180,6 +223,34 @@ defmodule TdDq.Implementations.BulkLoadTest do
       assert {:ok, %{ids: [_id1, _id2], errors: []}} = BulkLoad.bulk_load(imp, claims)
     end
 
+    test "return ids with valid df_content that include hierarchy field", %{
+      rule: %{name: rule_name},
+      hierarchy_template_name: hierarchy_template_name,
+      claims: claims,
+      hierarchy: %{nodes: nodes}
+    } do
+      [%{key: key_node_1}, %{key: key_node_2} | _] = nodes
+
+      imp =
+        Enum.map(@valid_implementation, fn imp ->
+          imp
+          |> Map.put("rule_name", rule_name)
+          |> Map.put("template", hierarchy_template_name)
+          |> Map.put("hierarchy_name_1", "children_1")
+          |> Map.put("hierarchy_name_2", "father|children_1")
+        end)
+
+      assert {:ok, %{ids: [id1, id2], errors: []}} = BulkLoad.bulk_load(imp, claims)
+
+      df_content = %{
+        "hierarchy_name_1" => key_node_2,
+        "hierarchy_name_2" => [key_node_1, key_node_2]
+      }
+
+      assert %{df_content: ^df_content} = Implementations.get_implementation!(id1)
+      assert %{df_content: ^df_content} = Implementations.get_implementation!(id2)
+    end
+
     test "return ids with valid df_content that include field with multiple values", %{
       rule: %{name: rule_name},
       claims: claims
@@ -268,6 +339,23 @@ defmodule TdDq.Implementations.BulkLoadTest do
         end)
 
       assert {:ok, %{ids: [], errors: [_e1, _e2]}} = BulkLoad.bulk_load(imp, claims)
+    end
+
+    test "return error with hierarchy more than one nodes", %{
+      rule: %{name: rule_name},
+      hierarchy_template_name: hierarchy_template_name,
+      claims: claims
+    } do
+      imp =
+        Enum.map(@valid_implementation, fn imp ->
+          imp
+          |> Map.put("rule_name", rule_name)
+          |> Map.put("template", hierarchy_template_name)
+          |> Map.put("hierarchy_name_1", "children_2")
+          |> Map.put("hierarchy_name_2", "children_2|children_2")
+        end)
+
+      assert {:ok, %{ids: [], errors: [_, _]}} = BulkLoad.bulk_load(imp, claims)
     end
 
     test "return errors when some field doesn't exist and not template defined", %{
@@ -416,5 +504,44 @@ defmodule TdDq.Implementations.BulkLoadTest do
       assert ids == ids_to_reindex
       assert {:ok, %{ids: ^ids, ids_to_reindex: [], errors: []}} = BulkLoad.bulk_load(imp, claims)
     end
+  end
+
+  defp create_hierarchy do
+    hierarchy_id = 1
+
+    %{
+      id: hierarchy_id,
+      name: "name_#{hierarchy_id}",
+      nodes: [
+        build(:hierarchy_node, %{
+          node_id: 1,
+          parent_id: nil,
+          name: "father",
+          path: "/father",
+          hierarchy_id: hierarchy_id
+        }),
+        build(:hierarchy_node, %{
+          node_id: 2,
+          parent_id: 1,
+          name: "children_1",
+          path: "/father/children_1",
+          hierarchy_id: hierarchy_id
+        }),
+        build(:hierarchy_node, %{
+          node_id: 3,
+          parent_id: 1,
+          name: "children_2",
+          path: "/father/children_2",
+          hierarchy_id: hierarchy_id
+        }),
+        build(:hierarchy_node, %{
+          node_id: 4,
+          parent_id: nil,
+          name: "children_2",
+          path: "/children_2",
+          hierarchy_id: hierarchy_id
+        })
+      ]
+    }
   end
 end

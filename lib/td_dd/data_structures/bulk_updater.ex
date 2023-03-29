@@ -173,6 +173,7 @@ defmodule TdDd.DataStructures.BulkUpdater do
   end
 
   # If the task fails...
+  @impl true
   def handle_info({:DOWN, ref, _, _pid, reason}, state) when is_reference(ref) do
     {task_info, state} = pop_in(state.tasks[ref])
     create_event(task_info, :DOWN, reason)
@@ -180,6 +181,7 @@ defmodule TdDd.DataStructures.BulkUpdater do
   end
 
   # This handle function executes when the task has timed out
+  @impl true
   def handle_info({:timeout, %{ref: ref} = task}, state) when is_reference(ref) do
     {task_info, state} = pop_in(state.tasks[ref])
 
@@ -271,11 +273,15 @@ defmodule TdDd.DataStructures.BulkUpdater do
   end
 
   defp get_message_from_nested_errors(k, nested_errors) do
-    Enum.map(nested_errors, fn {field, {_, [{_, e} | _]}} ->
-      %{
-        field: field,
-        message: "#{k}.#{e}"
-      }
+    Enum.map(nested_errors, fn
+      {field, {_, [{_, e} | _]}} ->
+        %{field: field, message: "#{k}.#{e}"}
+
+      {field, {e}} ->
+        %{field: field, message: "#{k}.#{e}"}
+
+      {field, e} ->
+        %{field: field, message: e}
     end)
   end
 end
