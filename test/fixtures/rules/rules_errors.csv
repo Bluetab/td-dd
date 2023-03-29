@@ -1,4 +1,5 @@
-name;domain_external_id;template;string;list
+name;domain_external_id;template;string;list;hierarchy_name_1;hierarchy_name_2
 rule_foo_1;invalid_domain;bar_template;boo_1;one
 rule_foo_2;zoo_domain;invalid_template;boo_2;two
 rule_foo_3;zoo_domain;bar_template;boo_3;false
+rule_foo_4;zoo_domain;hierarchies;boo_4;false;children_2;children_2|children_2

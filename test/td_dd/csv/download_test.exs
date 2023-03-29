@@ -75,8 +75,20 @@ defmodule TdDd.CSV.DownloadTest do
       CacheHelpers.insert_hierarchy(
         id: 1927,
         nodes: [
-          build(:hierarchy_node, %{node_id: 50, parent_id: nil, hierarchy_id: 1927}),
-          build(:hierarchy_node, %{node_id: 51, parent_id: nil, hierarchy_id: 1927})
+          build(:hierarchy_node, %{
+            node_id: 50,
+            name: "node_0",
+            parent_id: nil,
+            hierarchy_id: 1927,
+            path: "/node_0"
+          }),
+          build(:hierarchy_node, %{
+            node_id: 51,
+            name: "node_1",
+            parent_id: nil,
+            hierarchy_id: 1927,
+            path: "/node_1"
+          })
         ]
       )
 
@@ -121,7 +133,7 @@ defmodule TdDd.CSV.DownloadTest do
       structures = [structure_1]
       csv = Download.to_csv(structures)
 
-      expected_hierarchy_value = "node_0|node_1"
+      expected_hierarchy_value = "/node_0|/node_1"
 
       assert csv ==
                """

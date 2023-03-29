@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-5650] Tests for hierarchy bulk uploads
+
 ## [5.4.0] 2023-03-28
 
 ### Added
