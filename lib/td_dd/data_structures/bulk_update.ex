@@ -43,11 +43,8 @@ defmodule TdDd.DataStructures.BulkUpdate do
 
   def from_csv(upload, :simple) do
     case parse_file(upload) do
-      {:ok, rows} ->
-        parse_rows(rows)
-
-      errors ->
-        {:error, errors}
+      {:ok, rows} -> parse_rows(rows)
+      {:error, _} = error -> error
     end
   end
 
@@ -65,7 +62,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
       |> case do
         [_ | _] = contents -> contents
         [] -> {:error, %{message: :external_id_not_found}}
-        errors -> {:error, errors}
+        {:error, _} = error -> error
       end
     end
   end

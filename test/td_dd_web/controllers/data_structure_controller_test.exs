@@ -1276,6 +1276,81 @@ defmodule TdDdWeb.DataStructureControllerTest do
     end
 
     @tag authentication: [role: "admin"]
+    test "return error if template not exists", %{conn: conn, domain: %{id: domain_id}} do
+      %{id: data_structure_id} =
+        insert(:data_structure,
+          confidential: false,
+          external_id: "some_external_id_1",
+          domain_ids: [domain_id]
+        )
+
+      insert(:data_structure_version,
+        data_structure_id: data_structure_id,
+        type: "unknown_template"
+      )
+
+      conn
+      |> post(data_structure_path(conn, :bulk_update_template_content),
+        structures: plug_upload("test/fixtures/td3787/upload.csv")
+      )
+      |> json_response(:accepted)
+
+      assert_receive {:info, {_ref, {:error, :template_not_found}}}, @receive_timeout
+
+      assert [
+               %{
+                 "csv_hash" => _csv_hash,
+                 "status" => "FAILED",
+                 "task_reference" => _task_reference,
+                 "response" => nil,
+                 "message" => "DOWN, :template_not_found"
+               }
+               | _
+             ] =
+               conn
+               |> get(Routes.csv_bulk_update_event_path(conn, :index))
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "return error if external_id_not_found", %{conn: conn, domain: %{id: domain_id}} do
+      %{id: data_structure_id} =
+        insert(:data_structure,
+          confidential: false,
+          external_id: "some_external_id_1",
+          domain_ids: [domain_id]
+        )
+
+      insert(:data_structure_version,
+        data_structure_id: data_structure_id,
+        type: @template_name
+      )
+
+      conn
+      |> post(data_structure_path(conn, :bulk_update_template_content),
+        structures: plug_upload("test/fixtures/td3071/empty_lines.csv")
+      )
+      |> json_response(:accepted)
+
+      assert_receive {:info, {_ref, {:error, %{message: :external_id_not_found}}}},
+                     @receive_timeout
+
+      assert [
+               %{
+                 "csv_hash" => _csv_hash,
+                 "status" => "FAILED",
+                 "task_reference" => _task_reference,
+                 "response" => nil,
+                 "message" => "DOWN, %{message: :external_id_not_found}"
+               }
+               | _
+             ] =
+               conn
+               |> get(Routes.csv_bulk_update_event_path(conn, :index))
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
     test "upload, valid csv with multiple field values", %{conn: conn, domain: %{id: domain_id}} do
       data_structure =
         insert(:data_structure,

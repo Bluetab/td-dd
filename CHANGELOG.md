@@ -6,6 +6,12 @@
 
 - [TD-5650] Tests for hierarchy bulk uploads
 
+### Fixed
+
+- [TD-5670] Structure notes bulk_update when has invalid external_id and template not found
+
+
+
 ## [5.4.0] 2023-03-28
 
 ### Added
