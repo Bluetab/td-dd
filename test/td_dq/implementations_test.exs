@@ -1175,7 +1175,7 @@ defmodule TdDq.ImplementationsTest do
              ]
     end
 
-    test "udpate a implementations when it is a rejected state" do
+    test "update a implementations when it is a rejected state" do
       implementation = insert(:implementation, status: :rejected)
       claims = build(:claims)
 
