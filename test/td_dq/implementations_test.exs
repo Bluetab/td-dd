@@ -1175,6 +1175,52 @@ defmodule TdDq.ImplementationsTest do
              ]
     end
 
+    test "udpate a implementations when it is a rejected state" do
+      implementation = insert(:implementation, status: :rejected)
+      claims = build(:claims)
+
+      validations = [
+        %{
+          operator: %{
+            name: "gt",
+            value_type: "timestamp"
+          },
+          structure: %{id: 12_554},
+          value: [%{raw: "2019-12-30 05:35:00"}]
+        }
+      ]
+
+      update_attrs =
+        %{
+          validation: [%{conditions: validations}]
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert {:ok, %{implementation: updated_implementation}} =
+               Implementations.update_implementation(implementation, update_attrs, claims)
+
+      assert %Implementation{} = updated_implementation
+      assert updated_implementation.rule_id == implementation.rule_id
+
+      assert updated_implementation.implementation_key ==
+               implementation.implementation_key
+
+      assert updated_implementation.validation == [
+               %TdDq.Implementations.Conditions{
+                 conditions: [
+                   %TdDq.Implementations.ConditionRow{
+                     operator: %TdDq.Implementations.Operator{
+                       name: "gt",
+                       value_type: "timestamp"
+                     },
+                     structure: %TdDq.Implementations.Structure{id: 12_554},
+                     value: [%{"raw" => "2019-12-30 05:35:00"}]
+                   }
+                 ]
+               }
+             ]
+    end
+
     test "with population in validations updates data" do
       implementation = insert(:implementation)
       claims = build(:claims)

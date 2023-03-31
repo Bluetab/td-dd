@@ -278,6 +278,7 @@ defmodule TdDq.Implementations do
 
   defp upsert(multi, changeset, :published), do: Multi.insert(multi, :implementation, changeset)
   defp upsert(multi, changeset, :draft), do: Multi.update(multi, :implementation, changeset)
+  defp upsert(multi, changeset, :rejected), do: Multi.update(multi, :implementation, changeset)
 
   defp upsert(multi, %{data: implementation, changes: %{rule_id: rule_id}}) do
     %{domain_id: new_domain_id} = Repo.get!(Rule, rule_id)
