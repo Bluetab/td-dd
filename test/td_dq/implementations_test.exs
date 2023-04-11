@@ -4,6 +4,7 @@ defmodule TdDq.ImplementationsTest do
   import TdDd.TestOperators
 
   alias Ecto.Changeset
+  alias TdDd.Search.MockIndexWorker
   alias TdDq.Implementations
   alias TdDq.Implementations.Implementation
   alias TdDq.Implementations.ImplementationStructure
@@ -12,7 +13,7 @@ defmodule TdDq.ImplementationsTest do
 
   setup do
     start_supervised!(TdDq.MockRelationCache)
-    start_supervised!(TdDd.Search.MockIndexWorker)
+    start_supervised!(MockIndexWorker)
     start_supervised!(TdDq.Cache.RuleLoader)
     start_supervised!(TdDd.Search.StructureEnricher)
     %{id: domain_id} = CacheHelpers.insert_domain()
@@ -1856,6 +1857,21 @@ defmodule TdDq.ImplementationsTest do
                  data_structure,
                  %{type: :dataset}
                )
+    end
+
+    test "reindexes implementation_structure/1 after creation" do
+      MockIndexWorker.clear()
+
+      %{id: implementation_id} = implementation = insert(:implementation)
+      data_structure = insert(:data_structure)
+
+      Implementations.create_implementation_structure(
+        implementation,
+        data_structure,
+        %{type: :dataset}
+      )
+
+      assert MockIndexWorker.calls() == [{:reindex_implementations, implementation_id}]
     end
 
     test "create_implementation_structure/1 with invalid data returns error changeset" do

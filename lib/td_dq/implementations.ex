@@ -507,8 +507,8 @@ defmodule TdDq.Implementations do
 
   def get_structures(%Implementation{} = implementation) do
     implementation
-    |> (&Map.put(&1, :validations, flatten_conditions_set(&1.validation))).()
-    |> (&Map.put(&1, :populations, flatten_conditions_set(&1.populations))).()
+    |> then(&Map.put(&1, :validations, flatten_conditions_set(&1.validation)))
+    |> then(&Map.put(&1, :populations, flatten_conditions_set(&1.populations)))
     |> Map.take([:dataset, :populations, :validations, :segments])
     |> Map.values()
     |> Enum.flat_map(&structure/1)
@@ -781,7 +781,10 @@ defmodule TdDq.Implementations do
     enriched_validation = Enum.map(implementation.validation, &enrich_conditions/1)
     enriched_segments = Enum.map(implementation.segments, &enrich_condition/1)
 
-    enriched_data_structures = enrich_data_structures_path(implementation)
+    enriched_data_structures =
+      implementation
+      |> Repo.preload(data_structures: [data_structure: [:system, :current_version]])
+      |> enrich_data_structures_path()
 
     implementation
     |> Map.put(:dataset, enriched_dataset)
@@ -1079,7 +1082,7 @@ defmodule TdDq.Implementations do
   end
 
   def create_implementation_structure(
-        implementation,
+        %{id: implementation_id} = implementation,
         data_structure,
         attrs \\ %{},
         opts \\ [
@@ -1087,13 +1090,18 @@ defmodule TdDq.Implementations do
           conflict_target: [:implementation_id, :data_structure_id, :type]
         ]
       ) do
-    %ImplementationStructure{}
-    |> ImplementationStructure.changeset(
-      attrs,
-      implementation,
-      data_structure
-    )
-    |> Repo.insert(opts)
+    implementation_structure =
+      %ImplementationStructure{}
+      |> ImplementationStructure.changeset(
+        attrs,
+        implementation,
+        data_structure
+      )
+      |> Repo.insert(opts)
+
+    @index_worker.reindex_implementations(implementation_id)
+
+    implementation_structure
   end
 
   def delete_implementation_structure(%ImplementationStructure{} = implementation_structure) do

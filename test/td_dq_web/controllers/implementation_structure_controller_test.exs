@@ -1,7 +1,10 @@
 defmodule TdDqWeb.ImplementationStructureControllerTest do
   use TdDqWeb.ConnCase
 
+  alias TdDd.Search.MockIndexWorker
+
   setup %{conn: conn} do
+    start_supervised!(MockIndexWorker)
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
 
@@ -121,6 +124,30 @@ defmodule TdDqWeb.ImplementationStructureControllerTest do
         )
 
       assert response(conn, :forbidden)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "reindex implementation after create ImplementationStructure link", %{
+      conn: conn
+    } do
+      MockIndexWorker.clear()
+      domain = build(:domain)
+      %{id: implementation_id} = implementation = insert(:implementation, domain_id: domain.id)
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
+
+      conn =
+        post(
+          conn,
+          Routes.implementation_implementation_structure_path(conn, :create, implementation),
+          data_structure_id: data_structure_id,
+          type: "dataset"
+        )
+
+      assert response(conn, 201)
+
+      assert MockIndexWorker.calls() == [
+               {:reindex_implementations, implementation_id}
+             ]
     end
 
     @tag authentication: [role: "admin"]
