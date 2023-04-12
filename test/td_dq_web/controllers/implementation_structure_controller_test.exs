@@ -340,5 +340,37 @@ defmodule TdDqWeb.ImplementationStructureControllerTest do
                |> get(Routes.implementation_path(conn, :show, implementation_id))
                |> json_response(:ok)
     end
+
+    @tag authentication: [role: "admin"]
+    test "reindex implementation after delete ImplementationStructure link", %{
+      conn: conn
+    } do
+      MockIndexWorker.clear()
+      domain = build(:domain)
+      %{
+        id: id,
+        implementation_id: implementation_id
+      } =
+        insert(:implementation_structure,
+          implementation: build(:implementation, domain_id: domain.id),
+          data_structure: build(:data_structure, domain_ids: [domain.id])
+        )
+
+      conn =
+        delete(
+          conn,
+          Routes.implementation_structure_path(
+            conn,
+            :delete,
+            id
+          )
+        )
+
+      assert response(conn, 204)
+
+      assert MockIndexWorker.calls() == [
+               {:reindex_implementations, implementation_id}
+             ]
+    end
   end
 end

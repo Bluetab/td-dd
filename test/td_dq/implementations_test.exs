@@ -1876,7 +1876,7 @@ defmodule TdDq.ImplementationsTest do
 
     test "create_implementation_structure/1 with invalid data returns error changeset" do
       assert {:error, %Ecto.Changeset{}} =
-               Implementations.create_implementation_structure(nil, nil, %{})
+               Implementations.create_implementation_structure(%Implementation{}, nil, %{})
     end
 
     test "creating a deleted implementation_structure will undelete it" do
@@ -1914,6 +1914,25 @@ defmodule TdDq.ImplementationsTest do
                TdDd.Repo.get!(ImplementationStructure, implementation_structure.id)
 
       refute is_nil(deleted_at)
+    end
+
+    test "reindex implementation when delete_implementation_structure/1" do
+      MockIndexWorker.clear()
+      domain = build(:domain)
+      %{
+        implementation_id: implementation_id
+      } = implementation_structure =
+        insert(:implementation_structure,
+          implementation: build(:implementation, domain_id: domain.id),
+          data_structure: build(:data_structure, domain_ids: [domain.id])
+        )
+
+      assert {:ok, %ImplementationStructure{}} =
+               Implementations.delete_implementation_structure(implementation_structure)
+
+      assert MockIndexWorker.calls() == [
+        {:reindex_implementations, implementation_id}
+      ]
     end
   end
 

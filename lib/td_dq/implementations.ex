@@ -1090,24 +1090,32 @@ defmodule TdDq.Implementations do
           conflict_target: [:implementation_id, :data_structure_id, :type]
         ]
       ) do
-    implementation_structure =
-      %ImplementationStructure{}
-      |> ImplementationStructure.changeset(
-        attrs,
-        implementation,
-        data_structure
-      )
-      |> Repo.insert(opts)
 
-    @index_worker.reindex_implementations(implementation_id)
-
-    implementation_structure
+    %ImplementationStructure{}
+    |> ImplementationStructure.changeset(
+      attrs,
+      implementation,
+      data_structure
+    )
+    |> Repo.insert(opts)
+    |> case do
+      {:error, _} = error -> error
+      implementation_structure ->
+        @index_worker.reindex_implementations(implementation_id)
+        implementation_structure
+    end
   end
 
   def delete_implementation_structure(%ImplementationStructure{} = implementation_structure) do
     implementation_structure
     |> ImplementationStructure.delete_changeset()
     |> Repo.update()
+    |> case do
+      {:error, _} = error -> error
+      deleted_implementation_structure ->
+        @index_worker.reindex_implementations(implementation_structure.implementation_id)
+        deleted_implementation_structure
+    end
   end
 
   def get_cached_content(%{} = content, type) when is_binary(type) do
