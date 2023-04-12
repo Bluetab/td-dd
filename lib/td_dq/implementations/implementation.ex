@@ -460,6 +460,11 @@ defmodule TdDq.Implementations.Implementation do
       structure_names = get_structure_names(structures)
       structure_aliases = Implementations.get_sources(implementation)
 
+      structure_links =
+        implementation
+        |> Map.get(:data_structures)
+        |> Enum.map(&Map.get(&1, :data_structure_id))
+
       %Implementation{inserted_at: ref_inserted_at} =
         Map.get(implementation, :implementation_ref_struct)
 
@@ -484,6 +489,7 @@ defmodule TdDq.Implementations.Implementation do
       |> Map.put(:domain_ids, domain_ids)
       |> Map.put(:structure_ids, structure_ids)
       |> Map.put(:structure_names, structure_names)
+      |> Map.put(:structure_links, structure_links)
       |> Map.put(:df_content, df_content)
     end
 
