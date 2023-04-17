@@ -10,6 +10,7 @@
 
 - [TD-5670] Structure notes bulk_update when has invalid external_id and template not found
 - [TD-5696] Rejected implementations cant be edited
+- [TD-5698] Ruleless implementations reindex when upload results
 
 ## [5.4.0] 2023-03-28
 

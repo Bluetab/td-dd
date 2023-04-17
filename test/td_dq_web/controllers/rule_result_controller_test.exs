@@ -1,10 +1,12 @@
 defmodule TdDqWeb.RuleResultControllerTest do
   use TdDqWeb.ConnCase
 
+  import Mox
   alias Decimal
   alias TdDq.Rules.RuleResults
 
   setup_all do
+    start_supervised!(TdDd.Search.Cluster)
     start_supervised(TdDq.Cache.RuleLoader)
     start_supervised(TdDd.Search.MockIndexWorker)
     :ok
@@ -19,8 +21,16 @@ defmodule TdDqWeb.RuleResultControllerTest do
         rule = insert(:rule, active: true)
         ri = insert(:implementation, implementation_key: "ri135", rule: rule, status: :published)
 
+        ri_ruleless =
+          insert(:implementation, implementation_key: "ri_ruleless", rule: nil, status: :published)
+
         rule_results = %Plug.Upload{path: fixture}
-        {:ok, rule: rule, rule_results_file: rule_results, implementation: ri}
+
+        {:ok,
+         rule: rule,
+         rule_results_file: rule_results,
+         implementation: ri,
+         implementation_ruleless: ri_ruleless}
     end
   end
 
@@ -133,6 +143,38 @@ defmodule TdDqWeb.RuleResultControllerTest do
       assert conn
              |> post(Routes.rule_result_path(conn, :create), rule_results: rule_results_file)
              |> response(:ok)
+    end
+
+    @tag authentication: [role: "service"]
+    @tag fixture: "test/fixtures/rule_results/rule_results_errors_records.csv"
+    test "can load results with implementations ruleless", %{
+      conn: conn,
+      rule_results_file: rule_results_file,
+      implementation_ruleless: implementation
+    } do
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/implementations/_search", _, _ ->
+        SearchHelpers.hits_response([implementation])
+      end)
+
+      assert %{"data" => [%{"execution_result_info" => %{"result_text" => nil}}]} =
+               conn
+               |> post(Routes.implementation_search_path(conn, :create))
+               |> json_response(:ok)
+
+      assert conn
+             |> post(Routes.rule_result_path(conn, :create), rule_results: rule_results_file)
+             |> response(:ok)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/implementations/_search", _, _ ->
+        SearchHelpers.hits_response([implementation])
+      end)
+
+      assert %{"data" => [%{"execution_result_info" => %{"errors" => 4}}]} =
+               conn
+               |> post(Routes.implementation_search_path(conn, :create))
+               |> json_response(:ok)
     end
 
     @tag authentication: [role: "user"]

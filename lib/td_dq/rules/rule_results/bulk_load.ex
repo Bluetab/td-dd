@@ -14,6 +14,8 @@ defmodule TdDq.Rules.RuleResults.BulkLoad do
   alias TdDq.Rules.RuleResult
   alias TdDq.Rules.RuleResults
 
+  @index_worker Application.compile_env(:td_dd, :dq_index_worker)
+
   require Logger
 
   def bulk_load(records) do
@@ -42,16 +44,27 @@ defmodule TdDq.Rules.RuleResults.BulkLoad do
 
   defp bulk_refresh(res) do
     with {:ok, %{results: results}} <- res,
-         rule_ids <- rule_ids_from_results(results) do
+         {rule_ids, implementation_ids} <- split_results_by_has_rule_id(results) do
       RuleLoader.refresh(rule_ids)
+      @index_worker.reindex_implementations(implementation_ids)
       res
     end
   end
 
-  defp rule_ids_from_results(results) do
+  defp split_results_by_has_rule_id(results) do
+    {implementations_ruleless, implementations_with_rules} =
+      Enum.split_with(results, fn result -> is_nil(result.rule_id) end)
+
+    rule_ids = get_ids_from_results(implementations_with_rules, :rule_id)
+
+    implementation_ids = get_ids_from_results(implementations_ruleless, :implementation_id)
+
+    {rule_ids, implementation_ids}
+  end
+
+  defp get_ids_from_results(results, id_type) do
     results
-    |> Enum.map(&Map.get(&1, :rule_id))
-    |> Enum.reject(&is_nil/1)
+    |> Enum.map(&Map.get(&1, id_type))
     |> Enum.uniq()
   end
 
