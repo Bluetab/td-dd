@@ -1,3 +1,5 @@
 implementation_key;date;records;errors;m:param1;m:param2;m:param3
 ri135;2019-08-29-00-00-00;1000000;2;valor;valor2;4
 ri135;2019-08-30-00-00-00;4;4;;;5
+ri_ruleless;2019-08-29-00-00-00;1000000;2;valor;valor2;4
+ri_ruleless;2019-08-30-00-00-00;4;4;;;5
