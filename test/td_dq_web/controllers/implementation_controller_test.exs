@@ -3181,6 +3181,91 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       assert {:ok, %{id: ^id, goal: 30.0}} = CacheHelpers.get_implementation(implementation_ref)
     end
+
+    @tag authentication: [role: "admin"]
+    test "updating implementation will create implementation_structures in implementation ref", %{
+      conn: conn
+    } do
+      domain = build(:domain)
+
+      %{id: dataset_structure_id} =
+        dataset_structure = insert(:data_structure, domain_ids: [domain.id])
+
+      %{id: validation_structure_id} = insert(:data_structure, domain_ids: [domain.id])
+
+      dataset_row =
+        build(
+          :dataset_row,
+          structure: build(:dataset_structure, id: dataset_structure_id)
+        )
+
+      %{id: implementation_ref_id} =
+        implementation_ref =
+        insert(:implementation,
+          status: :versioned,
+          version: 1,
+          domain_id: domain.id,
+          dataset: [dataset_row]
+        )
+
+      implementation =
+        insert(:implementation,
+          status: :published,
+          version: 2,
+          domain_id: domain.id,
+          dataset: [dataset_row],
+          implementation_ref: implementation_ref_id
+        )
+
+      insert(:implementation_structure,
+        implementation: implementation_ref,
+        data_structure: insert(:data_structure, domain_ids: [domain.id])
+      )
+
+      insert(:implementation_structure,
+        deleted_at: DateTime.utc_now(),
+        implementation: implementation_ref,
+        data_structure: dataset_structure
+      )
+
+      validations = [
+        %{
+          operator: %{
+            name: "gt",
+            value_type: "timestamp"
+          },
+          structure: %{id: validation_structure_id},
+          value: [%{raw: "2019-12-30 05:35:00"}]
+        }
+      ]
+
+      update_attrs =
+        %{
+          validation: [%{conditions: validations}],
+          status: :draft
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert conn
+             |> put(Routes.implementation_path(conn, :update, implementation),
+               rule_implementation: update_attrs
+             )
+             |> json_response(:ok)
+
+      assert conn
+             |> get(Routes.implementation_path(conn, :show, implementation_ref_id))
+
+      assert %{"data" => %{"data_structures" => [_ | _] = data_structures_links}} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, implementation_ref_id))
+               |> json_response(:ok)
+
+      assert length(data_structures_links) == 2
+
+      assert Enum.all?(data_structures_links, fn dsl ->
+               Map.get(dsl, "implementation_id") == implementation_ref_id
+             end)
+    end
   end
 
   describe "delete implementation" do

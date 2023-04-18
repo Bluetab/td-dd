@@ -6,6 +6,9 @@
 
 - [TD-5650] Tests for hierarchy bulk uploads
 - [TD-5297] Added `DB_SSL` environment variable for Database SSL connection
+- [TD-5641]
+  - Move implementation structure links to implementation ref
+  - Reindex implementation when add new links
 
 ### Fixed
 

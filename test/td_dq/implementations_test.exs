@@ -4,6 +4,7 @@ defmodule TdDq.ImplementationsTest do
   import TdDd.TestOperators
 
   alias Ecto.Changeset
+  alias TdDd.Search.MockIndexWorker
   alias TdDq.Implementations
   alias TdDq.Implementations.Implementation
   alias TdDq.Implementations.ImplementationStructure
@@ -12,7 +13,7 @@ defmodule TdDq.ImplementationsTest do
 
   setup do
     start_supervised!(TdDq.MockRelationCache)
-    start_supervised!(TdDd.Search.MockIndexWorker)
+    start_supervised!(MockIndexWorker)
     start_supervised!(TdDq.Cache.RuleLoader)
     start_supervised!(TdDd.Search.StructureEnricher)
     %{id: domain_id} = CacheHelpers.insert_domain()
@@ -1377,14 +1378,14 @@ defmodule TdDq.ImplementationsTest do
 
       claims = build(:claims, role: "admin")
 
-      assert {:ok, %{implementation: %{id: id}}} =
+      assert {:ok, _} =
                Implementations.update_implementation(implementation, update_attrs, claims)
 
       assert %Implementation{
                data_structures: [
                  %{data_structure_id: ^validation_data_structure_id, type: :validation}
                ]
-             } = Implementations.get_implementation!(id, preload: :data_structures)
+             } = Implementations.get_implementation!(implementation.id, preload: :data_structures)
     end
 
     test "update basic implementation to default implementation" do
@@ -1858,9 +1859,24 @@ defmodule TdDq.ImplementationsTest do
                )
     end
 
+    test "reindex implementation after create implementation_structure" do
+      MockIndexWorker.clear()
+
+      %{id: implementation_id} = implementation = insert(:implementation)
+      data_structure = insert(:data_structure)
+
+      Implementations.create_implementation_structure(
+        implementation,
+        data_structure,
+        %{type: :dataset}
+      )
+
+      assert MockIndexWorker.calls() == [{:reindex_implementations, implementation_id}]
+    end
+
     test "create_implementation_structure/1 with invalid data returns error changeset" do
       assert {:error, %Ecto.Changeset{}} =
-               Implementations.create_implementation_structure(nil, nil, %{})
+               Implementations.create_implementation_structure(%Implementation{}, nil, %{})
     end
 
     test "creating a deleted implementation_structure will undelete it" do
@@ -1898,6 +1914,123 @@ defmodule TdDq.ImplementationsTest do
                TdDd.Repo.get!(ImplementationStructure, implementation_structure.id)
 
       refute is_nil(deleted_at)
+    end
+
+    test "reindex implementation when delete_implementation_structure/1" do
+      MockIndexWorker.clear()
+      domain = build(:domain)
+
+      %{
+        implementation_id: implementation_id
+      } =
+        implementation_structure =
+        insert(:implementation_structure,
+          implementation: build(:implementation, domain_id: domain.id),
+          data_structure: build(:data_structure, domain_ids: [domain.id])
+        )
+
+      assert {:ok, %ImplementationStructure{}} =
+               Implementations.delete_implementation_structure(implementation_structure)
+
+      assert MockIndexWorker.calls() == [
+               {:reindex_implementations, implementation_id}
+             ]
+    end
+
+    test "when update implementation new implementation_structures will be created linked to implementation ref" do
+      claims = build(:claims)
+      domain = build(:domain)
+
+      %{id: dataset_structure_id} =
+        dataset_structure = insert(:data_structure, domain_ids: [domain.id])
+
+      %{id: validation_structure_id} = insert(:data_structure, domain_ids: [domain.id])
+
+      dataset_row =
+        build(
+          :dataset_row,
+          structure: build(:dataset_structure, id: dataset_structure_id)
+        )
+
+      %{id: implementation_ref_id} =
+        implementation_ref =
+        insert(:implementation,
+          status: :versioned,
+          version: 1,
+          domain_id: domain.id,
+          dataset: [dataset_row]
+        )
+
+      implementation =
+        insert(:implementation,
+          status: :published,
+          version: 2,
+          domain_id: domain.id,
+          dataset: [dataset_row],
+          implementation_ref: implementation_ref_id
+        )
+
+      insert(:implementation_structure,
+        implementation: implementation_ref,
+        data_structure: insert(:data_structure, domain_ids: [domain.id])
+      )
+
+      deleted_data_structure_link =
+        insert(:implementation_structure,
+          deleted_at: DateTime.utc_now(),
+          implementation: implementation_ref,
+          data_structure: dataset_structure
+        )
+
+      validations = [
+        %{
+          operator: %{
+            name: "gt",
+            value_type: "timestamp"
+          },
+          structure: %{id: validation_structure_id},
+          value: [%{raw: "2019-12-30 05:35:00"}]
+        }
+      ]
+
+      update_attrs =
+        %{
+          validation: [%{conditions: validations}],
+          status: :draft
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert {:ok, _} =
+               implementation
+               |> Repo.preload(data_structures: :data_structure, rule: [])
+               |> Implementations.update_implementation(
+                 update_attrs,
+                 claims
+               )
+
+      assert %{data_structures: data_structures_links} =
+               Implementation
+               |> where([i], i.id == ^implementation_ref_id)
+               |> preload(:data_structures)
+               |> Repo.one()
+
+      assert length(data_structures_links) == 2
+
+      assert Enum.all?(data_structures_links, fn dsl ->
+               dsl.implementation_id == implementation_ref_id
+             end)
+
+      assert %{data_structure_id: ^dataset_structure_id} =
+               deleted_link =
+               ImplementationStructure
+               |> where(
+                 [is],
+                 is.data_structure_id == ^deleted_data_structure_link.data_structure_id
+               )
+               |> where([is], is.implementation_id == ^implementation_ref_id)
+               |> Repo.one()
+
+      refute is_nil(deleted_link.deleted_at)
     end
   end
 
