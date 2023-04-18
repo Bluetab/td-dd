@@ -1,5 +1,11 @@
 # Changelog
 
+## [5.5.1] 2023-04-18
+
+### Fixed
+
+- [TD-5641] foreign_key for implementation links
+
 ## [5.5.0] 2023-04-18
 
 ### Added
