@@ -78,9 +78,15 @@ defmodule TdDq.Implementations.Implementation do
 
     has_many(:results, RuleResult)
 
-    has_many(:data_structures, ImplementationStructure, where: [deleted_at: nil])
+    has_many(:data_structures, ImplementationStructure,
+      foreign_key: :implementation_id,
+      references: :implementation_ref,
+      where: [deleted_at: nil]
+    )
 
     has_many(:dataset_structures, ImplementationStructure,
+      foreign_key: :implementation_id,
+      references: :implementation_ref,
       where: [deleted_at: nil, type: :dataset]
     )
 
