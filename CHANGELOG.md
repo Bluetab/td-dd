@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-5650] Tests for hierarchy bulk uploads
+- [TD-5297] Added `DB_SSL` environment variable for Database SSL connection
 
 ### Fixed
 
