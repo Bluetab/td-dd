@@ -507,8 +507,8 @@ defmodule TdDq.Implementations do
 
   def get_structures(%Implementation{} = implementation) do
     implementation
-    |> (&Map.put(&1, :validations, flatten_conditions_set(&1.validation))).()
-    |> (&Map.put(&1, :populations, flatten_conditions_set(&1.populations))).()
+    |> then(&Map.put(&1, :validations, flatten_conditions_set(&1.validation)))
+    |> then(&Map.put(&1, :populations, flatten_conditions_set(&1.populations)))
     |> Map.take([:dataset, :populations, :validations, :segments])
     |> Map.values()
     |> Enum.flat_map(&structure/1)
@@ -781,7 +781,15 @@ defmodule TdDq.Implementations do
     enriched_validation = Enum.map(implementation.validation, &enrich_conditions/1)
     enriched_segments = Enum.map(implementation.segments, &enrich_condition/1)
 
-    enriched_data_structures = enrich_data_structures_path(implementation)
+    enriched_data_structures =
+      implementation
+      |> Repo.preload(
+        implementation_ref_struct: [
+          data_structures: [data_structure: [:system, :current_version]]
+        ],
+        data_structures: []
+      )
+      |> enrich_data_structures_path()
 
     implementation
     |> Map.put(:dataset, enriched_dataset)
@@ -820,7 +828,9 @@ defmodule TdDq.Implementations do
 
   defp enrich_dataset_row(dataset_row), do: dataset_row
 
-  defp enrich_data_structures_path(%{data_structures: [_ | _] = data_structures}) do
+  defp enrich_data_structures_path(%{
+         implementation_ref_struct: %{data_structures: [_ | _] = data_structures}
+       }) do
     data_structure_ids =
       data_structures
       |> Enum.map(fn
@@ -1079,7 +1089,7 @@ defmodule TdDq.Implementations do
   end
 
   def create_implementation_structure(
-        implementation,
+        %{id: implementation_id} = implementation,
         data_structure,
         attrs \\ %{},
         opts \\ [
@@ -1087,19 +1097,40 @@ defmodule TdDq.Implementations do
           conflict_target: [:implementation_id, :data_structure_id, :type]
         ]
       ) do
+    implementation_ref =
+      implementation
+      |> Repo.preload(:implementation_ref_struct)
+      |> Map.get(:implementation_ref_struct)
+
     %ImplementationStructure{}
     |> ImplementationStructure.changeset(
       attrs,
-      implementation,
+      implementation_ref,
       data_structure
     )
     |> Repo.insert(opts)
+    |> case do
+      {:error, _} = error ->
+        error
+
+      implementation_structure ->
+        @index_worker.reindex_implementations(implementation_id)
+        implementation_structure
+    end
   end
 
   def delete_implementation_structure(%ImplementationStructure{} = implementation_structure) do
     implementation_structure
     |> ImplementationStructure.delete_changeset()
     |> Repo.update()
+    |> case do
+      {:error, _} = error ->
+        error
+
+      deleted_implementation_structure ->
+        @index_worker.reindex_implementations(implementation_structure.implementation_id)
+        deleted_implementation_structure
+    end
   end
 
   def get_cached_content(%{} = content, type) when is_binary(type) do

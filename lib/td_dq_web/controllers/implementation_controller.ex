@@ -134,10 +134,7 @@ defmodule TdDqWeb.ImplementationController do
       id
       |> Implementations.get_implementation!(
         enrich: [:source, :links, :domain],
-        preload: [
-          :rule,
-          [data_structures: [data_structure: [:system, :current_version]]]
-        ]
+        preload: [:rule]
       )
       |> add_last_rule_result()
       |> add_quality_event()
