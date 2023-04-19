@@ -110,6 +110,7 @@ defmodule TdDq.Search.Mappings do
           result: %{type: "float"},
           errors: %{type: "long"},
           records: %{type: "long"},
+          details: %{enabled: false},
           date: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
           result_text: %{
             type: "text",

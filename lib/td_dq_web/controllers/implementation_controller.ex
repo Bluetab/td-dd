@@ -276,12 +276,29 @@ defmodule TdDqWeb.ImplementationController do
     {header_labels, params} = Map.pop(params, "header_labels", %{})
     {content_labels, params} = Map.pop(params, "content_labels", %{})
 
-    implementations = Search.search(params, claims)
+    implementations =
+      params
+      |> Search.search(claims)
+      |> maybe_remove_result_details(claims)
 
     conn
     |> put_resp_content_type("text/csv", "utf-8")
     |> put_resp_header("content-disposition", "attachment; filename=\"implementations.zip\"")
     |> send_resp(:ok, Download.to_csv(implementations, header_labels, content_labels))
+  end
+
+  defp maybe_remove_result_details(implementations, %{role: "admin"}), do: implementations
+
+  defp maybe_remove_result_details(implementations, _) do
+    implementations
+    |> Enum.map(fn imp ->
+      {_, new_execution_result_info} =
+        imp
+        |> Map.get(:execution_result_info)
+        |> Map.pop(:details)
+
+      Map.put(imp, :execution_result_info, new_execution_result_info)
+    end)
   end
 
   defp add_last_rule_result(%Implementation{} = implementation) do

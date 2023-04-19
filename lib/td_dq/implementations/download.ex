@@ -24,18 +24,40 @@ defmodule TdDq.Implementations.Download do
     {implementation_fields, implementation_field_headers} =
       fields_with_headers(implementations, &template_content/1)
 
+    result_details_headers = result_headers(implementations, &result_content/1)
+
     headers =
       header_labels
       |> build_headers()
+      |> Kernel.++(
+        Enum.map(result_details_headers, fn header ->
+          "result_details_" <> Atom.to_string(header)
+        end)
+      )
       |> concat_headers(implementations, :datasets)
       |> concat_headers(implementations, :validations)
 
     headers = headers ++ rule_field_headers ++ implementation_field_headers
 
     implementations =
-      format_implementations(content_labels, implementations, rule_fields, implementation_fields)
+      format_implementations(
+        content_labels,
+        implementations,
+        rule_fields,
+        implementation_fields,
+        result_details_headers
+      )
 
     export(headers, implementations)
+  end
+
+  defp result_headers(records, fun) do
+    records
+    |> Enum.group_by(fun)
+    |> Map.delete(nil)
+    |> Map.keys()
+    |> Enum.flat_map(fn tuple -> Map.keys(tuple) end)
+    |> Enum.uniq()
   end
 
   defp fields_with_headers(records, fun) do
@@ -49,7 +71,13 @@ defmodule TdDq.Implementations.Download do
     |> Enum.unzip()
   end
 
-  defp format_implementations(content_labels, implementations, rule_fields, implementation_fields) do
+  defp format_implementations(
+         content_labels,
+         implementations,
+         rule_fields,
+         implementation_fields,
+         result_details_headers
+       ) do
     number_of_dataset_external_ids = count_implementations_items(implementations, :datasets)
     number_of_validations_fields = count_implementations_items(implementations, :validations)
     time_zone = Application.get_env(:td_dd, :time_zone)
@@ -78,6 +106,7 @@ defmodule TdDq.Implementations.Download do
          |> translate(content_labels),
          TdDd.Helpers.shift_zone(implementation.inserted_at, time_zone)
        ] ++
+         fill_result_details(implementation, result_details_headers) ++
          fill_with(
            get_implementation_fields(implementation, :datasets),
            number_of_dataset_external_ids,
@@ -183,6 +212,28 @@ defmodule TdDq.Implementations.Download do
     end
   end
 
+  defp fill_result_details(%{execution_result_info: %{details: %{} = details}}, headers) do
+    Enum.map(headers, fn
+      :Query = header ->
+        Base.decode64!(Map.get(details, header, ""))
+
+      header ->
+        data = Map.get(details, header, nil)
+
+        if is_map(data) do
+          Jason.encode!(data)
+        else
+          data
+        end
+    end)
+  end
+
+  defp fill_result_details(_, headers) do
+    Enum.map(headers, fn _ ->
+      nil
+    end)
+  end
+
   defp translate(nil, _content_labels), do: nil
 
   defp translate(content, content_labels), do: Map.get(content_labels, content, content)
@@ -230,4 +281,17 @@ defmodule TdDq.Implementations.Download do
 
   defp template_content(%{template: %{content: content}}), do: content
   defp template_content(_), do: nil
+
+  defp result_content(%{execution_result_info: %{details: %{} = details}}), do: details
+  defp result_content(_), do: nil
+
+  defp decode_query_details(details) do
+    Enum.map(details, fn
+      {:Query = key, value} ->
+        {key, Base.decode64!(value)}
+
+      tuple ->
+        tuple
+    end)
+  end
 end
