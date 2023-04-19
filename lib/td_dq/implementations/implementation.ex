@@ -363,6 +363,7 @@ defmodule TdDq.Implementations.Implementation do
     Map.new()
     |> with_result(rule_result)
     |> with_date(rule_result)
+    |> with_details(rule_result)
     |> Helpers.with_result_text(minimum, goal, result_type)
   end
 
@@ -375,6 +376,12 @@ defmodule TdDq.Implementations.Implementation do
   defp with_date(result_map, rule_result) do
     Map.put(result_map, :date, Map.get(rule_result, :date))
   end
+
+  defp with_details(result_map, %{details: %{} = details}) do
+    Map.put(result_map, :details, details)
+  end
+
+  defp with_details(result_map, _), do: result_map
 
   def publishable?(%__MODULE__{status: status}), do: status in [:draft, :pending_approval]
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-4217] Add result details for admins in implementations csv download
+
 ## [5.5.1] 2023-04-18
 
 ### Fixed
