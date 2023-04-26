@@ -1862,7 +1862,12 @@ defmodule TdDq.ImplementationsTest do
     test "reindex implementation after create implementation_structure" do
       MockIndexWorker.clear()
 
-      %{id: implementation_id} = implementation = insert(:implementation)
+      %{id: implementation_ref_id} = insert(:implementation, version: 1)
+
+      %{id: implementation_id} =
+        implementation =
+        insert(:implementation, version: 2, implementation_ref: implementation_ref_id)
+
       data_structure = insert(:data_structure)
 
       Implementations.create_implementation_structure(
@@ -1871,7 +1876,11 @@ defmodule TdDq.ImplementationsTest do
         %{type: :dataset}
       )
 
-      assert MockIndexWorker.calls() == [{:reindex_implementations, implementation_id}]
+      [
+        {:reindex_implementations, implementation_reindexed}
+      ] = MockIndexWorker.calls()
+
+      assert implementation_reindexed <|> [implementation_id, implementation_ref_id]
     end
 
     test "create_implementation_structure/1 with invalid data returns error changeset" do
@@ -1920,21 +1929,25 @@ defmodule TdDq.ImplementationsTest do
       MockIndexWorker.clear()
       domain = build(:domain)
 
-      %{
-        implementation_id: implementation_id
-      } =
-        implementation_structure =
+      %{id: implementation_ref_id} = implementation_ref = insert(:implementation, version: 1)
+
+      %{id: implementation_id} =
+        insert(:implementation, version: 2, implementation_ref: implementation_ref_id)
+
+      implementation_structure =
         insert(:implementation_structure,
-          implementation: build(:implementation, domain_id: domain.id),
+          implementation: implementation_ref,
           data_structure: build(:data_structure, domain_ids: [domain.id])
         )
 
       assert {:ok, %ImplementationStructure{}} =
                Implementations.delete_implementation_structure(implementation_structure)
 
-      assert MockIndexWorker.calls() == [
-               {:reindex_implementations, implementation_id}
-             ]
+      [
+        {:reindex_implementations, implementation_reindexed}
+      ] = MockIndexWorker.calls()
+
+      assert implementation_reindexed <|> [implementation_id, implementation_ref_id]
     end
 
     test "when update implementation new implementation_structures will be created linked to implementation ref" do

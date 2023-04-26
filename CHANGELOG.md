@@ -6,6 +6,10 @@
 
 - [TD-4217] Add result details for admins in implementations csv download
 
+### Fixed
+
+- [TD-5732] Fixed reindex all implementation versions when add/delete links
+
 ## [5.5.1] 2023-04-18
 
 ### Fixed

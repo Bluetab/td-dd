@@ -1089,7 +1089,7 @@ defmodule TdDq.Implementations do
   end
 
   def create_implementation_structure(
-        %{id: implementation_id} = implementation,
+        implementation,
         data_structure,
         attrs \\ %{},
         opts \\ [
@@ -1114,7 +1114,8 @@ defmodule TdDq.Implementations do
         error
 
       implementation_structure ->
-        @index_worker.reindex_implementations(implementation_id)
+        implementations_ids = get_implementation_versions_ids_by_ref(implementation_ref.id)
+        @index_worker.reindex_implementations(implementations_ids)
         implementation_structure
     end
   end
@@ -1128,9 +1129,19 @@ defmodule TdDq.Implementations do
         error
 
       deleted_implementation_structure ->
-        @index_worker.reindex_implementations(implementation_structure.implementation_id)
+        implementations_ids =
+          get_implementation_versions_ids_by_ref(implementation_structure.implementation_id)
+
+        @index_worker.reindex_implementations(implementations_ids)
         deleted_implementation_structure
     end
+  end
+
+  defp get_implementation_versions_ids_by_ref(implementation_ref) do
+    Implementation
+    |> where([i], i.implementation_ref == ^implementation_ref)
+    |> Repo.all()
+    |> Enum.map(&Map.get(&1, :id))
   end
 
   def get_cached_content(%{} = content, type) when is_binary(type) do
