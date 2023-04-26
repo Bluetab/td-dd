@@ -284,14 +284,4 @@ defmodule TdDq.Implementations.Download do
 
   defp result_content(%{execution_result_info: %{details: %{} = details}}), do: details
   defp result_content(_), do: nil
-
-  defp decode_query_details(details) do
-    Enum.map(details, fn
-      {:Query = key, value} ->
-        {key, Base.decode64!(value)}
-
-      tuple ->
-        tuple
-    end)
-  end
 end

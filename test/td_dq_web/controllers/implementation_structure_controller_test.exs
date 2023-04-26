@@ -1,6 +1,8 @@
 defmodule TdDqWeb.ImplementationStructureControllerTest do
   use TdDqWeb.ConnCase
 
+  import TdDd.TestOperators
+
   alias TdDd.Search.MockIndexWorker
 
   setup %{conn: conn} do
@@ -132,7 +134,12 @@ defmodule TdDqWeb.ImplementationStructureControllerTest do
     } do
       MockIndexWorker.clear()
       domain = build(:domain)
-      %{id: implementation_id} = implementation = insert(:implementation, domain_id: domain.id)
+      %{id: implementation_ref_id} = insert(:implementation, version: 1)
+
+      %{id: implementation_id} =
+        implementation =
+        insert(:implementation, version: 2, implementation_ref: implementation_ref_id)
+
       %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
 
       conn =
@@ -145,9 +152,11 @@ defmodule TdDqWeb.ImplementationStructureControllerTest do
 
       assert response(conn, 201)
 
-      assert MockIndexWorker.calls() == [
-               {:reindex_implementations, implementation_id}
-             ]
+      [
+        {:reindex_implementations, implementation_reindexed}
+      ] = MockIndexWorker.calls()
+
+      assert implementation_reindexed <|> [implementation_id, implementation_ref_id]
     end
 
     @tag authentication: [role: "admin"]
@@ -400,12 +409,14 @@ defmodule TdDqWeb.ImplementationStructureControllerTest do
       MockIndexWorker.clear()
       domain = build(:domain)
 
-      %{
-        id: id,
-        implementation_id: implementation_id
-      } =
+      %{id: implementation_ref_id} = implementation_ref = insert(:implementation, version: 1)
+
+      %{id: implementation_id} =
+        insert(:implementation, version: 2, implementation_ref: implementation_ref_id)
+
+      %{id: id} =
         insert(:implementation_structure,
-          implementation: build(:implementation, domain_id: domain.id),
+          implementation: implementation_ref,
           data_structure: build(:data_structure, domain_ids: [domain.id])
         )
 
@@ -421,9 +432,11 @@ defmodule TdDqWeb.ImplementationStructureControllerTest do
 
       assert response(conn, 204)
 
-      assert MockIndexWorker.calls() == [
-               {:reindex_implementations, implementation_id}
-             ]
+      [
+        {:reindex_implementations, implementation_reindexed}
+      ] = MockIndexWorker.calls()
+
+      assert implementation_reindexed <|> [implementation_id, implementation_ref_id]
     end
   end
 end
