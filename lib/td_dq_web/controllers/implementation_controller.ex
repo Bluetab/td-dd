@@ -229,7 +229,7 @@ defmodule TdDqWeb.ImplementationController do
     implementation = Implementations.get_implementation!(id)
 
     with :ok <- Bodyguard.permit(Implementations, :delete, claims, implementation),
-         {:ok, %{implementation: _}} <-
+         {:ok, _} <-
            Implementations.delete_implementation(implementation, claims) do
       send_resp(conn, :no_content, "")
     end
