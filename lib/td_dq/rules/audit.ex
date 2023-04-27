@@ -7,6 +7,7 @@ defmodule TdDq.Rules.Audit do
 
   import TdDq.Audit.AuditSupport, only: [publish: 1, publish: 4, publish: 5]
 
+  alias Ecto.Changeset
   alias TdCache.ConceptCache
   alias TdCache.TaxonomyCache
   alias TdDq.Rules
@@ -122,6 +123,24 @@ defmodule TdDq.Rules.Audit do
   end
 
   def implementations_deprecated(_repo, _), do: {:ok, []}
+
+  @doc """
+  Publishes `:implementations_deprecated` events. Should be called using `Ecto.Multi.run/5`.
+  """
+  def implementations_deleted(repo, %{implementations: {_, implementations}}, user_id)
+      when is_list(implementations) do
+    implementations
+    |> Enum.map(fn implementation ->
+      implementation_deleted(repo, %{implementation: implementation}, %Changeset{}, user_id)
+    end)
+    |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+    |> case do
+      %{error: errors} -> {:error, errors}
+      %{ok: event_ids} -> {:ok, event_ids}
+    end
+  end
+
+  def implementations_deleted(_repo, _), do: {:ok, []}
 
   @doc """
   Publishes an `implementation_updated` event (or `implementation_deprecated`,

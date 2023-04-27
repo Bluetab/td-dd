@@ -441,25 +441,33 @@ defmodule TdDq.Implementations do
   end
 
   def delete_implementation(
-        %Implementation{} = implementation,
+        %Implementation{implementation_ref: implementation_ref_id},
         %Claims{user_id: user_id}
       ) do
-    changeset =
-      implementation
-      |> Repo.preload(:rule)
-      |> Changeset.change()
+    query =
+      Implementation
+      |> where([i], i.implementation_ref == ^implementation_ref_id)
+      |> select([i], i)
 
     Multi.new()
-    |> Multi.delete(:implementation, changeset)
+    |> Multi.delete_all(:implementations, query)
     |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
-    |> Multi.run(:audit, Audit, :implementation_deleted, [changeset, user_id])
+    |> Multi.run(:audit, Audit, :implementations_deleted, [user_id])
     |> Repo.transaction()
     |> on_delete()
   end
 
-  defp on_delete({:ok, %{implementation: %{id: id, rule_id: rule_id}}} = result) do
-    RuleLoader.refresh(rule_id)
-    @index_worker.delete_implementations(id)
+  defp on_delete({:ok, %{implementations: {_, implementations}}} = result) do
+    ids =
+      implementations
+      |> Enum.map(fn %{rule_id: rule_id, id: id} -> [{:rule_ids, rule_id}, {:ids, id}] end)
+      |> List.flatten()
+      |> Enum.uniq()
+      |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+
+    RuleLoader.refresh(ids.rule_ids)
+    @index_worker.delete_implementations(ids.ids)
+
     result
   end
 

@@ -8,6 +8,7 @@ defmodule TdDq.Cache.ImplementationLoader do
   use GenServer
 
   alias TdCache.ImplementationCache
+  alias TdCache.LinkCache
   alias TdDq.Events.QualityEvents
   alias TdDq.Implementations
   alias TdDq.Implementations.Implementation
@@ -33,19 +34,11 @@ defmodule TdDq.Cache.ImplementationLoader do
   Updates implementation cache if it has links. Should be called using
   `Ecto.Multi.run/5`.
   """
-  def maybe_update_implementation_cache(_repo, %{implementations_moved: {_, implementations}}) do
-    implementation_ref_to_cache =
-      implementations
-      |> Enum.map(fn %Implementation{implementation_ref: implementation_ref} = implementation ->
-        case Implementations.get_implementation_links(implementation) do
-          [] -> nil
-          _ -> implementation_ref
-        end
-      end)
-      |> Enum.filter(fn implementation_ref -> implementation_ref != nil end)
+  def maybe_update_implementation_cache(_repo, %{implementations_moved: {_, implementations}}),
+    do: maybe_update_implementations_cache(implementations)
 
-    {:ok, cache_implementations(implementation_ref_to_cache, force: true)}
-  end
+  def maybe_update_implementation_cache(_repo, %{implementations: {_, implementations}}),
+    do: maybe_update_implementations_cache(implementations)
 
   def maybe_update_implementation_cache(_repo, %{
         implementation: %{implementation_ref: implementation_ref}
@@ -141,8 +134,27 @@ defmodule TdDq.Cache.ImplementationLoader do
     |> Enum.map(&maybe_delete_or_cache_implementations(&1, opts))
   end
 
+  defp maybe_update_implementations_cache(implementations) do
+    implementation_ref_to_cache =
+      implementations
+      |> Enum.map(fn %Implementation{implementation_ref: implementation_ref} = implementation ->
+        case Implementations.get_implementation_links(implementation) do
+          [] -> nil
+          _ -> implementation_ref
+        end
+      end)
+      |> Enum.filter(fn implementation_ref -> implementation_ref != nil end)
+      |> Enum.uniq()
+
+    {:ok, cache_implementations(implementation_ref_to_cache, force: true)}
+  end
+
   defp maybe_delete_or_cache_implementations(implementation_ref, _opts)
        when is_number(implementation_ref) do
+    {:ok, implementation_links} =
+      LinkCache.list("implementation_ref", implementation_ref, "business_concept")
+
+    Enum.each(implementation_links, &LinkCache.delete(&1.id))
     ImplementationCache.delete(implementation_ref)
   end
 
