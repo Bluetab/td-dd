@@ -145,12 +145,18 @@ defmodule TdDq.ExecutionsTest do
 
     test "list executions filtered by source (raw)" do
       %{id: source_id, external_id: source_external_id} = insert(:source)
-      %{id: implementation_id} = insert(:raw_implementation, source_id: source_id)
+
+      %{id: implementation_id} =
+        insert(:raw_implementation, source_id: source_id, status: :published)
+
       insert(:implementation_structure, implementation_id: implementation_id)
       %{id: execution_id} = insert(:execution, implementation_id: implementation_id)
 
       %{id: source_id_2, external_id: source_external_id_2} = insert(:source)
-      %{id: implementation_id_2} = insert(:raw_implementation, source_id: source_id_2)
+
+      %{id: implementation_id_2} =
+        insert(:raw_implementation, source_id: source_id_2, status: :published)
+
       insert(:implementation_structure, implementation_id: implementation_id_2)
       %{id: execution_id_2} = insert(:execution, implementation_id: implementation_id_2)
 
@@ -169,7 +175,10 @@ defmodule TdDq.ExecutionsTest do
       %{id: data_structure_id} = insert(:data_structure, source_id: source_id)
 
       %{implementation_id: implementation_id} =
-        insert(:implementation_structure, data_structure_id: data_structure_id)
+        insert(:implementation_structure,
+          data_structure_id: data_structure_id,
+          implementation: insert(:implementation, status: :published)
+        )
 
       %{id: execution_id} = insert(:execution, implementation_id: implementation_id)
 
@@ -180,7 +189,10 @@ defmodule TdDq.ExecutionsTest do
       %{id: data_structure_id_3} = insert(:data_structure, source_id: source_id_3)
 
       %{implementation_id: implementation_id_2} =
-        insert(:implementation_structure, data_structure_id: data_structure_id_2)
+        insert(:implementation_structure,
+          data_structure_id: data_structure_id_2,
+          implementation: insert(:implementation, status: :published)
+        )
 
       assert %{implementation_id: ^implementation_id_2} =
                insert(
