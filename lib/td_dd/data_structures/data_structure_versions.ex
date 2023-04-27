@@ -178,6 +178,16 @@ defmodule TdDd.DataStructures.DataStructureVersions do
     end
   end
 
+  def get_grant_user_permissions(data_structure, claims) do
+    %{
+      request_grant: can_request_grant?(claims, data_structure),
+      update_grant_removal:
+        permit?(DataStructures, :request_grant_removal, claims, data_structure),
+      create_foreign_grant_request:
+        permit?(DataStructures, :create_foreign_grant_request, claims, data_structure)
+    }
+  end
+
   defp actions(claims, %{data_structure: data_structure} = _dsv) do
     [:link_data_structure, :link_structure_to_structure]
     |> Enum.filter(&Bodyguard.permit?(DataStructures, &1, claims, data_structure))

@@ -23,6 +23,13 @@ defmodule TdDd.DataStructures.Search.Query do
     do_build_filters(view_scope, confidential_scope)
   end
 
+  def build_filters(%{
+        "create_grant_request" => view_scope,
+        "manage_confidential_structures" => confidential_scope
+      }) do
+    do_build_filters(view_scope, confidential_scope)
+  end
+
   def build_filters(%{} = _permissions), do: @match_none
 
   defp do_build_filters(:none, _), do: @match_none

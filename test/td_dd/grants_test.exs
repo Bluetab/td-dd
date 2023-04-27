@@ -42,6 +42,18 @@ defmodule TdDd.GrantsTest do
     end
   end
 
+  describe "list_active_grants!/1" do
+    test "returns the grants of a list of data_structures by user", %{user_id: user_id} do
+      %{id: id, data_structure_id: data_structure_id} = insert(:grant, user_id: user_id, end_date: nil)
+      insert(:grant, data_structure_id: data_structure_id)
+      insert(:grant, user_id: user_id)
+      assert [%{id: ^id}] = Grants.list_active_grants(%{
+        data_structure_ids: [data_structure_id],
+        user_id: user_id,
+      })
+    end
+  end
+
   describe "create_grant/3" do
     test "with valid data creates a grant", %{
       claims: claims,

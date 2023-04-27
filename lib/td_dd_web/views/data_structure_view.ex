@@ -3,6 +3,8 @@ defmodule TdDdWeb.DataStructureView do
 
   alias TdDd.DataStructures
   alias TdDdWeb.DataStructureVersionView
+  alias TdDdWeb.GrantRequestView
+  alias TdDdWeb.GrantView
   alias TdDdWeb.StructureTagView
 
   def render("index.json", %{actions: %{} = actions} = assigns) when map_size(actions) > 0 do
@@ -57,7 +59,11 @@ defmodule TdDdWeb.DataStructureView do
     |> data_structure_json()
     |> add_metadata(data_structure)
     |> add_system_with_keys(data_structure, ["external_id", "id", "name"])
+    |> add_data_fields(data_structure)
     |> maybe_put_note(data_structure)
+    |> maybe_put_my_grants(data_structure)
+    |> maybe_put_my_grant_request(data_structure)
+    |> maybe_put_grant_user_permissions(data_structure)
   end
 
   def render(name, %{
@@ -166,6 +172,18 @@ defmodule TdDdWeb.DataStructureView do
 
     Map.put_new(json, :note, latest_note)
   end
+
+  defp maybe_put_my_grant_request(json, %{my_grant_request: [%{} = my_grant_request]}), do:
+    Map.put_new(json, :my_grant_request, render_one(my_grant_request, GrantRequestView, "grant_request.json"))
+  defp maybe_put_my_grant_request(json, _), do: json
+
+  defp maybe_put_my_grants(json, %{my_grants: [_ | _] = my_grants}), do:
+    Map.put_new(json, :my_grants, render_many(my_grants, GrantView, "grant.json"))
+  defp maybe_put_my_grants(json, _), do: json
+
+  defp maybe_put_grant_user_permissions(json, %{user_permissions: %{} = user_permissions}), do:
+    Map.put_new(json, :user_permissions, user_permissions)
+  defp maybe_put_grant_user_permissions(json, _), do: json
 
   defp add_children(data_structure_json, data_structure),
     do: add_relations(data_structure_json, data_structure, :children)

@@ -163,6 +163,25 @@ defmodule TdDd.Grants.RequestsTest do
       assert {:ok, []} = Requests.list_grant_requests(claims, %{status: "earliest"})
     end
 
+    test "latest_grant_request_by_data_structures/2 returns latest grant request of each structure for user_id" do
+      %{user_id: user_id} = build(:claims)
+
+      %{data_structure_id: data_structure_id} =
+        insert(:grant_request, group: build(:grant_request_group, user_id: user_id))
+
+      insert(:grant_request, group: build(:grant_request_group, user_id: user_id))
+      insert(:grant_request, data_structure_id: data_structure_id)
+
+      %{id: id} =
+        insert(:grant_request,
+          data_structure_id: data_structure_id,
+          group: build(:grant_request_group, user_id: user_id)
+        )
+
+      assert [%{id: ^id}] =
+               Requests.latest_grant_request_by_data_structures([data_structure_id], user_id)
+    end
+
     test "includes domain_id and filters by domain_ids" do
       claims = build(:claims, role: "service")
       %{id: domain_id} = CacheHelpers.insert_domain()

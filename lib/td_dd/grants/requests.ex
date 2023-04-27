@@ -277,6 +277,31 @@ defmodule TdDd.Grants.Requests do
     |> Repo.one()
   end
 
+  def latest_grant_request_by_data_structures(data_structure_ids, user_id) do
+
+    status_subquery =
+      GrantRequestStatus
+      |> distinct([s], s.grant_request_id)
+      |> order_by([s], desc: s.inserted_at)
+      |> subquery()
+
+    GrantRequest
+    |> where([r], r.data_structure_id in ^data_structure_ids)
+    |> join(:inner, [r], g in assoc(r, :group))
+    |> join(:left, [r], s in ^status_subquery, on: s.grant_request_id == r.id)
+    |> where([_, g], g.user_id == ^user_id)
+    |> select_merge([r, g, s], %{
+      current_status: s.status,
+      status_reason: s.reason,
+      updated_at: s.inserted_at,
+      rank: rank() |> over(partition_by: r.data_structure_id, order_by: {:desc, r.inserted_at})
+    })
+    |> subquery()
+    |> where([r], r.rank == 1)
+    |> preload(:group)
+    |> Repo.all()
+  end
+
   def get_group(grant_request) do
     grant_request
     |> Repo.preload(:group)

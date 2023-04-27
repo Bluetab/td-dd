@@ -76,6 +76,17 @@ defmodule TdDd.DataStructures.Policy do
       Permissions.authorized?(claims, _permission = action, domain_ids)
   end
 
+  # Match on non `DataStructure` struct to handle authorization from ElasticSearch
+  def authorize(action, %{} = claims, %{domain_ids: domain_ids})
+      when action in [
+             :create_grant_request,
+             :create_foreign_grant_request,
+             :request_grant_removal,
+           ] do
+    Permissions.authorized?(claims, :view_data_structure, domain_ids) and
+      Permissions.authorized?(claims, _permission = action, domain_ids)
+  end
+
   def authorize(:tag, %{} = claims, %DataStructure{domain_ids: domain_ids}) do
     Permissions.authorized?(claims, :link_data_structure_tag, domain_ids)
   end
