@@ -6,6 +6,7 @@
 
 - [TD-4217] Add result details for admins in implementations csv download
 - [TD-5602] Add migration to improve query perfance with 2 new indexes
+- [TD-5661] Multiple structures grant requests
 
 ### Fixed
 

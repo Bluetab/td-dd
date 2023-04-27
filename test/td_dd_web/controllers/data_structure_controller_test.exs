@@ -230,6 +230,68 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       refute Map.has_key?(response, "_actions")
     end
+
+    @tag authentication: [role: "admin"]
+    test "search with grant_requests flag will include users grants and grant_requests", %{
+      conn: conn,
+      claims: %{user_id: user_id}
+    } do
+      %{data_structure_id: id} = dsv = insert(:data_structure_version)
+
+      %{id: request_id} =
+        insert(:grant_request,
+          group: build(:grant_request_group, user_id: user_id),
+          data_structure_id: id
+        )
+
+      %{id: grant_id} = insert(:grant, user_id: user_id, end_date: nil, data_structure_id: id)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: _query}, _ ->
+        SearchHelpers.hits_response([dsv])
+      end)
+
+      assert %{
+               "data" => [
+                 %{
+                   "id" => ^id,
+                   "my_grants" => [%{"id" => ^grant_id}],
+                   "my_grant_request" => %{"id" => ^request_id}
+                 }
+               ]
+             } =
+               conn
+               |> post(data_structure_path(conn, :search), %{"my_grant_requests" => true})
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "search without grant_requests flag will not include users grants and grant_requests", %{
+      conn: conn,
+      claims: %{user_id: user_id}
+    } do
+      %{data_structure_id: id} = dsv = insert(:data_structure_version)
+
+      insert(:grant_request,
+        group: build(:grant_request_group, user_id: user_id),
+        data_structure_id: id
+      )
+
+      insert(:grant, user_id: user_id, end_date: nil, data_structure_id: id)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: _query}, _ ->
+        SearchHelpers.hits_response([dsv])
+      end)
+
+      assert %{"data" => [%{"id" => ^id} = data_structure]} =
+               conn
+               |> post(data_structure_path(conn, :search))
+               |> json_response(:ok)
+
+      refute "my_grants" in Map.keys(data_structure)
+      refute "my_grant_request" in Map.keys(data_structure)
+    end
   end
 
   describe "search with scroll" do

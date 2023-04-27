@@ -58,7 +58,7 @@ defmodule TdDd.Search.Mappings do
       path_sort: %{type: "keyword", normalizer: "sortable"},
       note: content_mappings,
       class: %{type: "text", fields: %{raw: %{type: "keyword", null_value: ""}}},
-      classes: %{enabled: false},
+      classes: %{enabled: true},
       source_alias: %{type: "keyword", fields: @raw_sort},
       version: %{type: "short"},
       tags: %{type: "text", fields: %{raw: %{type: "keyword", null_value: ""}}},

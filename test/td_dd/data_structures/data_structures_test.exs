@@ -618,6 +618,98 @@ defmodule TdDd.DataStructuresTest do
       assert DataStructures.list_data_structures(search_params), [data_structure]
     end
 
+    test "list_data_structures_data_fields/1 returns all data_fields by data_structure" do
+      domain1 = CacheHelpers.insert_domain()
+      domain2 = CacheHelpers.insert_domain()
+      domain3 = CacheHelpers.insert_domain()
+
+      claims = build(:claims, role: "user")
+
+      CacheHelpers.put_session_permissions(claims, %{
+        "view_data_structure" => [domain2.id, domain3.id],
+        "manage_confidential_structures" => [domain3.id]
+      })
+
+      [%{data_structure_id: data_structure_id} = dsv] =
+        ["structure"]
+        |> Enum.map(&insert(:data_structure, external_id: &1))
+        |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id))
+
+      fields =
+        [
+          %{external_id: "domain_1_not_conf", domain_id: domain1.id, confidential: false},
+          %{external_id: "domain_1_conf", domain_id: domain1.id, confidential: true},
+          %{external_id: "domain_2_not_conf", domain_id: domain2.id, confidential: false},
+          %{external_id: "domain_2_conf", domain_id: domain2.id, confidential: true},
+          %{external_id: "domain_3_not_conf", domain_id: domain3.id, confidential: false},
+          %{external_id: "domain_3_conf", domain_id: domain3.id, confidential: true}
+        ]
+        |> Enum.map(
+          &insert(:data_structure,
+            external_id: &1.external_id,
+            domain_ids: [&1.domain_id],
+            confidential: &1.confidential
+          )
+        )
+        |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id, class: "field"))
+
+      relation_type_id = RelationTypes.default_id!()
+
+      Enum.map(
+        fields,
+        &insert(:data_structure_relation,
+          parent_id: dsv.id,
+          child_id: &1.id,
+          relation_type_id: relation_type_id
+        )
+      )
+
+      assert [
+               %{
+                 id: ^data_structure_id,
+                 data_field: %{data_structure: %{external_id: "domain_2_not_conf"}}
+               },
+               %{
+                 id: ^data_structure_id,
+                 data_field: %{data_structure: %{external_id: "domain_3_not_conf"}}
+               },
+               %{
+                 id: ^data_structure_id,
+                 data_field: %{data_structure: %{external_id: "domain_3_conf"}}
+               }
+             ] = DataStructures.list_data_structures_data_fields([data_structure_id], claims)
+
+      admin_claims = build(:claims)
+
+      assert [
+               %{
+                 id: ^data_structure_id,
+                 data_field: %{data_structure: %{external_id: "domain_1_not_conf"}}
+               },
+               %{
+                 id: ^data_structure_id,
+                 data_field: %{data_structure: %{external_id: "domain_1_conf"}}
+               },
+               %{
+                 id: ^data_structure_id,
+                 data_field: %{data_structure: %{external_id: "domain_2_not_conf"}}
+               },
+               %{
+                 id: ^data_structure_id,
+                 data_field: %{data_structure: %{external_id: "domain_2_conf"}}
+               },
+               %{
+                 id: ^data_structure_id,
+                 data_field: %{data_structure: %{external_id: "domain_3_not_conf"}}
+               },
+               %{
+                 id: ^data_structure_id,
+                 data_field: %{data_structure: %{external_id: "domain_3_conf"}}
+               }
+             ] =
+               DataStructures.list_data_structures_data_fields([data_structure_id], admin_claims)
+    end
+
     test "get_data_structure!/1 returns the data_structure with given id", %{
       data_structure: data_structure
     } do

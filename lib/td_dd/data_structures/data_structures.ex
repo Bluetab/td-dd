@@ -28,6 +28,7 @@ defmodule TdDd.DataStructures do
   alias TdDd.Search.StructureVersionEnricher
   alias TdDfLib.Format
   alias Truedat.Auth.Claims
+  alias Truedat.Search.Permissions
 
   @protected "_protected"
 
@@ -121,6 +122,63 @@ defmodule TdDd.DataStructures do
     end)
     |> Repo.all()
   end
+
+  def list_data_structures_data_fields(data_structure_ids, claims) do
+    %{
+      "view_data_structure" => view_domain_ids,
+      "manage_confidential_structures" => manage_confidential_domain_ids
+    } =
+      ["view_data_structure", "manage_confidential_structures"]
+      |> Permissions.get_search_permissions(claims)
+
+    DataStructure
+    |> where([ds], ds.id in ^data_structure_ids)
+    |> join(:inner, [ds], dsv in assoc(ds, :current_version))
+    |> join(:inner, [_, dsv], child in assoc(dsv, :children))
+    |> where([_, _, child], child.class == "field")
+    |> join(:inner, [_, _, child], child_ds in assoc(child, :data_structure), as: :child_ds)
+    |> handle_permission_filter(view_domain_ids, manage_confidential_domain_ids)
+    |> select([ds, _, child, child_ds], %{
+      id: ds.id,
+      data_field: %{child | data_structure: child_ds}
+    })
+    |> Repo.all()
+  end
+
+  defp handle_permission_filter(query, :all, :all), do: query
+  defp handle_permission_filter(query, :none, _), do: where(query, [], false)
+
+  defp handle_permission_filter(query, :all, :none),
+    do: where(query, [_, _, _, child_ds], not child_ds.confidential)
+
+  defp handle_permission_filter(query, :all, domain_ids),
+    do:
+      where(
+        query,
+        [_, _, _, child_ds],
+        not child_ds.confidential or fragment("? && ?", child_ds.domain_ids, ^domain_ids)
+      )
+
+  defp handle_permission_filter(query, view_domain_ids, :none),
+    do:
+      where(
+        query,
+        [_, _, _, child_ds],
+        not child_ds.confidential and fragment("? && ?", child_ds.domain_ids, ^view_domain_ids)
+      )
+
+  defp handle_permission_filter(query, view_domain_ids, :all),
+    do:
+      where(query, [_, _, _, child_ds], fragment("? && ?", child_ds.domain_ids, ^view_domain_ids))
+
+  defp handle_permission_filter(query, view_domain_ids, confidential_domain_ids),
+    do:
+      where(
+        query,
+        [_, _, _, child_ds],
+        (not child_ds.confidential and fragment("? && ?", child_ds.domain_ids, ^view_domain_ids)) or
+          fragment("? && ?", child_ds.domain_ids, ^confidential_domain_ids)
+      )
 
   @doc "Gets a single data_structure by external_id"
   def get_data_structure_by_external_id(external_id, preload \\ []) do

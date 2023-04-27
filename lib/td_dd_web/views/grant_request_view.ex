@@ -54,6 +54,7 @@ defmodule TdDdWeb.GrantRequestView do
     grant_request
     |> Map.take(embed)
     |> Enum.reduce(%{}, fn
+      {:data_structure, %Ecto.Association.NotLoaded{}}, acc -> acc
       {:data_structure, %{} = data_structure}, acc ->
         Map.put(
           acc,
