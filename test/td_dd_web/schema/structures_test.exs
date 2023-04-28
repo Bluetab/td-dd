@@ -89,7 +89,10 @@ defmodule TdDdWeb.Schema.StructuresTest do
         updated_at
       }
       parents { dataStructure { external_id } }
-      children { dataStructure { external_id } }
+      children {
+        dataStructure { external_id }
+        classes
+        }
       siblings { dataStructure { external_id } }
       versions {
         version
@@ -425,6 +428,9 @@ defmodule TdDdWeb.Schema.StructuresTest do
           &insert(:data_structure_version, data_structure_id: &1.id, class: structure_class.(&1))
         )
 
+      %{class: class_value_child, name: class_name_child} =
+        insert(:structure_classification, data_structure_version_id: child_id)
+
       default_relation_type_id = RelationTypes.default_id!()
 
       %{id: custom_relation_type_id, name: custom_relation_type_name} =
@@ -591,8 +597,11 @@ defmodule TdDdWeb.Schema.StructuresTest do
                    %{"dataStructure" => %{"external_id" => "non_default_parent"}}
                  ],
                  "children" => [
-                   %{"dataStructure" => %{"external_id" => "child"}},
-                   %{"dataStructure" => %{"external_id" => "non_default_child"}}
+                   %{
+                     "dataStructure" => %{"external_id" => "child"},
+                     "classes" => %{class_name_child => class_value_child}
+                   },
+                   %{"dataStructure" => %{"external_id" => "non_default_child"}, "classes" => nil}
                  ],
                  "siblings" => [
                    %{"dataStructure" => %{"external_id" => external_id}},
