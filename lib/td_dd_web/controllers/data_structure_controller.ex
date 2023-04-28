@@ -505,7 +505,9 @@ defmodule TdDdWeb.DataStructureController do
   defp do_search(conn, search_params, page, size) do
     my_grant_requests = Map.get(search_params, "my_grant_requests")
     claims = conn.assigns[:current_resource]
-    permission = if my_grant_requests, do: :create_grant_request, else: conn.assigns[:search_permission]
+
+    permission =
+      if my_grant_requests, do: :create_grant_request, else: conn.assigns[:search_permission]
 
     page = Map.get(search_params, "page", page)
     size = Map.get(search_params, "size", size)
@@ -529,39 +531,51 @@ defmodule TdDdWeb.DataStructureController do
     [data_structures: data_structures]
   end
 
-  defp maybe_load_my_grant_requests(%{results: results} = search_results, true, %{user_id: user_id} = claims) do
-    data_structures_ids = Enum.map(results, &(&1.id))
+  defp maybe_load_my_grant_requests(
+         %{results: results} = search_results,
+         true,
+         %{user_id: user_id} = claims
+       ) do
+    data_structures_ids = Enum.map(results, & &1.id)
 
-    grants_by_ds = %{
-      data_structure_ids: data_structures_ids,
-      user_id: user_id,
-    }
-    |> Grants.list_active_grants()
-    |> Enum.group_by(& &1.data_structure_id)
+    grants_by_ds =
+      %{
+        data_structure_ids: data_structures_ids,
+        user_id: user_id
+      }
+      |> Grants.list_active_grants()
+      |> Enum.group_by(& &1.data_structure_id)
 
-    requests_by_ds = data_structures_ids
-    |> Requests.latest_grant_request_by_data_structures(user_id)
-    |> Enum.group_by(& &1.data_structure_id)
+    requests_by_ds =
+      data_structures_ids
+      |> Requests.latest_grant_request_by_data_structures(user_id)
+      |> Enum.group_by(& &1.data_structure_id)
 
-    data_fields_by_ds = data_structures_ids
-    |> DataStructures.list_data_structures_data_fields(claims)
-    |> Enum.group_by(& &1.id)
-    |> Enum.map(fn {data_structure_id, data_fields} ->
-    {data_structure_id, Enum.map(data_fields, & &1.data_field)}
-    end)
-    |> Map.new
+    data_fields_by_ds =
+      data_structures_ids
+      |> DataStructures.list_data_structures_data_fields(claims)
+      |> Enum.group_by(& &1.id)
+      |> Enum.map(fn {data_structure_id, data_fields} ->
+        {data_structure_id, Enum.map(data_fields, & &1.data_field)}
+      end)
+      |> Map.new()
 
-    results = results
-    |> Enum.map(&
-      &1
-      |> Map.put(:my_grants, Map.get(grants_by_ds, &1.id))
-      |> Map.put(:my_grant_request, Map.get(requests_by_ds, &1.id))
-      |> Map.put(:data_fields, Map.get(data_fields_by_ds, &1.id))
-      |> Map.put(:user_permissions, DataStructureVersions.get_grant_user_permissions(&1, claims))
-    )
+    results =
+      results
+      |> Enum.map(
+        &(&1
+          |> Map.put(:my_grants, Map.get(grants_by_ds, &1.id))
+          |> Map.put(:my_grant_request, Map.get(requests_by_ds, &1.id))
+          |> Map.put(:data_fields, Map.get(data_fields_by_ds, &1.id))
+          |> Map.put(
+            :user_permissions,
+            DataStructureVersions.get_grant_user_permissions(&1, claims)
+          ))
+      )
 
     Map.put(search_results, :results, results)
   end
+
   defp maybe_load_my_grant_requests(search_results, _, _), do: search_results
 
   defp deleted_structures(%{"filters" => %{"all" => true} = filters} = search_params) do

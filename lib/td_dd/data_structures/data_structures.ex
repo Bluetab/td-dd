@@ -1111,6 +1111,13 @@ defmodule TdDd.DataStructures do
     )
   end
 
+  def add_classes(%{classifications: [_ | _] = classifications} = struct) do
+    classes = Map.new(classifications, fn %{name: name, class: class} -> {name, class} end)
+    Map.put(struct, :classes, classes)
+  end
+
+  def add_classes(dsv), do: dsv
+
   ## Dataloader
 
   def datasource do
@@ -1121,6 +1128,7 @@ defmodule TdDd.DataStructures do
     Enum.reduce(params, queryable, fn
       {:deleted, false}, q -> where(q, [dsv], is_nil(dsv.deleted_at))
       {:deleted, true}, q -> where(q, [dsv], not is_nil(dsv.deleted_at))
+      {:preload, preload}, q -> preload(q, ^preload)
     end)
   end
 end

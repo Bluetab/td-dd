@@ -278,7 +278,6 @@ defmodule TdDd.Grants.Requests do
   end
 
   def latest_grant_request_by_data_structures(data_structure_ids, user_id) do
-
     status_subquery =
       GrantRequestStatus
       |> distinct([s], s.grant_request_id)

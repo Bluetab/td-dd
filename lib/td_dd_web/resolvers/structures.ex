@@ -3,6 +3,8 @@ defmodule TdDdWeb.Resolvers.Structures do
   Absinthe resolvers for data structures and related entities
   """
 
+  import Absinthe.Resolution.Helpers, only: [on_load: 2]
+
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructureLinks
   alias TdDd.DataStructures.DataStructureVersions
@@ -196,6 +198,21 @@ defmodule TdDdWeb.Resolvers.Structures do
 
   def structure_tags(%{} = data_structure, _args, _resolution) do
     {:ok, Tags.tags(data_structure)}
+  end
+
+  def childrens(parent, args, %{context: %{loader: loader}}) do
+    batch_key = Map.to_list(args) ++ [{:preload, :classifications}]
+
+    loader
+    |> Dataloader.load(TdDd.DataStructures, {:children, batch_key}, parent)
+    |> on_load(fn loader ->
+      children =
+        loader
+        |> Dataloader.get(TdDd.DataStructures, {:children, batch_key}, parent)
+        |> Enum.map(&TdDd.DataStructures.add_classes/1)
+
+      {:ok, children}
+    end)
   end
 
   def data_structure_links(%{} = data_structure, _args, _resolution) do
