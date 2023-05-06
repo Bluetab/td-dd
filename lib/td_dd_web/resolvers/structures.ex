@@ -200,8 +200,8 @@ defmodule TdDdWeb.Resolvers.Structures do
     {:ok, Tags.tags(data_structure)}
   end
 
-  def childrens(parent, args, %{context: %{loader: loader}}) do
-    batch_key = Map.to_list(args) ++ [{:preload, :classifications}]
+  def childrens(parent, args, %{context: %{loader: loader, claims: claims}}) do
+    batch_key = Map.to_list(args) ++ [{:preload, [:classifications, :data_structure]}]
 
     loader
     |> Dataloader.load(TdDd.DataStructures, {:children, batch_key}, parent)
@@ -210,6 +210,7 @@ defmodule TdDdWeb.Resolvers.Structures do
         loader
         |> Dataloader.get(TdDd.DataStructures, {:children, batch_key}, parent)
         |> Enum.map(&TdDd.DataStructures.add_classes/1)
+        |> Enum.filter(&check_structure_children_permision(&1, claims))
 
       {:ok, children}
     end)
@@ -217,6 +218,13 @@ defmodule TdDdWeb.Resolvers.Structures do
 
   def data_structure_links(%{} = data_structure, _args, _resolution) do
     {:ok, DataStructureLinks.links(data_structure)}
+  end
+
+  defp check_structure_children_permision(%{data_structure: data_structure}, claims) do
+    case Bodyguard.permit(DataStructures, :view_data_structure, claims, data_structure) do
+      :ok -> true
+      _ -> false
+    end
   end
 
   defp claims(%{context: %{claims: claims}}), do: claims
