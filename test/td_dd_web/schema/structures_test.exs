@@ -169,6 +169,27 @@ defmodule TdDdWeb.Schema.StructuresTest do
   }
   """
 
+  @domains_query """
+  query DataStructureVersion($dataStructureId: ID!, $version: String!) {
+    dataStructureVersion(dataStructureId: $dataStructureId, version: $version) {
+      id
+      dataStructure {
+        id
+        domain_ids
+        domains { id,name }
+      }
+      children {
+        dataStructure {
+          external_id
+          id
+          domain_ids
+          domains { id,name }
+        }
+      }
+    }
+  }
+  """
+
   @variables %{"since" => "2020-01-01T00:00:00Z"}
   @metadata %{"foo" => ["bar"]}
 
@@ -431,33 +452,18 @@ defmodule TdDdWeb.Schema.StructuresTest do
       %{class: class_value_child, name: class_name_child} =
         insert(:structure_classification, data_structure_version_id: child_id)
 
-      default_relation_type_id = RelationTypes.default_id!()
-
       %{id: custom_relation_type_id, name: custom_relation_type_name} =
         insert(:relation_type, name: "relation_type_1")
 
-      create_relation = fn parent_id, child_id, relation_type_id ->
-        insert(:data_structure_relation,
-          parent_id: parent_id,
-          child_id: child_id,
-          relation_type_id: relation_type_id
-        )
-      end
+      create_relation(parent.id, id)
+      create_relation(parent.id, sibling.id)
+      create_relation(id, child.id)
 
-      create_default_relation = fn parent_id, child_id ->
-        create_relation.(parent_id, child_id, default_relation_type_id)
-      end
+      %{id: parent_relation_id} =
+        create_relation(non_default_parent.id, id, custom_relation_type_id)
 
-      create_custom_relation = fn parent_id, child_id ->
-        create_relation.(parent_id, child_id, custom_relation_type_id)
-      end
-
-      create_default_relation.(parent.id, id)
-      create_default_relation.(parent.id, sibling.id)
-      create_default_relation.(id, child.id)
-
-      %{id: parent_relation_id} = create_custom_relation.(non_default_parent.id, id)
-      %{id: child_relation_id} = create_custom_relation.(id, non_default_child.id)
+      %{id: child_relation_id} =
+        create_relation(id, non_default_child.id, custom_relation_type_id)
 
       ## Structure Note
       insert(:structure_note,
@@ -773,6 +779,88 @@ defmodule TdDdWeb.Schema.StructuresTest do
       assert response["errors"] == nil
       assert %{"dataStructureVersion" => %{"id" => ^string_id}} = data
     end
+
+    @tag authentication: [role: "user", permissions: [:view_data_structure]]
+    test "returns data childs when the childs have permissions by the user",
+         %{
+           conn: conn,
+           domain: %{id: domain_id}
+         } do
+      %{id: domain_id_without_permissions} = CacheHelpers.insert_domain()
+
+      %{id: ds_father_id} =
+        structure_father =
+        insert(:data_structure,
+          external_id: "father",
+          domain_ids: [domain_id, domain_id_without_permissions]
+        )
+
+      %{id: dsv_father_id} =
+        insert(:data_structure_version, data_structure: structure_father, version: 1)
+
+      structure_child_2_dom =
+        insert(:data_structure,
+          external_id: "child_2_dom",
+          domain_ids: [domain_id, domain_id_without_permissions]
+        )
+
+      %{id: dsv_child_2_dom_id} =
+        insert(:data_structure_version, data_structure: structure_child_2_dom, version: 1)
+
+      structure_child_1_dom_with =
+        insert(:data_structure,
+          external_id: "ds_child_1_with_permissions",
+          domain_ids: [domain_id]
+        )
+
+      %{id: dsv_child_1_with_permissions_id} =
+        insert(:data_structure_version, data_structure: structure_child_1_dom_with, version: 1)
+
+      structure_child_1_dom_without =
+        insert(:data_structure,
+          external_id: "ds_child_1_without_permissions",
+          domain_ids: [domain_id_without_permissions]
+        )
+
+      %{id: dsv_child_1_without_permissions_id} =
+        insert(:data_structure_version, data_structure: structure_child_1_dom_without, version: 1)
+
+      ## Structure relations
+
+      create_relation(dsv_father_id, dsv_child_2_dom_id)
+      create_relation(dsv_father_id, dsv_child_1_with_permissions_id)
+      create_relation(dsv_father_id, dsv_child_1_without_permissions_id)
+
+      variables = %{"dataStructureId" => ds_father_id, "version" => "latest"}
+
+      assert %{"data" => %{"dataStructureVersion" => %{"children" => children}} = data} =
+               response =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @domains_query,
+                 "variables" => variables
+               })
+               |> json_response(:ok)
+
+      assert [
+               %{
+                 "dataStructure" => %{
+                   "domain_ids" => [^domain_id, ^domain_id_without_permissions],
+                   "external_id" => "child_2_dom"
+                 }
+               },
+               %{
+                 "dataStructure" => %{
+                   "domain_ids" => [^domain_id],
+                   "external_id" => "ds_child_1_with_permissions"
+                 }
+               }
+             ] = children
+
+      string_id = "#{dsv_father_id}"
+      assert response["errors"] == nil
+      assert %{"dataStructureVersion" => %{"id" => ^string_id}} = data
+    end
   end
 
   describe "dataStructureRelations query" do
@@ -813,5 +901,17 @@ defmodule TdDdWeb.Schema.StructuresTest do
 
       assert id == to_string(expected_id)
     end
+  end
+
+  defp create_relation(parent_id, child_id) do
+    create_relation(parent_id, child_id, RelationTypes.default_id!())
+  end
+
+  defp create_relation(parent_id, child_id, relation_type_id) do
+    insert(:data_structure_relation,
+      parent_id: parent_id,
+      child_id: child_id,
+      relation_type_id: relation_type_id
+    )
   end
 end

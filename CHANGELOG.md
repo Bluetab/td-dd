@@ -7,14 +7,12 @@
 - [TD-4217] Add result details for admins in implementations csv download
 - [TD-5602] Add migration to improve query perfance with 2 new indexes
 - [TD-5661] Multiple structures grant requests
+- [TD-4591] Add validation in the visibility of the structures that are displayed in the data catalog
 
 ### Fixed
 
 - [TD-5732] Fixed reindex all implementation versions when add/delete links
 - [TD-5442] Fix hard delete implementation versions
-
-### Fixed
-
 - [TD-5680] Fix Children Data Structure Versions populate their classes correctly
 
 ## [5.5.1] 2023-04-18
