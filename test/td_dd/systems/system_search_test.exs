@@ -24,7 +24,7 @@ defmodule TdDD.Systems.SystemSearchTest do
         _, :post, "/structures/_search", %{aggs: aggs, query: query, size: 0}, _ ->
           assert aggs == %{
                    "system_id" => %{
-                     terms: %{field: "system_id", size: 50},
+                     terms: %{field: "system_id", size: 200},
                      aggs: %{"types" => %{terms: %{field: "type.raw", size: 50}}}
                    }
                  }

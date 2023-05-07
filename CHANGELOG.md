@@ -13,10 +13,12 @@
 
 - [TD-5732] Fixed reindex all implementation versions when add/delete links
 - [TD-5442] Fix hard delete implementation versions
-<<<<<<< HEAD
-=======
 - [TD-5680] Fix Children Data Structure Versions populate their classes correctly
->>>>>>> fe7438468192f598ac401aae4173ec1dd6b69d0d
+
+### Changed
+
+- [TD-5744] Increase systems search size to 200
+
 
 ## [5.5.1] 2023-04-18
 
