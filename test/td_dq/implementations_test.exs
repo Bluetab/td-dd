@@ -1461,7 +1461,6 @@ defmodule TdDq.ImplementationsTest do
   end
 
   describe "delete_implementation/2" do
-
     setup do
       claims = build(:claims)
       domain = build(:domain)
@@ -1542,10 +1541,19 @@ defmodule TdDq.ImplementationsTest do
     end
 
     test "deleting a deprecated implementation also deletes everything related with implementation_ref, including previous versions",
-    %{implementation_v1: implementation_v1, implementation_v2: implementation_v2, rule_id: rule_id, claims: claims} do
+         %{
+           implementation_v1: implementation_v1,
+           implementation_v2: implementation_v2,
+           rule_id: rule_id,
+           claims: claims
+         } do
       %{id: implementation_ref_id} = implementation_v1
       %{data_structure_id: ds_id} = insert(:data_structure_version)
-      insert(:implementation_structure, data_structure_id: ds_id, implementation_id: implementation_ref_id)
+
+      insert(:implementation_structure,
+        data_structure_id: ds_id,
+        implementation_id: implementation_ref_id
+      )
 
       %{id: implementation_v2_id} = implementation_v2
 
@@ -1555,10 +1563,11 @@ defmodule TdDq.ImplementationsTest do
           implementation_id: implementation_v2_id
         )
 
-      %{id: remediation_id} = insert(
-        :remediation,
-        rule_result_id: rule_result_id
-      )
+      %{id: remediation_id} =
+        insert(
+          :remediation,
+          rule_result_id: rule_result_id
+        )
 
       Implementations.delete_implementation(implementation_v2, claims)
 
@@ -1575,7 +1584,11 @@ defmodule TdDq.ImplementationsTest do
     end
 
     test "deleting a deprecated implementation also deletes its previous versions from cache",
-    %{implementation_v1: implementation_v1, implementation_v2: implementation_v2, claims: claims} do
+         %{
+           implementation_v1: implementation_v1,
+           implementation_v2: implementation_v2,
+           claims: claims
+         } do
       %{id: implementation_ref_id} = implementation_v1
       %{id: implementation_v2_id} = implementation_v2
 
@@ -1598,8 +1611,11 @@ defmodule TdDq.ImplementationsTest do
     end
 
     test "deleted deprecated implementation generates audit events",
-    %{implementation_v1: implementation_v1, implementation_v2: implementation_v2, claims: claims} do
-
+         %{
+           implementation_v1: implementation_v1,
+           implementation_v2: implementation_v2,
+           claims: claims
+         } do
       %{id: implementation_v1_id} = implementation_v1
       implementation_v1_id_string = "#{implementation_v1_id}"
 
@@ -1609,19 +1625,29 @@ defmodule TdDq.ImplementationsTest do
       {:ok, %{audit: [event_id1, event_id2]}} =
         Implementations.delete_implementation(implementation_v2, claims)
 
-      assert {:ok, [%{
-        event: "implementation_deleted",
-        resource_id: ^implementation_v1_id_string,
-      }]} = Stream.range(:redix, @stream, event_id1, event_id1, transform: :range)
+      assert {:ok,
+              [
+                %{
+                  event: "implementation_deleted",
+                  resource_id: ^implementation_v1_id_string
+                }
+              ]} = Stream.range(:redix, @stream, event_id1, event_id1, transform: :range)
 
-      assert {:ok, [%{
-        event: "implementation_deleted",
-        resource_id: ^implementation_v2_id_string,
-      }]} = Stream.range(:redix, @stream, event_id2, event_id2, transform: :range)
+      assert {:ok,
+              [
+                %{
+                  event: "implementation_deleted",
+                  resource_id: ^implementation_v2_id_string
+                }
+              ]} = Stream.range(:redix, @stream, event_id2, event_id2, transform: :range)
     end
 
     test "deleted deprecated implementation calls elastic reindex",
-    %{implementation_v1: implementation_v1, implementation_v2: implementation_v2, claims: claims} do
+         %{
+           implementation_v1: implementation_v1,
+           implementation_v2: implementation_v2,
+           claims: claims
+         } do
       %{id: implementation_ref_id} = implementation_v1
       %{id: implementation_v2_id} = implementation_v2
 
