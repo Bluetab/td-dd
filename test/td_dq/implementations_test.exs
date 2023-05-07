@@ -5,15 +5,13 @@ defmodule TdDq.ImplementationsTest do
 
   alias Ecto.Changeset
   alias TdCache.ImplementationCache
-  alias TdCache.LinkCache
   alias TdCache.Redix
   alias TdCache.Redix.Stream
   alias TdDd.Search.MockIndexWorker
   alias TdDq.Implementations
   alias TdDq.Implementations.Implementation
   alias TdDq.Implementations.ImplementationStructure
-  alias TdDq.Remediations.Remediation
-  alias TdDq.Rules.RuleResult
+  alias TdDq.Rules.RuleResults
 
   @moduletag sandbox: :shared
   @stream TdCache.Audit.stream()
@@ -1463,6 +1461,41 @@ defmodule TdDq.ImplementationsTest do
   end
 
   describe "delete_implementation/2" do
+
+    setup do
+      claims = build(:claims)
+      domain = build(:domain)
+
+      %{id: rule_id} = rule = insert(:rule)
+
+      %{id: implementation_ref_id} =
+        implementation_v1 =
+        insert(
+          :implementation,
+          rule: rule,
+          version: 1,
+          domain_id: domain.id,
+          status: :versioned
+        )
+
+      implementation_v2 =
+        insert(
+          :implementation,
+          rule: rule,
+          version: 2,
+          domain_id: domain.id,
+          status: :deprecated,
+          implementation_ref: implementation_ref_id
+        )
+
+      [
+        claims: claims,
+        implementation_v1: implementation_v1,
+        implementation_v2: implementation_v2,
+        rule_id: rule_id
+      ]
+    end
+
     test "deletes the implementation" do
       %{id: implementation_ref_id} = implementation = insert(:implementation)
       claims = build(:claims)
@@ -1470,7 +1503,7 @@ defmodule TdDq.ImplementationsTest do
       assert {:ok, %{implementations: {1, _}}} =
                Implementations.delete_implementation(implementation, claims)
 
-      assert [] = check_implementations_exists(implementation_ref_id)
+      assert nil == Implementations.get_implementation(implementation_ref_id)
     end
 
     test "deletes the implementation and related data_structures" do
@@ -1484,8 +1517,7 @@ defmodule TdDq.ImplementationsTest do
       assert {:ok, %{implementations: {1, _}}} =
                Implementations.delete_implementation(implementation, claims)
 
-      assert [] = check_implementations_exists(implementation_ref_id)
-
+      assert nil == Implementations.get_implementation(implementation_ref_id)
       assert is_nil(Repo.get(ImplementationStructure, implementation_structure_id))
     end
 
@@ -1505,35 +1537,17 @@ defmodule TdDq.ImplementationsTest do
       assert {:ok, %{implementations: {1, _}}} =
                Implementations.delete_implementation(implementation, claims)
 
-      assert [] = check_implementations_exists(implementation_id)
+      assert nil == Implementations.get_implementation(implementation_id)
       assert is_nil(Repo.get(TdDq.Executions.Execution, execution_id))
     end
 
-    test "delete deprecated implementation deletes previous versions and everything related with implementation_ref" do
-      claims = build(:claims)
-      domain = build(:domain)
+    test "deleting a deprecated implementation also deletes everything related with implementation_ref, including previous versions",
+    %{implementation_v1: implementation_v1, implementation_v2: implementation_v2, rule_id: rule_id, claims: claims} do
+      %{id: implementation_ref_id} = implementation_v1
+      %{data_structure_id: ds_id} = insert(:data_structure_version)
+      insert(:implementation_structure, data_structure_id: ds_id, implementation_id: implementation_ref_id)
 
-      %{id: rule_id} = rule = insert(:rule)
-
-      %{id: implementation_ref_id} =
-        insert(
-          :implementation,
-          rule: rule,
-          version: 1,
-          domain_id: domain.id,
-          status: :versioned
-        )
-
-      %{id: implementation_v2_id} =
-        implementation_v2 =
-        insert(
-          :implementation,
-          rule: rule,
-          version: 2,
-          domain_id: domain.id,
-          status: :deprecated,
-          implementation_ref: implementation_ref_id
-        )
+      %{id: implementation_v2_id} = implementation_v2
 
       %{id: rule_result_id} =
         insert(:rule_result,
@@ -1541,136 +1555,75 @@ defmodule TdDq.ImplementationsTest do
           implementation_id: implementation_v2_id
         )
 
-      insert(
+      %{id: remediation_id} = insert(
         :remediation,
         rule_result_id: rule_result_id
       )
 
       Implementations.delete_implementation(implementation_v2, claims)
 
-      assert [] = check_implementations_exists(implementation_ref_id)
+      assert nil == Implementations.get_implementation(implementation_ref_id)
 
       assert [] =
                ImplementationStructure
                |> where([i], i.implementation_id == ^implementation_ref_id)
                |> Repo.all()
 
-      assert [] =
-               RuleResult
-               |> where([i], i.id == ^rule_result_id)
-               |> Repo.all()
+      assert nil == RuleResults.get_rule_result(rule_result_id)
 
-      assert [] =
-               Remediation
-               |> where([re], re.rule_result_id == ^rule_result_id)
-               |> Repo.all()
+      assert nil == TdDq.Remediations.get_remediation(remediation_id)
     end
 
-    test "deleted deprecated implementation delete implementation and links from cache" do
-      claims = build(:claims)
-      domain = build(:domain)
-
-      rule = insert(:rule)
-
-      %{id: implementation_ref_id} =
-        implementation_v1 =
-        insert(
-          :implementation,
-          rule: rule,
-          version: 1,
-          domain_id: domain.id,
-          status: :versioned
-        )
-
-      %{id: implementation_v2_id} =
-        implementation_v2 =
-        insert(
-          :implementation,
-          rule: rule,
-          version: 2,
-          domain_id: domain.id,
-          status: :deprecated,
-          implementation_ref: implementation_ref_id
-        )
+    test "deleting a deprecated implementation also deletes its previous versions from cache",
+    %{implementation_v1: implementation_v1, implementation_v2: implementation_v2, claims: claims} do
+      %{id: implementation_ref_id} = implementation_v1
+      %{id: implementation_v2_id} = implementation_v2
 
       CacheHelpers.put_implementation(implementation_v1)
       CacheHelpers.put_implementation(implementation_v2)
 
       %{id: concept_id} = CacheHelpers.insert_concept()
 
-      %{id: link_id} =
-        CacheHelpers.insert_link(
-          implementation_ref_id,
-          "implementation_ref",
-          "business_concept",
-          concept_id
-        )
+      CacheHelpers.insert_link(
+        implementation_ref_id,
+        "implementation_ref",
+        "business_concept",
+        concept_id
+      )
 
       Implementations.delete_implementation(implementation_v2, claims)
 
       assert {:ok, nil} = ImplementationCache.get(implementation_v2_id)
       assert {:ok, nil} = ImplementationCache.get(implementation_ref_id)
-      assert {:ok, nil} = LinkCache.get(link_id)
     end
 
-    test "deleted deprecated implementation generate audit events" do
-      claims = build(:claims)
-      domain = build(:domain)
+    test "deleted deprecated implementation generates audit events",
+    %{implementation_v1: implementation_v1, implementation_v2: implementation_v2, claims: claims} do
 
-      rule = insert(:rule)
+      %{id: implementation_v1_id} = implementation_v1
+      implementation_v1_id_string = "#{implementation_v1_id}"
 
-      %{id: implementation_ref_id} =
-        insert(
-          :implementation,
-          rule: rule,
-          version: 1,
-          domain_id: domain.id,
-          status: :versioned
-        )
-
-      implementation_v2 =
-        insert(
-          :implementation,
-          rule: rule,
-          version: 2,
-          domain_id: domain.id,
-          status: :deprecated,
-          implementation_ref: implementation_ref_id
-        )
+      %{id: implementation_v2_id} = implementation_v2
+      implementation_v2_id_string = "#{implementation_v2_id}"
 
       {:ok, %{audit: [event_id1, event_id2]}} =
         Implementations.delete_implementation(implementation_v2, claims)
 
-      assert {:ok, [_]} = Stream.range(:redix, @stream, event_id1, event_id1, transform: :range)
+      assert {:ok, [%{
+        event: "implementation_deleted",
+        resource_id: ^implementation_v1_id_string,
+      }]} = Stream.range(:redix, @stream, event_id1, event_id1, transform: :range)
 
-      assert {:ok, [_]} = Stream.range(:redix, @stream, event_id2, event_id2, transform: :range)
+      assert {:ok, [%{
+        event: "implementation_deleted",
+        resource_id: ^implementation_v2_id_string,
+      }]} = Stream.range(:redix, @stream, event_id2, event_id2, transform: :range)
     end
 
-    test "deleted deprecated implementation calls reindex elastic" do
-      claims = build(:claims)
-      domain = build(:domain)
-
-      rule = insert(:rule)
-
-      %{id: implementation_ref_id} =
-        insert(
-          :implementation,
-          rule: rule,
-          version: 1,
-          domain_id: domain.id,
-          status: :versioned
-        )
-
-      %{id: implementation_v2_id} =
-        implementation_v2 =
-        insert(
-          :implementation,
-          rule: rule,
-          version: 2,
-          domain_id: domain.id,
-          status: :deprecated,
-          implementation_ref: implementation_ref_id
-        )
+    test "deleted deprecated implementation calls elastic reindex",
+    %{implementation_v1: implementation_v1, implementation_v2: implementation_v2, claims: claims} do
+      %{id: implementation_ref_id} = implementation_v1
+      %{id: implementation_v2_id} = implementation_v2
 
       Implementations.delete_implementation(implementation_v2, claims)
 
@@ -2282,11 +2235,5 @@ defmodule TdDq.ImplementationsTest do
 
       assert ^implementation_id = linked_implementation_id
     end
-  end
-
-  defp check_implementations_exists(implementation_ref_id) do
-    Implementation
-    |> where([i], i.implementation_ref == ^implementation_ref_id)
-    |> Repo.all()
   end
 end

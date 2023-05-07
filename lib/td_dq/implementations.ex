@@ -457,16 +457,22 @@ defmodule TdDq.Implementations do
     |> on_delete()
   end
 
-  defp on_delete({:ok, %{implementations: {_, implementations}}} = result) do
-    ids =
-      implementations
-      |> Enum.map(fn %{rule_id: rule_id, id: id} -> [{:rule_ids, rule_id}, {:ids, id}] end)
-      |> List.flatten()
-      |> Enum.uniq()
-      |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+  defp on_delete({:ok, %{implementations: {_count, implementations}}} = result) do
+    {rule_ids, implementation_ids} = Enum.reduce(
+      implementations,
+      {MapSet.new(), MapSet.new()},
+      fn %{rule_id: rule_id, id: implementation_id}, {rule_ids_set, implementation_ids_set} ->
+        {
+          MapSet.put(rule_ids_set, rule_id),
+          MapSet.put(implementation_ids_set, implementation_id)}
+      end
+    )
+    |> then(fn {rule_ids_set, implementation_ids_set} ->
+      {MapSet.to_list(rule_ids_set), MapSet.to_list(implementation_ids_set)}
+    end)
 
-    RuleLoader.refresh(ids.rule_ids)
-    @index_worker.delete_implementations(ids.ids)
+    RuleLoader.refresh(rule_ids)
+    @index_worker.delete_implementations(implementation_ids)
 
     result
   end
