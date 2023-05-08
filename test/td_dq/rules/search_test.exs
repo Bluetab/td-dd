@@ -24,7 +24,7 @@ defmodule TdDq.Rules.SearchTest do
             SearchHelpers.aggs_response(@aggs)
         end)
 
-        assert {:ok, %{"active.raw" => ["true", "false"]}} =
+        assert {:ok, %{"active.raw" => %{values: ["true", "false"]}}} =
                  Search.get_filter_values(claims, _params = %{})
       end
     end
@@ -140,7 +140,7 @@ defmodule TdDq.Rules.SearchTest do
           SearchHelpers.aggs_response(@aggs)
       end)
 
-      assert {:ok, %{"active.raw" => ["true", "false"]}} =
+      assert {:ok, %{"active.raw" => %{values: ["true", "false"]}}} =
                Search.get_filter_values(claims, _params = %{})
     end
 
@@ -153,7 +153,7 @@ defmodule TdDq.Rules.SearchTest do
           SearchHelpers.aggs_response(@aggs)
       end)
 
-      assert {:ok, %{"active.raw" => ["true", "false"]}} =
+      assert {:ok, %{"active.raw" => %{values: ["true", "false"]}}} =
                Search.get_filter_values(claims, _params = %{}, :implementations)
     end
 

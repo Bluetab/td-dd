@@ -47,14 +47,14 @@ defmodule TdCx.Search do
   end
 
   defp filter_values({name, %{"buckets" => buckets}}) do
-    {name, Enum.map(buckets, & &1["key"])}
+    {name, %{values: Enum.map(buckets, & &1["key"])}}
   end
 
   defp filter_values({name, %{"distinct_search" => distinct_search}}) do
     filter_values({name, distinct_search})
   end
 
-  defp filter_values({name, %{"doc_count" => 0}}), do: {name, []}
+  defp filter_values({name, %{"doc_count" => 0}}), do: {name, %{values: []}}
 
   defp get_total(value) when is_integer(value), do: value
   defp get_total(%{"relation" => "eq", "value" => value}) when is_integer(value), do: value

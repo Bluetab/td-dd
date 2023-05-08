@@ -30,7 +30,7 @@ defmodule TdDqWeb.RuleFilterControllerTest do
                |> post(Routes.rule_filter_path(conn, :search, %{"filters" => filters}))
                |> json_response(:ok)
 
-      assert data == %{"domain_id" => [1, 2]}
+      assert data == %{"domain_id" => %{"values" => [1, 2]}}
     end
 
     @tag authentication: [role: "user", permissions: ["view_quality_rule"]]
