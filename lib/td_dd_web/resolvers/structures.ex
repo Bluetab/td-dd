@@ -65,6 +65,7 @@ defmodule TdDdWeb.Resolvers.Structures do
          user_permissions <- enriched_dsv[:user_permissions] do
       {:ok,
        dsv
+       |> maybe_check_siblings_permission(claims)
        |> Map.put(:actions, actions)
        |> Map.put(:user_permissions, user_permissions)}
     else
@@ -73,6 +74,15 @@ defmodule TdDdWeb.Resolvers.Structures do
       {:enriched_dsv, :forbidden} -> {:error, :forbidden}
     end
   end
+
+  defp maybe_check_siblings_permission(%{siblings: []} = dsv, _claims), do: dsv
+
+  defp maybe_check_siblings_permission(%{siblings: dsv_sibling} = dsv, claims) do
+    filtered_sibling = Enum.filter(dsv_sibling, &check_structure_related_permision(&1, claims))
+    Map.put(dsv, :siblings, filtered_sibling)
+  end
+
+  defp maybe_check_siblings_permission(dsv, _claims), do: dsv
 
   def domain_id(%{domain_ids: domain_ids}, _args, _resolution) do
     domain_id =
@@ -210,7 +220,7 @@ defmodule TdDdWeb.Resolvers.Structures do
         loader
         |> Dataloader.get(TdDd.DataStructures, {:children, batch_key}, parent)
         |> Enum.map(&TdDd.DataStructures.add_classes/1)
-        |> Enum.filter(&check_structure_children_permision(&1, claims))
+        |> Enum.filter(&check_structure_related_permision(&1, claims))
 
       {:ok, children}
     end)
@@ -220,7 +230,7 @@ defmodule TdDdWeb.Resolvers.Structures do
     {:ok, DataStructureLinks.links(data_structure)}
   end
 
-  defp check_structure_children_permision(%{data_structure: data_structure}, claims) do
+  defp check_structure_related_permision(%{data_structure: data_structure}, claims) do
     case Bodyguard.permit(DataStructures, :view_data_structure, claims, data_structure) do
       :ok -> true
       _ -> false
