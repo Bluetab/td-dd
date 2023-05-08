@@ -169,7 +169,7 @@ defmodule TdDdWeb.Schema.StructuresTest do
   }
   """
 
-  @domains_query """
+  @permissions_domains_query """
   query DataStructureVersion($dataStructureId: ID!, $version: String!) {
     dataStructureVersion(dataStructureId: $dataStructureId, version: $version) {
       id
@@ -179,6 +179,14 @@ defmodule TdDdWeb.Schema.StructuresTest do
         domains { id,name }
       }
       children {
+        dataStructure {
+          external_id
+          id
+          domain_ids
+          domains { id,name }
+        }
+      }
+      siblings {
         dataStructure {
           external_id
           id
@@ -837,7 +845,7 @@ defmodule TdDdWeb.Schema.StructuresTest do
                response =
                conn
                |> post("/api/v2", %{
-                 "query" => @domains_query,
+                 "query" => @permissions_domains_query,
                  "variables" => variables
                })
                |> json_response(:ok)
@@ -860,6 +868,92 @@ defmodule TdDdWeb.Schema.StructuresTest do
       string_id = "#{dsv_father_id}"
       assert response["errors"] == nil
       assert %{"dataStructureVersion" => %{"id" => ^string_id}} = data
+    end
+
+    @tag authentication: [role: "user", permissions: [:view_data_structure]]
+    test "returns data siblings when the siblings have permissions by the user",
+         %{
+           conn: conn,
+           domain: %{id: domain_id}
+         } do
+      %{id: domain_id_without_permissions} = CacheHelpers.insert_domain()
+
+      structure_father =
+        insert(:data_structure,
+          external_id: "father",
+          domain_ids: [domain_id, domain_id_without_permissions]
+        )
+
+      %{id: dsv_father_id} =
+        insert(:data_structure_version, data_structure: structure_father, version: 1)
+
+      %{id: structure_sibling_2_id} =
+        structure_sibling_2_dom =
+        insert(:data_structure,
+          external_id: "child_2_dom",
+          domain_ids: [domain_id, domain_id_without_permissions]
+        )
+
+      %{id: dsv_sibling_2_id} =
+        insert(:data_structure_version, data_structure: structure_sibling_2_dom, version: 1)
+
+      structure_sibling_1_dom_with =
+        insert(:data_structure,
+          external_id: "ds_sibling_1_with_permissions",
+          domain_ids: [domain_id]
+        )
+
+      %{id: dsv_sibling_1_with_permissions_id} =
+        insert(:data_structure_version, data_structure: structure_sibling_1_dom_with, version: 1)
+
+      structure_sibling_1_dom_without =
+        insert(:data_structure,
+          external_id: "ds_sibling_1_without_permissions",
+          domain_ids: [domain_id_without_permissions]
+        )
+
+      %{id: dsv_sibling_1_without_permissions_id} =
+        insert(:data_structure_version,
+          data_structure: structure_sibling_1_dom_without,
+          version: 1
+        )
+
+      ## Structure relations
+
+      create_relation(dsv_father_id, dsv_sibling_2_id)
+      create_relation(dsv_father_id, dsv_sibling_1_with_permissions_id)
+      create_relation(dsv_father_id, dsv_sibling_1_without_permissions_id)
+
+      variables = %{"dataStructureId" => structure_sibling_2_id, "version" => "latest"}
+
+      assert %{"data" => %{"dataStructureVersion" => %{"siblings" => siblings}} = data} =
+               response =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @permissions_domains_query,
+                 "variables" => variables
+               })
+               |> json_response(:ok)
+
+      assert [
+               %{
+                 "dataStructure" => %{
+                   "domain_ids" => [^domain_id, ^domain_id_without_permissions],
+                   "external_id" => "child_2_dom"
+                 }
+               },
+               %{
+                 "dataStructure" => %{
+                   "domain_ids" => [^domain_id],
+                   "external_id" => "ds_sibling_1_with_permissions"
+                 }
+               }
+             ] = siblings
+
+      string_id = "#{dsv_sibling_2_id}"
+      assert response["errors"] == nil
+      assert %{"dataStructureVersion" => %{"id" => ^string_id}} = data
+      assert length(siblings) == 2
     end
   end
 
