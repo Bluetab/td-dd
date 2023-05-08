@@ -30,7 +30,7 @@ defmodule TdDd.DataStructures.SearchTest do
               SearchHelpers.aggs_response(@aggregations)
           end)
 
-          assert {:ok, %{"foo" => ["bar", "baz"]}} =
+          assert {:ok, %{"foo" => %{values: ["bar", "baz"]}}} =
                    Search.get_filter_values(claims, permission, %{})
         end
       end
@@ -71,7 +71,7 @@ defmodule TdDd.DataStructures.SearchTest do
             SearchHelpers.aggs_response(@aggregations)
         end)
 
-        assert {:ok, %{"foo" => ["bar", "baz"]}} =
+        assert {:ok, %{"foo" => %{values: ["bar", "baz"]}}} =
                  Search.get_filter_values(claims, permission, %{})
       end
     end

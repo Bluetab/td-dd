@@ -37,7 +37,7 @@ defmodule TdDqWeb.ImplementationFilterControllerTest do
                |> post(Routes.implementation_filter_path(conn, :search, %{"filters" => filters}))
                |> json_response(:ok)
 
-      assert data == %{"rule.name.raw" => ["foo", "bar"]}
+      assert data == %{"rule.name.raw" => %{"values" => ["foo", "bar"]}}
     end
 
     @tag authentication: [role: "user", permissions: ["view_quality_rule"]]
