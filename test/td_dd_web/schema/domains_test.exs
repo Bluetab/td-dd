@@ -1,6 +1,8 @@
 defmodule TdDdWeb.Schema.DomainTest do
   use TdDdWeb.ConnCase
 
+  import TdDd.TestOperators
+
   @domain_with_actions """
   query Domain($id: ID!, $actions: [String!]!) {
     domain(id: $id) {
@@ -30,6 +32,18 @@ defmodule TdDdWeb.Schema.DomainTest do
       externalId
       name
       actions(actions: $domainActions)
+    }
+  }
+  """
+
+  @domain_with_parent """
+  query Domain($id: ID!, $actions: [String!]!) {
+    domain(id: $id) {
+      id
+      actions(actions: $actions)
+      parents {
+        id
+      }
     }
   }
   """
@@ -315,6 +329,44 @@ defmodule TdDdWeb.Schema.DomainTest do
       refute Map.has_key?(resp, "errors")
 
       assert %{"actions" => ["manageImplementations"], "id" => to_string(domain_id)} == domain
+    end
+
+    @tag authentication: [role: "admin"]
+    test "returns the domain with parent", %{conn: conn} do
+      %{id: grandad_domain_id} = grandad_domain = CacheHelpers.insert_domain()
+
+      %{id: father_domain_id} =
+        father_domain =
+        CacheHelpers.insert_domain(parent_id: grandad_domain_id, parents: [grandad_domain])
+
+      %{id: child_domain_id} =
+        CacheHelpers.insert_domain(parent_id: father_domain_id, parents: [father_domain])
+
+      assert %{"data" => %{"domain" => domain}} =
+               resp =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @domain_with_parent,
+                 "variables" => %{
+                   "actions" => ["manageImplementations"],
+                   "id" => to_string(child_domain_id)
+                 }
+               })
+               |> json_response(:ok)
+
+      refute Map.has_key?(resp, "errors")
+
+      str_father_domain_id = to_string(father_domain_id)
+      str_grandad_domain_id = to_string(grandad_domain_id)
+      str_child_domain_id = to_string(child_domain_id)
+
+      assert %{
+               "actions" => ["manageImplementations"],
+               "id" => ^str_child_domain_id,
+               "parents" => parents
+             } = domain
+
+      assert [%{"id" => str_grandad_domain_id}, %{"id" => str_father_domain_id}] <|> parents
     end
   end
 

@@ -29,7 +29,7 @@ defmodule TdDdWeb.Schema.Domains do
     field :parent_id, :id
     field :external_id, :string
     field :name, :string
-    field :parents, list_of(:domain)
+    field :parents, list_of(:domain), resolve: &Resolvers.Domains.get_parents/3
     # field :updated_at, :datetime
 
     field :actions, list_of(:string) do

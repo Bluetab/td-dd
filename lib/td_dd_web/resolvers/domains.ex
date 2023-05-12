@@ -7,6 +7,7 @@ defmodule TdDdWeb.Resolvers.Domains do
   alias TdCache.TaxonomyCache
   alias TdDd.Lineage.NodeQuery
   alias TdDd.Lineage.Units
+  alias TdDd.Search.StructureEnricher
 
   @spec domains(any, any, any) :: {:ok, list}
 
@@ -26,6 +27,14 @@ defmodule TdDdWeb.Resolvers.Domains do
     get_cache_domains(domain_ids)
   end
 
+  def domain(_parent, %{id: id}, _resolution) do
+    {:ok, TaxonomyCache.get_domain(id)}
+  end
+
+  def get_parents(%{id: id_parent}, _args, _resolution) do
+    {:ok, StructureEnricher.get_domain_parents(id_parent)}
+  end
+
   defp get_cache_domains(domain_ids) do
     domains =
       domain_ids
@@ -33,10 +42,6 @@ defmodule TdDdWeb.Resolvers.Domains do
       |> Enum.reject(&is_nil/1)
 
     {:ok, domains}
-  end
-
-  def domain(_parent, %{id: id}, _resolution) do
-    {:ok, TaxonomyCache.get_domain(id)}
   end
 
   defp permitted_domains(action, resolution, domain_ids \\ []) do
@@ -114,10 +119,7 @@ defmodule TdDdWeb.Resolvers.Domains do
   defp permitted_domain_ids(%{role: "user", jti: jti}, "manageBasicImplementations"),
     do: Permissions.permitted_domain_ids(jti, :manage_basic_implementations)
 
-  defp permitted_domain_ids(
-         %{role: "user", jti: jti},
-         "manageBasicRulelessImplementations"
-       ) do
+  defp permitted_domain_ids(%{role: "user", jti: jti}, "manageBasicRulelessImplementations") do
     jti
     |> Permissions.permitted_domain_ids([
       :manage_basic_implementations,
