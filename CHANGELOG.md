@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-5751] Enrich domains parents in V2
+
 ## [5.6.0] 2023-05-09
 
 ### Added

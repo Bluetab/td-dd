@@ -83,6 +83,9 @@ defmodule TdDdWeb.Schema.StructuresTest do
         domains {
           id
           name
+          parents {
+            id
+          }
         }
         external_id
         inserted_at
@@ -192,6 +195,27 @@ defmodule TdDdWeb.Schema.StructuresTest do
           id
           domain_ids
           domains { id,name }
+        }
+      }
+    }
+  }
+  """
+
+  @domains_herarchy_query """
+  query DataStructureVersion($dataStructureId: ID!, $version: String!) {
+    dataStructureVersion(dataStructureId: $dataStructureId, version: $version) {
+      id
+      version
+      name
+      dataStructure {
+        id
+        domain_ids
+        domains {
+          id
+          parent_id
+          parents {
+            id
+          }
         }
       }
     }
@@ -388,7 +412,11 @@ defmodule TdDdWeb.Schema.StructuresTest do
     @tag contains: %{}
     @tag depends: []
     test "returns required data when queried by admin", %{conn: conn, claims: %{user_id: user_id}} do
-      %{id: domain_id, name: domain_name} = CacheHelpers.insert_domain()
+      %{id: father_domain_id} = father_domain = CacheHelpers.insert_domain()
+
+      %{id: domain_id, name: domain_name} =
+        CacheHelpers.insert_domain(parent_id: father_domain_id, parents: [father_domain])
+
       %{id: source_id, external_id: source_external_id} = source = insert(:source)
       %{id: system_id, name: system_name} = system = insert(:system)
 
@@ -592,7 +620,12 @@ defmodule TdDdWeb.Schema.StructuresTest do
                    "domains" => [
                      %{
                        "id" => "#{domain_id}",
-                       "name" => domain_name
+                       "name" => domain_name,
+                       "parents" => [
+                         %{
+                           "id" => "#{father_domain_id}"
+                         }
+                       ]
                      }
                    ],
                    "external_id" => external_id,
@@ -954,6 +987,52 @@ defmodule TdDdWeb.Schema.StructuresTest do
       assert response["errors"] == nil
       assert %{"dataStructureVersion" => %{"id" => ^string_id}} = data
       assert length(siblings) == 2
+    end
+
+    @tag authentication: [role: "admin"]
+    test "returns data and domains herarchy", %{conn: conn} do
+      %{id: father_domain_id} = father_domain = CacheHelpers.insert_domain()
+
+      %{id: child_domain_id} =
+        child_domain =
+        CacheHelpers.insert_domain(parent_id: father_domain_id, parents: [father_domain])
+
+      structure =
+        insert(:data_structure,
+          external_id: "structure",
+          domain_ids: [child_domain_id],
+          domains: [child_domain]
+        )
+
+      insert(:data_structure_version, data_structure: structure, version: 1)
+
+      variables = %{"dataStructureId" => structure.id, "version" => "latest"}
+
+      assert %{
+               "data" => %{
+                 "dataStructureVersion" => %{"dataStructure" => %{"domains" => domains}}
+               }
+             } =
+               response =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @domains_herarchy_query,
+                 "variables" => variables
+               })
+               |> json_response(:ok)
+
+      str_child_id = to_string(child_domain_id)
+      str_father_id = to_string(father_domain_id)
+
+      assert [
+               %{
+                 "id" => ^str_child_id,
+                 "parent_id" => ^str_father_id,
+                 "parents" => [%{"id" => ^str_father_id}]
+               }
+             ] = domains
+
+      assert response["errors"] == nil
     end
   end
 
