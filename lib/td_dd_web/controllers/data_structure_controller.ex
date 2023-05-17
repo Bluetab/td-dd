@@ -418,7 +418,8 @@ defmodule TdDdWeb.DataStructureController do
 
   def csv(conn, params) do
     header_labels = Map.get(params, "header_labels", %{})
-    params = Map.drop(params, ["header_labels", "page", "size"])
+    structure_url_schema = Map.get(params, "structure_url_schema", nil)
+    params = Map.drop(params, ["header_labels", "page", "size", "structure_url_schema"])
 
     permission = conn.assigns[:search_permission]
     claims = conn.assigns[:current_resource]
@@ -433,12 +434,13 @@ defmodule TdDdWeb.DataStructureController do
         conn
         |> put_resp_content_type("text/csv", "utf-8")
         |> put_resp_header("content-disposition", "attachment; filename=\"structures.zip\"")
-        |> send_resp(:ok, Download.to_csv(data_structures, header_labels))
+        |> send_resp(:ok, Download.to_csv(data_structures, header_labels, structure_url_schema))
     end
   end
 
   def editable_csv(conn, params) do
-    params = Map.drop(params, ["page", "size"])
+    structure_url_schema = Map.get(params, "structure_url_schema", nil)
+    params = Map.drop(params, ["page", "size", "structure_url_schema"])
     permission = conn.assigns[:search_permission]
     claims = conn.assigns[:current_resource]
 
@@ -452,7 +454,7 @@ defmodule TdDdWeb.DataStructureController do
         conn
         |> put_resp_content_type("text/csv", "utf-8")
         |> put_resp_header("content-disposition", "attachment; filename=\"structures.zip\"")
-        |> send_resp(:ok, Download.to_editable_csv(data_structures))
+        |> send_resp(:ok, Download.to_editable_csv(data_structures, structure_url_schema))
     end
   end
 

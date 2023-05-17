@@ -20,7 +20,31 @@ defmodule TdDd.CSV.Download do
     "inserted_at"
   ]
 
-  @editable_headers [:external_id, :name, :type, :path]
+  @headers_extended [
+    "type",
+    "tech_name",
+    "alias_name",
+    "link_to_structure",
+    "group",
+    "domain",
+    "system",
+    "path",
+    "description",
+    "external_id",
+    "inserted_at"
+  ]
+
+  @editable_headers [
+    :external_id,
+    :name,
+    :type,
+    :path
+  ]
+  @editable_extra_headers [
+    "tech_name",
+    "alias_name",
+    "link_to_structure"
+  ]
 
   @lineage_headers [
     "source_external_id",
@@ -41,7 +65,9 @@ defmodule TdDd.CSV.Download do
     "mutable_metadata"
   ]
 
-  def to_csv(structures, header_labels \\ nil) do
+  def to_csv(structures), do: to_csv(structures, nil, nil)
+
+  def to_csv(structures, header_labels, structure_url_schema) do
     structures
     |> Enum.group_by(&Map.get(&1, :type))
     |> Enum.reduce([], fn {type, structures}, acc ->
@@ -54,23 +80,20 @@ defmodule TdDd.CSV.Download do
         end)
 
       content_labels = Enum.map(content, &Map.get(&1, "label"))
-      headers = build_headers(header_labels) ++ content_labels
+
+      headers =
+        if is_nil(structure_url_schema) do
+          build_headers(header_labels) ++ content_labels
+        else
+          build_headers(header_labels, @headers_extended) ++ content_labels
+        end
 
       content_fields = Enum.map(content, &Map.take(&1, ["name", "values", "type", "cardinality"]))
 
       structures_list =
         Enum.map(structures, fn %{note: content} = structure ->
-          [
-            structure.type,
-            structure.name,
-            structure.group,
-            get_domain(structure),
-            Map.get(structure.system, "name"),
-            Enum.join(structure.path, " > "),
-            structure.description,
-            structure.external_id,
-            structure.inserted_at
-          ]
+          structure
+          |> get_standar_fields(structure_url_schema)
           |> Parser.append_parsed_fields(content_fields, content)
         end)
 
@@ -81,7 +104,7 @@ defmodule TdDd.CSV.Download do
     |> to_string
   end
 
-  def to_editable_csv(structures) do
+  def to_editable_csv(structures, structure_url_schema \\ nil) do
     type_fields =
       structures
       |> Enum.map(& &1.type)
@@ -92,12 +115,13 @@ defmodule TdDd.CSV.Download do
 
     type_headers = Enum.map(type_fields, &Map.get(&1, "name"))
 
-    headers = @editable_headers ++ type_headers
+    headers = get_editable_headers(type_headers, structure_url_schema)
 
     core =
       Enum.map(structures, fn %{note: content} = structure ->
         @editable_headers
         |> Enum.map(&editable_structure_value(structure, &1))
+        |> add_editable_extra_fields(structure, structure_url_schema)
         |> Parser.append_parsed_fields(type_fields, content)
       end)
 
@@ -105,6 +129,67 @@ defmodule TdDd.CSV.Download do
     |> CSV.encode(separator: ?;)
     |> Enum.to_list()
     |> to_string()
+  end
+
+  defp get_structure_alias(%{note: %{"alias" => alias}}), do: alias
+
+  defp get_structure_alias(_), do: ""
+
+  defp get_standar_fields(structure, nil) do
+    [
+      structure.type,
+      structure.name,
+      structure.group,
+      get_domain(structure),
+      Map.get(structure.system, "name"),
+      Enum.join(structure.path, " > "),
+      structure.description,
+      structure.external_id,
+      structure.inserted_at
+    ]
+  end
+
+  defp get_standar_fields(structure, structure_url_schema) do
+    [
+      structure.type,
+      Map.get(structure, :original_name, structure.name),
+      get_structure_alias(structure),
+      get_structure_url_schema(structure_url_schema, structure.data_structure_id),
+      structure.group,
+      get_domain(structure),
+      Map.get(structure.system, "name"),
+      Enum.join(structure.path, " > "),
+      structure.description,
+      structure.external_id,
+      structure.inserted_at
+    ]
+  end
+
+  defp get_structure_url_schema(url_schema, structure_id) do
+    if String.contains?(url_schema, "/:id") do
+      String.replace(url_schema, ":id", to_string(structure_id))
+    else
+      nil
+    end
+  end
+
+  defp get_editable_headers(type_headers, nil) do
+    @editable_headers ++ type_headers
+  end
+
+  defp get_editable_headers(type_headers, _structure_url_schema) do
+    @editable_headers ++ @editable_extra_headers ++ type_headers
+  end
+
+  defp add_editable_extra_fields(editable_fields, _, nil), do: editable_fields
+
+  defp add_editable_extra_fields(editable_fields, structure, structure_url_schema) do
+    editable_fields ++
+      [
+        Map.get(structure, :original_name, structure.name),
+        get_structure_alias(structure),
+        get_structure_url_schema(structure_url_schema, structure.data_structure_id)
+      ]
   end
 
   defp type_editable_fields(%{template: %{content: content}}) when is_list(content) do
