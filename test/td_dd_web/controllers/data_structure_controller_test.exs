@@ -1095,6 +1095,62 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert %{"name" => ^name} = row
     end
 
+    @tag authentication: [
+           role: "user",
+           permissions: [:manage_structures_domain, :view_data_structure]
+         ]
+    test "gets csv content using scroll to search, filter by taxonomy, with tech_name, alias_name and structure_link",
+         %{
+           conn: conn,
+           domain: %{id: domain_id}
+         } do
+      %{id: child_domain_id} = CacheHelpers.insert_domain(parent_id: domain_id)
+
+      %{name: name} =
+        dsv =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, domain_ids: [child_domain_id])
+        )
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, opts ->
+        assert opts == [params: %{"scroll" => "1m"}]
+
+        assert %{
+                 bool: %{
+                   filter: [
+                     # The query taxonomy filter gets converted to the field "domain_ids"
+                     %{terms: %{"domain_ids" => [_domain_id, _child_domain_id]}},
+                     %{term: %{"confidential" => false}}
+                   ],
+                   must_not: %{exists: %{field: "deleted_at"}}
+                 }
+               } = query
+
+        SearchHelpers.scroll_response([dsv])
+      end)
+      |> expect(:request, fn _, :post, "/_search/scroll", body, opts ->
+        assert opts == []
+        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
+        SearchHelpers.scroll_response([])
+      end)
+
+      params = %{
+        "filters" => %{"taxonomy" => [domain_id]},
+        :structure_url_schema => "https://truedat.td.dd/structure/:id"
+      }
+
+      assert [row] =
+               post(conn, data_structure_path(conn, :csv), params)
+               |> response(:ok)
+               |> String.split("\r\n")
+               |> Enum.reject(&(&1 == ""))
+               |> CSV.decode!(headers: true, separator: ?;)
+               |> Enum.to_list()
+
+      assert %{"tech_name" => ^name} = row
+    end
+
     @tag authentication: [role: "admin"]
     test "gets editable csv content using scroll to search", %{
       conn: conn,
@@ -1125,6 +1181,58 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert body == """
              external_id;name;type;path;string;list\r
              #{external_id};#{name};#{type};#{Enum.join(path, "")};foo;bar\r
+             """
+    end
+
+    @tag authentication: [role: "admin"]
+    test "gets editable csv content using scroll to search with tech_name, alias_name and structure_link",
+         %{
+           conn: conn,
+           data_structure: data_structure,
+           data_structure_version: dsv
+         } do
+      insert(:structure_note,
+        data_structure: data_structure,
+        df_content: %{"string" => "foo", "list" => "bar"},
+        status: :published
+      )
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", _, opts ->
+        assert opts == [params: %{"scroll" => "1m"}]
+        SearchHelpers.scroll_response([dsv])
+      end)
+      |> expect(:request, fn _, :post, "/_search/scroll", body, [] ->
+        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
+        SearchHelpers.scroll_response([])
+      end)
+
+      assert %{resp_body: body} =
+               post(
+                 conn,
+                 data_structure_path(conn, :editable_csv, %{
+                   :structure_url_schema => "https://truedat.td.dd/structure/:id"
+                 })
+               )
+
+      %{alias: alias_name, external_id: external_id} = data_structure
+
+      %{
+        data_structure_id: data_structure_id,
+        name: dsv_name,
+        type: type,
+        path: path
+      } = dsv
+
+      # original_name as
+      # TdDd.DataStructures.DataStructureVersion ->
+      #  Elasticsearch.Document maybe_put_alias does
+      original_name = dsv_name
+      structure_url = "https://truedat.td.dd/structure/" <> to_string(data_structure_id)
+
+      assert body == """
+             external_id;name;type;path;tech_name;alias_name;link_to_structure;string;list\r
+             #{external_id};#{dsv_name};#{type};#{Enum.join(path, "")};#{original_name};#{alias_name};#{structure_url};foo;bar\r
              """
     end
 

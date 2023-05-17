@@ -65,6 +65,84 @@ defmodule TdDd.CSV.DownloadTest do
                """
     end
 
+    test "to_csv/3 return csv content to download with tech_name, alias_name and structure link" do
+      field_name = "add_info1"
+      field_label = "Add Info 1"
+      type = "Columna"
+
+      %{id: template_id, name: template_name} =
+        CacheHelpers.insert_template(%{
+          content: [
+            %{
+              "name" => "group",
+              "fields" => [
+                %{
+                  "name" => field_name,
+                  "type" => "list",
+                  "label" => field_label
+                }
+              ]
+            }
+          ]
+        })
+
+      insert(:data_structure_type, name: type, template_id: template_id)
+      %{name: domain_name} = CacheHelpers.insert_domain()
+
+      # Structure without Alias
+      structure_1 = %{
+        name: "TechName_1",
+        description: "Loren impusm",
+        template: %{"name" => template_name},
+        note: %{field_name => ["field_value"]},
+        domain: %{"external_id" => "ex_id_1", "name" => domain_name},
+        inserted_at: "2023-05-15",
+        external_id: "myext_123456",
+        group: "gr",
+        path: ["LOREM", "Ipsum Dolor", "Amet"],
+        type: type,
+        system: %{"external_id" => "sys", "name" => "sys_name"},
+        data_structure_id: 8
+      }
+
+      # Structure with Alias
+      structure_2 = %{
+        name: "Alias Name 2",
+        original_name: "TechName_2",
+        alias: "Alias Name 2",
+        description: "Lorem Ipsum",
+        template: %{"name" => template_name},
+        note: %{field_name => ["field_value"], "alias" => "Alias Name 2"},
+        domain: %{"external_id" => "ex_id_2", "name" => domain_name},
+        inserted_at: "2023-05-15",
+        external_id: "myext_234567",
+        group: "gr",
+        path: ["LOREM", "Ipsum Dolor", "Sit"],
+        type: type,
+        system: %{"external_id" => "sys", "name" => "sys_name"},
+        data_structure_id: 9
+      }
+
+      # Simulating structure_url_schema input from web and conversion for structures
+      structure_url_schema = "https://truedat.td.dd/structure/:id"
+
+      structure_1_url_schema_converted =
+        "https://truedat.td.dd/structure/" <> to_string(structure_1.data_structure_id)
+
+      structure_2_url_schema_converted =
+        "https://truedat.td.dd/structure/" <> to_string(structure_2.data_structure_id)
+
+      structures = [structure_1, structure_2]
+      csv = Download.to_csv(structures, nil, structure_url_schema)
+
+      assert csv ==
+               """
+               type;tech_name;alias_name;link_to_structure;group;domain;system;path;description;external_id;inserted_at;Add Info 1\r
+               #{structure_1.type};#{structure_1.name};;#{structure_1_url_schema_converted};#{structure_1.group};#{domain_name};#{Map.get(structure_1.system, "name")};#{Enum.join(structure_1.path, " > ")};#{structure_1.description};#{structure_1.external_id};#{structure_1.inserted_at};field_value\r
+               #{structure_2.type};#{structure_2.original_name};#{structure_2.alias};#{structure_2_url_schema_converted};#{structure_2.group};#{domain_name};#{Map.get(structure_2.system, "name")};#{Enum.join(structure_2.path, " > ")};#{structure_2.description};#{structure_2.external_id};#{structure_2.inserted_at};field_value\r
+               """
+    end
+
     test "to_csv/1 return csv content to download with hierarchy" do
       template_name = "column"
       field_name = "hierarchy_field"
@@ -237,6 +315,67 @@ defmodule TdDd.CSV.DownloadTest do
                """
                external_id;name;type;path;field_name\r
                ext_id;name;type;foo > bar;field_value\r
+               """
+    end
+
+    test "to_editable_csv/2 return csv content to download with tech_name, alias_name and structure link" do
+      CacheHelpers.insert_template(%{
+        id: 42,
+        name: "template",
+        label: "label",
+        scope: "dd",
+        content: [
+          %{
+            "name" => "group",
+            "fields" => [
+              %{
+                "name" => "field_name",
+                "type" => "list",
+                "label" => "Label foo"
+              }
+            ]
+          }
+        ]
+      })
+
+      insert(:data_structure_type, name: "type", template_id: 42)
+
+      structure_1 = %{
+        name: "TechName_1",
+        path: ["foo", "bar"],
+        template: %{"name" => "template"},
+        note: %{"field_name" => ["field_value"]},
+        external_id: "ext_id",
+        type: "type",
+        data_structure_id: 8
+      }
+
+      structure_2 = %{
+        name: "Alias Name 2",
+        original_name: "TechName_2",
+        alias: "Alias Name 2",
+        path: ["foo", "bar"],
+        template: %{"name" => "template"},
+        note: %{"field_name" => ["field_value"], "alias" => "Alias Name 2"},
+        external_id: "ext_id",
+        type: "type",
+        data_structure_id: 8
+      }
+
+      # Simulating structure_url_schema input from web and conversion for structures
+      structure_url_schema = "https://truedat.td.dd/structure/:id"
+
+      structure_1_url_schema_converted =
+        "https://truedat.td.dd/structure/" <> to_string(structure_1.data_structure_id)
+
+      structure_2_url_schema_converted =
+        "https://truedat.td.dd/structure/" <> to_string(structure_2.data_structure_id)
+
+      assert Download.to_editable_csv([structure_1, structure_2], structure_url_schema) ==
+               """
+               external_id;name;type;path;tech_name;alias_name;link_to_structure;field_name\r
+               #{structure_1.external_id};#{structure_1.name};#{structure_1.type};#{Enum.join(structure_1.path, " > ")};#{structure_1.name};;#{structure_1_url_schema_converted};#{Map.get(structure_1.note, "field_name")}\r
+               #{structure_2.external_id};#{structure_2.name};#{structure_2.type};#{Enum.join(structure_2.path, " > ")};#{structure_2.original_name};#{structure_2.alias};#{structure_2_url_schema_converted};#{Map.get(structure_2.note, "field_name")}\r
                """
     end
   end
