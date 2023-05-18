@@ -35,6 +35,10 @@ defmodule TdDd.Search.MockIndexWorker do
     Agent.update(__MODULE__, &[{:reindex_implementations, param} | &1])
   end
 
+  def delete(param) do
+    Agent.update(__MODULE__, &[{:delete, param} | &1])
+  end
+
   def delete_rules(param) do
     Agent.update(__MODULE__, &[{:delete_rules, param} | &1])
   end

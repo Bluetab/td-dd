@@ -5,6 +5,9 @@
 ### Added
 
 - [TD-5491] Add link to the structure and the technical name in the downloded files of structures metadata
+- [TD-5504] [TD-5141]:
+  - Domain Structures for implementations
+  - Implementation domain to csv donwload
 
 ### Fixed
 

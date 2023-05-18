@@ -64,9 +64,10 @@ defmodule TdDq.Implementations.Implementation do
 
     belongs_to(:implementation_ref_struct, Implementation, foreign_key: :implementation_ref)
 
-    has_many :versions, Implementation,
+    has_many(:versions, Implementation,
       foreign_key: :implementation_ref,
       references: :implementation_ref
+    )
 
     embeds_one(:raw_content, RawContent, on_replace: :delete)
     embeds_many(:dataset, DatasetRow, on_replace: :delete)
@@ -468,6 +469,9 @@ defmodule TdDq.Implementations.Implementation do
         Implementation.get_execution_result_info(implementation, result, quality_event)
 
       domain_ids = List.wrap(domain_id)
+
+      domain = Helpers.get_domain(domain_id)
+
       structures = Implementations.get_structures(implementation)
       structure_ids = get_structure_ids(structures)
       structure_names = get_structure_names(structures)
@@ -477,6 +481,15 @@ defmodule TdDq.Implementations.Implementation do
         implementation
         |> Map.get(:data_structures)
         |> Enum.map(&Map.get(&1, :data_structure_id))
+
+      structure_domain_ids =
+        implementation
+        |> Map.get(:data_structures)
+        |> Enum.map(&get_structures_domains_ids(&1.data_structure))
+        |> Enum.flat_map(& &1)
+        |> Enum.uniq()
+
+      structure_domains = Helpers.get_domains(structure_domain_ids)
 
       %Implementation{inserted_at: ref_inserted_at} =
         Map.get(implementation, :implementation_ref_struct)
@@ -500,6 +513,9 @@ defmodule TdDq.Implementations.Implementation do
       |> Map.put(:structure_aliases, structure_aliases)
       |> Map.put(:execution_result_info, execution_result_info)
       |> Map.put(:domain_ids, domain_ids)
+      |> Map.put(:domain, domain)
+      |> Map.put(:structure_domain_ids, structure_domain_ids)
+      |> Map.put(:structure_domains, structure_domains)
       |> Map.put(:structure_ids, structure_ids)
       |> Map.put(:structure_names, structure_names)
       |> Map.put(:structure_links, structure_links)
@@ -663,6 +679,12 @@ defmodule TdDq.Implementations.Implementation do
       |> Enum.map(&Map.get(&1, :name))
       |> Enum.filter(& &1)
       |> Enum.uniq()
+    end
+
+    defp get_structures_domains_ids([]), do: []
+
+    defp get_structures_domains_ids(%{domains: domains}) do
+      Enum.map(domains, &Map.get(&1, :id))
     end
   end
 end

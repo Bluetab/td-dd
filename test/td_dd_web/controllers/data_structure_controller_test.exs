@@ -4,11 +4,13 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
   import Mox
   import Routes
+  import TdDd.TestOperators
 
   alias Path
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.StructureNotes
+  alias TdDd.Search.MockIndexWorker
 
   @moduletag sandbox: :shared
   @template_name "data_structure_controller_test_template"
@@ -35,6 +37,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   end
 
   setup_all do
+    start_supervised(MockIndexWorker)
     start_supervised({Task.Supervisor, name: TdDd.TaskSupervisor})
     start_supervised!(TdDd.Lineage.GraphData)
     start_supervised!(TdDd.Search.Cluster)
@@ -327,6 +330,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       data_structure: %{id: id, domain_ids: [old_domain_id]} = data_structure,
       swagger_schema: schema
     } do
+      MockIndexWorker.clear()
       %{id: new_domain_id} = CacheHelpers.insert_domain()
       attrs = %{domain_ids: [new_domain_id]}
 
@@ -344,6 +348,51 @@ defmodule TdDdWeb.DataStructureControllerTest do
                |> json_response(:ok)
 
       assert %{domain_ids: [^new_domain_id]} = DataStructures.get_data_structure!(id)
+
+      [
+        {:reindex, structure_reindex}
+      ] = MockIndexWorker.calls()
+
+      assert structure_reindex <|> [id]
+    end
+
+    @tag authentication: [role: "user"]
+    test "reindex implementation when data_structure domain_id is updated and has implementation_structure relation",
+         %{
+           conn: conn,
+           claims: claims,
+           data_structure: %{id: id, domain_ids: [old_domain_id]} = data_structure,
+           swagger_schema: schema
+         } do
+      MockIndexWorker.clear()
+      %{id: new_domain_id} = CacheHelpers.insert_domain()
+      attrs = %{domain_ids: [new_domain_id]}
+
+      %{id: implementation_id} = insert(:implementation, version: 1, status: :published)
+
+      insert(:implementation_structure,
+        data_structure_id: id,
+        implementation_id: implementation_id
+      )
+
+      CacheHelpers.put_session_permissions(claims, %{
+        update_data_structure: [old_domain_id],
+        manage_confidential_structures: [old_domain_id, new_domain_id],
+        manage_structures_domain: [old_domain_id, new_domain_id],
+        view_data_structure: [old_domain_id, new_domain_id]
+      })
+
+      assert %{"data" => %{"id" => ^id}} =
+               conn
+               |> put(data_structure_path(conn, :update, data_structure), data_structure: attrs)
+               |> validate_resp_schema(schema, "DataStructureResponse")
+               |> json_response(:ok)
+
+      assert %{domain_ids: [^new_domain_id]} = DataStructures.get_data_structure!(id)
+
+      implementation_reindexed = Keyword.get(MockIndexWorker.calls(), :reindex_implementations)
+
+      assert implementation_reindexed <|> [implementation_id]
     end
 
     @tag authentication: [role: "user"]
@@ -891,6 +940,45 @@ defmodule TdDdWeb.DataStructureControllerTest do
                  }
                ]
              }
+    end
+
+    @tag authentication: [role: "user"]
+    test "reindex implementation when change structure domains and has implementation_structure relation",
+         %{conn: conn, claims: claims} do
+      MockIndexWorker.clear()
+      %{id: bar_domain_id} = CacheHelpers.insert_domain(%{external_id: "bar"})
+      %{id: foo_domain_id} = CacheHelpers.insert_domain(%{external_id: "foo"})
+
+      CacheHelpers.put_session_permissions(claims, %{
+        manage_structures_domain: [bar_domain_id, foo_domain_id],
+        view_data_structure: [bar_domain_id, foo_domain_id]
+      })
+
+      {[id_one, _id_two, id_three], [_, _, _]} =
+        create_three_data_structures(bar_domain_id, "bar_external_id")
+
+      %{id: implementation_id_1} = insert(:implementation, version: 1, status: :published)
+      %{id: implementation_id_2} = insert(:implementation, version: 1, status: :published)
+
+      insert(:implementation_structure,
+        data_structure_id: id_one,
+        implementation_id: implementation_id_1
+      )
+
+      insert(:implementation_structure,
+        data_structure_id: id_three,
+        implementation_id: implementation_id_2
+      )
+
+      conn
+      |> post(data_structure_path(conn, :bulk_upload_domains),
+        structures_domains: plug_upload("test/fixtures/td4535/structures_domains_good.csv")
+      )
+      |> json_response(:ok)
+
+      implementation_reindexed = Keyword.get(MockIndexWorker.calls(), :reindex_implementations)
+
+      assert implementation_reindexed <|> [implementation_id_1, implementation_id_2]
     end
 
     @tag authentication: [role: "user", permissions: [:manage_structures_domain]]

@@ -72,7 +72,9 @@ defmodule TdDqWeb.ImplementationView do
       :rule_id,
       :structure_aliases,
       :status,
-      :version
+      :version,
+      :structure_domain_ids,
+      :structure_domains
     ])
     |> Map.put(
       :raw_content,
@@ -112,6 +114,8 @@ defmodule TdDqWeb.ImplementationView do
       :result_type,
       :rule_id,
       :structure_aliases,
+      :structure_domain_ids,
+      :structure_domains,
       :status,
       :version
     ])
