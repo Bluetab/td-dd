@@ -24,11 +24,13 @@ defmodule TdDd.DataStructures do
   alias TdDd.Grants
   alias TdDd.Lineage.GraphData
   alias TdDd.Repo
-  alias TdDd.Search.IndexWorker
   alias TdDd.Search.StructureVersionEnricher
   alias TdDfLib.Format
+  alias TdDq.Implementations
   alias Truedat.Auth.Claims
   alias Truedat.Search.Permissions
+
+  @index_worker Application.compile_env(:td_dd, :index_worker)
 
   @protected "_protected"
 
@@ -668,7 +670,9 @@ defmodule TdDd.DataStructures do
         %Changeset{data: %DataStructure{id: id}} = changeset,
         inherit
       ) do
-    do_update_data_structure(id, changeset, inherit, user_id)
+    id
+    |> do_update_data_structure(changeset, inherit, user_id)
+    |> maybe_reindex_implementations()
     |> tap(&on_update/1)
   end
 
@@ -688,6 +692,7 @@ defmodule TdDd.DataStructures do
           acc
       end)
       |> List.flatten()
+      |> maybe_reindex_implementations()
       |> on_update
     end)
   end
@@ -718,8 +723,22 @@ defmodule TdDd.DataStructures do
     {:ok, ids}
   end
 
-  defp on_update({:ok, %{updated_ids: ids}}), do: IndexWorker.reindex(ids)
+  defp on_update({:ok, %{updated_ids: ids}}), do: @index_worker.reindex(ids)
+  defp on_update(ids) when is_list(ids), do: @index_worker.reindex(ids)
+
   defp on_update(_), do: :ok
+
+  defp maybe_reindex_implementations({:ok, %{domain_ids: {_, structures_ids}}} = result) do
+    Implementations.reindex_implementations_structures(structures_ids)
+    result
+  end
+
+  defp maybe_reindex_implementations(structures_ids) when is_list(structures_ids) do
+    Implementations.reindex_implementations_structures(structures_ids)
+    structures_ids
+  end
+
+  defp maybe_reindex_implementations(result), do: result
 
   def delete_data_structure(%DataStructure{} = data_structure, %Claims{user_id: user_id}) do
     Multi.new()
@@ -741,11 +760,11 @@ defmodule TdDd.DataStructures do
 
   defp on_delete({:ok, %{} = res}) do
     with %{delete_versions: {_count, data_structure_ids}} <- res do
-      IndexWorker.delete(data_structure_ids)
+      @index_worker.delete(data_structure_ids)
     end
 
     with %{descendents: %{data_structures_ids: structures_ids}} <- res do
-      IndexWorker.delete(structures_ids)
+      @index_worker.delete(structures_ids)
     end
 
     {:ok, res}

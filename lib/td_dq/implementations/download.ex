@@ -3,6 +3,7 @@ defmodule TdDq.Implementations.Download do
   Helper module to download implementations.
   """
 
+  alias TdCache.DomainCache
   alias TdCache.TemplateCache
   alias TdDfLib.Format
   alias TdDfLib.Parser
@@ -90,6 +91,7 @@ defmodule TdDq.Implementations.Download do
       ([
          implementation.implementation_key,
          implementation.implementation_type,
+         get_domain(implementation.domain_ids),
          translate("executable.#{implementation.executable}", content_labels),
          Map.get(rule, :name, ""),
          Map.get(rule, :df_name, ""),
@@ -104,7 +106,8 @@ defmodule TdDq.Implementations.Download do
          get_in(implementation, [:execution_result_info, :result]),
          get_in(implementation, [:execution_result_info, :result_text])
          |> translate(content_labels),
-         TdDd.Helpers.shift_zone(implementation.inserted_at, time_zone)
+         TdDd.Helpers.shift_zone(implementation.inserted_at, time_zone),
+         get_domain(implementation.structure_domain_ids)
        ] ++
          fill_result_details(implementation, result_details_headers) ++
          fill_with(
@@ -132,6 +135,7 @@ defmodule TdDq.Implementations.Download do
     [
       "implementation_key",
       "implementation_type",
+      "domain",
       "executable",
       "rule",
       "rule_template",
@@ -144,7 +148,8 @@ defmodule TdDq.Implementations.Download do
       "errors",
       "result",
       "execution",
-      "inserted_at"
+      "inserted_at",
+      "structure_domains"
     ]
     |> Enum.map(fn h -> Map.get(header_labels, h, h) end)
   end
@@ -284,4 +289,30 @@ defmodule TdDq.Implementations.Download do
 
   defp result_content(%{execution_result_info: %{details: %{} = details}}), do: details
   defp result_content(_), do: nil
+
+  defp get_domain([_ | _] = domain_ids) do
+    Enum.map_join(domain_ids, "|", fn id ->
+      id
+      |> DomainCache.get!()
+      |> make_domain_path()
+    end)
+  end
+
+  defp get_domain(%{domain: %{"name" => name}}), do: name
+  defp get_domain(_), do: nil
+
+  defp make_domain_path(domain, domain_path \\ [])
+
+  defp make_domain_path(nil, _), do: ""
+
+  defp make_domain_path(%{parent_id: nil, name: name}, domain_path),
+    do: Enum.join([name | domain_path], "/")
+
+  defp make_domain_path(%{parent_id: parent_id, name: name}, domain_path) do
+    new_domain_path = [name | domain_path]
+
+    parent_id
+    |> DomainCache.get!()
+    |> make_domain_path(new_domain_path)
+  end
 end

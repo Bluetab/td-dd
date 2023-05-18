@@ -2041,6 +2041,27 @@ defmodule TdDq.ImplementationsTest do
       assert implementation_reindexed <|> [implementation_id, implementation_ref_id]
     end
 
+    test "reindex implementation by structures ids related to implementation_structure" do
+      MockIndexWorker.clear()
+
+      %{id: implementation_id} = insert(:implementation, version: 1, status: :published)
+
+      %{id: data_structure_id} = insert(:data_structure)
+
+      insert(:implementation_structure,
+        data_structure_id: data_structure_id,
+        implementation_id: implementation_id
+      )
+
+      Implementations.reindex_implementations_structures([data_structure_id])
+
+      [
+        {:reindex_implementations, implementation_reindexed}
+      ] = MockIndexWorker.calls()
+
+      assert implementation_reindexed <|> [implementation_id]
+    end
+
     test "create_implementation_structure/1 with invalid data returns error changeset" do
       assert {:error, %Ecto.Changeset{}} =
                Implementations.create_implementation_structure(%Implementation{}, nil, %{})

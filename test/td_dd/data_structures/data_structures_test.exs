@@ -13,11 +13,13 @@ defmodule TdDd.DataStructuresTest do
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.Repo
+  alias TdDd.Search.MockIndexWorker
 
   @moduletag sandbox: :shared
   @stream TdCache.Audit.stream()
 
   setup_all do
+    start_supervised!(MockIndexWorker)
     on_exit(fn -> Redix.del!(@stream) end)
     [claims: build(:claims)]
   end
@@ -62,6 +64,30 @@ defmodule TdDd.DataStructuresTest do
 
       assert %{confidential: {1, [^id]}, domain_ids: {1, [^id]}, updated_ids: [^id]} = result
       assert %DataStructure{confidential: true} = Repo.get(DataStructure, id)
+    end
+
+    test "reindex implementations if updated domain_ids and has implementation_structure relation",
+         %{
+           data_structure: %{id: id} = data_structure,
+           claims: claims
+         } do
+      MockIndexWorker.clear()
+      %{id: implementation_id} = insert(:implementation, version: 1, status: :published)
+
+      insert(:implementation_structure,
+        data_structure_id: id,
+        implementation_id: implementation_id
+      )
+
+      params = %{domain_ids: [1, 2, 3]}
+
+      assert {:ok, result} =
+               DataStructures.update_data_structure(claims, data_structure, params, false)
+
+      implementation_reindexed = Keyword.get(MockIndexWorker.calls(), :reindex_implementations)
+
+      assert implementation_reindexed <|> [implementation_id]
+      assert %{domain_ids: {1, [^id]}, updated_ids: [^id]} = result
     end
 
     test "applies changes to descendents", %{claims: claims} do

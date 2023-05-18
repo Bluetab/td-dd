@@ -13,8 +13,10 @@ defmodule TdDq.Implementations do
   alias TdCx.Sources
   alias TdDd.Cache.StructureEntry
   alias TdDd.DataStructures
+  alias TdDd.DataStructures.DataStructure
   alias TdDd.ReferenceData
   alias TdDd.Repo
+  alias TdDd.Search.StructureEnricher
   alias TdDfLib.Format
   alias TdDq.Cache.ImplementationLoader
   alias TdDq.Cache.RuleLoader
@@ -806,6 +808,7 @@ defmodule TdDq.Implementations do
         data_structures: []
       )
       |> enrich_data_structures_path()
+      |> Enum.map(&enrich_domains(&1))
 
     implementation
     |> Map.put(:dataset, enriched_dataset)
@@ -833,6 +836,26 @@ defmodule TdDq.Implementations do
   end
 
   defp enrich_implementation_structure(structure), do: structure
+
+  defp enrich_domains(
+         %{data_structure: %DataStructure{domain_ids: [_ | _] = domain_ids} = structure} =
+           implementation_structure
+       ) do
+    domains =
+      Enum.map(domain_ids, fn domain_id ->
+        case TaxonomyCache.get_domain(domain_id) do
+          %{} = domain ->
+            Map.put(domain, :parents, StructureEnricher.get_domain_parents(domain.id))
+
+          nil ->
+            %{}
+        end
+      end)
+
+    Map.put(implementation_structure, :data_structure, %{structure | domains: domains})
+  end
+
+  defp enrich_domains(implementation_structure), do: implementation_structure
 
   defp enrich_dataset_row(%{structure: structure} = dataset_row) do
     enriched_structure = enrich_implementation_structure(structure)
@@ -1104,6 +1127,12 @@ defmodule TdDq.Implementations do
     |> Repo.preload(preloads)
   end
 
+  def get_implementation_by_structure_ids(structures_ids) do
+    ImplementationStructure
+    |> where([is], is.data_structure_id in ^structures_ids)
+    |> Repo.all()
+  end
+
   def create_implementation_structure(
         implementation,
         data_structure,
@@ -1150,6 +1179,19 @@ defmodule TdDq.Implementations do
 
         @index_worker.reindex_implementations(implementations_ids)
         deleted_implementation_structure
+    end
+  end
+
+  def reindex_implementations_structures(structures_ids) do
+    implementations_ids =
+      structures_ids
+      |> get_implementation_by_structure_ids()
+      |> Enum.map(&Map.get(&1, :implementation_id))
+
+    if implementations_ids !== [] do
+      @index_worker.reindex_implementations(implementations_ids)
+    else
+      :ok
     end
   end
 

@@ -21,6 +21,14 @@ defmodule TdDq.Search.Helpers do
 
   def get_domain(_), do: %{}
 
+  def get_domains([_ | _] = domain_ids) do
+    Enum.map(domain_ids, fn domain_id ->
+      get_domain(domain_id)
+    end)
+  end
+
+  def get_domains(_), do: []
+
   def confidential?(%{business_concept_id: nil}), do: false
 
   def confidential?(%{business_concept_id: business_concept_id}) do
