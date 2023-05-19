@@ -222,6 +222,30 @@ defmodule TdDdWeb.Schema.StructuresTest do
   }
   """
 
+  @alias_children_query """
+  query DataStructureVersion($dataStructureId: ID!, $version: String!) {
+    dataStructureVersion(dataStructureId: $dataStructureId, version: $version) {
+      id
+      children {
+        alias
+        id
+      }
+    }
+  }
+  """
+
+  @alias_siblings_query """
+  query DataStructureVersion($dataStructureId: ID!, $version: String!) {
+    dataStructureVersion(dataStructureId: $dataStructureId, version: $version) {
+      id
+      siblings {
+        alias
+        id
+      }
+    }
+  }
+  """
+
   @variables %{"since" => "2020-01-01T00:00:00Z"}
   @metadata %{"foo" => ["bar"]}
 
@@ -1033,6 +1057,124 @@ defmodule TdDdWeb.Schema.StructuresTest do
              ] = domains
 
       assert response["errors"] == nil
+    end
+
+    @tag authentication: [role: "user", permissions: [:view_data_structure]]
+    test "returns data childs with alias",
+         %{
+           conn: conn,
+           domain: %{id: domain_id}
+         } do
+      %{id: ds_father_id} =
+        structure_father = insert(:data_structure, external_id: "father", domain_ids: [domain_id])
+
+      %{id: dsv_father_id} =
+        insert(:data_structure_version, data_structure: structure_father, version: 1)
+
+      structure_child_with_alias =
+        insert(:data_structure, alias: "alias_structure", domain_ids: [domain_id])
+
+      %{id: dsv_child_with_alias_id} =
+        insert(:data_structure_version, data_structure: structure_child_with_alias, version: 1)
+
+      structure_child_without_alias = insert(:data_structure, domain_ids: [domain_id])
+
+      %{id: dsv_child_without_alias_id} =
+        insert(:data_structure_version, data_structure: structure_child_without_alias, version: 1)
+
+      ## Structure relations
+
+      create_relation(dsv_father_id, dsv_child_with_alias_id)
+      create_relation(dsv_father_id, dsv_child_without_alias_id)
+
+      children_without_alias_id = to_string(dsv_child_without_alias_id)
+      children_with_alias_id = to_string(dsv_child_with_alias_id)
+
+      variables = %{"dataStructureId" => ds_father_id, "version" => "latest"}
+
+      assert %{"data" => %{"dataStructureVersion" => %{"children" => children}}} =
+               response =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @alias_children_query,
+                 "variables" => variables
+               })
+               |> json_response(:ok)
+
+      assert response["errors"] == nil
+
+      assert [
+               %{
+                 "id" => ^children_with_alias_id,
+                 "alias" => "alias_structure"
+               },
+               %{
+                 "id" => ^children_without_alias_id,
+                 "alias" => nil
+               }
+             ] = children
+    end
+
+    @tag authentication: [role: "user", permissions: [:view_data_structure]]
+    test "returns data siblings with alias",
+         %{
+           conn: conn,
+           domain: %{id: domain_id}
+         } do
+      structure_father = insert(:data_structure, external_id: "father", domain_ids: [domain_id])
+
+      %{id: dsv_father_id} =
+        insert(:data_structure_version, data_structure: structure_father, version: 1)
+
+      structure_sibling_with_alias =
+        insert(:data_structure, alias: "alias_structure", domain_ids: [domain_id])
+
+      %{id: dsv_sibling_with_alias_id} =
+        insert(:data_structure_version, data_structure: structure_sibling_with_alias, version: 1)
+
+      %{id: structure_sibling_without_alias_id} =
+        structure_sibling_without_alias = insert(:data_structure, domain_ids: [domain_id])
+
+      %{id: dsv_sibling_without_alias_id} =
+        insert(:data_structure_version,
+          data_structure: structure_sibling_without_alias,
+          version: 1
+        )
+
+      ## Structure relations
+
+      create_relation(dsv_father_id, dsv_sibling_with_alias_id)
+      create_relation(dsv_father_id, dsv_sibling_without_alias_id)
+
+      sibling_without_alias_id = to_string(dsv_sibling_without_alias_id)
+      sibling_with_alias_id = to_string(dsv_sibling_with_alias_id)
+
+      variables = %{
+        "dataStructureId" => structure_sibling_without_alias_id,
+        "version" => "latest"
+      }
+
+      assert %{"data" => %{"dataStructureVersion" => %{"siblings" => siblings}}} =
+               response =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @alias_siblings_query,
+                 "variables" => variables
+               })
+               |> json_response(:ok)
+
+      assert response["errors"] == nil
+
+      assert [
+               %{
+                 "id" => ^sibling_with_alias_id,
+                 "alias" => "alias_structure"
+               },
+               %{
+                 "id" => ^sibling_without_alias_id,
+                 "alias" => nil
+               }
+             ] = siblings
     end
   end
 

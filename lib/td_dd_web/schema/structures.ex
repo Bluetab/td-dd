@@ -84,7 +84,7 @@ defmodule TdDdWeb.Schema.Structures do
 
   object :data_structure_version do
     field :id, non_null(:id)
-    field :alias, :string
+    field :alias, :string, resolve: &Resolvers.Structures.add_alias/3
     field :version, non_null(:integer)
     field :class, :string
     field :description, :string
