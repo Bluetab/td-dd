@@ -15,9 +15,13 @@ defmodule TdDq.Rules.RuleResults.Policy do
   def authorize(:upload, %{role: "user"} = claims, _params),
     do: Permissions.authorized?(claims, :manage_rule_results)
 
-  def authorize(:manage_remediations, %{role: "user"} = claims, %RuleResult{
-        rule: %{domain_id: domain_id}
-      }) do
+  def authorize(
+        :manage_remediations,
+        %{role: "user"} = claims,
+        %RuleResult{
+          implementation: %{domain_id: domain_id}
+        }
+      ) do
     Permissions.authorized?(claims, :manage_remediations, domain_id)
   end
 

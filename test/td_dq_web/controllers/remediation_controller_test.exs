@@ -36,7 +36,11 @@ defmodule TdDqWeb.RemediationControllerTest do
     rule = insert(:rule, domain_id: domain.id)
 
     %{id: rule_result_id} =
-      rule_result = insert(:rule_result, rule: rule, implementation: build(:implementation))
+      rule_result =
+      insert(:rule_result,
+        rule: rule,
+        implementation: build(:implementation, domain_id: domain.id)
+      )
 
     remediation = insert(:remediation, rule_result_id: rule_result_id)
 
