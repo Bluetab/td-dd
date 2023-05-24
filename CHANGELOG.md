@@ -1,10 +1,12 @@
 # Changelog
 
-## [5.7.0] 2023-05-23
+## [Unreleased]
 
 ### Changed
 
 - [TD-5796] Use domain implementations to check segmentation permissions
+
+## [5.7.0] 2023-05-23
 
 ### Added
 
