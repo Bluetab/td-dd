@@ -27,7 +27,9 @@ defmodule TdDqWeb.RemediationController do
   def show(conn, %{"rule_result_id" => rule_result_id}) do
     with claims <- conn.assigns[:current_resource],
          %RuleResult{remediation: remediation} = rule_result <-
-           RuleResults.get_rule_result(rule_result_id, preload: [:remediation, :rule]) do
+           RuleResults.get_rule_result(rule_result_id,
+             preload: [:remediation, :implementation]
+           ) do
       if Bodyguard.permit?(RuleResults, :manage_remediations, claims, rule_result) do
         conn
         |> put_actions(rule_result)
@@ -55,7 +57,7 @@ defmodule TdDqWeb.RemediationController do
   def create(conn, %{"rule_result_id" => rule_result_id, "remediation" => remediation_params}) do
     with claims <- conn.assigns[:current_resource],
          %RuleResult{} = rule_result <-
-           RuleResults.get_rule_result(rule_result_id, preload: [:rule]),
+           RuleResults.get_rule_result(rule_result_id, preload: [:implementation]),
          :ok <- Bodyguard.permit(RuleResults, :manage_remediations, claims, rule_result),
          {:ok, %{remediation: remediation}} <-
            Remediations.create_remediation(rule_result_id, remediation_params, claims) do
@@ -87,7 +89,7 @@ defmodule TdDqWeb.RemediationController do
   def update(conn, %{"rule_result_id" => rule_result_id, "remediation" => remediation_params}) do
     with claims <- conn.assigns[:current_resource],
          %RuleResult{remediation: remediation} = rule_result <-
-           RuleResults.get_rule_result(rule_result_id, preload: [:remediation, :rule]),
+           RuleResults.get_rule_result(rule_result_id, preload: [:remediation, :implementation]),
          :ok <- Bodyguard.permit(RuleResults, :manage_remediations, claims, rule_result),
          {:ok, remediation} <- Remediations.update_remediation(remediation, remediation_params) do
       conn
@@ -113,7 +115,7 @@ defmodule TdDqWeb.RemediationController do
   def delete(conn, %{"rule_result_id" => rule_result_id}) do
     with claims <- conn.assigns[:current_resource],
          %RuleResult{remediation: remediation} = rule_result <-
-           RuleResults.get_rule_result(rule_result_id, preload: [:remediation, :rule]),
+           RuleResults.get_rule_result(rule_result_id, preload: [:remediation, :implementation]),
          true <- not is_nil(remediation) || nil,
          :ok <- Bodyguard.permit(RuleResults, :manage_remediations, claims, rule_result),
          {:ok, _remediation} <- Remediations.delete_remediation(remediation) do

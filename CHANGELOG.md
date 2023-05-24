@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [TD-5796] Use domain implementations to check segmentation permissions
+
 ### Added
 
 - [TD-5491] Add link to the structure and the technical name in the downloded files of structures metadata

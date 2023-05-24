@@ -285,7 +285,7 @@ defmodule TdDq.Rules.Audit do
       date: date,
       implementation:
         %{implementation_key: implementation_key, id: implementation_id} = implementation
-    } = RuleResults.get_rule_result(rule_result_id, preload: [:rule, :implementation])
+    } = RuleResults.get_rule_result(rule_result_id, preload: [:implementation])
 
     domain_ids = get_domain_ids(implementation)
 

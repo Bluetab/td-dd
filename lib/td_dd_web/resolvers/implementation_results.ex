@@ -7,7 +7,7 @@ defmodule TdDdWeb.Resolvers.ImplementationResults do
 
   def result(_parent, %{id: id}, resolution) do
     with {:claims, %{} = claims} <- {:claims, claims(resolution)},
-         result <- RuleResults.get_rule_result(id),
+         result <- RuleResults.get_rule_result(id, preload: [:implementation]),
          :ok <- Bodyguard.permit(RuleResults, :view, claims, result) do
       {:ok, result}
     else
