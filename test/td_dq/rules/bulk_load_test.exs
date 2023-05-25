@@ -24,14 +24,14 @@ defmodule TdDq.Rules.BulkLoadTest do
           "cardinality" => "?",
           "name" => "hierarchy_name_1",
           "type" => "hierarchy",
-          "values" => %{"hierarchy" => 1},
+          "values" => %{"hierarchy" => %{"id" => 1}},
           "widget" => "dropdown"
         },
         %{
           "cardinality" => "*",
           "name" => "hierarchy_name_2",
           "type" => "hierarchy",
-          "values" => %{"hierarchy" => 1},
+          "values" => %{"hierarchy" => %{"id" => 1}},
           "widget" => "dropdown"
         }
       ]
