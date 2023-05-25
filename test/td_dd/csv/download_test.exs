@@ -183,7 +183,7 @@ defmodule TdDd.CSV.DownloadTest do
                 "type" => "hierarchy",
                 "name" => field_name,
                 "label" => field_label,
-                "values" => %{"hierarchy" => 1927},
+                "values" => %{"hierarchy" => %{"id" => 1927}},
                 "cardinality" => "*"
               }
             ]
