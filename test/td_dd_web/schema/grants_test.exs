@@ -237,7 +237,7 @@ defmodule TdDdWeb.Schema.GrantsTest do
       dsv_id_str = "#{dsv.id}"
       child_id_str = "#{child.id}"
 
-      assert [%{"id" => child_id_str}, %{"id" => dsv_id_str}] <|> dsv_children
+      assert [%{"id" => child_id_str}, %{"id" => dsv_id_str}] ||| dsv_children
     end
 
     @tag authentication: [

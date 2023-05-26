@@ -32,7 +32,7 @@ defmodule TdDd.Grants.RequestsTest do
 
     test "list_grant_request_groups/0 returns all grant_request_groups" do
       grant_request_group = insert(:grant_request_group)
-      assert Requests.list_grant_request_groups() <|> [grant_request_group]
+      assert Requests.list_grant_request_groups() ||| [grant_request_group]
     end
 
     test "get_grant_request_group!/1 returns the grant_request_group with given id" do

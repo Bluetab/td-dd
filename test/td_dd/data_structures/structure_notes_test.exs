@@ -32,13 +32,13 @@ defmodule TdDd.DataStructures.StructureNotesTest do
   describe "structure_notes" do
     test "list_structure_notes/0 returns all structure_notes" do
       structure_note = insert(:structure_note)
-      assert StructureNotes.list_structure_notes() <|> [structure_note]
+      assert StructureNotes.list_structure_notes() ||| [structure_note]
     end
 
     test "list_structure_notes/1 returns all structure_notes for a data_structure" do
       %{data_structure_id: data_structure_id} = structure_note = insert(:structure_note)
       insert(:structure_note)
-      assert StructureNotes.list_structure_notes(data_structure_id) <|> [structure_note]
+      assert StructureNotes.list_structure_notes(data_structure_id) ||| [structure_note]
     end
 
     test "list_structure_notes/1 returns all structure_notes filtered by params" do
@@ -52,9 +52,9 @@ defmodule TdDd.DataStructures.StructureNotesTest do
         "status" => "versioned"
       }
 
-      assert StructureNotes.list_structure_notes(filters) <|> [n1, n2]
-      assert StructureNotes.list_structure_notes(%{}) <|> [n1, n2, n3, n4]
-      assert StructureNotes.list_structure_notes(%{"status" => :draft}) <|> [n4]
+      assert StructureNotes.list_structure_notes(filters) ||| [n1, n2]
+      assert StructureNotes.list_structure_notes(%{}) ||| [n1, n2, n3, n4]
+      assert StructureNotes.list_structure_notes(%{"status" => :draft}) ||| [n4]
     end
 
     test "list_structure_notes/1 return results paginated by offset ordered by updated_at and note id" do

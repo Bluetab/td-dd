@@ -781,7 +781,7 @@ defmodule TdDd.LoaderTest do
   describe "system_ids/1" do
     test "returns a unique list of system ids" do
       records = 1..15 |> Enum.map(fn id -> %{system_id: Integer.mod(id, 10)} end)
-      assert Loader.system_ids(records) <|> 0..9
+      assert Loader.system_ids(records) ||| 0..9
     end
   end
 

@@ -76,7 +76,7 @@ defmodule TdDq.RuleResultsTest do
       result = insert(:rule_result, implementation: implementation2)
 
       {:ok, %{all: rule_results}} = RuleResults.list_rule_results_paginate()
-      assert rule_results <|> [result]
+      assert rule_results ||| [result]
     end
 
     test "retrieves results with date gt condition" do
@@ -89,7 +89,7 @@ defmodule TdDq.RuleResultsTest do
       {:ok, %{all: rule_results}} =
         RuleResults.list_rule_results_paginate(%{"since" => "2000-01-11T11:11:11"})
 
-      assert rule_results <|> [result]
+      assert rule_results ||| [result]
     end
   end
 
@@ -317,7 +317,7 @@ defmodule TdDq.RuleResultsTest do
       {:ok, %{all: segment_results}} =
         RuleResults.list_segment_results(%{"since" => "2000-01-11T11:11:11"})
 
-      assert segment_results <|> [result]
+      assert segment_results ||| [result]
     end
 
     test "retrieves results paginated by offset ordered by updated_at and segment result id" do

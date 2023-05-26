@@ -40,7 +40,7 @@ config :td_dd, TdDqWeb.Endpoint,
 # EX_LOGGER_FORMAT='$date $time [$level] $message'
 config :logger, :console,
   format:
-    (System.get_env("EX_LOGGER_FORMAT") || "$date\T$time\Z [$level]$levelpad $metadata$message") <>
+    (System.get_env("EX_LOGGER_FORMAT") || "$date\T$time\Z [$level] $metadata$message") <>
       "\n",
   level: :info,
   metadata: [:pid, :module],

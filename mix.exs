@@ -9,7 +9,7 @@ defmodule TdDd.MixProject do
           nil -> "5.7.0-local"
           v -> v
         end,
-      elixir: "~> 1.12",
+      elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix] ++ Mix.compilers() ++ [:phoenix_swagger],
       start_permanent: Mix.env() == :prod,

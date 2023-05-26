@@ -156,7 +156,7 @@ defmodule TdDqWeb.ImplementationStructureControllerTest do
         {:reindex_implementations, implementation_reindexed}
       ] = MockIndexWorker.calls()
 
-      assert implementation_reindexed <|> [implementation_id, implementation_ref_id]
+      assert implementation_reindexed ||| [implementation_id, implementation_ref_id]
     end
 
     @tag authentication: [role: "admin"]
@@ -436,7 +436,7 @@ defmodule TdDqWeb.ImplementationStructureControllerTest do
         {:reindex_implementations, implementation_reindexed}
       ] = MockIndexWorker.calls()
 
-      assert implementation_reindexed <|> [implementation_id, implementation_ref_id]
+      assert implementation_reindexed ||| [implementation_id, implementation_ref_id]
     end
   end
 end

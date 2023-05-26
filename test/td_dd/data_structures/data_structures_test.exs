@@ -86,7 +86,7 @@ defmodule TdDd.DataStructuresTest do
 
       implementation_reindexed = Keyword.get(MockIndexWorker.calls(), :reindex_implementations)
 
-      assert implementation_reindexed <|> [implementation_id]
+      assert implementation_reindexed ||| [implementation_id]
       assert %{domain_ids: {1, [^id]}, updated_ids: [^id]} = result
     end
 
@@ -794,9 +794,9 @@ defmodule TdDd.DataStructuresTest do
       end)
 
       assert DataStructures.get_siblings(dsv1) == []
-      assert DataStructures.get_siblings(dsv2) <|> [dsv2, dsv3]
-      assert DataStructures.get_siblings(dsv3) <|> [dsv2, dsv3]
-      assert DataStructures.get_siblings(dsv4) <|> [dsv4]
+      assert DataStructures.get_siblings(dsv2) ||| [dsv2, dsv3]
+      assert DataStructures.get_siblings(dsv3) ||| [dsv2, dsv3]
+      assert DataStructures.get_siblings(dsv4) ||| [dsv4]
     end
 
     test "delete_data_structure/1 deletes a data_structure with relations", %{claims: claims} do
@@ -871,9 +871,9 @@ defmodule TdDd.DataStructuresTest do
              } = DataStructures.get_data_structure_version!(dsv.id, enrich_opts)
 
       assert id == dsv.id
-      assert parents <|> [parent]
-      assert children <|> [child]
-      assert siblings <|> [sibling, dsv]
+      assert parents ||| [parent]
+      assert children ||| [child]
+      assert siblings ||| [sibling, dsv]
       assert relations.parents == []
       assert relations.children == []
     end
@@ -905,16 +905,16 @@ defmodule TdDd.DataStructuresTest do
       assert id == dsv.id
       # Parents, children and siblings have always their metadata removed, even
       # when enriched :with_protected_metadata
-      assert parents <|> [%{parent | metadata: %{"m_foo" => "m_bar"}}]
+      assert parents ||| [%{parent | metadata: %{"m_foo" => "m_bar"}}]
       assert result_parent.metadata == %{"m_foo" => "m_bar"}
       # Enriched parents, children and siblings do not have mutable_metadata loaded.
       assert result_parent.mutable_metadata == nil
-      assert children <|> [%{child | metadata: %{"m_foo" => "m_bar"}}]
+      assert children ||| [%{child | metadata: %{"m_foo" => "m_bar"}}]
       assert result_child.metadata == %{"m_foo" => "m_bar"}
       assert result_child.mutable_metadata == nil
 
       assert siblings
-             <|> [
+             ||| [
                %{sibling | metadata: %{"m_foo" => "m_bar"}},
                %{dsv | metadata: %{"m_foo" => "m_bar"}}
              ]
@@ -950,16 +950,16 @@ defmodule TdDd.DataStructuresTest do
       assert dsv_m == %{"m_foo" => "m_bar"}
       assert dsv_mm == %{"mm_foo" => "mm_bar"}
       assert id == dsv.id
-      assert parents <|> [%{parent | metadata: %{"m_foo" => "m_bar"}}]
+      assert parents ||| [%{parent | metadata: %{"m_foo" => "m_bar"}}]
       assert result_parent.metadata == %{"m_foo" => "m_bar"}
       # Enriched parents, children and siblings do not have mutable_metadata loaded.
       assert result_parent.mutable_metadata == nil
-      assert children <|> [%{child | metadata: %{"m_foo" => "m_bar"}}]
+      assert children ||| [%{child | metadata: %{"m_foo" => "m_bar"}}]
       assert result_child.metadata == %{"m_foo" => "m_bar"}
       assert result_child.mutable_metadata == nil
 
       assert siblings
-             <|> [
+             ||| [
                %{sibling | metadata: %{"m_foo" => "m_bar"}},
                %{dsv | metadata: %{"m_foo" => "m_bar"}}
              ]
@@ -1071,10 +1071,10 @@ defmodule TdDd.DataStructuresTest do
              } = DataStructures.get_data_structure_version!(dsv.id, enrich_opts)
 
       assert id == dsv.id
-      assert parents <|> [parent]
-      assert children <|> ([child] ++ fields)
-      assert siblings <|> [sibling, dsv]
-      assert data_fields <|> fields
+      assert parents ||| [parent]
+      assert children ||| ([child] ++ fields)
+      assert siblings ||| [sibling, dsv]
+      assert data_fields ||| fields
       assert %{children: [child_relation]} = relations
       assert child_relation.version <~> r_child
 
@@ -1089,9 +1089,9 @@ defmodule TdDd.DataStructuresTest do
              } = DataStructures.get_data_structure_version!(dsv.id, enrich_opts)
 
       assert id == dsv.id
-      assert parents <|> [parent]
-      assert children <|> ([child, child_confidential] ++ fields ++ field_confidential)
-      assert siblings <|> [sibling, dsv, sibling_confidential]
+      assert parents ||| [parent]
+      assert children ||| ([child, child_confidential] ++ fields ++ field_confidential)
+      assert siblings ||| [sibling, dsv, sibling_confidential]
       assert %{children: child_rels} = relations
       assert Enum.find(child_rels, &(&1.version.id == r_child.id)).version <~> r_child
 
@@ -1155,7 +1155,7 @@ defmodule TdDd.DataStructuresTest do
       assert %{children: children} =
                DataStructures.get_data_structure_version!(dsv.id, [:children])
 
-      assert children <|> [child]
+      assert children ||| [child]
     end
 
     test "get_data_structure_version!/2 gets custom relations", %{
@@ -1223,9 +1223,9 @@ defmodule TdDd.DataStructuresTest do
              } = DataStructures.get_data_structure_version!(dsv.id, enrich_opts)
 
       assert id == dsv.id
-      assert parents <|> [parent]
-      assert children <|> [child]
-      assert siblings <|> [sibling, dsv]
+      assert parents ||| [parent]
+      assert children ||| [child]
+      assert siblings ||| [sibling, dsv]
       assert %{parents: [parent_relation], children: [child_relation]} = relations
       assert parent_relation.version <~> parent_custom_relation
       assert child_relation.version <~> child_custom_relation
@@ -1262,7 +1262,7 @@ defmodule TdDd.DataStructuresTest do
       assert %{children: children} =
                DataStructures.get_data_structure_version!(dsv.id, [:children])
 
-      assert children <|> deleted_children
+      assert children ||| deleted_children
     end
 
     test "get_data_structure_version!/2 enriches with fields" do
@@ -1285,7 +1285,7 @@ defmodule TdDd.DataStructuresTest do
       assert %{data_fields: data_fields} =
                DataStructures.get_data_structure_version!(dsv.id, [:data_fields])
 
-      assert data_fields <|> fields
+      assert data_fields ||| fields
     end
 
     test "get_data_structure_version!/2 enriches with versions", %{system: system} do
@@ -1298,7 +1298,7 @@ defmodule TdDd.DataStructuresTest do
       assert %{versions: versions} =
                DataStructures.get_data_structure_version!(dsv.id, [:versions])
 
-      assert versions <|> [dsv | dsvs]
+      assert versions ||| [dsv | dsvs]
     end
 
     test "get_data_structure_version!/2 enriches with system", %{

@@ -366,7 +366,7 @@ defmodule TdDdWeb.Schema.DomainTest do
                "parents" => parents
              } = domain
 
-      assert [%{"id" => str_grandad_domain_id}, %{"id" => str_father_domain_id}] <|> parents
+      assert [%{"id" => str_grandad_domain_id}, %{"id" => str_father_domain_id}] ||| parents
     end
   end
 

@@ -103,7 +103,7 @@ defmodule TdDd.DataStructures.DataStructureQueriesTest do
              DataStructureQueries.children(%{grant_ids: [grant_id]})
              |> Repo.all()
 
-    assert dsv_children <|> [dsv_a_id, dsv_b_id, dsv_c_id]
+    assert dsv_children ||| [dsv_a_id, dsv_b_id, dsv_c_id]
   end
 
   describe "DataStructureQueries.enriched_structure_versions/1" do

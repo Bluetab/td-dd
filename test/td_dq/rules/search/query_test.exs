@@ -17,7 +17,7 @@ defmodule TdDq.Rules.Search.QueryTest do
       }
 
       assert Query.build_filters(permissions)
-             <|> [
+             ||| [
                %{match_all: %{}},
                %{
                  must_not: [
@@ -53,7 +53,7 @@ defmodule TdDq.Rules.Search.QueryTest do
       }
 
       assert Query.build_filters(permissions)
-             <|> [
+             ||| [
                %{terms: %{"domain_ids" => [1, 2]}},
                %{
                  must_not: [
@@ -88,7 +88,7 @@ defmodule TdDq.Rules.Search.QueryTest do
       }
 
       assert Query.build_filters(permissions)
-             <|> [
+             ||| [
                %{terms: %{"domain_ids" => [1, 2]}},
                %{term: %{"_confidential" => false}},
                %{
@@ -125,7 +125,7 @@ defmodule TdDq.Rules.Search.QueryTest do
       }
 
       assert Query.build_filters(permissions)
-             <|> [
+             ||| [
                %{match_all: %{}},
                %{
                  bool: %{
@@ -170,7 +170,7 @@ defmodule TdDq.Rules.Search.QueryTest do
       }
 
       assert Query.build_filters(permissions)
-             <|> [
+             ||| [
                %{terms: %{"domain_ids" => [1, 2]}},
                %{term: %{"executable" => true}},
                %{term: %{"domain_ids" => 3}},
@@ -211,7 +211,7 @@ defmodule TdDq.Rules.Search.QueryTest do
       }
 
       assert Query.build_filters(permissions)
-             <|> [
+             ||| [
                %{match_all: %{}},
                %{term: %{"_confidential" => false}},
                %{
@@ -251,7 +251,7 @@ defmodule TdDq.Rules.Search.QueryTest do
       }
 
       assert Query.build_filters(permissions)
-             <|> [
+             ||| [
                %{match_all: %{}},
                %{term: %{"_confidential" => false}},
                %{
@@ -279,7 +279,7 @@ defmodule TdDq.Rules.Search.QueryTest do
       }
 
       assert Query.build_filters(permissions)
-             <|> [
+             ||| [
                %{match_all: %{}},
                %{term: %{"_confidential" => false}},
                %{
@@ -307,7 +307,7 @@ defmodule TdDq.Rules.Search.QueryTest do
       }
 
       assert Query.build_filters(permissions)
-             <|> [
+             ||| [
                %{term: %{"_confidential" => false}},
                %{term: %{"domain_ids" => 1}}
              ]

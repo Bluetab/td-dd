@@ -39,7 +39,7 @@ defmodule TdDq.ImplementationsTest do
     test "returns all implementations" do
       implementation = insert(:implementation)
 
-      assert Implementations.list_implementations() <|> [implementation]
+      assert Implementations.list_implementations() ||| [implementation]
     end
   end
 
@@ -1654,7 +1654,7 @@ defmodule TdDq.ImplementationsTest do
       Implementations.delete_implementation(implementation_v2, claims)
 
       assert [implementation_ref_id, implementation_v2_id]
-             <|> MockIndexWorker.calls()[:delete_implementations]
+             ||| MockIndexWorker.calls()[:delete_implementations]
     end
   end
 
@@ -1983,7 +1983,7 @@ defmodule TdDq.ImplementationsTest do
     end
 
     test "get sources of default implementation", %{implementations: [impl | _]} do
-      assert Implementations.get_sources(impl) == ["foo", "bar"]
+      assert Implementations.get_sources(impl) ||| ["foo", "bar"]
     end
 
     test "get sources of raw implementation", %{implementations: [_, impl1, impl2]} do
@@ -2038,7 +2038,7 @@ defmodule TdDq.ImplementationsTest do
         {:reindex_implementations, implementation_reindexed}
       ] = MockIndexWorker.calls()
 
-      assert implementation_reindexed <|> [implementation_id, implementation_ref_id]
+      assert implementation_reindexed ||| [implementation_id, implementation_ref_id]
     end
 
     test "reindex implementation by structures ids related to implementation_structure" do
@@ -2059,7 +2059,7 @@ defmodule TdDq.ImplementationsTest do
         {:reindex_implementations, implementation_reindexed}
       ] = MockIndexWorker.calls()
 
-      assert implementation_reindexed <|> [implementation_id]
+      assert implementation_reindexed ||| [implementation_id]
     end
 
     test "create_implementation_structure/1 with invalid data returns error changeset" do
@@ -2126,7 +2126,7 @@ defmodule TdDq.ImplementationsTest do
         {:reindex_implementations, implementation_reindexed}
       ] = MockIndexWorker.calls()
 
-      assert implementation_reindexed <|> [implementation_id, implementation_ref_id]
+      assert implementation_reindexed ||| [implementation_id, implementation_ref_id]
     end
 
     test "when update implementation new implementation_structures will be created linked to implementation ref" do

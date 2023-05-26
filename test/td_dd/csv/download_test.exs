@@ -691,10 +691,16 @@ defmodule TdDd.CSV.DownloadTest do
         "mutable_metadata" => "Mutable metadata"
       }
 
+      metadata_string = grant_1
+      |> get_in([:data_structure_version, :metadata])
+      |> Jason.encode!()
+      |> then(& Regex.replace(~r/"/, &1, fn _, _ -> "\"\"" end))
+      |> then(& "\"#{&1}\"")
+
       assert Download.to_csv_grants(grants, header_labels) ==
                """
                User;Structure;Start date;End date;Metadata;Mutable metadata\r
-               #{grant_1.user.full_name};#{grant_1.data_structure_version.name};#{grant_1.start_date};#{grant_1.end_date};\"{\"\"nullable\"\":false,\"\"precision\"\":\"\"1,0\"\",\"\"type\"\":\"\"CHAR\"\"}\";null\r
+               #{grant_1.user.full_name};#{grant_1.data_structure_version.name};#{grant_1.start_date};#{grant_1.end_date};#{metadata_string};null\r
                """
     end
   end
