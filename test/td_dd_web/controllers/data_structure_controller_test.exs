@@ -353,7 +353,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
         {:reindex, structure_reindex}
       ] = MockIndexWorker.calls()
 
-      assert structure_reindex <|> [id]
+      assert structure_reindex ||| [id]
     end
 
     @tag authentication: [role: "user"]
@@ -392,7 +392,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       implementation_reindexed = Keyword.get(MockIndexWorker.calls(), :reindex_implementations)
 
-      assert implementation_reindexed <|> [implementation_id]
+      assert implementation_reindexed ||| [implementation_id]
     end
 
     @tag authentication: [role: "user"]
@@ -978,7 +978,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       implementation_reindexed = Keyword.get(MockIndexWorker.calls(), :reindex_implementations)
 
-      assert implementation_reindexed <|> [implementation_id_1, implementation_id_2]
+      assert implementation_reindexed ||| [implementation_id_1, implementation_id_2]
     end
 
     @tag authentication: [role: "user", permissions: [:manage_structures_domain]]

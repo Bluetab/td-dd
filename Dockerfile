@@ -1,5 +1,5 @@
-### Minimal runtime image based on alpine:3.13
-ARG RUNTIME_BASE=alpine:3.13
+### Minimal runtime image based on alpine:3.18
+ARG RUNTIME_BASE=alpine:3.18
 
 FROM ${RUNTIME_BASE}
 
@@ -11,7 +11,7 @@ ARG APP_NAME
 
 WORKDIR /app
 
-COPY _build/${MIX_ENV}/*.tar.gz .
+COPY _build/${MIX_ENV}/*.tar.gz ./
 
 RUN apk --no-cache add ncurses-libs openssl bash ca-certificates libstdc++ && \
     apk --no-cache add tzdata && \

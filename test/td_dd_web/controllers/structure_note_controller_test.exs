@@ -105,7 +105,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
 
       assert [] == Map.keys(actions)
       assert [] == Map.keys(v1_actions)
-      assert ["deleted", "edited", "pending_approval", "published"] <|> Map.keys(v2_actions)
+      assert ["deleted", "edited", "pending_approval", "published"] ||| Map.keys(v2_actions)
     end
 
     @tag authentication: [role: "admin"]
@@ -137,7 +137,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
       assert [] == Map.keys(actions)
       assert [] == Map.keys(v1_actions)
       assert [] == Map.keys(v2_actions)
-      assert ["rejected", "published"] <|> Map.keys(v3_actions)
+      assert ["rejected", "published"] ||| Map.keys(v3_actions)
     end
 
     @tag authentication: [role: "admin"]
@@ -193,7 +193,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
         |> get(Routes.data_structure_note_path(conn, :index, data_structure_id))
         |> json_response(:ok)
 
-      assert ["old", "baz", "new"] == diff
+      assert ["old", "baz", "new"] ||| diff
     end
 
     @tag authentication: [role: "admin"]
@@ -301,7 +301,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
         |> Enum.map(fn sn -> sn.id end)
 
       assert first_structure_notes
-             <|> (conn
+             ||| (conn
                   |> get(Routes.data_structure_note_path(conn, :index, first_data_structure_id))
                   |> validate_resp_schema(schema, "StructureNotesResponse")
                   |> json_response(:ok)
@@ -309,7 +309,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
                   |> Enum.map(fn sn -> Map.get(sn, "id") end))
 
       assert second_structure_notes
-             <|> (conn
+             ||| (conn
                   |> get(Routes.data_structure_note_path(conn, :index, second_data_structure_id))
                   |> json_response(:ok)
                   |> Map.get("data")
@@ -331,7 +331,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
       {[_, published_note, draft_note], index_result} =
         permissions_test_builder(conn, domain, statuses)
 
-      assert [published_note, draft_note] <|> index_result
+      assert [published_note, draft_note] ||| index_result
     end
 
     @tag authentication: [
@@ -350,7 +350,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
       {[_, published_note, _, draft_note], index_result} =
         permissions_test_builder(conn, domain, statuses)
 
-      assert [published_note, draft_note] <|> index_result
+      assert [published_note, draft_note] ||| index_result
     end
 
     @tag authentication: [
@@ -371,7 +371,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
       {[_, published_note, versioned_note, _, _, deprecated_note], index_result} =
         permissions_test_builder(conn, domain, statuses)
 
-      assert [published_note, versioned_note, deprecated_note] <|> index_result
+      assert [published_note, versioned_note, deprecated_note] ||| index_result
     end
 
     defp permissions_test_builder(conn, domain, statuses) do
@@ -422,7 +422,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
         end)
 
       assert response
-             <|> (conn
+             ||| (conn
                   |> post(Routes.structure_note_path(conn, :search),
                     status: "published",
                     updated_at: "2021-01-02 10:00:00"

@@ -17,7 +17,7 @@ defmodule TdDd.TestOperators do
   alias TdDq.Rules.RuleResult
 
   def a <~> b, do: approximately_equal(a, b)
-  def a <|> b, do: approximately_equal(sorted(a), sorted(b))
+  def a ||| b, do: approximately_equal(sorted(a), sorted(b))
 
   ## Sort by id if present
   defp sorted([%{id: _} | _] = list) do

@@ -161,7 +161,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert :ok = IndexWorker.quiesce()
 
-      assert Map.keys(update_notes) <|> ids
+      assert Map.keys(update_notes) ||| ids
 
       assert ids
              |> Enum.map(&StructureNotes.get_latest_structure_note/1)
@@ -184,7 +184,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert :ok = IndexWorker.quiesce()
 
-      assert Map.keys(update_notes) <|> ids
+      assert Map.keys(update_notes) ||| ids
 
       latest_structure_notes = Enum.map(ids, &StructureNotes.get_latest_structure_note/1)
 
@@ -278,7 +278,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
              |> Enum.all?(&(&1 == @valid_content))
 
       assert Enum.count(changed_notes_ds_ids) == 5
-      assert changed_notes_ds_ids <|> changed_ids
+      assert changed_notes_ds_ids ||| changed_ids
     end
 
     test "returns an error if a structure has no template", %{type: type} do
@@ -332,7 +332,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert :ok = IndexWorker.quiesce()
 
-      assert Map.keys(update_notes) <|> ids
+      assert Map.keys(update_notes) ||| ids
 
       df_contents =
         ids
@@ -368,7 +368,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert :ok = IndexWorker.quiesce()
 
-      assert Map.keys(update_notes) <|> ids
+      assert Map.keys(update_notes) ||| ids
 
       df_contents =
         Enum.map(ids, fn id ->
@@ -415,7 +415,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert :ok = IndexWorker.quiesce()
 
-      assert Map.keys(update_notes) <|> ids
+      assert Map.keys(update_notes) ||| ids
 
       df_contents =
         Enum.map(ids, fn id ->
@@ -472,7 +472,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert :ok = IndexWorker.quiesce()
 
-      assert Map.keys(update_notes) <|> ids
+      assert Map.keys(update_notes) ||| ids
 
       df_contents =
         ids
