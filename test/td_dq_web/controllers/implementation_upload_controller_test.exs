@@ -287,7 +287,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
         )
 
       # The other one in published status
-      %{id: implementation_boo_key_5_id} =
+      %{id: implementation_boo_key_5_id, updated_at: updated_date} =
         insert(
           :implementation,
           implementation_key: "boo_key_5",
@@ -388,8 +388,11 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
                status: :published,
                implementation_type: "default",
                minimum: 156.0,
-               goal: 155.0
+               goal: 155.0,
+               updated_at: updated_at_recover
              } = Enum.find(uploaded_implementations, &(&1.implementation_key == "boo_key_5"))
+
+      refute updated_at_recover == updated_date
 
       #   ...and previously published one is now versioned
       assert %Implementation{
@@ -400,8 +403,11 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
                implementation_type: "default",
                version: 1,
                minimum: 10.0,
-               goal: 20.0
+               goal: 20.0,
+               updated_at: updated_at_recover2
              } = Implementations.get_implementation(implementation_boo_key_5_id)
+
+      refute updated_at_recover2 == updated_date
 
       # This one is new
       assert %Implementation{

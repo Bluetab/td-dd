@@ -15,5 +15,6 @@ priv/static/swagger*.json
 local
 data/
 .vscode
+.tool-versions
 TODO.md
 config/runtime.exs

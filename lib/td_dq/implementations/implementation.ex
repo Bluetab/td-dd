@@ -46,7 +46,7 @@ defmodule TdDq.Implementations.Implementation do
     field(:implementation_key, :string)
     field(:implementation_type, :string, default: "default")
     field(:executable, :boolean, default: true)
-    field(:deleted_at, :utc_datetime)
+    field(:deleted_at, :utc_datetime_usec)
     field(:domain_id, :integer)
     field(:domain, :map, virtual: true)
     field(:df_name, :string)
@@ -93,7 +93,7 @@ defmodule TdDq.Implementations.Implementation do
 
     has_many(:dataset_sources, through: [:dataset_structures, :source])
 
-    timestamps(type: :utc_datetime)
+    timestamps(type: :utc_datetime_usec)
   end
 
   def valid_result_types, do: @valid_result_types
@@ -124,12 +124,14 @@ defmodule TdDq.Implementations.Implementation do
   def changeset(%__MODULE__{} = implementation, params) do
     implementation
     |> cast(params, @cast_fields)
+    |> put_change(:updated_at, DateTime.utc_now())
     |> changeset_validations(implementation, params)
   end
 
   def status_changeset(%__MODULE__{} = implementation, params) do
     implementation
     |> cast(params, [:status, :version, :deleted_at])
+    |> put_change(:updated_at, DateTime.utc_now())
     |> validate_required([:status, :version])
     |> validate_or_put_implementation_key
   end
