@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## Added
+
+- [TD-5752] Add force update control dates when update implementations by web or csv bulk update
+
 ### Changed
 
 - [TD-5796] Use domain implementations to check segmentation permissions

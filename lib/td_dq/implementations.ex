@@ -275,7 +275,8 @@ defmodule TdDq.Implementations do
   defp need_update?(implementation, params) do
     implementation
     |> Implementation.changeset(params)
-    |> Map.get(:changes) != %{}
+    |> Map.get(:changes)
+    |> Map.drop([:updated_at]) != %{}
   end
 
   defp upsert(multi, changeset, :published), do: Multi.insert(multi, :implementation, changeset)
