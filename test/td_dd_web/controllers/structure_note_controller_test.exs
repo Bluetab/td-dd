@@ -300,20 +300,20 @@ defmodule TdDdWeb.StructureNoteControllerTest do
         ]
         |> Enum.map(fn sn -> sn.id end)
 
-      assert first_structure_notes
-             ||| (conn
-                  |> get(Routes.data_structure_note_path(conn, :index, first_data_structure_id))
-                  |> validate_resp_schema(schema, "StructureNotesResponse")
-                  |> json_response(:ok)
-                  |> Map.get("data")
-                  |> Enum.map(fn sn -> Map.get(sn, "id") end))
+      assert first_structure_notes |||
+               conn
+               |> get(Routes.data_structure_note_path(conn, :index, first_data_structure_id))
+               |> validate_resp_schema(schema, "StructureNotesResponse")
+               |> json_response(:ok)
+               |> Map.get("data")
+               |> Enum.map(fn sn -> Map.get(sn, "id") end)
 
-      assert second_structure_notes
-             ||| (conn
-                  |> get(Routes.data_structure_note_path(conn, :index, second_data_structure_id))
-                  |> json_response(:ok)
-                  |> Map.get("data")
-                  |> Enum.map(fn sn -> Map.get(sn, "id") end))
+      assert second_structure_notes |||
+               conn
+               |> get(Routes.data_structure_note_path(conn, :index, second_data_structure_id))
+               |> json_response(:ok)
+               |> Map.get("data")
+               |> Enum.map(fn sn -> Map.get(sn, "id") end)
     end
 
     @tag authentication: [
@@ -421,14 +421,14 @@ defmodule TdDdWeb.StructureNoteControllerTest do
           }
         end)
 
-      assert response
-             ||| (conn
-                  |> post(Routes.structure_note_path(conn, :search),
-                    status: "published",
-                    updated_at: "2021-01-02 10:00:00"
-                  )
-                  |> json_response(:ok)
-                  |> Map.get("data"))
+      assert response |||
+               conn
+               |> post(Routes.structure_note_path(conn, :search),
+                 status: "published",
+                 updated_at: "2021-01-02 10:00:00"
+               )
+               |> json_response(:ok)
+               |> Map.get("data")
     end
 
     @tag authentication: [role: "admin"]

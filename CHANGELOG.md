@@ -6,6 +6,10 @@
 
 - [TD-5752] Add force update control dates when update implementations by web or csv bulk update
 
+## Fixed
+
+- [TD-5810] Fix alias in data_fields v2
+
 ### Changed
 
 - [TD-5796] Use domain implementations to check segmentation permissions

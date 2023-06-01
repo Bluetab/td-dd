@@ -691,11 +691,12 @@ defmodule TdDd.CSV.DownloadTest do
         "mutable_metadata" => "Mutable metadata"
       }
 
-      metadata_string = grant_1
-      |> get_in([:data_structure_version, :metadata])
-      |> Jason.encode!()
-      |> then(& Regex.replace(~r/"/, &1, fn _, _ -> "\"\"" end))
-      |> then(& "\"#{&1}\"")
+      metadata_string =
+        grant_1
+        |> get_in([:data_structure_version, :metadata])
+        |> Jason.encode!()
+        |> then(&Regex.replace(~r/"/, &1, fn _, _ -> "\"\"" end))
+        |> then(&"\"#{&1}\"")
 
       assert Download.to_csv_grants(grants, header_labels) ==
                """

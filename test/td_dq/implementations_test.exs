@@ -1653,8 +1653,8 @@ defmodule TdDq.ImplementationsTest do
 
       Implementations.delete_implementation(implementation_v2, claims)
 
-      assert [implementation_ref_id, implementation_v2_id]
-             ||| MockIndexWorker.calls()[:delete_implementations]
+      assert [implementation_ref_id, implementation_v2_id] |||
+               MockIndexWorker.calls()[:delete_implementations]
     end
   end
 
