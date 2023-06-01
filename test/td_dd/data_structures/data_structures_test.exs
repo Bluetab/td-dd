@@ -913,11 +913,11 @@ defmodule TdDd.DataStructuresTest do
       assert result_child.metadata == %{"m_foo" => "m_bar"}
       assert result_child.mutable_metadata == nil
 
-      assert siblings
-             ||| [
-               %{sibling | metadata: %{"m_foo" => "m_bar"}},
-               %{dsv | metadata: %{"m_foo" => "m_bar"}}
-             ]
+      assert siblings |||
+               [
+                 %{sibling | metadata: %{"m_foo" => "m_bar"}},
+                 %{dsv | metadata: %{"m_foo" => "m_bar"}}
+               ]
 
       assert result_sibling.metadata == %{"m_foo" => "m_bar"}
       assert result_sibling.mutable_metadata == nil
@@ -958,11 +958,11 @@ defmodule TdDd.DataStructuresTest do
       assert result_child.metadata == %{"m_foo" => "m_bar"}
       assert result_child.mutable_metadata == nil
 
-      assert siblings
-             ||| [
-               %{sibling | metadata: %{"m_foo" => "m_bar"}},
-               %{dsv | metadata: %{"m_foo" => "m_bar"}}
-             ]
+      assert siblings |||
+               [
+                 %{sibling | metadata: %{"m_foo" => "m_bar"}},
+                 %{dsv | metadata: %{"m_foo" => "m_bar"}}
+               ]
 
       assert result_sibling.metadata == %{"m_foo" => "m_bar"}
       assert result_sibling.mutable_metadata == nil
@@ -1072,7 +1072,7 @@ defmodule TdDd.DataStructuresTest do
 
       assert id == dsv.id
       assert parents ||| [parent]
-      assert children ||| ([child] ++ fields)
+      assert children ||| [child] ++ fields
       assert siblings ||| [sibling, dsv]
       assert data_fields ||| fields
       assert %{children: [child_relation]} = relations
@@ -1090,7 +1090,7 @@ defmodule TdDd.DataStructuresTest do
 
       assert id == dsv.id
       assert parents ||| [parent]
-      assert children ||| ([child, child_confidential] ++ fields ++ field_confidential)
+      assert children ||| [child, child_confidential] ++ fields ++ field_confidential
       assert siblings ||| [sibling, dsv, sibling_confidential]
       assert %{children: child_rels} = relations
       assert Enum.find(child_rels, &(&1.version.id == r_child.id)).version <~> r_child

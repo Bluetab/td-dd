@@ -25,9 +25,10 @@ defmodule TdDq.Implementations.Download do
     {implementation_fields, implementation_field_headers} =
       fields_with_headers(implementations, &template_content/1)
 
-    result_details_headers = implementations
-    |> result_headers(&result_content/1)
-    |> Enum.sort
+    result_details_headers =
+      implementations
+      |> result_headers(&result_content/1)
+      |> Enum.sort()
 
     headers =
       header_labels

@@ -250,7 +250,7 @@ defmodule TdDd.DataStructures.DataStructureVersions do
       :description,
       :inserted_at,
       :links,
-      :notes,
+      :note,
       :metadata,
       :name,
       :type,

@@ -225,8 +225,8 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
                %{"id" => to_string(rule_result_id_1)},
                %{"id" => to_string(rule_result_id_2)},
                %{"id" => to_string(rule_result_id_3)}
-             ]
-             ||| Map.get(implementation, "results")
+             ] |||
+               Map.get(implementation, "results")
     end
 
     @tag authentication: [role: "admin"]

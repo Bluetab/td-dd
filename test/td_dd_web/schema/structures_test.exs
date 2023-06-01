@@ -230,6 +230,12 @@ defmodule TdDdWeb.Schema.StructuresTest do
         alias
         id
       }
+      data_fields {
+        data_structure_id
+        id
+        type
+        alias
+      }
     }
   }
   """
@@ -1075,24 +1081,39 @@ defmodule TdDdWeb.Schema.StructuresTest do
         insert(:data_structure, alias: "alias_structure", domain_ids: [domain_id])
 
       %{id: dsv_child_with_alias_id} =
-        insert(:data_structure_version, data_structure: structure_child_with_alias, version: 1)
+        insert(:data_structure_version,
+          data_structure: structure_child_with_alias,
+          version: 1,
+          class: "field"
+        )
 
       structure_child_without_alias = insert(:data_structure, domain_ids: [domain_id])
 
       %{id: dsv_child_without_alias_id} =
-        insert(:data_structure_version, data_structure: structure_child_without_alias, version: 1)
+        insert(:data_structure_version,
+          data_structure: structure_child_without_alias,
+          version: 1,
+          class: "field"
+        )
 
       ## Structure relations
 
       create_relation(dsv_father_id, dsv_child_with_alias_id)
       create_relation(dsv_father_id, dsv_child_without_alias_id)
 
-      children_without_alias_id = to_string(dsv_child_without_alias_id)
-      children_with_alias_id = to_string(dsv_child_with_alias_id)
+      dsv_children_without_alias_id = to_string(dsv_child_without_alias_id)
+      dsv_children_with_alias_id = to_string(dsv_child_with_alias_id)
+
+      children_without_alias_id = to_string(structure_child_without_alias.id)
+      children_with_alias_id = to_string(structure_child_with_alias.id)
 
       variables = %{"dataStructureId" => ds_father_id, "version" => "latest"}
 
-      assert %{"data" => %{"dataStructureVersion" => %{"children" => children}}} =
+      assert %{
+               "data" => %{
+                 "dataStructureVersion" => %{"children" => children, "data_fields" => data_fields}
+               }
+             } =
                response =
                conn
                |> post("/api/v2", %{
@@ -1105,14 +1126,25 @@ defmodule TdDdWeb.Schema.StructuresTest do
 
       assert [
                %{
-                 "id" => ^children_with_alias_id,
+                 "id" => ^dsv_children_with_alias_id,
                  "alias" => "alias_structure"
                },
                %{
-                 "id" => ^children_without_alias_id,
+                 "id" => ^dsv_children_without_alias_id,
                  "alias" => nil
                }
              ] = children
+
+      assert [
+               %{
+                 "alias" => "alias_structure",
+                 "data_structure_id" => ^children_with_alias_id
+               },
+               %{
+                 "alias" => nil,
+                 "data_structure_id" => ^children_without_alias_id
+               }
+             ] = data_fields
     end
 
     @tag authentication: [role: "user", permissions: [:view_data_structure]]

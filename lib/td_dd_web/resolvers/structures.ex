@@ -113,7 +113,10 @@ defmodule TdDdWeb.Resolvers.Structures do
   end
 
   def add_alias(%{data_structure: %{alias: alias}}, _args, _resolution), do: {:ok, alias}
-  def add_alias(_parent, _args, _resolution), do: {:ok, nil}
+
+  def add_alias(%{alias: alias}, _args, _resolution), do: {:ok, alias}
+
+  def add_alias(_dsv, _args, _resolution), do: {:ok, nil}
 
   def note(
         %{data_structure: %{published_note: %{df_content: %{} = content}}} = dsv,
