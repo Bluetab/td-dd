@@ -17,6 +17,7 @@
 - [TD-5803]
   - Upgrade to Elixir 1.14
   - Support for setting Node name on releases
+- [TD-5697] Use `HierarchyCache.get_node/1`
 
 ## [5.7.0] 2023-05-23
 
