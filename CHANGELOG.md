@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+## Added
+
+- [TD-5770] Add database TSL configuration
+
 ## [5.8.0] 2023-06-05
 
 ## Added

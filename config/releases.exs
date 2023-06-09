@@ -10,7 +10,16 @@ config :td_dd, TdDd.Repo,
   port: System.get_env("DB_PORT", "5432") |> String.to_integer(),
   pool_size: System.get_env("DB_POOL_SIZE", "16") |> String.to_integer(),
   timeout: System.get_env("DB_TIMEOUT_MILLIS", "600000") |> String.to_integer(),
-  ssl: System.get_env("DB_SSL", "") |> String.downcase() == "true"
+  ssl: System.get_env("DB_SSL", "") |> String.downcase() == "true",
+  ssl_opts: [
+    cacertfile: System.get_env("DB_SSL_CACERTFILE", ""),
+    verify: :verify_peer,
+    fail_if_no_peer_cert: System.get_env("DB_SSL", "") |> String.downcase() == "true",
+    server_name_indication: System.get_env("DB_HOST") |> to_charlist(),
+    versions: [
+      System.get_env("DB_SSL_VERSION", "tlsv1.2") |> String.downcase() |> String.to_atom()
+    ]
+  ]
 
 config :td_dd, Truedat.Auth.Guardian, secret_key: System.fetch_env!("GUARDIAN_SECRET_KEY")
 
