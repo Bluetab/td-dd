@@ -5,6 +5,7 @@
 ## Added
 
 - [TD-5770] Add database TSL configuration
+- [TD-5577] Add retrive global filters for default user
 
 ## [5.8.0] 2023-06-05
 
