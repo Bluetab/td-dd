@@ -106,4 +106,46 @@ defmodule TdDd.UserSearchFiltersTest do
       end
     end
   end
+
+  test "retrive global data_structure filter when role by default " do
+    CacheHelpers.put_default_permissions(["view_data_structure"])
+
+    %{user_id: user_id} = claims = build(:claims, role: "user")
+    %{user_id: user_id2} = build(:claims, role: "bad_user")
+
+    usf1 = insert(:user_search_filter, is_global: true, user_id: user_id, scope: "data_structure")
+
+    usf2 =
+      insert(:user_search_filter, is_global: true, user_id: user_id2, scope: "data_structure")
+
+    insert(:user_search_filter, is_global: false, user_id: user_id2, scope: "data_structure")
+
+    assert UserSearchFilters.list_user_search_filters(%{"scope" => "data_structure"}, claims)
+           |> assert_lists_equal([usf1, usf2])
+  end
+
+  test "retrive global quality_rule filter when role by default " do
+    CacheHelpers.put_default_permissions(["view_quality_rule"])
+
+    %{user_id: user_id} = claims = build(:claims, role: "user")
+    %{user_id: user_id2} = build(:claims, role: "bad_user")
+
+    usf4 = insert(:user_search_filter, is_global: true, user_id: user_id, scope: "rule")
+    usf5 = insert(:user_search_filter, is_global: true, user_id: user_id2, scope: "rule")
+    insert(:user_search_filter, is_global: false, user_id: user_id2, scope: "rule")
+
+    usf7 =
+      insert(:user_search_filter, is_global: true, user_id: user_id, scope: "rule_implementation")
+
+    usf8 =
+      insert(:user_search_filter, is_global: true, user_id: user_id2, scope: "rule_implementation")
+
+    insert(:user_search_filter, is_global: false, user_id: user_id2, scope: "rule_implementation")
+
+    assert UserSearchFilters.list_user_search_filters(%{"scope" => "rule"}, claims)
+           |> assert_lists_equal([usf4, usf5])
+
+    assert UserSearchFilters.list_user_search_filters(%{"scope" => "rule_implementation"}, claims)
+           |> assert_lists_equal([usf7, usf8])
+  end
 end
