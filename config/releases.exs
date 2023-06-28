@@ -36,6 +36,11 @@ config :td_cache, :event_stream, consumer_id: System.fetch_env!("HOSTNAME")
 
 config :td_dd, import_dir: System.get_env("IMPORT_DIR")
 
+config :td_dd, TdDd.Search.Mappings,
+  enabled_mappings: %{
+    metadata: System.get_env("MAPPINGS_METADATA_ENABLED", "true") |> String.downcase() == "true"
+  }
+
 config :td_dd, TdDd.Scheduler,
   jobs: [
     cache_cleaner: [

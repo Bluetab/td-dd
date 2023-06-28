@@ -55,10 +55,17 @@ defmodule TdDd.Search.Indexer do
     |> Jason.encode!()
     |> put_template(alias_name)
     |> case do
-      {:ok, _} ->
+      {:ok, result} ->
+        Logger.info(
+          "put_template result: #{inspect(result)}\n Starting reindex using hot_swap..."
+        )
+
         Cluster
         |> Index.hot_swap(alias_name)
         |> log_errors()
+
+      error ->
+        error
     end
 
     Tasks.log_end()
@@ -152,24 +159,50 @@ defmodule TdDd.Search.Indexer do
   end
 
   defp log_errors(:ok), do: :ok
-  defp log_errors({:error, [e | _] = es}), do: log_errors(e, length(es))
+  defp log_errors({:error, [_ | _] = exceptions}), do: log_errors(exceptions, length(exceptions))
   defp log_errors({:error, e}), do: log_errors(e, 1)
 
   defp log_errors(e, 1) do
-    message = message(e)
-    Logger.warn("Reindexing finished with error: #{message}")
+    {index, message} = info(e)
+    Logger.error("Hot swap failed. New index #{index} build finished with error: #{message}")
   end
 
-  defp log_errors(e, count) do
-    message = message(e)
-    Logger.warn("Reindexing finished with #{count} errors including: #{message}")
+  defp log_errors(exceptions, count) do
+    [first_exception | _] = exceptions
+    {index, _message} = info(first_exception)
+
+    Enum.reduce(
+      exceptions,
+      [],
+      fn e, acc ->
+        {_index, message} = info(e)
+
+        [
+          "#{message}\n",
+          acc
+        ]
+      end
+    )
+    |> Kernel.then(fn messages ->
+      ["Hot swap failed. New index #{index} build finished with #{count} errors:\n" | messages]
+    end)
+    |> Logger.error()
   end
 
-  defp message(e) do
+  defp info(e) do
     if Exception.exception?(e) do
-      Exception.message(e)
+      index = info_index(e)
+      {index, "#{info_document_id(e)}#{Exception.message(e)}"}
     else
       "#{inspect(e)}"
     end
   end
+
+  defp info_document_id(%Elasticsearch.Exception{raw: %{"_id" => id}}),
+    do: "Data structure ID #{id}: "
+
+  defp info_document_id(_), do: ""
+
+  defp info_index(%Elasticsearch.Exception{raw: %{"_index" => index}}), do: "Index #{index}: "
+  defp info_index(_e), do: ""
 end

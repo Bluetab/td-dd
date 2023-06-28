@@ -9,6 +9,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   alias Path
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.Search.Aggregations
   alias TdDd.DataStructures.StructureNotes
   alias TdDd.Search.MockIndexWorker
 
@@ -175,6 +176,69 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert %{"data" => [%{"id" => ^id}]} =
                conn
                |> post(data_structure_path(conn, :search), %{"query" => "foo"})
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "get_bucket_structures includes filters and without", %{conn: conn} do
+      %{data_structure_id: id} = dsv = insert(:data_structure_version)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
+        assert %{
+                 bool: %{
+                   filter: [
+                     %{term: %{"parent_id" => ""}},
+                     %{term: %{"metadata.region" => "eu-west-1"}}
+                   ],
+                   must_not: %{exists: %{field: "deleted_at"}}
+                 }
+               } = query
+
+        SearchHelpers.hits_response([dsv])
+      end)
+
+      assert %{"data" => [%{"id" => ^id}]} =
+               conn
+               |> post(
+                 data_structure_path(conn, :get_bucket_structures),
+                 %{
+                   "metadata.region" => "eu-west-1",
+                   "parent_id" => ""
+                 }
+               )
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "get_bucket_structures transforms special Aggregations.@missing_term_name filter to without (must not in query)",
+         %{conn: conn} do
+      %{data_structure_id: id} = dsv = insert(:data_structure_version)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
+        assert %{
+                 bool: %{
+                   filter: %{term: %{"parent_id" => ""}},
+                   must_not: [
+                     %{exists: %{field: "deleted_at"}},
+                     %{exists: %{field: "metadata.region"}}
+                   ]
+                 }
+               } = query
+
+        SearchHelpers.hits_response([dsv])
+      end)
+
+      assert %{"data" => [%{"id" => ^id}]} =
+               conn
+               |> post(
+                 data_structure_path(conn, :get_bucket_structures),
+                 %{
+                   "metadata.region" => Aggregations.missing_term_name(),
+                   "parent_id" => ""
+                 }
+               )
                |> json_response(:ok)
     end
 
