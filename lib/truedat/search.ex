@@ -128,7 +128,15 @@ defmodule Truedat.Search do
   end
 
   defp filter_values({name, %{"buckets" => buckets}}) do
-    {name, %{values: Enum.map(buckets, &bucket_key/1)}}
+    {
+      name,
+      %{
+        values: Enum.map(buckets, &bucket_key/1),
+        # TODO: This is a redundant as values is already in buckets, but don't
+        # want to change front-end now.
+        buckets: buckets
+      }
+    }
   end
 
   defp filter_values({name, %{"distinct_search" => distinct_search}}) do

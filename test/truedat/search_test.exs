@@ -75,9 +75,9 @@ defmodule Truedat.SearchTest do
         SearchHelpers.aggs_response(@aggs, 123)
       end)
 
-      assert Search.search(%{}, "foo") ==
-               {:ok,
-                %{aggregations: %{"my_agg" => %{values: ["foo", "bar"]}}, results: [], total: 123}}
+      assert {:ok,
+              %{aggregations: %{"my_agg" => %{values: ["foo", "bar"]}}, results: [], total: 123}} =
+               Search.search(%{}, "foo")
     end
 
     test "does not format aggregations from response if format: :raw is specified" do

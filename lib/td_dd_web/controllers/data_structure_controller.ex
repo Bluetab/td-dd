@@ -183,6 +183,18 @@ defmodule TdDdWeb.DataStructureController do
     |> render("index.json", data_structures: data_structures)
   end
 
+  def get_bucket_structures(conn, params) do
+    claims = conn.assigns[:current_resource]
+    permission = conn.assigns[:search_permission]
+
+    %{results: data_structures, total: total} =
+      Search.bucket_structures(claims, permission, params)
+
+    conn
+    |> put_resp_header("x-total-count", "#{total}")
+    |> render("index.json", data_structures: data_structures)
+  end
+
   swagger_path :bulk_update do
     description("Bulk Update of extra info structures")
     produces("application/json")

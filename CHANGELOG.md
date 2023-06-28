@@ -1,8 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-4986] Configurable data catalog bucket views based on note and metadata
+  fields
+
 ## [5.9.0] 2023-06-20
 
-## Added
+### Added
 
 - [TD-5770] Add database TSL configuration
 - [TD-4260] Rule content in implementation aggregations
@@ -10,11 +17,11 @@
 
 ## [5.8.0] 2023-06-05
 
-## Added
+### Added
 
 - [TD-5752] Add force update control dates when update implementations by web or csv bulk update
 
-## Fixed
+### Fixed
 
 - [TD-5810] Fix alias in data_fields v2
 

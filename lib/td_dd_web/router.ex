@@ -122,6 +122,8 @@ defmodule TdDdWeb.Router do
       resources("/classifiers", ClassifierController, only: [:index, :show, :create, :delete])
     end
 
+    post "/buckets/structures", DataStructureController, :get_bucket_structures
+
     get("/data_structures/search/reindex_all", SearchController, :reindex_all)
 
     get("/data_structure_filters", DataStructureFilterController, :index)

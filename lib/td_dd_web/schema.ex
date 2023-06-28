@@ -9,6 +9,7 @@ defmodule TdDdWeb.Schema do
 
   import_types(Absinthe.Plug.Types)
   import_types(Absinthe.Type.Custom)
+  import_types(TdDdWeb.Schema.CatalogViewConfigs)
   import_types(TdDdWeb.Schema.Commond)
   import_types(TdDdWeb.Schema.DataStructureLinks)
   import_types(TdDdWeb.Schema.Labels)
@@ -39,6 +40,7 @@ defmodule TdDdWeb.Schema do
     import_fields(:domain_queries)
     import_fields(:function_queries)
     import_fields(:grant_queries)
+    import_fields(:catalog_view_config_queries)
     import_fields(:grant_request_queries)
     import_fields(:grant_approval_rules_queries)
     import_fields(:implementation_queries)
@@ -56,6 +58,7 @@ defmodule TdDdWeb.Schema do
   end
 
   mutation do
+    import_fields(:catalog_view_config_mutations)
     import_fields(:grant_approval_rules_mutations)
     import_fields(:implementation_mutations)
     import_fields(:reference_data_mutations)

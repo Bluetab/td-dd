@@ -3,8 +3,13 @@ defmodule TdDd.DataStructures.Search.Aggregations do
   Aggregations for elasticsearch
   """
   alias TdCache.TemplateCache
+  alias TdDd.DataStructures.CatalogViewConfigs
   alias TdDd.DataStructures.DataStructureTypes
   alias TdDfLib.Format
+
+  @missing_term_name "_missing"
+
+  def missing_term_name, do: @missing_term_name
 
   def aggregations do
     static_aggs = %{
@@ -31,10 +36,45 @@ defmodule TdDd.DataStructures.Search.Aggregations do
   end
 
   defp filter_aggs do
-    DataStructureTypes.metadata_filters()
-    |> Map.values()
-    |> Enum.flat_map(& &1)
-    |> Map.new(fn filter -> {"metadata.#{filter}", %{terms: %{field: "_filters.#{filter}"}}} end)
+    catalog_view_configs_filters =
+      CatalogViewConfigs.list()
+      |> Enum.map(fn
+        %{field_type: field_type, field_name: field_name}
+        when field_type in ["metadata", "mutable_metadata"] ->
+          {"#{field_type}.#{field_name}",
+           %{
+             terms: %{
+               field: "#{field_type}.#{field_name}.keyword",
+               missing: @missing_term_name
+             }
+           }}
+
+        %{field_type: "note", field_name: "midominio" = field_name} ->
+          {"note.#{field_name}",
+           %{
+             terms: %{
+               field: "note.#{field_name}"
+             }
+           }}
+
+        %{field_type: "note", field_name: field_name} ->
+          {"note.#{field_name}",
+           %{
+             terms: %{
+               field: "note.#{field_name}.raw",
+               missing: @missing_term_name
+             }
+           }}
+      end)
+      |> Map.new()
+
+    data_structure_types_filters =
+      DataStructureTypes.metadata_filters()
+      |> Map.values()
+      |> Enum.flat_map(& &1)
+      |> Map.new(fn filter -> {"metadata.#{filter}", %{terms: %{field: "_filters.#{filter}"}}} end)
+
+    Map.merge(catalog_view_configs_filters, data_structure_types_filters)
   end
 
   defp content_terms(%{content: content}) do

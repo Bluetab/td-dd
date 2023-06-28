@@ -134,6 +134,7 @@ defmodule TdDdWeb.DataStructureView do
       :name,
       :original_name,
       :parent,
+      :parent_id,
       :path,
       :source_id,
       :source,

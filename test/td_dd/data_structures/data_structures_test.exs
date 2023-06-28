@@ -481,7 +481,7 @@ defmodule TdDd.DataStructuresTest do
                classes: %{"foo" => "bar"},
                note: note,
                domain_ids: [^domain_id],
-               mutable_metadata: %{"foo" => "bar"},
+               metadata: %{"foo" => "bar"},
                domain: %{id: ^domain_id, name: ^domain_name, external_id: ^domain_external_id},
                path: path,
                path_sort: "yayo~papa",
