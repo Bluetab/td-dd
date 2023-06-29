@@ -6,6 +6,7 @@
 
 - [TD-4986] Configurable data catalog bucket views based on note and metadata
   fields
+- [TD-5787] Add Elastic Search Boost option in templates
 
 ## [5.9.0] 2023-06-20
 

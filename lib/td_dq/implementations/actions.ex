@@ -9,6 +9,19 @@ defmodule TdDq.Implementations.Actions do
 
   defdelegate authorize(action, user, params), to: TdDq.Implementations.Policy
 
+  @publish_actions [
+    :auto_publish,
+    "download",
+    "execute",
+    "create",
+    "createBasic",
+    "createBasicRuleLess",
+    "createRaw",
+    "createRawRuleLess",
+    "createRuleLess",
+    "uploadResults"
+  ]
+
   defp get_available_actions(_params, %Implementation{}) do
     [
       :auto_publish,
@@ -30,18 +43,11 @@ defmodule TdDq.Implementations.Actions do
   end
 
   defp get_available_actions(%{"filters" => %{"status" => ["published"]}}, Implementation) do
-    [
-      :auto_publish,
-      "download",
-      "execute",
-      "create",
-      "createBasic",
-      "createBasicRuleLess",
-      "createRaw",
-      "createRawRuleLess",
-      "createRuleLess",
-      "uploadResults"
-    ]
+    @publish_actions
+  end
+
+  defp get_available_actions(%{"must" => %{"status" => ["published"]}}, Implementation) do
+    @publish_actions
   end
 
   defp get_available_actions(_params, Implementation) do

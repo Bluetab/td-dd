@@ -361,11 +361,15 @@ defmodule TdDd.Factory do
     }
   end
 
-  def concept_factory do
+  def concept_factory(attrs) do
+    attrs = default_assoc(attrs, :domain_id, :domain)
+
     %{
       id: System.unique_integer([:positive]),
-      name: sequence("concept_name")
+      name: sequence("concept_name"),
+      confidential: false
     }
+    |> merge_attributes(attrs)
   end
 
   def profile_execution_factory do

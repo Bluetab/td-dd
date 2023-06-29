@@ -6,9 +6,9 @@ defmodule Truedat.Search.Filters do
   alias TdCache.TaxonomyCache
   alias Truedat.Search.Query
 
-  def build_filters(filters, aggregations, acc \\ %{}) do
+  def build_filters(filters, aggregations, acc, filter_type \\ :filters) do
     filters
-    |> Enum.map(&build_filter(&1, aggregations))
+    |> Enum.map(&build_filter(&1, aggregations, filter_type))
     |> Enum.reduce(acc, &merge/2)
   end
 
@@ -24,17 +24,18 @@ defmodule Truedat.Search.Filters do
     end)
   end
 
-  defp build_filter({"taxonomy" = key, values}, aggs) do
+  defp build_filter({"taxonomy" = key, values}, aggs, filter_type) do
     values = TaxonomyCache.reachable_domain_ids(values)
-    build_filter(key, values, aggs)
+    build_filter(key, values, aggs, filter_type)
   end
 
-  defp build_filter({key, values}, aggs) do
-    build_filter(key, values, aggs)
+  defp build_filter({key, values}, aggs, filter_type) do
+    build_filter(key, values, aggs, filter_type)
   end
 
-  defp build_filter(%{terms: %{field: field}}, values) do
-    {:filter, term(field, values)}
+  defp build_filter(%{terms: %{field: field}}, values, filter_type) do
+    must_or_filter = get_filter_type(filter_type)
+    {must_or_filter, term(field, values)}
   end
 
   defp build_filter(
@@ -42,7 +43,8 @@ defmodule Truedat.Search.Filters do
            nested: %{path: path},
            aggs: %{distinct_search: %{terms: %{field: field}}}
          },
-         values
+         values,
+         filter_type
        ) do
     nested_query = %{
       nested: %{
@@ -51,32 +53,39 @@ defmodule Truedat.Search.Filters do
       }
     }
 
-    {:filter, nested_query}
+    must_or_filter = get_filter_type(filter_type)
+    {must_or_filter, nested_query}
   end
 
-  defp build_filter("must_not", values) do
+  defp build_filter("must_not", values, _filter_type) do
     {:must_not, Enum.map(values, fn {key, term_values} -> term(key, term_values) end)}
   end
 
-  defp build_filter("exists", value) do
+  defp build_filter("exists", value, _filter_type) do
     {:must, %{exists: value}}
   end
 
-  defp build_filter(field, value) when field in ["updated_at", "start_date", "end_date"] do
-    {:filter, Query.range(field, value)}
+  defp build_filter(field, value, filter_type)
+       when field in ["updated_at", "start_date", "end_date"] do
+    must_or_filter = get_filter_type(filter_type)
+    {must_or_filter, Query.range(field, value)}
   end
 
-  defp build_filter(field, values) when is_binary(field) do
-    {:filter, term(field, values)}
+  defp build_filter(field, values, filter_type) when is_binary(field) do
+    must_or_filter = get_filter_type(filter_type)
+    {must_or_filter, term(field, values)}
   end
 
-  defp build_filter(key, values, aggs) do
+  defp build_filter(key, values, aggs, filter_type) do
     aggs
     |> Map.get(key, _field = key)
-    |> build_filter(values)
+    |> build_filter(values, filter_type)
   end
 
   defp term(field, values) do
     Query.term_or_terms(field, values)
   end
+
+  defp get_filter_type(:must), do: :must
+  defp get_filter_type(:filters), do: :filter
 end
