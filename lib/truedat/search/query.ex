@@ -7,8 +7,26 @@ defmodule Truedat.Search.Query do
 
   @match_all %{match_all: %{}}
 
-  def build_query(filters, params, aggs \\ %{}) do
-    acc = filters |> List.wrap() |> acc()
+  def build_query(filters, params, aggs \\ %{})
+
+  def build_query(filters, %{"must" => _} = params, aggs) do
+    query = Map.get(params, "query")
+
+    acc =
+      filters
+      |> List.wrap()
+      |> acc(:must)
+
+    params
+    |> Map.take(["must", "query", "without", "with"])
+    |> Enum.reduce(acc, &reduce_query(&1, &2, aggs))
+    |> maybe_optimize()
+    |> add_query_should(query)
+    |> bool_query()
+  end
+
+  def build_query(filters, params, aggs) do
+    acc = filters |> List.wrap() |> acc(:filter)
 
     params
     |> Map.take(["filters", "query", "without", "with"])
@@ -17,27 +35,34 @@ defmodule Truedat.Search.Query do
     |> bool_query()
   end
 
-  defp acc([]), do: %{}
+  defp acc([], _filter_or_must), do: %{}
 
-  defp acc([_ | _] = filters) do
+  defp acc([_ | _] = filters, filter_or_must) do
     filters
     |> Enum.reduce(%{}, fn
       %{must_not: must_not_filters}, acu ->
-        acu
-        |> Map.update(:must_not, must_not_filters, fn mn -> mn ++ must_not_filters end)
+        Map.update(acu, :must_not, must_not_filters, fn mn -> mn ++ must_not_filters end)
 
       f, acu ->
-        acu
-        |> Map.update(:filter, [f], fn filters -> [f | filters] end)
+        Map.update(acu, filter_or_must, [f], fn filters -> [f | filters] end)
     end)
   end
 
   defp reduce_query({"filters", %{} = filters}, %{} = acc, aggs)
        when map_size(filters) > 0 do
-    Filters.build_filters(filters, aggs, acc)
+    Filters.build_filters(filters, aggs, acc, :filters)
   end
 
   defp reduce_query({"filters", %{}}, %{} = acc, _) do
+    acc
+  end
+
+  defp reduce_query({"must", %{} = must}, %{} = acc, aggs)
+       when map_size(must) > 0 do
+    Filters.build_filters(must, aggs, acc, :must)
+  end
+
+  defp reduce_query({"must", %{}}, %{} = acc, _) do
     acc
   end
 
@@ -64,8 +89,28 @@ defmodule Truedat.Search.Query do
     end)
   end
 
+  defp add_query_should(filters, nil), do: filters
+
+  defp add_query_should(filters, query) do
+    should = [
+      %{
+        multi_match: %{
+          query: maybe_wildcard(query),
+          type: "best_fields",
+          operator: "and"
+        }
+      }
+    ]
+
+    Map.put(filters, :should, should)
+  end
+
   defp maybe_optimize(%{filter: _} = bool) do
     Map.update!(bool, :filter, &optimize/1)
+  end
+
+  defp maybe_optimize(%{must: _} = bool) do
+    Map.update!(bool, :must, &optimize/1)
   end
 
   defp maybe_optimize(%{} = bool), do: bool

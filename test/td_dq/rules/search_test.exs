@@ -203,6 +203,23 @@ defmodule TdDq.Rules.SearchTest do
       end
     end
 
+    for role <- ["admin", "service", "user"] do
+      @tag authentication: [role: role, permissions: ["view_quality_rule"]]
+      test "searches and returns hits for #{role} account with must param", %{
+        claims: claims,
+        rule: rule
+      } do
+        ElasticsearchMock
+        |> expect(:request, fn
+          _, :post, "/rules/_search", %{from: 30, size: 10, query: _query} = search, _ ->
+            refute Map.has_key?(search, :aggs)
+            SearchHelpers.hits_response([rule], 11)
+        end)
+
+        assert %{results: [_], total: 11} = Search.search_rules(%{"must" => %{}}, claims, 3, 10)
+      end
+    end
+
     @tag authentication: [role: "user", permissions: ["view_quality_rule"]]
     test "filters by domain_ids and not confidential", %{claims: claims, rule: rule} do
       ElasticsearchMock
@@ -221,6 +238,29 @@ defmodule TdDq.Rules.SearchTest do
       end)
 
       assert %{results: [_]} = Search.search_rules(_params = %{}, claims)
+    end
+
+    @tag authentication: [role: "user", permissions: ["view_quality_rule"]]
+    test "filters by domain_ids and not confidential with must param", %{
+      claims: claims,
+      rule: rule
+    } do
+      ElasticsearchMock
+      |> expect(:request, fn
+        _, :post, "/rules/_search", %{from: 0, size: 50, query: query}, _ ->
+          assert %{
+                   bool: %{
+                     must: [
+                       %{term: %{"_confidential" => false}},
+                       %{term: %{"domain_ids" => _}}
+                     ]
+                   }
+                 } = query
+
+          SearchHelpers.hits_response([rule])
+      end)
+
+      assert %{results: [_]} = Search.search_rules(%{"must" => %{}}, claims)
     end
 
     @tag authentication: [
@@ -253,6 +293,36 @@ defmodule TdDq.Rules.SearchTest do
       assert %{results: [_]} = Search.search_rules(_params = %{}, claims)
     end
 
+    @tag authentication: [
+           role: "user",
+           permissions: ["view_quality_rule", "manage_confidential_business_concepts"]
+         ]
+    test "filters by domain_ids or confidential with must param", %{claims: claims, rule: rule} do
+      ElasticsearchMock
+      |> expect(:request, fn
+        _, :post, "/rules/_search", %{query: query}, _ ->
+          assert %{
+                   bool: %{
+                     must: [
+                       %{
+                         bool: %{
+                           should: [
+                             %{term: %{"domain_ids" => _}},
+                             %{term: %{"_confidential" => false}}
+                           ]
+                         }
+                       },
+                       %{term: %{"domain_ids" => _}}
+                     ]
+                   }
+                 } = query
+
+          SearchHelpers.hits_response([rule])
+      end)
+
+      assert %{results: [_]} = Search.search_rules(%{"must" => %{}}, claims)
+    end
+
     @tag authentication: [role: "service"]
     test "includes scroll as query param", %{claims: claims, rule: rule} do
       ElasticsearchMock
@@ -263,6 +333,17 @@ defmodule TdDq.Rules.SearchTest do
 
       params = %{"scroll" => "1m"}
       assert %{results: [_]} = Search.search_rules(params, claims)
+    end
+
+    @tag authentication: [role: "service"]
+    test "includes scroll as query param with must params", %{claims: claims, rule: rule} do
+      ElasticsearchMock
+      |> expect(:request, fn
+        _, :post, "/rules/_search", %{query: _}, [params: %{"scroll" => "1m"}] ->
+          SearchHelpers.hits_response([rule])
+      end)
+
+      assert %{results: [_]} = Search.search_rules(%{"must" => %{}, "scroll" => "1m"}, claims)
     end
   end
 

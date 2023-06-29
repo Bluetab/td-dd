@@ -122,7 +122,11 @@ defmodule TdDd.Search.Mappings do
   defp get_mappings(%{content: content}) do
     content
     |> Format.flatten_content_fields()
-    |> Enum.map(&field_mapping/1)
+    |> Enum.map(fn field ->
+      field
+      |> field_mapping
+      |> maybe_boost(field)
+    end)
   end
 
   defp field_mapping(%{"name" => name, "type" => "table"}) do
@@ -168,6 +172,15 @@ defmodule TdDd.Search.Mappings do
   defp field_mapping(%{"name" => name}) do
     {name, mapping_type("string")}
   end
+
+  defp maybe_boost(field_tuple, %{"boost" => boost}) when boost in ["", "1"], do: field_tuple
+
+  defp maybe_boost({name, field_value}, %{"boost" => boost}) do
+    {boost_float, _} = Float.parse(boost)
+    {name, Map.put(field_value, :boost, boost_float)}
+  end
+
+  defp maybe_boost(field_tuple, _), do: field_tuple
 
   defp mapping_type(values) when is_map(values) do
     %{type: "text", fields: @raw}
