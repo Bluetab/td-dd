@@ -75,9 +75,9 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
       assert_maps_equal(
         aggs,
         %{
-          "metadata.bar" => %{terms: %{field: "_filters.bar"}},
-          "metadata.baz" => %{terms: %{field: "_filters.baz"}},
-          "metadata.foo" => %{terms: %{field: "_filters.foo"}}
+          "metadata.bar" => %{terms: %{field: "_filters.bar", missing: "_missing"}},
+          "metadata.baz" => %{terms: %{field: "_filters.baz", missing: "_missing"}},
+          "metadata.foo" => %{terms: %{field: "_filters.foo", missing: "_missing"}}
         },
         ["metadata.foo", "metadata.bar", "metadata.baz"]
       )
