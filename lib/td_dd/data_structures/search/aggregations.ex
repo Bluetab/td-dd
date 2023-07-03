@@ -72,7 +72,10 @@ defmodule TdDd.DataStructures.Search.Aggregations do
       DataStructureTypes.metadata_filters()
       |> Map.values()
       |> Enum.flat_map(& &1)
-      |> Map.new(fn filter -> {"metadata.#{filter}", %{terms: %{field: "_filters.#{filter}"}}} end)
+      |> Map.new(fn filter ->
+        {"metadata.#{filter}",
+         %{terms: %{field: "_filters.#{filter}", missing: @missing_term_name}}}
+      end)
 
     Map.merge(catalog_view_configs_filters, data_structure_types_filters)
   end
