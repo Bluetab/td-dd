@@ -359,14 +359,16 @@ defmodule TdDq.Implementations.Implementation do
   def get_execution_result_info(implementation, result, _),
     do: build_result_info(implementation, result)
 
-  defp build_result_info(
-         %Implementation{minimum: minimum, goal: goal, result_type: result_type},
-         rule_result
-       ) do
-    Map.new()
-    |> with_result(rule_result)
-    |> with_date(rule_result)
-    |> with_details(rule_result)
+  defp build_result_info(%Implementation{result_type: result_type}, rule_result) do
+    %{minimum: minimum, goal: goal} =
+      result =
+      Map.new()
+      |> with_result(rule_result)
+      |> with_date(rule_result)
+      |> with_details(rule_result)
+      |> with_thresholds(rule_result)
+
+    result
     |> Helpers.with_result_text(minimum, goal, result_type)
   end
 
@@ -382,6 +384,12 @@ defmodule TdDq.Implementations.Implementation do
 
   defp with_details(result_map, %{details: %{} = details}) do
     Map.put(result_map, :details, details)
+  end
+
+  defp with_thresholds(result_map, %{implementation_id: implementation_id}) do
+    %{minimum: minimum, goal: goal} = TdDd.Repo.get(Implementation, implementation_id)
+
+    Map.merge(%{minimum: minimum, goal: goal}, result_map)
   end
 
   defp with_details(result_map, _), do: result_map

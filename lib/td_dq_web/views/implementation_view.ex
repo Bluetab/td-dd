@@ -235,7 +235,9 @@ defmodule TdDqWeb.ImplementationView do
               implementation_id: implementation.id,
               result_type: last_rule_result.result_type,
               records: last_rule_result.records,
-              params: last_rule_result.params
+              params: last_rule_result.params,
+              minimum: last_rule_result.minimum,
+              goal: last_rule_result.goal
             }
           ]
       end

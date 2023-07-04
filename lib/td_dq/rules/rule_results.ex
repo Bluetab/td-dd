@@ -233,6 +233,17 @@ defmodule TdDq.Rules.RuleResults do
     |> limit(1)
     |> order_by([rr], desc: rr.date)
     |> Repo.one()
+    |> get_rule_result_thresholds()
+  end
+
+  def get_rule_result_thresholds(nil), do: nil
+
+  def get_rule_result_thresholds(%{implementation_id: implementation_id} = ruleResult) do
+    %{minimum: minimum, goal: goal} = TdDd.Repo.get(Implementation, implementation_id)
+
+    ruleResult
+    |> Map.put(:minimum, minimum)
+    |> Map.put(:goal, goal)
   end
 
   def delete_rule_result(%RuleResult{} = rule_result) do

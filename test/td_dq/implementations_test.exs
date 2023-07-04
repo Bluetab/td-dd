@@ -2041,6 +2041,61 @@ defmodule TdDq.ImplementationsTest do
       assert implementation_reindexed ||| [implementation_id, implementation_ref_id]
     end
 
+    test "load results to implementation and then search in elastic the threshold in it" do
+      claims = build(:claims)
+      %{id: domain_id} = CacheHelpers.insert_domain()
+      rule = insert(:rule, domain_id: domain_id)
+
+      implementation_v1_published_params =
+        string_params_for(:implementation,
+          rule_id: rule.id,
+          minimum: 20,
+          goal: 40,
+          result_type: "percentage",
+          status: :published
+        )
+
+      rule_result_params =
+        string_params_for(
+          :rule_result,
+          errors: 30,
+          records: 100
+        )
+
+      {:ok, %{implementation: %{id: implementation_v1_id}}} =
+        {:ok, %{implementation: implementation_v1}} =
+        Implementations.create_implementation(
+          rule,
+          implementation_v1_published_params,
+          claims
+        )
+
+      RuleResults.create_rule_result(implementation_v1, rule_result_params)
+
+      implementation_v2_params =
+        string_params_for(:implementation,
+          minimum: 40,
+          goal: 80,
+          version: 2,
+          status: :published
+        )
+
+      MockIndexWorker.clear()
+
+      {:ok, %{implementation: %{id: implementation_v2_id}}} =
+        Implementations.maybe_update_implementation(
+          implementation_v1,
+          implementation_v2_params,
+          claims
+        )
+
+      [
+        {:reindex_implementations, implementation_reindexed}
+      ] = MockIndexWorker.calls()
+
+      assert implementation_reindexed ||| [implementation_v1_id, implementation_v2_id]
+    end
+
     test "reindex implementation by structures ids related to implementation_structure" do
       MockIndexWorker.clear()
 

@@ -1,12 +1,13 @@
 # Changelog
 
-## [Unreleased]
+# [Unreleased]
 
-### Added
+## Added
 
 - [TD-4986] Configurable data catalog bucket views based on note and metadata
   fields
 - [TD-5787] Add Elastic Search Boost option in templates
+- [TD-5840] Fix color of result in implementations search
 
 ## [5.9.0] 2023-06-20
 
