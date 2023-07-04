@@ -1,6 +1,6 @@
 # Changelog
 
-# [Unreleased]
+## [Unreleased]
 
 ## Added
 
@@ -8,6 +8,7 @@
   fields
 - [TD-5787] Add Elastic Search Boost option in templates
 - [TD-5840] Fix color of result in implementations search
+- [TD-5808] Configured TdCluster
 
 ## [5.9.0] 2023-06-20
 
