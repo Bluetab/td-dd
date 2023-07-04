@@ -85,6 +85,7 @@ defmodule TdDd.MixProject do
       {:td_cache,
        git: "https://github.com/Bluetab/td-cache.git", branch: "develop", override: true},
       {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "5.8.1"},
+      {:td_cluster, git: "https://github.com/Bluetab/td-cluster.git", tag: "5.10.0"},
       {:graph, git: "https://github.com/Bluetab/graph.git", tag: "1.3.0"},
       {:vaultex, "~> 1.0.1"},
       {:sobelow, "~> 0.11", only: [:dev, :test]}

@@ -35,6 +35,10 @@ defmodule TdDd.Application do
     [
       # Task supervisor
       {Task.Supervisor, name: TdDd.TaskSupervisor},
+
+      # Cluster supervisor
+      TdCluster.Supervisor,
+
       # Workers for search and indexing
       TdDd.Search.Cluster,
       TdDd.Search.IndexWorker,
