@@ -56,10 +56,13 @@ defmodule TdDq.RuleResultsTest do
 
   describe "get_latest_rule_result/1 " do
     test "returns the latest result of an implementation" do
-      implementation = insert(:implementation)
+      implementation = insert(:implementation, rule: build(:rule))
       ts = DateTime.utc_now()
 
-      latest = insert(:rule_result, implementation: implementation, date: ts)
+      latest =
+        insert(:rule_result, implementation: implementation, date: ts)
+        |> RuleResults.get_rule_result_thresholds()
+
       insert(:rule_result, implementation: implementation, date: DateTime.add(ts, -1000))
       insert(:rule_result, implementation: implementation, date: DateTime.add(ts, -2000))
 
