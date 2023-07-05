@@ -1196,7 +1196,7 @@ defmodule TdDq.Implementations do
     end
   end
 
-  defp get_implementation_versions_ids_by_ref(implementation_ref) do
+  def get_implementation_versions_ids_by_ref(implementation_ref) do
     Implementation
     |> where([i], i.implementation_ref == ^implementation_ref)
     |> Repo.all()
