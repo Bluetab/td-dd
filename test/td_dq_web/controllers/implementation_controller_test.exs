@@ -3652,6 +3652,26 @@ defmodule TdDqWeb.ImplementationControllerTest do
       implementation: previous_implementation,
       implementations: new_implementations
     } do
+      concept_id = System.unique_integer([:positive])
+      CacheHelpers.insert_concept(%{id: concept_id})
+
+      concept_id_2 = System.unique_integer([:positive])
+      CacheHelpers.insert_concept(%{id: concept_id_2})
+
+      CacheHelpers.insert_link(
+        previous_implementation.id,
+        "implementation_ref",
+        "business_concept",
+        concept_id
+      )
+
+      CacheHelpers.insert_link(
+        previous_implementation.id,
+        "implementation_ref",
+        "business_concept",
+        concept_id_2
+      )
+
       ElasticsearchMock
       |> expect(:request, fn
         _,
@@ -3668,7 +3688,10 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
           assert sort == ["_score", "implementation_key.raw"]
 
-          SearchHelpers.hits_response([previous_implementation | new_implementations])
+          SearchHelpers.hits_response([
+            previous_implementation
+            | new_implementations
+          ])
       end)
 
       [
@@ -3709,8 +3732,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       for regex <- [
             # credo:disable-for-lines:5 Credo.Check.Readability.MaxLineLength
-            "implementation_key;implementation_type;domain;executable;rule;rule_template;implementation_template;goal;minimum;business_concept;last_execution_at;records;errors;result;execution;inserted_at;structure_domains;result_details_Query;result_details_baz_title;result_details_foo_title;result_details_jaz_title;dataset_external_id_1;validation_field_1\r",
-            ~r/#{key_0};default;;[\w+.]+;#{name_0};;;\d*\.?\d*;\d*\.?\d*;;;;;;;#{ts_0};;;;;;;\r/,
+            "implementation_key;implementation_type;domain;executable;rule;rule_template;implementation_template;goal;minimum;business_concepts;last_execution_at;records;errors;result;execution;inserted_at;structure_domains;result_details_Query;result_details_baz_title;result_details_foo_title;result_details_jaz_title;dataset_external_id_1;validation_field_1\r",
+            ~r/#{key_0};default;;[\w+.]+;#{name_0};;;\d*\.?\d*;\d*\.?\d*;[\w+]+|[\w+]+;;;;;;#{ts_0};;;;;;;\r/,
             ~r/#{key_1};default;;[\w+.]+;#{name_1};;;\d*\.?\d*;\d*\.?\d*;;[[:ascii:]]+;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;#{ts_1};;FOO;baz;;;;\r/,
             ~r/#{key_2};default;;[\w+.]+;#{name_2};;;\d*\.?\d*;\d*\.?\d*;;[[:ascii:]]+;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;#{ts_2};;;bazz;\"{\"\"x\"\":\"\"foo\"\"}\";jaz;;\r/,
             ~r/#{key_3};default;;[\w+.]+;#{name_3};;;\d*\.?\d*;\d*\.?\d*;;;;;;;#{ts_3};;;;;;;\r/
@@ -3754,7 +3777,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       for regex <- [
             # credo:disable-for-lines:5 Credo.Check.Readability.MaxLineLength
-            "implementation_key;implementation_type;domain;executable;rule;rule_template;implementation_template;goal;minimum;business_concept;last_execution_at;records;errors;result;execution;inserted_at;structure_domains;result_details_Query;result_details_baz_title;result_details_foo_title;result_details_jaz_title;dataset_external_id_1;validation_field_1\r",
+            "implementation_key;implementation_type;domain;executable;rule;rule_template;implementation_template;goal;minimum;business_concepts;last_execution_at;records;errors;result;execution;inserted_at;structure_domains;result_details_Query;result_details_baz_title;result_details_foo_title;result_details_jaz_title;dataset_external_id_1;validation_field_1\r",
             ~r/#{key_1};default;;[\w+.]+;#{name_1};;;\d*\.?\d*;\d*\.?\d*;;[[:ascii:]]+;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;[[:ascii:]]+;;#{query};#{detail_field1};;;;\r/,
             ~r/#{key_2};default;;[\w+.]+;#{name_2};;;\d*\.?\d*;\d*\.?\d*;;[[:ascii:]]+;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;[[:ascii:]]+;;#{baz_title};\"{\"\"x\"\":\"\"foo\"\"}\";#{jaz_title};;\r/,
             ~r/#{key_3};default;;[\w+.]+;#{name_3};;;\d*\.?\d*;\d*\.?\d*;;;;;;;[[:ascii:]]+;;;;;;\r/
@@ -3789,7 +3812,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       for regex <- [
             # credo:disable-for-lines:5 Credo.Check.Readability.MaxLineLength
-            "implementation_key;implementation_type;domain;executable;rule;rule_template;implementation_template;goal;minimum;business_concept;last_execution_at;records;errors;result;execution;inserted_at;structure_domains;dataset_external_id_1;validation_field_1\r",
+            "implementation_key;implementation_type;domain;executable;rule;rule_template;implementation_template;goal;minimum;business_concepts;last_execution_at;records;errors;result;execution;inserted_at;structure_domains;dataset_external_id_1;validation_field_1\r",
             ~r/#{key_1};default;;[\w+.]+;#{name_1};;;\d*\.?\d*;\d*\.?\d*;;[[:ascii:]]+;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;[[:ascii:]]+;;;\r/,
             ~r/#{key_2};default;;[\w+.]+;#{name_2};;;\d*\.?\d*;\d*\.?\d*;;[[:ascii:]]+;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;[[:ascii:]]+;;;\r/,
             ~r/#{key_3};default;;[\w+.]+;#{name_3};;;\d*\.?\d*;\d*\.?\d*;;;;;;;[[:ascii:]]+;;;\r/

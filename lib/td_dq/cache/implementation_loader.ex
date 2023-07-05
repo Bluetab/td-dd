@@ -14,6 +14,8 @@ defmodule TdDq.Cache.ImplementationLoader do
   alias TdDq.Implementations.Implementation
   alias TdDq.Rules.RuleResults
 
+  @index_worker Application.compile_env(:td_dd, :dq_index_worker)
+
   require Logger
 
   ## Client API
@@ -102,18 +104,27 @@ defmodule TdDq.Cache.ImplementationLoader do
 
   @impl GenServer
   def handle_call({:consume, events}, _from, state) do
+    Enum.each(events, &reindex_implementations/1)
+
     implementation_refs = Enum.flat_map(events, &read_implementation_refs/1)
     reply = cache_implementations(implementation_refs)
     {:reply, reply, state}
   end
 
   ## Private functions
-
-  defp read_implementation_refs(%{event: "add_link", source: source, target: target}) do
-    extract_implementation_refs([source, target])
+  defp reindex_implementations(%{event: event, source: source, target: target})
+       when event in ["add_link", "remove_link"] do
+    [source, target]
+    |> extract_implementation_refs()
+    |> Enum.map(&Implementations.get_implementation_versions_ids_by_ref(&1))
+    |> List.flatten()
+    |> @index_worker.reindex_implementations()
   end
 
-  defp read_implementation_refs(%{event: "remove_link", source: source, target: target}) do
+  defp reindex_implementations(_), do: nil
+
+  defp read_implementation_refs(%{event: event, source: source, target: target})
+       when event in ["add_link", "remove_link"] do
     extract_implementation_refs([source, target])
   end
 

@@ -101,7 +101,7 @@ defmodule TdDq.Implementations.Download do
          implementation.df_name,
          implementation.goal,
          implementation.minimum,
-         get_in(implementation, [:current_business_concept_version, :name]),
+         fill_concepts(implementation),
          get_in(implementation, [:execution_result_info, :date])
          |> TdDd.Helpers.shift_zone(time_zone),
          get_in(implementation, [:execution_result_info, :records]),
@@ -145,7 +145,7 @@ defmodule TdDq.Implementations.Download do
       "implementation_template",
       "goal",
       "minimum",
-      "business_concept",
+      "business_concepts",
       "last_execution_at",
       "records",
       "errors",
@@ -218,6 +218,12 @@ defmodule TdDq.Implementations.Download do
       len when len <= 0 -> list
       len -> list ++ List.duplicate(item, len)
     end
+  end
+
+  defp fill_concepts(implementation) do
+    implementation
+    |> Map.get(:concepts, [])
+    |> Enum.join("|")
   end
 
   defp fill_result_details(%{execution_result_info: %{details: %{} = details}}, headers) do

@@ -386,13 +386,13 @@ defmodule TdDq.Implementations.Implementation do
     Map.put(result_map, :details, details)
   end
 
+  defp with_details(result_map, _), do: result_map
+
   defp with_thresholds(result_map, %{implementation_id: implementation_id}) do
     %{minimum: minimum, goal: goal} = TdDd.Repo.get(Implementation, implementation_id)
 
     Map.merge(%{minimum: minimum, goal: goal}, result_map)
   end
-
-  defp with_details(result_map, _), do: result_map
 
   def publishable?(%__MODULE__{status: status}), do: status in [:draft, :pending_approval]
 
@@ -518,6 +518,19 @@ defmodule TdDq.Implementations.Implementation do
       |> transform_validation()
       |> transform_segments()
       |> maybe_rule(rule)
+      |> then(fn mapped_implementation ->
+        rule_concept = Map.get(mapped_implementation, :current_business_concept_version)
+
+        linked_concepts =
+          Implementations.get_implementation_links(implementation, "business_concept")
+
+        concepts =
+          List.flatten([List.wrap(rule_concept) | linked_concepts])
+          |> Enum.map(&Map.get(&1, :name, ""))
+          |> Enum.reject(&(&1 == ""))
+
+        Map.put(mapped_implementation, :concepts, concepts)
+      end)
       |> Map.put(:raw_content, get_raw_content(implementation))
       |> Map.put(:inserted_at, ref_inserted_at)
       |> Map.put(:structure_aliases, structure_aliases)

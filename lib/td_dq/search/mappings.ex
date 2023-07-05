@@ -101,6 +101,7 @@ defmodule TdDq.Search.Mappings do
           }
         }
       },
+      concepts: %{type: "text", fields: @raw_sort},
       updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       implementation_key: %{type: "text", boost: 2.0, fields: @raw},

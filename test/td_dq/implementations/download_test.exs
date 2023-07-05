@@ -81,9 +81,7 @@ defmodule TdDq.Implementations.DownloadTest do
           df_name: "download",
           name: "Rule"
         },
-        current_business_concept_version: %{
-          name: "name"
-        },
+        concepts: ["name"],
         execution_result_info: %{
           date: "2021-05-05T00:00:00Z",
           result_text: "quality_result.under_goal",
@@ -101,8 +99,8 @@ defmodule TdDq.Implementations.DownloadTest do
 
       assert csv ==
                """
-               implementation_key;implementation_type;domain;Executable;rule;Rule Template Label;Implementation Template Label;goal;minimum;business_concept;last_execution_at;records;errors;result;execution;inserted_at;structure_domains;Info;System;Domain\r
-               #{impl.implementation_key};#{impl.implementation_type};#{domain_name_1};Executable;#{impl.rule.name};#{impl.rule.df_name};#{impl.df_name};#{impl.goal};#{impl.minimum};#{impl.current_business_concept_version.name};#{Helpers.shift_zone(impl.execution_result_info.date)};;;#{impl.execution_result_info.result};Under Goal;#{Helpers.shift_zone(impl.inserted_at)};#{domain_name_1};field_value;system|system1;domain1|domain2\r
+               implementation_key;implementation_type;domain;Executable;rule;Rule Template Label;Implementation Template Label;goal;minimum;business_concepts;last_execution_at;records;errors;result;execution;inserted_at;structure_domains;Info;System;Domain\r
+               #{impl.implementation_key};#{impl.implementation_type};#{domain_name_1};Executable;#{impl.rule.name};#{impl.rule.df_name};#{impl.df_name};#{impl.goal};#{impl.minimum};#{impl.concepts};#{Helpers.shift_zone(impl.execution_result_info.date)};;;#{impl.execution_result_info.result};Under Goal;#{Helpers.shift_zone(impl.inserted_at)};#{domain_name_1};field_value;system|system1;domain1|domain2\r
                """
     end
 
@@ -126,9 +124,7 @@ defmodule TdDq.Implementations.DownloadTest do
           df_name: "download",
           name: "Rule"
         },
-        current_business_concept_version: %{
-          name: "name"
-        },
+        concepts: ["name"],
         execution_result_info: nil,
         df_name: "impl_df_name_1",
         goal: "12",
@@ -153,9 +149,7 @@ defmodule TdDq.Implementations.DownloadTest do
           df_name: "download",
           name: "Rule"
         },
-        current_business_concept_version: %{
-          name: "name"
-        },
+        concepts: ["name"],
         execution_result_info: %{
           date: "2021-05-05T00:00:00Z",
           result: "40.00"
@@ -171,9 +165,9 @@ defmodule TdDq.Implementations.DownloadTest do
 
       assert csv ==
                """
-               implementation_key;implementation_type;domain;Executable;rule;Rule Template Label;Implementation Template Label;goal;minimum;business_concept;last_execution_at;records;errors;result;execution;inserted_at;structure_domains;Info;System;Domain\r
-               #{impl.implementation_key};#{impl.implementation_type};#{domain_name_1};Executable;#{impl.rule.name};#{impl.rule.df_name};#{impl.df_name};#{impl.goal};#{impl.minimum};#{impl.current_business_concept_version.name};;;;;;#{Helpers.shift_zone(impl.inserted_at)};;field_value;system|system1;\r
-               #{impl1.implementation_key};#{impl1.implementation_type};#{domain_name_1};Internal;#{impl1.rule.name};#{impl1.rule.df_name};#{impl1.df_name};#{impl1.goal};#{impl1.minimum};#{impl1.current_business_concept_version.name};#{Helpers.shift_zone(impl1.execution_result_info.date)};;;#{impl1.execution_result_info.result};;#{Helpers.shift_zone(impl1.inserted_at)};;field_value;system|system1;\r
+               implementation_key;implementation_type;domain;Executable;rule;Rule Template Label;Implementation Template Label;goal;minimum;business_concepts;last_execution_at;records;errors;result;execution;inserted_at;structure_domains;Info;System;Domain\r
+               #{impl.implementation_key};#{impl.implementation_type};#{domain_name_1};Executable;#{impl.rule.name};#{impl.rule.df_name};#{impl.df_name};#{impl.goal};#{impl.minimum};#{impl.concepts};;;;;;#{Helpers.shift_zone(impl.inserted_at)};;field_value;system|system1;\r
+               #{impl1.implementation_key};#{impl1.implementation_type};#{domain_name_1};Internal;#{impl1.rule.name};#{impl1.rule.df_name};#{impl1.df_name};#{impl1.goal};#{impl1.minimum};#{impl1.concepts};#{Helpers.shift_zone(impl1.execution_result_info.date)};;;#{impl1.execution_result_info.result};;#{Helpers.shift_zone(impl1.inserted_at)};;field_value;system|system1;\r
                """
     end
 
@@ -183,7 +177,7 @@ defmodule TdDq.Implementations.DownloadTest do
 
       impl = %{
         domain_ids: [domain_id_1],
-        current_business_concept_version: %{name: "name"},
+        concepts: ["name"],
         df_content: %{
           system: [
             %{id: 1, name: "system", exernal_id: "exid"},
@@ -211,8 +205,8 @@ defmodule TdDq.Implementations.DownloadTest do
 
       assert csv ==
                """
-               implementation_key;implementation_type;domain;Executable;rule;Rule Template Label;Implementation Template Label;goal;minimum;business_concept;last_execution_at;records;errors;result;execution;inserted_at;structure_domains;Info;System;Domain\r
-               #{impl.implementation_key};#{impl.implementation_type};#{domain_name_1};Executable;;;#{impl.df_name};#{impl.goal};#{impl.minimum};#{impl.current_business_concept_version.name};#{Helpers.shift_zone(impl.execution_result_info.date)};;;#{impl.execution_result_info.result};Under Goal;#{Helpers.shift_zone(impl.inserted_at)};;field_value;system|system1;\r
+               implementation_key;implementation_type;domain;Executable;rule;Rule Template Label;Implementation Template Label;goal;minimum;business_concepts;last_execution_at;records;errors;result;execution;inserted_at;structure_domains;Info;System;Domain\r
+               #{impl.implementation_key};#{impl.implementation_type};#{domain_name_1};Executable;;;#{impl.df_name};#{impl.goal};#{impl.minimum};#{impl.concepts};#{Helpers.shift_zone(impl.execution_result_info.date)};;;#{impl.execution_result_info.result};Under Goal;#{Helpers.shift_zone(impl.inserted_at)};;field_value;system|system1;\r
                """
     end
   end
