@@ -53,7 +53,11 @@ defmodule TdDd.DataStructures do
   end
 
   def list_data_structure_versions(clauses \\ %{}) do
-    clauses
+    criteria_apply_order = [:min_id, :since, :order_by, :limit]
+
+    criteria_apply_order
+    |> Enum.filter(&Map.has_key?(clauses, &1))
+    |> Enum.map(&{&1, Map.get(clauses, &1)})
     |> Enum.reduce(DataStructureVersion, fn
       {:since, since}, q ->
         join_ds_updated_at =
