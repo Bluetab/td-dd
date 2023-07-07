@@ -11,6 +11,11 @@
 - [TD-5593] Add related concept in quality implementations list and implementation download
 - [TD-5808] Configured TdCluster
 
+### Fixed
+
+- [TD-5886] Sort criteria composition for `list_data_structure_versions` to
+  avoid undesired query due to a bad order applying the clauses
+
 ## [5.9.0] 2023-06-20
 
 ### Added
