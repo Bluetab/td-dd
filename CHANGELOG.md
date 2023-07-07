@@ -11,6 +11,10 @@
 - [TD-5593] Add related concept in quality implementations list and implementation download
 - [TD-5808] Configured TdCluster
 
+## Changed
+
+- [TD-5912] `.gitlab-ci.yml` adaptations for develop and main branches
+
 ### Fixed
 
 - [TD-5886] Sort criteria composition for `list_data_structure_versions` to
