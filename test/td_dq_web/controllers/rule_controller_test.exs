@@ -261,6 +261,40 @@ defmodule TdDqWeb.RuleControllerTest do
                |> validate_resp_schema(schema, "RulesResponse")
                |> json_response(:ok)
     end
+
+    @tag authentication: [
+           user_name: "not_an_admin",
+           permissions: [:view_quality_rule, :manage_confidential_business_concepts]
+         ]
+    test "lists all rules of a confidential concept", %{
+      conn: conn,
+      swagger_schema: schema,
+      domain: domain
+    } do
+      business_concept_id = System.unique_integer([:positive])
+
+      CacheHelpers.insert_concept(%{
+        id: business_concept_id,
+        domain_id: domain.id,
+        confidential: true
+      })
+
+      %{id: id1, business_concept_id: business_concept_id} =
+        insert(:rule, business_concept_id: business_concept_id, domain_id: domain.id)
+
+      %{id: id2} = insert(:rule, business_concept_id: business_concept_id, domain_id: domain.id)
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.rule_path(conn, :get_rules_by_concept, business_concept_id))
+               |> validate_resp_schema(schema, "RulesResponse")
+               |> json_response(:ok)
+
+      assert [
+               %{"id" => ^id1, "business_concept_id" => ^business_concept_id},
+               %{"id" => ^id2, "business_concept_id" => ^business_concept_id}
+             ] = Enum.sort_by(data, & &1["id"])
+    end
   end
 
   describe "verify token is required" do
