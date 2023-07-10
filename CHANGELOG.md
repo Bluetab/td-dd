@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- [TD-5878] Fix: change permision check to domain id when a concept is marked as confidential
+
 ## [5.10.0] 2023-07-06
 
 ### Added
