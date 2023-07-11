@@ -39,21 +39,12 @@ defmodule TdDd.DataStructures.Search.Aggregations do
     catalog_view_configs_filters =
       CatalogViewConfigs.list()
       |> Enum.map(fn
-        %{field_type: field_type, field_name: field_name}
-        when field_type in ["metadata", "mutable_metadata"] ->
-          {"#{field_type}.#{field_name}",
+        %{field_type: "metadata", field_name: field_name} ->
+          {"metadata.#{field_name}",
            %{
              terms: %{
-               field: "#{field_type}.#{field_name}.keyword",
+               field: "metadata.#{field_name}.keyword",
                missing: @missing_term_name
-             }
-           }}
-
-        %{field_type: "note", field_name: "midominio" = field_name} ->
-          {"note.#{field_name}",
-           %{
-             terms: %{
-               field: "note.#{field_name}"
              }
            }}
 
