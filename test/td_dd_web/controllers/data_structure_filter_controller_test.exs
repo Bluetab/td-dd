@@ -31,7 +31,7 @@ defmodule TdDdWeb.DataStructureFilterControllerTest do
                |> get(Routes.data_structure_filter_path(conn, :index))
                |> json_response(:ok)
 
-      assert data == %{"foo" => %{"values" => ["bar", "baz"]}}
+      assert %{"foo" => %{"values" => ["bar", "baz"]}} = data
     end
 
     @tag authentication: [user_name: "non_admin_user"]

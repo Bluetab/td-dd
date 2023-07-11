@@ -63,6 +63,34 @@ defmodule TdDdWeb.Schema.StructuresTest do
   }
   """
 
+  @metric_versions_query """
+    query dataStructureVersions($limit: Int!, $since: DateTime, $minId: Int) {
+      dataStructureVersions(limit: $limit, since: $since, minId: $minId) {
+          id
+          description
+          version
+          metadata
+          name
+          dataStructure {
+              id
+              domainId
+              domainIds
+              externalId
+              system {
+                  id
+                  externalId
+              }
+          }
+          insertedAt
+          updatedAt
+          deletedAt
+          class
+          type
+          group
+      }
+  }
+  """
+
   @version_query """
   query DataStructureVersion($dataStructureId: ID!, $version: String!, $note_fields: [String]) {
     dataStructureVersion(dataStructureId: $dataStructureId, version: $version) {
@@ -849,6 +877,59 @@ defmodule TdDdWeb.Schema.StructuresTest do
       string_id = "#{id}"
       assert response["errors"] == nil
       assert %{"dataStructureVersion" => %{"id" => ^string_id}} = data
+    end
+
+    @tag authentication: [role: "service"]
+    test "returns data when queried from metrics connector", %{
+      conn: conn
+    } do
+      dsv1_day = ~U[2019-04-16 00:00:00Z]
+      dsv1_ds_day = ~U[2023-05-22 00:00:00Z]
+      dsv2_day = ~U[2019-06-17 00:00:00Z]
+      dsv2_deleted_day = ~U[2023-04-28 00:00:00Z]
+      dsv2_ds_day = ~U[2022-10-25 00:00:00Z]
+      since = "2022-11-22 00:00:00Z"
+
+      ds1 = insert(:data_structure, inserted_at: dsv1_ds_day, updated_at: dsv1_ds_day)
+      ds2 = insert(:data_structure, inserted_at: dsv2_ds_day, updated_at: dsv2_ds_day)
+
+      dsv1 =
+        insert(:data_structure_version,
+          data_structure_id: ds1.id,
+          version: 0,
+          inserted_at: dsv1_day,
+          updated_at: dsv1_day
+        )
+
+      dsv2 =
+        insert(:data_structure_version,
+          data_structure_id: ds2.id,
+          version: 0,
+          inserted_at: dsv2_day,
+          updated_at: dsv2_day,
+          deleted_at: dsv2_deleted_day
+        )
+
+      string_dsv2_id = to_string(dsv2.id)
+
+      variables = %{limit: 2, since: since, minId: dsv1.id + 1}
+
+      assert %{"data" => data} =
+               response =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @metric_versions_query,
+                 "variables" => variables
+               })
+               |> json_response(:ok)
+
+      assert response["errors"] == nil
+
+      assert %{
+               "dataStructureVersions" => [
+                 %{"id" => ^string_dsv2_id}
+               ]
+             } = data
     end
 
     @tag authentication: [role: "user", permissions: [:view_data_structure]]

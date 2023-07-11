@@ -149,13 +149,16 @@ defmodule TdDd.DataStructures.DataStructureVersion do
               %{alias: alias_name, search_content: content, domain_ids: _domain_ids} =
                 data_structure,
             path: path,
-            tag_names: tags
+            tag_names: tags,
+            metadata: metadata,
+            mutable_metadata: mutable_metadata
           } = dsv
         ) do
       # IMPORTANT: Avoid enriching structs one-by-one in this function.
       # Instead, enrichment should be performed as efficiently as possible on
       # chunked data using `TdDd.DataStructures.enriched_structure_versions/1`.
       name_path = Enum.map(path, & &1["name"])
+      parent_id = List.last(Enum.map(path, &Integer.to_string(&1["data_structure_id"])), "")
 
       data_structure
       |> Map.take([
@@ -172,11 +175,22 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       |> Map.put(:domain, first_domain(data_structure))
       |> Map.put(:field_type, field_type(dsv))
       |> Map.put(:path_sort, path_sort(name_path))
+      |> Map.put(:parent_id, parent_id)
       |> Map.put(:path, name_path)
       |> Map.put(:source_alias, source_alias(dsv))
       |> Map.put(:system, system(data_structure))
       |> Map.put(:with_content, is_map(content) and map_size(content) > 0)
       |> Map.put(:tags, tags)
+      |> Map.put(
+        # Both mutable metadata (version metadata) and non mutable metadata (structure metadata)
+        :metadata,
+        Map.merge(
+          metadata || %{},
+          mutable_metadata || %{}
+        )
+        # clean empty field name
+        |> Map.drop([""])
+      )
       |> Map.merge(
         Map.take(dsv, [
           :_filters,
@@ -186,8 +200,6 @@ defmodule TdDd.DataStructures.DataStructureVersion do
           :deleted_at,
           :description,
           :group,
-          :metadata,
-          :mutable_metadata,
           :name,
           :type,
           :updated_at,

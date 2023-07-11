@@ -1,5 +1,5 @@
 variables:
-  VERSION: "5.9.1" # used for alpha builds
+  VERSION: "5.10.1" # used for alpha builds
   APP_NAME: "td_dd"
   COMPOSE_FILE: "ci/docker-compose.yml"
   COMPOSE_PROJECT_NAME: "${APP_NAME}_${CI_JOB_ID}"
@@ -38,7 +38,7 @@ test:
 publish:
   stage: publish
   only:
-    - master
+    - develop
     - tags
   tags:
     - docker
@@ -50,7 +50,7 @@ publish:
 acceptance:
   stage: acceptance
   only:
-    - master
+    - develop
     - tags
   tags:
     - docker-compose
@@ -67,7 +67,8 @@ acceptance:
 acceptance:branches:
   stage: acceptance
   except:
-    - master
+    - develop
+    - main
     - tags
   tags:
     - docker-compose
@@ -85,7 +86,8 @@ acceptance:branches:
 publish:branches:
   stage: deploy
   except:
-    - master
+    - develop
+    - main
     - tags
   when: manual
   tags:
@@ -100,7 +102,8 @@ deploy:
   tags:
     - kubectl
   only:
-    - master
+    - develop
+    - tags
   dependencies: []
   script:
     - kubectl set image deployment.v1.apps/${K8S_DEPLOYMENT} ${K8S_CONTAINER}=${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION} --record

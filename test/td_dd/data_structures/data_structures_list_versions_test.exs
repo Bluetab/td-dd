@@ -47,7 +47,8 @@ defmodule TdDd.DataStructuresTestListVersions do
           deleted_at: day5
         )
 
-      assert [^dsv3, ^dsv4] = DataStructures.list_data_structure_versions(%{since: day4})
+      assert [^dsv3, ^dsv4] =
+               DataStructures.list_data_structure_versions(%{since: day4, order_by: "id"})
     end
 
     test "data structure updated_at >= since clause" do
@@ -94,42 +95,44 @@ defmodule TdDd.DataStructuresTestListVersions do
         )
 
       assert [^dsv1, ^dsv2, ^dsv3, ^dsv4] =
-               DataStructures.list_data_structure_versions(%{since: day4})
+               DataStructures.list_data_structure_versions(%{since: day4, order_by: "id"})
     end
 
     test "since filter works with other filters" do
-      day1 = ~U[2020-01-01 00:00:00Z]
-      day2 = ~U[2020-01-02 00:00:00Z]
+      dsv1_day = ~U[2019-04-16 00:00:00Z]
+      dsv1_ds_day = ~U[2023-05-22 00:00:00Z]
+      dsv2_day = ~U[2019-06-17 00:00:00Z]
+      dsv2_deleted_day = ~U[2023-04-28 00:00:00Z]
+      dsv2_ds_day = ~U[2022-10-25 00:00:00Z]
+      since = ~U[2022-11-22 00:00:00Z]
 
-      ds = insert(:data_structure, inserted_at: day2, updated_at: day2)
+      ds1 = insert(:data_structure, inserted_at: dsv1_ds_day, updated_at: dsv1_ds_day)
+      ds2 = insert(:data_structure, inserted_at: dsv2_ds_day, updated_at: dsv2_ds_day)
 
-      _dsv1 =
+      dsv1 =
         insert(:data_structure_version,
-          data_structure_id: ds.id,
+          data_structure_id: ds1.id,
           version: 0,
-          inserted_at: day2,
-          updated_at: day2
+          inserted_at: dsv1_day,
+          updated_at: dsv1_day
         )
 
       dsv2 =
         insert(:data_structure_version,
-          data_structure_id: ds.id,
-          version: 1,
-          inserted_at: day2,
-          updated_at: day2
+          data_structure_id: ds2.id,
+          version: 0,
+          inserted_at: dsv2_day,
+          updated_at: dsv2_day,
+          deleted_at: dsv2_deleted_day
         )
 
-      dsv3 =
-        insert(:data_structure_version,
-          data_structure_id: ds.id,
-          version: 2,
-          inserted_at: day2,
-          updated_at: day2
-        )
-
-      assert [^dsv2, ^dsv3] =
-               DataStructures.list_data_structure_versions(%{since: day1, min_id: dsv2.id})
-               |> Enum.sort_by(& &1.id)
+      assert [^dsv2] =
+               DataStructures.list_data_structure_versions(%{
+                 since: since,
+                 min_id: dsv1.id + 1,
+                 limit: 3,
+                 order_by: "id"
+               })
     end
   end
 end

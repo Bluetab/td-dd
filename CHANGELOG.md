@@ -1,8 +1,28 @@
 # Changelog
 
+## [5.10.0] 2023-07-06
+
+### Added
+
+- [TD-4986] Configurable data catalog bucket views based on note and metadata
+  fields
+- [TD-5787] Add Elastic Search Boost option in templates
+- [TD-5840] Fix color of result in implementations search
+- [TD-5593] Add related concept in quality implementations list and implementation download
+- [TD-5808] Configured TdCluster
+
+## Changed
+
+- [TD-5912] `.gitlab-ci.yml` adaptations for develop and main branches
+
+### Fixed
+
+- [TD-5886] Sort criteria composition for `list_data_structure_versions` to
+  avoid undesired query due to a bad order applying the clauses
+
 ## [5.9.0] 2023-06-20
 
-## Added
+### Added
 
 - [TD-5770] Add database TSL configuration
 - [TD-4260] Rule content in implementation aggregations
@@ -10,11 +30,11 @@
 
 ## [5.8.0] 2023-06-05
 
-## Added
+### Added
 
 - [TD-5752] Add force update control dates when update implementations by web or csv bulk update
 
-## Fixed
+### Fixed
 
 - [TD-5810] Fix alias in data_fields v2
 

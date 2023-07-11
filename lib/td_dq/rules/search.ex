@@ -35,7 +35,15 @@ defmodule TdDq.Rules.Search do
     |> do_search(:implementations, params)
   end
 
-  defp build_query(%Claims{} = claims, params, :rules = index) do
+  defp build_query(%Claims{} = claims, %{"must" => _} = params, index) do
+    build_query(%Claims{} = claims, params, index, filter_type: :must)
+  end
+
+  defp build_query(%Claims{} = claims, params, index) do
+    build_query(%Claims{} = claims, params, index, filter_type: :filters)
+  end
+
+  defp build_query(%Claims{} = claims, params, :rules = index, _opts) do
     aggs = aggregations(index)
 
     claims
@@ -43,15 +51,19 @@ defmodule TdDq.Rules.Search do
     |> Query.build_query(params, aggs)
   end
 
-  defp build_query(%Claims{} = claims, params, :implementations = index) do
+  defp build_query(%Claims{} = claims, params, :implementations = index, opts) do
     aggs = aggregations(index)
+    filter_or_must = Atom.to_string(opts[:filter_type])
 
     {executable, params} =
       params
       |> put_default_filters(claims)
-      |> Map.get_and_update("filters", fn
-        nil -> :pop
-        filters -> Map.pop(filters, "executable")
+      |> Map.get_and_update(filter_or_must, fn
+        nil ->
+          :pop
+
+        filters ->
+          Map.pop(filters, "executable")
       end)
 
     claims
@@ -121,6 +133,11 @@ defmodule TdDq.Rules.Search do
 
   defp aggregations(:implementations) do
     TdDq.Implementations.Search.Aggregations.aggregations()
+  end
+
+  defp put_default_filters(%{"must" => _} = params, %{role: "service"}) do
+    defaults = %{"status" => ["published"]}
+    Map.update(params, "must", defaults, &Map.merge(defaults, &1))
   end
 
   defp put_default_filters(%{} = params, %{role: "service"}) do

@@ -34,6 +34,21 @@ defmodule TdDqWeb.RuleSearchControllerTest do
                |> json_response(:ok)
     end
 
+    @tag authentication: [role: "admin"]
+    test "admin can search rules with must param", %{conn: conn, rule: rule} do
+      ElasticsearchMock
+      |> expect(:request, fn
+        _, :post, "/rules/_search", %{query: query, size: 20}, _ ->
+          assert query == %{bool: %{must: %{match_all: %{}}}}
+          SearchHelpers.hits_response([rule])
+      end)
+
+      assert %{"data" => [_]} =
+               conn
+               |> post(Routes.rule_search_path(conn, :create), %{"must" => %{}})
+               |> json_response(:ok)
+    end
+
     @tag authentication: [role: "user"]
     test "user with no permissions cannot search rules", %{conn: conn} do
       ElasticsearchMock
@@ -49,6 +64,21 @@ defmodule TdDqWeb.RuleSearchControllerTest do
                |> json_response(:ok)
     end
 
+    @tag authentication: [role: "user"]
+    test "user with no permissions cannot search rules with must param", %{conn: conn} do
+      ElasticsearchMock
+      |> expect(:request, fn
+        _, :post, "/rules/_search", %{query: query, size: 20}, _ ->
+          assert query == %{bool: %{must: %{match_none: %{}}}}
+          SearchHelpers.hits_response([])
+      end)
+
+      assert %{"data" => []} =
+               conn
+               |> post(Routes.rule_search_path(conn, :create), %{"must" => %{}})
+               |> json_response(:ok)
+    end
+
     @tag authentication: [role: "user", permissions: [:view_quality_rule]]
     test "user with permissions can search rules", %{conn: conn, rule: rule} do
       ElasticsearchMock
@@ -56,8 +86,7 @@ defmodule TdDqWeb.RuleSearchControllerTest do
         _, :post, "/rules/_search", %{query: query, size: 20}, _ ->
           assert %{
                    bool: %{
-                     filter: [_not_confidential, %{term: %{"domain_ids" => _}}],
-                     must_not: _must_not
+                     filter: [_not_confidential, %{term: %{"domain_ids" => _}}]
                    }
                  } = query
 
@@ -67,6 +96,26 @@ defmodule TdDqWeb.RuleSearchControllerTest do
       assert %{"data" => [_]} =
                conn
                |> post(Routes.rule_search_path(conn, :create))
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "user", permissions: [:view_quality_rule]]
+    test "user with permissions can search rules with must param", %{conn: conn, rule: rule} do
+      ElasticsearchMock
+      |> expect(:request, fn
+        _, :post, "/rules/_search", %{query: query, size: 20}, _ ->
+          assert %{
+                   bool: %{
+                     must: [_not_confidential, %{term: %{"domain_ids" => _}}]
+                   }
+                 } = query
+
+          SearchHelpers.hits_response([rule])
+      end)
+
+      assert %{"data" => [_]} =
+               conn
+               |> post(Routes.rule_search_path(conn, :create), %{"must" => %{}})
                |> json_response(:ok)
     end
 

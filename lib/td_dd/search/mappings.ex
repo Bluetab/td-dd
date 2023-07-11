@@ -20,6 +20,8 @@ defmodule TdDd.Search.Mappings do
 
   def get_mappings do
     content_mappings = %{type: "object", properties: get_dynamic_mappings("dd")}
+    Application.get_all_env(:td_dd)
+    enabled_mappings = Application.get_env(:td_dd, __MODULE__)[:enabled_mappings]
 
     properties = %{
       id: %{type: "long", index: false},
@@ -49,13 +51,19 @@ defmodule TdDd.Search.Mappings do
       external_id: %{type: "keyword", index: false},
       domain_ids: %{type: "long"},
       deleted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-      metadata: %{enabled: false},
-      mutable_metadata: %{enabled: false},
+      # Both mutable metadata (version metadata) and non mutable metadata (structure metadata)
+      metadata: %{
+        enabled: enabled_mappings[:metadata],
+        type: "object",
+        dynamic: true
+      },
+      # mutable_metadata: %{enabled: true, type: "object", dynamic: true},
       linked_concepts: %{type: "boolean"},
       inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       path: %{type: "keyword", fields: @text},
       path_sort: %{type: "keyword", normalizer: "sortable"},
+      parent_id: %{type: "text", analyzer: "keyword"},
       note: content_mappings,
       class: %{type: "text", fields: %{raw: %{type: "keyword", null_value: ""}}},
       classes: %{enabled: true},
@@ -114,7 +122,11 @@ defmodule TdDd.Search.Mappings do
   defp get_mappings(%{content: content}) do
     content
     |> Format.flatten_content_fields()
-    |> Enum.map(&field_mapping/1)
+    |> Enum.map(fn field ->
+      field
+      |> field_mapping
+      |> maybe_boost(field)
+    end)
   end
 
   defp field_mapping(%{"name" => name, "type" => "table"}) do
@@ -160,6 +172,15 @@ defmodule TdDd.Search.Mappings do
   defp field_mapping(%{"name" => name}) do
     {name, mapping_type("string")}
   end
+
+  defp maybe_boost(field_tuple, %{"boost" => boost}) when boost in ["", "1"], do: field_tuple
+
+  defp maybe_boost({name, field_value}, %{"boost" => boost}) do
+    {boost_float, _} = Float.parse(boost)
+    {name, Map.put(field_value, :boost, boost_float)}
+  end
+
+  defp maybe_boost(field_tuple, _), do: field_tuple
 
   defp mapping_type(values) when is_map(values) do
     %{type: "text", fields: @raw}

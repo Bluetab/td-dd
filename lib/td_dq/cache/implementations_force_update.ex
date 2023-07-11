@@ -9,7 +9,7 @@ defmodule TdDq.Cache.ImplementationsForceUpdate do
   def migrate do
     # Update cache implementations
     # Add descriptions
-    if acquire_lock?("TD-4922") do
+    if acquire_lock?("TD-4922") || acquire_lock?("TD-5840") do
       ImplementationLoader.refresh(force: true)
     end
   end

@@ -101,15 +101,18 @@ defmodule TdDq.Search.Mappings do
           }
         }
       },
+      concepts: %{type: "text", fields: @raw_sort},
       updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       implementation_key: %{type: "text", boost: 2.0, fields: @raw},
       implementation_type: %{type: "text", fields: @raw_sort},
       execution_result_info: %{
         properties: %{
-          result: %{type: "float"},
+          result: %{type: "text"},
           errors: %{type: "long"},
           records: %{type: "long"},
+          minimum: %{type: "text"},
+          goal: %{type: "text"},
           details: %{enabled: false},
           date: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
           result_text: %{
@@ -185,13 +188,23 @@ defmodule TdDq.Search.Mappings do
     content
     |> Format.flatten_content_fields()
     |> Enum.filter(&(Map.get(&1, "type") == type))
-    |> Enum.map(&field_mapping/1)
+    |> Enum.map(fn field ->
+      field
+      |> field_mapping
+      |> maybe_boost(field)
+      |> maybe_disable_search(field)
+    end)
   end
 
   defp get_mappings(%{content: content}, _scope, _type) do
     content
     |> Format.flatten_content_fields()
-    |> Enum.map(&field_mapping/1)
+    |> Enum.map(fn field ->
+      field
+      |> field_mapping
+      |> maybe_boost(field)
+      |> maybe_disable_search(field)
+    end)
   end
 
   defp field_mapping(%{"name" => name, "type" => "table"}) do
@@ -241,6 +254,21 @@ defmodule TdDq.Search.Mappings do
   defp field_mapping(%{"name" => name}) do
     {name, mapping_type("string")}
   end
+
+  defp maybe_boost(field_tuple, %{"boost" => boost}) when boost in ["", "1"], do: field_tuple
+
+  defp maybe_boost({name, field_value}, %{"boost" => boost}) do
+    {boost_float, _} = Float.parse(boost)
+    {name, Map.put(field_value, :boost, boost_float)}
+  end
+
+  defp maybe_boost(field_tuple, _), do: field_tuple
+
+  defp maybe_disable_search({name, field_value}, %{"searchable" => false}) do
+    {name, Map.put(field_value, :index, false)}
+  end
+
+  defp maybe_disable_search(field_tuple, _), do: field_tuple
 
   defp mapping_type(values) when is_map(values) do
     %{type: "text", fields: @raw}

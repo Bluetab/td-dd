@@ -10,6 +10,7 @@ defmodule TdDd.Factory do
   alias TdCx.Events.Event
   alias TdCx.Jobs.Job
   alias TdCx.Sources.Source
+  alias TdDd.DataStructures.CatalogViewConfig
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureLink
   alias TdDd.DataStructures.DataStructureRelation
@@ -360,11 +361,15 @@ defmodule TdDd.Factory do
     }
   end
 
-  def concept_factory do
+  def concept_factory(attrs) do
+    attrs = default_assoc(attrs, :domain_id, :domain)
+
     %{
       id: System.unique_integer([:positive]),
-      name: sequence("concept_name")
+      name: sequence("concept_name"),
+      confidential: false
     }
+    |> merge_attributes(attrs)
   end
 
   def profile_execution_factory do
@@ -781,6 +786,14 @@ defmodule TdDd.Factory do
     %TdDd.Access{
       source_user_name: sequence("access_source_user_name"),
       details: %{}
+    }
+    |> merge_attributes(attrs)
+  end
+
+  def catalog_view_config_factory(attrs) do
+    %CatalogViewConfig{
+      field_type: "metadata",
+      field_name: sequence("field_name")
     }
     |> merge_attributes(attrs)
   end

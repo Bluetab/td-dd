@@ -9,6 +9,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   alias Path
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.Search.Aggregations
   alias TdDd.DataStructures.StructureNotes
   alias TdDd.Search.MockIndexWorker
 
@@ -163,6 +164,28 @@ defmodule TdDdWeb.DataStructureControllerTest do
     end
 
     @tag authentication: [role: "admin"]
+    test "search without query includes match_all clause with must in params", %{conn: conn} do
+      %{data_structure_id: id} = dsv = insert(:data_structure_version)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
+        assert query == %{
+                 bool: %{
+                   must: %{match_all: %{}},
+                   must_not: %{exists: %{field: "deleted_at"}}
+                 }
+               }
+
+        SearchHelpers.hits_response([dsv])
+      end)
+
+      assert %{"data" => [%{"id" => ^id}]} =
+               conn
+               |> post(data_structure_path(conn, :search), %{"must" => %{}})
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
     test "search with query includes multi_match clause", %{conn: conn} do
       %{data_structure_id: id} = dsv = insert(:data_structure_version)
 
@@ -175,6 +198,85 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert %{"data" => [%{"id" => ^id}]} =
                conn
                |> post(data_structure_path(conn, :search), %{"query" => "foo"})
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "get_bucket_structures includes filters and without", %{conn: conn} do
+      %{data_structure_id: id} = dsv = insert(:data_structure_version)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
+        assert %{
+                 bool: %{
+                   filter: [
+                     %{term: %{"parent_id" => ""}},
+                     %{term: %{"metadata.region" => "eu-west-1"}}
+                   ],
+                   must_not: %{exists: %{field: "deleted_at"}}
+                 }
+               } = query
+
+        SearchHelpers.hits_response([dsv])
+      end)
+
+      assert %{"data" => [%{"id" => ^id}]} =
+               conn
+               |> post(
+                 data_structure_path(conn, :get_bucket_structures),
+                 %{
+                   "metadata.region" => "eu-west-1",
+                   "parent_id" => ""
+                 }
+               )
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "get_bucket_structures transforms special Aggregations.@missing_term_name filter to without (must not in query)",
+         %{conn: conn} do
+      %{data_structure_id: id} = dsv = insert(:data_structure_version)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
+        assert %{
+                 bool: %{
+                   filter: %{term: %{"parent_id" => ""}},
+                   must_not: [
+                     %{exists: %{field: "deleted_at"}},
+                     %{exists: %{field: "metadata.region"}}
+                   ]
+                 }
+               } = query
+
+        SearchHelpers.hits_response([dsv])
+      end)
+
+      assert %{"data" => [%{"id" => ^id}]} =
+               conn
+               |> post(
+                 data_structure_path(conn, :get_bucket_structures),
+                 %{
+                   "metadata.region" => Aggregations.missing_term_name(),
+                   "parent_id" => ""
+                 }
+               )
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "search with query includes multi_match clause with must params", %{conn: conn} do
+      %{data_structure_id: id} = dsv = insert(:data_structure_version)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
+        assert %{bool: %{must: %{multi_match: _}}} = query
+        SearchHelpers.hits_response([dsv])
+      end)
+
+      assert %{"data" => [%{"id" => ^id}]} =
+               conn
+               |> post(data_structure_path(conn, :search), %{"must" => %{}, "query" => "foo"})
                |> json_response(:ok)
     end
 
@@ -193,7 +295,30 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert %{
                "bulkUpdate" => %{"href" => href, "method" => "POST"},
                "bulkUpload" => _,
-               "autoPublish" => _
+               "autoPublish" => _,
+               "bulkUploadDomains" => _
+             } = actions
+
+      assert href == "/api/data_structures/bulk_update"
+    end
+
+    @tag authentication: [role: "admin"]
+    test "includes actions for admin role with must params", %{conn: conn} do
+      ElasticsearchMock
+      |> expect(:request, fn _, _, _, _, _ -> SearchHelpers.hits_response([], 1) end)
+
+      params = %{"must" => %{"type.raw" => ["foo"]}}
+
+      assert %{"_actions" => actions} =
+               conn
+               |> post(data_structure_path(conn, :search), params)
+               |> json_response(:ok)
+
+      assert %{
+               "bulkUpdate" => %{"href" => href, "method" => "POST"},
+               "bulkUpload" => _,
+               "autoPublish" => _,
+               "bulkUploadDomains" => _
              } = actions
 
       assert href == "/api/data_structures/bulk_update"
@@ -220,6 +345,27 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert href == "/api/data_structures/bulk_update_template_content"
     end
 
+    @tag authentication: [
+           permissions: ["create_structure_note", "publish_structure_note_from_draft"]
+         ]
+    test "includes actions for a user with permissions with must params", %{conn: conn} do
+      ElasticsearchMock
+      |> expect(:request, fn _, _, _, _, _ -> SearchHelpers.hits_response([]) end)
+
+      assert %{"_actions" => actions} =
+               conn
+               |> post(data_structure_path(conn, :search), %{"must" => %{}})
+               |> json_response(:ok)
+
+      assert %{
+               "bulkUpload" => %{"href" => href, "method" => "POST"},
+               "autoPublish" => %{"href" => href, "method" => "POST"}
+             } = actions
+
+      refute Map.has_key?(actions, "bulkUpdate")
+      assert href == "/api/data_structures/bulk_update_template_content"
+    end
+
     @tag authentication: [role: "user", permissions: ["view_data_structure"]]
     test "does not include actions for a user without permissions", %{conn: conn} do
       ElasticsearchMock
@@ -229,6 +375,20 @@ defmodule TdDdWeb.DataStructureControllerTest do
                response =
                conn
                |> post(data_structure_path(conn, :search), %{})
+               |> json_response(:ok)
+
+      refute Map.has_key?(response, "_actions")
+    end
+
+    @tag authentication: [role: "user", permissions: ["view_data_structure"]]
+    test "does not include actions for a user without permissions with must params", %{conn: conn} do
+      ElasticsearchMock
+      |> expect(:request, fn _, _, _, _, _ -> SearchHelpers.hits_response([]) end)
+
+      assert %{} =
+               response =
+               conn
+               |> post(data_structure_path(conn, :search), %{"must" => %{}})
                |> json_response(:ok)
 
       refute Map.has_key?(response, "_actions")
@@ -269,6 +429,44 @@ defmodule TdDdWeb.DataStructureControllerTest do
     end
 
     @tag authentication: [role: "admin"]
+    test "search with grant_requests flag will include users grants and grant_requests with must params",
+         %{
+           conn: conn,
+           claims: %{user_id: user_id}
+         } do
+      %{data_structure_id: id} = dsv = insert(:data_structure_version)
+
+      %{id: request_id} =
+        insert(:grant_request,
+          group: build(:grant_request_group, user_id: user_id),
+          data_structure_id: id
+        )
+
+      %{id: grant_id} = insert(:grant, user_id: user_id, end_date: nil, data_structure_id: id)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: _query}, _ ->
+        SearchHelpers.hits_response([dsv])
+      end)
+
+      assert %{
+               "data" => [
+                 %{
+                   "id" => ^id,
+                   "my_grants" => [%{"id" => ^grant_id}],
+                   "my_grant_request" => %{"id" => ^request_id}
+                 }
+               ]
+             } =
+               conn
+               |> post(data_structure_path(conn, :search), %{
+                 "must" => %{},
+                 "my_grant_requests" => true
+               })
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
     test "search without grant_requests flag will not include users grants and grant_requests", %{
       conn: conn,
       claims: %{user_id: user_id}
@@ -295,6 +493,35 @@ defmodule TdDdWeb.DataStructureControllerTest do
       refute "my_grants" in Map.keys(data_structure)
       refute "my_grant_request" in Map.keys(data_structure)
     end
+
+    @tag authentication: [role: "admin"]
+    test "search without grant_requests flag will not include users grants and grant_requests with must params",
+         %{
+           conn: conn,
+           claims: %{user_id: user_id}
+         } do
+      %{data_structure_id: id} = dsv = insert(:data_structure_version)
+
+      insert(:grant_request,
+        group: build(:grant_request_group, user_id: user_id),
+        data_structure_id: id
+      )
+
+      insert(:grant, user_id: user_id, end_date: nil, data_structure_id: id)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: _query}, _ ->
+        SearchHelpers.hits_response([dsv])
+      end)
+
+      assert %{"data" => [%{"id" => ^id} = data_structure]} =
+               conn
+               |> post(data_structure_path(conn, :search), %{"must" => %{}})
+               |> json_response(:ok)
+
+      refute "my_grants" in Map.keys(data_structure)
+      refute "my_grant_request" in Map.keys(data_structure)
+    end
   end
 
   describe "search with scroll" do
@@ -311,6 +538,27 @@ defmodule TdDdWeb.DataStructureControllerTest do
                conn
                |> post(data_structure_path(conn, :search), %{
                  "filters" => %{"all" => true},
+                 "size" => 5,
+                 "scroll" => "1m"
+               })
+               |> json_response(:ok)
+
+      assert length(data) == 5
+    end
+
+    @tag authentication: [role: "admin"]
+    test "includes scroll_id in response with must params", %{conn: conn} do
+      dsvs = Enum.map(1..5, fn _ -> insert(:data_structure_version) end)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", _, [params: %{"scroll" => "1m"}] ->
+        SearchHelpers.scroll_response(dsvs, 7)
+      end)
+
+      assert %{"data" => data, "scroll_id" => _scroll_id} =
+               conn
+               |> post(data_structure_path(conn, :search), %{
+                 "must" => %{"all" => true},
                  "size" => 5,
                  "scroll" => "1m"
                })

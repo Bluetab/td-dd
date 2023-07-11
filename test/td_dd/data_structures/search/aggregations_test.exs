@@ -3,6 +3,8 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
 
   alias TdDd.DataStructures.Search.Aggregations
 
+  @missing_term_name Aggregations.missing_term_name()
+
   @static_fields [
     "class.raw",
     "confidential.raw",
@@ -73,12 +75,28 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
       assert_maps_equal(
         aggs,
         %{
-          "metadata.bar" => %{terms: %{field: "_filters.bar"}},
-          "metadata.baz" => %{terms: %{field: "_filters.baz"}},
-          "metadata.foo" => %{terms: %{field: "_filters.foo"}}
+          "metadata.bar" => %{terms: %{field: "_filters.bar", missing: "_missing"}},
+          "metadata.baz" => %{terms: %{field: "_filters.baz", missing: "_missing"}},
+          "metadata.foo" => %{terms: %{field: "_filters.foo", missing: "_missing"}}
         },
         ["metadata.foo", "metadata.bar", "metadata.baz"]
       )
+    end
+
+    test "includes custom catalog view configs field aggregations" do
+      insert(:catalog_view_config, field_type: "metadata", field_name: "database")
+      insert(:catalog_view_config, field_type: "mutable_metadata", field_name: "command")
+      insert(:catalog_view_config, field_type: "note", field_name: "layer")
+
+      %{
+        "metadata.database" => %{
+          terms: %{field: "metadata.database.keyword", missing: @missing_term_name}
+        },
+        "mutable_metadata.command" => %{
+          terms: %{field: "mutable_metadata.command.keyword", missing: @missing_term_name}
+        },
+        "note.layer" => %{terms: %{field: "note.layer.raw", missing: @missing_term_name}}
+      } = Aggregations.aggregations()
     end
   end
 end

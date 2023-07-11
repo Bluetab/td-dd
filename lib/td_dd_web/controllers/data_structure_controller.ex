@@ -183,6 +183,18 @@ defmodule TdDdWeb.DataStructureController do
     |> render("index.json", data_structures: data_structures)
   end
 
+  def get_bucket_structures(conn, params) do
+    claims = conn.assigns[:current_resource]
+    permission = conn.assigns[:search_permission]
+
+    %{results: data_structures, total: total} =
+      Search.bucket_structures(claims, permission, params)
+
+    conn
+    |> put_resp_header("x-total-count", "#{total}")
+    |> render("index.json", data_structures: data_structures)
+  end
+
   swagger_path :bulk_update do
     description("Bulk Update of extra info structures")
     produces("application/json")
@@ -580,9 +592,22 @@ defmodule TdDdWeb.DataStructureController do
 
   defp maybe_load_my_grant_requests(search_results, _, _), do: search_results
 
+  defp deleted_structures(%{"must" => %{"all" => true} = filters} = search_params) do
+    must = Map.delete(filters, "all")
+    Map.put(search_params, "must", must)
+  end
+
   defp deleted_structures(%{"filters" => %{"all" => true} = filters} = search_params) do
     filters = Map.delete(filters, "all")
     Map.put(search_params, "filters", filters)
+  end
+
+  defp deleted_structures(%{"must" => _} = search_params) do
+    must = Map.delete(Map.get(search_params, "must", %{}), "all")
+
+    search_params
+    |> Map.put("must", must)
+    |> Map.put("without", "deleted_at")
   end
 
   defp deleted_structures(search_params) do
@@ -630,6 +655,10 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   defp bulk_actions(%{"filters" => %{"type.raw" => [_]}} = _params, total) when total > 0 do
+    [:bulk_upload, :auto_publish, :bulk_update, :bulk_upload_domains]
+  end
+
+  defp bulk_actions(%{"must" => %{"type.raw" => [_]}} = _params, total) when total > 0 do
     [:bulk_upload, :auto_publish, :bulk_update, :bulk_upload_domains]
   end
 

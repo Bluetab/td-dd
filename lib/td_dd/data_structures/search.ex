@@ -74,6 +74,23 @@ defmodule TdDd.DataStructures.Search do
     |> do_scroll(ttl, limit, acc ++ results)
   end
 
+  def bucket_structures(claims, permission, params) do
+    initial_without = ["deleted_at"]
+
+    {filters, without} =
+      params
+      |> Enum.find(fn {_key, val} -> val == Aggregations.missing_term_name() end)
+      |> Kernel.then(fn
+        {key, _val} -> {Map.drop(params, [key]), ["#{key}" | initial_without]}
+        nil -> {params, initial_without}
+      end)
+
+    %{}
+    |> Map.put("filters", filters)
+    |> Map.put("without", without)
+    |> search_data_structures(claims, permission, 0, 1_000)
+  end
+
   def search_data_structures(params, claims, permission, page \\ 0, size \\ 50)
 
   def search_data_structures(params, %Claims{} = claims, permission, page, size) do

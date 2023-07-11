@@ -38,7 +38,8 @@ config :td_dd, TdDd.Search.Cluster,
     "index.indexing.slowlog.threshold.index.debug" => "2s",
     "index.indexing.slowlog.threshold.index.trace" => "500ms",
     "index.indexing.slowlog.level" => "info",
-    "index.indexing.slowlog.source" => "1000"
+    "index.indexing.slowlog.source" => "1000",
+    "index.mapping.total_fields.limit" => "3000"
   },
   indexes: %{
     grants: %{

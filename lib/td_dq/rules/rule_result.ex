@@ -32,6 +32,8 @@ defmodule TdDq.Rules.RuleResult do
     field(:row_number, :integer, virtual: true)
     field(:result_type, :string)
     field(:details, :map, default: %{})
+    field(:minimum, :float, virtual: true)
+    field(:goal, :float, virtual: true)
 
     belongs_to(:implementation, Implementation)
     belongs_to(:rule, Rule)

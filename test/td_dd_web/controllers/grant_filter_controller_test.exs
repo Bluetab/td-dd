@@ -38,7 +38,7 @@ defmodule TdDdWeb.GrantFilterControllerTest do
                |> post(Routes.grant_filter_path(conn, :search, %{}))
                |> json_response(:ok)
 
-      assert data == %{"data_structure_version.name.raw" => %{"values" => ["foo", "baz"]}}
+      assert %{"data_structure_version.name.raw" => %{"values" => ["foo", "baz"]}} = data
     end
 
     @tag authentication: [user_name: "non_admin_user", permissions: ["view_grants"]]
@@ -149,7 +149,7 @@ defmodule TdDdWeb.GrantFilterControllerTest do
                  |> post(Routes.grant_filter_path(conn, :search_mine, %{}))
                  |> json_response(:ok)
 
-        assert data == %{"data_structure_version.name.raw" => %{"values" => ["foo", "baz"]}}
+        assert %{"data_structure_version.name.raw" => %{"values" => ["foo", "baz"]}} = data
       end
     end
   end

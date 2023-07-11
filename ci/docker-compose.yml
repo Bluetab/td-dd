@@ -45,7 +45,7 @@ services:
       start_period: 10s
 
   vault:
-    image: vault
+    image: hashicorp/vault
     environment:
       - VAULT_DEV_ROOT_TOKEN_ID=vault_secret_token1234
 
