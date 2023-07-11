@@ -2,7 +2,14 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-5907] Download Implementation CSV Execution Details for Non-Admin Users
+
+### Fixed
+
 - [TD-5878] Fix: change permision check to domain id when a concept is marked as confidential
+
 
 ## [5.10.0] 2023-07-06
 
