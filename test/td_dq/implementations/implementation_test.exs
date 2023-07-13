@@ -430,6 +430,68 @@ defmodule TdDq.Implementations.ImplementationTest do
              } = Document.encode(rule_implementation)
     end
 
+    test "encoded implementation includes linked structures" do
+      %{id: domain_1_id} = CacheHelpers.insert_domain()
+      %{id: domain_2_id} = CacheHelpers.insert_domain()
+
+      %{id: ds_1_id, external_id: ds_1_external_id} =
+        insert(:data_structure, domain_ids: [domain_1_id, domain_2_id])
+
+      %{name: dsv_1_name, path: dsv_1_path, type: dsv_1_type} =
+        insert(:data_structure_version, data_structure_id: ds_1_id)
+
+      %{id: ds_2_id, external_id: ds_2_external_id} =
+        insert(:data_structure, domain_ids: [domain_1_id, domain_2_id])
+
+      %{name: dsv_2_name, path: dsv_2_path, type: dsv_2_type} =
+        insert(:data_structure_version, data_structure_id: ds_2_id)
+
+      %{id: implementation_id} =
+        implementation =
+        insert(:implementation) |> Repo.preload([:data_structures, :implementation_ref_struct])
+
+      insert(
+        :implementation_structure,
+        data_structure_id: ds_1_id,
+        implementation_id: implementation_id,
+        type: :dataset
+      )
+
+      insert(
+        :implementation_structure,
+        data_structure_id: ds_2_id,
+        implementation_id: implementation_id,
+        type: :validation
+      )
+
+      assert %{
+               structure_links: [
+                 %{
+                   link_type: :dataset,
+                   structure: %{
+                     domain_ids: [^domain_1_id, ^domain_2_id],
+                     external_id: ^ds_1_external_id,
+                     id: ^ds_1_id,
+                     name: ^dsv_1_name,
+                     path: ^dsv_1_path,
+                     type: ^dsv_1_type
+                   }
+                 },
+                 %{
+                   link_type: :validation,
+                   structure: %{
+                     domain_ids: [^domain_1_id, ^domain_2_id],
+                     external_id: ^ds_2_external_id,
+                     id: ^ds_2_id,
+                     name: ^dsv_2_name,
+                     path: ^dsv_2_path,
+                     type: ^dsv_2_type
+                   }
+                 }
+               ]
+             } = Document.encode(implementation)
+    end
+
     test "encoded implementation includes populations" do
       rule = insert(:rule)
 

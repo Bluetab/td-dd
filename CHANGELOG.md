@@ -4,6 +4,7 @@
 
 ### Added
 
+- [TD-5829] Add implementations linked structures in ElasticSearch
 - [TD-5907] Download Implementation CSV Execution Details for Non-Admin Users
 
 ### Fixed
