@@ -58,11 +58,12 @@ defmodule TdDq.Implementations.DownloadTest do
       assert csv == ""
     end
 
-    test "returns csv content" do
+    test "returns csv content with domain name from template" do
       %{id: domain_id_1, name: domain_name_1} =
-        CacheHelpers.insert_domain(external_id: "domain1", name: "imp_domain_1")
+        CacheHelpers.insert_domain(external_id: "domain1", name: "domain_name_1")
 
-      %{id: domain_id_2} = CacheHelpers.insert_domain(external_id: "domain2")
+      %{id: domain_id_2} =
+        CacheHelpers.insert_domain(external_id: "domain2", name: "domain_name_2")
 
       impl = %{
         implementation_key: "key1",
@@ -100,7 +101,7 @@ defmodule TdDq.Implementations.DownloadTest do
       assert csv ==
                """
                implementation_key;implementation_type;domain;Executable;rule;Rule Template Label;Implementation Template Label;goal;minimum;business_concepts;last_execution_at;records;errors;result;execution;inserted_at;structure_domains;Info;System;Domain\r
-               #{impl.implementation_key};#{impl.implementation_type};#{domain_name_1};Executable;#{impl.rule.name};#{impl.rule.df_name};#{impl.df_name};#{impl.goal};#{impl.minimum};#{impl.concepts};#{Helpers.shift_zone(impl.execution_result_info.date)};;;#{impl.execution_result_info.result};Under Goal;#{Helpers.shift_zone(impl.inserted_at)};#{domain_name_1};field_value;system|system1;domain1|domain2\r
+               #{impl.implementation_key};#{impl.implementation_type};#{domain_name_1};Executable;#{impl.rule.name};#{impl.rule.df_name};#{impl.df_name};#{impl.goal};#{impl.minimum};#{impl.concepts};#{Helpers.shift_zone(impl.execution_result_info.date)};;;#{impl.execution_result_info.result};Under Goal;#{Helpers.shift_zone(impl.inserted_at)};#{domain_name_1};field_value;system|system1;domain_name_1|domain_name_2\r
                """
     end
 
