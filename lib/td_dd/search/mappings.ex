@@ -182,9 +182,5 @@ defmodule TdDd.Search.Mappings do
 
   defp maybe_boost(field_tuple, _), do: field_tuple
 
-  defp mapping_type(values) when is_map(values) do
-    %{type: "text", fields: @raw}
-  end
-
-  defp mapping_type(_default), do: %{type: "text"}
+  defp mapping_type(_default), do: %{type: "text", fields: @raw}
 end

@@ -1,6 +1,12 @@
 # Changelog
 
-## [Unreleased]
+## [5.10.1] 2023-07-11
+
+### Fixed
+
+- [TD-4986] Note aggregations
+
+## [5.10.0] 2023-07-06
 
 ### Added
 

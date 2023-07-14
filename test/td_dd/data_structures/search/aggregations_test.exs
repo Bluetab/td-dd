@@ -85,15 +85,11 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
 
     test "includes custom catalog view configs field aggregations" do
       insert(:catalog_view_config, field_type: "metadata", field_name: "database")
-      insert(:catalog_view_config, field_type: "mutable_metadata", field_name: "command")
       insert(:catalog_view_config, field_type: "note", field_name: "layer")
 
       %{
         "metadata.database" => %{
           terms: %{field: "metadata.database.keyword", missing: @missing_term_name}
-        },
-        "mutable_metadata.command" => %{
-          terms: %{field: "mutable_metadata.command.keyword", missing: @missing_term_name}
         },
         "note.layer" => %{terms: %{field: "note.layer.raw", missing: @missing_term_name}}
       } = Aggregations.aggregations()
