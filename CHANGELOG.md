@@ -17,6 +17,25 @@
 
 ### Added
 
+- [TD-5829] Add implementations linked structures in ElasticSearch
+- [TD-5907] Download Implementation CSV Execution Details for Non-Admin Users
+
+### Changed
+
+- [TD-5844] CSV dynamic content domain fields:
+  - Structure notes domain: as name for non-editable CSV and as external id for editable CSV
+  - Implementation dynamic content domain: as name instead of external id.
+
+
+### Fixed
+
+- [TD-5878] Fix: change permision check to domain id when a concept is marked as confidential
+
+
+## [5.10.0] 2023-07-06
+
+### Added
+
 - [TD-4986] Configurable data catalog bucket views based on note and metadata
   fields
 - [TD-5787] Add Elastic Search Boost option in templates

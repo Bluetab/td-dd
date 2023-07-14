@@ -427,6 +427,7 @@ defmodule TdDq.Implementations.Implementation do
 
   defimpl Elasticsearch.Document do
     alias TdCache.TemplateCache
+    alias TdDd.DataStructures.DataStructureVersion
     alias TdDfLib.Format
     alias TdDq.Search.Helpers
 
@@ -490,13 +491,43 @@ defmodule TdDq.Implementations.Implementation do
       structure_links =
         implementation
         |> Map.get(:data_structures)
+        |> Enum.map(fn %{
+                         type: link_type,
+                         data_structure: %{
+                           id: id,
+                           domain_ids: domain_ids,
+                           external_id: external_id,
+                           current_version: dsv
+                         }
+                       } ->
+          %{
+            link_type: link_type,
+            structure:
+              add_dsv_fields(
+                %{
+                  domain_ids: domain_ids,
+                  external_id: external_id,
+                  id: id
+                },
+                dsv
+              )
+          }
+        end)
+
+      # linked_structures_ids is included in structure_links.structure.id
+      # but using it would require nested query in the front-end
+      linked_structures_ids =
+        implementation
+        |> Map.get(:data_structures)
         |> Enum.map(&Map.get(&1, :data_structure_id))
 
+      # structure_domain_ids is included in
+      # structure_links.structure.domain_ids but using it would require
+      # nested query in the front-end and metrics connector
       structure_domain_ids =
         implementation
         |> Map.get(:data_structures)
-        |> Enum.map(&get_structures_domains_ids(&1.data_structure))
-        |> Enum.flat_map(& &1)
+        |> Enum.flat_map(& &1.data_structure.domain_ids)
         |> Enum.uniq()
 
       structure_domains = Helpers.get_domains(structure_domain_ids)
@@ -541,9 +572,25 @@ defmodule TdDq.Implementations.Implementation do
       |> Map.put(:structure_domains, structure_domains)
       |> Map.put(:structure_ids, structure_ids)
       |> Map.put(:structure_names, structure_names)
+      |> Map.put(:linked_structures_ids, linked_structures_ids)
       |> Map.put(:structure_links, structure_links)
       |> Map.put(:df_content, df_content)
     end
+
+    defp add_dsv_fields(structure_fields, %DataStructureVersion{
+           name: name,
+           type: type,
+           path: path
+         }) do
+      Map.merge(
+        structure_fields,
+        %{name: name, type: type, path: path}
+      )
+    end
+
+    # A DataStructure current_version can be nil if all structure versions have
+    # been logically deleted
+    defp add_dsv_fields(structure_fields, nil), do: structure_fields
 
     defp get_raw_content(implementation) do
       raw_content = Map.get(implementation, :raw_content) || %{}
@@ -702,12 +749,6 @@ defmodule TdDq.Implementations.Implementation do
       |> Enum.map(&Map.get(&1, :name))
       |> Enum.filter(& &1)
       |> Enum.uniq()
-    end
-
-    defp get_structures_domains_ids([]), do: []
-
-    defp get_structures_domains_ids(%{domains: domains}) do
-      Enum.map(domains, &Map.get(&1, :id))
     end
   end
 end
