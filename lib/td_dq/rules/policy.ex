@@ -63,9 +63,23 @@ defmodule TdDq.Rules.Policy do
 
   defp maybe_authorize_confidential(%{} = claims, concept_id) do
     case ConceptCache.member_confidential_ids(concept_id) do
-      {:ok, 1} -> authorized?(claims, :manage_confidential_business_concepts, concept_id)
+      {:ok, 1} -> check_authorize_confidential_domain_ids(claims, concept_id)
       _ -> true
     end
+  end
+
+  defp check_authorize_confidential_domain_ids(claims, concept_id) do
+    concept_domain_ids =
+      case ConceptCache.get(concept_id) do
+        {:ok, %{shared_to_ids: shared_to_ids, domain: %{id: bc_domain_id}}} ->
+          [bc_domain_id | shared_to_ids]
+          |> Enum.uniq()
+
+        {:ok, nil} ->
+          []
+      end
+
+    authorized?(claims, :manage_confidential_business_concepts, concept_domain_ids)
   end
 
   defp fetch_values(%Changeset{data: %Rule{} = data} = changeset, field)

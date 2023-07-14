@@ -75,7 +75,17 @@ defmodule TdDq.Search.Mappings do
       structure_ids: %{type: "long", null_value: -1},
       structure_aliases: %{type: "text", fields: @raw},
       structure_names: %{type: "text", fields: @raw},
-      structure_links: %{type: "long", null_value: -1},
+      linked_structures_ids: %{type: "long", null_value: -1},
+      structure_links: %{
+        type: "nested",
+        properties: %{
+          link_type: %{type: "text"},
+          structure: %{
+            type: "nested",
+            properties: get_linked_structure_mapping()
+          }
+        }
+      },
       rule: %{
         properties: %{
           df_name: %{type: "text", fields: @raw},
@@ -293,6 +303,17 @@ defmodule TdDq.Search.Mappings do
       system: %{properties: get_system_mappings()},
       type: %{type: "text", fields: @raw},
       metadata: %{enabled: false}
+    }
+  end
+
+  defp get_linked_structure_mapping do
+    %{
+      domain_ids: %{type: "long"},
+      external_id: %{type: "text"},
+      id: %{type: "long"},
+      name: %{type: "text"},
+      type: %{type: "text", fields: @raw},
+      path: %{type: "text"}
     }
   end
 
