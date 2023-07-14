@@ -1,12 +1,6 @@
 # Changelog
 
-## [5.10.1] 2023-07-11
-
-### Fixed
-
-- [TD-4986] Note aggregations
-
-## [5.10.0] 2023-07-06
+## [Unreleased]
 
 ### Added
 
@@ -24,6 +18,18 @@
 
 - [TD-5878] Fix: change permision check to domain id when a concept is marked as confidential
 
+## [5.10.2] 2023-07-14
+
+### Fixed
+
+- [TD-4986] Readd index.mapping.total_fields.limit deleted in [TD-5808]
+  (releases.exs to runtime.exs change)
+
+## [5.10.1] 2023-07-11
+
+### Fixed
+
+- [TD-4986] Note aggregations
 
 ## [5.10.0] 2023-07-06
 
