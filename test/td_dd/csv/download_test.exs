@@ -255,19 +255,18 @@ defmodule TdDd.CSV.DownloadTest do
       insert(:data_structure_type, name: type, template_id: template_id)
 
       %{id: domain_id, name: domain_name} = CacheHelpers.insert_domain(%{name: "domain_1"})
-      %{id: domain_inside_note_1_id} = CacheHelpers.insert_domain(
-        %{
+
+      %{id: domain_inside_note_1_id} =
+        CacheHelpers.insert_domain(%{
           name: "domain_inside_note_1_name",
           external_id: "domain_inside_note_1_external_id"
-        }
-      )
-      %{id: domain_inside_note_2_id} = CacheHelpers.insert_domain(
-        %{
+        })
+
+      %{id: domain_inside_note_2_id} =
+        CacheHelpers.insert_domain(%{
           name: "domain_inside_note_2_name",
           external_id: "domain_inside_note_2_external_id"
-        }
-      )
-
+        })
 
       %{id: subdomain_id, name: subdomain_name} =
         CacheHelpers.insert_domain(%{name: "subdomain_1", parent_id: domain_id})
@@ -366,18 +365,17 @@ defmodule TdDd.CSV.DownloadTest do
         ]
       })
 
-      %{id: domain_inside_note_1_id} = CacheHelpers.insert_domain(
-        %{
+      %{id: domain_inside_note_1_id} =
+        CacheHelpers.insert_domain(%{
           name: "domain_inside_note_1_name",
           external_id: "domain_inside_note_1_external_id"
-        }
-      )
-      %{id: domain_inside_note_2_id} = CacheHelpers.insert_domain(
-        %{
+        })
+
+      %{id: domain_inside_note_2_id} =
+        CacheHelpers.insert_domain(%{
           name: "domain_inside_note_2_name",
           external_id: "domain_inside_note_2_external_id"
-        }
-      )
+        })
 
       insert(:data_structure_type, name: "type", template_id: 42)
 

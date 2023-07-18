@@ -270,7 +270,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
-        assert %{bool: %{must: %{multi_match: _}}} = query
+        assert %{bool: %{must: [%{multi_match: _}, %{match_all: %{}}]}} = query
         SearchHelpers.hits_response([dsv])
       end)
 
