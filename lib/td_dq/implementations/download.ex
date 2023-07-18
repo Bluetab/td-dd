@@ -124,7 +124,11 @@ defmodule TdDq.Implementations.Download do
            nil
          ))
       |> Parser.append_parsed_fields(rule_fields, rule_content, :with_domain_name)
-      |> Parser.append_parsed_fields(implementation_fields, implementation_content, :with_domain_name)
+      |> Parser.append_parsed_fields(
+        implementation_fields,
+        implementation_content,
+        :with_domain_name
+      )
     end)
   end
 
