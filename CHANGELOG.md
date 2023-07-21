@@ -18,6 +18,7 @@
 ### Fixed
 
 - [TD-5878] Fix: change permision check to domain id when a concept is marked as confidential
+- [TD-5837] Retrieve mutable metadata for children, data_fields and parents in v2
 
 ## [5.10.2] 2023-07-14
 
