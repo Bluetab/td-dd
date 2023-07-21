@@ -53,6 +53,8 @@ defmodule TdDdWeb.DataStructureLinkControllerTest do
                )
                |> json_response(:ok)
 
+      data_order = Enum.sort(data)
+
       assert [
                %{
                  "labels" => [^label1_name, ^label2_name],
@@ -64,7 +66,7 @@ defmodule TdDdWeb.DataStructureLinkControllerTest do
                  "source" => %{"external_id" => ^ds3_external_id},
                  "target" => %{"external_id" => ^ds1_external_id}
                }
-             ] = data
+             ] = data_order
     end
 
     @tag authentication: [role: "service"]

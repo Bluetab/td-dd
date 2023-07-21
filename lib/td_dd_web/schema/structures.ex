@@ -94,7 +94,7 @@ defmodule TdDdWeb.Schema.Structures do
     field :deleted_at, :datetime
     field :inserted_at, :datetime
     field :updated_at, :datetime
-    field :metadata, :json
+    field :metadata, :json, resolve: &Resolvers.Structures.metadata/3
     field :data_structure_id, :id
     field :data_structure, :data_structure, resolve: dataloader(TdDd.DataStructures)
     field :path, list_of(:string), resolve: &Resolvers.Structures.data_structure_version_path/3
@@ -115,7 +115,9 @@ defmodule TdDdWeb.Schema.Structures do
 
     field :siblings, list_of(:data_structure_version)
     field :versions, list_of(:data_structure_version)
-    field :data_fields, list_of(:data_structure_version)
+
+    field :data_fields, list_of(:data_structure_version),
+      resolve: &Resolvers.Structures.data_fields/3
 
     field :ancestry, list_of(:json), resolve: &Resolvers.Structures.ancestry/3
 
@@ -131,7 +133,7 @@ defmodule TdDdWeb.Schema.Structures do
       resolve(&Resolvers.Structures.note/3)
     end
 
-    field :profile, :profile
+    field :profile, :profile, resolve: &Resolvers.Structures.profile/3
     field :source, :source
     field :system, :system
     field :structure_type, :data_structure_type, resolve: dataloader(TdDd.DataStructures)
@@ -139,7 +141,7 @@ defmodule TdDdWeb.Schema.Structures do
     field :grants, list_of(:grant)
     field :grant, :grant
 
-    field :links, list_of(:json)
+    field :links, list_of(:json), resolve: &Resolvers.Structures.links/3
     field :_actions, :json, resolve: &Resolvers.Structures.actions/3
     field :user_permissions, :json
   end
