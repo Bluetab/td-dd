@@ -2,19 +2,7 @@ import Config
 
 config :td_dd, :time_zone, System.get_env("TZ", "Etc/UTC")
 
-config :td_cluster,
-  scope: :truedat,
-  topologies: [
-    truedat: [
-      strategy: TdCluster.Strategy,
-      config: [
-        node_template: System.get_env("RELEASE_NODE_TEMPLATE", "{{service}}@{{hostname}}"),
-        services: [],
-        groups: [:dd],
-        polling_interval: 3_000
-      ]
-    ]
-  ]
+config :td_cluster, groups: [:dd]
 
 if config_env() == :prod do
   config :td_dd, TdDd.Repo,

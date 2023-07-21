@@ -13,6 +13,7 @@
 - [TD-5844] CSV dynamic content domain fields:
   - Structure notes domain: as name for non-editable CSV and as external id for editable CSV
   - Implementation dynamic content domain: as name instead of external id.
+- [TD-5809] Fix td_cluster configuration
 
 
 ### Fixed
