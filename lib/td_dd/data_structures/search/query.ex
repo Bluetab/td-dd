@@ -73,13 +73,22 @@ defmodule TdDd.DataStructures.Search.Query do
 
   defp do_build_query(query, []), do: query
 
-  defp do_build_query(%{bool: bool} = query, words) do
-    must =
-      words
-      |> Enum.map(&multi_match/1)
-      |> maybe_bool_query()
+  defp do_build_query(%{bool: %{must: must} = bool} = query, words) do
+    must_query = build_bool_query(words)
 
-    %{query | bool: Map.put(bool, :must, must)}
+    %{query | bool: Map.put(bool, :must, [must_query, must])}
+  end
+
+  defp do_build_query(%{bool: bool} = query, words) do
+    must_query = build_bool_query(words)
+
+    %{query | bool: Map.put(bool, :must, must_query)}
+  end
+
+  defp build_bool_query(words) do
+    words
+    |> Enum.map(&multi_match/1)
+    |> maybe_bool_query()
   end
 
   defp multi_match(query) do

@@ -12,6 +12,8 @@ defmodule TdDdWeb.Resolvers.Structures do
   alias TdDd.DataStructures.Tags
   alias TdDd.Utils.CollectionUtils
 
+  @permissions_attrs [:with_protected_metadata, :with_confidential, :profile]
+
   def data_structures(_parent, args, _resolution) do
     {:ok, DataStructures.list_data_structures(args)}
   end
@@ -216,8 +218,37 @@ defmodule TdDdWeb.Resolvers.Structures do
     {:ok, Tags.tags(data_structure)}
   end
 
+  def metadata(
+        %TdDd.DataStructures.DataStructureVersion{data_structure: %{id: _} = ds} = dsv,
+        _args,
+        %{context: %{claims: claims}} = _resolution
+      ) do
+    opts = get_permissions_opts(ds, claims)
+
+    %{metadata: metadata} =
+      dsv
+      |> DataStructures.get_mutable_metadata([metadata_versions: true] ++ opts)
+      |> DataStructureVersions.merge_metadata()
+
+    {:ok, metadata}
+  end
+
+  def metadata(
+        %TdDd.DataStructures.DataStructureVersion{data_structure_id: ds_id} = dsv,
+        args,
+        resolution
+      ) do
+    data_structure = DataStructures.get_data_structure!(ds_id)
+
+    dsv
+    |> Map.put(:data_structure, data_structure)
+    |> metadata(args, resolution)
+  end
+
   def childrens(parent, args, %{context: %{loader: loader, claims: claims}}) do
-    batch_key = Map.to_list(args) ++ [{:preload, [:classifications, :data_structure]}]
+    batch_key =
+      Map.to_list(args) ++
+        [{:preload, [:classifications, :data_structure]}]
 
     loader
     |> Dataloader.load(TdDd.DataStructures, {:children, batch_key}, parent)
@@ -230,6 +261,33 @@ defmodule TdDdWeb.Resolvers.Structures do
 
       {:ok, children}
     end)
+  end
+
+  def data_fields(%{data_structure: ds} = dsv, _args, %{context: %{claims: claims}} = _resolution) do
+    deleted = not is_nil(Map.get(dsv, :deleted_at))
+
+    opts =
+      get_permissions_opts(ds, claims) ++
+        [
+          deleted: deleted,
+          preload: [:published_note, [data_structure: :profile]]
+        ]
+
+    data_fields = DataStructures.get_field_structures(dsv, opts)
+
+    {:ok, data_fields}
+  end
+
+  def profile(%{data_structure: ds} = dsv, _args, %{context: %{claims: claims}} = _resolution) do
+    opts = get_permissions_opts(ds, claims)
+
+    profile = if Keyword.get(opts, :profile), do: DataStructures.get_profile!(dsv), else: nil
+
+    {:ok, profile}
+  end
+
+  def links(dsv, _args, _resolution) do
+    {:ok, DataStructures.get_structure_links(dsv)}
   end
 
   def data_structure_links(%{} = data_structure, _args, _resolution) do
@@ -245,4 +303,15 @@ defmodule TdDdWeb.Resolvers.Structures do
 
   defp claims(%{context: %{claims: claims}}), do: claims
   defp claims(_), do: nil
+
+  defp get_permissions_opts(ds, claims) do
+    ds
+    |> DataStructureVersions.enrich_opts(claims, [:profile])
+    |> Enum.filter(fn e ->
+      e in @permissions_attrs
+    end)
+    |> Enum.map(fn permission ->
+      {permission, true}
+    end)
+  end
 end

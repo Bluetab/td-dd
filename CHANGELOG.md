@@ -1,5 +1,27 @@
 # Changelog
 
+## [5.11.0] 2023-07-24
+
+### Added
+
+- [TD-5829] Add implementations linked structures in ElasticSearch
+- [TD-5907] Download Implementation CSV Execution Details for Non-Admin Users
+- [TD-5831] Add query with multiple must for structure grant request
+- [TD-5379] API Upload implementation result for specific execution
+
+### Changed
+
+- [TD-5844] CSV dynamic content domain fields:
+  - Structure notes domain: as name for non-editable CSV and as external id for editable CSV
+  - Implementation dynamic content domain: as name instead of external id.
+- [TD-5809] Fix td_cluster configuration
+
+
+### Fixed
+
+- [TD-5878] Fix: change permision check to domain id when a concept is marked as confidential
+- [TD-5837] Retrieve mutable metadata for children, data_fields and parents in v2
+
 ## [5.10.2] 2023-07-14
 
 ### Fixed
