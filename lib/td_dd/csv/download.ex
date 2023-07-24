@@ -94,7 +94,7 @@ defmodule TdDd.CSV.Download do
         Enum.map(structures, fn %{note: content} = structure ->
           structure
           |> get_standar_fields(structure_url_schema)
-          |> Parser.append_parsed_fields(content_fields, content)
+          |> Parser.append_parsed_fields(content_fields, content, :with_domain_name)
         end)
 
       csv_list = export_to_csv(headers, structures_list, !Enum.empty?(acc))
@@ -122,7 +122,7 @@ defmodule TdDd.CSV.Download do
         @editable_headers
         |> Enum.map(&editable_structure_value(structure, &1))
         |> add_editable_extra_fields(structure, structure_url_schema)
-        |> Parser.append_parsed_fields(type_fields, content)
+        |> Parser.append_parsed_fields(type_fields, content, :with_domain_external_id)
       end)
 
     [headers | core]

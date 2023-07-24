@@ -220,7 +220,7 @@ defmodule TdDd.CSV.DownloadTest do
                """
     end
 
-    test "to_csv/1 return csv content to download with domain paths" do
+    test "to_csv/1 return csv content to download with domain paths, also note domains by their name" do
       template_name = "Table"
       field_name = "add_info1"
       field_label = "Add Info 1"
@@ -240,6 +240,12 @@ defmodule TdDd.CSV.DownloadTest do
                 "name" => field_name,
                 "type" => "list",
                 "label" => field_label
+              },
+              %{
+                "name" => "domain_inside_note_field",
+                "type" => "domain",
+                "label" => "domain_inside_note_field_label",
+                "cardinality" => "*"
               }
             ]
           }
@@ -250,6 +256,18 @@ defmodule TdDd.CSV.DownloadTest do
 
       %{id: domain_id, name: domain_name} = CacheHelpers.insert_domain(%{name: "domain_1"})
 
+      %{id: domain_inside_note_1_id} =
+        CacheHelpers.insert_domain(%{
+          name: "domain_inside_note_1_name",
+          external_id: "domain_inside_note_1_external_id"
+        })
+
+      %{id: domain_inside_note_2_id} =
+        CacheHelpers.insert_domain(%{
+          name: "domain_inside_note_2_name",
+          external_id: "domain_inside_note_2_external_id"
+        })
+
       %{id: subdomain_id, name: subdomain_name} =
         CacheHelpers.insert_domain(%{name: "subdomain_1", parent_id: domain_id})
 
@@ -257,7 +275,10 @@ defmodule TdDd.CSV.DownloadTest do
         name: "1. 4. 4 Primas Bajas (grafico)",
         description: "Gráfico de evolución mensual de la prima",
         template: %{"name" => template_name},
-        note: %{field_name => ["field_value"]},
+        note: %{
+          field_name => ["field_value"],
+          "domain_inside_note_field" => [domain_inside_note_1_id, domain_inside_note_2_id]
+        },
         domain_ids: [domain_id, subdomain_id],
         domain: %{"external_id" => "ex_id_1", "name" => domain_name},
         inserted_at: "2018-05-05",
@@ -273,8 +294,8 @@ defmodule TdDd.CSV.DownloadTest do
 
       assert csv ==
                """
-               type;name;group;domain;system;path;description;external_id;inserted_at;Add Info 1\r
-               #{structure_1.type};#{structure_1.name};#{structure_1.group};#{domain_name}|#{domain_name}/#{subdomain_name};#{Map.get(structure_1.system, "name")};CMC > Objetos Públicos > Informes > Cuadro de Mando Integral;#{structure_1.description};#{structure_1.external_id};#{structure_1.inserted_at};field_value\r
+               type;name;group;domain;system;path;description;external_id;inserted_at;Add Info 1;domain_inside_note_field_label\r
+               #{structure_1.type};#{structure_1.name};#{structure_1.group};#{domain_name}|#{domain_name}/#{subdomain_name};#{Map.get(structure_1.system, "name")};CMC > Objetos Públicos > Informes > Cuadro de Mando Integral;#{structure_1.description};#{structure_1.external_id};#{structure_1.inserted_at};field_value;domain_inside_note_1_name|domain_inside_note_2_name\r
                """
     end
 
@@ -332,11 +353,29 @@ defmodule TdDd.CSV.DownloadTest do
                 "name" => "field_name",
                 "type" => "list",
                 "label" => "Label foo"
+              },
+              %{
+                "name" => "domain_inside_note_field",
+                "type" => "domain",
+                "label" => "domain_inside_note_field_label",
+                "cardinality" => "*"
               }
             ]
           }
         ]
       })
+
+      %{id: domain_inside_note_1_id} =
+        CacheHelpers.insert_domain(%{
+          name: "domain_inside_note_1_name",
+          external_id: "domain_inside_note_1_external_id"
+        })
+
+      %{id: domain_inside_note_2_id} =
+        CacheHelpers.insert_domain(%{
+          name: "domain_inside_note_2_name",
+          external_id: "domain_inside_note_2_external_id"
+        })
 
       insert(:data_structure_type, name: "type", template_id: 42)
 
@@ -344,7 +383,10 @@ defmodule TdDd.CSV.DownloadTest do
         name: "TechName_1",
         path: ["foo", "bar"],
         template: %{"name" => "template"},
-        note: %{"field_name" => ["field_value"]},
+        note: %{
+          "field_name" => ["field_value"],
+          "domain_inside_note_field" => [domain_inside_note_1_id, domain_inside_note_2_id]
+        },
         external_id: "ext_id",
         type: "type",
         data_structure_id: 8
@@ -373,9 +415,9 @@ defmodule TdDd.CSV.DownloadTest do
 
       assert Download.to_editable_csv([structure_1, structure_2], structure_url_schema) ==
                """
-               external_id;name;type;path;tech_name;alias_name;link_to_structure;field_name\r
-               #{structure_1.external_id};#{structure_1.name};#{structure_1.type};#{Enum.join(structure_1.path, " > ")};#{structure_1.name};;#{structure_1_url_schema_converted};#{Map.get(structure_1.note, "field_name")}\r
-               #{structure_2.external_id};#{structure_2.name};#{structure_2.type};#{Enum.join(structure_2.path, " > ")};#{structure_2.original_name};#{structure_2.alias};#{structure_2_url_schema_converted};#{Map.get(structure_2.note, "field_name")}\r
+               external_id;name;type;path;tech_name;alias_name;link_to_structure;field_name;domain_inside_note_field\r
+               #{structure_1.external_id};#{structure_1.name};#{structure_1.type};#{Enum.join(structure_1.path, " > ")};#{structure_1.name};;#{structure_1_url_schema_converted};#{Map.get(structure_1.note, "field_name")};domain_inside_note_1_external_id|domain_inside_note_2_external_id\r
+               #{structure_2.external_id};#{structure_2.name};#{structure_2.type};#{Enum.join(structure_2.path, " > ")};#{structure_2.original_name};#{structure_2.alias};#{structure_2_url_schema_converted};#{Map.get(structure_2.note, "field_name")};\r
                """
     end
   end

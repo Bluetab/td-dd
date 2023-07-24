@@ -9,6 +9,8 @@ defmodule TdDdWeb.Schema.StructuresTest do
 
   @moduletag sandbox: :shared
 
+  @protected "_protected"
+
   @query """
   query DataStructureVersions($since: DateTime) {
     dataStructureVersions(since: $since) {
@@ -275,6 +277,42 @@ defmodule TdDdWeb.Schema.StructuresTest do
       siblings {
         alias
         id
+      }
+    }
+  }
+  """
+
+  @metadata_query """
+  query DataStructureVersion($dataStructureId: ID!, $version: String!) {
+    dataStructureVersion(dataStructureId: $dataStructureId, version: $version) {
+      id
+      metadata
+      children {
+        id
+        metadata
+      }
+      data_fields {
+        id
+        metadata
+      }
+      parents {
+        id
+        metadata
+      }
+    }
+  }
+  """
+
+  @profile_query """
+  query DataStructureVersion($dataStructureId: ID!, $version: String!) {
+    dataStructureVersion(dataStructureId: $dataStructureId, version: $version) {
+      id
+      profile {
+        max
+        min
+        null_count
+        most_frequent
+        value
       }
     }
   }
@@ -1098,6 +1136,229 @@ defmodule TdDdWeb.Schema.StructuresTest do
       assert response["errors"] == nil
       assert %{"dataStructureVersion" => %{"id" => ^string_id}} = data
       assert length(siblings) == 2
+    end
+
+    @tag authentication: [
+           role: "user",
+           permissions: [:view_data_structure, :view_protected_metadata]
+         ]
+    test "returns metadata for children", %{conn: conn, domain: %{id: domain_id}} do
+      # main
+      %{id: ds_main_id} =
+        structure_main = insert(:data_structure, external_id: "main", domain_ids: [domain_id])
+
+      %{id: dsv_main_id} =
+        insert(:data_structure_version,
+          data_structure: structure_main,
+          version: 1,
+          metadata: %{"foo_main" => "this is no mutable (main)"}
+        )
+
+      mutable_metadata_main = %{
+        "mm_foo_main" => "this is mutable (main)",
+        @protected => %{"mm_protected_main" => "this is protected mutable (main)"}
+      }
+
+      insert(:structure_metadata,
+        data_structure_id: ds_main_id,
+        fields: mutable_metadata_main
+      )
+
+      # child 1
+      structure_child_1 = insert(:data_structure, external_id: "child_1", domain_ids: [domain_id])
+
+      %{id: dsv_child_1} =
+        insert(:data_structure_version,
+          data_structure: structure_child_1,
+          version: 1,
+          class: "field",
+          metadata: %{"foo_child" => "this is no mutable (child)"}
+        )
+
+      mutable_metadata_1 = %{
+        "mm_foo" => "this is mutable (child)",
+        @protected => %{"mm_protected" => "this is protected mutable (child)"}
+      }
+
+      insert(:structure_metadata,
+        data_structure_id: structure_child_1.id,
+        fields: mutable_metadata_1
+      )
+
+      create_relation(dsv_main_id, dsv_child_1)
+
+      # parent
+      structure_parent_1 =
+        insert(:data_structure, external_id: "parent_1", domain_ids: [domain_id])
+
+      %{id: dsv_parent_1} =
+        insert(:data_structure_version,
+          data_structure: structure_parent_1,
+          version: 1,
+          class: "field",
+          metadata: %{"foo_parent" => "this is no mutable (parent)"}
+        )
+
+      mutable_metadata_1 = %{
+        "mm_foo" => "this is mutable (parent)",
+        @protected => %{"mm_protected" => "this is protected mutable (parent)"}
+      }
+
+      insert(:structure_metadata,
+        data_structure_id: structure_parent_1.id,
+        fields: mutable_metadata_1
+      )
+
+      create_relation(dsv_parent_1, dsv_main_id)
+
+      variables = %{"dataStructureId" => ds_main_id, "version" => "latest"}
+      # assert main
+      str_dsv_main = to_string(dsv_main_id)
+
+      metadata_main = %{
+        "_protected" => %{"mm_protected_main" => "this is protected mutable (main)"},
+        "foo_main" => "this is no mutable (main)",
+        "mm_foo_main" => "this is mutable (main)"
+      }
+
+      assert %{
+               "data" => %{
+                 "dataStructureVersion" => %{
+                   "id" => ^str_dsv_main,
+                   "metadata" => ^metadata_main,
+                   "parents" => parents,
+                   "children" => children,
+                   "data_fields" => data_fields
+                 }
+               }
+             } =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @metadata_query,
+                 "variables" => variables
+               })
+               |> json_response(:ok)
+
+      # assert children
+      str_dsv_child_1 = to_string(dsv_child_1)
+
+      metadata_child = %{
+        "_protected" => %{"mm_protected" => "this is protected mutable (child)"},
+        "foo_child" => "this is no mutable (child)",
+        "mm_foo" => "this is mutable (child)"
+      }
+
+      assert [
+               %{
+                 "id" => ^str_dsv_child_1,
+                 "metadata" => ^metadata_child
+               }
+             ] = children
+
+      assert [%{"id" => ^str_dsv_child_1, "metadata" => ^metadata_child}] = data_fields
+
+      # assert parent
+      str_dsv_parent_1 = to_string(dsv_parent_1)
+
+      metadata_parent = %{
+        "_protected" => %{"mm_protected" => "this is protected mutable (parent)"},
+        "foo_parent" => "this is no mutable (parent)",
+        "mm_foo" => "this is mutable (parent)"
+      }
+
+      assert [
+               %{
+                 "id" => ^str_dsv_parent_1,
+                 "metadata" => ^metadata_parent
+               }
+             ] = parents
+    end
+
+    @tag authentication: [
+           role: "user",
+           permissions: [:view_data_structure]
+         ]
+    test "get data without profile permission", %{conn: conn, domain: %{id: domain_id}} do
+      %{id: ds_id} = structure = insert(:data_structure, domain_ids: [domain_id])
+
+      insert(:profile,
+        data_structure_id: ds_id,
+        min: "3",
+        max: "5",
+        null_count: 0,
+        most_frequent: ~s([["A", "22"]])
+      )
+
+      %{id: dsv_id} =
+        insert(:data_structure_version,
+          data_structure: structure,
+          version: 1
+        )
+
+      variables = %{"dataStructureId" => ds_id, "version" => "latest"}
+
+      %{"data" => data} =
+        conn
+        |> post("/api/v2", %{
+          "query" => @profile_query,
+          "variables" => variables
+        })
+        |> json_response(:ok)
+
+      str_dsv_id = to_string(dsv_id)
+
+      assert %{
+               "dataStructureVersion" => %{
+                 "id" => ^str_dsv_id,
+                 "profile" => nil
+               }
+             } = data
+    end
+
+    @tag authentication: [
+           role: "user",
+           permissions: [:view_data_structure, :view_data_structures_profile]
+         ]
+    test "get data with profile permission", %{conn: conn, domain: %{id: domain_id}} do
+      %{id: ds_id} = structure = insert(:data_structure, domain_ids: [domain_id])
+
+      insert(:profile,
+        data_structure_id: ds_id,
+        min: "3",
+        max: "5",
+        null_count: 0,
+        most_frequent: ~s([["A", "22"]])
+      )
+
+      %{id: dsv_id} =
+        insert(:data_structure_version,
+          data_structure: structure,
+          version: 1
+        )
+
+      variables = %{"dataStructureId" => ds_id, "version" => "latest"}
+
+      %{"data" => data} =
+        conn
+        |> post("/api/v2", %{
+          "query" => @profile_query,
+          "variables" => variables
+        })
+        |> json_response(:ok)
+
+      str_dsv_id = to_string(dsv_id)
+
+      assert %{
+               "dataStructureVersion" => %{
+                 "id" => ^str_dsv_id,
+                 "profile" => %{
+                   "max" => "5",
+                   "min" => "3",
+                   "most_frequent" => [%{"k" => "A", "v" => 22}],
+                   "null_count" => 0
+                 }
+               }
+             } = data
     end
 
     @tag authentication: [role: "admin"]

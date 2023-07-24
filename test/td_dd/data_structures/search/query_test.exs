@@ -84,6 +84,22 @@ defmodule TdDd.DataStructures.Search.QueryTest do
              } = Query.build_query(@all_permissions, %{"query" => " foo     "}, %{})
     end
 
+    test "includes a must exists and multi_match clause for a single word" do
+      assert %{
+               bool: %{
+                 must: [
+                   %{multi_match: %{fields: _, lenient: _, query: "foo", type: _}},
+                   %{exists: %{"field" => "foo.moo"}}
+                 ]
+               }
+             } =
+               Query.build_query(
+                 @all_permissions,
+                 %{"query" => " foo     ", "must" => %{"exists" => %{"field" => "foo.moo"}}},
+                 %{}
+               )
+    end
+
     test "includes a multi_match clause for each word in the query term" do
       assert %{
                bool: %{

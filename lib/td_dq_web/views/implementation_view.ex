@@ -67,6 +67,7 @@ defmodule TdDqWeb.ImplementationView do
       :inserted_at,
       :updated_at,
       :links,
+      :linked_structures_ids,
       :concepts,
       :minimum,
       :result_type,
@@ -75,7 +76,8 @@ defmodule TdDqWeb.ImplementationView do
       :status,
       :version,
       :structure_domain_ids,
-      :structure_domains
+      :structure_domains,
+      :structure_links
     ])
     |> Map.put(
       :raw_content,
@@ -111,6 +113,7 @@ defmodule TdDqWeb.ImplementationView do
       :inserted_at,
       :updated_at,
       :links,
+      :linked_structures_ids,
       :concepts,
       :minimum,
       :result_type,
@@ -119,6 +122,7 @@ defmodule TdDqWeb.ImplementationView do
       :structure_domain_ids,
       :structure_domains,
       :status,
+      :structure_links,
       :version
     ])
     |> Map.put(:dataset, render_many(implementation.dataset, DatasetView, "dataset_row.json"))

@@ -2,19 +2,7 @@ import Config
 
 config :td_dd, :time_zone, System.get_env("TZ", "Etc/UTC")
 
-config :td_cluster,
-  scope: :truedat,
-  topologies: [
-    truedat: [
-      strategy: TdCluster.Strategy,
-      config: [
-        node_template: System.get_env("RELEASE_NODE_TEMPLATE", "{{service}}@{{hostname}}"),
-        services: [],
-        groups: [:dd],
-        polling_interval: 3_000
-      ]
-    ]
-  ]
+config :td_cluster, groups: [:dd]
 
 if config_env() == :prod do
   config :td_dd, TdDd.Repo,
@@ -183,7 +171,8 @@ if config_env() == :prod do
         System.get_env("ES_INDEXING_SLOWLOG_THRESHOLD_TRACE", "500ms"),
       "index.indexing.slowlog.level" => System.get_env("ES_INDEXING_SLOWLOG_LEVEL", "info"),
       "index.indexing.slowlog.source" => System.get_env("ES_INDEXING_SLOWLOG_SOURCE", "1000"),
-      "index.mapping.total_fields.limit" => System.get_env("ES_MAPPING_TOTAL_FIELDS_LIMIT", "3000")
+      "index.mapping.total_fields.limit" =>
+        System.get_env("ES_MAPPING_TOTAL_FIELDS_LIMIT", "3000")
     }
 
   config :td_dd, TdDd.DataStructures.Search,

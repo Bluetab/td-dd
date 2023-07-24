@@ -193,6 +193,25 @@ defmodule TdDq.RuleResultsTest do
       assert [%{id: ^id2}] = executions
     end
 
+    test "updates expecific execution" do
+      %{id: implementation_id} = implementation = insert(:implementation)
+
+      %{id: id1} = insert(:execution, implementation_id: implementation_id)
+
+      insert(:execution, implementation_id: implementation_id)
+
+      params = %{
+        "date" => "2023-07-17",
+        "errors" => 0,
+        "records" => 10,
+        "execution_id" => id1
+      }
+
+      assert {:ok, %{} = multi} = RuleResults.create_rule_result(implementation, params)
+      assert %{executions: {1, executions}} = multi
+      assert [%{id: ^id1}] = executions
+    end
+
     test "publishes rule_result_created event for an implementation associated to a rule" do
       %{id: domain_id} = CacheHelpers.insert_domain()
       %{id: business_concept_id} = CacheHelpers.insert_concept(%{domain_id: domain_id})

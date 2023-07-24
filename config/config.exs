@@ -11,6 +11,7 @@ config :td_dd, :time_zone, System.get_env("TZ", "Etc/UTC")
 
 # Environment
 config :td_dd, :env, Mix.env()
+config :td_cluster, :env, Mix.env()
 
 # General application configuration
 config :td_dd,

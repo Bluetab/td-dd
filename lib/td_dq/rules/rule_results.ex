@@ -140,13 +140,15 @@ defmodule TdDq.Rules.RuleResults do
         params
       )
 
+    execution_id = Map.get(params, "execution_id", nil)
+
     Multi.new()
     |> Multi.insert(:result, changeset)
     |> Multi.run(:segments, fn _, %{result: result} ->
       bulk_segments(result, params)
     end)
     |> Multi.run(:executions, fn _repo, %{result: result} ->
-      res = update_executions(result)
+      res = update_executions(result, execution_id)
       {:ok, res}
     end)
     |> Multi.run(:events, fn _, %{executions: {_, executions}} ->
@@ -192,15 +194,23 @@ defmodule TdDq.Rules.RuleResults do
   end
 
   defp update_executions(
-         %{id: id, implementation_id: implementation_id, inserted_at: ts} = _result
+         %{id: id, implementation_id: implementation_id, inserted_at: ts} = _result,
+         execution_id
        ) do
     Execution
     |> select([e], e)
     |> where([e], is_nil(e.result_id))
+    |> maybe_where_execution_id(execution_id)
     |> join(:inner, [e], i in assoc(e, :implementation))
     |> where([e, i], i.id == ^implementation_id)
     |> update(set: [result_id: ^id, updated_at: ^ts])
     |> Repo.update_all([])
+  end
+
+  defp maybe_where_execution_id(query, nil), do: query
+
+  defp maybe_where_execution_id(query, execution_id) do
+    query |> where([e], e.id == ^execution_id)
   end
 
   defp on_create({:ok, %{result: rule_result}} = result) do

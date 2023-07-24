@@ -126,7 +126,7 @@ defmodule TdDd.DataStructures.DataStructureVersions do
 
   defp field_to_enrich_opt(_), do: []
 
-  defp enrich_opts(data_structure, %{user_id: user_id} = claims, enriches) do
+  def enrich_opts(data_structure, %{user_id: user_id} = claims, enriches) do
     Enum.filter(@base_enrich_attrs ++ enriches, fn
       :profile ->
         permit?(DataStructures, :view_data_structures_profile, claims, data_structure)
@@ -260,7 +260,7 @@ defmodule TdDd.DataStructures.DataStructureVersions do
     |> Map.put(:alias, alias_name)
   end
 
-  defp merge_metadata(%{metadata_versions: [_ | _] = metadata_versions} = dsv) do
+  def merge_metadata(%{metadata_versions: [_ | _] = metadata_versions} = dsv) do
     %{fields: mutable_metadata} =
       Enum.max_by(metadata_versions, & &1.version)
       |> case do
@@ -290,5 +290,5 @@ defmodule TdDd.DataStructures.DataStructureVersions do
     end)
   end
 
-  defp merge_metadata(dsv), do: dsv
+  def merge_metadata(dsv), do: dsv
 end

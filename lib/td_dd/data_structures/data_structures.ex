@@ -372,7 +372,7 @@ defmodule TdDd.DataStructures do
     end
   end
 
-  defp get_profile!(%DataStructureVersion{} = dsv) do
+  def get_profile!(%DataStructureVersion{} = dsv) do
     case Repo.preload(dsv, data_structure: :profile) do
       %{data_structure: %{profile: profile}} -> profile
     end
@@ -410,6 +410,18 @@ defmodule TdDd.DataStructures do
     |> Repo.all()
     |> Repo.preload(opts[:preload] || [])
     |> protect_metadata(Keyword.get(opts, :with_protected_metadata))
+  end
+
+  def get_mutable_metadata(nil, _), do: []
+  def get_mutable_metadata([], _), do: []
+
+  def get_mutable_metadata(dsv, opts) when is_list(dsv) do
+    Enum.map(dsv, &get_mutable_metadata(&1, opts))
+  end
+
+  def get_mutable_metadata(dsv, opts) do
+    metadata_versions = get_metadata_versions!(dsv, opts)
+    Map.put(dsv, :metadata_versions, metadata_versions)
   end
 
   def get_children(%DataStructureVersion{id: id}, opts \\ []) do
