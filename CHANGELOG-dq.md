@@ -1,11 +1,5 @@
 # Changelog
 
-## [Unreleased]
-
-### Added
-
-- [TD-5379] API Upload implementation result for specific execution
-
 ## [4.18.0] 2021-04-19
 
 ### Fixed

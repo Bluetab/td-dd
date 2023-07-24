@@ -1,12 +1,13 @@
 # Changelog
 
-## [Unreleased]
+## [5.11.0] 2023-07-24
 
 ### Added
 
 - [TD-5829] Add implementations linked structures in ElasticSearch
 - [TD-5907] Download Implementation CSV Execution Details for Non-Admin Users
 - [TD-5831] Add query with multiple must for structure grant request
+- [TD-5379] API Upload implementation result for specific execution
 
 ### Changed
 
