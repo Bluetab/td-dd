@@ -56,7 +56,7 @@ defmodule TdDd.DataStructures.HierarchyTest do
       assert expected ||| Hierarchy.list_hierarchy()
     end
 
-    test "it should not insert duplicates", %{} do
+    test "running twice, it should not insert duplicates", %{} do
       [
         dsv_id_a,
         dsv_id_b,
