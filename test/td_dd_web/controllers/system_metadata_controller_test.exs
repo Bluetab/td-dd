@@ -69,6 +69,35 @@ defmodule TdDdWeb.SystemMetadataControllerTest do
              |> post(Routes.system_metadata_path(conn, :create, system_external_id, body))
              |> response(:accepted)
     end
+
+    @tag authentication: [role: "service"]
+    test "calls worker with inherit_domains true on valid json data", %{conn: conn} do
+      %{id: system_id, external_id: system_external_id} = insert(:system)
+
+      body = %{
+        "data_structures" => %{"foo" => "bar"},
+        "data_structure_relations" => %{"bar" => "baz"},
+        "domain" => "domain",
+        "source" => "source",
+        "inherit_domains" => "true"
+      }
+
+      expect(TdDd.Loader.MockWorker, :load, fn %{id: ^system_id},
+                                               %{"system_id" => _} = params,
+                                               audit,
+                                               opts ->
+        assert body == Map.delete(params, "system_id")
+        assert %{ts: _, last_change_by: _} = audit
+        assert opts[:domain] == "domain"
+        assert opts[:source] == "source"
+        assert opts[:inherit_domains] == true
+        :ok
+      end)
+
+      assert conn
+             |> post(Routes.system_metadata_path(conn, :create, system_external_id, body))
+             |> response(:accepted)
+    end
   end
 
   describe "PATCH /api/systems/:external_id/metadata" do

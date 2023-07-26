@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-5715] Add posibility for inherit domains when load new structures
+
 ## [5.11.0] 2023-07-24
 
 ### Added
