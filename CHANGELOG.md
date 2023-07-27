@@ -1,5 +1,11 @@
 # Changelog
 
+## [5.11.1] 2023-07-27
+
+### Fixed
+
+- [TD-5952] Multiple filters and search text for elasticsearch in structures
+
 ## [5.11.0] 2023-07-24
 
 ### Added

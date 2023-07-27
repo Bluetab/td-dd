@@ -76,7 +76,7 @@ defmodule TdDd.DataStructures.Search.Query do
   defp do_build_query(%{bool: %{must: must} = bool} = query, words) do
     must_query = build_bool_query(words)
 
-    %{query | bool: Map.put(bool, :must, [must_query, must])}
+    %{query | bool: Map.put(bool, :must, List.flatten([must_query, must]))}
   end
 
   defp do_build_query(%{bool: bool} = query, words) do
