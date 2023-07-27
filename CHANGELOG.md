@@ -1,5 +1,11 @@
 # Changelog
 
+## [5.11.2] 2023-07-27
+
+### Fixed
+
+- [TD-5946] Add the keyword type and the sorteable in the mapping for `execution_result_info.result`
+
 ## [5.11.1] 2023-07-27
 
 ### Fixed
