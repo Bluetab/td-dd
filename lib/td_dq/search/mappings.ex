@@ -118,7 +118,7 @@ defmodule TdDq.Search.Mappings do
       implementation_type: %{type: "text", fields: @raw_sort},
       execution_result_info: %{
         properties: %{
-          result: %{type: "text"},
+          result: %{type: "text", fields: @raw_sort},
           errors: %{type: "long"},
           records: %{type: "long"},
           minimum: %{type: "text"},
