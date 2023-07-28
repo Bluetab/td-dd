@@ -1,5 +1,11 @@
 # Changelog
 
+## [5.11.3] 2023-07-28
+
+### Fixed
+
+- [TD-5943] My grants query now retrieve only the user grants
+
 ## [5.11.2] 2023-07-27
 
 ### Fixed
