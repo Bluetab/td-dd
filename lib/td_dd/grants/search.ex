@@ -73,6 +73,10 @@ defmodule TdDd.Grants.Search do
     |> search(claims, page, size)
   end
 
+  defp put_filter(%{"must" => _} = params, field, condition) do
+    Map.update(params, "must", %{field => condition}, &Map.put_new(&1, field, condition))
+  end
+
   defp put_filter(params, field, condition) do
     Map.update(params, "filters", %{field => condition}, &Map.put_new(&1, field, condition))
   end
