@@ -6,11 +6,18 @@
 
 - [TD-5715] Add posibility for inherit domains when load new structures
 
+## [5.11.3] 2023-07-28
+
+### Fixed
+
+- [TD-5943] My grants query now retrieve only the user grants
+
 ## [5.11.2] 2023-07-27
 
 ### Fixed
 
 - [TD-5946] Add the keyword type and the sorteable in the mapping for `execution_result_info.result`
+
 ## [5.11.1] 2023-07-27
 
 ### Fixed
