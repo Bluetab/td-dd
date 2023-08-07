@@ -7,6 +7,10 @@
 - [TD-5715] Add posibility for inherit domains when load new structures
 - [TD-5902] Ecto migration to remove index duplicity and reduce disk usage
 
+### Fixed
+
+- [TD-5867] Permit special caracters (Unicode, semicolon, hash) in raw implementations fields (dataset, population and validations)
+
 ## [5.11.3] 2023-07-28
 
 ### Fixed

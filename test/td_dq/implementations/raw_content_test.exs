@@ -36,4 +36,39 @@ defmodule TdDq.Implementations.RawContentTest do
              validations: "validations"
            } = changes
   end
+
+  test "valid changeset" do
+    params = %{
+      "source_id" => 1,
+      "dataset" => Base.encode64("TPERSONS p"),
+      "population" => Base.encode64("p.hobby = '漫画'"),
+      # validation just checks for certain keywords/characters. Middle
+      # semicolon is invalid SQL but it is still accepted.
+      "validations" => Base.encode64("p.age IS NOT ; NULL; # some comment")
+    }
+
+    assert %{changes: changes, valid?: true} = RawContent.changeset(%RawContent{}, params)
+
+    assert %{
+             dataset: "TPERSONS p",
+             population: "p.hobby = '漫画'",
+             validations: "p.age IS NOT ; NULL; # some comment",
+           } = changes
+  end
+
+  test "invalid changeset" do
+    params = %{
+      "source_id" => 1,
+      "dataset" => Base.encode64("TPERSONS p"),
+      "population" => Base.encode64("p.hobby = '漫画'"),
+      "validations" => Base.encode64("p.age IS NOT NULL; DROP TABLE TPERSONS;")
+    }
+
+    assert %{
+      changes: _changes,
+      valid?: false,
+      errors: [validations: {"invalid.validations", [validation: :invalid_content]}],
+    } = RawContent.changeset(%RawContent{}, params)
+  end
+
 end
