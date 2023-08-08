@@ -318,6 +318,26 @@ defmodule TdDdWeb.Schema.StructuresTest do
   }
   """
 
+  @note_query """
+  query DataStructureVersion($dataStructureId: ID!, $version: String!) {
+    dataStructureVersion(dataStructureId: $dataStructureId, version: $version) {
+      id
+      parents{
+        id
+        note
+      }
+      children{
+        id
+        note
+      }
+      data_fields {
+        id
+        note
+      }
+      note
+    }
+  }
+  """
   @variables %{"since" => "2020-01-01T00:00:00Z"}
   @metadata %{"foo" => ["bar"]}
 
@@ -839,7 +859,7 @@ defmodule TdDdWeb.Schema.StructuresTest do
                      ]
                    },
                    %{
-                     "note" => nil,
+                     "note" => %{"has_note" => false},
                      "data_structure_id" => "#{nodef_child_ds_id}",
                      "id" => "#{nodef_child_dsv_id}",
                      "type" => "Table",
@@ -1313,6 +1333,154 @@ defmodule TdDdWeb.Schema.StructuresTest do
                  "profile" => nil
                }
              } = data
+    end
+
+    @tag authentication: [
+           role: "user",
+           permissions: [:view_data_structure]
+         ]
+    test "get data and data_fields with respective last note", %{
+      conn: conn,
+      domain: %{id: domain_id}
+    } do
+      # main
+      %{id: id_ds_main_id} =
+        structure_main = insert(:data_structure, external_id: "main", domain_ids: [domain_id])
+
+      %{id: dsv_main_id} =
+        insert(:data_structure_version,
+          data_structure: structure_main,
+          version: 1
+        )
+
+      %{df_content: main_note} =
+        insert(:structure_note,
+          data_structure_id: id_ds_main_id,
+          df_content: %{"foo main" => "bar main"},
+          status: :published
+        )
+
+      # child 1
+      structure_child_1 = insert(:data_structure, external_id: "child_1", domain_ids: [domain_id])
+
+      %{id: id_dsv_child_1} =
+        insert(:data_structure_version,
+          data_structure: structure_child_1,
+          version: 1,
+          class: "field"
+        )
+
+      create_relation(dsv_main_id, id_dsv_child_1)
+
+      # child 2
+      %{id: id_ds_child_2} =
+        structure_child_2 =
+        insert(:data_structure, external_id: "child_2", domain_ids: [domain_id])
+
+      %{id: id_dsv_child_2} =
+        insert(:data_structure_version,
+          data_structure: structure_child_2,
+          version: 1,
+          class: "field"
+        )
+
+      insert(:structure_note,
+        data_structure_id: id_ds_child_2,
+        df_content: %{
+          "foo" => "bar",
+          "child_field" => "value1",
+          "not_selected_field" => "value2"
+        },
+        status: :published
+      )
+
+      create_relation(dsv_main_id, id_dsv_child_2)
+
+      # parent
+      %{id: id_ds_parent} =
+        structure_parent = insert(:data_structure, external_id: "parent", domain_ids: [domain_id])
+
+      %{id: id_dsv_parent} =
+        insert(:data_structure_version,
+          data_structure: structure_parent,
+          version: 1,
+          class: "field"
+        )
+
+      insert(:structure_note,
+        data_structure_id: id_ds_parent,
+        df_content: %{
+          "foo" => "bar",
+          "PARENTfield" => "value1",
+          "not_selected_field" => "value2"
+        },
+        status: :published
+      )
+
+      create_relation(id_dsv_parent, dsv_main_id)
+
+      variables = %{"dataStructureId" => id_ds_main_id, "version" => "latest"}
+      # assert main
+      str_dsv_main = to_string(dsv_main_id)
+
+      data_fields = [
+        %{"note" => %{"has_note" => false}},
+        %{
+          "note" => %{
+            "child_field" => "value1",
+            "foo" => "bar",
+            "not_selected_field" => "value2"
+          }
+        }
+      ]
+
+      parent_notes = [
+        %{
+          "note" => %{
+            "PARENTfield" => "value1",
+            "foo" => "bar",
+            "not_selected_field" => "value2"
+          }
+        }
+      ]
+
+      children_notes = [
+        %{"note" => %{"has_note" => false}},
+        %{
+          "note" => %{
+            "child_field" => "value1",
+            "foo" => "bar",
+            "not_selected_field" => "value2"
+          }
+        }
+      ]
+
+      assert %{
+               "data" => %{
+                 "dataStructureVersion" => %{
+                   "id" => ^str_dsv_main,
+                   "note" => ^main_note,
+                   "parents" => response_parent,
+                   "children" => response_children,
+                   "data_fields" => response_data_fields
+                 }
+               }
+             } =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @note_query,
+                 "variables" => variables
+               })
+               |> json_response(:ok)
+
+      assert data_fields ==
+               Enum.map(response_data_fields, fn %{"note" => note} -> %{"note" => note} end)
+
+      assert parent_notes ==
+               Enum.map(response_parent, fn %{"note" => note} -> %{"note" => note} end)
+
+      assert children_notes ==
+               Enum.map(response_children, fn %{"note" => note} -> %{"note" => note} end)
     end
 
     @tag authentication: [
