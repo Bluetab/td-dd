@@ -6,6 +6,8 @@
 
 - [TD-5715] Add posibility for inherit domains when load new structures
 - [TD-5902] Ecto migration to remove index duplicity and reduce disk usage
+- [TD-5936] Add Note resolver for dataStructureVersion v2 queries
+
 
 ## [5.11.3] 2023-07-28
 
