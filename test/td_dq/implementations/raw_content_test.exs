@@ -52,7 +52,7 @@ defmodule TdDq.Implementations.RawContentTest do
     assert %{
              dataset: "TPERSONS p",
              population: "p.hobby = '漫画'",
-             validations: "p.age IS NOT ; NULL; # some comment",
+             validations: "p.age IS NOT ; NULL; # some comment"
            } = changes
   end
 
@@ -65,10 +65,9 @@ defmodule TdDq.Implementations.RawContentTest do
     }
 
     assert %{
-      changes: _changes,
-      valid?: false,
-      errors: [validations: {"invalid.validations", [validation: :invalid_content]}],
-    } = RawContent.changeset(%RawContent{}, params)
+             changes: _changes,
+             valid?: false,
+             errors: [validations: {"invalid.validations", [validation: :invalid_content]}]
+           } = RawContent.changeset(%RawContent{}, params)
   end
-
 end

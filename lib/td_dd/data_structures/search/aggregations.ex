@@ -38,16 +38,8 @@ defmodule TdDd.DataStructures.Search.Aggregations do
   defp filter_aggs do
     catalog_view_configs_filters =
       CatalogViewConfigs.list()
+      |> Enum.filter(&(&1.field_type == "note"))
       |> Enum.map(fn
-        %{field_type: "metadata", field_name: field_name} ->
-          {"metadata.#{field_name}",
-           %{
-             terms: %{
-               field: "metadata.#{field_name}.keyword",
-               missing: @missing_term_name
-             }
-           }}
-
         %{field_type: "note", field_name: field_name} ->
           {"note.#{field_name}",
            %{
@@ -62,7 +54,8 @@ defmodule TdDd.DataStructures.Search.Aggregations do
     data_structure_types_filters =
       DataStructureTypes.metadata_filters()
       |> Map.values()
-      |> Enum.flat_map(& &1)
+      |> List.flatten()
+      |> Enum.uniq()
       |> Map.new(fn filter ->
         {"metadata.#{filter}",
          %{terms: %{field: "_filters.#{filter}", missing: @missing_term_name}}}
