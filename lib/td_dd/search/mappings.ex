@@ -21,7 +21,6 @@ defmodule TdDd.Search.Mappings do
   def get_mappings do
     content_mappings = %{type: "object", properties: get_dynamic_mappings("dd")}
     Application.get_all_env(:td_dd)
-    enabled_mappings = Application.get_env(:td_dd, __MODULE__)[:enabled_mappings]
 
     properties = %{
       id: %{type: "long", index: false},
@@ -51,13 +50,9 @@ defmodule TdDd.Search.Mappings do
       external_id: %{type: "keyword", index: false},
       domain_ids: %{type: "long"},
       deleted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-      # Both mutable metadata (version metadata) and non mutable metadata (structure metadata)
       metadata: %{
-        enabled: enabled_mappings[:metadata],
-        type: "object",
-        dynamic: true
+        enabled: false
       },
-      # mutable_metadata: %{enabled: true, type: "object", dynamic: true},
       linked_concepts: %{type: "boolean"},
       inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},

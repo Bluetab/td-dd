@@ -7,6 +7,7 @@
 - [TD-5715] Add posibility for inherit domains when load new structures
 - [TD-5902] Ecto migration to remove index duplicity and reduce disk usage
 - [TD-5936] Add Note resolver for dataStructureVersion v2 queries
+- [TD-5937] Limit Catalog Metadata Views to data structures filters
 
 
 ### Fixed
