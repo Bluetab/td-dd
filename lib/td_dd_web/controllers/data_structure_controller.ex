@@ -40,6 +40,8 @@ defmodule TdDdWeb.DataStructureController do
     :data_structure_type
   ]
 
+  @default_lang "es"
+
   plug(TdDdWeb.SearchPermissionPlug)
 
   action_fallback(TdDdWeb.FallbackController)
@@ -430,6 +432,7 @@ defmodule TdDdWeb.DataStructureController do
 
   def csv(conn, params) do
     header_labels = Map.get(params, "header_labels", %{})
+    {lang, params} = Map.pop(params, "lang", @default_lang)
     structure_url_schema = Map.get(params, "structure_url_schema", nil)
     params = Map.drop(params, ["header_labels", "page", "size", "structure_url_schema"])
 
@@ -446,7 +449,10 @@ defmodule TdDdWeb.DataStructureController do
         conn
         |> put_resp_content_type("text/csv", "utf-8")
         |> put_resp_header("content-disposition", "attachment; filename=\"structures.zip\"")
-        |> send_resp(:ok, Download.to_csv(data_structures, header_labels, structure_url_schema))
+        |> send_resp(
+          :ok,
+          Download.to_csv(data_structures, header_labels, structure_url_schema, lang)
+        )
     end
   end
 

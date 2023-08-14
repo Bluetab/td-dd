@@ -9,6 +9,7 @@ defmodule CacheHelpers do
   alias TdCache.AclCache
   alias TdCache.ConceptCache
   alias TdCache.HierarchyCache
+  alias TdCache.I18nCache
   alias TdCache.ImplementationCache
   alias TdCache.LinkCache
   alias TdCache.Permissions
@@ -169,4 +170,11 @@ defmodule CacheHelpers do
   def get_link(link_id) do
     LinkCache.get(link_id)
   end
+
+  def put_i18n_messages(lang, messages) when is_list(messages) do
+    Enum.each(messages, &I18nCache.put(lang, &1))
+    on_exit(fn -> I18nCache.delete(lang) end)
+  end
+
+  def put_i18n_message(lang, message), do: put_i18n_messages(lang, [message])
 end

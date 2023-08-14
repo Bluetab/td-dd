@@ -4,26 +4,27 @@ defmodule TdDq.Implementations.Download do
   """
 
   alias TdCache.DomainCache
+  alias TdCache.I18nCache
   alias TdCache.TemplateCache
   alias TdDfLib.Format
   alias TdDfLib.Parser
   alias TdDq.Implementations
 
-  def to_csv([], _, _), do: ""
+  def to_csv([], _, _, _), do: ""
 
-  def to_csv(implementations, header_labels, content_labels) do
+  def to_csv(implementations, header_labels, content_labels, lang) do
     implementations
     |> enrich_templates()
-    |> csv_format(header_labels, content_labels)
+    |> csv_format(header_labels, content_labels, lang)
     |> to_string()
   end
 
-  defp csv_format(implementations, header_labels, content_labels) do
+  defp csv_format(implementations, header_labels, content_labels, lang) do
     {rule_fields, rule_field_headers} =
-      fields_with_headers(implementations, &rule_template_content/1)
+      fields_with_headers(implementations, lang, &rule_template_content/1)
 
     {implementation_fields, implementation_field_headers} =
-      fields_with_headers(implementations, &template_content/1)
+      fields_with_headers(implementations, lang, &template_content/1)
 
     result_details_headers =
       implementations
@@ -32,7 +33,7 @@ defmodule TdDq.Implementations.Download do
 
     headers =
       header_labels
-      |> build_headers()
+      |> build_headers(lang)
       |> Kernel.++(
         Enum.map(result_details_headers, fn header ->
           "result_details_" <> Atom.to_string(header)
@@ -45,11 +46,16 @@ defmodule TdDq.Implementations.Download do
 
     implementations =
       format_implementations(
-        content_labels,
-        implementations,
-        rule_fields,
-        implementation_fields,
-        result_details_headers
+        %{
+          content_labels: content_labels,
+          result_details_headers: result_details_headers
+        },
+        %{
+          implementations: implementations,
+          rule_fields: rule_fields,
+          implementation_fields: implementation_fields
+        },
+        lang
       )
 
     export(headers, implementations)
@@ -64,38 +70,40 @@ defmodule TdDq.Implementations.Download do
     |> Enum.uniq()
   end
 
-  defp fields_with_headers(records, fun) do
+  defp fields_with_headers(records, lang, fun) do
     records
     |> Enum.group_by(fun)
     |> Map.delete(nil)
     |> Map.keys()
-    |> Enum.flat_map(&Format.flatten_content_fields/1)
+    |> Enum.flat_map(&Format.flatten_content_fields(&1, lang))
     |> Enum.uniq()
-    |> Enum.map(&{Map.take(&1, ["name", "values", "type"]), Map.get(&1, "label")})
+    |> Enum.map(&{Map.take(&1, ["name", "values", "type", "label"]), Map.get(&1, "definition")})
     |> Enum.unzip()
   end
 
-  defp format_implementations(
-         content_labels,
-         implementations,
-         rule_fields,
-         implementation_fields,
-         result_details_headers
-       ) do
-    number_of_dataset_external_ids = count_implementations_items(implementations, :datasets)
-    number_of_validations_fields = count_implementations_items(implementations, :validations)
+  defp format_implementations(headers, data, lang) do
+    number_of_dataset_external_ids =
+      count_implementations_items(data[:implementations], :datasets)
+
+    number_of_validations_fields =
+      count_implementations_items(data[:implementations], :validations)
+
     time_zone = Application.get_env(:td_dd, :time_zone)
 
-    Enum.map(implementations, fn implementation ->
+    Enum.map(data[:implementations], fn implementation ->
       rule = Map.get(implementation, :rule, %{})
       rule_content = Map.get(rule, :df_content, %{})
       implementation_content = Map.get(implementation, :df_content)
 
       ([
          implementation.implementation_key,
-         implementation.implementation_type,
+         I18nCache.get_definition(
+           lang,
+           "implementations.type.#{implementation.implementation_type}",
+           default_value: implementation.implementation_type
+         ),
          get_domain(implementation.domain_ids),
-         translate("executable.#{implementation.executable}", content_labels),
+         translate("executable.#{implementation.executable}", headers[:content_labels]),
          Map.get(rule, :name, ""),
          Map.get(rule, :df_name, ""),
          implementation.df_name,
@@ -108,11 +116,11 @@ defmodule TdDq.Implementations.Download do
          get_in(implementation, [:execution_result_info, :errors]),
          get_in(implementation, [:execution_result_info, :result]),
          get_in(implementation, [:execution_result_info, :result_text])
-         |> translate(content_labels),
+         |> translate(headers[:content_labels]),
          TdDd.Helpers.shift_zone(implementation.inserted_at, time_zone),
          get_domain(implementation.structure_domain_ids)
        ] ++
-         fill_result_details(implementation, result_details_headers) ++
+         fill_result_details(implementation, headers[:result_details_headers]) ++
          fill_with(
            get_implementation_fields(implementation, :datasets),
            number_of_dataset_external_ids,
@@ -123,11 +131,15 @@ defmodule TdDq.Implementations.Download do
            number_of_validations_fields,
            nil
          ))
-      |> Parser.append_parsed_fields(rule_fields, rule_content, :with_domain_name)
+      |> Parser.append_parsed_fields(data[:rule_fields], rule_content,
+        lang: lang,
+        domain_type: :with_domain_name
+      )
       |> Parser.append_parsed_fields(
-        implementation_fields,
+        data[:implementation_fields],
         implementation_content,
-        :with_domain_name
+        lang: lang,
+        domain_type: :with_domain_name
       )
     end)
   end
@@ -138,7 +150,7 @@ defmodule TdDq.Implementations.Download do
     |> Enum.to_list()
   end
 
-  defp build_headers(header_labels) do
+  defp build_headers(header_labels, lang) do
     [
       "implementation_key",
       "implementation_type",
@@ -158,7 +170,12 @@ defmodule TdDq.Implementations.Download do
       "inserted_at",
       "structure_domains"
     ]
-    |> Enum.map(fn h -> Map.get(header_labels, h, h) end)
+    |> Enum.map(fn h ->
+      default_header =
+        I18nCache.get_definition(lang, "ruleImplementations.props.#{h}", default_value: h)
+
+      Map.get(header_labels, h, default_header)
+    end)
   end
 
   defp concat_headers(header_labels, implementations, items_key) do
