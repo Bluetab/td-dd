@@ -6,13 +6,15 @@ defmodule TdDd.CSV.DownloadTest do
 
   alias TdDd.CSV.Download
 
+  @lang "es"
+
   describe "Structures download" do
     test "download empty csv" do
-      csv = Download.to_csv([])
+      csv = Download.to_csv([], nil, nil, "es")
       assert csv == ""
     end
 
-    test "to_csv/1 return csv content to download" do
+    test "to_csv/4 return csv content to download" do
       template_name = "Table"
       field_name = "add_info1"
       field_label = "Add Info 1"
@@ -56,7 +58,8 @@ defmodule TdDd.CSV.DownloadTest do
       }
 
       structures = [structure_1]
-      csv = Download.to_csv(structures)
+
+      csv = Download.to_csv(structures, nil, nil, @lang)
 
       assert csv ==
                """
@@ -65,7 +68,7 @@ defmodule TdDd.CSV.DownloadTest do
                """
     end
 
-    test "to_csv/3 return csv content to download with tech_name, alias_name and structure link" do
+    test "to_csv/4 return csv content to download with tech_name, alias_name and structure link" do
       field_name = "add_info1"
       field_label = "Add Info 1"
       type = "Columna"
@@ -133,7 +136,7 @@ defmodule TdDd.CSV.DownloadTest do
         "https://truedat.td.dd/structure/" <> to_string(structure_2.data_structure_id)
 
       structures = [structure_1, structure_2]
-      csv = Download.to_csv(structures, nil, structure_url_schema)
+      csv = Download.to_csv(structures, nil, structure_url_schema, @lang)
 
       assert csv ==
                """
@@ -143,7 +146,7 @@ defmodule TdDd.CSV.DownloadTest do
                """
     end
 
-    test "to_csv/1 return csv content to download with hierarchy" do
+    test "to_csv/4 return csv content to download with hierarchy" do
       template_name = "column"
       field_name = "hierarchy_field"
       field_label = "Hierarchy Field"
@@ -209,7 +212,7 @@ defmodule TdDd.CSV.DownloadTest do
       }
 
       structures = [structure_1]
-      csv = Download.to_csv(structures)
+      csv = Download.to_csv(structures, nil, nil, "")
 
       expected_hierarchy_value = "/node_0|/node_1"
 
@@ -220,7 +223,7 @@ defmodule TdDd.CSV.DownloadTest do
                """
     end
 
-    test "to_csv/1 return csv content to download with domain paths, also note domains by their name" do
+    test "to_csv/4 return csv content to download with domain paths, also note domains by their name" do
       template_name = "Table"
       field_name = "add_info1"
       field_label = "Add Info 1"
@@ -290,7 +293,7 @@ defmodule TdDd.CSV.DownloadTest do
       }
 
       structures = [structure_1]
-      csv = Download.to_csv(structures)
+      csv = Download.to_csv(structures, nil, nil, "")
 
       assert csv ==
                """
@@ -576,7 +579,7 @@ defmodule TdDd.CSV.DownloadTest do
                """
     end
 
-    test "to_csv/1 return csv content with multiple fields to download" do
+    test "to_csv/4 return csv content with multiple fields to download" do
       template_name = "Table"
       field_label = "Label foo"
       template_id = 1
@@ -635,16 +638,90 @@ defmodule TdDd.CSV.DownloadTest do
         system: %{"external_id" => "sys", "name" => "sys_name"}
       }
 
-      assert Download.to_csv([structure_1]) ==
+      assert Download.to_csv([structure_1], nil, nil, "") ==
                """
                type;name;group;domain;system;path;description;external_id;inserted_at;#{field_label}1;#{field_label}2;#{field_label}3\r
+               #{structure_1.type};#{structure_1.name};#{structure_1.group};#{domain_name};#{Map.get(structure_1.system, "name")};CMC > Objetos Públicos > Informes > Cuadro de Mando Integral;#{structure_1.description};#{structure_1.external_id};#{structure_1.inserted_at};1|2;multi|field;field\r
+               """
+    end
+
+    test "to_csv/4 return csv translate" do
+      template_name = "Table"
+      field_label = "Label foo"
+      template_id = 1
+      type = "Columna"
+
+      CacheHelpers.insert_template(%{
+        id: template_id,
+        name: template_name,
+        label: "label",
+        scope: "dd",
+        content: [
+          %{
+            "name" => "group",
+            "fields" => [
+              %{
+                "name" => "field_numbers",
+                "type" => "integer",
+                "label" => field_label <> "1",
+                "cardinality" => "*"
+              },
+              %{
+                "name" => "field_texts",
+                "type" => "string",
+                "label" => field_label <> "2",
+                "cardinality" => "+"
+              },
+              %{
+                "name" => "field_text",
+                "type" => "string",
+                "label" => field_label <> "3",
+                "cardinality" => "1"
+              }
+            ]
+          }
+        ]
+      })
+
+      column_es_1 = "column es 11"
+      column_es_2 = "column es 22"
+
+      CacheHelpers.put_i18n_messages("es", [
+        %{message_id: "fields.#{field_label}1", definition: column_es_1},
+        %{message_id: "fields.#{field_label}2", definition: column_es_2}
+      ])
+
+      insert(:data_structure_type, name: type, template_id: template_id)
+      domain_name = "domain_1"
+
+      structure_1 = %{
+        name: "1. 4. 4 Primas Bajas (grafico)",
+        description: "Gráfico de evolución mensual de la prima",
+        template: %{"name" => template_name},
+        note: %{
+          "field_numbers" => [1, 2],
+          "field_texts" => ["multi", "field"],
+          "field_text" => ["field"]
+        },
+        domain: %{"external_id" => "ex_id_1", "name" => domain_name},
+        inserted_at: "2018-05-05",
+        external_id: "myext_292929",
+        group: "gr",
+        path: ["CMC", "Objetos Públicos", "Informes", "Cuadro de Mando Integral"],
+        type: type,
+        system: %{"external_id" => "sys", "name" => "sys_name"}
+      }
+
+      assert Download.to_csv([structure_1], nil, nil, "es") ==
+               """
+               type;name;group;domain;system;path;description;external_id;inserted_at;#{column_es_1};#{column_es_2};#{field_label}3\r
                #{structure_1.type};#{structure_1.name};#{structure_1.group};#{domain_name};#{Map.get(structure_1.system, "name")};CMC > Objetos Públicos > Informes > Cuadro de Mando Integral;#{structure_1.description};#{structure_1.external_id};#{structure_1.inserted_at};1|2;multi|field;field\r
                """
     end
   end
 
   describe "Lineage download" do
-    test "linage_to_csv/3 return csv content" do
+    test "linage_to_csv/4 return csv content" do
       contains_row = [
         source: %{external_id: "eid1", name: "name", class: "Group"},
         target: %{external_id: "eid2", name: "name1", class: "Group"}
