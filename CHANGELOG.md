@@ -8,7 +8,7 @@
 - [TD-5902] Ecto migration to remove index duplicity and reduce disk usage
 - [TD-5936] Add Note resolver for dataStructureVersion v2 queries
 - [TD-5937] Limit Catalog Metadata Views to data structures filters
-
+- [TD-5938] Enable Edit as default/raw implementation for draft status implementations
 
 ### Fixed
 
