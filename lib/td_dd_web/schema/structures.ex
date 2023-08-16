@@ -107,13 +107,12 @@ defmodule TdDdWeb.Schema.Structures do
 
     field :parents, list_of(:data_structure_version) do
       arg(:deleted, :boolean, default_value: false)
-      # resolve(dataloader(TdDd.DataStructures))
       resolve(&Resolvers.Structures.parents/3)
     end
 
     field :children, list_of(:data_structure_version) do
       arg(:deleted, :boolean, default_value: false)
-      resolve(&Resolvers.Structures.childrens/3)
+      resolve(&Resolvers.Structures.children/3)
     end
 
     field(:siblings, list_of(:data_structure_version))
