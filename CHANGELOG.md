@@ -14,6 +14,10 @@
   - Complete reindex: delete temporal index if there are any errors.
 - [TD-5891] Download csv i18n support
 
+## Changed
+
+- [TD-5913] Update td-df-lib to fix depends validation
+
 ### Fixed
 
 - [TD-5867] Permit special caracters (Unicode, semicolon, hash) in raw implementations fields (dataset, population and validations)
