@@ -59,7 +59,7 @@ defmodule Truedat.Search.IndexerTest do
           "_id" => "1769351",
           "_index" => "structures-1691648696299822",
           "_primary_term" => 1,
-          "_seq_no" => 26637,
+          "_seq_no" => 26_637,
           "_shards" => %{"failed" => 0, "successful" => 1, "total" => 2},
           "_type" => "_doc",
           "_version" => 19,

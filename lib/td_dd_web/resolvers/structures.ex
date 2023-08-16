@@ -249,10 +249,13 @@ defmodule TdDdWeb.Resolvers.Structures do
     |> metadata(args, resolution)
   end
 
-  def childrens(parent, args, %{context: %{loader: loader, claims: claims}}) do
+  def children(parent, args, %{context: %{loader: loader, claims: claims}}) do
     batch_key =
       Map.to_list(args) ++
-        [{:preload, [:classifications, :data_structure, :published_note]}]
+        [
+          {:add_children, parent},
+          {:preload, [:classifications, :data_structure, :published_note]}
+        ]
 
     loader
     |> Dataloader.load(TdDd.DataStructures, {:children, batch_key}, parent)
@@ -260,25 +263,26 @@ defmodule TdDdWeb.Resolvers.Structures do
       children =
         loader
         |> Dataloader.get(TdDd.DataStructures, {:children, batch_key}, parent)
-        |> Enum.map(&TdDd.DataStructures.add_classes/1)
         |> Enum.filter(&check_structure_related_permision(&1, claims))
+        |> Enum.map(&add_classes/1)
 
       {:ok, children}
     end)
   end
 
-  def parents(parent, args, %{context: %{loader: loader, claims: claims}}) do
+  def parents(child, args, %{context: %{loader: loader, claims: claims}}) do
     batch_key =
       Map.to_list(args) ++
-        [{:preload, [:data_structure, :published_note]}]
+        [{:add_parents, child}, {:preload, [:classifications, :data_structure, :published_note]}]
 
     loader
-    |> Dataloader.load(TdDd.DataStructures, {:parents, batch_key}, parent)
+    |> Dataloader.load(TdDd.DataStructures, {:parents, batch_key}, child)
     |> on_load(fn loader ->
       parents =
         loader
-        |> Dataloader.get(TdDd.DataStructures, {:parents, batch_key}, parent)
+        |> Dataloader.get(TdDd.DataStructures, {:parents, batch_key}, child)
         |> Enum.filter(&check_structure_related_permision(&1, claims))
+        |> Enum.map(&add_classes/1)
 
       {:ok, parents}
     end)
@@ -321,6 +325,13 @@ defmodule TdDdWeb.Resolvers.Structures do
       _ -> false
     end
   end
+
+  defp add_classes(%{classifications: [_ | _] = classifications} = struct) do
+    classes = Map.new(classifications, fn %{name: name, class: class} -> {name, class} end)
+    Map.put(struct, :classes, classes)
+  end
+
+  defp add_classes(dsv), do: dsv
 
   defp claims(%{context: %{claims: claims}}), do: claims
   defp claims(_), do: nil

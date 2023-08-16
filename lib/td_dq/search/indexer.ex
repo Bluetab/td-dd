@@ -4,13 +4,13 @@ defmodule TdDq.Search.Indexer do
   """
 
   alias Elasticsearch.Index.Bulk
-  alias Truedat.Search.Indexer
   alias TdCache.Redix
   alias TdDd.Search.Cluster
   alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Rule
   alias TdDq.Search.Mappings
   alias TdDq.Search.Store
+  alias Truedat.Search.Indexer
 
   require Logger
 
