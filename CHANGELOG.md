@@ -13,6 +13,7 @@
   - Bulk and complete reindex: better logging.
   - Complete reindex: delete temporal index if there are any errors.
 - [TD-5891] Download csv i18n support
+- [TD-5979] Retrieve only children/parents using default relation type
 
 ## Changed
 

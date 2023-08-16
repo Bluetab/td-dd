@@ -3,12 +3,12 @@ defmodule TdCx.Search.Indexer do
   Manages elasticsearch indices
   """
   alias Elasticsearch.Index.Bulk
-  alias Truedat.Search.Indexer
   alias TdCache.Redix
   alias TdCx.Jobs.Job
   alias TdCx.Search.Mappings
   alias TdCx.Search.Store
   alias TdDd.Search.Cluster
+  alias Truedat.Search.Indexer
 
   require Logger
 
