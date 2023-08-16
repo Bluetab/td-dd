@@ -65,9 +65,7 @@ defmodule TdDd.CSV.Download do
     "mutable_metadata"
   ]
 
-  def to_csv(structures), do: to_csv(structures, nil, nil)
-
-  def to_csv(structures, header_labels, structure_url_schema) do
+  def to_csv(structures, header_labels, structure_url_schema, lang) do
     structures
     |> Enum.group_by(&Map.get(&1, :type))
     |> Enum.reduce([], fn {type, structures}, acc ->
@@ -75,11 +73,14 @@ defmodule TdDd.CSV.Download do
         [name: type]
         |> DataStructureTypes.get_by()
         |> then(fn
-          %{template: %{content: content = [_ | _]}} -> Format.flatten_content_fields(content)
-          _ -> []
+          %{template: %{content: content = [_ | _]}} ->
+            Format.flatten_content_fields(content, lang)
+
+          _ ->
+            []
         end)
 
-      content_labels = Enum.map(content, &Map.get(&1, "label"))
+      content_labels = Enum.map(content, &Map.get(&1, "definition"))
 
       headers =
         if is_nil(structure_url_schema) do
@@ -88,13 +89,17 @@ defmodule TdDd.CSV.Download do
           build_headers(header_labels, @headers_extended) ++ content_labels
         end
 
-      content_fields = Enum.map(content, &Map.take(&1, ["name", "values", "type", "cardinality"]))
+      content_fields =
+        Enum.map(content, &Map.take(&1, ["name", "values", "type", "cardinality", "label"]))
 
       structures_list =
         Enum.map(structures, fn %{note: content} = structure ->
           structure
           |> get_standar_fields(structure_url_schema)
-          |> Parser.append_parsed_fields(content_fields, content, :with_domain_name)
+          |> Parser.append_parsed_fields(content_fields, content,
+            lang: lang,
+            domain_type: :with_domain_name
+          )
         end)
 
       csv_list = export_to_csv(headers, structures_list, !Enum.empty?(acc))
@@ -122,7 +127,7 @@ defmodule TdDd.CSV.Download do
         @editable_headers
         |> Enum.map(&editable_structure_value(structure, &1))
         |> add_editable_extra_fields(structure, structure_url_schema)
-        |> Parser.append_parsed_fields(type_fields, content, :with_domain_external_id)
+        |> Parser.append_parsed_fields(type_fields, content, domain_type: :with_domain_external_id)
       end)
 
     [headers | core]

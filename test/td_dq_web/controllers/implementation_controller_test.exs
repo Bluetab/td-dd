@@ -1145,7 +1145,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "autoPublish" => %{
                  "href" => "/api/rule_implementations/upload",
                  "method" => "POST"
-               }
+               },
+               "convert_raw" => %{"method" => "POST"},
+               "convert_default" => %{"method" => "POST"}
              } == actions
     end
 
@@ -1364,7 +1366,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "autoPublish" => %{
                  "href" => "/api/rule_implementations/upload",
                  "method" => "POST"
-               }
+               },
+               "convert_raw" => %{"method" => "POST"},
+               "convert_default" => %{"method" => "POST"}
              } == actions
     end
 

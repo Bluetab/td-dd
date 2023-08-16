@@ -108,11 +108,6 @@ config :td_cache, :event_stream,
     [group: "dq", key: "template:events", consumer: TdDq.Search.IndexWorker]
   ]
 
-config :td_dd, TdDd.Search.Mappings,
-  enabled_mappings: %{
-    metadata: System.get_env("MAPPINGS_METADATA_ENABLED", "true") |> String.downcase() == "true"
-  }
-
 config :td_dd, TdDd.Scheduler,
   jobs: [
     cache_cleaner: [

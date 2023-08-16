@@ -141,8 +141,18 @@ defmodule TdDdWeb.MetadataController do
   @spec loader_opts(map) :: keyword()
   def loader_opts(%{} = params) do
     params
-    |> Map.take(["domain", "source", "external_id", "parent_external_id", "op", "job_id"])
+    |> Map.take([
+      "domain",
+      "inherit_domains",
+      "source",
+      "external_id",
+      "parent_external_id",
+      "op",
+      "job_id"
+    ])
     |> Keyword.new(fn
+      {"inherit_domains" = k, "true"} -> {String.to_atom(k), true}
+      {"inherit_domains" = k, _} -> {String.to_atom(k), false}
       {"op", v} -> {:operation, v}
       {k, v} -> {String.to_atom(k), v}
     end)

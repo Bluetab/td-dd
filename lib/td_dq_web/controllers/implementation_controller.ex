@@ -10,6 +10,8 @@ defmodule TdDqWeb.ImplementationController do
   alias TdDq.Rules
   alias TdDq.Rules.RuleResults
 
+  @default_lang "es"
+
   action_fallback(TdDqWeb.FallbackController)
 
   def swagger_definitions do
@@ -275,6 +277,7 @@ defmodule TdDqWeb.ImplementationController do
 
     {header_labels, params} = Map.pop(params, "header_labels", %{})
     {content_labels, params} = Map.pop(params, "content_labels", %{})
+    {lang, params} = Map.pop(params, "lang", @default_lang)
 
     implementations =
       params
@@ -283,7 +286,7 @@ defmodule TdDqWeb.ImplementationController do
     conn
     |> put_resp_content_type("text/csv", "utf-8")
     |> put_resp_header("content-disposition", "attachment; filename=\"implementations.zip\"")
-    |> send_resp(:ok, Download.to_csv(implementations, header_labels, content_labels))
+    |> send_resp(:ok, Download.to_csv(implementations, header_labels, content_labels, lang))
   end
 
   defp add_last_rule_result(%Implementation{} = implementation) do

@@ -148,7 +148,7 @@ defmodule TdDdWeb.Resolvers.Structures do
     {:ok, handle_note_select(content, dsv)}
   end
 
-  def note(_dsv, _args, _resolution), do: {:ok, nil}
+  def note(_dsv, _args, _resolution), do: {:ok, %{has_note: false}}
 
   defp handle_note_select(content, dsv, select_fields \\ nil)
 
@@ -158,7 +158,11 @@ defmodule TdDdWeb.Resolvers.Structures do
     |> Map.take(select_fields)
   end
 
-  defp handle_note_select(content, dsv, nil), do: DataStructures.get_cached_content(content, dsv)
+  defp handle_note_select(content, dsv, select_fields)
+       when is_nil(select_fields) or select_fields == [] do
+    DataStructures.get_cached_content(content, dsv)
+  end
+
   defp handle_note_select(_content, _dsv, _), do: nil
 
   def ancestry(%{path: [_ | _] = path}, _args, _resolution), do: {:ok, path}
@@ -248,7 +252,7 @@ defmodule TdDdWeb.Resolvers.Structures do
   def childrens(parent, args, %{context: %{loader: loader, claims: claims}}) do
     batch_key =
       Map.to_list(args) ++
-        [{:preload, [:classifications, :data_structure]}]
+        [{:preload, [:classifications, :data_structure, :published_note]}]
 
     loader
     |> Dataloader.load(TdDd.DataStructures, {:children, batch_key}, parent)
@@ -260,6 +264,23 @@ defmodule TdDdWeb.Resolvers.Structures do
         |> Enum.filter(&check_structure_related_permision(&1, claims))
 
       {:ok, children}
+    end)
+  end
+
+  def parents(parent, args, %{context: %{loader: loader, claims: claims}}) do
+    batch_key =
+      Map.to_list(args) ++
+        [{:preload, [:data_structure, :published_note]}]
+
+    loader
+    |> Dataloader.load(TdDd.DataStructures, {:parents, batch_key}, parent)
+    |> on_load(fn loader ->
+      parents =
+        loader
+        |> Dataloader.get(TdDd.DataStructures, {:parents, batch_key}, parent)
+        |> Enum.filter(&check_structure_related_permision(&1, claims))
+
+      {:ok, parents}
     end)
   end
 
