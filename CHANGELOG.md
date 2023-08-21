@@ -6,6 +6,10 @@
 
 - [TD-5979] Retrieve only children/parents using default relation type
 
+### Changed
+
+- [TD-5974] structure_domain_ids filtered by type = validation
+
 ## [5.12.0] 2023-08-16
 
 ### Added
