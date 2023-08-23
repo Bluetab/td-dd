@@ -1495,14 +1495,148 @@ defmodule TdDq.ImplementationsTest do
       ]
     end
 
-    test "deletes the implementation" do
-      %{id: implementation_ref_id} = implementation = insert(:implementation)
-      claims = build(:claims)
+    test "delete published implementation changes status to deprecated",
+         %{
+           claims: claims
+         } do
+      %{id: implementation_v1_id, implementation_ref: implementation_ref_id} =
+        insert(
+          :implementation,
+          version: 1,
+          status: :versioned
+        )
 
-      assert {:ok, %{implementations: {1, _}}} =
-               Implementations.delete_implementation(implementation, claims)
+      %{id: implementation_v2_id} =
+        implementation_v2 =
+        insert(
+          :implementation,
+          version: 2,
+          status: :published,
+          implementation_ref: implementation_ref_id
+        )
 
-      assert nil == Implementations.get_implementation(implementation_ref_id)
+      assert {:ok,
+              %{implementation: %Implementation{id: ^implementation_v2_id, status: :deprecated}}} =
+               Implementations.delete_implementation(implementation_v2, claims)
+
+      assert %{id: ^implementation_v1_id} =
+               Implementations.get_implementation!(implementation_v1_id)
+    end
+
+    test "delete deprecated implementation do hard delete of all implementation",
+         %{
+           claims: claims,
+           implementation_v1: %{implementation_ref: implementation_ref_id} = implementation_v1,
+           implementation_v2: implementation_v2
+         } do
+      assert {
+               :ok,
+               %{
+                 implementations: {2, deleted_implementations}
+               }
+             } = Implementations.delete_implementation(implementation_v2, claims)
+
+      assert [implementation_v1, implementation_v2] ||| deleted_implementations
+
+      versions = Implementations.get_versions(%{implementation_ref: implementation_ref_id})
+
+      assert Enum.empty?(versions)
+    end
+
+    test "delete draft implementation removes only draft implementation",
+         %{
+           claims: claims,
+           implementation_v1: %{implementation_ref: implementation_ref_id}
+         } do
+      %{id: implementation_v3_id} =
+        implementation_v3 =
+        insert(
+          :implementation,
+          version: 3,
+          status: :draft,
+          implementation_ref: implementation_ref_id
+        )
+
+      assert {
+               :ok,
+               %{
+                 implementations: {1, deleted_implementations}
+               }
+             } = Implementations.delete_implementation(implementation_v3, claims)
+
+      assert [%{id: ^implementation_v3_id}] = deleted_implementations
+
+      versions = Implementations.get_versions(%{implementation_ref: implementation_ref_id})
+
+      assert length(versions) == 2
+    end
+
+    test "delete rejected implementation removes only rejected implementation",
+         %{
+           claims: claims,
+           implementation_v1: %{implementation_ref: implementation_ref_id}
+         } do
+      %{id: implementation_v3_id} =
+        implementation_v3 =
+        insert(
+          :implementation,
+          version: 3,
+          status: :rejected,
+          implementation_ref: implementation_ref_id
+        )
+
+      {
+        :ok,
+        %{
+          implementations: {1, deleted_implementations}
+        }
+      } = Implementations.delete_implementation(implementation_v3, claims)
+
+      assert [%{id: ^implementation_v3_id}] = deleted_implementations
+
+      versions = Implementations.get_versions(%{implementation_ref: implementation_ref_id})
+
+      assert length(versions) == 2
+    end
+
+    test "delete pending_approval implementation removes only pending_approval implementation",
+         %{
+           claims: claims,
+           implementation_v1: %{implementation_ref: implementation_ref_id}
+         } do
+      %{id: implementation_v3_id} =
+        implementation_v3 =
+        insert(
+          :implementation,
+          version: 3,
+          status: :pending_approval,
+          implementation_ref: implementation_ref_id
+        )
+
+      {
+        :ok,
+        %{
+          implementations: {1, deleted_implementations}
+        }
+      } = Implementations.delete_implementation(implementation_v3, claims)
+
+      assert [%{id: ^implementation_v3_id}] = deleted_implementations
+
+      versions = Implementations.get_versions(%{implementation_ref: implementation_ref_id})
+
+      assert length(versions) == 2
+    end
+
+    test "delete versioned implementation don't remove nothing",
+         %{
+           claims: claims,
+           implementation_v1: %{implementation_ref: implementation_ref_id} = implementation_v1
+         } do
+      Implementations.delete_implementation(implementation_v1, claims)
+
+      versions = Implementations.get_versions(%{implementation_ref: implementation_ref_id})
+
+      assert length(versions) == 2
     end
 
     test "deletes the implementation and related data_structures" do

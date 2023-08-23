@@ -10,6 +10,10 @@
 
 - [TD-5974] structure_domain_ids filtered by type = validation
 
+### Fixed
+
+- [TD-5898] Fix behavior of removing implementation based on status
+
 ## [5.12.0] 2023-08-16
 
 ### Added
