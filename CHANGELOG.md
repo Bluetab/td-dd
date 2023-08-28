@@ -5,6 +5,8 @@
 ### Added
 
 - [TD-5979] Retrieve only children/parents using default relation type
+- [TD-5929] Support to upload csv in the navigator language
+  - Download editable metadata is downloaded in the navigator language
 
 ### Changed
 
