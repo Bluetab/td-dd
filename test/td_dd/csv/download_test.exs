@@ -302,283 +302,6 @@ defmodule TdDd.CSV.DownloadTest do
                """
     end
 
-    test "to_editable_csv/1 return csv content to download" do
-      CacheHelpers.insert_template(%{
-        id: 42,
-        name: "template",
-        label: "label",
-        scope: "dd",
-        content: [
-          %{
-            "name" => "group",
-            "fields" => [
-              %{
-                "name" => "field_name",
-                "type" => "list",
-                "label" => "Label foo"
-              }
-            ]
-          }
-        ]
-      })
-
-      insert(:data_structure_type, name: "type", template_id: 42)
-
-      structures = [
-        %{
-          name: "name",
-          path: ["foo", "bar"],
-          template: %{"name" => "template"},
-          note: %{"field_name" => ["field_value"]},
-          external_id: "ext_id",
-          type: "type"
-        }
-      ]
-
-      assert Download.to_editable_csv(structures) ==
-               """
-               external_id;name;type;path;field_name\r
-               ext_id;name;type;foo > bar;field_value\r
-               """
-    end
-
-    test "to_editable_csv/2 return csv content to download with tech_name, alias_name and structure link" do
-      CacheHelpers.insert_template(%{
-        id: 42,
-        name: "template",
-        label: "label",
-        scope: "dd",
-        content: [
-          %{
-            "name" => "group",
-            "fields" => [
-              %{
-                "name" => "field_name",
-                "type" => "list",
-                "label" => "Label foo"
-              },
-              %{
-                "name" => "domain_inside_note_field",
-                "type" => "domain",
-                "label" => "domain_inside_note_field_label",
-                "cardinality" => "*"
-              }
-            ]
-          }
-        ]
-      })
-
-      %{id: domain_inside_note_1_id} =
-        CacheHelpers.insert_domain(%{
-          name: "domain_inside_note_1_name",
-          external_id: "domain_inside_note_1_external_id"
-        })
-
-      %{id: domain_inside_note_2_id} =
-        CacheHelpers.insert_domain(%{
-          name: "domain_inside_note_2_name",
-          external_id: "domain_inside_note_2_external_id"
-        })
-
-      insert(:data_structure_type, name: "type", template_id: 42)
-
-      structure_1 = %{
-        name: "TechName_1",
-        path: ["foo", "bar"],
-        template: %{"name" => "template"},
-        note: %{
-          "field_name" => ["field_value"],
-          "domain_inside_note_field" => [domain_inside_note_1_id, domain_inside_note_2_id]
-        },
-        external_id: "ext_id",
-        type: "type",
-        data_structure_id: 8
-      }
-
-      structure_2 = %{
-        name: "Alias Name 2",
-        original_name: "TechName_2",
-        alias: "Alias Name 2",
-        path: ["foo", "bar"],
-        template: %{"name" => "template"},
-        note: %{"field_name" => ["field_value"], "alias" => "Alias Name 2"},
-        external_id: "ext_id",
-        type: "type",
-        data_structure_id: 8
-      }
-
-      # Simulating structure_url_schema input from web and conversion for structures
-      structure_url_schema = "https://truedat.td.dd/structure/:id"
-
-      structure_1_url_schema_converted =
-        "https://truedat.td.dd/structure/" <> to_string(structure_1.data_structure_id)
-
-      structure_2_url_schema_converted =
-        "https://truedat.td.dd/structure/" <> to_string(structure_2.data_structure_id)
-
-      assert Download.to_editable_csv([structure_1, structure_2], structure_url_schema) ==
-               """
-               external_id;name;type;path;tech_name;alias_name;link_to_structure;field_name;domain_inside_note_field\r
-               #{structure_1.external_id};#{structure_1.name};#{structure_1.type};#{Enum.join(structure_1.path, " > ")};#{structure_1.name};;#{structure_1_url_schema_converted};#{Map.get(structure_1.note, "field_name")};domain_inside_note_1_external_id|domain_inside_note_2_external_id\r
-               #{structure_2.external_id};#{structure_2.name};#{structure_2.type};#{Enum.join(structure_2.path, " > ")};#{structure_2.original_name};#{structure_2.alias};#{structure_2_url_schema_converted};#{Map.get(structure_2.note, "field_name")};\r
-               """
-    end
-  end
-
-  describe "Structure downloads with multiple fields" do
-    test "to_editable_csv/1 return csv content with multiple fields, to download" do
-      CacheHelpers.insert_template(%{
-        id: 42,
-        name: "template",
-        label: "label",
-        scope: "dd",
-        content: [
-          %{
-            "name" => "group",
-            "fields" => [
-              %{
-                "name" => "field_numbers",
-                "type" => "integer",
-                "label" => "Label foo",
-                "cardinality" => "*"
-              },
-              %{
-                "name" => "field_texts",
-                "type" => "string",
-                "label" => "Label foo",
-                "cardinality" => "+"
-              },
-              %{
-                "name" => "field_text",
-                "type" => "string",
-                "label" => "Label foo",
-                "cardinality" => "1"
-              },
-              %{
-                "name" => "field_domains",
-                "type" => "domain",
-                "label" => "Label foo",
-                "cardinality" => "*"
-              }
-            ]
-          }
-        ]
-      })
-
-      insert(:data_structure_type, name: "type", template_id: 42)
-      %{id: domain_id_1} = CacheHelpers.insert_domain(external_id: "domain_1")
-      %{id: domain_id_2} = CacheHelpers.insert_domain(external_id: "domain_2")
-
-      structures = [
-        %{
-          name: "name",
-          path: ["foo", "bar"],
-          template: %{"name" => "template"},
-          note: %{
-            "field_numbers" => [1, 2],
-            "field_texts" => ["multi", "field"],
-            "field_text" => ["field"],
-            "field_domains" => [domain_id_1, domain_id_2]
-          },
-          external_id: "ext_id",
-          type: "type"
-        }
-      ]
-
-      assert Download.to_editable_csv(structures) ==
-               """
-               external_id;name;type;path;field_numbers;field_texts;field_text;field_domains\r
-               ext_id;name;type;foo > bar;1|2;multi|field;field;domain_1|domain_2\r
-               """
-    end
-
-    test "to_editable_csv/1 will not return duplicated fields from templates" do
-      CacheHelpers.insert_template(%{
-        id: 51,
-        name: "template1",
-        label: "label1",
-        scope: "dd",
-        content: [
-          %{
-            "name" => "group",
-            "fields" => [
-              %{
-                "name" => "field1",
-                "type" => "string",
-                "label" => "field1",
-                "cardinality" => "1"
-              },
-              %{
-                "name" => "field_dup",
-                "type" => "string",
-                "label" => "field_dup",
-                "cardinality" => "1"
-              }
-            ]
-          }
-        ]
-      })
-
-      CacheHelpers.insert_template(%{
-        id: 52,
-        name: "template2",
-        label: "label2",
-        scope: "dd",
-        content: [
-          %{
-            "name" => "group",
-            "fields" => [
-              %{
-                "name" => "field2",
-                "type" => "string",
-                "label" => "field2",
-                "cardinality" => "1"
-              },
-              %{
-                "name" => "field_dup",
-                "type" => "string",
-                "label" => "field_dup",
-                "cardinality" => "1"
-              }
-            ]
-          }
-        ]
-      })
-
-      insert(:data_structure_type, name: "type1", template_id: 51)
-      insert(:data_structure_type, name: "type2", template_id: 52)
-
-      structures = [
-        %{
-          name: "name1",
-          path: ["foo", "bar"],
-          note: %{
-            "field1" => "1",
-            "field_dup" => "dup"
-          },
-          external_id: "ext_id1",
-          type: "type1"
-        },
-        %{
-          name: "name2",
-          path: ["foo", "bar"],
-          note: %{
-            "field2" => "2",
-            "field_dup" => "dup"
-          },
-          external_id: "ext_id2",
-          type: "type2"
-        }
-      ]
-
-      assert Download.to_editable_csv(structures) ==
-               """
-               external_id;name;type;path;field1;field_dup;field2\r
-               ext_id1;name1;type1;foo > bar;1;dup;\r
-               ext_id2;name2;type2;foo > bar;;dup;2\r
-               """
-    end
-
     test "to_csv/4 return csv content with multiple fields to download" do
       template_name = "Table"
       field_label = "Label foo"
@@ -716,6 +439,398 @@ defmodule TdDd.CSV.DownloadTest do
                """
                type;name;group;domain;system;path;description;external_id;inserted_at;#{column_es_1};#{column_es_2};#{field_label}3\r
                #{structure_1.type};#{structure_1.name};#{structure_1.group};#{domain_name};#{Map.get(structure_1.system, "name")};CMC > Objetos Públicos > Informes > Cuadro de Mando Integral;#{structure_1.description};#{structure_1.external_id};#{structure_1.inserted_at};1|2;multi|field;field\r
+               """
+    end
+
+    test "to_editable_csv return csv content to download" do
+      CacheHelpers.insert_template(%{
+        id: 42,
+        name: "template",
+        label: "label",
+        scope: "dd",
+        content: [
+          %{
+            "name" => "group",
+            "fields" => [
+              %{
+                "name" => "field_name",
+                "type" => "list",
+                "label" => "Label foo"
+              }
+            ]
+          }
+        ]
+      })
+
+      insert(:data_structure_type, name: "type", template_id: 42)
+
+      structures = [
+        %{
+          name: "name",
+          path: ["foo", "bar"],
+          template: %{"name" => "template"},
+          note: %{"field_name" => ["field_value"]},
+          external_id: "ext_id",
+          type: "type"
+        }
+      ]
+
+      assert Download.to_editable_csv(structures, nil, @lang) ==
+               """
+               external_id;name;type;path;field_name\r
+               ext_id;name;type;foo > bar;field_value\r
+               """
+    end
+
+    test "to_editable_csv return csv content to download with tech_name, alias_name and structure link" do
+      CacheHelpers.insert_template(%{
+        id: 42,
+        name: "template",
+        label: "label",
+        scope: "dd",
+        content: [
+          %{
+            "name" => "group",
+            "fields" => [
+              %{
+                "name" => "field_name",
+                "type" => "list",
+                "label" => "Label foo"
+              },
+              %{
+                "name" => "domain_inside_note_field",
+                "type" => "domain",
+                "label" => "domain_inside_note_field_label",
+                "cardinality" => "*"
+              }
+            ]
+          }
+        ]
+      })
+
+      %{id: domain_inside_note_1_id} =
+        CacheHelpers.insert_domain(%{
+          name: "domain_inside_note_1_name",
+          external_id: "domain_inside_note_1_external_id"
+        })
+
+      %{id: domain_inside_note_2_id} =
+        CacheHelpers.insert_domain(%{
+          name: "domain_inside_note_2_name",
+          external_id: "domain_inside_note_2_external_id"
+        })
+
+      insert(:data_structure_type, name: "type", template_id: 42)
+
+      structure_1 = %{
+        name: "TechName_1",
+        path: ["foo", "bar"],
+        template: %{"name" => "template"},
+        note: %{
+          "field_name" => ["field_value"],
+          "domain_inside_note_field" => [domain_inside_note_1_id, domain_inside_note_2_id]
+        },
+        external_id: "ext_id",
+        type: "type",
+        data_structure_id: 8
+      }
+
+      structure_2 = %{
+        name: "Alias Name 2",
+        original_name: "TechName_2",
+        alias: "Alias Name 2",
+        path: ["foo", "bar"],
+        template: %{"name" => "template"},
+        note: %{"field_name" => ["field_value"], "alias" => "Alias Name 2"},
+        external_id: "ext_id",
+        type: "type",
+        data_structure_id: 8
+      }
+
+      # Simulating structure_url_schema input from web and conversion for structures
+      structure_url_schema = "https://truedat.td.dd/structure/:id"
+
+      structure_1_url_schema_converted =
+        "https://truedat.td.dd/structure/" <> to_string(structure_1.data_structure_id)
+
+      structure_2_url_schema_converted =
+        "https://truedat.td.dd/structure/" <> to_string(structure_2.data_structure_id)
+
+      assert Download.to_editable_csv([structure_1, structure_2], structure_url_schema, @lang) ==
+               """
+               external_id;name;type;path;tech_name;alias_name;link_to_structure;field_name;domain_inside_note_field\r
+               #{structure_1.external_id};#{structure_1.name};#{structure_1.type};#{Enum.join(structure_1.path, " > ")};#{structure_1.name};;#{structure_1_url_schema_converted};#{Map.get(structure_1.note, "field_name")};domain_inside_note_1_external_id|domain_inside_note_2_external_id\r
+               #{structure_2.external_id};#{structure_2.name};#{structure_2.type};#{Enum.join(structure_2.path, " > ")};#{structure_2.original_name};#{structure_2.alias};#{structure_2_url_schema_converted};#{Map.get(structure_2.note, "field_name")};\r
+               """
+    end
+
+    test "to_editable_csv return editable csv translated" do
+      template_name = "Test i18n"
+      template_id = 1
+
+      CacheHelpers.insert_template(%{
+        id: template_id,
+        name: template_name,
+        label: "label",
+        scope: "dd",
+        content: [
+          %{
+            "name" => "group",
+            "fields" => [
+              %{
+                "cardinality" => "?",
+                "default" => "",
+                "label" => "i18n_test.dropdown.fixed",
+                "name" => "i18n_test.dropdown.fixed",
+                "subscribable" => false,
+                "type" => "string",
+                "values" => %{
+                  "fixed" => [
+                    "pear",
+                    "banana"
+                  ]
+                },
+                "widget" => "dropdown"
+              },
+              %{
+                "cardinality" => "?",
+                "default" => "",
+                "label" => "i18n_test_no_translate",
+                "name" => "i18n_test_no_translate",
+                "type" => "string",
+                "values" => nil,
+                "widget" => "string"
+              },
+              %{
+                "cardinality" => "?",
+                "default" => "",
+                "label" => "i18n_test.radio.fixed",
+                "name" => "i18n_test.radio.fixed",
+                "subscribable" => false,
+                "type" => "string",
+                "values" => %{
+                  "fixed" => [
+                    "pear",
+                    "banana"
+                  ]
+                },
+                "widget" => "radio"
+              },
+              %{
+                "cardinality" => "*",
+                "default" => "",
+                "label" => "i18n_test.checkbox.fixed_tuple",
+                "name" => "i18n_test.checkbox.fixed_tuple",
+                "subscribable" => false,
+                "type" => "string",
+                "values" => %{
+                  "fixed_tuple" => [
+                    %{
+                      "text" => "pear",
+                      "value" => "option_1"
+                    },
+                    %{
+                      "text" => "banana",
+                      "value" => "option_2"
+                    }
+                  ]
+                },
+                "widget" => "checkbox"
+              }
+            ]
+          }
+        ]
+      })
+
+      CacheHelpers.put_i18n_messages("es", [
+        %{message_id: "fields.i18n_test.dropdown.fixed", definition: "Dropdown Fijo"},
+        %{message_id: "fields.i18n_test.dropdown.fixed.pear", definition: "Pera"},
+        %{message_id: "fields.i18n_test.dropdown.fixed.banana", definition: "Platano"},
+        %{message_id: "fields.i18n_test.radio.fixed", definition: "Radio Fijo"},
+        %{message_id: "fields.i18n_test.radio.fixed.pear", definition: "Pera"},
+        %{message_id: "fields.i18n_test.radio.fixed.banana", definition: "Platano"},
+        %{message_id: "fields.i18n_test.checkbox.fixed_tuple", definition: "Checkbox Tupla Fija"},
+        %{message_id: "fields.i18n_test.checkbox.fixed_tuple.pear", definition: "Pera"},
+        %{message_id: "fields.i18n_test.checkbox.fixed_tuple.banana", definition: "Platano"}
+      ])
+
+      insert(:data_structure_type, name: "type", template_id: template_id)
+
+      structures = [
+        %{
+          name: "name",
+          path: ["foo", "bar"],
+          template: %{"name" => template_name},
+          note: %{
+            "i18n_test.dropdown.fixed" => "pear",
+            "i18n_test_no_translate" => "Test no translate",
+            "i18n_test.radio.fixed" => "banana",
+            "i18n_test.checkbox.fixed_tuple" => ["option_1", "option_2"]
+          },
+          external_id: "ext_id",
+          type: "type"
+        }
+      ]
+
+      assert Download.to_editable_csv(structures, nil, @lang) ==
+               """
+               external_id;name;type;path;i18n_test.dropdown.fixed;i18n_test_no_translate;i18n_test.radio.fixed;i18n_test.checkbox.fixed_tuple\r
+               ext_id;name;type;foo > bar;Pera;Test no translate;Platano;Pera|Platano\r
+               """
+    end
+  end
+
+  describe "Structure downloads with multiple fields" do
+    test "to_editable_csv return csv content with multiple fields, to download" do
+      CacheHelpers.insert_template(%{
+        id: 42,
+        name: "template",
+        label: "label",
+        scope: "dd",
+        content: [
+          %{
+            "name" => "group",
+            "fields" => [
+              %{
+                "name" => "field_numbers",
+                "type" => "integer",
+                "label" => "Label foo",
+                "cardinality" => "*"
+              },
+              %{
+                "name" => "field_texts",
+                "type" => "string",
+                "label" => "Label foo",
+                "cardinality" => "+"
+              },
+              %{
+                "name" => "field_text",
+                "type" => "string",
+                "label" => "Label foo",
+                "cardinality" => "1"
+              },
+              %{
+                "name" => "field_domains",
+                "type" => "domain",
+                "label" => "Label foo",
+                "cardinality" => "*"
+              }
+            ]
+          }
+        ]
+      })
+
+      insert(:data_structure_type, name: "type", template_id: 42)
+      %{id: domain_id_1} = CacheHelpers.insert_domain(external_id: "domain_1")
+      %{id: domain_id_2} = CacheHelpers.insert_domain(external_id: "domain_2")
+
+      structures = [
+        %{
+          name: "name",
+          path: ["foo", "bar"],
+          template: %{"name" => "template"},
+          note: %{
+            "field_numbers" => [1, 2],
+            "field_texts" => ["multi", "field"],
+            "field_text" => ["field"],
+            "field_domains" => [domain_id_1, domain_id_2]
+          },
+          external_id: "ext_id",
+          type: "type"
+        }
+      ]
+
+      assert Download.to_editable_csv(structures, nil, @lang) ==
+               """
+               external_id;name;type;path;field_numbers;field_texts;field_text;field_domains\r
+               ext_id;name;type;foo > bar;1|2;multi|field;field;domain_1|domain_2\r
+               """
+    end
+
+    test "to_editable_csv will not return duplicated fields from templates" do
+      CacheHelpers.insert_template(%{
+        id: 51,
+        name: "template1",
+        label: "label1",
+        scope: "dd",
+        content: [
+          %{
+            "name" => "group",
+            "fields" => [
+              %{
+                "name" => "field1",
+                "type" => "string",
+                "label" => "field1",
+                "cardinality" => "1"
+              },
+              %{
+                "name" => "field_dup",
+                "type" => "string",
+                "label" => "field_dup",
+                "cardinality" => "1"
+              }
+            ]
+          }
+        ]
+      })
+
+      CacheHelpers.insert_template(%{
+        id: 52,
+        name: "template2",
+        label: "label2",
+        scope: "dd",
+        content: [
+          %{
+            "name" => "group",
+            "fields" => [
+              %{
+                "name" => "field2",
+                "type" => "string",
+                "label" => "field2",
+                "cardinality" => "1"
+              },
+              %{
+                "name" => "field_dup",
+                "type" => "string",
+                "label" => "field_dup",
+                "cardinality" => "1"
+              }
+            ]
+          }
+        ]
+      })
+
+      insert(:data_structure_type, name: "type1", template_id: 51)
+      insert(:data_structure_type, name: "type2", template_id: 52)
+
+      structures = [
+        %{
+          name: "name1",
+          path: ["foo", "bar"],
+          note: %{
+            "field1" => "1",
+            "field_dup" => "dup"
+          },
+          external_id: "ext_id1",
+          type: "type1"
+        },
+        %{
+          name: "name2",
+          path: ["foo", "bar"],
+          note: %{
+            "field2" => "2",
+            "field_dup" => "dup"
+          },
+          external_id: "ext_id2",
+          type: "type2"
+        }
+      ]
+
+      assert Download.to_editable_csv(structures, nil, @lang) ==
+               """
+               external_id;name;type;path;field1;field_dup;field2\r
+               ext_id1;name1;type1;foo > bar;1;dup;\r
+               ext_id2;name2;type2;foo > bar;;dup;2\r
                """
     end
   end

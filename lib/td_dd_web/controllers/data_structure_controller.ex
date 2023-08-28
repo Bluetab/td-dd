@@ -40,7 +40,7 @@ defmodule TdDdWeb.DataStructureController do
     :data_structure_type
   ]
 
-  @default_lang "es"
+  @default_lang "en"
 
   plug(TdDdWeb.SearchPermissionPlug)
 
@@ -457,6 +457,7 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   def editable_csv(conn, params) do
+    {lang, params} = Map.pop(params, "lang", @default_lang)
     structure_url_schema = Map.get(params, "structure_url_schema", nil)
     params = Map.drop(params, ["page", "size", "structure_url_schema"])
     permission = conn.assigns[:search_permission]
@@ -472,7 +473,7 @@ defmodule TdDdWeb.DataStructureController do
         conn
         |> put_resp_content_type("text/csv", "utf-8")
         |> put_resp_header("content-disposition", "attachment; filename=\"structures.zip\"")
-        |> send_resp(:ok, Download.to_editable_csv(data_structures, structure_url_schema))
+        |> send_resp(:ok, Download.to_editable_csv(data_structures, structure_url_schema, lang))
     end
   end
 

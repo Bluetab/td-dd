@@ -109,7 +109,7 @@ defmodule TdDd.CSV.Download do
     |> to_string
   end
 
-  def to_editable_csv(structures, structure_url_schema \\ nil) do
+  def to_editable_csv(structures, structure_url_schema, lang) do
     type_fields =
       structures
       |> Enum.map(& &1.type)
@@ -127,7 +127,10 @@ defmodule TdDd.CSV.Download do
         @editable_headers
         |> Enum.map(&editable_structure_value(structure, &1))
         |> add_editable_extra_fields(structure, structure_url_schema)
-        |> Parser.append_parsed_fields(type_fields, content, domain_type: :with_domain_external_id)
+        |> Parser.append_parsed_fields(type_fields, content,
+          domain_type: :with_domain_external_id,
+          lang: lang
+        )
       end)
 
     [headers | core]
@@ -197,9 +200,8 @@ defmodule TdDd.CSV.Download do
       ]
   end
 
-  defp type_editable_fields(%{template: %{content: content}}) when is_list(content) do
-    Enum.flat_map(content, &Map.get(&1, "fields"))
-  end
+  defp type_editable_fields(%{template: %{content: content}}) when is_list(content),
+    do: Enum.flat_map(content, &Map.get(&1, "fields"))
 
   defp type_editable_fields(_type), do: []
 
