@@ -19,6 +19,7 @@ defmodule TdDd.DataStructures do
   alias TdDd.DataStructures.DataStructureQueries
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.DataStructures.StructureNote
   alias TdDd.Grants
@@ -431,6 +432,7 @@ defmodule TdDd.DataStructures do
     default = Keyword.get(opts, :default)
     deleted = Keyword.get(opts, :deleted)
     confidential = Keyword.get(opts, :with_confidential)
+    default_relation_type_id = RelationTypes.default_id!()
 
     DataStructureRelation
     |> where([r], r.parent_id == ^id)
@@ -441,8 +443,8 @@ defmodule TdDd.DataStructures do
     |> with_confidential(confidential, dynamic([child_ds: ds], ds.confidential == false))
     |> relation_type_condition(
       default,
-      dynamic([relation_type: rt], rt.name == "default"),
-      dynamic([relation_type: rt], rt.name != "default")
+      dynamic([relation_type: rt], rt.id == ^default_relation_type_id),
+      dynamic([relation_type: rt], rt.id != ^default_relation_type_id)
     )
     |> order_by([child: c], asc: c.data_structure_id, desc: c.version)
     |> distinct([child: c], c)
@@ -460,6 +462,7 @@ defmodule TdDd.DataStructures do
     default = Keyword.get(opts, :default)
     deleted = Keyword.get(opts, :deleted)
     confidential = Keyword.get(opts, :with_confidential)
+    default_relation_type_id = RelationTypes.default_id!()
 
     DataStructureRelation
     |> where([r], r.child_id == ^id)
@@ -469,8 +472,8 @@ defmodule TdDd.DataStructures do
     |> with_deleted(deleted, dynamic([parent: parent], is_nil(parent.deleted_at)))
     |> relation_type_condition(
       default,
-      dynamic([relation_type: rt], rt.name == "default"),
-      dynamic([relation_type: rt], rt.name != "default")
+      dynamic([relation_type: rt], rt.id == ^default_relation_type_id),
+      dynamic([relation_type: rt], rt.id != ^default_relation_type_id)
     )
     |> with_confidential(confidential, dynamic([parent_ds: ds], ds.confidential == false))
     |> order_by([parent: p], asc: p.data_structure_id, desc: p.version)
@@ -488,6 +491,7 @@ defmodule TdDd.DataStructures do
   def get_siblings(%DataStructureVersion{id: id}, opts \\ []) do
     default = Keyword.get(opts, :default)
     confidential = Keyword.get(opts, :with_confidential)
+    default_relation_type_id = RelationTypes.default_id!()
 
     DataStructureRelation
     |> where([r], r.child_id == ^id)
@@ -505,13 +509,13 @@ defmodule TdDd.DataStructures do
     |> with_confidential(confidential, dynamic([sibling_ds: ds], ds.confidential == false))
     |> relation_type_condition(
       default,
-      dynamic([parent_rt: rt], rt.name == "default"),
-      dynamic([parent_rt: rt], rt.name != "default")
+      dynamic([parent_rt: rt], rt.id == ^default_relation_type_id),
+      dynamic([parent_rt: rt], rt.id != ^default_relation_type_id)
     )
     |> relation_type_condition(
       default,
-      dynamic([child_rt: rt], rt.name == "default"),
-      dynamic([child_rt: rt], rt.name != "default")
+      dynamic([child_rt: rt], rt.id == ^default_relation_type_id),
+      dynamic([child_rt: rt], rt.id != ^default_relation_type_id)
     )
     |> order_by([sibling: s], asc: s.data_structure_id, desc: s.version)
     |> distinct([sibling: s], s)
@@ -1149,13 +1153,6 @@ defmodule TdDd.DataStructures do
     )
   end
 
-  def add_classes(%{classifications: [_ | _] = classifications} = struct) do
-    classes = Map.new(classifications, fn %{name: name, class: class} -> {name, class} end)
-    Map.put(struct, :classes, classes)
-  end
-
-  def add_classes(dsv), do: dsv
-
   ## Dataloader
 
   def datasource do
@@ -1166,7 +1163,29 @@ defmodule TdDd.DataStructures do
     Enum.reduce(params, queryable, fn
       {:deleted, false}, q -> where(q, [dsv], is_nil(dsv.deleted_at))
       {:deleted, true}, q -> where(q, [dsv], not is_nil(dsv.deleted_at))
+      {:add_children, parent}, q -> add_children(q, parent)
+      {:add_parents, child}, q -> add_parents(q, child)
       {:preload, preload}, q -> preload(q, ^preload)
     end)
+  end
+
+  defp add_children(q, %{id: parent_id}) do
+    default_type = RelationTypes.default_id!()
+
+    q
+    |> join(:inner, [dsv], r in DataStructureRelation,
+      on: r.child_id == dsv.id and r.parent_id == ^parent_id
+    )
+    |> where([_dsv, r], r.relation_type_id == ^default_type)
+  end
+
+  defp add_parents(q, %{id: child_id}) do
+    default_type = RelationTypes.default_id!()
+
+    q
+    |> join(:inner, [dsv], r in DataStructureRelation,
+      on: r.parent_id == dsv.id and r.child_id == ^child_id
+    )
+    |> where([_dsv, r], r.relation_type_id == ^default_type)
   end
 end

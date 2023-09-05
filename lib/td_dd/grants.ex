@@ -233,7 +233,7 @@ defmodule TdDd.Grants do
   defp enrich(:dsv_children, grants) do
     grant_ids = Enum.map(grants, &Map.get(&1, :id))
 
-    dsv_grant_childrens =
+    dsv_grant_children =
       DataStructureQueries.dsv_grant_children(grant_ids: grant_ids)
       |> Repo.all()
       |> Enum.map(fn %{dsv_children: dsv_children} = dsv_grant_children ->
@@ -245,7 +245,7 @@ defmodule TdDd.Grants do
       |> Enum.reduce(%{}, &Map.put(&2, &1.grant_id, &1.dsv_children))
 
     Enum.map(grants, fn grant ->
-      Map.put(grant, :dsv_children, Map.get(dsv_grant_childrens, grant.id))
+      Map.put(grant, :dsv_children, Map.get(dsv_grant_children, grant.id))
     end)
   end
 end

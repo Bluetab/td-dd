@@ -4,7 +4,7 @@ defmodule TdDd.DataStructures.Hasher do
   bulk loading. Three hashes are calculated:
 
     * `hash` - The hash of the struct's own hashable fields
-    * `lhash` - The hash of the struct's hash and its childrens hashes
+    * `lhash` - The hash of the struct's hash and its children hashes
     * `ghash` - The hash of the struct's hash and its descendents hashes
 
   The module also implements the `Task` behaviour to calculate the initial hash of

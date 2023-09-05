@@ -527,6 +527,7 @@ defmodule TdDq.Implementations.Implementation do
       structure_domain_ids =
         implementation
         |> Map.get(:data_structures)
+        |> Enum.filter(&(&1.type === :validation))
         |> Enum.flat_map(& &1.data_structure.domain_ids)
         |> Enum.uniq()
 

@@ -4,7 +4,6 @@ defmodule TdDd.Search.Indexer do
   """
 
   alias Elasticsearch.Index.Bulk
-  alias Truedat.Search.Indexer
   alias TdCache.Redix
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Grants.GrantStructure
@@ -13,6 +12,7 @@ defmodule TdDd.Search.Indexer do
   alias TdDd.Search.Store
   alias TdDd.Search.StructureEnricher
   alias TdDd.Search.Tasks
+  alias Truedat.Search.Indexer
 
   require Logger
 

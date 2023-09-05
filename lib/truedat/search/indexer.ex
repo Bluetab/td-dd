@@ -1,7 +1,12 @@
 defmodule Truedat.Search.Indexer do
+  @moduledoc """
+  Manages elasticsearch indices
+  """
+
   require Logger
-  alias Elasticsearch.Index
+
   alias Elasticsearch.Cluster.Config
+  alias Elasticsearch.Index
   alias Elasticsearch.Index.Bulk
 
   def maybe_hot_swap({:ok, _put_template_result}, cluster, alias_name) do

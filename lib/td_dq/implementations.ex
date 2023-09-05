@@ -444,14 +444,32 @@ defmodule TdDq.Implementations do
   end
 
   def delete_implementation(
-        %Implementation{implementation_ref: implementation_ref_id},
+        %Implementation{} = implementation,
         %Claims{user_id: user_id}
       ) do
-    query =
-      Implementation
-      |> where([i], i.implementation_ref == ^implementation_ref_id)
-      |> select([i], i)
+    implementation
+    |> prepare_query_phisical_delete()
+    |> phisical_delete(user_id)
+  end
 
+  defp prepare_query_phisical_delete(%Implementation{
+         status: :deprecated,
+         implementation_ref: implementation_ref_id
+       }) do
+    Implementation
+    |> where([i], i.implementation_ref == ^implementation_ref_id)
+    |> select([i], i)
+  end
+
+  defp prepare_query_phisical_delete(%Implementation{
+         id: implementation_id
+       }) do
+    Implementation
+    |> where([i], i.id == ^implementation_id and i.status != :versioned)
+    |> select([i], i)
+  end
+
+  defp phisical_delete(query, user_id) do
     Multi.new()
     |> Multi.delete_all(:implementations, query)
     |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
