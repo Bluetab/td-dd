@@ -1,5 +1,19 @@
 # Changelog
 
+## [5.13.0] 2023-09-05
+
+### Added
+
+- [TD-5979] Retrieve only children/parents using default relation type
+
+### Changed
+
+- [TD-5974] structure_domain_ids filtered by type = validation
+
+### Fixed
+
+- [TD-5898] Fix behavior of removing implementation based on status
+
 ## [5.12.0] 2023-08-16
 
 ### Added

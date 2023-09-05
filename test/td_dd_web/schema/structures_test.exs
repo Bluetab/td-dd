@@ -121,7 +121,10 @@ defmodule TdDdWeb.Schema.StructuresTest do
         inserted_at
         updated_at
       }
-      parents { dataStructure { external_id } }
+      parents {
+        dataStructure { external_id }
+        classes
+      }
       children {
         dataStructure { external_id }
         classes
@@ -414,7 +417,8 @@ defmodule TdDdWeb.Schema.StructuresTest do
 
     @tag authentication: [role: "service"]
     test "can query parents, excludes deleted parents", %{conn: conn} do
-      %{parent_id: parent_id} = insert(:data_structure_relation)
+      %{parent_id: parent_id} =
+        insert(:data_structure_relation, relation_type_id: RelationTypes.default_id!())
 
       assert %{"data" => data} =
                response =
@@ -443,6 +447,62 @@ defmodule TdDdWeb.Schema.StructuresTest do
       assert %{"dataStructureVersions" => data_structure_versions} = data
 
       refute Enum.any?(data_structure_versions, &(%{"id" => "#{parent_id}"} in &1["parents"]))
+    end
+
+    @tag authentication: [role: "service"]
+    test "returns only children with default relation type", %{conn: conn} do
+      %{id: ds_father_id} =
+        structure_father =
+        insert(:data_structure,
+          external_id: "father"
+        )
+
+      %{id: dsv_father_id} =
+        insert(:data_structure_version, data_structure: structure_father, version: 1)
+
+      structure_child_1_dom =
+        insert(:data_structure,
+          external_id: "child_1_dom"
+        )
+
+      %{id: dsv_child_1_dom_id} =
+        insert(:data_structure_version, data_structure: structure_child_1_dom, version: 1)
+
+      structure_child_2_dom =
+        insert(:data_structure,
+          external_id: "child_2_dom"
+        )
+
+      %{id: dsv_child_2_dom_id} =
+        insert(:data_structure_version, data_structure: structure_child_2_dom, version: 1)
+
+      %{id: non_default_relation_type_id} = insert(:relation_type)
+
+      ## Structure relations
+
+      create_relation(dsv_father_id, dsv_child_1_dom_id)
+      create_relation(dsv_father_id, dsv_child_2_dom_id, non_default_relation_type_id)
+
+      variables = %{"dataStructureId" => ds_father_id, "version" => "latest"}
+
+      assert %{"data" => %{"dataStructureVersion" => %{"children" => children}}} =
+               response =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @version_query,
+                 "variables" => variables
+               })
+               |> json_response(:ok)
+
+      assert response["errors"] == nil
+
+      assert [
+               %{
+                 "dataStructure" => %{
+                   "external_id" => "child_1_dom"
+                 }
+               }
+             ] = children
     end
 
     @tag authentication: [role: "service"]
@@ -601,6 +661,9 @@ defmodule TdDdWeb.Schema.StructuresTest do
           &insert(:data_structure_version, data_structure_id: &1.id, class: structure_class.(&1))
         )
 
+      %{class: class_value_parent, name: class_name_parent} =
+        insert(:structure_classification, data_structure_version_id: parent_dsv_id)
+
       %{class: class_value_child, name: class_name_child} =
         insert(:structure_classification, data_structure_version_id: child_id)
 
@@ -756,15 +819,16 @@ defmodule TdDdWeb.Schema.StructuresTest do
                  "id" => "#{id}",
                  "metadata" => %{"description" => "some description"},
                  "parents" => [
-                   %{"dataStructure" => %{"external_id" => "parent"}},
-                   %{"dataStructure" => %{"external_id" => "non_default_parent"}}
+                   %{
+                     "dataStructure" => %{"external_id" => "parent"},
+                     "classes" => %{class_name_parent => class_value_parent}
+                   }
                  ],
                  "children" => [
                    %{
                      "dataStructure" => %{"external_id" => "child"},
                      "classes" => %{class_name_child => class_value_child}
-                   },
-                   %{"dataStructure" => %{"external_id" => "non_default_child"}, "classes" => nil}
+                   }
                  ],
                  "siblings" => [
                    %{"dataStructure" => %{"external_id" => external_id}},
@@ -991,7 +1055,7 @@ defmodule TdDdWeb.Schema.StructuresTest do
     end
 
     @tag authentication: [role: "user", permissions: [:view_data_structure]]
-    test "returns data childs when the childs have permissions by the user",
+    test "returns data children when the children have permissions by the user",
          %{
            conn: conn,
            domain: %{id: domain_id}
