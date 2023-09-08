@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-5979] Retrieve only children/parents using default relation type
+- [TD-5935] Remediation GraphQL API, with pagination and filters.
 
 ### Changed
 
