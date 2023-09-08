@@ -38,7 +38,6 @@ defmodule TdDd.DataStructures.BulkUpdate do
     )
   end
 
-  def from_csv(upload), do: from_csv(upload, :default)
   def from_csv(nil, _), do: {:error, %{message: :no_csv_uploaded}}
 
   def from_csv(upload, :simple) do
@@ -48,13 +47,15 @@ defmodule TdDd.DataStructures.BulkUpdate do
     end
   end
 
-  def from_csv(upload, :default) do
+  def from_csv(upload, lang), do: from_csv(upload, :default, lang)
+
+  def from_csv(upload, :default, lang) do
     with {:ok, rows} <- parse_file(upload) do
       rows
       |> parse_rows(@data_structure_preloads)
       |> Enum.filter(fn {_row, data_structure, _index} -> data_structure end)
       |> Enum.reduce_while([], fn {row, data_structure, index}, acc ->
-        case format_content(row, data_structure, index) do
+        case format_content(row, data_structure, index, lang) do
           {:error, error} -> {:halt, {:error, error}}
           content -> {:cont, acc ++ [content]}
         end
@@ -69,8 +70,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
 
   defp parse_rows(rows, preloads \\ []) do
     rows
-    |> Enum.with_index()
-    |> Enum.map(fn {row, index} -> {row, index + 2} end)
+    |> Enum.with_index(2)
     |> Enum.map(fn
       {%{"external_id" => external_id} = row, index} ->
         {
@@ -257,7 +257,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
     }
   end
 
-  defp format_content(row, data_structure, row_index) do
+  defp format_content(row, data_structure, row_index, lang) do
     data_structure
     |> DataStructures.template_name()
     |> Templates.content_schema()
@@ -278,12 +278,24 @@ defmodule TdDd.DataStructures.BulkUpdate do
           Parser.format_content(%{
             content: content,
             content_schema: content_schema,
-            domain_ids: domain_ids
+            domain_ids: domain_ids,
+            lang: lang
           })
+          |> Enum.map(fn {field, value} -> {field, format_content_errors(value)} end)
+          |> Map.new()
 
         {%{"df_content" => content}, %{data_structure: data_structure, row_index: row_index}}
     end
   end
+
+  defp format_content_errors(content) when is_list(content) do
+    case Enum.find(content, fn cont -> match?({:error, _}, cont) end) do
+      {:error, _} = error -> error
+      _ -> content
+    end
+  end
+
+  defp format_content_errors(content_value), do: content_value
 
   defp do_update(ids, %{} = params, %Claims{user_id: user_id}, auto_publish) do
     data_structures =

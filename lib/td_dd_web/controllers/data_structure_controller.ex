@@ -40,7 +40,7 @@ defmodule TdDdWeb.DataStructureController do
     :data_structure_type
   ]
 
-  @default_lang "en"
+  @default_lang Application.compile_env(:td_dd, :lang)
 
   plug(TdDdWeb.SearchPermissionPlug)
 
@@ -317,6 +317,7 @@ defmodule TdDdWeb.DataStructureController do
 
   def bulk_update_template_content(conn, params) do
     %{user_id: user_id} = claims = conn.assigns[:current_resource]
+    {lang, params} = Map.pop(params, "lang", @default_lang)
     structures_content_upload = Map.get(params, "structures")
 
     auto_publish = params |> Map.get("auto_publish", "false") |> String.to_existing_atom()
@@ -329,7 +330,8 @@ defmodule TdDdWeb.DataStructureController do
                csv_hash,
                structures_content_upload,
                user_id,
-               auto_publish
+               auto_publish,
+               lang
              ) do
           {:just_started, ^csv_hash, task_reference} ->
             {
