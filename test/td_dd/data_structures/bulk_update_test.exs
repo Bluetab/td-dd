@@ -690,9 +690,9 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                    df_content:
                      {_,
                       [
-                        {:"i18n_test.checkbox.fixed", {:no_translation_found}},
-                        {:"i18n_test.dropdown.fixed", {:no_translation_found}},
-                        {:"i18n_test.radio.fixed", {:no_translation_found}}
+                        {:"i18n_test.checkbox.fixed", :no_translation_found},
+                        {:"i18n_test.dropdown.fixed", :no_translation_found},
+                        {:"i18n_test.radio.fixed", :no_translation_found}
                       ]}
                  ]
                }, _}} = note_error
