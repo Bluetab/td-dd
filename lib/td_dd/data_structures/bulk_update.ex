@@ -281,21 +281,10 @@ defmodule TdDd.DataStructures.BulkUpdate do
             domain_ids: domain_ids,
             lang: lang
           })
-          |> Enum.map(fn {field, value} -> {field, format_content_errors(value)} end)
-          |> Map.new()
 
         {%{"df_content" => content}, %{data_structure: data_structure, row_index: row_index}}
     end
   end
-
-  defp format_content_errors(content) when is_list(content) do
-    case Enum.find(content, fn cont -> match?({:error, _}, cont) end) do
-      {:error, _} = error -> error
-      _ -> content
-    end
-  end
-
-  defp format_content_errors(content_value), do: content_value
 
   defp do_update(ids, %{} = params, %Claims{user_id: user_id}, auto_publish) do
     data_structures =

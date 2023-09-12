@@ -35,36 +35,36 @@ defmodule TdDq.Implementations.BulkLoad do
     "validations" => []
   }
 
+  @default_lang Application.compile_env(:td_dd, :lang)
+
   def required_headers, do: @required_headers
 
-  def bulk_load(implementations, claims) do
-    bulk_load(implementations, claims, false)
-  end
+  def bulk_load(implementations, claims, auto_publish \\ false, lang \\ @default_lang)
 
-  def bulk_load(implementations, claims, auto_publish) do
+  def bulk_load(implementations, claims, auto_publish, lang) do
     Logger.info("Loading Implementations...")
 
     Timer.time(
-      fn -> do_bulk_load(implementations, claims, auto_publish) end,
+      fn -> do_bulk_load(implementations, claims, auto_publish, lang) end,
       fn millis, _ -> Logger.info("Implementation loaded in #{millis}ms") end
     )
   end
 
-  defp do_bulk_load(implementations, claims, auto_publish) do
+  defp do_bulk_load(implementations, claims, auto_publish, lang) do
     %{ids_to_reindex: ids} =
-      result = upsert_implementations(implementations, claims, auto_publish)
+      result = upsert_implementations(implementations, claims, auto_publish, lang)
 
     @index_worker.reindex_implementations(ids)
     {:ok, result}
   end
 
-  defp upsert_implementations(implementations_params, claims, auto_publish) do
+  defp upsert_implementations(implementations_params, claims, auto_publish, lang) do
     to_status = if auto_publish, do: "published", else: "draft"
 
     {processed_params, errors} =
       implementations_params
       |> Enum.map(&Map.put(&1, "status", to_status))
-      |> Enum.map(&process_params(&1))
+      |> Enum.map(&process_params(&1, lang))
       |> Enum.split_with(fn {v, _} -> v == :ok end)
 
     errors = Enum.map(errors, fn {:error, v} -> v end)
@@ -113,10 +113,10 @@ defmodule TdDq.Implementations.BulkLoad do
     end
   end
 
-  defp process_params(%{"implementation_key" => imp_key} = params) do
+  defp process_params(%{"implementation_key" => imp_key} = params, lang) do
     with {:ok, imp} <- enrich_implementation(params),
          {:ok, imp} <- maybe_put_domain_id(imp) do
-      case format_df_content(imp) do
+      case format_df_content(imp, lang) do
         {:error, error} -> {:error, %{implementation_key: imp_key, message: error}}
         imp -> imp
       end
@@ -192,7 +192,7 @@ defmodule TdDq.Implementations.BulkLoad do
   defp domain_ids(%{"domain_id" => domain_id}), do: [domain_id]
   defp domain_ids(_), do: nil
 
-  defp format_df_content(%{"df_name" => template_name, "df_content" => df_content} = params)
+  defp format_df_content(%{"df_name" => template_name, "df_content" => df_content} = params, lang)
        when is_binary(template_name) do
     case TemplateCache.get_by_name!(template_name) do
       nil ->
@@ -208,12 +208,13 @@ defmodule TdDq.Implementations.BulkLoad do
           Parser.format_content(%{
             content: df_content,
             content_schema: content_schema,
-            domain_ids: domain_ids(params)
+            domain_ids: domain_ids(params),
+            lang: lang
           })
 
         {:ok, Map.put(params, "df_content", content)}
     end
   end
 
-  defp format_df_content(params), do: {:ok, params}
+  defp format_df_content(params, _lang), do: {:ok, params}
 end

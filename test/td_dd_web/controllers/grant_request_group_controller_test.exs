@@ -422,7 +422,8 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
                |> post(Routes.grant_request_group_path(conn, :create), grant_request_group: params)
                |> json_response(:unprocessable_entity)
 
-      assert %{"requests" => [%{"metadata" => ["list: can't be blank - string: can't be blank"]}]} = errors
+      assert %{"requests" => [%{"metadata" => ["list: can't be blank - string: can't be blank"]}]} =
+               errors
     end
   end
 

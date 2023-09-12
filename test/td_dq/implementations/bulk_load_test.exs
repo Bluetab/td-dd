@@ -285,6 +285,179 @@ defmodule TdDq.Implementations.BulkLoadTest do
       assert {:ok, %{ids: [_id1, _id2], errors: []}} = BulkLoad.bulk_load(imp, claims)
     end
 
+    test "return ids with valid df_content that include fixed values translated with single cardinality",
+         %{
+           claims: claims,
+           domain: %{id: domain_id}
+         } do
+      template_content = [
+        %{
+          "fields" => [
+            %{
+              "cardinality" => "1",
+              "label" => "i18n",
+              "name" => "i18n",
+              "type" => "string",
+              "values" => %{"fixed" => ["one", "two", "three"]}
+            }
+          ],
+          "name" => "group_name0"
+        }
+      ]
+
+      %{name: template_name} =
+        CacheHelpers.insert_template(
+          scope: "ri",
+          content: template_content
+        )
+
+      CacheHelpers.put_i18n_message("es", %{message_id: "fields.i18n.one", definition: "uno"})
+      CacheHelpers.put_i18n_message("en", %{message_id: "fields.i18n.one", definition: "one"})
+
+      [imp | _] = @valid_implementation
+
+      imp =
+        imp
+        |> Map.put("template", template_name)
+        |> Map.put("i18n", "uno")
+        |> Map.put("domain_id", domain_id)
+
+      assert {:ok, %{ids: [id1], errors: []}} = BulkLoad.bulk_load([imp], claims, false, "es")
+
+      df_content = %{"i18n" => "one"}
+
+      assert %{df_content: ^df_content} = Implementations.get_implementation!(id1)
+    end
+
+    test "return ids with valid df_content that include fixed values translated with multiple cardinality",
+         %{
+           claims: claims,
+           domain: %{id: domain_id}
+         } do
+      template_content = [
+        %{
+          "fields" => [
+            %{
+              "cardinality" => "+",
+              "label" => "i18n",
+              "name" => "i18n",
+              "type" => "string",
+              "values" => %{"fixed" => ["one", "two", "three"]}
+            }
+          ],
+          "name" => "group_name0"
+        }
+      ]
+
+      %{name: template_name} =
+        CacheHelpers.insert_template(
+          scope: "ri",
+          content: template_content
+        )
+
+      CacheHelpers.put_i18n_messages("es", [
+        %{message_id: "fields.i18n.one", definition: "uno"},
+        %{message_id: "fields.i18n.two", definition: "dos"}
+      ])
+
+      CacheHelpers.put_i18n_messages("en", [
+        %{message_id: "fields.i18n.one", definition: "one"},
+        %{message_id: "fields.i18n.two", definition: "two"}
+      ])
+
+      [imp | _] = @valid_implementation
+
+      imp =
+        imp
+        |> Map.put("template", template_name)
+        |> Map.put("i18n", "uno|dos")
+        |> Map.put("domain_id", domain_id)
+
+      assert {:ok, %{ids: [id1], errors: []}} = BulkLoad.bulk_load([imp], claims, false, "es")
+
+      df_content = %{"i18n" => ["one", "two"]}
+
+      assert %{df_content: ^df_content} = Implementations.get_implementation!(id1)
+    end
+
+    test "return error with df_content that include fixed values without translation and single cardinality",
+         %{
+           claims: claims,
+           domain: %{id: domain_id}
+         } do
+      template_content = [
+        %{
+          "fields" => [
+            %{
+              "cardinality" => "1",
+              "label" => "i18n",
+              "name" => "i18n",
+              "type" => "string",
+              "values" => %{"fixed" => ["one", "two", "three"]}
+            }
+          ],
+          "name" => "group_name0"
+        }
+      ]
+
+      %{name: template_name} =
+        CacheHelpers.insert_template(
+          scope: "ri",
+          content: template_content
+        )
+
+      [imp | _] = @valid_implementation
+
+      imp =
+        imp
+        |> Map.put("template", template_name)
+        |> Map.put("i18n", "uno")
+        |> Map.put("domain_id", domain_id)
+
+      assert {:ok,
+              %{ids: [], errors: [%{message: %{df_content: ["i18n: translation not found"]}}]}} =
+               BulkLoad.bulk_load([imp], claims, false, "es")
+    end
+
+    test "return error with df_content that include fixed values without translation and multiple cardinality",
+         %{
+           claims: claims,
+           domain: %{id: domain_id}
+         } do
+      template_content = [
+        %{
+          "fields" => [
+            %{
+              "cardinality" => "+",
+              "label" => "i18n",
+              "name" => "i18n",
+              "type" => "string",
+              "values" => %{"fixed" => ["one", "two", "three"]}
+            }
+          ],
+          "name" => "group_name0"
+        }
+      ]
+
+      %{name: template_name} =
+        CacheHelpers.insert_template(
+          scope: "ri",
+          content: template_content
+        )
+
+      [imp | _] = @valid_implementation
+
+      imp =
+        imp
+        |> Map.put("template", template_name)
+        |> Map.put("i18n", "uno|dos")
+        |> Map.put("domain_id", domain_id)
+
+      assert {:ok,
+              %{ids: [], errors: [%{message: %{df_content: ["i18n: translation not found"]}}]}} =
+               BulkLoad.bulk_load([imp], claims, false, "es")
+    end
+
     test "return error when rule not exist", %{
       rule: %{name: rule_name},
       claims: claims,
