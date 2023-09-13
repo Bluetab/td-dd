@@ -53,6 +53,7 @@ defmodule TdDq.Rules.BulkLoad do
     rules
     |> Enum.reduce(%{ids: [], errors: []}, fn %{"name" => rule_name} = rule, acc ->
       enriched_rule = enrich_rule(rule, lang)
+
       case Rules.create_rule(enriched_rule, claims, true) do
         {:ok, %{rule: %{id: id}}} ->
           %{acc | ids: [id | acc.ids]}

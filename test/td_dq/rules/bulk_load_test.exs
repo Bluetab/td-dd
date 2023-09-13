@@ -354,16 +354,20 @@ defmodule TdDq.Rules.BulkLoadTest do
           |> Map.put("i18n", "uno|tres")
         end)
 
-      assert {:ok, %{ids: [], errors: [
-        %{
-          message: %{df_content: ["i18n: translation not found"]},
-          rule_name: "foo_rule"
-        },
-        %{
-          message: %{df_content: ["i18n: translation not found"]},
-          rule_name: "bar_rule"
-        }
-      ]}} = BulkLoad.bulk_load(rules, claims, "es")
+      assert {:ok,
+              %{
+                ids: [],
+                errors: [
+                  %{
+                    message: %{df_content: ["i18n: translation not found"]},
+                    rule_name: "foo_rule"
+                  },
+                  %{
+                    message: %{df_content: ["i18n: translation not found"]},
+                    rule_name: "bar_rule"
+                  }
+                ]
+              }} = BulkLoad.bulk_load(rules, claims, "es")
     end
 
     test "return error when domain_external_id not exit", %{
