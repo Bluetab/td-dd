@@ -83,7 +83,7 @@ defmodule TdDd.DataStructures.BulkUpdater do
                  BulkUpdate.split_succeeded_errors(update_notes) do
             make_summary(updates, updated_notes, not_updated_notes)
           else
-            {:error, _} = error -> error
+            error -> error
           end
         end
       )

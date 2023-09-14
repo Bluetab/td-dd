@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-5929] Support to upload csv of implementations, rule and strucutures
+  in the browser language
+  - Download editable metadata is downloaded in the browser language
+
 ## [5.13.1] 2023-09-14
 
 ### Fixed
@@ -32,8 +40,6 @@
 
 - [TD-5979] Retrieve only children/parents using default relation type
 - [TD-5935] Remediation GraphQL API, with pagination and filters.
-- [TD-5929] Support to upload csv in the browser language
-  - Download editable metadata is downloaded in the navigator language
 
 ### Changed
 
