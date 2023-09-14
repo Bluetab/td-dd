@@ -121,6 +121,7 @@ defmodule TdDd.Search.Mappings do
       field
       |> field_mapping
       |> maybe_boost(field)
+      |> maybe_disable_search(field)
     end)
   end
 
@@ -178,4 +179,10 @@ defmodule TdDd.Search.Mappings do
   defp maybe_boost(field_tuple, _), do: field_tuple
 
   defp mapping_type(_default), do: %{type: "text", fields: @raw}
+
+  defp maybe_disable_search({name, field_value}, %{"searchable" => false}) do
+    {name, Map.drop(field_value, [:fields])}
+  end
+
+  defp maybe_disable_search(field_tuple, _), do: field_tuple
 end
