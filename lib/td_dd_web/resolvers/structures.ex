@@ -69,7 +69,8 @@ defmodule TdDdWeb.Resolvers.Structures do
        dsv
        |> maybe_check_siblings_permission(claims)
        |> Map.put(:actions, actions)
-       |> Map.put(:user_permissions, user_permissions)}
+       |> Map.put(:user_permissions, user_permissions)
+      }
     else
       {:claims, nil} -> {:error, :unauthorized}
       {:enriched_dsv, nil} -> {:error, :not_found}
@@ -286,21 +287,6 @@ defmodule TdDdWeb.Resolvers.Structures do
 
       {:ok, parents}
     end)
-  end
-
-  def data_fields(%{data_structure: ds} = dsv, _args, %{context: %{claims: claims}} = _resolution) do
-    deleted = not is_nil(Map.get(dsv, :deleted_at))
-
-    opts =
-      get_permissions_opts(ds, claims) ++
-        [
-          deleted: deleted,
-          preload: [:published_note, [data_structure: :profile]]
-        ]
-
-    data_fields = DataStructures.get_field_structures(dsv, opts)
-
-    {:ok, data_fields}
   end
 
   def profile(%{data_structure: ds} = dsv, _args, %{context: %{claims: claims}} = _resolution) do

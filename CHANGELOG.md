@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-6016] Restore missing data fields degree enrichment
+
 ## [5.13.0] 2023-09-05
 
 ### Added

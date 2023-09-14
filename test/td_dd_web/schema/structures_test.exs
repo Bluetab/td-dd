@@ -205,6 +205,20 @@ defmodule TdDdWeb.Schema.StructuresTest do
   }
   """
 
+  @enriched_data_fields_query """
+  query DataStructureVersion($dataStructureId: ID!, $version: String!){
+    dataStructureVersion(dataStructureId: $dataStructureId, version: $version) {
+      dataFields {
+        name
+        degree {
+          in
+          out
+        }
+      }
+    }
+  }
+  """
+
   @permissions_domains_query """
   query DataStructureVersion($dataStructureId: ID!, $version: String!) {
     dataStructureVersion(dataStructureId: $dataStructureId, version: $version) {
@@ -503,6 +517,88 @@ defmodule TdDdWeb.Schema.StructuresTest do
                  }
                }
              ] = children
+    end
+
+    @tag authentication: [role: "service"]
+    test "data fields enriched with degree", %{conn: conn} do
+      %{id: ds_father_id} =
+        structure_father =
+        insert(:data_structure,
+          external_id: "table"
+        )
+
+      %{id: dsv_father_id} =
+        insert(:data_structure_version,
+          data_structure: structure_father,
+          version: 1,
+          class: "table",
+          name: "table"
+        )
+
+      structure_child_1 =
+        insert(:data_structure,
+          external_id: "field_1"
+        )
+
+      %{id: dsv_child_1_id} =
+        insert(:data_structure_version,
+          data_structure: structure_child_1,
+          version: 1,
+          class: "field",
+          name: "field_1"
+        )
+
+      structure_child_2 =
+        insert(:data_structure,
+          external_id: "field_2"
+        )
+
+      %{id: dsv_child_2_id} =
+        insert(:data_structure_version,
+          data_structure: structure_child_2,
+          version: 1,
+          class: "field",
+          name: "field_2"
+        )
+
+      ## Structure relations
+
+      create_relation(dsv_father_id, dsv_child_1_id)
+      create_relation(dsv_father_id, dsv_child_2_id)
+
+      ### Graph
+
+      nodes = ["table", "field_1", "field_2"]
+
+      GraphData.state(
+        state:
+          setup_state(%{
+            contains: nodes,
+            depends: [
+              {"table", "field_1", [metadata: "table_to_field_label"]},
+              {"table", "field_2", [metadata: "table_to_field_label"]},
+              {"field_1", "field_2", [metadata: "field_to_field_label"]}
+            ]
+          })
+      )
+
+      variables = %{"dataStructureId" => ds_father_id, "version" => "latest"}
+
+      assert %{"data" => %{"dataStructureVersion" => %{"dataFields" => data_fields}}} =
+               response =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @enriched_data_fields_query,
+                 "variables" => variables
+               })
+               |> json_response(:ok)
+
+      assert response["errors"] == nil
+
+      assert [
+               %{"degree" => %{"in" => 1, "out" => 1}, "name" => "field_1"},
+               %{"degree" => %{"in" => 2, "out" => 0}, "name" => "field_2"}
+             ] = data_fields
     end
 
     @tag authentication: [role: "service"]
