@@ -12,7 +12,7 @@ defmodule TdDq.Remediations.Remediation do
     belongs_to(:rule_result, RuleResult)
     field(:df_name, :string)
     field(:df_content, :map)
-    timestamps()
+    timestamps(type: :utc_datetime_usec)
   end
 
   def changeset(attrs) do

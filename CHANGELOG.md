@@ -22,6 +22,27 @@
 
 ## [5.12.0] 2023-08-16
 
+### Fixed
+
+- [TD-6016] Restore missing data fields degree enrichment
+
+## [5.13.0] 2023-09-05
+
+### Added
+
+- [TD-5979] Retrieve only children/parents using default relation type
+- [TD-5935] Remediation GraphQL API, with pagination and filters.
+
+### Changed
+
+- [TD-5974] structure_domain_ids filtered by type = validation
+
+### Fixed
+
+- [TD-5898] Fix behavior of removing implementation based on status
+
+## [5.12.0] 2023-08-16
+
 ### Added
 
 - [TD-5715] Add posibility for inherit domains when load new structures
