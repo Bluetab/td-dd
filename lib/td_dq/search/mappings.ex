@@ -275,7 +275,7 @@ defmodule TdDq.Search.Mappings do
   defp maybe_boost(field_tuple, _), do: field_tuple
 
   defp maybe_disable_search({name, field_value}, %{"searchable" => false}) do
-    {name, Map.put(field_value, :index, false)}
+    {name, Map.drop(field_value, [:fields])}
   end
 
   defp maybe_disable_search(field_tuple, _), do: field_tuple
