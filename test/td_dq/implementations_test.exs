@@ -2055,6 +2055,42 @@ defmodule TdDq.ImplementationsTest do
       assert id3 in ids
     end
 
+    test "deprecates implementations ruleless which don't reference existing structure ids" do
+      %{data_structure_id: structure_id1} = insert(:data_structure_version)
+
+      %{data_structure_id: structure_id2} =
+        insert(:data_structure_version, deleted_at: DateTime.utc_now())
+
+      insert(:implementation,
+        dataset: [build(:dataset_row, structure: build(:dataset_structure, id: structure_id1))],
+        populations: [],
+        validation: [],
+        segments: [],
+        rule: nil,
+        rule_id: nil
+      )
+
+      assert :ok = Implementations.deprecate_implementations()
+
+      %{id: id2} =
+        insert(:implementation,
+          dataset: [build(:dataset_row, structure: build(:dataset_structure, id: structure_id2))],
+          populations: [],
+          validation: [],
+          segments: [],
+          rule: nil,
+          rule_id: nil
+        )
+
+      %{id: id3} = insert(:implementation, rule: nil, rule_id: nil)
+
+      assert {:ok, %{deprecated: deprecated}} = Implementations.deprecate_implementations()
+      assert {2, implementations} = deprecated
+      assert ids = Enum.map(implementations, & &1.id)
+      assert id2 in ids
+      assert id3 in ids
+    end
+
     test "only deprecates implementations with unexisting reference dataset" do
       %{id: id} = insert(:reference_dataset)
 
@@ -2070,6 +2106,31 @@ defmodule TdDq.ImplementationsTest do
       %{id: id_to_deprecate} =
         insert(:implementation,
           dataset: [%{structure: %{id: id + 1, type: "reference_dataset"}}]
+        )
+
+      assert {:ok, %{deprecated: deprecated}} = Implementations.deprecate_implementations()
+      assert {1, [%{id: ^id_to_deprecate}]} = deprecated
+    end
+
+    test "only deprecates implementations ruleless with unexisting reference dataset" do
+      %{id: id} = insert(:reference_dataset)
+
+      insert(:implementation,
+        dataset: [build(:dataset_row, structure: %{id: id, type: "reference_dataset"})],
+        populations: [],
+        validation: [],
+        segments: [],
+        rule_id: nil,
+        rule: nil
+      )
+
+      assert :ok = Implementations.deprecate_implementations()
+
+      %{id: id_to_deprecate} =
+        insert(:implementation,
+          dataset: [%{structure: %{id: id + 1, type: "reference_dataset"}}],
+          rule_id: nil,
+          rule: nil
         )
 
       assert {:ok, %{deprecated: deprecated}} = Implementations.deprecate_implementations()
