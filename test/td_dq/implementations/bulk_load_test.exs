@@ -312,7 +312,6 @@ defmodule TdDq.Implementations.BulkLoadTest do
         )
 
       CacheHelpers.put_i18n_message("es", %{message_id: "fields.i18n.one", definition: "uno"})
-      CacheHelpers.put_i18n_message("en", %{message_id: "fields.i18n.one", definition: "one"})
 
       [imp | _] = @valid_implementation
 
@@ -360,11 +359,6 @@ defmodule TdDq.Implementations.BulkLoadTest do
         %{message_id: "fields.i18n.two", definition: "dos"}
       ])
 
-      CacheHelpers.put_i18n_messages("en", [
-        %{message_id: "fields.i18n.one", definition: "one"},
-        %{message_id: "fields.i18n.two", definition: "two"}
-      ])
-
       [imp | _] = @valid_implementation
 
       imp =
@@ -380,7 +374,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
       assert %{df_content: ^df_content} = Implementations.get_implementation!(id1)
     end
 
-    test "return error with df_content that include fixed values without translation and single cardinality",
+    test "return error with df_content that include fixed values without i18n key and single cardinality",
          %{
            claims: claims,
            domain: %{id: domain_id}
@@ -414,12 +408,10 @@ defmodule TdDq.Implementations.BulkLoadTest do
         |> Map.put("i18n", "uno")
         |> Map.put("domain_id", domain_id)
 
-      assert {:ok,
-              %{ids: [], errors: [%{message: %{df_content: ["i18n: translation not found"]}}]}} =
-               BulkLoad.bulk_load([imp], claims, false, "es")
+        assert {:ok, %{errors: [%{implementation_key: "boo", message: %{df_content: ["i18n: is invalid"]}}]}}
     end
 
-    test "return error with df_content that include fixed values without translation and multiple cardinality",
+    test "return error with df_content that include fixed values without i18n key and multiple cardinality",
          %{
            claims: claims,
            domain: %{id: domain_id}
@@ -453,9 +445,8 @@ defmodule TdDq.Implementations.BulkLoadTest do
         |> Map.put("i18n", "uno|dos")
         |> Map.put("domain_id", domain_id)
 
-      assert {:ok,
-              %{ids: [], errors: [%{message: %{df_content: ["i18n: translation not found"]}}]}} =
-               BulkLoad.bulk_load([imp], claims, false, "es")
+        assert {:ok, %{errors: [%{message: %{df_content: ["i18n: has an invalid entry"]}}]}} =
+          BulkLoad.bulk_load([imp], claims, false, "es")
     end
 
     test "return error when rule not exist", %{

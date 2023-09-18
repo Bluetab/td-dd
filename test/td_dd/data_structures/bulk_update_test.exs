@@ -116,7 +116,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
           "label" => "i18n_test.dropdown.fixed",
           "name" => "i18n_test.dropdown.fixed",
           "type" => "string",
-          "values" => %{"fixed" => ["Pear", "Banana", "Apple"]},
+          "values" => %{"fixed" => ["pear", "banana", "apple", "peach"]},
           "widget" => "dropdown"
         },
         %{
@@ -132,7 +132,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
           "label" => "i18n_test.radio.fixed",
           "name" => "i18n_test.radio.fixed",
           "type" => "string",
-          "values" => %{"fixed" => ["Pear", "Banana", "Apple"]},
+          "values" => %{"fixed" => ["pear", "banana", "apple", "peach"]},
           "widget" => "radio"
         },
         %{
@@ -140,7 +140,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
           "label" => "i18n_test.checkbox.fixed",
           "name" => "i18n_test.checkbox.fixed",
           "type" => "string",
-          "values" => %{"fixed" => ["Pear", "Banana", "Apple"]},
+          "values" => %{"fixed" => ["pear", "banana", "apple", "peach"]},
           "widget" => "checkbox"
         }
       ]
@@ -636,7 +636,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                upload
                |> BulkUpdate.from_csv(lang)
                |> BulkUpdate.do_csv_bulk_update(user_id)
-
       assert :ok = IndexWorker.quiesce()
 
       ids = Map.keys(update_notes)
@@ -644,21 +643,21 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert Enum.all?(ids, fn id -> id in structure_ids end)
 
       assert %{
-               "i18n_test.checkbox.fixed" => ["Pear", "Apple"],
-               "i18n_test.dropdown.fixed" => "Pear",
-               "i18n_test.radio.fixed" => "Apple",
+               "i18n_test.checkbox.fixed" => ["pear", "apple"],
+               "i18n_test.dropdown.fixed" => "peach",
+               "i18n_test.radio.fixed" => "apple",
                "i18n_test_no_translate" => "SIN TRADUCCION"
              } = get_df_content_from_ext_id("ex_id11")
 
       assert %{
-               "i18n_test.checkbox.fixed" => ["Pear", "Banana"],
-               "i18n_test.dropdown.fixed" => "Apple",
-               "i18n_test.radio.fixed" => "Banana",
+               "i18n_test.checkbox.fixed" => ["pear", "banana"],
+               "i18n_test.dropdown.fixed" => "apple",
+               "i18n_test.radio.fixed" => "banana",
                "i18n_test_no_translate" => "SIN TRADUCCION"
              } = get_df_content_from_ext_id("ex_id12")
     end
 
-    test "update data structures notes with values without translation return error" do
+    test "update data structures notes with values without i18n key and invalid value return error" do
       expect_bulk_index()
 
       lang = "es"
@@ -690,9 +689,8 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                    df_content:
                      {_,
                       [
-                        {:"i18n_test.checkbox.fixed", :no_translation_found},
-                        {:"i18n_test.dropdown.fixed", :no_translation_found},
-                        {:"i18n_test.radio.fixed", :no_translation_found}
+                        {:"i18n_test.checkbox.fixed", {"has an invalid entry", _}},
+                        {:"i18n_test.radio.fixed", {"is invalid", _}},
                       ]}
                  ]
                }, _}} = note_error
@@ -919,32 +917,17 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   defp insert_i18n_messages(_) do
     CacheHelpers.put_i18n_messages("es", [
       %{message_id: "fields.i18n_test.dropdown.fixed", definition: "Dropdown Fijo"},
-      %{message_id: "fields.i18n_test.dropdown.fixed.pear", definition: "Pera"},
-      %{message_id: "fields.i18n_test.dropdown.fixed.banana", definition: "Plátano"},
-      %{message_id: "fields.i18n_test.dropdown.fixed.apple", definition: "Manzana"},
+      %{message_id: "fields.i18n_test.dropdown.fixed.pear", definition: "pera"},
+      %{message_id: "fields.i18n_test.dropdown.fixed.banana", definition: "plátano"},
+      %{message_id: "fields.i18n_test.dropdown.fixed.apple", definition: "manzana"},
       %{message_id: "fields.i18n_test.radio.fixed", definition: "Radio Fijo"},
-      %{message_id: "fields.i18n_test.radio.fixed.pear", definition: "Pera"},
-      %{message_id: "fields.i18n_test.radio.fixed.banana", definition: "Plátano"},
-      %{message_id: "fields.i18n_test.radio.fixed.apple", definition: "Manzana"},
+      %{message_id: "fields.i18n_test.radio.fixed.pear", definition: "pera"},
+      %{message_id: "fields.i18n_test.radio.fixed.banana", definition: "plátano"},
+      %{message_id: "fields.i18n_test.radio.fixed.apple", definition: "manzana"},
       %{message_id: "fields.i18n_test.checkbox.fixed", definition: "Checkbox Fijo"},
-      %{message_id: "fields.i18n_test.checkbox.fixed.pear", definition: "Pera"},
-      %{message_id: "fields.i18n_test.checkbox.fixed.banana", definition: "Plátano"},
-      %{message_id: "fields.i18n_test.checkbox.fixed.apple", definition: "Manzana"}
-    ])
-
-    CacheHelpers.put_i18n_messages("en", [
-      %{message_id: "fields.i18n_test.dropdown.fixed", definition: "Dropdown Fixed"},
-      %{message_id: "fields.i18n_test.dropdown.fixed.pear", definition: "Pear"},
-      %{message_id: "fields.i18n_test.dropdown.fixed.banana", definition: "Banana"},
-      %{message_id: "fields.i18n_test.dropdown.fixed.apple", definition: "Apple"},
-      %{message_id: "fields.i18n_test.radio.fixed", definition: "Radio Fixed"},
-      %{message_id: "fields.i18n_test.radio.fixed.pear", definition: "Pear"},
-      %{message_id: "fields.i18n_test.radio.fixed.banana", definition: "Banana"},
-      %{message_id: "fields.i18n_test.radio.fixed.apple", definition: "Apple"},
-      %{message_id: "fields.i18n_test.checkbox.fixed", definition: "Checkbox Fijo"},
-      %{message_id: "fields.i18n_test.checkbox.fixed.pear", definition: "Pear"},
-      %{message_id: "fields.i18n_test.checkbox.fixed.banana", definition: "Banana"},
-      %{message_id: "fields.i18n_test.checkbox.fixed.apple", definition: "Apple"}
+      %{message_id: "fields.i18n_test.checkbox.fixed.pear", definition: "pera"},
+      %{message_id: "fields.i18n_test.checkbox.fixed.banana", definition: "plátano"},
+      %{message_id: "fields.i18n_test.checkbox.fixed.apple", definition: "manzana"}
     ])
   end
 

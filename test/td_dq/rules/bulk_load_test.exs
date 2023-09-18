@@ -198,7 +198,6 @@ defmodule TdDq.Rules.BulkLoadTest do
         )
 
       CacheHelpers.put_i18n_message("es", %{message_id: "fields.i18n.one", definition: "uno"})
-      CacheHelpers.put_i18n_message("en", %{message_id: "fields.i18n.one", definition: "one"})
 
       rules =
         Enum.map(@rules, fn rule ->
@@ -248,12 +247,6 @@ defmodule TdDq.Rules.BulkLoadTest do
         %{message_id: "fields.i18n.three", definition: "tres"}
       ])
 
-      CacheHelpers.put_i18n_messages("en", [
-        %{message_id: "fields.i18n.one", definition: "one"},
-        %{message_id: "fields.i18n.two", definition: "two"},
-        %{message_id: "fields.i18n.three", definition: "three"}
-      ])
-
       rules =
         Enum.map(@rules, fn rule ->
           rule
@@ -270,7 +263,7 @@ defmodule TdDq.Rules.BulkLoadTest do
       assert %{df_content: ^df_content} = Rules.get_rule(id2)
     end
 
-    test "returns ids with valid template that include fixed values without translation and single cardinality",
+    test "returns ids with valid template that include fixed values without i18n key and single cardinality",
          %{
            external_id: domain_external_id,
            claims: claims
@@ -309,18 +302,18 @@ defmodule TdDq.Rules.BulkLoadTest do
                 ids: [],
                 errors: [
                   %{
-                    message: %{df_content: ["i18n: translation not found"]},
+                    message: %{df_content: ["i18n: is invalid"]},
                     rule_name: "foo_rule"
                   },
                   %{
-                    message: %{df_content: ["i18n: translation not found"]},
+                    message: %{df_content: ["i18n: is invalid"]},
                     rule_name: "bar_rule"
                   }
                 ]
               }} = BulkLoad.bulk_load(rules, claims, "es")
     end
 
-    test "returns ids with valid template that include fixed values without translation and multiple cardinality",
+    test "returns ids with valid template that include fixed values without i18n key and multiple cardinality",
          %{
            external_id: domain_external_id,
            claims: claims
@@ -359,11 +352,11 @@ defmodule TdDq.Rules.BulkLoadTest do
                 ids: [],
                 errors: [
                   %{
-                    message: %{df_content: ["i18n: translation not found"]},
+                    message: %{df_content: ["i18n: has an invalid entry"]},
                     rule_name: "foo_rule"
                   },
                   %{
-                    message: %{df_content: ["i18n: translation not found"]},
+                    message: %{df_content: ["i18n: has an invalid entry"]},
                     rule_name: "bar_rule"
                   }
                 ]
