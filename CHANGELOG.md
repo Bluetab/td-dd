@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-5999] List implementations without rules
+
 ## [5.13.1] 2023-09-14
 
 ### Fixed

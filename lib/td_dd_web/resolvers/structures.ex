@@ -69,8 +69,7 @@ defmodule TdDdWeb.Resolvers.Structures do
        dsv
        |> maybe_check_siblings_permission(claims)
        |> Map.put(:actions, actions)
-       |> Map.put(:user_permissions, user_permissions)
-      }
+       |> Map.put(:user_permissions, user_permissions)}
     else
       {:claims, nil} -> {:error, :unauthorized}
       {:enriched_dsv, nil} -> {:error, :not_found}

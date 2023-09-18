@@ -672,7 +672,12 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
                |> post(Routes.implementation_upload_path(conn, :create), attrs)
                |> json_response(:ok)
 
-      assert [{_, ^version, ^id, :published}, {_, _, _, :draft}] =
+      assert [
+               {_, ^version, ^id, :published},
+               {_, _, _, :draft},
+               {_, _, _, :draft},
+               {_, _, _, :draft}
+             ] =
                Implementations.list_implementations()
                |> Enum.sort(&(&1.status >= &2.status))
                |> Enum.map(&{&1.implementation_key, &1.version, &1.id, &1.status})
