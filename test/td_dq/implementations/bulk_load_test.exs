@@ -408,7 +408,12 @@ defmodule TdDq.Implementations.BulkLoadTest do
         |> Map.put("i18n", "uno")
         |> Map.put("domain_id", domain_id)
 
-        assert {:ok, %{errors: [%{implementation_key: "boo", message: %{df_content: ["i18n: is invalid"]}}]}}
+      assert {:ok,
+              %{
+                errors: [
+                  %{implementation_key: "boo", message: %{df_content: ["i18n: is invalid"]}}
+                ]
+              }}
     end
 
     test "return error with df_content that include fixed values without i18n key and multiple cardinality",
@@ -445,8 +450,8 @@ defmodule TdDq.Implementations.BulkLoadTest do
         |> Map.put("i18n", "uno|dos")
         |> Map.put("domain_id", domain_id)
 
-        assert {:ok, %{errors: [%{message: %{df_content: ["i18n: has an invalid entry"]}}]}} =
-          BulkLoad.bulk_load([imp], claims, false, "es")
+      assert {:ok, %{errors: [%{message: %{df_content: ["i18n: has an invalid entry"]}}]}} =
+               BulkLoad.bulk_load([imp], claims, false, "es")
     end
 
     test "return error when rule not exist", %{

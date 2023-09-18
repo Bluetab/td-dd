@@ -636,6 +636,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                upload
                |> BulkUpdate.from_csv(lang)
                |> BulkUpdate.do_csv_bulk_update(user_id)
+
       assert :ok = IndexWorker.quiesce()
 
       ids = Map.keys(update_notes)
@@ -690,7 +691,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                      {_,
                       [
                         {:"i18n_test.checkbox.fixed", {"has an invalid entry", _}},
-                        {:"i18n_test.radio.fixed", {"is invalid", _}},
+                        {:"i18n_test.radio.fixed", {"is invalid", _}}
                       ]}
                  ]
                }, _}} = note_error
