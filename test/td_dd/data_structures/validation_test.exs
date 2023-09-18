@@ -44,7 +44,7 @@ defmodule TdDd.DataStructures.ValidationTest do
       validator = Validation.validator(structure_note)
       assert is_function(validator, 2)
 
-      assert [{:content, {"invalid content", _errors}}] =
+      assert [{:content, {"list: is invalid - string: can't be blank", _errors}}] =
                validator.(:content, %{"list" => "four"})
     end
   end

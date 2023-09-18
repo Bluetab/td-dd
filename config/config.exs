@@ -9,6 +9,9 @@ import Config
 config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
 config :td_dd, :time_zone, System.get_env("TZ", "Etc/UTC")
 
+# Language
+config :td_dd, :lang, "en"
+
 # Environment
 config :td_dd, :env, Mix.env()
 config :td_cluster, :env, Mix.env()
@@ -91,6 +94,8 @@ config :td_dd, TdDd.Loader.Worker, timeout: 30_000
 config :td_dd, TdDd.Repo,
   pool_size: 4,
   timeout: 600_000
+
+config :td_df_lib, lang: "en"
 
 config :td_cache, :audit,
   service: "td_dd",

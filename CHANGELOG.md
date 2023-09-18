@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-5929] Support to upload csv of implementations, rule and strucutures
+  in the browser language
+  - Download editable metadata is downloaded in the browser language
+
 ### Fixed
 
 - [TD-5999] List implementations without rules
