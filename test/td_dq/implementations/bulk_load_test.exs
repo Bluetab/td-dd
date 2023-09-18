@@ -413,7 +413,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
                 errors: [
                   %{implementation_key: "boo", message: %{df_content: ["i18n: is invalid"]}}
                 ]
-              }}
+              }} = BulkLoad.bulk_load([imp], claims, false, "es")
     end
 
     test "return error with df_content that include fixed values without i18n key and multiple cardinality",
