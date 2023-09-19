@@ -34,25 +34,25 @@ defmodule TdDq.Rules.BulkLoad do
 
   def required_headers, do: @required_headers
 
-  def bulk_load(rules, claims) do
+  def bulk_load(rules, claims, lang) do
     Logger.info("Loading Rules...")
 
     Timer.time(
-      fn -> do_bulk_load(rules, claims) end,
+      fn -> do_bulk_load(rules, claims, lang) end,
       fn millis, _ -> Logger.info("Rules loaded in #{millis}ms") end
     )
   end
 
-  defp do_bulk_load(rules, claims) do
-    %{ids: ids} = results = create_rules(rules, claims)
+  defp do_bulk_load(rules, claims, lang) do
+    %{ids: ids} = results = create_rules(rules, claims, lang)
     RuleLoader.refresh(ids)
     {:ok, results}
   end
 
-  defp create_rules(rules, claims) do
+  defp create_rules(rules, claims, lang) do
     rules
     |> Enum.reduce(%{ids: [], errors: []}, fn %{"name" => rule_name} = rule, acc ->
-      enriched_rule = enrich_rule(rule)
+      enriched_rule = enrich_rule(rule, lang)
 
       case Rules.create_rule(enriched_rule, claims, true) do
         {:ok, %{rule: %{id: id}}} ->
@@ -68,7 +68,7 @@ defmodule TdDq.Rules.BulkLoad do
     |> Map.update!(:errors, &Enum.reverse(&1))
   end
 
-  defp enrich_rule(rule) do
+  defp enrich_rule(rule, lang) do
     rule
     |> Enum.reduce(%{"df_content" => %{}}, fn {head, value}, acc ->
       if Enum.member?(@required_headers ++ @optional_headers, head) do
@@ -79,7 +79,7 @@ defmodule TdDq.Rules.BulkLoad do
       end
     end)
     |> maybe_put_domain_id(rule)
-    |> ensure_template()
+    |> ensure_template(lang)
     |> convert_description()
     |> Map.merge(@default_rule)
   end
@@ -109,7 +109,7 @@ defmodule TdDq.Rules.BulkLoad do
     end
   end
 
-  defp ensure_template(%{"df_content" => df_content, "domain_id" => domain_id} = rule) do
+  defp ensure_template(%{"df_content" => df_content, "domain_id" => domain_id} = rule, lang) do
     template = Map.get(rule, "template")
 
     rule =
@@ -131,12 +131,13 @@ defmodule TdDq.Rules.BulkLoad do
           Parser.format_content(%{
             content: df_content,
             content_schema: content_schema,
-            domain_ids: [domain_id]
+            domain_ids: [domain_id],
+            lang: lang
           })
 
         Map.put(rule, "df_content", content)
     end
   end
 
-  defp ensure_template(rule), do: rule
+  defp ensure_template(rule, _lang), do: rule
 end

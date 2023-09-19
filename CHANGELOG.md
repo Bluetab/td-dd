@@ -1,5 +1,17 @@
 # Changelog
 
+## [5.14.0] 2023-09-19
+
+### Added
+
+- [TD-5929] Support to upload csv of implementations, rule and strucutures
+  in the browser language
+  - Download editable metadata is downloaded in the browser language
+
+### Fixed
+
+- [TD-5999] List implementations without rules
+
 ## [5.13.1] 2023-09-14
 
 ### Fixed
@@ -11,6 +23,27 @@
 ### Added
 
 - [TD-5979] Retrieve only children/parents using default relation type
+
+### Changed
+
+- [TD-5974] structure_domain_ids filtered by type = validation
+
+### Fixed
+
+- [TD-5898] Fix behavior of removing implementation based on status
+
+## [5.12.0] 2023-08-16
+
+### Fixed
+
+- [TD-6016] Restore missing data fields degree enrichment
+
+## [5.13.0] 2023-09-05
+
+### Added
+
+- [TD-5979] Retrieve only children/parents using default relation type
+- [TD-5935] Remediation GraphQL API, with pagination and filters.
 
 ### Changed
 

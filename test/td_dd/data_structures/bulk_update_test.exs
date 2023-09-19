@@ -107,6 +107,47 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     }
   ]
 
+  @c3 [
+    %{
+      "name" => "group",
+      "fields" => [
+        %{
+          "cardinality" => "?",
+          "label" => "i18n_test.dropdown.fixed",
+          "name" => "i18n_test.dropdown.fixed",
+          "type" => "string",
+          "values" => %{"fixed" => ["pear", "banana", "apple", "peach"]},
+          "widget" => "dropdown"
+        },
+        %{
+          "cardinality" => "?",
+          "label" => "i18n_test_no_translate",
+          "name" => "i18n_test_no_translate",
+          "type" => "string",
+          "values" => nil,
+          "widget" => "string"
+        },
+        %{
+          "cardinality" => "?",
+          "label" => "i18n_test.radio.fixed",
+          "name" => "i18n_test.radio.fixed",
+          "type" => "string",
+          "values" => %{"fixed" => ["pear", "banana", "apple", "peach"]},
+          "widget" => "radio"
+        },
+        %{
+          "cardinality" => "*",
+          "label" => "i18n_test.checkbox.fixed",
+          "name" => "i18n_test.checkbox.fixed",
+          "type" => "string",
+          "values" => %{"fixed" => ["pear", "banana", "apple", "peach"]},
+          "widget" => "checkbox"
+        }
+      ]
+    }
+  ]
+  @default_lang "en"
+
   setup :set_mox_from_context
   setup :verify_on_exit!
 
@@ -489,7 +530,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   end
 
   describe "from_csv/2" do
-    setup :from_csv_templates
+    setup [:from_csv_templates, :insert_i18n_messages]
 
     defp get_df_content_from_ext_id(ext_id) do
       ext_id
@@ -520,7 +561,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert {:ok, %{update_notes: update_notes}} =
                upload
-               |> BulkUpdate.from_csv()
+               |> BulkUpdate.from_csv(@default_lang)
                |> BulkUpdate.do_csv_bulk_update(user_id)
 
       assert :ok = IndexWorker.quiesce()
@@ -529,7 +570,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert length(ids) == 10
       assert Enum.all?(ids, fn id -> id in structure_ids end)
 
-      assert %{"text" => "text", "critical" => "Yes", "role" => ["Role"], "key_value" => ["1"]} =
+      assert %{"text" => "text", "critical" => "Yes", "role" => ["Role"], "key_value" => [""]} =
                get_df_content_from_ext_id("ex_id1")
 
       assert %{"text" => "text2", "critical" => "Yes", "role" => ["Role"]} =
@@ -569,6 +610,93 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
              } = get_df_content_from_ext_id("ex_id10")
     end
 
+    test "update all data structures content in native language", %{sts: sts} do
+      expect_bulk_index()
+
+      lang = "es"
+
+      %{user_id: user_id} = build(:claims)
+
+      structure_ids =
+        sts
+        |> Enum.slice(10, 14)
+        |> Enum.map(& &1.data_structure_id)
+
+      ex_id = "ex_id11"
+
+      ex_id
+      |> DataStructures.get_data_structure_by_external_id()
+      |> Map.get(:id)
+      |> StructureNotes.get_latest_structure_note()
+      |> StructureNotes.delete_structure_note(user_id)
+
+      upload = %{path: "test/fixtures/td5929/structures_in_native_lang.csv"}
+
+      assert {:ok, %{update_notes: update_notes}} =
+               upload
+               |> BulkUpdate.from_csv(lang)
+               |> BulkUpdate.do_csv_bulk_update(user_id)
+
+      assert :ok = IndexWorker.quiesce()
+
+      ids = Map.keys(update_notes)
+      assert length(ids) == 2
+      assert Enum.all?(ids, fn id -> id in structure_ids end)
+
+      assert %{
+               "i18n_test.checkbox.fixed" => ["pear", "apple"],
+               "i18n_test.dropdown.fixed" => "peach",
+               "i18n_test.radio.fixed" => "apple",
+               "i18n_test_no_translate" => "SIN TRADUCCION"
+             } = get_df_content_from_ext_id("ex_id11")
+
+      assert %{
+               "i18n_test.checkbox.fixed" => ["pear", "banana"],
+               "i18n_test.dropdown.fixed" => "apple",
+               "i18n_test.radio.fixed" => "banana",
+               "i18n_test_no_translate" => "SIN TRADUCCION"
+             } = get_df_content_from_ext_id("ex_id12")
+    end
+
+    test "update data structures notes with values without i18n key and invalid value return error" do
+      expect_bulk_index()
+
+      lang = "es"
+
+      %{user_id: user_id} = build(:claims)
+
+      ex_id = "ex_id11"
+
+      ex_id
+      |> DataStructures.get_data_structure_by_external_id()
+      |> Map.get(:id)
+      |> StructureNotes.get_latest_structure_note()
+      |> StructureNotes.delete_structure_note(user_id)
+
+      upload = %{path: "test/fixtures/td5929/structures_in_native_lang_with_invalid_values.csv"}
+
+      assert {:ok, %{update_notes: update_notes}} =
+               upload
+               |> BulkUpdate.from_csv(lang)
+               |> BulkUpdate.do_csv_bulk_update(user_id)
+
+      assert :ok = IndexWorker.quiesce()
+      [_, notes_errors] = BulkUpdate.split_succeeded_errors(update_notes)
+      [note_error] = Enum.map(notes_errors, fn {_k, v} -> v end)
+
+      assert {:error,
+              {%{
+                 errors: [
+                   df_content:
+                     {_,
+                      [
+                        {:"i18n_test.checkbox.fixed", {"has an invalid entry", _}},
+                        {:"i18n_test.radio.fixed", {"is invalid", _}}
+                      ]}
+                 ]
+               }, _}} = note_error
+    end
+
     test "returns error on content" do
       expect_bulk_index()
 
@@ -577,7 +705,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       {:ok, %{update_notes: update_notes}} =
         upload
-        |> BulkUpdate.from_csv()
+        |> BulkUpdate.from_csv(@default_lang)
         |> BulkUpdate.do_csv_bulk_update(user_id)
 
       assert :ok = IndexWorker.quiesce()
@@ -603,7 +731,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       {:ok, %{update_notes: update_notes}} =
         upload
-        |> BulkUpdate.from_csv()
+        |> BulkUpdate.from_csv(@default_lang)
         |> BulkUpdate.do_csv_bulk_update(user_id)
 
       assert :ok = IndexWorker.quiesce()
@@ -633,7 +761,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert {:ok, %{update_notes: _update_notes}} =
                upload
-               |> BulkUpdate.from_csv()
+               |> BulkUpdate.from_csv(@default_lang)
                |> BulkUpdate.do_csv_bulk_update(user_id)
 
       assert :ok = IndexWorker.quiesce()
@@ -642,7 +770,8 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     test "return error when external_id does not exists" do
       upload = %{path: "test/fixtures/td3606/upload_without_external_id.csv"}
 
-      assert {:error, %{message: :external_id_not_found}} = BulkUpdate.from_csv(upload)
+      assert {:error, %{message: :external_id_not_found}} =
+               BulkUpdate.from_csv(upload, @default_lang)
     end
   end
 
@@ -758,9 +887,11 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   defp from_csv_templates(_) do
     %{id: id_t1, name: type1} = CacheHelpers.insert_template(content: @c1)
     %{id: id_t2, name: type2} = CacheHelpers.insert_template(content: @c2)
+    %{id: id_t3, name: type3} = CacheHelpers.insert_template(content: @c3)
 
     insert(:data_structure_type, name: type1, template_id: id_t1)
     insert(:data_structure_type, name: type2, template_id: id_t2)
+    insert(:data_structure_type, name: type3, template_id: id_t3)
 
     sts1 =
       Enum.map(1..5, fn id ->
@@ -774,7 +905,31 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         valid_structure_note(type2, data_structure, [])
       end)
 
-    [sts: sts1 ++ sts2]
+    sts3 =
+      Enum.map(11..15, fn id ->
+        data_structure = insert(:data_structure, external_id: "ex_id#{id}")
+        opts = if Integer.mod(id, 2) !== 0, do: [], else: [status: :draft]
+        valid_structure_note(type3, data_structure, opts)
+      end)
+
+    [sts: sts1 ++ sts2 ++ sts3]
+  end
+
+  defp insert_i18n_messages(_) do
+    CacheHelpers.put_i18n_messages("es", [
+      %{message_id: "fields.i18n_test.dropdown.fixed", definition: "Dropdown Fijo"},
+      %{message_id: "fields.i18n_test.dropdown.fixed.pear", definition: "pera"},
+      %{message_id: "fields.i18n_test.dropdown.fixed.banana", definition: "plátano"},
+      %{message_id: "fields.i18n_test.dropdown.fixed.apple", definition: "manzana"},
+      %{message_id: "fields.i18n_test.radio.fixed", definition: "Radio Fijo"},
+      %{message_id: "fields.i18n_test.radio.fixed.pear", definition: "pera"},
+      %{message_id: "fields.i18n_test.radio.fixed.banana", definition: "plátano"},
+      %{message_id: "fields.i18n_test.radio.fixed.apple", definition: "manzana"},
+      %{message_id: "fields.i18n_test.checkbox.fixed", definition: "Checkbox Fijo"},
+      %{message_id: "fields.i18n_test.checkbox.fixed.pear", definition: "pera"},
+      %{message_id: "fields.i18n_test.checkbox.fixed.banana", definition: "plátano"},
+      %{message_id: "fields.i18n_test.checkbox.fixed.apple", definition: "manzana"}
+    ])
   end
 
   defp to_content_url(url) do

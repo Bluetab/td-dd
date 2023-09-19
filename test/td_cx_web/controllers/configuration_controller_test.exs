@@ -222,7 +222,7 @@ defmodule TdCxWeb.ConfigurationControllerTest do
           configuration: @invalid_update_attrs
         )
 
-      assert json_response(conn, 422)["errors"] == %{"content" => ["invalid content"]}
+      assert json_response(conn, 422)["errors"] == %{"content" => ["field1: can't be blank"]}
     end
   end
 

@@ -35,6 +35,8 @@ defmodule TdDdWeb.Policy do
   def authorize(:query, %{role: "user"}, :templates), do: true
   def authorize(:query, %{role: "user"}, :template), do: true
   def authorize(:query, %{role: "user"}, :structure_notes), do: true
+  def authorize(:query, %{role: "user"}, :remediation), do: true
+  def authorize(:query, %{role: "user"}, :remediations_connection), do: false
 
   def authorize(:query, %{} = claims, :data_structure),
     do: Bodyguard.permit(TdDd.DataStructures, :query, claims)

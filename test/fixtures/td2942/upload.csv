@@ -1,5 +1,5 @@
 external_id;text;critical;enriched_text;urls_one_or_none;role;key_value;integer;hierarchy_name_1;hierarchy_name_2
-ex_id1;text;Yes;;;Role;Elemento 1;;;
+ex_id1;text;Yes;;;Role;;;;
 ex_id2;text2;Yes;;;Role;;;;
 ex_id3;;No;;;Role;;;;
 ex_id6;;;I’m 6;;;;;;

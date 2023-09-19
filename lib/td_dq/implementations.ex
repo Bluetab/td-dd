@@ -603,7 +603,7 @@ defmodule TdDq.Implementations do
     dynamic = dynamic_params(:rule, rule_params, rule_fields, dynamic)
 
     Implementation
-    |> join(:inner, [ri], r in assoc(ri, :rule))
+    |> join(:left, [ri], r in assoc(ri, :rule))
     |> where(^dynamic)
     |> where([_ri, r], is_nil(r.deleted_at))
     |> deleted_implementations(opts, :implementations)
