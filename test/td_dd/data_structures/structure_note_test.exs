@@ -326,7 +326,7 @@ defmodule TdDd.DataStructures.StructureNoteTest do
                StructureNote.changeset(structure_note, %{df_content: @invalid_content})
 
       assert length(errors) == 1
-      assert {"invalid content", details} = errors[:df_content]
+      assert {"list: is invalid - string: can't be blank", details} = errors[:df_content]
       assert {"can't be blank", [validation: :required]} = details[:string]
       assert {"is invalid", [validation: :inclusion, enum: _]} = details[:list]
     end

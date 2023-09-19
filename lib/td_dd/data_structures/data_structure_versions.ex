@@ -117,6 +117,8 @@ defmodule TdDd.DataStructures.DataStructureVersions do
   defp field_to_enrich_opt(:metadata),
     do: [:with_protected_metadata, :metadata_versions]
 
+  # These static preloads are present even if degree or links GraphQL fields
+  # are not requested.
   defp field_to_enrich_opt(:data_fields),
     do: [
       :data_fields,
@@ -241,21 +243,6 @@ defmodule TdDd.DataStructures.DataStructureVersions do
          } = dsv
        ) do
     dsv
-    |> Map.take([
-      :id,
-      :classes,
-      :data_structure_id,
-      :degree,
-      :deleted_at,
-      :description,
-      :inserted_at,
-      :links,
-      :note,
-      :metadata,
-      :name,
-      :type,
-      :published_note
-    ])
     |> with_profile_attrs(profile)
     |> Map.put(:alias, alias_name)
   end

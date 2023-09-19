@@ -118,9 +118,7 @@ defmodule TdDdWeb.Schema.Structures do
     field(:siblings, list_of(:data_structure_version))
     field(:versions, list_of(:data_structure_version))
 
-    field(:data_fields, list_of(:data_structure_version),
-      resolve: &Resolvers.Structures.data_fields/3
-    )
+    field :data_fields, list_of(:data_structure_version)
 
     field(:ancestry, list_of(:json), resolve: &Resolvers.Structures.ancestry/3)
 

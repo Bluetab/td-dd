@@ -152,7 +152,7 @@ defmodule TdDq.Implementations.ImplementationTest do
       invalid_content = %{"list" => "foo", "string" => "whatever"}
       params = params_for(:implementation, df_name: template_name, df_content: invalid_content)
       assert %{valid?: false, errors: errors} = Implementation.changeset(@implementation, params)
-      assert {"invalid content", _detail} = errors[:df_content]
+      assert {"list: is invalid", _detail} = errors[:df_content]
     end
 
     test "validates df_content is safe", %{template_name: template_name} do

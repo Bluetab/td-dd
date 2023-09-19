@@ -67,7 +67,7 @@ defmodule TdDq.RemediationTest do
       }
 
       assert %{valid?: false, errors: errors} = Remediation.changeset(params)
-      assert {"invalid content", _detail} = errors[:df_content]
+      assert {"list: is invalid", _detail} = errors[:df_content]
     end
 
     test "validates df_content is safe", %{rule_result: %{id: rule_result_id}} do
@@ -82,7 +82,7 @@ defmodule TdDq.RemediationTest do
       }
 
       assert %{valid?: false, errors: errors} = Remediation.changeset(params)
-      assert {"invalid content", _detail} = errors[:df_content]
+      assert {"list: is invalid", _detail} = errors[:df_content]
     end
   end
 end

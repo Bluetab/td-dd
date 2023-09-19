@@ -288,21 +288,6 @@ defmodule TdDdWeb.Resolvers.Structures do
     end)
   end
 
-  def data_fields(%{data_structure: ds} = dsv, _args, %{context: %{claims: claims}} = _resolution) do
-    deleted = not is_nil(Map.get(dsv, :deleted_at))
-
-    opts =
-      get_permissions_opts(ds, claims) ++
-        [
-          deleted: deleted,
-          preload: [:published_note, [data_structure: :profile]]
-        ]
-
-    data_fields = DataStructures.get_field_structures(dsv, opts)
-
-    {:ok, data_fields}
-  end
-
   def profile(%{data_structure: ds} = dsv, _args, %{context: %{claims: claims}} = _resolution) do
     opts = get_permissions_opts(ds, claims)
 

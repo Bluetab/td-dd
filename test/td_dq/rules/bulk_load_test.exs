@@ -38,6 +38,8 @@ defmodule TdDq.Rules.BulkLoadTest do
     }
   ]
 
+  @default_lang "en"
+
   setup do
     start_supervised!(TdDd.Search.MockIndexWorker)
     start_supervised(TdDq.Cache.RuleLoader)
@@ -59,7 +61,7 @@ defmodule TdDq.Rules.BulkLoadTest do
     ]
   end
 
-  describe "bulk_load/2" do
+  describe "bulk_load/3" do
     @tag authentication: [role: "admin"]
 
     test "return ids from inserted rules", %{external_id: external_id, claims: claims} do
@@ -68,7 +70,9 @@ defmodule TdDq.Rules.BulkLoadTest do
           Map.put(rule, "domain_external_id", external_id)
         end)
 
-      assert {:ok, %{ids: [id1, id2], errors: []}} = BulkLoad.bulk_load(rules, claims)
+      assert {:ok, %{ids: [id1, id2], errors: []}} =
+               BulkLoad.bulk_load(rules, claims, @default_lang)
+
       assert %{name: "foo_rule"} = Rules.get_rule(id1)
       assert %{name: "bar_rule"} = Rules.get_rule(id2)
     end
@@ -87,7 +91,8 @@ defmodule TdDq.Rules.BulkLoadTest do
           |> Map.put("list", "one")
         end)
 
-      assert {:ok, %{ids: [id1, id2], errors: []}} = BulkLoad.bulk_load(rules, claims)
+      assert {:ok, %{ids: [id1, id2], errors: []}} =
+               BulkLoad.bulk_load(rules, claims, @default_lang)
 
       df_content = %{"string" => "initial", "list" => "one"}
 
@@ -113,7 +118,8 @@ defmodule TdDq.Rules.BulkLoadTest do
           |> Map.put("hierarchy_name_2", "father|children_1")
         end)
 
-      assert {:ok, %{ids: [id1, id2], errors: []}} = BulkLoad.bulk_load(rules, claims)
+      assert {:ok, %{ids: [id1, id2], errors: []}} =
+               BulkLoad.bulk_load(rules, claims, @default_lang)
 
       df_content = %{
         "hierarchy_name_1" => key_node_2,
@@ -156,12 +162,205 @@ defmodule TdDq.Rules.BulkLoadTest do
           |> Map.put("multi_string", "a|b|c")
         end)
 
-      assert {:ok, %{ids: [id1, id2], errors: []}} = BulkLoad.bulk_load(rules, claims)
+      assert {:ok, %{ids: [id1, id2], errors: []}} =
+               BulkLoad.bulk_load(rules, claims, @default_lang)
 
       df_content = %{"multi_string" => ["a", "b", "c"]}
 
       assert %{df_content: ^df_content} = Rules.get_rule(id1)
       assert %{df_content: ^df_content} = Rules.get_rule(id2)
+    end
+
+    test "returns ids with valid template that include fixed values translated with single cardinality",
+         %{
+           external_id: domain_external_id,
+           claims: claims
+         } do
+      template_content = [
+        %{
+          "fields" => [
+            %{
+              "cardinality" => "1",
+              "label" => "i18n",
+              "name" => "i18n",
+              "type" => "string",
+              "values" => %{"fixed" => ["one", "two", "three"]}
+            }
+          ],
+          "name" => "group_name0"
+        }
+      ]
+
+      %{name: template_name} =
+        CacheHelpers.insert_template(
+          scope: "dq",
+          content: template_content
+        )
+
+      CacheHelpers.put_i18n_message("es", %{message_id: "fields.i18n.one", definition: "uno"})
+
+      rules =
+        Enum.map(@rules, fn rule ->
+          rule
+          |> Map.put("domain_external_id", domain_external_id)
+          |> Map.put("template", template_name)
+          |> Map.put("i18n", "uno")
+        end)
+
+      assert {:ok, %{ids: [id1, id2], errors: []}} = BulkLoad.bulk_load(rules, claims, "es")
+
+      df_content = %{"i18n" => "one"}
+
+      assert %{df_content: ^df_content} = Rules.get_rule(id1)
+      assert %{df_content: ^df_content} = Rules.get_rule(id2)
+    end
+
+    test "returns ids with valid template that include fixed values translated with multiple cardinality",
+         %{
+           external_id: domain_external_id,
+           claims: claims
+         } do
+      template_content = [
+        %{
+          "fields" => [
+            %{
+              "cardinality" => "+",
+              "label" => "i18n",
+              "name" => "i18n",
+              "type" => "string",
+              "values" => %{"fixed" => ["one", "two", "three"]}
+            }
+          ],
+          "name" => "group_name0"
+        }
+      ]
+
+      %{name: template_name} =
+        CacheHelpers.insert_template(
+          scope: "dq",
+          content: template_content
+        )
+
+      CacheHelpers.put_i18n_messages("es", [
+        %{message_id: "fields.i18n.one", definition: "uno"},
+        %{message_id: "fields.i18n.two", definition: "dos"},
+        %{message_id: "fields.i18n.three", definition: "tres"}
+      ])
+
+      rules =
+        Enum.map(@rules, fn rule ->
+          rule
+          |> Map.put("domain_external_id", domain_external_id)
+          |> Map.put("template", template_name)
+          |> Map.put("i18n", "uno|tres")
+        end)
+
+      assert {:ok, %{ids: [id1, id2], errors: []}} = BulkLoad.bulk_load(rules, claims, "es")
+
+      df_content = %{"i18n" => ["one", "three"]}
+
+      assert %{df_content: ^df_content} = Rules.get_rule(id1)
+      assert %{df_content: ^df_content} = Rules.get_rule(id2)
+    end
+
+    test "returns ids with valid template that include fixed values without i18n key and single cardinality",
+         %{
+           external_id: domain_external_id,
+           claims: claims
+         } do
+      template_content = [
+        %{
+          "fields" => [
+            %{
+              "cardinality" => "1",
+              "label" => "i18n",
+              "name" => "i18n",
+              "type" => "string",
+              "values" => %{"fixed" => ["one", "two", "three"]}
+            }
+          ],
+          "name" => "group_name0"
+        }
+      ]
+
+      %{name: template_name} =
+        CacheHelpers.insert_template(
+          scope: "dq",
+          content: template_content
+        )
+
+      rules =
+        Enum.map(@rules, fn rule ->
+          rule
+          |> Map.put("domain_external_id", domain_external_id)
+          |> Map.put("template", template_name)
+          |> Map.put("i18n", "uno")
+        end)
+
+      assert {:ok,
+              %{
+                ids: [],
+                errors: [
+                  %{
+                    message: %{df_content: ["i18n: is invalid"]},
+                    rule_name: "foo_rule"
+                  },
+                  %{
+                    message: %{df_content: ["i18n: is invalid"]},
+                    rule_name: "bar_rule"
+                  }
+                ]
+              }} = BulkLoad.bulk_load(rules, claims, "es")
+    end
+
+    test "returns ids with valid template that include fixed values without i18n key and multiple cardinality",
+         %{
+           external_id: domain_external_id,
+           claims: claims
+         } do
+      template_content = [
+        %{
+          "fields" => [
+            %{
+              "cardinality" => "+",
+              "label" => "i18n",
+              "name" => "i18n",
+              "type" => "string",
+              "values" => %{"fixed" => ["one", "two", "three"]}
+            }
+          ],
+          "name" => "group_name0"
+        }
+      ]
+
+      %{name: template_name} =
+        CacheHelpers.insert_template(
+          scope: "dq",
+          content: template_content
+        )
+
+      rules =
+        Enum.map(@rules, fn rule ->
+          rule
+          |> Map.put("domain_external_id", domain_external_id)
+          |> Map.put("template", template_name)
+          |> Map.put("i18n", "uno|tres")
+        end)
+
+      assert {:ok,
+              %{
+                ids: [],
+                errors: [
+                  %{
+                    message: %{df_content: ["i18n: has an invalid entry"]},
+                    rule_name: "foo_rule"
+                  },
+                  %{
+                    message: %{df_content: ["i18n: has an invalid entry"]},
+                    rule_name: "bar_rule"
+                  }
+                ]
+              }} = BulkLoad.bulk_load(rules, claims, "es")
     end
 
     test "return error when domain_external_id not exit", %{
@@ -173,7 +372,8 @@ defmodule TdDq.Rules.BulkLoadTest do
       rule1 = Map.put(rule1, "domain_external_id", domain_external_id)
       %{"name" => name} = rule2 = Map.put(rule2, "domain_external_id", "foo")
 
-      assert {:ok, %{ids: [id], errors: [error]}} = BulkLoad.bulk_load([rule1, rule2], claims)
+      assert {:ok, %{ids: [id], errors: [error]}} =
+               BulkLoad.bulk_load([rule1, rule2], claims, @default_lang)
 
       assert %{name: "foo_rule"} = Rules.get_rule(id)
       assert %{rule_name: ^name, message: _} = error
@@ -197,7 +397,8 @@ defmodule TdDq.Rules.BulkLoadTest do
         |> Map.put("domain_external_id", domain_external_id)
         |> Map.put("template", "xwy")
 
-      assert {:ok, %{ids: [], errors: [_e1, _e2]}} = BulkLoad.bulk_load([rule1, rule2], claims)
+      assert {:ok, %{ids: [], errors: [_e1, _e2]}} =
+               BulkLoad.bulk_load([rule1, rule2], claims, @default_lang)
     end
 
     test "return error with hierarchy more than one nodes", %{
@@ -215,7 +416,8 @@ defmodule TdDq.Rules.BulkLoadTest do
           |> Map.put("hierarchy_name_2", "children_2|children_2")
         end)
 
-      assert {:ok, %{ids: [], errors: [_e1, _e2]}} = BulkLoad.bulk_load(rules, claims)
+      assert {:ok, %{ids: [], errors: [_e1, _e2]}} =
+               BulkLoad.bulk_load(rules, claims, @default_lang)
     end
 
     test "return ids with a description", %{
@@ -233,7 +435,8 @@ defmodule TdDq.Rules.BulkLoadTest do
         rule2
         |> Map.put("domain_external_id", domain_external_id)
 
-      assert {:ok, %{ids: [id1, id2], errors: []}} = BulkLoad.bulk_load([rule1, rule2], claims)
+      assert {:ok, %{ids: [id1, id2], errors: []}} =
+               BulkLoad.bulk_load([rule1, rule2], claims, @default_lang)
 
       description = %{
         "document" => %{

@@ -20,10 +20,10 @@ defmodule TdDd.DataStructures.BulkUpdater do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
-  def bulk_csv_update(csv_hash, structures_content_upload, user_id, auto_publish) do
+  def bulk_csv_update(csv_hash, structures_content_upload, user_id, auto_publish, lang) do
     GenServer.call(
       __MODULE__,
-      {:bulk_csv_update, csv_hash, structures_content_upload, user_id, auto_publish},
+      {:bulk_csv_update, csv_hash, structures_content_upload, user_id, auto_publish, lang},
       60_000
     )
   end
@@ -48,14 +48,14 @@ defmodule TdDd.DataStructures.BulkUpdater do
 
   @impl true
   def handle_call(
-        {:bulk_csv_update, csv_hash, structures_content_upload, user_id, auto_publish},
+        {:bulk_csv_update, csv_hash, structures_content_upload, user_id, auto_publish, lang},
         _from,
         state
       ) do
     %{reply: update_state, state: new_state} =
       csv_hash
       |> pending_update()
-      |> launch_task(csv_hash, state, structures_content_upload, user_id, auto_publish)
+      |> launch_task(csv_hash, state, structures_content_upload, user_id, auto_publish, lang)
 
     {:reply, update_state, new_state}
   end
@@ -66,7 +66,8 @@ defmodule TdDd.DataStructures.BulkUpdater do
         state,
         %{filename: filename} = structures_content_upload,
         user_id,
-        auto_publish
+        auto_publish,
+        lang
       ) do
     Task.Supervisor.children(TdDd.TaskSupervisor)
 
@@ -75,14 +76,14 @@ defmodule TdDd.DataStructures.BulkUpdater do
         TdDd.TaskSupervisor,
         fn ->
           with [_ | _] = contents <-
-                 BulkUpdate.from_csv(structures_content_upload),
+                 BulkUpdate.from_csv(structures_content_upload, lang),
                {:ok, %{updates: updates, update_notes: update_notes}} <-
                  BulkUpdate.do_csv_bulk_update(contents, user_id, auto_publish),
                [updated_notes, not_updated_notes] <-
                  BulkUpdate.split_succeeded_errors(update_notes) do
             make_summary(updates, updated_notes, not_updated_notes)
           else
-            {:error, _} = error -> error
+            error -> error
           end
         end
       )
@@ -122,7 +123,8 @@ defmodule TdDd.DataStructures.BulkUpdater do
         state,
         _structures_content_upload,
         _user_id,
-        _auto_publish
+        _auto_publish,
+        _lang
       ) do
     %{reply: update_state, state: state}
   end
