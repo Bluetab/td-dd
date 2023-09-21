@@ -1,5 +1,11 @@
 # Changelog
 
+ ## [Unreleased]
+
+ ### Added
+
+- [TD-5495] Foreing keys columns should match original ID columns in all tables
+
 ## [5.14.0] 2023-09-19
 
 ### Added
