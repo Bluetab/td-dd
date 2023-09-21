@@ -16,6 +16,12 @@ defmodule TdDd.ReferenceData do
     |> Repo.one!()
   end
 
+  @spec get(binary | integer) :: Dataset.t()
+  def get(id) do
+    dataset_query(id: id)
+    |> Repo.one()
+  end
+
   def exists?(id) do
     dataset_query(id: id)
     |> Repo.exists?()
