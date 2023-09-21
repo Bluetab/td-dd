@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-5947] Support for DataViews
+
 ## [5.14.0] 2023-09-19
 
 ### Added

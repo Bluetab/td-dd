@@ -527,6 +527,7 @@ defmodule TdDdWeb.DataStructureController do
 
   defp do_search(conn, search_params, page, size) do
     my_grant_requests = Map.get(search_params, "my_grant_requests")
+    with_data_fields = Map.get(search_params, "with_data_fields")
     claims = conn.assigns[:current_resource]
 
     permission =
@@ -540,6 +541,7 @@ defmodule TdDdWeb.DataStructureController do
     |> Map.drop(["page", "size"])
     |> Search.search_data_structures(claims, permission, page, size)
     |> maybe_load_my_grant_requests(my_grant_requests, claims)
+    |> maybe_load_data_fields(with_data_fields, claims)
   end
 
   defp search_assigns(%{results: data_structures, scroll_id: scroll_id}) do
@@ -600,6 +602,25 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   defp maybe_load_my_grant_requests(search_results, _, _), do: search_results
+
+  defp maybe_load_data_fields(%{results: results} = search_results, true, claims) do
+    data_structures_ids = Enum.map(results, & &1.id)
+
+    data_fields_by_ds =
+      data_structures_ids
+      |> DataStructures.list_data_structures_data_fields(claims)
+      |> Enum.group_by(& &1.id)
+      |> Enum.map(fn {data_structure_id, data_fields} ->
+        {data_structure_id, Enum.map(data_fields, & &1.data_field)}
+      end)
+      |> Map.new()
+
+    results = Enum.map(results, &Map.put(&1, :data_fields, Map.get(data_fields_by_ds, &1.id)))
+
+    Map.put(search_results, :results, results)
+  end
+
+  defp maybe_load_data_fields(search_results, _, _), do: search_results
 
   defp deleted_structures(%{"must" => %{"all" => true} = filters} = search_params) do
     must = Map.delete(filters, "all")

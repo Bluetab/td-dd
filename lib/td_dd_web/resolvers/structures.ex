@@ -77,9 +77,7 @@ defmodule TdDdWeb.Resolvers.Structures do
     end
   end
 
-  defp maybe_check_siblings_permission(%{siblings: []} = dsv, _claims), do: dsv
-
-  defp maybe_check_siblings_permission(%{siblings: dsv_sibling} = dsv, claims) do
+  defp maybe_check_siblings_permission(%{siblings: [_ | _] = dsv_sibling} = dsv, claims) do
     filtered_sibling = Enum.filter(dsv_sibling, &check_structure_related_permision(&1, claims))
     Map.put(dsv, :siblings, filtered_sibling)
   end
