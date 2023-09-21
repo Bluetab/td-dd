@@ -9,6 +9,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   alias Path
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.Search.Aggregations
   alias TdDd.DataStructures.StructureNotes
   alias TdDd.Search.MockIndexWorker
@@ -462,6 +463,42 @@ defmodule TdDdWeb.DataStructureControllerTest do
                |> post(data_structure_path(conn, :search), %{
                  "must" => %{},
                  "my_grant_requests" => true
+               })
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "search passing flag with_data_fields will return the structure data_fields", %{
+      conn: conn
+    } do
+      %{data_structure_id: id, id: dsv_id} = dsv = insert(:data_structure_version)
+
+      %{data_structure_id: child_ds_id, id: child_id} =
+        insert(:data_structure_version, class: "field")
+
+      insert(:data_structure_relation,
+        parent_id: dsv_id,
+        child_id: child_id,
+        relation_type_id: RelationTypes.default_id!()
+      )
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: _query}, _ ->
+        SearchHelpers.hits_response([dsv])
+      end)
+
+      assert %{
+               "data" => [
+                 %{
+                   "id" => ^id,
+                   "data_fields" => [%{"id" => ^child_ds_id}]
+                 }
+               ]
+             } =
+               conn
+               |> post(data_structure_path(conn, :search), %{
+                 "must" => %{},
+                 "with_data_fields" => true
                })
                |> json_response(:ok)
     end
