@@ -1,6 +1,8 @@
 defmodule TdDdWeb.Schema.SourcesTest do
   use TdDdWeb.ConnCase
 
+  @moduletag sandbox: :shared
+
   @valid_config %{"string" => "foo", "list" => "two"}
 
   @source_with_template """
@@ -512,6 +514,11 @@ defmodule TdDdWeb.Schema.SourcesTest do
   end
 
   describe "deleteSource mutation" do
+    setup do
+      start_supervised!(TdCx.Cache.SourcesLatestEvent)
+      :ok
+    end
+
     @tag authentication: [role: "user"]
     test "returns forbidden for a non-admin user", %{conn: conn} do
       %{id: id} = insert(:source)

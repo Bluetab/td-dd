@@ -5,6 +5,7 @@ defmodule TdCxWeb.EventControllerTest do
 
   setup do
     start_supervised!(TdCx.Search.IndexWorker)
+    start_supervised!(TdCx.Cache.SourcesLatestEvent)
     start_supervised!(TdDd.Search.Cluster)
     :ok
   end

@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-5947] Support for DataViews
+- [TD-5532] Sources latest event cache
 
 ## [5.14.0] 2023-09-19
 
