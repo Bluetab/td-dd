@@ -45,6 +45,7 @@ defmodule TdDd.Application do
       # Task to recalculate data structure hashes on startup
       TdDd.DataStructures.Hasher,
       # Workers for cache loading
+      TdCx.Cache.SourcesLatestEvent,
       TdDd.Cache.SystemLoader,
       TdDd.Cache.StructureLoader,
       # Lineage workers
