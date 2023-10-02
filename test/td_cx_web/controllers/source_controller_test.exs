@@ -344,6 +344,11 @@ defmodule TdCxWeb.SourceControllerTest do
   describe "delete source" do
     setup :create_source
 
+    setup do
+      start_supervised!(TdCx.Cache.SourcesLatestEvent)
+      :ok
+    end
+
     @tag authentication: [role: "user"]
     test "returns unauthorized for non admin user", %{conn: conn, source: source} do
       conn = delete(conn, Routes.source_path(conn, :delete, source.external_id))

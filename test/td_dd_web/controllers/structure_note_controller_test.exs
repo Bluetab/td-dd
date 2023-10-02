@@ -432,6 +432,36 @@ defmodule TdDdWeb.StructureNoteControllerTest do
     end
 
     @tag authentication: [role: "admin"]
+    test "search structure_notes by filter with until param", %{conn: conn} do
+      n1 = insert(:structure_note, status: :published, updated_at: ~U[2021-01-01T11:00:00Z])
+      n2 = insert(:structure_note, status: :published, updated_at: ~U[2021-01-02T11:00:00Z])
+      insert(:structure_note, status: :published, updated_at: ~U[2021-01-03T11:00:00Z])
+      insert(:structure_note, status: :draft, updated_at: ~U[2021-01-04T11:00:00Z])
+
+      response =
+        [n1, n2]
+        |> Enum.map(fn sn ->
+          %{
+            "id" => sn.id,
+            "status" => sn.status |> Atom.to_string(),
+            "df_content" => sn.df_content,
+            "data_structure_id" => sn.data_structure_id,
+            "data_structure_external_id" => sn.data_structure.external_id,
+            "updated_at" => DateTime.to_iso8601(sn.updated_at),
+            "version" => 1
+          }
+        end)
+
+      assert response |||
+               conn
+               |> post(Routes.structure_note_path(conn, :search),
+                 until: "2021-01-02 11:00:00"
+               )
+               |> json_response(:ok)
+               |> Map.get("data")
+    end
+
+    @tag authentication: [role: "admin"]
     test "search structure_notes by data_struture system_id", %{conn: conn} do
       %{system_id: system_id} = ds1 = insert(:data_structure)
       ds2 = insert(:data_structure)

@@ -4,6 +4,7 @@ defmodule TdDdWeb.Resolvers.Sources do
   """
 
   alias TdCache.TemplateCache
+  alias TdCx.Cache.SourcesLatestEvent
   alias TdCx.Sources
 
   def sources(_parent, args, _resolution) do
@@ -21,6 +22,11 @@ defmodule TdDdWeb.Resolvers.Sources do
   def job_types(%{config: config}, _args, _resolution) do
     job_types = Map.get(config, "job_types", [])
     {:ok, job_types}
+  end
+
+  def latest_event(%{id: source_id}, _args, _resolution) do
+    latest_event = SourcesLatestEvent.get(source_id)
+    {:ok, latest_event}
   end
 
   def enable_source(parent, %{id: id} = _args, resolution) do

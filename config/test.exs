@@ -44,3 +44,5 @@ config :td_cache, :event_stream, streams: []
 config :logger, level: :warn
 
 # config :logger, :console, level: :debug
+
+config :td_cluster, groups: [:dd]
