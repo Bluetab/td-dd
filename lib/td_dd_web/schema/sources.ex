@@ -86,6 +86,8 @@ defmodule TdDdWeb.Schema.Sources do
       resolve(dataloader(TdCx.Sources))
     end
 
+    field :latest_event, :event, resolve: &Resolvers.Sources.latest_event/3
+
     field :jobs, list_of(:job) do
       arg(:limit, :integer, default_value: 20)
       resolve(dataloader(TdCx.Sources))

@@ -57,6 +57,19 @@ defmodule TdDd.DataStructures.StructureNotesTest do
       assert StructureNotes.list_structure_notes(%{"status" => :draft}) ||| [n4]
     end
 
+    test "list_structure_notes/1 returns all structure_notes filtered by until and to_date" do
+      n1 = insert(:structure_note, status: :versioned, updated_at: ~N[2021-01-01 10:00:00])
+      n2 = insert(:structure_note, status: :versioned, updated_at: ~N[2021-01-02 10:00:00])
+      insert(:structure_note, status: :versioned, updated_at: ~N[2021-01-03 10:00:00])
+      insert(:structure_note, status: :draft, updated_at: ~N[2021-01-04 10:00:00])
+
+      until_filters = %{
+        "until" => "2021-01-02 10:00:00"
+      }
+
+      assert StructureNotes.list_structure_notes(until_filters) ||| [n1, n2]
+    end
+
     test "list_structure_notes/1 return results paginated by offset ordered by updated_at and note id" do
       page_size = 200
 

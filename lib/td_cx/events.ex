@@ -6,6 +6,7 @@ defmodule TdCx.Events do
   import Ecto.Query
 
   alias Ecto.Multi
+  alias TdCx.Cache.SourcesLatestEvent
   alias TdCx.Events.Event
   alias TdCx.Jobs.Audit
   alias TdCx.Jobs.Job
@@ -64,6 +65,10 @@ defmodule TdCx.Events do
     |> Multi.run(:external_id, fn _, %{event: event} -> {:ok, get_external_id(event)} end)
     |> Multi.run(:source_external_id, fn _, %{event: event} ->
       {:ok, get_source_external_id(event)}
+    end)
+    |> Multi.run(:refresh_cache, fn _, %{source_id: source_id, event: latest_event} ->
+      :ok = SourcesLatestEvent.refresh(source_id, latest_event)
+      {:ok, nil}
     end)
     |> Multi.run(:audit, Audit, :job_status_updated, [user_id])
     |> Repo.transaction()
