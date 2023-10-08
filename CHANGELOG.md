@@ -1,11 +1,12 @@
 # Changelog
 
-## [Unreleased]
+[5.15.0] 2023-10-02
 
 ### Added
 
 - [TD-5947] Support for DataViews
 - [TD-5532] Sources latest event cache
+- [TD-6042] Until filter for api/data_structure_notes/search
 
 ## [5.14.0] 2023-09-19
 

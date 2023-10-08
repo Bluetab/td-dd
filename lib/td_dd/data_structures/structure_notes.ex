@@ -56,6 +56,9 @@ defmodule TdDd.DataStructures.StructureNotes do
   defp add_params({filter, updated_at}, query) when filter in ["since", "updated_at"],
     do: where(query, [sn], sn.updated_at >= ^updated_at)
 
+  defp add_params({filter, updated_at}, query) when filter in ["until"],
+    do: where(query, [sn], sn.updated_at <= ^updated_at)
+
   defp add_params({"system_id", system_id}, query) do
     query
     |> join(:inner, [sn], ds in assoc(sn, :data_structure))
