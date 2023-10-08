@@ -724,6 +724,21 @@ defmodule TdDd.Factory do
     |> merge_attributes(attrs)
   end
 
+  def graph_factory(attrs) do
+    %TdDd.Lineage.Graph{
+      hash: "1234",
+      data: %{
+        "ids" => [],
+        "opts" => %{"type" => "lineage"},
+        "paths" => [],
+        "groups" => [],
+        "excludes" => [],
+        "resources" => []
+      }
+    }
+    |> merge_attributes(attrs)
+  end
+
   def lineage_event_factory do
     %TdDd.Lineage.LineageEvent{
       user_id: "438",

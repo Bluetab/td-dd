@@ -13,38 +13,77 @@ defmodule TdDdWeb.GraphController do
 
   def create(conn, %{} = params) do
     with %{user_id: user_id} = _claims <- conn.assigns[:current_resource] do
-      {code, response, id} =
-        case do_drawing(user_id, params) do
-          {:already_calculated, %Graph{id: id, data: graph_data}} ->
-            data =
-              graph_data
-              |> Map.put(:id, id)
-
-            {:created, data, id}
-
-          {:just_started, hash, task_reference} ->
-            {:accepted,
-             %{graph_hash: hash, status: "JUST_STARTED", task_reference: task_reference}, hash}
-
-          {:already_started, %LineageEvent{graph_hash: hash} = event} ->
-            {:accepted, TdDdWeb.LineageEventView.render("show.json", %{lineage_event: event}),
-             hash}
-        end
+      {code, response, _id} =
+        do_drawing(user_id, params)
+        |> response(:created)
 
       conn
-      |> put_resp_header("location", Routes.graph_path(TdDdWeb.Endpoint, :show, id))
       |> put_resp_content_type("application/json", "utf-8")
       |> send_resp(code, response |> Jason.encode!())
     end
   end
 
-  def show(conn, %{"id" => id} = _params) do
-    with %Graph{data: data} <- Graphs.get!(id) do
-      json = %{data: Map.put(data, :id, id)} |> Jason.encode!()
+  defp response(
+         {:already_calculated, %Graph{id: id, data: graph_data}},
+         graph_done_response_code
+       ) do
+    data =
+      graph_data
+      |> Map.put(:id, id)
 
-      conn
-      |> put_resp_content_type("application/json", "utf-8")
-      |> send_resp(200, json)
+    {graph_done_response_code, data, id}
+  end
+
+  defp response(
+         {:just_started, hash, task_reference},
+         _graph_done_response_code
+       ) do
+    {
+      :accepted,
+      %{
+        graph_hash: hash,
+        status: "JUST_STARTED",
+        task_reference: task_reference
+      },
+      hash
+    }
+  end
+
+  defp response(
+         {:already_started, %LineageEvent{graph_hash: hash} = event},
+         _graph_done_response_code
+       ) do
+    {
+      :accepted,
+      TdDdWeb.LineageEventView.render("show.json", %{lineage_event: event}),
+      hash
+    }
+  end
+
+  def show(conn, %{"id" => id_str} = _params) do
+    %{user_id: user_id} = conn.assigns[:current_resource]
+
+    case Graphs.get(id_str) do
+      %{id: id, data: data, is_stale: false} ->
+        json = %{data: Map.put(data, :id, id)} |> Jason.encode!()
+
+        conn
+        |> put_resp_content_type("application/json", "utf-8")
+        |> send_resp(200, json)
+
+      %{params: create_params, is_stale: true} ->
+        {code, response, _id} =
+          do_drawing(
+            user_id,
+            Map.put(create_params, "isRedirected", true)
+          )
+          |> response(:ok)
+
+        conn
+        |> put_resp_content_type("application/json", "utf-8")
+        |> send_resp(code, response |> Jason.encode!())
+
+      error -> error
     end
   end
 
@@ -77,7 +116,7 @@ defmodule TdDdWeb.GraphController do
   end
 
   def csv(conn, %{"id" => id}) do
-    with %Graph{data: data} <- Graphs.get!(id) do
+    with %Graph{data: data} <- Graphs.get(id) do
       type =
         data
         |> Map.get("opts")
