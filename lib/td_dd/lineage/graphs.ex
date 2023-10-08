@@ -7,7 +7,6 @@ defmodule TdDd.Lineage.Graphs do
   alias Graph.Drawing
   alias TdDd.Lineage.Graph, as: Graph
   alias TdDd.Lineage.Units
-  alias TdDd.Lineage.Units.Event
   alias TdDd.Repo
 
   @lowest_date ~U[0000-01-01 00:00:00Z]
@@ -18,8 +17,11 @@ defmodule TdDd.Lineage.Graphs do
   Fetches a `Graph` where the primary key matches the given id.
   """
   def get(id) do
+    # convoluted left join with a last unit event one row table just to get
+    # this information together with the searched graph, in one query.
+
     query = from g in Graph,
-    left_join: ue in Event, on: true,
+    left_join: ue in subquery(Units.last_updated_query()),
     where: g.id == ^id,
     select:  %{graph: g, unit_last_updated: ue.inserted_at}
 
