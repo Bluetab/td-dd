@@ -1,6 +1,12 @@
 # Changelog
 
-[5.15.0] 2023-10-02
+## [Unreleased]
+
+### Changed
+
+- [TD-5958] Keep graph URL across lineage changes
+
+## [5.15.0] 2023-10-02
 
 ### Added
 
