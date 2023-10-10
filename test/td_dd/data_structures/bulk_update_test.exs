@@ -113,7 +113,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       "fields" => [
         %{
           "cardinality" => "?",
-          "label" => "i18n_test.dropdown.fixed",
+          "label" => "label_i18n_test.Dropdown Fixed",
           "name" => "i18n_test.dropdown.fixed",
           "type" => "string",
           "values" => %{"fixed" => ["pear", "banana", "apple", "peach"]},
@@ -121,7 +121,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         },
         %{
           "cardinality" => "?",
-          "label" => "i18n_test_no_translate",
+          "label" => "label_i18n_test_no_translate",
           "name" => "i18n_test_no_translate",
           "type" => "string",
           "values" => nil,
@@ -129,7 +129,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         },
         %{
           "cardinality" => "?",
-          "label" => "i18n_test.radio.fixed",
+          "label" => "label_i18n_test.Radio Fixed",
           "name" => "i18n_test.radio.fixed",
           "type" => "string",
           "values" => %{"fixed" => ["pear", "banana", "apple", "peach"]},
@@ -137,7 +137,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         },
         %{
           "cardinality" => "*",
-          "label" => "i18n_test.checkbox.fixed",
+          "label" => "label_i18n_test.Checkbox Fixed",
           "name" => "i18n_test.checkbox.fixed",
           "type" => "string",
           "values" => %{"fixed" => ["pear", "banana", "apple", "peach"]},
@@ -917,18 +917,18 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
   defp insert_i18n_messages(_) do
     CacheHelpers.put_i18n_messages("es", [
-      %{message_id: "fields.i18n_test.dropdown.fixed", definition: "Dropdown Fijo"},
-      %{message_id: "fields.i18n_test.dropdown.fixed.pear", definition: "pera"},
-      %{message_id: "fields.i18n_test.dropdown.fixed.banana", definition: "plátano"},
-      %{message_id: "fields.i18n_test.dropdown.fixed.apple", definition: "manzana"},
-      %{message_id: "fields.i18n_test.radio.fixed", definition: "Radio Fijo"},
-      %{message_id: "fields.i18n_test.radio.fixed.pear", definition: "pera"},
-      %{message_id: "fields.i18n_test.radio.fixed.banana", definition: "plátano"},
-      %{message_id: "fields.i18n_test.radio.fixed.apple", definition: "manzana"},
-      %{message_id: "fields.i18n_test.checkbox.fixed", definition: "Checkbox Fijo"},
-      %{message_id: "fields.i18n_test.checkbox.fixed.pear", definition: "pera"},
-      %{message_id: "fields.i18n_test.checkbox.fixed.banana", definition: "plátano"},
-      %{message_id: "fields.i18n_test.checkbox.fixed.apple", definition: "manzana"}
+      %{message_id: "fields.label_i18n_test.Dropdown Fixed", definition: "Dropdown Fijo"},
+      %{message_id: "fields.label_i18n_test.Dropdown Fixed.pear", definition: "pera"},
+      %{message_id: "fields.label_i18n_test.Dropdown Fixed.banana", definition: "plátano"},
+      %{message_id: "fields.label_i18n_test.Dropdown Fixed.apple", definition: "manzana"},
+      %{message_id: "fields.label_i18n_test.Radio Fixed", definition: "Radio Fijo"},
+      %{message_id: "fields.label_i18n_test.Radio Fixed.pear", definition: "pera"},
+      %{message_id: "fields.label_i18n_test.Radio Fixed.banana", definition: "plátano"},
+      %{message_id: "fields.label_i18n_test.Radio Fixed.apple", definition: "manzana"},
+      %{message_id: "fields.label_i18n_test.Checkbox Fixed", definition: "Checkbox Fijo"},
+      %{message_id: "fields.label_i18n_test.Checkbox Fixed.pear", definition: "pera"},
+      %{message_id: "fields.label_i18n_test.Checkbox Fixed.banana", definition: "plátano"},
+      %{message_id: "fields.label_i18n_test.Checkbox Fixed.apple", definition: "manzana"}
     ])
   end
 

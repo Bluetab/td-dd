@@ -295,7 +295,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
           "fields" => [
             %{
               "cardinality" => "1",
-              "label" => "i18n",
+              "label" => "label_i18n",
               "name" => "i18n",
               "type" => "string",
               "values" => %{"fixed" => ["one", "two", "three"]}
@@ -311,7 +311,10 @@ defmodule TdDq.Implementations.BulkLoadTest do
           content: template_content
         )
 
-      CacheHelpers.put_i18n_message("es", %{message_id: "fields.i18n.one", definition: "uno"})
+      CacheHelpers.put_i18n_message("es", %{
+        message_id: "fields.label_i18n.one",
+        definition: "uno"
+      })
 
       [imp | _] = @valid_implementation
 
@@ -338,7 +341,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
           "fields" => [
             %{
               "cardinality" => "+",
-              "label" => "i18n",
+              "label" => "label_i18n",
               "name" => "i18n",
               "type" => "string",
               "values" => %{"fixed" => ["one", "two", "three"]}
@@ -355,8 +358,8 @@ defmodule TdDq.Implementations.BulkLoadTest do
         )
 
       CacheHelpers.put_i18n_messages("es", [
-        %{message_id: "fields.i18n.one", definition: "uno"},
-        %{message_id: "fields.i18n.two", definition: "dos"}
+        %{message_id: "fields.label_i18n.one", definition: "uno"},
+        %{message_id: "fields.label_i18n.two", definition: "dos"}
       ])
 
       [imp | _] = @valid_implementation
@@ -384,7 +387,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
           "fields" => [
             %{
               "cardinality" => "1",
-              "label" => "i18n",
+              "label" => "label_i18n",
               "name" => "i18n",
               "type" => "string",
               "values" => %{"fixed" => ["one", "two", "three"]}
@@ -426,7 +429,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
           "fields" => [
             %{
               "cardinality" => "+",
-              "label" => "i18n",
+              "label" => "label_i18n",
               "name" => "i18n",
               "type" => "string",
               "values" => %{"fixed" => ["one", "two", "three"]}
@@ -452,6 +455,57 @@ defmodule TdDq.Implementations.BulkLoadTest do
 
       assert {:ok, %{errors: [%{message: %{df_content: ["i18n: has an invalid entry"]}}]}} =
                BulkLoad.bulk_load([imp], claims, false, "es")
+    end
+
+    test "returns ids with result type in not default language",
+         %{
+           domain: %{id: domain_id},
+           claims: claims
+         } do
+      CacheHelpers.put_i18n_message("es", %{
+        message_id: "ruleImplementations.props.result_type.deviation",
+        definition: "Desviación"
+      })
+
+      CacheHelpers.put_i18n_message("es", %{
+        message_id: "ruleImplementations.props.result_type.errors_number",
+        definition: "Número"
+      })
+
+      CacheHelpers.put_i18n_message("es", %{
+        message_id: "ruleImplementations.props.result_type.percentage",
+        definition: "Porcentaje"
+      })
+
+      impl =
+        [
+          %{
+            "goal" => "1",
+            "implementation_key" => "foo",
+            "minimum" => "100",
+            "result_type" => "desviación"
+          },
+          %{
+            "goal" => "1",
+            "implementation_key" => "bar",
+            "minimum" => "100",
+            "result_type" => "número"
+          },
+          %{
+            "goal" => "10",
+            "implementation_key" => "baz",
+            "minimum" => "1",
+            "result_type" => "porcentaje"
+          }
+        ]
+        |> Enum.map(&Map.put(&1, "domain_id", domain_id))
+
+      assert {:ok, %{ids: [id1, id2, id3], errors: []}} =
+               BulkLoad.bulk_load(impl, claims, false, "es")
+
+      assert %{result_type: "percentage"} = Implementations.get_implementation!(id1)
+      assert %{result_type: "errors_number"} = Implementations.get_implementation!(id2)
+      assert %{result_type: "deviation"} = Implementations.get_implementation!(id3)
     end
 
     test "return error when rule not exist", %{
