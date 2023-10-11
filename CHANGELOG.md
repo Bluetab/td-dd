@@ -1,5 +1,12 @@
 # Changelog
 
+[Unreleased]
+
+### Added
+
+- [TD-6082] Support to upload implementations with result type in browser
+  language
+
 [5.15.0] 2023-10-02
 
 ### Added
