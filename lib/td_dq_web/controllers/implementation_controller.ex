@@ -89,8 +89,9 @@ defmodule TdDqWeb.ImplementationController do
   end
 
   def create(conn, %{
-        "rule_implementation" => %{"original_id" => original_implementation_id} = params
+        "rule_implementation" => %{"operation" => "clone", "implementation_ref" => original_implementation_ref} = params
       }) do
+
     claims = conn.assigns[:current_resource]
 
     with {:ok, %{implementation: %{id: id}}} <-
@@ -98,7 +99,7 @@ defmodule TdDqWeb.ImplementationController do
          implementation <-
            Implementations.get_implementation!(id, enrich: :source, preload: [:results]) do
       Cluster.clone_relations(
-        original_implementation_id,
+        original_implementation_ref,
         id,
         "business_concept",
         claims
