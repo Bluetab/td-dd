@@ -6,6 +6,10 @@
 
 - [TD-5958] Keep graph URL across lineage changes
 
+### Added
+
+- [TD-5582] Implementation clone copies original business concepts links
+
 ## [5.15.0] 2023-10-02
 
 ### Added
