@@ -1,6 +1,8 @@
 defmodule TdDqWeb.ImplementationController do
   use TdDqWeb, :controller
 
+  alias TdCluster.Cluster.TdLm, as: Cluster
+
   alias TdDq.Events.QualityEvents
   alias TdDq.Implementations
   alias TdDq.Implementations.Actions
@@ -84,6 +86,30 @@ defmodule TdDqWeb.ImplementationController do
 
     response(201, "Created", Schema.ref(:ImplementationResponse))
     response(400, "Client Error")
+  end
+
+  def create(conn, %{
+        "rule_implementation" => %{"operation" => "clone", "implementation_ref" => original_implementation_ref} = params
+      }) do
+
+    claims = conn.assigns[:current_resource]
+
+    with {:ok, %{implementation: %{id: id}}} <-
+           Implementations.create_ruleless_implementation(params, claims),
+         implementation <-
+           Implementations.get_implementation!(id, enrich: :source, preload: [:results]) do
+      Cluster.clone_relations(
+        original_implementation_ref,
+        id,
+        "business_concept",
+        claims
+      )
+
+      conn
+      |> put_status(:created)
+      |> put_resp_header("location", Routes.implementation_path(conn, :show, implementation))
+      |> render("show.json", implementation: implementation)
+    end
   end
 
   def create(conn, %{"rule_implementation" => %{"rule_id" => rule_id} = params})
