@@ -135,7 +135,12 @@ defmodule TdDdWeb.GraphControllerTest do
     @tag contains: %{"foo" => ["bar", "baz"]}
     @tag depends: [{"bar", "baz", metadata: %{}}]
     test "create existing graph returns the graph drawing", %{conn: conn} do
-      insert(:unit_event, event: "LoadSucceeded", inserted_at: ~U[2007-08-31 01:39:00Z], unit: build(:unit))
+      insert(:unit_event,
+        event: "LoadSucceeded",
+        inserted_at: ~U[2007-08-31 01:39:00Z],
+        unit: build(:unit)
+      )
+
       assert %{
                "graph_hash" => _graph_hash,
                "status" => "JUST_STARTED",
@@ -169,7 +174,12 @@ defmodule TdDdWeb.GraphControllerTest do
     @tag contains: %{"foo" => ["bar", "baz"]}
     @tag depends: [{"bar", "baz", metadata: %{"foo" => "bar"}}]
     test "create existing graph returns the graph drawing with metadata", %{conn: conn} do
-      insert(:unit_event, event: "LoadSucceeded", inserted_at: ~U[2007-08-31 01:39:00Z], unit: build(:unit))
+      insert(:unit_event,
+        event: "LoadSucceeded",
+        inserted_at: ~U[2007-08-31 01:39:00Z],
+        unit: build(:unit)
+      )
+
       assert %{
                "graph_hash" => _graph_hash,
                "status" => "JUST_STARTED",

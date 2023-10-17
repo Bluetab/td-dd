@@ -64,14 +64,7 @@ defmodule TdDdWeb.GraphController do
     %{user_id: user_id} = conn.assigns[:current_resource]
 
     case Graphs.get(id_str) do
-      %{id: id, data: data, is_stale: false} ->
-        json = %{data: Map.put(data, :id, id)} |> Jason.encode!()
-
-        conn
-        |> put_resp_content_type("application/json", "utf-8")
-        |> send_resp(200, json)
-
-      %{params: create_params, is_stale: true} ->
+      %{params: create_params, is_stale: true} when not is_nil(create_params) ->
         {code, response, _id} =
           do_drawing(
             user_id,
@@ -83,7 +76,15 @@ defmodule TdDdWeb.GraphController do
         |> put_resp_content_type("application/json", "utf-8")
         |> send_resp(code, response |> Jason.encode!())
 
-      error -> error
+      %{id: id, data: data} ->
+        json = %{data: Map.put(data, :id, id)} |> Jason.encode!()
+
+        conn
+        |> put_resp_content_type("application/json", "utf-8")
+        |> send_resp(200, json)
+
+      error ->
+        error
     end
   end
 

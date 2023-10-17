@@ -20,13 +20,14 @@ defmodule TdDd.Lineage.Graphs do
     # convoluted left join with a last unit event one row table just to get
     # this information together with the searched graph, in one query.
 
-    query = from g in Graph,
-    left_join: ue in subquery(Units.last_updated_query()),
-    where: g.id == ^id,
-    select:  %{graph: g, unit_last_updated: ue.inserted_at}
+    query =
+      from g in Graph,
+        left_join: ue in subquery(Units.last_updated_query()),
+        where: g.id == ^id,
+        select: %{graph: g, unit_last_updated: ue.inserted_at}
 
     with %{graph: g, unit_last_updated: unit_last_updated} <- Repo.one(query) do
-      %{g | is_stale: :lt == DateTime.compare(g.updated_at, unit_last_updated || @lowest_date) }
+      %{g | is_stale: :lt == DateTime.compare(g.updated_at, unit_last_updated || @lowest_date)}
     end
   end
 
@@ -37,10 +38,11 @@ defmodule TdDd.Lineage.Graphs do
     %Graph{
       data: data,
       hash: hash,
-      params: Map.merge(
-        %{ids: ids, excludes: excludes},
-        opts
-      ),
+      params:
+        Map.merge(
+          %{ids: ids, excludes: excludes},
+          opts
+        )
     }
     |> Repo.insert!(
       on_conflict: {:replace, [:data, :updated_at]},
@@ -50,8 +52,13 @@ defmodule TdDd.Lineage.Graphs do
 
   def non_stale_graph_by_hash_query(hash) do
     from g in Graph,
-    where: g.hash == ^hash and g.updated_at >= fragment("COALESCE(?, '-infinity')",
-           subquery(Units.last_updated_query()))
+      where:
+        g.hash == ^hash and
+          g.updated_at >=
+            fragment(
+              "COALESCE(?, '-infinity')",
+              subquery(Units.last_updated_query())
+            )
   end
 
   @doc """

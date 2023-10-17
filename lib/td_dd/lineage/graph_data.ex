@@ -384,6 +384,7 @@ defmodule TdDd.Lineage.GraphData do
         Graph.new([], acyclic: true),
         &Graph.add_vertex(&2, &1.external_id, data_label(&1))
       )
+
     Logger.info("Imported #{Graph.no_vertices(contains)} tree vertices")
 
     depends =
@@ -469,6 +470,7 @@ defmodule TdDd.Lineage.GraphData do
     Constant hash across lineage loads. Node ids might change for new lineage
     load, so avoid using them.
     '''
+
     hash =
       opts
       |> deterministic_map
@@ -481,8 +483,9 @@ defmodule TdDd.Lineage.GraphData do
 
   defp deterministic_map(opts) do
     defaults = %{excludes: [], levels: :all}
+
     opts
-    |> Map.new
+    |> Map.new()
     |> Kernel.then(&Map.merge(defaults, &1))
   end
 

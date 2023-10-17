@@ -1177,8 +1177,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       data =
         conn
         |> post(data_structure_path(conn, :bulk_upload_domains),
-          structures_domains:
-            upload("test/fixtures/td4535/structures_domains_permissions.csv")
+          structures_domains: upload("test/fixtures/td4535/structures_domains_permissions.csv")
         )
         |> json_response(:ok)
 
@@ -1254,8 +1253,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       data =
         conn
         |> post(data_structure_path(conn, :bulk_upload_domains),
-          structures_domains:
-            upload("test/fixtures/td4535/structures_domains_bad_header.csv")
+          structures_domains: upload("test/fixtures/td4535/structures_domains_bad_header.csv")
         )
         |> json_response(:unprocessable_entity)
 
@@ -1747,8 +1745,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
              } =
                conn
                |> post(data_structure_path(conn, :bulk_update_template_content),
-                 structures:
-                   upload("test/fixtures/td4100/upload_with_invalid_external_id.csv")
+                 structures: upload("test/fixtures/td4100/upload_with_invalid_external_id.csv")
                )
                |> json_response(:accepted)
 
