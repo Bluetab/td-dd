@@ -181,7 +181,7 @@ defmodule TdDq.Rules.BulkLoadTest do
           "fields" => [
             %{
               "cardinality" => "1",
-              "label" => "i18n",
+              "label" => "label_i18n",
               "name" => "i18n",
               "type" => "string",
               "values" => %{"fixed" => ["one", "two", "three"]}
@@ -197,7 +197,10 @@ defmodule TdDq.Rules.BulkLoadTest do
           content: template_content
         )
 
-      CacheHelpers.put_i18n_message("es", %{message_id: "fields.i18n.one", definition: "uno"})
+      CacheHelpers.put_i18n_message("es", %{
+        message_id: "fields.label_i18n.one",
+        definition: "uno"
+      })
 
       rules =
         Enum.map(@rules, fn rule ->
@@ -225,7 +228,7 @@ defmodule TdDq.Rules.BulkLoadTest do
           "fields" => [
             %{
               "cardinality" => "+",
-              "label" => "i18n",
+              "label" => "label_i18n",
               "name" => "i18n",
               "type" => "string",
               "values" => %{"fixed" => ["one", "two", "three"]}
@@ -242,9 +245,9 @@ defmodule TdDq.Rules.BulkLoadTest do
         )
 
       CacheHelpers.put_i18n_messages("es", [
-        %{message_id: "fields.i18n.one", definition: "uno"},
-        %{message_id: "fields.i18n.two", definition: "dos"},
-        %{message_id: "fields.i18n.three", definition: "tres"}
+        %{message_id: "fields.label_i18n.one", definition: "uno"},
+        %{message_id: "fields.label_i18n.two", definition: "dos"},
+        %{message_id: "fields.label_i18n.three", definition: "tres"}
       ])
 
       rules =
@@ -273,7 +276,7 @@ defmodule TdDq.Rules.BulkLoadTest do
           "fields" => [
             %{
               "cardinality" => "1",
-              "label" => "i18n",
+              "label" => "label_i18n",
               "name" => "i18n",
               "type" => "string",
               "values" => %{"fixed" => ["one", "two", "three"]}
@@ -323,7 +326,7 @@ defmodule TdDq.Rules.BulkLoadTest do
           "fields" => [
             %{
               "cardinality" => "+",
-              "label" => "i18n",
+              "label" => "label_i18n",
               "name" => "i18n",
               "type" => "string",
               "values" => %{"fixed" => ["one", "two", "three"]}

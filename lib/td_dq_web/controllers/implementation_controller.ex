@@ -89,9 +89,9 @@ defmodule TdDqWeb.ImplementationController do
   end
 
   def create(conn, %{
-        "rule_implementation" => %{"operation" => "clone", "implementation_ref" => original_implementation_ref} = params
+        "rule_implementation" =>
+          %{"operation" => "clone", "implementation_ref" => original_implementation_ref} = params
       }) do
-
     claims = conn.assigns[:current_resource]
 
     with {:ok, %{implementation: %{id: id}}} <-
