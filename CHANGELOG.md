@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [TD-5958] Keep graph URL across lineage changes
+
 ### Added
 
 - [TD-6082] Support to upload implementations with result type in browser

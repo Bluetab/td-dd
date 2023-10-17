@@ -1,4 +1,5 @@
 defmodule TdDdWeb.DataStructureControllerTest do
+  use TdDd.ProcessCase
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
@@ -19,24 +20,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
   @template_with_multifields_name "data_structure_controller_test_template_with_multifields"
   @receive_timeout 500
   @protected DataStructures.protected()
-
-  defp plug_upload(path) do
-    %Plug.Upload{
-      path: path,
-      filename: Path.basename(path)
-    }
-  end
-
-  # function that returns the function to be injected
-  def notify_callback do
-    pid = self()
-
-    fn reason, msg ->
-      # send msg back to test process
-      Kernel.send(pid, {reason, msg})
-      :ok
-    end
-  end
 
   setup_all do
     start_supervised(MockIndexWorker)
@@ -1119,7 +1102,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_upload_domains),
-        structures_domains: plug_upload("test/fixtures/td4535/structures_domains_good.csv")
+        structures_domains: upload("test/fixtures/td4535/structures_domains_good.csv")
       )
       |> json_response(:forbidden)
     end
@@ -1140,7 +1123,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       data =
         conn
         |> post(data_structure_path(conn, :bulk_upload_domains),
-          structures_domains: plug_upload("test/fixtures/td4535/structures_domains_good.csv")
+          structures_domains: upload("test/fixtures/td4535/structures_domains_good.csv")
         )
         |> json_response(:ok)
 
@@ -1194,8 +1177,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       data =
         conn
         |> post(data_structure_path(conn, :bulk_upload_domains),
-          structures_domains:
-            plug_upload("test/fixtures/td4535/structures_domains_permissions.csv")
+          structures_domains: upload("test/fixtures/td4535/structures_domains_permissions.csv")
         )
         |> json_response(:ok)
 
@@ -1257,7 +1239,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_upload_domains),
-        structures_domains: plug_upload("test/fixtures/td4535/structures_domains_good.csv")
+        structures_domains: upload("test/fixtures/td4535/structures_domains_good.csv")
       )
       |> json_response(:ok)
 
@@ -1271,8 +1253,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       data =
         conn
         |> post(data_structure_path(conn, :bulk_upload_domains),
-          structures_domains:
-            plug_upload("test/fixtures/td4535/structures_domains_bad_header.csv")
+          structures_domains: upload("test/fixtures/td4535/structures_domains_bad_header.csv")
         )
         |> json_response(:unprocessable_entity)
 
@@ -1300,7 +1281,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
         conn
         |> post(data_structure_path(conn, :bulk_upload_domains),
           structures_domains:
-            plug_upload("test/fixtures/td4535/structures_domains_bad_missing_external_id.csv")
+            upload("test/fixtures/td4535/structures_domains_bad_missing_external_id.csv")
         )
         |> json_response(:ok)
 
@@ -1357,7 +1338,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
         conn
         |> post(data_structure_path(conn, :bulk_upload_domains),
           structures_domains:
-            plug_upload("test/fixtures/td4535/structures_domains_warning_inexistent.csv")
+            upload("test/fixtures/td4535/structures_domains_warning_inexistent.csv")
         )
         |> json_response(:ok)
 
@@ -1615,7 +1596,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: plug_upload("test/fixtures/td3787/upload_unprocessable_entity.csv")
+        structures: upload("test/fixtures/td3787/upload_unprocessable_entity.csv")
       )
       |> json_response(:unprocessable_entity)
     end
@@ -1634,7 +1615,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
              } =
                conn
                |> post(data_structure_path(conn, :bulk_update_template_content),
-                 structures: plug_upload("test/fixtures/td4100/upload.csv")
+                 structures: upload("test/fixtures/td4100/upload.csv")
                )
                |> json_response(:accepted)
 
@@ -1669,7 +1650,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
              } =
                conn
                |> post(data_structure_path(conn, :bulk_update_template_content),
-                 structures: plug_upload("test/fixtures/td4100/upload_with_one_warning.csv")
+                 structures: upload("test/fixtures/td4100/upload_with_one_warning.csv")
                )
                |> json_response(:accepted)
 
@@ -1714,7 +1695,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
              } =
                conn
                |> post(data_structure_path(conn, :bulk_update_template_content),
-                 structures: plug_upload("test/fixtures/td4100/upload_with_multiple_warnings.csv")
+                 structures: upload("test/fixtures/td4100/upload_with_multiple_warnings.csv")
                )
                |> json_response(:accepted)
 
@@ -1764,8 +1745,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
              } =
                conn
                |> post(data_structure_path(conn, :bulk_update_template_content),
-                 structures:
-                   plug_upload("test/fixtures/td4100/upload_with_invalid_external_id.csv")
+                 structures: upload("test/fixtures/td4100/upload_with_invalid_external_id.csv")
                )
                |> json_response(:accepted)
 
@@ -1797,7 +1777,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: plug_upload("test/fixtures/td3787/upload.csv")
+        structures: upload("test/fixtures/td3787/upload.csv")
       )
       |> response(:accepted)
 
@@ -1834,7 +1814,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: plug_upload("test/fixtures/td3787/upload.csv")
+        structures: upload("test/fixtures/td3787/upload.csv")
       )
       |> json_response(:accepted)
 
@@ -1871,7 +1851,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: plug_upload("test/fixtures/td3071/empty_lines.csv")
+        structures: upload("test/fixtures/td3071/empty_lines.csv")
       )
       |> json_response(:accepted)
 
@@ -1909,7 +1889,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: plug_upload("test/fixtures/td4548/upload_with_multifields.csv")
+        structures: upload("test/fixtures/td4548/upload_with_multifields.csv")
       )
       |> response(:accepted)
 
@@ -1946,7 +1926,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: plug_upload("test/fixtures/td3787/upload.csv")
+        structures: upload("test/fixtures/td3787/upload.csv")
       )
       |> response(:forbidden)
     end
@@ -1969,7 +1949,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: plug_upload("test/fixtures/td3787/upload.csv")
+        structures: upload("test/fixtures/td3787/upload.csv")
       )
       |> response(:accepted)
 
@@ -2014,7 +1994,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: plug_upload("test/fixtures/td3787/upload.csv")
+        structures: upload("test/fixtures/td3787/upload.csv")
       )
       |> response(:accepted)
 
@@ -2061,7 +2041,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: plug_upload("test/fixtures/td3787/upload.csv")
+        structures: upload("test/fixtures/td3787/upload.csv")
       )
       |> response(:accepted)
 
@@ -2100,7 +2080,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: plug_upload("test/fixtures/td3787/upload.csv"),
+        structures: upload("test/fixtures/td3787/upload.csv"),
         auto_publish: "true"
       )
       |> response(:accepted)
@@ -2141,7 +2121,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: plug_upload("test/fixtures/td3787/upload.csv"),
+        structures: upload("test/fixtures/td3787/upload.csv"),
         auto_publish: "true"
       )
       |> response(:forbidden)
