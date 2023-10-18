@@ -110,9 +110,8 @@ defmodule TdDd.Grants.GrantRequest do
         TemplateCache.get_by_name!(group.type) ||
           %{content: []}
 
-      user = grant_request.user
-
-      created_by = grant_request.created_by
+      user = get_user(grant_request.user)
+      created_by = get_user(grant_request.created_by)
 
       metadata =
         grant_request
@@ -152,5 +151,8 @@ defmodule TdDd.Grants.GrantRequest do
     end
 
     defp user_full_name(_), do: ""
+
+    defp get_user(nil), do: %{}
+    defp get_user(user), do: user
   end
 end
