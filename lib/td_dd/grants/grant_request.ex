@@ -111,6 +111,7 @@ defmodule TdDd.Grants.GrantRequest do
           %{content: []}
 
       user = grant_request.user
+
       created_by = grant_request.created_by
 
       metadata =
@@ -125,16 +126,16 @@ defmodule TdDd.Grants.GrantRequest do
         domain_ids: grant_request.domain_ids,
         user_id: group.user_id,
         user: %{
-          id: user.id,
-          user_name: user.user_name,
+          id: Map.get(user, :id),
+          user_name: Map.get(user, :user_name, ""),
           email: Map.get(user, :email, ""),
           full_name: user_full_name(user)
         },
         created_by_id: group.created_by_id,
         created_by: %{
-          id: created_by.id,
+          id: Map.get(created_by, :id),
           email: Map.get(created_by, :email, ""),
-          user_name: created_by.user_name,
+          user_name: Map.get(created_by, :user_name, ""),
           full_name: user_full_name(created_by)
         },
         data_structure_id: grant_request.data_structure_id,
