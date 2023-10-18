@@ -160,6 +160,11 @@ defmodule TdDdWeb.Router do
       resources("/status", GrantRequestStatusController, only: [:create], name: "status")
     end
 
+    post("/grant_requests/search", GrantRequestSearchController, :search)
+    post("/grant_requests_filters/search", GrantRequestFilterController, :search)
+    get("/grant_requests/search/reindex_all", GrantRequestSearchController, :reindex_all)
+    post("/grant_requests/bulk_approval", GrantRequestBulkApprovalController, :create)
+
     resources("/reference_data", ReferenceDataController, except: [:edit, :new]) do
       resources("/csv", ReferenceDataDownloadController, only: [:show], singleton: true)
     end

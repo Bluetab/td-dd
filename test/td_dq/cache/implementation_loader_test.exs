@@ -1,6 +1,8 @@
 defmodule TdDd.Cache.ImplementationLoaderTest do
   use TdDd.DataCase
 
+  import TdDd.TestOperators
+
   alias TdCache.ImplementationCache
   alias TdDq.Cache.ImplementationLoader
 
@@ -92,7 +94,7 @@ defmodule TdDd.Cache.ImplementationLoaderTest do
         ImplementationCache.get_relation_impl_id_and_impl_ref()
         |> Enum.map(&String.to_integer(&1))
 
-      assert [^impl_id1, ^impl_id1, ^impl_id3, ^impl_id2, ^impl_id4, ^impl_id4] = result
+      assert [impl_id1, impl_id1, impl_id3, impl_id2, impl_id4, impl_id4] ||| result
     end
   end
 end

@@ -88,4 +88,5 @@ defmodule Truedat.Search.Filters do
 
   defp get_filter_type(:must), do: :must
   defp get_filter_type(:filters), do: :filter
+  defp get_filter_type(:must_not), do: :must_not
 end
