@@ -20,7 +20,6 @@ defmodule TdDd.Search.Mappings do
 
   def get_mappings do
     content_mappings = %{type: "object", properties: get_dynamic_mappings("dd")}
-    Application.get_all_env(:td_dd)
 
     properties = %{
       id: %{type: "long", index: false},
@@ -104,6 +103,45 @@ defmodule TdDd.Search.Mappings do
     }
 
     settings = Cluster.setting(:grants)
+    %{mappings: %{properties: properties}, settings: settings}
+  end
+
+  def get_grant_request_mapping do
+    %{mappings: %{properties: dsv_properties}, settings: _settings} = get_mappings()
+    content_mappings = %{type: "object", properties: get_dynamic_mappings("gr")}
+
+    properties = %{
+      id: %{type: "long"},
+      current_status: %{type: "keyword"},
+      approved_by: %{type: "keyword"},
+      domain_ids: %{type: "long"},
+      user_id: %{type: "long"},
+      user: %{
+        type: "object",
+        properties: %{
+          id: %{type: "long", index: false},
+          user_name: %{type: "keyword"},
+          full_name: %{type: "text", fields: @raw}
+        }
+      },
+      created_by_id: %{type: "long"},
+      created_by: %{
+        type: "object",
+        properties: %{
+          id: %{type: "long", index: false},
+          user_name: %{type: "text", fields: @raw},
+          full_name: %{type: "text", fields: @raw}
+        }
+      },
+      data_structure_id: %{type: "long"},
+      data_structure_version: %{type: "object", properties: dsv_properties},
+      inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
+      type: %{type: "keyword"},
+      metadata: content_mappings,
+      modification_grant_id: %{type: "long"}
+    }
+
+    settings = Cluster.setting(:grant_requests)
     %{mappings: %{properties: properties}, settings: settings}
   end
 

@@ -1174,6 +1174,11 @@ defmodule TdDdWeb.DataStructureControllerTest do
        [pan_external_id_1, _pan_external_id_2, _pan_external_id_3]} =
         create_three_data_structures(pan_domain_id, "pan_external_id")
 
+      %{id: grant_request_id} =
+        insert(:grant_request,
+          data_structure_id: bar_id_one
+        )
+
       data =
         conn
         |> post(data_structure_path(conn, :bulk_upload_domains),
@@ -1207,6 +1212,14 @@ defmodule TdDdWeb.DataStructureControllerTest do
                  }
                ]
              }
+
+      find_call = {:reindex_grant_requests, [grant_request_id]}
+
+      assert find_call ==
+               MockIndexWorker.calls()
+               |> Enum.find(fn call ->
+                 find_call == call
+               end)
     end
 
     @tag authentication: [role: "user"]

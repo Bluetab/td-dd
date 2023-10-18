@@ -3,6 +3,7 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
 
   alias TdDd.Grants.ApprovalRules
   alias TdDd.Grants.Requests
+  alias TdDd.Search.MockIndexWorker
 
   @moduletag sandbox: :shared
 
@@ -13,6 +14,7 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
 
   setup _tags do
     start_supervised!(TdDd.Search.StructureEnricher)
+    start_supervised(MockIndexWorker)
     template = CacheHelpers.insert_template(name: @template_name)
 
     %{id: domain_id} = CacheHelpers.insert_domain()

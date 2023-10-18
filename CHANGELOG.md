@@ -2,14 +2,16 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-5582] Implementation clone copies original business concepts links
+- [TD-6082] Support to upload implementations with result type in browser
+  language
+- [TD-5540] GrantRequest approval bulk with elasticsearch
+
 ### Changed
 
 - [TD-5958] Keep graph URL across lineage changes
-
-### Added
-
-- [TD-6082] Support to upload implementations with result type in browser
-  language
 
 ## [5.15.0] 2023-10-02
 

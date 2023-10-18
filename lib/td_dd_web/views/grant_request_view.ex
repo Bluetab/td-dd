@@ -2,6 +2,9 @@ defmodule TdDdWeb.GrantRequestView do
   use TdDdWeb, :view
 
   alias TdCache.TemplateCache
+  alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.Systems.System
+  alias TdDdWeb.DataStructureVersionView
   alias TdDdWeb.DataStructureView
   alias TdDdWeb.GrantRequestApprovalView
   alias TdDdWeb.GrantRequestGroupView
@@ -41,6 +44,24 @@ defmodule TdDdWeb.GrantRequestView do
     |> Map.put(:status_reason, status_reason)
     |> put_embeddings(grant_request, Map.get(assigns, :embed, @default_embeddings))
     |> add_cached_content()
+  end
+
+  def render("grant_request_search.json", %{grant_request: grant_request} = _assigns) do
+    grant_request
+    |> Map.take([
+      :id,
+      :user_id,
+      :created_by_id,
+      :data_structure_id,
+      :metadata,
+      :inserted_at,
+      :current_status,
+      :domain_ids,
+      :modification_grant_id
+    ])
+    |> add_structure_version(grant_request)
+    |> add_system(grant_request)
+    |> add_users(grant_request)
   end
 
   defp put_embeddings(%{} = resp, grant_request, embed) do
@@ -88,4 +109,56 @@ defmodule TdDdWeb.GrantRequestView do
   end
 
   defp add_cached_content(grant_request), do: grant_request
+
+  defp add_system(resp, %{system: %System{} = system}) do
+    system = Map.take(system, [:external_id, :id, :name])
+    Map.put(resp, :system, system)
+  end
+
+  defp add_system(resp, _), do: resp
+
+  defp add_structure_version(resp, %{
+         data_structure_version: %DataStructureVersion{} = dsv
+       }) do
+    version =
+      dsv
+      |> DataStructureVersionView.add_ancestry()
+      |> Map.take([:name, :ancestry])
+
+    Map.put(resp, :data_structure_version, version)
+  end
+
+  defp add_structure_version(resp, %{
+         data_structure_version: %{data_structure_id: _data_structure_id} = dsv
+       }) do
+    version =
+      struct(DataStructureVersion, dsv)
+      |> Map.take([
+        :data_structure_id,
+        :name,
+        :description,
+        :external_id,
+        :metadata,
+        :path,
+        :note,
+        :mutable_metadata
+      ])
+      |> Map.put(:domain, dsv.domain)
+
+    Map.put(resp, :data_structure_version, version)
+  end
+
+  defp add_structure_version(resp, _), do: resp
+
+  defp add_users(resp, %{user: %{} = user, created_by: %{} = created_by}) do
+    resp
+    |> Map.put(:user, get_user_data(user))
+    |> Map.put(:created_by, get_user_data(created_by))
+  end
+
+  defp add_users(resp, _), do: resp
+
+  defp get_user_data(user_data) do
+    Map.take(user_data, [:email, :full_name, :user_name])
+  end
 end

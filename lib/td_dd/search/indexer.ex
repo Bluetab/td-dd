@@ -6,6 +6,7 @@ defmodule TdDd.Search.Indexer do
   alias Elasticsearch.Index.Bulk
   alias TdCache.Redix
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantStructure
   alias TdDd.Search.Cluster
   alias TdDd.Search.Mappings
@@ -18,6 +19,7 @@ defmodule TdDd.Search.Indexer do
 
   @dsv_index :structures
   @grant_index :grants
+  @grant_request_index :grant_requests
   @action "index"
 
   def reindex(:all) do
@@ -45,6 +47,18 @@ defmodule TdDd.Search.Indexer do
   end
 
   def reindex_grants(id), do: reindex_grants([id])
+
+  def reindex_grant_requests(:all) do
+    Tasks.log_start(@grant_request_index)
+    reindex_all(Mappings.get_grant_request_mapping(), @grant_request_index)
+  end
+
+  def reindex_grant_requests(ids) when is_list(ids) do
+    Tasks.log_start(@grant_request_index)
+    reindex(GrantRequest, @grant_request_index, ids)
+  end
+
+  def reindex_grant_requests(id), do: reindex_grant_requests([id])
 
   defp reindex_all(mappings, index) do
     Store.vacuum()
@@ -97,6 +111,24 @@ defmodule TdDd.Search.Indexer do
 
     delete_by_query(query, @grant_index)
   end
+
+  def delete_grant_requests(ids) when is_list(ids) do
+    ids_encoded_array = Jason.encode!(Enum.map(ids, &Integer.to_string(&1)))
+
+    query = """
+    {
+      "query": {
+        "terms": {
+          "id": #{ids_encoded_array}
+        }
+      }
+    }
+    """
+
+    delete_by_query(query, @grant_request_index)
+  end
+
+  def delete_grant_requests(id), do: delete_grant_requests([id])
 
   defp delete_by_query(query, index) do
     alias_name = Cluster.alias_name(index)

@@ -7,6 +7,7 @@ defmodule TdDd.Grants.GrantRequest do
   import Ecto.Changeset
 
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Grants.GrantRequestApproval
   alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Grants.GrantRequestStatus
@@ -18,6 +19,7 @@ defmodule TdDd.Grants.GrantRequest do
     field(:filters, :map)
     field(:metadata, :map)
     field(:current_status, :string, virtual: true)
+    field(:approved_by, {:array, :string}, virtual: true)
     field(:status_reason, :string, virtual: true)
     field(:domain_ids, {:array, :integer}, default: [])
     # updated_at is derived from most recent status
@@ -83,4 +85,71 @@ defmodule TdDd.Grants.GrantRequest do
   end
 
   defp validate_content(%{} = changeset, nil = _no_template_name), do: changeset
+
+  defimpl Elasticsearch.Document do
+    alias TdCache.TemplateCache
+    alias TdDd.Grants.GrantRequest
+    alias TdDfLib.Format
+
+    @impl Elasticsearch.Document
+    def id(%GrantRequest{id: id}), do: id
+
+    @impl Elasticsearch.Document
+    def routing(_), do: false
+
+    @impl Elasticsearch.Document
+    def encode(%{data_structure_version: nil}), do: %{}
+
+    def encode(
+          %{
+            data_structure_version: %DataStructureVersion{} = dsv,
+            group: %GrantRequestGroup{} = group
+          } = grant_request
+        ) do
+      template =
+        TemplateCache.get_by_name!(group.type) ||
+          %{content: []}
+
+      user = grant_request.user
+      created_by = grant_request.created_by
+
+      metadata =
+        grant_request
+        |> Map.get(:metadata)
+        |> Format.search_values(template)
+
+      %{
+        id: grant_request.id,
+        current_status: grant_request.current_status,
+        approved_by: grant_request.approved_by,
+        domain_ids: grant_request.domain_ids,
+        user_id: group.user_id,
+        user: %{
+          id: user.id,
+          user_name: user.user_name,
+          email: user.email,
+          full_name: user_full_name(user)
+        },
+        created_by_id: group.created_by_id,
+        created_by: %{
+          id: created_by.id,
+          email: created_by.email,
+          user_name: created_by.user_name,
+          full_name: user_full_name(created_by)
+        },
+        data_structure_id: grant_request.data_structure_id,
+        data_structure_version: Elasticsearch.Document.encode(dsv),
+        inserted_at: grant_request.inserted_at,
+        type: group.type,
+        metadata: metadata,
+        modification_grant_id: group.modification_grant_id
+      }
+    end
+
+    defp user_full_name(%{full_name: full_name}) do
+      full_name
+    end
+
+    defp user_full_name(_), do: ""
+  end
 end
