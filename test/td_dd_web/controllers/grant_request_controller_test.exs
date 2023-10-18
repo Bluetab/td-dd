@@ -1,11 +1,14 @@
 defmodule TdDdWeb.GrantRequestControllerTest do
   use TdDdWeb.ConnCase
 
+  alias TdDd.Search.MockIndexWorker
+
   @moduletag sandbox: :shared
   @template_name "grant_request_controller_test_template"
 
   setup do
     start_supervised!(TdDd.Search.StructureEnricher)
+    start_supervised(MockIndexWorker)
     CacheHelpers.insert_template(name: @template_name)
     :ok
   end
@@ -287,7 +290,10 @@ defmodule TdDdWeb.GrantRequestControllerTest do
     setup [:create_grant_request]
 
     @tag authentication: [role: "admin"]
-    test "deletes chosen grant_request", %{conn: conn, grant_request: grant_request} do
+    test "deletes chosen grant_request", %{
+      conn: conn,
+      grant_request: %{id: grant_request_id} = grant_request
+    } do
       assert conn
              |> delete(Routes.grant_request_path(conn, :delete, grant_request))
              |> response(:no_content)
@@ -295,13 +301,20 @@ defmodule TdDdWeb.GrantRequestControllerTest do
       assert_error_sent :not_found, fn ->
         get(conn, Routes.grant_request_path(conn, :show, grant_request))
       end
+
+      assert MockIndexWorker.calls() == [{:delete_grant_requests, [grant_request_id]}]
     end
 
     @tag authentication: [user_name: "non_admin"]
-    test "non admin user cannot delete grant_request", %{conn: conn, grant_request: grant_request} do
+    test "non admin user cannot delete grant_request", %{
+      conn: conn,
+      grant_request: grant_request
+    } do
       assert conn
              |> delete(Routes.grant_request_path(conn, :delete, grant_request))
              |> response(:forbidden)
+
+      assert MockIndexWorker.calls() == []
     end
   end
 

@@ -26,7 +26,8 @@ config :td_dd, TdDd.Search.Cluster,
     implementations: "implementations",
     jobs: "jobs",
     rules: "rules",
-    structures: "structures"
+    structures: "structures",
+    grant_requests: "grant_requests"
   },
   default_settings: %{
     "number_of_shards" => 5,
@@ -130,6 +131,34 @@ config :td_dd, TdDd.Search.Cluster,
       store: TdDd.Search.Store,
       sources: [TdDd.DataStructures.DataStructureVersion],
       bulk_page_size: 1000,
+      bulk_wait_interval: 0,
+      bulk_action: "index",
+      settings: %{
+        analysis: %{
+          analyzer: %{
+            ngram: %{
+              filter: ["lowercase", "asciifolding"],
+              tokenizer: "ngram"
+            }
+          },
+          normalizer: %{
+            sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
+          },
+          tokenizer: %{
+            ngram: %{
+              type: "ngram",
+              min_gram: 3,
+              max_gram: 3,
+              token_chars: ["letter", "digit"]
+            }
+          }
+        }
+      }
+    },
+    grant_requests: %{
+      store: TdDd.Search.Store,
+      sources: [TdDd.Grants.GrantRequest],
+      bulk_page_size: 5000,
       bulk_wait_interval: 0,
       bulk_action: "index",
       settings: %{

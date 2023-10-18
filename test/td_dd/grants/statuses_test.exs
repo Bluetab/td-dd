@@ -5,7 +5,10 @@ defmodule TdDd.Grants.StatusesTest do
   alias TdDd.Grants.GrantRequestStatus
   alias TdDd.Grants.Statuses
 
+  alias TdDd.Search.MockIndexWorker
+
   setup do
+    start_supervised(MockIndexWorker)
     [grant_request: insert(:grant_request, current_status: "approved")]
   end
 
@@ -14,6 +17,8 @@ defmodule TdDd.Grants.StatusesTest do
       assert {:error, :grant_request_status,
               %Changeset{errors: [status: {"invalid status change", _}]},
               _} = Statuses.create_grant_request_status(request, "not_valid_status", 0)
+
+      assert MockIndexWorker.calls() == []
     end
 
     test "creates grant request status with valid status change", %{
@@ -26,6 +31,8 @@ defmodule TdDd.Grants.StatusesTest do
                   status: "processing"
                 }
               }} = Statuses.create_grant_request_status(request, "processing", 0)
+
+      assert MockIndexWorker.calls() == [{:reindex_grant_requests, [id]}]
     end
 
     test "allows to create failed status with a reason if current is processing" do
@@ -40,6 +47,8 @@ defmodule TdDd.Grants.StatusesTest do
                   reason: ^reason
                 }
               }} = Statuses.create_grant_request_status(request, "failed", 0, reason)
+
+      assert MockIndexWorker.calls() == [{:reindex_grant_requests, [id]}]
     end
   end
 end

@@ -14,6 +14,33 @@ defmodule Truedat.Search.Permissions do
     |> do_get_search_permissions(claims)
   end
 
+  def get_roles_by_user(permission, %{role: "admin"}) do
+    {:ok, roles} = get_roles_by_permission(permission)
+
+    roles
+  end
+
+  def get_roles_by_user(permission, %{user_id: user_id} = _claims) do
+    {:ok, roles} = get_roles_by_permission(permission)
+
+    roles
+    |> Enum.flat_map(fn role ->
+      "domain"
+      |> TdCache.AclCache.get_acl_role_resource_domain_ids(role)
+      |> Enum.map(fn domain_id -> {role, domain_id} end)
+    end)
+    |> Enum.filter(fn {role, domain_id} ->
+      TdCache.AclCache.has_role?("domain", domain_id, role, user_id)
+    end)
+    |> Enum.map(fn {role, _domain_id} -> role end)
+  end
+
+  defp get_roles_by_permission(permission) do
+    {status, roles} = TdCache.Permissions.get_permission_roles(permission)
+
+    {status, Enum.sort(roles)}
+  end
+
   defp do_get_search_permissions(defaults, %{jti: jti} = _claims) do
     session_permissions = TdCache.Permissions.get_session_permissions(jti)
     default_permissions = get_default_permissions(defaults)
