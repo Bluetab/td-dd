@@ -18,6 +18,8 @@ defmodule TdDd.Grants.Policy do
 
   def authorize(_action, %{role: "admin"}, _params), do: true
 
+  def authorize(:reindex, %{role: "service"}, _params), do: true
+
   def authorize(:mutation, %{} = claims, _params),
     do: Permissions.authorized?(claims, :approve_grant_request)
 
@@ -89,7 +91,7 @@ defmodule TdDd.Grants.Policy do
     Permissions.authorized?(claims, :approve_grant_request, domain_ids)
   end
 
-  def authorize(:approve, %{} = claims, %GrantRequest{domain_ids: domain_ids}) do
+  def authorize(:approve, %{} = claims, %{domain_ids: domain_ids}) do
     Permissions.authorized?(claims, :approve_grant_request, domain_ids)
   end
 

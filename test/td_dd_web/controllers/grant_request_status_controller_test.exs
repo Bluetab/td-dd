@@ -1,6 +1,13 @@
 defmodule TdDdWeb.GrantRequestStatusControllerTest do
   use TdDdWeb.ConnCase
 
+  alias TdDd.Search.MockIndexWorker
+
+  setup do
+    start_supervised(MockIndexWorker)
+    :ok
+  end
+
   describe "create" do
     @tag authentication: [role: "user"]
     test "renders grant request when data is valid", %{conn: conn, claims: claims} do

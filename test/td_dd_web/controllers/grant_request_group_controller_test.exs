@@ -1,10 +1,13 @@
 defmodule TdDdWeb.GrantRequestGroupControllerTest do
   use TdDdWeb.ConnCase
 
+  alias TdDd.Search.MockIndexWorker
+
   @valid_metadata %{"list" => "one", "string" => "foo"}
   @template_name "grant_request_group_controller_test_template"
 
   setup do
+    start_supervised(MockIndexWorker)
     CacheHelpers.insert_template(name: @template_name)
     %{id: domain_id} = CacheHelpers.insert_domain()
     %{id: data_structure_id} = data_structure = insert(:data_structure, domain_ids: [domain_id])
@@ -431,10 +434,16 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
     setup [:create_grant_request_group]
 
     @tag authentication: [role: "admin"]
-    test "deletes chosen grant_request_group", %{conn: conn, group: group} do
+    test "deletes chosen grant_request_group", %{
+      conn: conn,
+      group: group,
+      grant_request_id: grant_request_id
+    } do
       assert conn
              |> delete(Routes.grant_request_group_path(conn, :delete, group))
              |> response(:no_content)
+
+      assert MockIndexWorker.calls() == [{:delete_grant_requests, [grant_request_id]}]
 
       assert_error_sent 404, fn ->
         get(conn, Routes.grant_request_group_path(conn, :show, group))
@@ -450,8 +459,9 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
   end
 
   defp create_grant_request_group(_) do
-    %{group: group} = insert(:grant_request, group: build(:grant_request_group))
+    %{id: grant_request_id, group: group} =
+      insert(:grant_request, group: build(:grant_request_group))
 
-    [group: group]
+    [group: group, grant_request_id: grant_request_id]
   end
 end

@@ -36,6 +36,10 @@ defmodule TdDdWeb.ConnCase do
 
       # The default endpoint for testing
       @endpoint Endpoint
+
+      def upload(path) do
+        %Plug.Upload{path: path, filename: Path.basename(path)}
+      end
     end
   end
 

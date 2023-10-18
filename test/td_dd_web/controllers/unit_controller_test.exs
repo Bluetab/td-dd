@@ -2,6 +2,8 @@ defmodule TdDdWeb.UnitControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
+  alias TdDd.TaskSupervisor
+
   @moduletag sandbox: :shared
 
   setup_all do
@@ -86,7 +88,7 @@ defmodule TdDdWeb.UnitControllerTest do
              |> put(Routes.unit_path(conn, :update, unit_name), nodes: nodes, rels: rels)
              |> response(:accepted)
 
-      assert await_completion() in [:normal, :timeout]
+      assert TaskSupervisor.await_completion() in [:normal, :timeout]
 
       assert %{"data" => data} =
                conn
@@ -113,7 +115,7 @@ defmodule TdDdWeb.UnitControllerTest do
              |> put(Routes.unit_path(conn, :update, unit_name), nodes: nodes, rels: rels)
              |> response(:accepted)
 
-      assert await_completion() in [:normal, :timeout]
+      assert TaskSupervisor.await_completion() in [:normal, :timeout]
 
       assert %{"data" => data} =
                conn
@@ -167,21 +169,5 @@ defmodule TdDdWeb.UnitControllerTest do
              |> put(Routes.unit_path(conn, :update, "foo"), nodes: nodes, rels: rels)
              |> json_response(:forbidden)
     end
-  end
-
-  defp await_completion(timeout \\ 1_000) do
-    TdDd.TaskSupervisor
-    |> Task.Supervisor.children()
-    |> Enum.each(&Process.monitor/1)
-
-    receive do
-      {:DOWN, _ref, :process, _object, reason} -> reason
-    after
-      timeout -> :timeout
-    end
-  end
-
-  defp upload(path) do
-    %Plug.Upload{path: path, filename: Path.basename(path)}
   end
 end

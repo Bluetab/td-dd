@@ -310,6 +310,7 @@ defmodule TdDd.DataStructures.StructureNotes do
       {:error, _, changeset, _} ->
         {:error, changeset}
     end
+    |> DataStructures.maybe_reindex_grant_requests()
   end
 
   defp on_update(res, opts \\ []) do
@@ -317,6 +318,7 @@ defmodule TdDd.DataStructures.StructureNotes do
       false -> on_update_structure(res)
       _ -> res
     end
+    |> DataStructures.maybe_reindex_grant_requests()
   end
 
   defp on_update_structure(
@@ -324,7 +326,8 @@ defmodule TdDd.DataStructures.StructureNotes do
        )
        when status in [:published, :deprecated] do
     IndexWorker.reindex(id)
-    res
+
+    DataStructures.maybe_reindex_grant_requests(res)
   end
 
   defp on_update_structure(res), do: res

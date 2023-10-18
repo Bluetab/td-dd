@@ -8,11 +8,14 @@ defmodule TdDd.Grants.RequestsTest do
   alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Grants.GrantRequestStatus
   alias TdDd.Grants.Requests
+  alias TdDd.Search.MockIndexWorker
 
   @template_name "grant_request_test_template"
   @valid_metadata %{"list" => "one", "string" => "bar"}
 
   setup tags do
+    start_supervised(MockIndexWorker)
+
     case Map.get(tags, :role, "user") do
       "admin" ->
         claims = build(:claims, role: "admin")
@@ -63,6 +66,8 @@ defmodule TdDd.Grants.RequestsTest do
       assert {1, nil} = statuses
 
       assert %{status: "pending"} = Repo.get_by!(GrantRequestStatus, grant_request_id: request_id)
+
+      assert MockIndexWorker.calls() == [{:reindex_grant_requests, [request_id]}]
     end
 
     test "create_grant_request_group/2 with modification_grant" do
@@ -363,11 +368,13 @@ defmodule TdDd.Grants.RequestsTest do
     end
 
     test "delete_grant_request/1 deletes the grant_request", %{claims: claims} do
-      grant_request = insert(:grant_request)
+      %{id: grant_request_id} = grant_request = insert(:grant_request)
       assert {:ok, %GrantRequest{}} = Requests.delete_grant_request(grant_request)
 
       assert_raise Ecto.NoResultsError, fn ->
         Requests.get_grant_request!(grant_request.id, claims)
+
+        assert MockIndexWorker.calls() == [{:delete_grant_request, [grant_request_id]}]
       end
     end
 
@@ -414,6 +421,8 @@ defmodule TdDd.Grants.RequestsTest do
       assert {:ok, %{approval: approval}} = Requests.create_approval(claims, request, params)
       assert %{is_rejection: false, user: user} = approval
       assert %{id: ^user_id, user_name: _} = user
+
+      assert MockIndexWorker.calls() == [{:reindex_grant_requests, [request.id]}]
     end
 
     test "admin can approve a grant request without having the role", %{

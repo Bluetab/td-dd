@@ -334,8 +334,4 @@ defmodule TdDdWeb.MetadataControllerTest do
   defp create_source(_) do
     [source: insert(:source)]
   end
-
-  defp upload(path) do
-    %Plug.Upload{path: path, filename: Path.basename(path)}
-  end
 end

@@ -23,6 +23,7 @@ defmodule TdDd.DataStructures do
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.DataStructures.StructureNote
   alias TdDd.Grants
+  alias TdDd.Grants.Requests
   alias TdDd.Lineage.GraphData
   alias TdDd.Repo
   alias TdDd.Search.StructureVersionEnricher
@@ -696,6 +697,7 @@ defmodule TdDd.DataStructures do
     id
     |> do_update_data_structure(changeset, inherit, user_id)
     |> maybe_reindex_implementations()
+    |> maybe_reindex_grant_requests()
     |> tap(&on_update/1)
   end
 
@@ -716,6 +718,7 @@ defmodule TdDd.DataStructures do
       end)
       |> List.flatten()
       |> maybe_reindex_implementations()
+      |> maybe_reindex_grant_requests()
       |> on_update
     end)
   end
@@ -1007,6 +1010,7 @@ defmodule TdDd.DataStructures do
     structure_metadata
     |> StructureMetadata.changeset(params)
     |> Repo.update()
+    |> maybe_reindex_grant_requests()
   end
 
   def get_metadata_version(%DataStructureVersion{
@@ -1152,6 +1156,48 @@ defmodule TdDd.DataStructures do
         |> protect_metadata(Keyword.get(opts, :with_protected_metadata)))
     )
   end
+
+  def maybe_reindex_grant_requests(
+        {:ok,
+         %{
+           data_structure_id: data_structure_id
+         }} = data
+      ) do
+    Requests.reindex_on_data_structure_update(data_structure_id)
+
+    data
+  end
+
+  def maybe_reindex_grant_requests(
+        {:ok,
+         %{
+           updated_ids: data_structure_ids
+         }} = data
+      ) do
+    Requests.reindex_on_data_structure_update(data_structure_ids)
+
+    data
+  end
+
+  def maybe_reindex_grant_requests(
+        {:ok,
+         %{
+           structure_note: %{
+             data_structure_id: data_structure_id
+           }
+         }} = data
+      ) do
+    Requests.reindex_on_data_structure_update(data_structure_id)
+
+    data
+  end
+
+  def maybe_reindex_grant_requests(data_structure_ids) when is_list(data_structure_ids) do
+    Requests.reindex_on_data_structure_update(data_structure_ids)
+    data_structure_ids
+  end
+
+  def maybe_reindex_grant_requests(data), do: data
 
   ## Dataloader
 
