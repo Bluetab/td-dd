@@ -127,13 +127,13 @@ defmodule TdDd.Grants.GrantRequest do
         user: %{
           id: user.id,
           user_name: user.user_name,
-          email: user.email,
+          email: Map.get(user, :email, ""),
           full_name: user_full_name(user)
         },
         created_by_id: group.created_by_id,
         created_by: %{
           id: created_by.id,
-          email: created_by.email,
+          email: Map.get(created_by, :email, ""),
           user_name: created_by.user_name,
           full_name: user_full_name(created_by)
         },
