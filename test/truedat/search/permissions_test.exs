@@ -74,7 +74,7 @@ defmodule Truedat.Search.PermissionsTest do
       assert Permissions.get_roles_by_user(:approve_grant_request, claims) == ["baz", "faz"]
     end
 
-    test "returns a list with roles for non_admin user" do
+    test "returns a list unique with roles for non_admin user" do
       %{user_id: user_id} = claims = build(:claims, role: "user")
 
       CacheHelpers.insert_user(id: user_id, role: "user")
@@ -92,6 +92,7 @@ defmodule Truedat.Search.PermissionsTest do
       })
 
       CacheHelpers.insert_acl(id1, "foo", [user_id])
+      CacheHelpers.insert_acl(id1, "bar", [user_id])
       CacheHelpers.insert_acl(id2, "bar", [user_id])
 
       assert Permissions.get_roles_by_user(:approve_grant_request, claims) == ["bar", "foo"]
