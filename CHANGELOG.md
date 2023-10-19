@@ -1,11 +1,11 @@
 # Changelog
 
-
-## [5.16.1] 2023-10-18
+## [5.16.2] 2023-10-19
+## [5.16.1] 2023-10-19
 
 ### Fixed
 
-- [TD-5540] GrantRequest approval bulk audit events
+- [TD-5540] GrantRequest approval bulk audit events and permissions issue
 
 ## [5.16.0] 2023-10-18
 

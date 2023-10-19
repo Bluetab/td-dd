@@ -33,6 +33,7 @@ defmodule Truedat.Search.Permissions do
       TdCache.AclCache.has_role?("domain", domain_id, role, user_id)
     end)
     |> Enum.map(fn {role, _domain_id} -> role end)
+    |> Enum.uniq()
   end
 
   defp get_roles_by_permission(permission) do
