@@ -1,5 +1,12 @@
 # Changelog
 
+
+## [5.16.1] 2023-10-18
+
+### Fixed
+
+- [TD-5540] GrantRequest approval bulk audit events
+
 ## [5.16.0] 2023-10-18
 
 ### Added
