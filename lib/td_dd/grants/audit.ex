@@ -114,7 +114,7 @@ defmodule TdDd.Grants.Audit do
 
     approvals
     |> Enum.map(fn approval ->
-      status = Map.get(status_with_grant_id_index, approval.id)
+      status = Map.get(status_with_grant_id_index, approval.grant_request_id)
       grant_request_approval_created(nil, %{approval: approval, status: status})
     end)
     |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
