@@ -76,7 +76,7 @@ defmodule TdDd.GrantRequests.AuditTest do
                Requests.bulk_create_approvals(claims, grant_requests, params)
 
       for event_id <- event_ids do
-        assert {:ok, [%{id: ^event_id}]} =
+        assert {:ok, [%{id: ^event_id, event: "grant_request_rejection"}]} =
                  Stream.range(:redix, @stream, event_id, event_id, transform: :range)
       end
     end
