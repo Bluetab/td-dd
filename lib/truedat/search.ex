@@ -148,6 +148,8 @@ defmodule Truedat.Search do
   defp bucket_key(%{"key_as_string" => key}) when key in ["true", "false"], do: key
   defp bucket_key(%{"key" => key}), do: key
 
+  defp get_domain(""), do: nil
+  defp get_domain(0), do: ""
   defp get_domain(id) when is_integer(id), do: TaxonomyCache.get_domain(id)
   defp get_domain(_), do: nil
 
