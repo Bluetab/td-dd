@@ -1,7 +1,14 @@
 # Changelog
 
+## [Unreleashed]
+
+### Added
+
+- [TD-6103] Allow empty option for domain type filter
+
 ## [5.16.2] 2023-10-19
-## [5.16.1] 2023-10-19
+
+## [5.16.1] 2023-10-18
 
 ### Fixed
 
