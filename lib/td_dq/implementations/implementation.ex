@@ -471,7 +471,7 @@ defmodule TdDq.Implementations.Implementation do
     @impl Elasticsearch.Document
     def encode(%Implementation{domain_id: domain_id} = implementation) do
       rule = Map.get(implementation, :rule)
-      implementation = Implementations.enrich_implementation_structures(implementation)
+      implementation = Implementations.enrich_implementation_structures(implementation, false)
       quality_event = QualityEvents.get_last_event_by_imp(implementation)
 
       result = RuleResults.get_latest_rule_result(implementation)
@@ -491,27 +491,29 @@ defmodule TdDq.Implementations.Implementation do
       structure_links =
         implementation
         |> Map.get(:data_structures)
-        |> Enum.map(fn %{
-                         type: link_type,
-                         data_structure: %{
-                           id: id,
-                           domain_ids: domain_ids,
-                           external_id: external_id,
-                           current_version: dsv
-                         }
-                       } ->
+        |> Enum.map(fn
           %{
-            link_type: link_type,
-            structure:
-              add_dsv_fields(
-                %{
-                  domain_ids: domain_ids,
-                  external_id: external_id,
-                  id: id
-                },
-                dsv
-              )
-          }
+            type: link_type,
+            current_version: dsv,
+            data_structure: %{id: id, domain_ids: domain_ids, external_id: external_id}
+          } ->
+            %{
+              link_type: link_type,
+              structure:
+                add_dsv_fields(
+                  %{
+                    domain_ids: domain_ids,
+                    external_id: external_id,
+                    id: id
+                  },
+                  dsv
+                )
+            }
+
+          %{
+            type: link_type
+          } ->
+            %{link_type: link_type}
         end)
 
       # linked_structures_ids is included in structure_links.structure.id
@@ -528,7 +530,11 @@ defmodule TdDq.Implementations.Implementation do
         implementation
         |> Map.get(:data_structures)
         |> Enum.filter(&(&1.type === :validation))
-        |> Enum.flat_map(& &1.data_structure.domain_ids)
+        |> Enum.flat_map(fn imp_structures ->
+          imp_structures
+          |> Map.get(:data_structure, %{})
+          |> Map.get(:domain_ids, [])
+        end)
         |> Enum.uniq()
 
       structure_domains = Helpers.get_domains(structure_domain_ids)
