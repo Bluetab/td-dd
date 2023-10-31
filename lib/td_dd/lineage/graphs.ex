@@ -23,6 +23,7 @@ defmodule TdDd.Lineage.Graphs do
     query =
       from g in Graph,
         left_join: ue in subquery(Units.last_updated_query()),
+        on: true,
         where: g.id == ^id,
         select: %{graph: g, unit_last_updated: ue.inserted_at}
 

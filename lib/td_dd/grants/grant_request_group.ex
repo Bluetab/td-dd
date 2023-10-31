@@ -33,9 +33,11 @@ defmodule TdDd.Grants.GrantRequestGroup do
   end
 
   defp cast_requests(changeset) do
+    type = fetch_field!(changeset, :type)
+
     cast_assoc(changeset, :requests,
       required: true,
-      with: {GrantRequest, :changeset, [fetch_field!(changeset, :type)]}
+      with: &GrantRequest.changeset(&1, &2, type)
     )
   end
 end

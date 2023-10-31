@@ -3,7 +3,6 @@ defmodule TdDdWeb.GrantRequestBulkApprovalController do
 
   alias TdDd.GrantRequests.Search
   alias TdDd.Grants.Requests
-  alias Truedat.Auth.Claims
 
   action_fallback(TdDdWeb.FallbackController)
 
