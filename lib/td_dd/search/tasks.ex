@@ -26,10 +26,22 @@ defmodule TdDd.Search.Tasks do
 
   def log_end, do: log(:end)
 
+  def log_start(pid, index), do: log(pid, {:start, index})
+
+  def log_start_stream(pid, count), do: log(pid, {:start_stream, count})
+
+  def log_progress(pid, chunk_size), do: log(pid, {:progress, chunk_size})
+
+  def log_end(pid), do: log(pid, :end)
+
   def log(message) do
+    log(self(), message)
+  end
+
+  def log(pid, message) do
     GenServer.cast(
       __MODULE__,
-      {:push, {self(), DateTime.utc_now(), :erlang.memory(:total)}, message}
+      {:push, {pid, DateTime.utc_now(), :erlang.memory(:total)}, message}
     )
   end
 
