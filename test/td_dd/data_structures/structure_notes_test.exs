@@ -7,6 +7,7 @@ defmodule TdDd.DataStructures.StructureNotesTest do
   alias TdCache.Redix.Stream
   alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.StructureNotes
+  alias TdDd.Search.MockIndexWorker
 
   @moduletag sandbox: :shared
   @stream TdCache.Audit.stream()
@@ -14,6 +15,7 @@ defmodule TdDd.DataStructures.StructureNotesTest do
 
   setup do
     start_supervised!(TdDd.Search.StructureEnricher)
+    start_supervised!(MockIndexWorker)
 
     alias_field = %{
       "cardinality" => "?",
@@ -55,6 +57,19 @@ defmodule TdDd.DataStructures.StructureNotesTest do
       assert StructureNotes.list_structure_notes(filters) ||| [n1, n2]
       assert StructureNotes.list_structure_notes(%{}) ||| [n1, n2, n3, n4]
       assert StructureNotes.list_structure_notes(%{"status" => :draft}) ||| [n4]
+    end
+
+    test "list_structure_notes/1 returns all structure_notes filtered by until and to_date" do
+      n1 = insert(:structure_note, status: :versioned, updated_at: ~N[2021-01-01 10:00:00])
+      n2 = insert(:structure_note, status: :versioned, updated_at: ~N[2021-01-02 10:00:00])
+      insert(:structure_note, status: :versioned, updated_at: ~N[2021-01-03 10:00:00])
+      insert(:structure_note, status: :draft, updated_at: ~N[2021-01-04 10:00:00])
+
+      until_filters = %{
+        "until" => "2021-01-02 10:00:00"
+      }
+
+      assert StructureNotes.list_structure_notes(until_filters) ||| [n1, n2]
     end
 
     test "list_structure_notes/1 return results paginated by offset ordered by updated_at and note id" do
@@ -126,6 +141,11 @@ defmodule TdDd.DataStructures.StructureNotesTest do
     test "create_structure_note/3 with valid data creates a structure_note" do
       data_structure = insert(:data_structure)
 
+      %{id: grant_request_id} =
+        insert(:grant_request,
+          data_structure: data_structure
+        )
+
       params = %{"df_content" => %{}, "status" => "draft", "version" => 42}
 
       assert {:ok, %StructureNote{} = structure_note} =
@@ -134,6 +154,14 @@ defmodule TdDd.DataStructures.StructureNotesTest do
       assert structure_note.df_content == %{}
       assert structure_note.status == :draft
       assert structure_note.version == 42
+
+      find_call = {:reindex_grant_requests, [grant_request_id]}
+
+      assert find_call ==
+               MockIndexWorker.calls()
+               |> Enum.find(fn call ->
+                 find_call == call
+               end)
     end
 
     test "create_structure_note/3 with invalid data returns error changeset" do

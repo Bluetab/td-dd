@@ -95,6 +95,35 @@ defmodule TdDd.Grants.Audit do
     {:ok, nil}
   end
 
+  def grant_request_bulk_approval_created(
+        _repo,
+        %{approvals: {_, approvals}}
+      )
+      when approvals == [] do
+    {:ok, []}
+  end
+
+  def grant_request_bulk_approval_created(
+        _repo,
+        %{approvals: {_, approvals}, statuses: {_, statuses}}
+      ) do
+    status_with_grant_id_index =
+      Map.new(statuses, fn %{grant_request_id: grant_request_id} = status ->
+        {grant_request_id, status}
+      end)
+
+    approvals
+    |> Enum.map(fn approval ->
+      status = Map.get(status_with_grant_id_index, approval.grant_request_id)
+      grant_request_approval_created(nil, %{approval: approval, status: status})
+    end)
+    |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+    |> case do
+      %{error: errors} -> {:error, errors}
+      %{ok: ids} -> {:ok, ids}
+    end
+  end
+
   def grant_request_status_created(_repo, %{
         grant_request_status: grant_request_status
       }) do

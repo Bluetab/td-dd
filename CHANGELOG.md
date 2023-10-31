@@ -1,11 +1,43 @@
 # Changelog
 
-## [Unreleased]
+## [Unreleashed]
+
+### Added
+
+- [TD-6103] Allow empty option for domain type filter
+
+### Fixed
+
+- [TD-6088] Improve implementations reindex
+
+## [5.16.2] 2023-10-19
+
+## [5.16.1] 2023-10-18
+
+### Fixed
+
+- [TD-5540] GrantRequest approval bulk audit events and permissions issue
+
+## [5.16.0] 2023-10-18
+
+### Added
+
+- [TD-5582] Implementation clone copies original business concepts links
+- [TD-6082] Support to upload implementations with result type in browser
+  language
+- [TD-5540] GrantRequest approval bulk with elasticsearch
+
+### Changed
+
+- [TD-5958] Keep graph URL across lineage changes
+
+## [5.15.0] 2023-10-02
 
 ### Added
 
 - [TD-5947] Support for DataViews
 - [TD-5532] Sources latest event cache
+- [TD-6042] Until filter for api/data_structure_notes/search
 
 ## [5.14.0] 2023-09-19
 

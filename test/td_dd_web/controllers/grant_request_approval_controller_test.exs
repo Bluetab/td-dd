@@ -1,5 +1,11 @@
 defmodule TdDdWeb.GrantRequestApprovalControllerTest do
   use TdDdWeb.ConnCase
+  alias TdDd.Search.MockIndexWorker
+
+  setup do
+    start_supervised(MockIndexWorker)
+    :ok
+  end
 
   describe "create" do
     @tag authentication: [role: "user"]
@@ -13,7 +19,7 @@ defmodule TdDdWeb.GrantRequestApprovalControllerTest do
         %{user_id: user_id, domain_id: domain_id, role: "foo_role"}
       ])
 
-      %{grant_request: grant_request} =
+      %{grant_request: %{id: grant_request_id} = grant_request} =
         insert(:grant_request_status,
           status: "pending",
           grant_request: build(:grant_request, domain_ids: [domain_id])
@@ -36,6 +42,8 @@ defmodule TdDdWeb.GrantRequestApprovalControllerTest do
 
       assert %{"is_rejection" => false, "comment" => "foo", "_embedded" => embedded} = data
       assert %{"user" => %{"id" => ^user_id}} = embedded
+
+      assert MockIndexWorker.calls() == [{:reindex_grant_requests, [grant_request_id]}]
     end
   end
 end

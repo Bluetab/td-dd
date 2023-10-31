@@ -149,7 +149,8 @@ if config_env() == :prod do
       jobs: System.get_env("ES_ALIAS_JOBS", "jobs"),
       structures: System.get_env("ES_ALIAS_STRUCTURES", "structures"),
       implementations: System.get_env("ES_ALIAS_IMPLEMENTATIONS", "implementations"),
-      rules: System.get_env("ES_ALIAS_RULES", "rules")
+      rules: System.get_env("ES_ALIAS_RULES", "rules"),
+      grant_requests: System.get_env("ES_ALIAS_GRANT_REQUESTS", "grant_requests")
     },
     default_options: [
       timeout: System.get_env("ES_TIMEOUT", "5000") |> String.to_integer(),

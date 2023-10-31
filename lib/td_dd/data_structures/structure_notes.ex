@@ -56,6 +56,9 @@ defmodule TdDd.DataStructures.StructureNotes do
   defp add_params({filter, updated_at}, query) when filter in ["since", "updated_at"],
     do: where(query, [sn], sn.updated_at >= ^updated_at)
 
+  defp add_params({filter, updated_at}, query) when filter in ["until"],
+    do: where(query, [sn], sn.updated_at <= ^updated_at)
+
   defp add_params({"system_id", system_id}, query) do
     query
     |> join(:inner, [sn], ds in assoc(sn, :data_structure))
@@ -307,6 +310,7 @@ defmodule TdDd.DataStructures.StructureNotes do
       {:error, _, changeset, _} ->
         {:error, changeset}
     end
+    |> DataStructures.maybe_reindex_grant_requests()
   end
 
   defp on_update(res, opts \\ []) do
@@ -314,6 +318,7 @@ defmodule TdDd.DataStructures.StructureNotes do
       false -> on_update_structure(res)
       _ -> res
     end
+    |> DataStructures.maybe_reindex_grant_requests()
   end
 
   defp on_update_structure(
@@ -321,7 +326,8 @@ defmodule TdDd.DataStructures.StructureNotes do
        )
        when status in [:published, :deprecated] do
     IndexWorker.reindex(id)
-    res
+
+    DataStructures.maybe_reindex_grant_requests(res)
   end
 
   defp on_update_structure(res), do: res

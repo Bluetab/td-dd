@@ -1,9 +1,11 @@
-defmodule TdDd.Grants.AuditTest do
+defmodule TdDd.GrantRequests.AuditTest do
   use TdDd.DataCase
 
+  alias TdCache.Redix
   alias TdCache.Redix.Stream
   alias TdDd.Grants.Requests
   alias TdDd.Grants.Statuses
+  alias TdDd.Search.MockIndexWorker
 
   @stream TdCache.Audit.stream()
 
@@ -11,7 +13,9 @@ defmodule TdDd.Grants.AuditTest do
   @valid_metadata %{"list" => "one", "string" => "bar"}
 
   setup do
+    start_supervised(MockIndexWorker)
     claims = build(:claims, role: "admin")
+    on_exit(fn -> Redix.del!(@stream) end)
     [claims: claims]
   end
 
@@ -41,6 +45,40 @@ defmodule TdDd.Grants.AuditTest do
 
       assert {:ok, [%{id: ^event_id}]} =
                Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+    end
+  end
+
+  describe "Requests.bulk_create_approvals/3" do
+    setup :setup_grant_request
+
+    test "rejected status insertion publishes an audit event", %{
+      claims: %{user_id: user_id} = claims,
+      domain_id: domain_id,
+      data_structure: data_structure
+    } do
+      grant_requests =
+        Enum.map(1..3, fn _ ->
+          insert(:grant_request,
+            data_structure: data_structure,
+            data_structure_id: data_structure.id,
+            current_status: "pending",
+            domain_ids: [domain_id]
+          )
+        end)
+
+      CacheHelpers.put_grant_request_approvers([
+        %{user_id: user_id, domain_id: domain_id, role: "rejector"}
+      ])
+
+      params = %{role: "rejector", is_rejection: true, comment: "foo"}
+
+      assert {:ok, %{audit: event_ids}} =
+               Requests.bulk_create_approvals(claims, grant_requests, params)
+
+      for event_id <- event_ids do
+        assert {:ok, [%{id: ^event_id, event: "grant_request_rejection"}]} =
+                 Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+      end
     end
   end
 

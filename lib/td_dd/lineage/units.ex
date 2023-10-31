@@ -72,13 +72,17 @@ defmodule TdDd.Lineage.Units do
   end
 
   def last_updated do
+    last_updated_query()
+    |> Repo.all()
+    |> Enum.at(0)
+  end
+
+  def last_updated_query do
     Event
     |> where([e], e.event in ["LoadSucceeded", "Deleted"])
     |> order_by([e], desc: e.inserted_at)
     |> select([e], e.inserted_at)
     |> limit(1)
-    |> Repo.all()
-    |> Enum.at(0)
   end
 
   def get_node(external_id, options \\ []) do
