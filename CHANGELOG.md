@@ -5,6 +5,11 @@
 ### Added
 
 - [TD-6103] Allow empty option for domain type filter
+- [TD-6059] Support for reporting reindex tasks on the cluster
+
+### Changed
+
+- [TD-6059] Updated elasticsearch library version
 
 ### Fixed
 
