@@ -31,6 +31,10 @@ defmodule TdDdWeb.Resolvers.Domains do
     {:ok, TaxonomyCache.get_domain(id)}
   end
 
+  def has_any_domain(_parent, %{action: action}, resolution) do
+    {:ok, not Enum.empty?(permitted_domains(action, resolution))}
+  end
+
   def get_parents(%{id: id_parent}, _args, _resolution) do
     {:ok, StructureEnricher.get_domain_parents(id_parent)}
   end
@@ -180,6 +184,12 @@ defmodule TdDdWeb.Resolvers.Domains do
 
   defp permitted_domain_ids(%{role: "user", jti: jti}, "createForeignGrantRequest"),
     do: Permissions.permitted_domain_ids(jti, :create_foreign_grant_request)
+
+  defp permitted_domain_ids(%{role: "user", jti: jti}, "createQualityControls"),
+    do: Permissions.permitted_domain_ids(jti, :create_quality_controls)
+
+  defp permitted_domain_ids(%{role: "user", jti: jti}, "publishQualityControls"),
+    do: Permissions.permitted_domain_ids(jti, :publish_quality_controls)
 
   defp permitted_domain_ids(%{role: "user", jti: jti}, action_or_permission) do
     Permissions.permitted_domain_ids(jti, Macro.underscore(action_or_permission))

@@ -24,6 +24,12 @@ defmodule TdDdWeb.Schema.DomainTest do
   }
   """
 
+  @has_any_domain """
+  query HasAnyDomain($action: String!) {
+    hasAnyDomain(action: $action)
+  }
+  """
+
   @domains_with_ids """
   query Domains($action: String!, $domainActions: [String!], $ids: [ID!]) {
     domains(action: $action, ids: $ids) {
@@ -329,6 +335,43 @@ defmodule TdDdWeb.Schema.DomainTest do
       refute Map.has_key?(resp, "errors")
 
       assert %{"actions" => ["manageImplementations"], "id" => to_string(domain_id)} == domain
+    end
+
+    @tag authentication: [
+           role: "user",
+           permissions: [:create_quality_controls]
+         ]
+    test "returns true if user has any permission", %{conn: conn} do
+      assert %{"data" => %{"hasAnyDomain" => true}} =
+               resp =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @has_any_domain,
+                 "variables" => %{
+                   "action" => "createQualityControls"
+                 }
+               })
+               |> json_response(:ok)
+
+      refute Map.has_key?(resp, "errors")
+    end
+
+    @tag authentication: [
+           role: "user"
+         ]
+    test "returns false if user has no permission", %{conn: conn} do
+      assert %{"data" => %{"hasAnyDomain" => false}} =
+               resp =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @has_any_domain,
+                 "variables" => %{
+                   "action" => "createQualityControls"
+                 }
+               })
+               |> json_response(:ok)
+
+      refute Map.has_key?(resp, "errors")
     end
 
     @tag authentication: [role: "admin"]
