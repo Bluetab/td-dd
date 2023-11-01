@@ -22,6 +22,12 @@ defmodule TdDdWeb.Schema.Domains do
       arg(:id, :id)
       resolve(&Resolvers.Domains.domain/3)
     end
+
+    @desc "Has any domain"
+    field :has_any_domain, :boolean do
+      arg(:action, :string)
+      resolve(&Resolvers.Domains.has_any_domain/3)
+    end
   end
 
   object :domain do

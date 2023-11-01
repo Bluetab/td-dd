@@ -9,7 +9,6 @@ defmodule TdDq.Search.Store do
 
   alias TdDd.DataStructures
   alias TdDd.Repo
-  alias TdDq.Implementations
   alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Rule
 

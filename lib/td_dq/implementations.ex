@@ -869,7 +869,7 @@ defmodule TdDq.Implementations do
        do: data_structures
 
   defp maybe_preload_structure(
-         %{implementation_ref_struct: %{data_structures: data_structures}},
+         %{implementation_ref_struct: %{data_structures: _data_structures}},
          _
        ),
        do: []
