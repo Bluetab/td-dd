@@ -808,7 +808,10 @@ defmodule TdDq.Implementations do
     end
   end
 
-  def enrich_implementation_structures(%Implementation{} = implementation) do
+  def enrich_implementation_structures(
+        %Implementation{} = implementation,
+        preload_structure \\ true
+      ) do
     enriched_dataset =
       implementation
       |> Map.get(:dataset)
@@ -817,17 +820,7 @@ defmodule TdDq.Implementations do
     enriched_populations = Enum.map(implementation.populations, &enrich_conditions/1)
     enriched_validation = Enum.map(implementation.validation, &enrich_conditions/1)
     enriched_segments = Enum.map(implementation.segments, &enrich_condition/1)
-
-    enriched_data_structures =
-      implementation
-      |> Repo.preload(
-        implementation_ref_struct: [
-          data_structures: [data_structure: [:system, :current_version]]
-        ],
-        data_structures: []
-      )
-      |> enrich_data_structures_path()
-      |> Enum.map(&enrich_domains(&1))
+    enriched_data_structures = maybe_preload_structure(implementation, preload_structure)
 
     implementation
     |> Map.put(:dataset, enriched_dataset)
@@ -855,6 +848,31 @@ defmodule TdDq.Implementations do
   end
 
   defp enrich_implementation_structure(structure), do: structure
+
+  defp maybe_preload_structure(implementation, true) do
+    implementation
+    |> Repo.preload(
+      implementation_ref_struct: [
+        data_structures: [data_structure: [:system, :current_version]]
+      ],
+      data_structures: []
+    )
+    |> enrich_data_structures_path()
+    |> Enum.map(&enrich_domains(&1))
+  end
+
+  defp maybe_preload_structure(
+         %{implementation_ref_struct: %{data_structures: data_structures}},
+         _
+       )
+       when is_list(data_structures),
+       do: data_structures
+
+  defp maybe_preload_structure(
+         %{implementation_ref_struct: %{data_structures: _data_structures}},
+         _
+       ),
+       do: []
 
   defp enrich_domains(
          %{data_structure: %DataStructure{domain_ids: [_ | _] = domain_ids} = structure} =

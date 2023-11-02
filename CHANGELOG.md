@@ -1,7 +1,23 @@
 # Changelog
 
+## [5.17.0] 2023-11-02
+
+### Added
+
+- [TD-6103] Allow empty option for domain type filter
+- [TD-6059] Support for reporting reindex tasks on the cluster
+
+### Changed
+
+- [TD-6059] Updated elasticsearch library version
+
+### Fixed
+
+- [TD-6088] Improve implementations reindex
+
 ## [5.16.2] 2023-10-19
-## [5.16.1] 2023-10-19
+## [5.16.1] 2023-10-18
+
 
 ### Fixed
 
