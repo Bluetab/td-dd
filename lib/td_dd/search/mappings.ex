@@ -180,7 +180,7 @@ defmodule TdDd.Search.Mappings do
   end
 
   defp field_mapping(%{"name" => name, "type" => "domain"}) do
-    {name, %{type: "long"}}
+    {name, %{type: "long", null_value: 0}}
   end
 
   defp field_mapping(%{"name" => name, "type" => "system"}) do

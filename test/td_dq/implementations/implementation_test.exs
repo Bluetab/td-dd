@@ -5,6 +5,7 @@ defmodule TdDq.Implementations.ImplementationTest do
   alias Elasticsearch.Document
   alias TdDd.Repo
   alias TdDq.Implementations.Implementation
+  alias TdDq.Search.Store
 
   @moduletag sandbox: :shared
 
@@ -446,9 +447,7 @@ defmodule TdDq.Implementations.ImplementationTest do
       %{name: dsv_2_name, path: dsv_2_path, type: dsv_2_type} =
         insert(:data_structure_version, data_structure_id: ds_2_id)
 
-      %{id: implementation_id} =
-        implementation =
-        insert(:implementation) |> Repo.preload([:data_structures, :implementation_ref_struct])
+      %{id: implementation_id} = insert(:implementation)
 
       insert(
         :implementation_structure,
@@ -463,6 +462,13 @@ defmodule TdDq.Implementations.ImplementationTest do
         implementation_id: implementation_id,
         type: :validation
       )
+
+      [implementation_stream] =
+        Store.transaction(fn ->
+          Implementation
+          |> Store.stream([implementation_id])
+          |> Enum.to_list()
+        end)
 
       assert %{
                structure_links: [
@@ -489,7 +495,7 @@ defmodule TdDq.Implementations.ImplementationTest do
                    }
                  }
                ]
-             } = Document.encode(implementation)
+             } = Document.encode(implementation_stream)
     end
 
     test "encoded implementation includes populations" do
