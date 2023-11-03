@@ -1,5 +1,11 @@
 # Changelog
 
+## [5.17.1]
+
+### Fixed
+
+- [TD-6159] Elasticsearch upgrade configuration
+
 ## [5.17.0] 2023-11-02
 
 ### Added
