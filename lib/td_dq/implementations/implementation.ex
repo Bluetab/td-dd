@@ -5,8 +5,11 @@ defmodule TdDq.Implementations.Implementation do
   use Ecto.Schema
 
   import Ecto.Changeset
+  import Ecto.Query
 
+  alias Assertions.Changeset
   alias Ecto.Changeset
+  alias TdDd.Repo
   alias TdDfLib.Format
   alias TdDfLib.Validation
   alias TdDq.Events.QualityEvents
@@ -222,10 +225,29 @@ defmodule TdDq.Implementations.Implementation do
           name: :draft_implementation_key_index,
           message: "duplicated"
         )
+        |> validate_implementation_key_is_not_used()
     end
   end
 
   defp validate_or_put_implementation_key(%Changeset{} = changeset), do: changeset
+
+  defp validate_implementation_key_is_not_used(
+         %{changes: %{implementation_key: implementation_key}} = changeset
+       ) do
+    possible_statuses = [:pending_approval, :published, :draft]
+
+    Implementation
+    |> where([i], i.implementation_key == ^implementation_key)
+    |> where([i], i.status in ^possible_statuses)
+    |> limit(1)
+    |> Repo.one()
+    |> case do
+      nil -> changeset
+      _ -> Changeset.add_error(changeset, :implementation_key, "duplicated")
+    end
+  end
+
+  defp validate_implementation_key_is_not_used(changeset), do: changeset
 
   defp validate_content(%{} = changeset) do
     if template_name = get_field(changeset, :df_name) do
