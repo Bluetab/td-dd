@@ -27,7 +27,7 @@ defmodule Truedat.Search.Indexer do
     config = Config.get(cluster)
     %{settings: settings} = index_config = config[:indexes][alias]
 
-    with :ok <- Index.create_from_settings(config, name, settings),
+    with :ok <- Index.create_from_settings(config, name, %{settings: settings}),
          :ok <- Bulk.upload(config, name, index_config),
          :ok <- Index.alias(config, name, to_string(alias)),
          :ok <- Index.clean_starting_with(config, to_string(alias), 2),
@@ -117,7 +117,7 @@ defmodule Truedat.Search.Indexer do
   def log_hot_swap_errors(index, {:error, [_ | _] = exceptions}) do
     exceptions
     |> Enum.map(&"#{message(&1)}\n")
-    |> Kernel.then(fn messages ->
+    |> then(fn messages ->
       ["New index #{index} build finished with #{pluralize(exceptions)}:\n" | messages]
     end)
     |> Logger.error()
@@ -139,16 +139,20 @@ defmodule Truedat.Search.Indexer do
     "#{Enum.count(exceptions)} errors"
   end
 
+  defp message(%Elasticsearch.Exception{message: nil} = e) do
+    "#{info_document_id(e)}#{raw_message(e)}"
+  end
+
   defp message(%Elasticsearch.Exception{} = e) do
     "#{info_document_id(e)}#{Exception.message(e)}"
   end
 
-  defp message(e) when Kernel.is_exception(e) do
+  defp message(e) when is_exception(e) do
     Exception.message(e)
   end
 
   defp message(e) do
-    "#{inspect(e)}"
+    inspect(e)
   end
 
   defp message(item, action) do
@@ -163,4 +167,9 @@ defmodule Truedat.Search.Indexer do
   defp info_document_id(item, action) do
     "Document ID #{item[action]["_id"]}"
   end
+
+  defp raw_message(%Elasticsearch.Exception{raw: %{"Message" => message}}),
+    do: message
+
+  defp raw_message(e), do: "No message found at " <> inspect(e)
 end
