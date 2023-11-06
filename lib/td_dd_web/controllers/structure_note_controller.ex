@@ -261,20 +261,13 @@ defmodule TdDdWeb.StructureNoteController do
     {:can, permit?(StructureNotes, :edit, claims, data_structure)}
   end
 
-  defp available_actions(conn, nil = structure_note, claims, data_structure) do
-    structure_note
-    |> available_statutes(claims, data_structure)
-    |> Enum.reduce(%{}, fn action, acc ->
-      Map.put(acc, action, get_action_location(conn, action, data_structure.id, structure_note))
-    end)
-  end
-
   defp available_actions(conn, structure_note, claims, data_structure) do
     structure_note
     |> available_statutes(claims, data_structure)
     |> Enum.reduce(%{}, fn action, acc ->
       Map.put(acc, action, get_action_location(conn, action, data_structure.id, structure_note))
     end)
+    # |> maybe_add_additional_actions(claims, data_structure)
   end
 
   defp get_action_location(conn, :draft, data_structure_id, %{status: :rejected} = structure_note) do
@@ -301,6 +294,7 @@ defmodule TdDdWeb.StructureNoteController do
       input: %{df_content: %{}},
       method: "PATCH"
     }
+
   end
 
   defp get_action_location(conn, :deleted, data_structure_id, structure_note) do

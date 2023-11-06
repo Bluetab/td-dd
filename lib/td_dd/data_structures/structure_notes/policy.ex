@@ -24,6 +24,15 @@ defmodule TdDd.DataStructures.StructureNotes.Policy do
       Permissions.authorized?(claims, permission(action), domain_ids)
   end
 
+  def authorize(
+        :ai_suggestions,
+        %{role: "user"} = claims,
+        %DataStructure{domain_ids: domain_ids} = ds
+      ) do
+    Bodyguard.permit?(DataStructures, :view_data_structure, claims, ds) and
+      Permissions.authorized?(claims, :ai_structure_note, domain_ids)
+  end
+
   def authorize(_action, %{role: role}, _params), do: role in ["admin", "service"]
 
   defp permission(:create), do: :create_structure_note
