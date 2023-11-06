@@ -5,7 +5,7 @@ defmodule TdDd.Repo.Migrations.AddNhsMvTableProfile do
 
     execute(
       """
-      CREATE MATERIALIZED VIEW IF NOT EXISTS vm_table_profile_test as
+      CREATE MATERIALIZED VIEW IF NOT EXISTS vm_table_profile as
       select tables.data_structure_id table_id, tables.table_name , columns.column_name, column_profiles.*,values->0 as key, values->1 as amount from
       (select data_structure_id, name table_name from (select *,RANK() OVER(PARTITION BY data_structure_id ORDER BY Version DESC) Rank from data_structure_versions) c where rank=1 and Type='Table') tables
       JOIN data_structures_hierarchy r ON (r.ancestor_ds_id = tables.data_structure_id and ancestor_level=1)
@@ -46,23 +46,23 @@ defmodule TdDd.Repo.Migrations.AddNhsMvTableProfile do
       JOIN (select data_structure_id, name column_name from (select *,RANK() OVER(PARTITION BY data_structure_id ORDER BY Version DESC) Rank from data_structure_versions) c where rank=1 and Type='Column') columns ON (columns.data_structure_id =r.ds_id )
 
       """,
-      "DROP MATERIALIZED VIEW IF EXISTS vm_table_profile_test"
+      "DROP MATERIALIZED VIEW IF EXISTS vm_table_profile"
     )
 
     execute(
       """
       SELECT cron.schedule(
-      'vm_table_profile_test',
+      'vm_table_profile',
       '*/5 * * * *',
-      $CRON$ REFRESH MATERIALIZED VIEW public.vm_table_profile_test; $CRON$
+      $CRON$ REFRESH MATERIALIZED VIEW public.vm_table_profile; $CRON$
 
       """,
-      "SELECT cron.unschedule('vm_table_profile_test')"
+      "SELECT cron.unschedule('vm_table_profile')"
     )
 
     execute(
       """
-      UPDATE cron.job SET database = 'td_dd' WHERE jobid = (select jobid from cron.job where jobname  = 'vm_table_profile_test')
+      UPDATE cron.job SET database = 'td_dd' WHERE jobid = (select jobid from cron.job where jobname  = 'vm_table_profile')
 
       """
     )
