@@ -61,7 +61,7 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
                  bool: %{
                    filter: %{
                      bool: %{
-                       should: [%{term: %{"data_structure_version.domain_ids" => ^domain_id}}]
+                       should: [%{term: %{"domain_ids" => ^domain_id}}]
                      }
                    }
                  }
