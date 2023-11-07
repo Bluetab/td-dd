@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.16.3] 2023-11-07
+
+### Fixed
+
+- [TD-6143] Domain_ids grant_request filters and elastic config
+
+
 ## [5.16.2] 2023-10-19
 ## [5.16.1] 2023-10-19
 
