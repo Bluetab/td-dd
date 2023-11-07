@@ -42,7 +42,7 @@ defmodule TdDd.GrantRequests.SearchTest do
           assert %{
                    bool: %{
                      filter: %{
-                       bool: %{should: [%{term: %{"data_structure_version.domain_ids" => _}}]}
+                       bool: %{should: [%{term: %{"domain_ids" => _}}]}
                      }
                    }
                  } = query

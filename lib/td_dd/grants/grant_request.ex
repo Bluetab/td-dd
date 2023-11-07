@@ -7,7 +7,6 @@ defmodule TdDd.Grants.GrantRequest do
   import Ecto.Changeset
 
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Grants.GrantRequestApproval
   alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Grants.GrantRequestStatus
@@ -98,11 +97,10 @@ defmodule TdDd.Grants.GrantRequest do
     def routing(_), do: false
 
     @impl Elasticsearch.Document
-    def encode(%{data_structure_version: nil}), do: %{}
 
     def encode(
           %{
-            data_structure_version: %DataStructureVersion{} = dsv,
+            data_structure_version: dsv,
             group: %GrantRequestGroup{} = group
           } = grant_request
         ) do
@@ -117,6 +115,8 @@ defmodule TdDd.Grants.GrantRequest do
         grant_request
         |> Map.get(:metadata)
         |> Format.search_values(template)
+
+      dsv = if is_nil(dsv), do: nil, else: Elasticsearch.Document.encode(dsv)
 
       %{
         id: grant_request.id,
@@ -138,7 +138,7 @@ defmodule TdDd.Grants.GrantRequest do
           full_name: user_full_name(created_by)
         },
         data_structure_id: grant_request.data_structure_id,
-        data_structure_version: Elasticsearch.Document.encode(dsv),
+        data_structure_version: dsv,
         inserted_at: grant_request.inserted_at,
         type: group.type,
         metadata: metadata,

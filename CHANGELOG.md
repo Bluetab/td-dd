@@ -3,7 +3,13 @@
 ## [Unreleased]
 
 ### Added
+
 - [TD-5390] Validate inplementation key unique when update implementation
+
+### Fixed
+
+- [TD-6173] Domain_ids grant_request filters and elastic config
+
 
 ## [5.17.1]
 
