@@ -59,7 +59,7 @@ defmodule TdDd.Search.Store do
     |> join(:left, [gr], gra in ^approved_by_subquery, on: gra.grant_request_id == gr.id)
     |> select([gr, s, gra], %GrantRequest{gr | current_status: s.status, approved_by: gra.role})
     |> Repo.stream()
-    |> Repo.stream_preload(1000, :group)
+    |> Repo.stream_preload(chunk_size(), :group)
     |> Stream.chunk_every(chunk_size())
     |> Stream.flat_map(&enrich_chunk_grant_request_structures(&1, users))
   end
@@ -96,7 +96,7 @@ defmodule TdDd.Search.Store do
     |> where([gr], gr.id in ^ids)
     |> select([gr, s, gra], %GrantRequest{gr | current_status: s.status, approved_by: gra.role})
     |> Repo.stream()
-    |> Repo.stream_preload(1000, :group)
+    |> Repo.stream_preload(chunk_size(), :group)
     |> Stream.chunk_every(chunk_size())
     |> Stream.flat_map(&enrich_chunk_grant_request_structures(&1, users))
   end

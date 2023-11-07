@@ -20,6 +20,6 @@ defmodule TdDd.GrantRequests.Search.Query do
   end
 
   defp domain_filter(domain_ids) do
-    Query.term_or_terms("data_structure_version.domain_ids", domain_ids)
+    Query.term_or_terms("domain_ids", domain_ids)
   end
 end
