@@ -331,4 +331,13 @@ defmodule TdDd.DataStructures.StructureNotes do
   end
 
   defp on_update_structure(res), do: res
+
+  def suggestion_fields_for_template(template_id) do
+    {:ok, %{content: content}} = TdCache.TemplateCache.get(template_id)
+
+    content
+    |> TdDfLib.Format.flatten_content_fields()
+    |> Enum.filter(& &1["ai_suggestion"])
+    |> Enum.map(&Map.take(&1, ["name", "description"]))
+  end
 end

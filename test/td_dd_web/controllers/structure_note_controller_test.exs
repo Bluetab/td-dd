@@ -82,7 +82,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
         |> get(Routes.data_structure_note_path(conn, :index, data_structure_id))
         |> json_response(:ok)
 
-      assert ["draft"] == Map.keys(actions)
+      assert ["ai_suggestions", "draft"] ||| Map.keys(actions)
       assert ["deprecated"] == Map.keys(sn_actions)
     end
 
@@ -105,7 +105,9 @@ defmodule TdDdWeb.StructureNoteControllerTest do
 
       assert [] == Map.keys(actions)
       assert [] == Map.keys(v1_actions)
-      assert ["deleted", "edited", "pending_approval", "published"] ||| Map.keys(v2_actions)
+
+      assert ["deleted", "edited", "pending_approval", "published", "ai_suggestions"] |||
+               Map.keys(v2_actions)
     end
 
     @tag authentication: [role: "admin"]
@@ -152,7 +154,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
         |> get(Routes.data_structure_note_path(conn, :index, data_structure_id))
         |> json_response(:ok)
 
-      assert ["draft"] == Map.keys(actions)
+      assert ["ai_suggestions", "draft"] ||| Map.keys(actions)
     end
 
     @tag authentication: [role: "admin"]
@@ -726,6 +728,64 @@ defmodule TdDdWeb.StructureNoteControllerTest do
                Routes.data_structure_note_path(conn, :delete, data_structure_id, structure_note)
              )
              |> response(:forbidden)
+    end
+  end
+
+  describe "note_suggestions" do
+    @tag authentication: [role: "admin"]
+    test "retrieves suggestions for the requested fields", %{conn: conn} do
+      template = %{
+        id: System.unique_integer([:positive]),
+        label: "suggestions_test",
+        name: "suggestions_test",
+        scope: "dd",
+        content: [
+          %{
+            "name" => "Identifier Template",
+            "fields" => [
+              %{
+                "cardinality" => "1",
+                "label" => "suggestion_field",
+                "name" => "suggestion_field",
+                "type" => "string",
+                "ai_suggestion" => true
+              },
+              %{
+                "cardinality" => "1",
+                "label" => "not_suggestion_field",
+                "name" => "not_suggestion_field",
+                "type" => "string"
+              }
+            ]
+          }
+        ]
+      }
+
+      %{id: template_id, name: template_name} = CacheHelpers.insert_template(template)
+      CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
+
+      %{id: data_structure_id} = data_structure = insert(:data_structure)
+
+      insert(:data_structure_version,
+        data_structure: data_structure,
+        type: template_name
+      )
+
+      args = {"data_structure", data_structure_id, %{name: "field"}}
+
+      TdCluster.TestHelpers.TdAiMock.resource_field_completion(&Mox.expect/4, args, {:ok, %{}})
+
+      assert %{} ==
+               conn
+               |> get(
+                 Routes.data_structure_structure_note_path(
+                   conn,
+                   :note_suggestions,
+                   data_structure_id
+                 )
+               )
+               |> json_response(:ok)
+               |> Map.get("data")
     end
   end
 

@@ -240,7 +240,7 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
     latest = get_latest_structure_note(id)
 
     case can_create_new_draft(latest) do
-      :ok -> [:draft]
+      :ok -> [:draft, :ai_suggestions]
       _ -> []
     end
   end
@@ -255,7 +255,7 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
   end
 
   def available_actions(:draft, _latest_id, _id),
-    do: [:pending_approval, :published, :deleted, :edited]
+    do: [:pending_approval, :published, :deleted, :edited, :ai_suggestions]
 
   def available_actions(:pending_approval, _latest_id, _id), do: [:published, :rejected]
   def available_actions(:rejected, _latest_id, _id), do: [:draft, :deleted]
