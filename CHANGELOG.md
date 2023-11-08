@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-5390] Validate inplementation key unique when update implementation
+- [TD-4304] Added structures links aggregation in implementation search
 
 ### Fixed
 
