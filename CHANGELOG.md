@@ -7,12 +7,15 @@
 - [TD-5390] Validate inplementation key unique when update implementation
 - [TD-4304] Added structures links aggregation in implementation search
 
+### Changed
+
+- [TD-6177] Update td-df-lib to fix format field
+
 ### Fixed
 
 - [TD-6173] Domain_ids grant_request filters and elastic config
 
-
-## [5.17.1]
+## [5.17.1] 2023-10-26
 
 ### Fixed
 
@@ -34,8 +37,8 @@
 - [TD-6088] Improve implementations reindex
 
 ## [5.16.2] 2023-10-19
-## [5.16.1] 2023-10-18
 
+## [5.16.1] 2023-10-18
 
 ### Fixed
 
