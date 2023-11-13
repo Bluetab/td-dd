@@ -127,6 +127,14 @@ defmodule Truedat.Search do
      }}
   end
 
+  defp filter_values({name, %{"meta" => %{"type" => "search", "index" => index}}}) do
+    {name,
+     %{
+       type: :search,
+       index: index
+     }}
+  end
+
   defp filter_values({name, %{"buckets" => buckets}}) do
     {
       name,

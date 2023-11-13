@@ -786,25 +786,10 @@ defmodule TdDq.Implementations do
   end
 
   defp insert_implementation(changeset) do
-    with {:ok, _} <- can_create_implementation_key(changeset),
-         {:ok, %{id: id} = implementation} <- Repo.insert(changeset) do
+    with {:ok, %{id: id} = implementation} <- Repo.insert(changeset) do
       implementation
       |> Implementation.implementation_ref_changeset(%{implementation_ref: id})
       |> Repo.update()
-    end
-  end
-
-  defp can_create_implementation_key(
-         %{changes: %{implementation_key: implementation_key}} = changeset
-       ) do
-    Implementation
-    |> where([i], i.implementation_key == ^implementation_key)
-    |> where([i], i.status == :published)
-    |> limit(1)
-    |> Repo.one()
-    |> case do
-      nil -> {:ok, changeset}
-      _ -> {:error, Changeset.add_error(changeset, :implementation_key, "duplicated")}
     end
   end
 
