@@ -314,10 +314,8 @@ defmodule TdDq.ImplementationsTest do
       claims = build(:claims)
 
       assert {:error, :implementation,
-              %{valid?: false, errors: [implementation_key: {"duplicated", constraint}]},
+              %{valid?: false, errors: [implementation_key: {"duplicated", []}]},
               _} = Implementations.create_implementation(rule, params, claims)
-
-      assert "draft_implementation_key_index" = constraint[:constraint_name]
     end
 
     test "with duplicated pending_approval implementation key returns an error", %{rule: rule} do
@@ -1457,6 +1455,51 @@ defmodule TdDq.ImplementationsTest do
                  ]
                }
              ]
+    end
+
+    test "validate that can not update implementation_key to an existing implementation_key" do
+      claims = build(:claims)
+
+      implementation_1_params =
+        string_params_for(:implementation,
+          status: :published,
+          implementation_key: "key_changed_1"
+        )
+
+      Implementations.create_ruleless_implementation(
+        implementation_1_params,
+        claims
+      )
+
+      implementation_2_create_params =
+        string_params_for(:implementation,
+          status: :published,
+          implementation_key: "key_changed_2"
+        )
+
+      {:ok, %{implementation: implementation_2_v1}} =
+        Implementations.create_ruleless_implementation(
+          implementation_2_create_params,
+          claims
+        )
+
+      implementation_v2_update_params =
+        string_params_for(:implementation,
+          status: :published,
+          implementation_key: "key_changed_1"
+        )
+
+      MockIndexWorker.clear()
+
+      assert {:error, :implementation, %{errors: errors}, %{}} =
+               Implementations.update_implementation(
+                 implementation_2_v1,
+                 implementation_v2_update_params,
+                 claims
+               )
+
+      assert length(errors) == 1
+      assert errors == [implementation_key: {"duplicated", []}]
     end
   end
 

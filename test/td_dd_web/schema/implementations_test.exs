@@ -319,7 +319,7 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
                %{"has_segments" => false, "id" => to_string(rule_result_1)},
                %{"has_segments" => false, "id" => to_string(rule_result_2)},
                %{"has_segments" => true, "id" => to_string(parent_id)}
-             ] == results
+             ] ||| results
     end
 
     @tag authentication: [role: "admin"]

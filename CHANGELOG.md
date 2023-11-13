@@ -1,5 +1,17 @@
 # Changelog
 
+## [5.18.0] 2023-11-13
+
+### Added
+
+- [TD-5390] Validate inplementation key unique when update implementation
+- [TD-4304] Added structures links aggregation in implementation search
+
+### Changed
+
+- [TD-6177] Update td-df-lib to fix format field
+- [TD-5319] Increment system aggregation size in data structures search
+
 ## [5.17.2] 2023-11-07
 
 ### Fixed
@@ -29,7 +41,6 @@
 
 ## [5.16.2] 2023-10-19
 ## [5.16.1] 2023-10-18
-
 
 ### Fixed
 
