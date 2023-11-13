@@ -10,6 +10,7 @@
 ### Changed
 
 - [TD-6177] Update td-df-lib to fix format field
+- [TD-5319] Increment system aggregation size in data structures search
 
 ### Fixed
 

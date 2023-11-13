@@ -13,7 +13,7 @@ defmodule TdDd.DataStructures.Search.Aggregations do
 
   def aggregations do
     static_aggs = %{
-      "system.name.raw" => %{terms: %{field: "system.name.raw", size: 50}},
+      "system.name.raw" => %{terms: %{field: "system.name.raw", size: 500}},
       "group.raw" => %{terms: %{field: "group.raw", size: 50}},
       "type.raw" => %{terms: %{field: "type.raw", size: 50}},
       "confidential.raw" => %{terms: %{field: "confidential.raw"}},
