@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [5.18.0] 2023-11-13
 
 ### Added
 
@@ -12,11 +12,13 @@
 - [TD-6177] Update td-df-lib to fix format field
 - [TD-5319] Increment system aggregation size in data structures search
 
+## [5.17.2] 2023-11-07
+
 ### Fixed
 
 - [TD-6173] Domain_ids grant_request filters and elastic config
 
-## [5.17.1] 2023-10-26
+## [5.17.1] 2023-11-03
 
 ### Fixed
 
@@ -38,7 +40,6 @@
 - [TD-6088] Improve implementations reindex
 
 ## [5.16.2] 2023-10-19
-
 ## [5.16.1] 2023-10-18
 
 ### Fixed
