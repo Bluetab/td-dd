@@ -8,6 +8,7 @@ defmodule TdCluster.ClusterTdDdTasksTest do
   @moduletag sandbox: :shared
 
   setup do
+    Application.put_env(:td_cluster, TdCluster.ClusterHandler, TdCluster.ClusterHandlerImpl)
     start_supervised!(Search.Tasks)
     :ok
   end

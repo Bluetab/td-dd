@@ -65,4 +65,14 @@ defmodule TdDd.DataStructures.Validation do
       domain_ids: domain_ids
     )
   end
+
+  def has_ai_suggestion(%DataStructure{} = data_structure) do
+    data_structure
+    |> DataStructures.template_name()
+    |> Templates.content_schema()
+    |> Enum.any?(fn
+      %{"ai_suggestion" => ai_suggestion} -> ai_suggestion
+      _ -> false
+    end)
+  end
 end

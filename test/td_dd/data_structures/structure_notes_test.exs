@@ -341,6 +341,67 @@ defmodule TdDd.DataStructures.StructureNotesTest do
       assert [%{"description" => "field description", "name" => "suggestion_field"}] ==
                StructureNotes.suggestion_fields_for_template(template_id)
     end
+
+    test "fixed values field will return possible_values" do
+      build_field = fn name, map ->
+        Map.merge(
+          %{
+            "cardinality" => "1",
+            "label" => name,
+            "name" => name,
+            "type" => "string",
+            "ai_suggestion" => true
+          },
+          map
+        )
+      end
+
+      template = %{
+        id: System.unique_integer([:positive]),
+        label: "suggestions_test",
+        name: "suggestions_test",
+        scope: "dd",
+        content: [
+          %{
+            "name" => "test",
+            "fields" => [
+              build_field.("fixed_list", %{
+                "values" => %{
+                  "fixed" => ["foo", "bar"]
+                }
+              }),
+              build_field.("key_value_list", %{
+                "values" => %{
+                  "fixed_tuple" => [
+                    %{
+                      "text" => "t1",
+                      "value" => "v1"
+                    },
+                    %{
+                      "text" => "t2",
+                      "value" => "v2"
+                    }
+                  ]
+                }
+              })
+            ]
+          }
+        ]
+      }
+
+      %{id: template_id} = CacheHelpers.insert_template(template)
+
+      assert [
+               %{
+                 "name" => "fixed_list",
+                 "possible_values" => ["foo", "bar"]
+               },
+               %{
+                 "name" => "key_value_list",
+                 "possible_values" => ["v1", "v2"]
+               }
+             ] = StructureNotes.suggestion_fields_for_template(template_id)
+    end
   end
 
   defp get_last_id_updated_at_notes(notes) do

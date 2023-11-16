@@ -4,6 +4,7 @@ defmodule TdDdWeb.StructureNoteController do
 
   import Bodyguard, only: [permit?: 4]
 
+  alias TdCluster.Cluster.TdAi
   alias TdDd.DataStructures
   alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.StructureNotes
@@ -251,23 +252,36 @@ defmodule TdDdWeb.StructureNoteController do
     end
   end
 
-  def note_suggestions(conn, %{"data_structure_id" => data_structure_id}) do
-    with claims <- conn.assigns[:current_resource],
-         %{current_version: %{structure_type: %{template_id: template_id}}} = data_structure <-
-           DataStructures.get_data_structure!(data_structure_id,
-             current_version: :structure_type
+  def note_suggestions(conn, %{"data_structure_id" => data_structure_id} = params) do
+    language = Map.get(params, "language", "en")
+
+    with %{user_id: user_id} = claims <- conn.assigns[:current_resource],
+         %{
+           current_version: %{structure_type: %{template_id: template_id}, type: structure_type},
+           system: %{external_id: system_external_id}
+         } = data_structure <-
+           DataStructures.get_data_structure!(
+             data_structure_id,
+             [:system, current_version: [:structure_type]]
            ),
          :ok <- Bodyguard.permit(StructureNotes, :ai_suggestions, claims, data_structure) do
-      fields = TdDd.DataStructures.StructureNotes.suggestion_fields_for_template(template_id)
+      fields = StructureNotes.suggestion_fields_for_template(template_id)
 
-      {:ok, suggestions} =
-        TdCluster.Cluster.TdAi.resource_field_completion(
-          "data_structure",
-          data_structure_id,
-          fields
-        )
-
-      render(conn, "suggestions.json", suggestions: suggestions)
+      TdAi.resource_field_completion(
+        "data_structure",
+        data_structure_id,
+        fields,
+        language: language,
+        requested_by: user_id,
+        selector: %{
+          "type" => structure_type,
+          "system_external_id" => system_external_id
+        }
+      )
+      |> case do
+        {:ok, suggestions} -> render(conn, "suggestions.json", suggestions: suggestions)
+        {:error, error} -> {:error, :unprocessable_entity, error}
+      end
     end
   end
 

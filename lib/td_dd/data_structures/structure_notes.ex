@@ -338,6 +338,22 @@ defmodule TdDd.DataStructures.StructureNotes do
     content
     |> TdDfLib.Format.flatten_content_fields()
     |> Enum.filter(& &1["ai_suggestion"])
-    |> Enum.map(&Map.take(&1, ["name", "description"]))
+    |> Enum.map(&map_suggestion_field/1)
   end
+
+  defp map_suggestion_field(%{"values" => %{"fixed" => possible_values}} = field) do
+    field
+    |> Map.take(["name", "description"])
+    |> Map.put("possible_values", possible_values)
+  end
+
+  defp map_suggestion_field(%{"values" => %{"fixed_tuple" => tuples}} = field) do
+    possible_values = Enum.map(tuples, & &1["value"])
+
+    field
+    |> Map.take(["name", "description"])
+    |> Map.put("possible_values", possible_values)
+  end
+
+  defp map_suggestion_field(field), do: Map.take(field, ["name", "description"])
 end
