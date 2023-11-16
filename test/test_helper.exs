@@ -1,4 +1,5 @@
 Mox.defmock(ElasticsearchMock, for: Elasticsearch.API)
+Mox.defmock(MockClusterHandler, for: TdCluster.ClusterHandler)
 TdCache.Redix.del!()
 ExUnit.start()
 Ecto.Adapters.SQL.Sandbox.mode(TdDd.Repo, :manual)

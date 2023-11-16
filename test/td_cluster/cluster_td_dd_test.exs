@@ -9,6 +9,7 @@ defmodule TdCluster.ClusterTdDdTest do
   @moduletag sandbox: :shared
 
   setup do
+    Application.put_env(:td_cluster, TdCluster.ClusterHandler, TdCluster.ClusterHandlerImpl)
     start_supervised!(TdDd.Search.StructureEnricher)
     :ok
   end

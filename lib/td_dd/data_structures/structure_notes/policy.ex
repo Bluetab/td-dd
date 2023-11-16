@@ -18,7 +18,8 @@ defmodule TdDd.DataStructures.StructureNotes.Policy do
              :reject,
              :submit,
              :unreject,
-             :history
+             :history,
+             :ai_suggestions
            ] do
     Bodyguard.permit?(DataStructures, :view_data_structure, claims, ds) and
       Permissions.authorized?(claims, permission(action), domain_ids)
@@ -36,4 +37,5 @@ defmodule TdDd.DataStructures.StructureNotes.Policy do
   defp permission(:reject), do: :reject_structure_note
   defp permission(:submit), do: :send_structure_note_to_approval
   defp permission(:unreject), do: :unreject_structure_note
+  defp permission(:ai_suggestions), do: :ai_structure_note
 end

@@ -4,6 +4,7 @@ defmodule TdDdWeb.StructureNoteController do
 
   import Bodyguard, only: [permit?: 4]
 
+  alias TdCluster.Cluster.TdAi
   alias TdDd.DataStructures
   alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.StructureNotes
@@ -251,6 +252,39 @@ defmodule TdDdWeb.StructureNoteController do
     end
   end
 
+  def note_suggestions(conn, %{"data_structure_id" => data_structure_id} = params) do
+    language = Map.get(params, "language", "en")
+
+    with %{user_id: user_id} = claims <- conn.assigns[:current_resource],
+         %{
+           current_version: %{structure_type: %{template_id: template_id}, type: structure_type},
+           system: %{external_id: system_external_id}
+         } = data_structure <-
+           DataStructures.get_data_structure!(
+             data_structure_id,
+             [:system, current_version: [:structure_type]]
+           ),
+         :ok <- Bodyguard.permit(StructureNotes, :ai_suggestions, claims, data_structure) do
+      fields = StructureNotes.suggestion_fields_for_template(template_id)
+
+      TdAi.resource_field_completion(
+        "data_structure",
+        data_structure_id,
+        fields,
+        language: language,
+        requested_by: user_id,
+        selector: %{
+          "type" => structure_type,
+          "system_external_id" => system_external_id
+        }
+      )
+      |> case do
+        {:ok, suggestions} -> render(conn, "suggestions.json", suggestions: suggestions)
+        {:error, error} -> {:error, :unprocessable_entity, error}
+      end
+    end
+  end
+
   defp can(%{status: _status}, %{"status" => nil}, _claims, _data_structure), do: {:can, true}
 
   defp can(%{status: status}, %{"status" => to_status}, claims, data_structure) do
@@ -259,14 +293,6 @@ defmodule TdDdWeb.StructureNoteController do
 
   defp can(%{status: :draft}, %{"df_content" => _df_content}, claims, data_structure) do
     {:can, permit?(StructureNotes, :edit, claims, data_structure)}
-  end
-
-  defp available_actions(conn, nil = structure_note, claims, data_structure) do
-    structure_note
-    |> available_statutes(claims, data_structure)
-    |> Enum.reduce(%{}, fn action, acc ->
-      Map.put(acc, action, get_action_location(conn, action, data_structure.id, structure_note))
-    end)
   end
 
   defp available_actions(conn, structure_note, claims, data_structure) do
@@ -300,6 +326,13 @@ defmodule TdDdWeb.StructureNoteController do
       href: Routes.data_structure_note_path(conn, :show, data_structure_id, structure_note),
       input: %{df_content: %{}},
       method: "PATCH"
+    }
+  end
+
+  defp get_action_location(conn, :ai_suggestions, data_structure_id, _) do
+    %{
+      href: Routes.data_structure_structure_note_path(conn, :note_suggestions, data_structure_id),
+      method: "GET"
     }
   end
 
@@ -379,8 +412,14 @@ defmodule TdDdWeb.StructureNoteController do
   defp is_available(nil, :draft, claims, data_structure),
     do: permit?(StructureNotes, :edit, claims, data_structure)
 
+  defp is_available(nil, :ai_suggestions, claims, data_structure),
+    do: permit?(StructureNotes, :ai_suggestions, claims, data_structure)
+
   defp is_available(:draft, :edited, claims, data_structure),
     do: permit?(StructureNotes, :edit, claims, data_structure)
+
+  defp is_available(:draft, :ai_suggestions, claims, data_structure),
+    do: permit?(StructureNotes, :ai_suggestions, claims, data_structure)
 
   defp is_available(_, :pending_approval, claims, data_structure),
     do: permit?(StructureNotes, :submit, claims, data_structure)
@@ -408,6 +447,7 @@ defmodule TdDdWeb.StructureNoteController do
   defp listable_statuses(claims, data_structure) do
     [
       {permit?(StructureNotes, :edit, claims, data_structure), [:draft]},
+      {permit?(StructureNotes, :ai_suggestions, claims, data_structure), [:draft]},
       {permit?(StructureNotes, :submit, claims, data_structure), [:draft, :pending_approval]},
       {permit?(StructureNotes, :reject, claims, data_structure), [:pending_approval, :rejected]},
       {permit?(StructureNotes, :unreject, claims, data_structure), [:rejected, :draft]},

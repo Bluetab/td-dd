@@ -306,6 +306,104 @@ defmodule TdDd.DataStructures.StructureNotesTest do
     end
   end
 
+  describe "suggestion_fields_for_template" do
+    test "suggestion_fields_for_template returns a list of fields enabled for suggestions" do
+      template = %{
+        id: System.unique_integer([:positive]),
+        label: "suggestions_test",
+        name: "suggestions_test",
+        scope: "dd",
+        content: [
+          %{
+            "name" => "Identifier Template",
+            "fields" => [
+              %{
+                "cardinality" => "1",
+                "description" => "field description",
+                "label" => "suggestion_field",
+                "name" => "suggestion_field",
+                "type" => "string",
+                "ai_suggestion" => true
+              },
+              %{
+                "cardinality" => "1",
+                "label" => "not_suggestion_field",
+                "name" => "not_suggestion_field",
+                "type" => "string"
+              }
+            ]
+          }
+        ]
+      }
+
+      %{id: template_id} = CacheHelpers.insert_template(template)
+
+      assert [%{"description" => "field description", "name" => "suggestion_field"}] ==
+               StructureNotes.suggestion_fields_for_template(template_id)
+    end
+
+    test "fixed values field will return possible_values" do
+      build_field = fn name, map ->
+        Map.merge(
+          %{
+            "cardinality" => "1",
+            "label" => name,
+            "name" => name,
+            "type" => "string",
+            "ai_suggestion" => true
+          },
+          map
+        )
+      end
+
+      template = %{
+        id: System.unique_integer([:positive]),
+        label: "suggestions_test",
+        name: "suggestions_test",
+        scope: "dd",
+        content: [
+          %{
+            "name" => "test",
+            "fields" => [
+              build_field.("fixed_list", %{
+                "values" => %{
+                  "fixed" => ["foo", "bar"]
+                }
+              }),
+              build_field.("key_value_list", %{
+                "values" => %{
+                  "fixed_tuple" => [
+                    %{
+                      "text" => "t1",
+                      "value" => "v1"
+                    },
+                    %{
+                      "text" => "t2",
+                      "value" => "v2"
+                    }
+                  ]
+                }
+              })
+            ]
+          }
+        ]
+      }
+
+      %{id: template_id} = CacheHelpers.insert_template(template)
+
+      assert [
+               %{
+                 "name" => "fixed_list",
+                 "possible_values" => ["foo", "bar"]
+               },
+               %{
+                 "name" => "key_value_list",
+                 "possible_values" => ["v1", "v2"]
+               }
+             ] = StructureNotes.suggestion_fields_for_template(template_id)
+    end
+  end
+
   defp get_last_id_updated_at_notes(notes) do
     last_note = List.last(notes)
     id = last_note.id

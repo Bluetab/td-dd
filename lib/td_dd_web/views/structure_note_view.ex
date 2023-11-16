@@ -34,6 +34,10 @@ defmodule TdDdWeb.StructureNoteView do
     %{data: render_one(structure_note, StructureNoteView, "structure_note.json")}
   end
 
+  def render("suggestions.json", %{suggestions: suggestions}) do
+    %{data: suggestions}
+  end
+
   def render(
         "structure_note.json",
         %{structure_note: %{_diff: [_ | _]} = structure_note}
