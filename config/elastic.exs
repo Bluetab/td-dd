@@ -46,7 +46,7 @@ config :td_dd, TdDd.Search.Cluster,
     grants: %{
       store: TdDd.Search.Store,
       sources: [TdDd.Grants.GrantStructure],
-      bulk_page_size: 5000,
+      bulk_page_size: 500,
       bulk_wait_interval: 0,
       bulk_action: "index",
       settings: %{
@@ -158,7 +158,7 @@ config :td_dd, TdDd.Search.Cluster,
     grant_requests: %{
       store: TdDd.Search.Store,
       sources: [TdDd.Grants.GrantRequest],
-      bulk_page_size: 5000,
+      bulk_page_size: 500,
       bulk_wait_interval: 0,
       bulk_action: "index",
       settings: %{

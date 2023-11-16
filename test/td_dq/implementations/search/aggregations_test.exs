@@ -28,7 +28,8 @@ defmodule TdDq.Implementations.Search.AggregationsTest do
                "execution_result_info.result_text" => _,
                "result_type.raw" => _,
                "rule" => _,
-               "source_external_id" => _
+               "source_external_id" => _,
+               "linked_structures_ids" => _
              } = Aggregations.aggregations()
     end
 

@@ -19,6 +19,10 @@ defmodule TdDq.Implementations.Search.Aggregations do
       "structure_taxonomy" => %{
         terms: %{field: "structure_domain_ids", size: 500},
         meta: %{type: "domain"}
+      },
+      "linked_structures_ids" => %{
+        terms: %{field: "linked_structures_ids", size: 50},
+        meta: %{type: "search", index: "structures"}
       }
     }
 

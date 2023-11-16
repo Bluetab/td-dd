@@ -1,13 +1,25 @@
 # Changelog
 
-## [Unreleased]
+## [5.18.0] 2023-11-13
 
 ### Added
 
 - [TD-5390] Validate inplementation key unique when update implementation
+- [TD-4304] Added structures links aggregation in implementation search
 - [TD-6140] Support for AI suggestions on StructureNotes
 
-## [5.17.1]
+### Changed
+
+- [TD-6177] Update td-df-lib to fix format field
+- [TD-5319] Increment system aggregation size in data structures search
+
+## [5.17.2] 2023-11-07
+
+### Fixed
+
+- [TD-6173] Domain_ids grant_request filters and elastic config
+
+## [5.17.1] 2023-11-03
 
 ### Fixed
 
@@ -30,7 +42,13 @@
 
 ## [5.16.2] 2023-10-19
 
+<<<<<<< HEAD
+
 ## [5.16.1] 2023-10-18
+
+=======
+
+> > > > > > > 81e6d56d160f55ad43e453dfbe0122100524649d
 
 ### Fixed
 
