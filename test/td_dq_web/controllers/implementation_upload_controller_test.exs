@@ -47,6 +47,47 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
       assert length(ids) == 3
     end
 
+    for status <- ["deprecated", "pending_approval", "versioned"] do
+      @tag authentication: [role: "admin"]
+      @tag status: status
+      test "uploads #{status} implementation returns error", %{
+        conn: conn,
+        status: status
+      } do
+        insert(
+          :implementation,
+          implementation_key: "boo_key_1",
+          status: status
+        )
+
+        attrs = %{
+          implementations: %Plug.Upload{
+            filename: "implementations.csv",
+            path: "test/fixtures/implementations/implementations.csv"
+          }
+        }
+
+        assert %{"data" => data} =
+                 conn
+                 |> post(Routes.implementation_upload_path(conn, :create), attrs)
+                 |> json_response(:ok)
+
+        assert %{
+                 "ids" => ids,
+                 "errors" => errors
+               } = data
+
+        assert length(ids) == 2
+
+        assert [
+                 %{
+                   "implementation_key" => "boo_key_1",
+                   "message" => %{"implementation" => [^status]}
+                 }
+               ] = errors
+      end
+    end
+
     @tag authentication: [role: "user"]
     test "return error if user has no permissions", %{conn: conn} do
       attrs = %{
