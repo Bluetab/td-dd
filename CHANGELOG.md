@@ -1,12 +1,21 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-6140] Support for AI suggestions on StructureNotes
+
+### Fixed
+
+- [TD-6176] Bulk upload deprecated implementations
+
 ## [5.18.0] 2023-11-13
 
 ### Added
 
 - [TD-5390] Validate inplementation key unique when update implementation
 - [TD-4304] Added structures links aggregation in implementation search
-- [TD-6140] Support for AI suggestions on StructureNotes
 
 ### Changed
 
@@ -42,13 +51,7 @@
 
 ## [5.16.2] 2023-10-19
 
-<<<<<<< HEAD
-
 ## [5.16.1] 2023-10-18
-
-=======
-
-> > > > > > > 81e6d56d160f55ad43e453dfbe0122100524649d
 
 ### Fixed
 
