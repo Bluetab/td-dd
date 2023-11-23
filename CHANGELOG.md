@@ -9,6 +9,7 @@
 ### Fixed
 
 - [TD-6176] Bulk upload deprecated implementations
+- [TD-6145] Deprecate implementation on rule soft deletion
 
 ## [5.18.0] 2023-11-13
 
