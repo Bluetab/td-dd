@@ -49,22 +49,6 @@ defmodule TdDd.Repo.Migrations.AddNhsMvTableProfile do
       "DROP MATERIALIZED VIEW IF EXISTS vm_table_profile"
     )
 
-    execute(
-      """
-      SELECT cron.schedule(
-      'vm_table_profile',
-      '*/5 * * * *',
-      $CRON$ REFRESH MATERIALIZED VIEW public.vm_table_profile; $CRON$
-
-      """,
-      "SELECT cron.unschedule('vm_table_profile')"
-    )
-
-    execute(
-      """
-      UPDATE cron.job SET database = 'td_dd' WHERE jobid = (select jobid from cron.job where jobname  = 'vm_table_profile')
-
-      """
-    )
+   
   end
 end
