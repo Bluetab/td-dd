@@ -49,9 +49,6 @@ defmodule TdDd.Repo.Migrations.AddNhsMvTableProfile do
       "DROP MATERIALIZED VIEW IF EXISTS vm_table_profile"
     )
 
-<<<<<<< HEAD:priv/repo/migrations/20231123094640_add_nhs_mv_table_profile.exs
    
-=======
->>>>>>> 191ae2cb3b54249f175b4d74d6fd73b3772f799a:priv/repo/migrations/20231103094638_add_nhs_mv_table_profile.exs
   end
 end

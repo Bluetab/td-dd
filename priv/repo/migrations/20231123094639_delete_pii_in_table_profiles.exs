@@ -1,4 +1,4 @@
-defmodule TdDd.Repo.Migrations.DeleteNhsPiiDataFromProfile do
+defmodule TdDd.Repo.Migrations.DeletePiiInTableProfile do
   use Ecto.Migration
 
   def change do
@@ -13,6 +13,12 @@ defmodule TdDd.Repo.Migrations.DeleteNhsPiiDataFromProfile do
       )
       """
     
+    )
+
+    execute(
+      """
+      REFRESH MATERIALIZED VIEW public.vm_table_profile
+      """
     )
 
    

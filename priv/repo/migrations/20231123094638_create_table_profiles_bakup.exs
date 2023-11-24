@@ -1,4 +1,4 @@
-defmodule TdDd.Repo.Migrations.CrfeateNhsTableProfileBackup do
+defmodule TdDd.Repo.Migrations.CreateTableProfilesBakup do
   use Ecto.Migration
 
   def change do
