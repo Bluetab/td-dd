@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [5.19.0] 2023-11-28
 
 ### Added
 
@@ -52,7 +52,6 @@
 - [TD-6088] Improve implementations reindex
 
 ## [5.16.2] 2023-10-19
-
 ## [5.16.1] 2023-10-18
 
 ### Fixed
