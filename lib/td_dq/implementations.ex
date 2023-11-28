@@ -241,6 +241,16 @@ defmodule TdDq.Implementations do
   end
 
   def update_implementation(
+        %Implementation{status: status, implementation_key: implementation_key},
+        _,
+        _,
+        _
+      )
+      when status in [:deprecated, :pending_approval, :versioned] do
+    {:error, {implementation_key, status}}
+  end
+
+  def update_implementation(
         %Implementation{status: status} = implementation,
         params,
         %Claims{user_id: user_id} = claims,

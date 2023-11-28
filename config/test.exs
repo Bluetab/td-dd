@@ -32,6 +32,8 @@ config :td_dd, :vault,
 
 config :td_dd, TdDd.DataStructures.HistoryManager, history_depth_days: 5
 
+config :td_cluster, TdCluster.ClusterHandler, MockClusterHandler
+
 config :vaultex, vault_addr: "http://vault:8200"
 
 config :td_cache, :audit, stream: "audit:events:test"

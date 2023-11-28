@@ -273,7 +273,7 @@ defmodule TdDq.Rules do
       |> select([ri, _], ri)
 
     Multi.new()
-    |> Multi.update_all(:deprecated, impls_to_delete, set: [deleted_at: ts])
+    |> Multi.update_all(:deprecated, impls_to_delete, set: [deleted_at: ts, status: "deprecated"])
     |> Multi.update_all(:rules, rules_to_delete, set: [deleted_at: ts])
     |> Multi.run(:audit, Audit, :implementations_deprecated, [])
     # TODO: audit rule deletion?

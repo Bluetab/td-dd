@@ -1,5 +1,17 @@
 # Changelog
 
+## [5.19.0] 2023-11-28
+
+### Added
+
+- [TD-6140] Support for AI suggestions on StructureNotes
+
+### Fixed
+
+- [TD-6176] Bulk upload deprecated implementations
+- [TD-6145] Deprecate implementation on rule soft deletion
+- [TD-6235] Fix regex new raw implementation sql
+
 ## [5.18.0] 2023-11-13
 
 ### Added
