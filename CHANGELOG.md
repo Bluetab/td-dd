@@ -10,6 +10,7 @@
 
 - [TD-6176] Bulk upload deprecated implementations
 - [TD-6145] Deprecate implementation on rule soft deletion
+- [TD-6235] Fix regex new raw implementation sql
 
 ## [5.18.0] 2023-11-13
 
