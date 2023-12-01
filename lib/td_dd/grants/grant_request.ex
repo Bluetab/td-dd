@@ -7,6 +7,8 @@ defmodule TdDd.Grants.GrantRequest do
   import Ecto.Changeset
 
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.Grants.Grant
   alias TdDd.Grants.GrantRequestApproval
   alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Grants.GrantRequestStatus
@@ -21,11 +23,23 @@ defmodule TdDd.Grants.GrantRequest do
     field(:approved_by, {:array, :string}, virtual: true)
     field(:status_reason, :string, virtual: true)
     field(:domain_ids, {:array, :integer}, default: [])
+
+    field(
+      :request_type,
+      Ecto.Enum,
+      values: [
+        :grant_access,
+        :grant_removal,
+        :grant_modification
+      ]
+    )
+
     # updated_at is derived from most recent status
     field(:updated_at, :utc_datetime_usec, virtual: true)
 
     belongs_to(:group, GrantRequestGroup)
     belongs_to(:data_structure, DataStructure)
+    belongs_to(:grant, Grant)
 
     has_many(:status, GrantRequestStatus)
     has_many(:approvals, GrantRequestApproval)
@@ -35,14 +49,32 @@ defmodule TdDd.Grants.GrantRequest do
     timestamps(type: :utc_datetime_usec, updated_at: false)
   end
 
+  def changeset(
+        %__MODULE__{} = struct,
+        %{"request_type" => "grant_removal"} = params,
+        template_name
+      ) do
+    struct
+    |> cast(
+      params,
+      [:filters, :data_structure_id, :grant_id, :request_type]
+    )
+    |> maybe_put_identifier(struct, template_name)
+    |> validate_change(:filters, &Validation.validate_safe/2)
+    |> check_constraint(:resource, name: :only_one_resource)
+  end
+
   def changeset(%__MODULE__{} = struct, params, template_name) do
     struct
-    |> cast(params, [:filters, :metadata, :data_structure_id])
+    |> cast(
+      params,
+      [:filters, :metadata, :data_structure_id, :grant_id, :request_type]
+    )
     |> maybe_put_identifier(struct, template_name)
     |> validate_content(template_name)
     |> validate_change(:filters, &Validation.validate_safe/2)
     |> validate_change(:metadata, &Validation.validate_safe/2)
-    |> foreign_key_constraint(:data_structure_id)
+    |> check_constraint(:resource, name: :only_one_resource)
   end
 
   defp maybe_put_identifier(
@@ -97,11 +129,13 @@ defmodule TdDd.Grants.GrantRequest do
     def routing(_), do: false
 
     @impl Elasticsearch.Document
-
     def encode(
           %{
             data_structure_version: dsv,
-            group: %GrantRequestGroup{} = group
+            group: %GrantRequestGroup{} = group,
+            grant_id: grant_id,
+            grant: grant,
+            request_type: request_type
           } = grant_request
         ) do
       template =
@@ -115,8 +149,6 @@ defmodule TdDd.Grants.GrantRequest do
         grant_request
         |> Map.get(:metadata)
         |> Format.search_values(template)
-
-      dsv = if is_nil(dsv), do: nil, else: Elasticsearch.Document.encode(dsv)
 
       %{
         id: grant_request.id,
@@ -138,13 +170,33 @@ defmodule TdDd.Grants.GrantRequest do
           full_name: user_full_name(created_by)
         },
         data_structure_id: grant_request.data_structure_id,
-        data_structure_version: dsv,
+        data_structure_version: encode_data_structure_version(dsv),
+        grant_id: grant_id,
+        grant: encode_grant(grant),
         inserted_at: grant_request.inserted_at,
         type: group.type,
         metadata: metadata,
-        modification_grant_id: group.modification_grant_id
+        modification_grant_id: group.modification_grant_id,
+        request_type: request_type
       }
     end
+
+    defp encode_grant(%Grant{id: id, data_structure_version: grant_dsv}) do
+      %{
+        id: id,
+        data_structure_version: encode_data_structure_version(grant_dsv)
+      }
+    end
+
+    defp encode_grant(%Ecto.Association.NotLoaded{}), do: nil
+
+    defp encode_grant(nil), do: nil
+
+    defp encode_data_structure_version(%DataStructureVersion{} = dsv) do
+      Elasticsearch.Document.encode(dsv)
+    end
+
+    defp encode_data_structure_version(_), do: nil
 
     defp user_full_name(%{full_name: full_name}) do
       full_name

@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-6140] Support for AI suggestions on StructureNotes
+- [TD-5505] Grant removal request workflow
 
 ### Fixed
 

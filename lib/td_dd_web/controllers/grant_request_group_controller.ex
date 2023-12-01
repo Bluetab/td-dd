@@ -25,9 +25,8 @@ defmodule TdDdWeb.GrantRequestGroupController do
          {:ok, params} <- with_valid_requests(params),
          :ok <- can_create_on_structures(claims, params),
          :ok <- Bodyguard.permit(Requests, :create_grant_request_group, claims, params),
-         modification_grant <- with_modification_grant(params),
          {:ok, %{group: %{id: id}}} <-
-           Requests.create_grant_request_group(params, modification_grant),
+           Requests.create_grant_request_group(params),
          %{} = group <- Requests.get_grant_request_group!(id) do
       conn
       |> put_status(:created)
@@ -44,15 +43,9 @@ defmodule TdDdWeb.GrantRequestGroupController do
     |> Map.put("created_by_id", created_by_id)
   end
 
-  defp with_modification_grant(%{"modification_grant_id" => grant_id}) when not is_nil(grant_id),
-    do: Grants.get_grant!(grant_id)
-
-  defp with_modification_grant(_), do: nil
-
-  defp with_valid_requests(%{"requests" => [_ | _] = requests, "type" => type} = params)
+  defp with_valid_requests(%{"requests" => [_ | _] = requests} = params)
        when is_list(requests) do
     requests
-    |> Enum.map(&Map.put(&1, "group_type", type))
     |> Enum.reduce_while([], &validate_child_request/2)
     |> case do
       {:error, _, _} = error -> error
@@ -62,6 +55,13 @@ defmodule TdDdWeb.GrantRequestGroupController do
 
   defp with_valid_requests(_),
     do: {:error, :unprocessable_entity, "at least one request is required"}
+
+  defp validate_child_request(%{"grant_id" => grant_id} = request, requests) do
+    case Grants.get_grant(grant_id) do
+      nil -> {:halt, {:error, :not_found, "Grant"}}
+      grant -> {:cont, requests ++ [Map.put(request, "grant", grant)]}
+    end
+  end
 
   defp validate_child_request(%{"data_structure_id" => data_structure_id} = request, requests) do
     case DataStructures.get_data_structure(data_structure_id) do
@@ -94,6 +94,13 @@ defmodule TdDdWeb.GrantRequestGroupController do
 
   defp can_create_on_structures(claims, %{"requests" => requests}) do
     Enum.reduce_while(requests, nil, fn req, _ -> can_create_on_structure(claims, req) end)
+  end
+
+  defp can_create_on_structure(claims, %{"grant" => grant}) do
+    case Bodyguard.permit(Grants, :manage, claims, grant) do
+      :ok -> {:cont, :ok}
+      error -> {:halt, error}
+    end
   end
 
   defp can_create_on_structure(claims, %{"data_structure" => data_structure}) do
