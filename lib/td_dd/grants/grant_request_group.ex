@@ -20,15 +20,14 @@ defmodule TdDd.Grants.GrantRequestGroup do
     timestamps(type: :utc_datetime_usec)
   end
 
-  def changeset(%__MODULE__{} = struct, params, %Grant{} = modification_grant) do
+  def changeset(%__MODULE__{} = struct, params) do
     struct
-    |> changeset(params, nil)
-    |> put_assoc(:modification_grant, modification_grant)
-  end
-
-  def changeset(%__MODULE__{} = struct, params, _) do
-    struct
-    |> cast(params, [:type, :user_id, :created_by_id])
+    |> cast(params, [:type, :user_id, :created_by_id, :modification_grant_id])
+    |> foreign_key_constraint(
+      :modification_grant,
+      name: :grant_request_groups_modification_grant_id_fkey,
+      message: "grant request group modification_grant_id does not exist"
+    )
     |> cast_requests()
   end
 

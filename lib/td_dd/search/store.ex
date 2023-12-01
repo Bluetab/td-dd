@@ -46,22 +46,8 @@ defmodule TdDd.Search.Store do
     |> do_stream_grants()
   end
 
-  @impl true
-  def stream(GrantRequest = schema) do
-    grants_request_count = Repo.aggregate(GrantRequest, :count, :id)
-    Tasks.log_start_stream(grants_request_count)
-    users = TdCache.UserCache.map()
-    status_subquery = status_subquery()
-    approved_by_subquery = approved_by_subquery()
-
-    schema
-    |> join(:left, [gr], s in ^status_subquery, on: s.grant_request_id == gr.id)
-    |> join(:left, [gr], gra in ^approved_by_subquery, on: gra.grant_request_id == gr.id)
-    |> select([gr, s, gra], %GrantRequest{gr | current_status: s.status, approved_by: gra.role})
-    |> Repo.stream()
-    |> Repo.stream_preload(chunk_size(), :group)
-    |> Stream.chunk_every(chunk_size())
-    |> Stream.flat_map(&enrich_chunk_grant_request_structures(&1, users))
+  def stream(GrantRequest) do
+    stream(GrantRequest, nil)
   end
 
   def stream(DataStructureVersion, data_structure_ids) do
@@ -83,23 +69,48 @@ defmodule TdDd.Search.Store do
   end
 
   def stream(GrantRequest = schema, ids) do
-    grants_request_count = Enum.count(ids)
+    grants_request_count = Repo.aggregate(GrantRequest, :count, :id)
     Tasks.log_start_stream(grants_request_count)
     users = TdCache.UserCache.map()
-
     status_subquery = status_subquery()
     approved_by_subquery = approved_by_subquery()
 
     schema
     |> join(:left, [gr], s in ^status_subquery, on: s.grant_request_id == gr.id)
     |> join(:left, [gr], gra in ^approved_by_subquery, on: gra.grant_request_id == gr.id)
-    |> where([gr], gr.id in ^ids)
-    |> select([gr, s, gra], %GrantRequest{gr | current_status: s.status, approved_by: gra.role})
+    |> join(:left, [gr, _s, _gra], grant in assoc(gr, :grant))
+    |> join(:left, [gr, _s, _gra, grant], dsv in assoc(grant, :data_structure_version))
+    |> where_ids(ids)
+    |> select(
+      [gr, s, gra, grant, dsv],
+      {
+        %GrantRequest{
+          gr
+          | current_status: s.status,
+            approved_by: gra.role,
+            grant: grant
+        },
+        dsv
+      }
+    )
     |> Repo.stream()
-    |> Repo.stream_preload(chunk_size(), :group)
+    |> Stream.map(fn
+      {%{grant: nil} = grant_request, _grant_dsv} ->
+        grant_request
+
+      {%{grant: %Grant{} = _grant} = grant_request, grant_dsv} ->
+        Kernel.put_in(grant_request.grant.data_structure_version, grant_dsv)
+    end)
+    |> Repo.stream_preload(1000, :group)
     |> Stream.chunk_every(chunk_size())
     |> Stream.flat_map(&enrich_chunk_grant_request_structures(&1, users))
   end
+
+  defp where_ids(query, ids) when is_list(ids) do
+    where(query, [gr], gr.id in ^ids)
+  end
+
+  defp where_ids(query, nil), do: query
 
   defp status_subquery do
     GrantRequestStatus
@@ -207,8 +218,12 @@ defmodule TdDd.Search.Store do
   defp enrich_chunk_grant_request_structures(grant_request_chunks, users) do
     structure_ids =
       grant_request_chunks
-      |> Enum.map(fn %{data_structure_id: structure_id} ->
-        structure_id
+      |> Enum.map(fn
+        %{data_structure_id: structure_id} when not is_nil(structure_id) ->
+          structure_id
+
+        %{grant: %{data_structure_id: grant_dsid}} when not is_nil(grant_dsid) ->
+          grant_dsid
       end)
       |> Enum.uniq()
 
@@ -232,6 +247,7 @@ defmodule TdDd.Search.Store do
            } = grant_request ->
           grant_request
           |> Map.put(:data_structure_version, Map.get(dsv_with_ds_index, structure_id))
+          |> maybe_update_grant_dsv(dsv_with_ds_index)
           |> Map.put(:user, Map.get(users, user_id))
           |> Map.put(:created_by, Map.get(users, created_by_id))
         end
@@ -243,6 +259,18 @@ defmodule TdDd.Search.Store do
 
     result
   end
+
+  defp maybe_update_grant_dsv(
+         %{grant: %{data_structure_id: grant_dsid}} = grant_request,
+         dsv_with_ds_index
+       ) do
+    Kernel.put_in(
+      grant_request.grant.data_structure_version,
+      Map.get(dsv_with_ds_index, grant_dsid)
+    )
+  end
+
+  defp maybe_update_grant_dsv(grant_request, _), do: grant_request
 
   defp chunk_size, do: Application.get_env(__MODULE__, :chunk_size, 1000)
 

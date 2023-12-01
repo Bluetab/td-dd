@@ -24,7 +24,88 @@ defmodule TdDdWeb.Schema.GrantRequestsTest do
   }
   """
 
+  @grant_request_query_by_grant """
+  query latestGrantRequest($id: ID!, $requestType: RequestTypeEnum!) {
+    latestGrantRequest(grantId: $id, requestType: $requestType) {
+      id
+      group {
+        grant {
+          id
+        }
+      }
+      requestType
+      status {
+        status
+      }
+    }
+  }
+  """
+
   describe "Grant request query" do
+    @tag authentication: [
+           role: "user",
+           permissions: [:view_grants, :manage_grants, :view_data_structure]
+         ]
+    test "returns grant by grant_id and request_type", %{
+      conn: conn,
+      claims: %{user_id: user_id} = _claims,
+      domain: %{id: domain_id}
+    } do
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain_id])
+
+      %{id: grant_id} =
+        grant =
+        insert(:grant,
+          data_structure_id: data_structure_id
+        )
+
+      %{id: grant_removal_request_id} =
+        insert(:grant_request,
+          grant: grant,
+          request_type: :grant_removal,
+          current_status: "pending",
+          domain_ids: [domain_id],
+          group: build(:grant_request_group, user_id: user_id)
+        )
+
+      insert(:grant_request_status,
+        grant_request_id: grant_removal_request_id,
+        status: "pending",
+        reason: "status_pending"
+      )
+
+      %{id: grant_modification_request_id} =
+        insert(:grant_request,
+          grant: grant,
+          request_type: :grant_modification,
+          current_status: "pending",
+          domain_ids: [domain_id],
+          group: build(:grant_request_group, user_id: user_id)
+        )
+
+      insert(:grant_request_status,
+        grant_request_id: grant_modification_request_id,
+        status: "pending",
+        reason: "status_pending"
+      )
+
+      assert %{"data" => %{"latestGrantRequest" => grant_request}} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @grant_request_query_by_grant,
+                 "variables" => %{"id" => grant_id, "requestType" => "GRANT_REMOVAL"}
+               })
+               |> json_response(:ok)
+
+      grant_removal_request_id_string = to_string(grant_removal_request_id)
+
+      assert %{
+               "id" => ^grant_removal_request_id_string,
+               "requestType" => "GRANT_REMOVAL",
+               "status" => %{"status" => "pending"}
+             } = grant_request
+    end
+
     @tag authentication: [role: "admin"]
     test "return owns grant request by structure_id", %{
       conn: conn,

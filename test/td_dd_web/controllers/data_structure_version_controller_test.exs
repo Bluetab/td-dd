@@ -703,7 +703,11 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
     @tag authentication: [
            role: "user",
-           permissions: [:view_data_structure, :request_grant_removal]
+           permissions: [
+             :view_data_structure,
+             :manage_grant_removal,
+             :manage_foreign_grant_removal
+           ]
          ]
     test "user with permission can update grant removal", %{
       conn: conn,
