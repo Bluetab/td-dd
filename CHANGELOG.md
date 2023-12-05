@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unversioned]
+
+### Removed
+
+- [TD-6217] Remove process that automatically deprecates implementations
+
 ## [5.19.0] 2023-11-28
 
 ### Added
