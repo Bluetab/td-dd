@@ -96,11 +96,11 @@ defmodule TdDdWeb.GrantRequestGroupController do
     Enum.reduce_while(requests, nil, fn req, _ -> can_create_on_structure(claims, req) end)
   end
 
-  defp can_create_on_structure(claims, %{"grant" => grant}) do
-    case Bodyguard.permit(Grants, :manage, claims, grant) do
-      :ok -> {:cont, :ok}
-      error -> {:halt, error}
-    end
+  # Grant removal request
+  defp can_create_on_structure(_claims, %{"grant" => _grant}) do
+    # No permissions for the time being. Maybe :create_grant_request
+    # could be reused (currently checked for grant creation)
+    {:cont, :ok}
   end
 
   defp can_create_on_structure(claims, %{"data_structure" => data_structure}) do
