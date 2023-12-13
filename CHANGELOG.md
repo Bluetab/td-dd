@@ -1,17 +1,24 @@
 # Changelog
 
-## [Unversioned]
+## [Unreleased]
+
+### Added
+
+- [TD-5505] Grant removal request workflow
 
 ### Removed
 
 - [TD-6217] Remove process that automatically deprecates implementations
+
+### Fixed
+
+- [TD-5505] Remove :manage_grant permission for grant removal request group
 
 ## [5.19.0] 2023-11-28
 
 ### Added
 
 - [TD-6140] Support for AI suggestions on StructureNotes
-- [TD-5505] Grant removal request workflow
 
 ### Fixed
 
