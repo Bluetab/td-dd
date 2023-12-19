@@ -26,6 +26,16 @@ defmodule TdDd.Grants do
     |> maybe_put_user()
   end
 
+  def get_grant(id) do
+    query =
+      from g in Grant,
+        join: ds in assoc(g, :data_structure),
+        where: g.id == ^id,
+        preload: [data_structure: ds]
+
+    Repo.one(query)
+  end
+
   def create_grant(
         params,
         %{id: data_structure_id} = data_structure,

@@ -59,7 +59,7 @@ defmodule TdDdWeb.GrantView do
     version =
       dsv
       |> DataStructureVersionView.add_ancestry()
-      |> Map.take([:name, :ancestry])
+      |> Map.take([:name, :ancestry, :path])
 
     Map.put(grant, :data_structure_version, version)
   end
@@ -75,7 +75,8 @@ defmodule TdDdWeb.GrantView do
         :description,
         :external_id,
         :metadata,
-        :mutable_metadata
+        :mutable_metadata,
+        :path
       ])
       |> Map.put(:domain, dsv.domain)
 

@@ -8,6 +8,8 @@ defmodule TdDdWeb.GrantRequestApprovalController do
   def create(conn, %{"grant_request_id" => id, "approval" => params}) do
     with claims <- conn.assigns[:current_resource],
          request <- Requests.get_grant_request!(id, claims),
+         # assuming :approve also includes :manage_grant_removal to approve grant
+         # requests of type :grant_removal
          :ok <- Bodyguard.permit(Requests, :approve, claims, request),
          {:ok, %{approval: approval}} <- Requests.create_approval(claims, request, params) do
       conn

@@ -66,7 +66,8 @@ defmodule TdDd.DataStructures.Policy do
              :link_data_structure,
              :link_structure_to_structure,
              :manage_grants,
-             :request_grant_removal,
+             :manage_grant_removal,
+             :manage_foreign_grant_removal,
              :update_data_structure,
              :view_data_structures_profile,
              :view_grants,
@@ -81,7 +82,7 @@ defmodule TdDd.DataStructures.Policy do
       when action in [
              :create_grant_request,
              :create_foreign_grant_request,
-             :request_grant_removal
+             :manage_grant_removal
            ] do
     Permissions.authorized?(claims, :view_data_structure, domain_ids) and
       Permissions.authorized?(claims, _permission = action, domain_ids)

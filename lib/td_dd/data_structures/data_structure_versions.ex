@@ -164,7 +164,8 @@ defmodule TdDd.DataStructures.DataStructureVersions do
         profile_permission: permit?(TdDd.Profiles, :profile, claims, dsv),
         request_grant: can_request_grant?(claims, data_structure),
         update_grant_removal:
-          permit?(DataStructures, :request_grant_removal, claims, data_structure),
+          permit?(DataStructures, :manage_grant_removal, claims, data_structure) and
+            permit?(DataStructures, :manage_foreign_grant_removal, claims, data_structure),
         create_foreign_grant_request:
           permit?(DataStructures, :create_foreign_grant_request, claims, data_structure)
       }
@@ -184,7 +185,7 @@ defmodule TdDd.DataStructures.DataStructureVersions do
     %{
       request_grant: can_request_grant?(claims, data_structure),
       update_grant_removal:
-        permit?(DataStructures, :request_grant_removal, claims, data_structure),
+        permit?(DataStructures, :manage_grant_removal, claims, data_structure),
       create_foreign_grant_request:
         permit?(DataStructures, :create_foreign_grant_request, claims, data_structure)
     }

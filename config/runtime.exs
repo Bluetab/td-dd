@@ -89,11 +89,6 @@ if config_env() == :prod do
         task: {TdDq.Cache.ImplementationLoader, :refresh, []},
         run_strategy: Quantum.RunStrategy.Local
       ],
-      rule_cache_refresher: [
-        schedule: System.get_env("CACHE_REFRESH_SCHEDULE", "@hourly"),
-        task: {TdDq.Implementations.Tasks, :deprecate_implementations, []},
-        run_strategy: Quantum.RunStrategy.Local
-      ],
       rule_indexer: [
         schedule: System.get_env("ES_REFRESH_SCHEDULE", "@daily"),
         task: {TdDq.Search.IndexWorker, :reindex, []},

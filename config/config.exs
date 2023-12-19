@@ -152,11 +152,6 @@ config :td_dd, TdDd.Scheduler,
       task: {TdDq.Cache.ImplementationLoader, :refresh, []},
       run_strategy: Quantum.RunStrategy.Local
     ],
-    rule_cache_refresher: [
-      schedule: "@hourly",
-      task: {TdDq.Implementations.Tasks, :deprecate_implementations, []},
-      run_strategy: Quantum.RunStrategy.Local
-    ],
     rule_indexer: [
       schedule: "@daily",
       task: {TdDq.Search.IndexWorker, :reindex, []},

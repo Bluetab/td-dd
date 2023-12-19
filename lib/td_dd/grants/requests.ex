@@ -11,8 +11,11 @@ defmodule TdDd.Grants.Requests do
   alias TdCache.UserCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.Grants
   alias TdDd.Grants.ApprovalRules
   alias TdDd.Grants.Audit
+  alias TdDd.Grants.Grant
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestApproval
   alias TdDd.Grants.GrantRequestGroup
@@ -46,15 +49,11 @@ defmodule TdDd.Grants.Requests do
     |> Repo.get!(id)
   end
 
-  def create_grant_request_group(
-        %{} = params,
-        modification_grant \\ nil
-      ) do
+  def create_grant_request_group(%{} = params) do
     changeset =
       GrantRequestGroup.changeset(
         %GrantRequestGroup{},
-        params,
-        modification_grant
+        params
       )
 
     Multi.new()
@@ -114,11 +113,22 @@ defmodule TdDd.Grants.Requests do
   end
 
   defp update_domain_ids(%{group: %{id: id}}) do
+    query =
+      GrantRequest
+      |> join(:left, [gr], ds in assoc(gr, :data_structure))
+      |> join(:left, [gr], g in assoc(gr, :grant))
+      |> join(:left, [_gr, _ds, g], gds in assoc(g, :data_structure))
+      |> select([gr, ds, _g, gds], %{
+        group_id: gr.group_id,
+        domain_ids: fragment("COALESCE(?, ?)", ds.domain_ids, gds.domain_ids)
+      })
+      |> where([gr, _, _, _], gr.group_id == ^id)
+
     GrantRequest
+    |> join(:inner, [gr, sub], sub in subquery(query), on: true)
+    |> where([gr, sub], gr.group_id == sub.group_id)
+    |> update([gr, sub], set: [domain_ids: sub.domain_ids])
     |> select([gr], gr.id)
-    |> where([gr], gr.group_id == ^id)
-    |> join(:inner, [gr], ds in assoc(gr, :data_structure))
-    |> update([gr, ds], set: [domain_ids: ds.domain_ids])
   end
 
   def delete_grant_request_group(%GrantRequestGroup{} = group) do
@@ -240,7 +250,11 @@ defmodule TdDd.Grants.Requests do
       })
 
     clauses
-    |> Map.put_new(:preload, group: [:modification_grant], data_structure: :current_version)
+    |> Map.put_new(:preload,
+      grant: :data_structure_version,
+      group: [:modification_grant],
+      data_structure: :current_version
+    )
     |> Enum.reduce(query, fn
       {:preload, preloads}, q ->
         preload(q, ^preloads)
@@ -271,15 +285,25 @@ defmodule TdDd.Grants.Requests do
     end)
   end
 
-  def latest_grant_request_by_data_structure(data_structure_id, user_id) do
-    GrantRequest
+  def latest_grant_request(%{data_structure_id: data_structure_id}, user_id) do
+    latest_grant_request_query(user_id)
     |> where([r], data_structure_id: ^data_structure_id)
+    |> Repo.one()
+  end
+
+  def latest_grant_request(%{grant_id: grant_id, request_type: request_type}, user_id) do
+    latest_grant_request_query(user_id)
+    |> where([r], grant_id: ^grant_id, request_type: ^request_type)
+    |> Repo.one()
+  end
+
+  defp latest_grant_request_query(user_id) do
+    GrantRequest
     |> join(:inner, [r], g in assoc(r, :group))
     |> where([_, g], g.user_id == ^user_id)
     |> preload(:group)
     |> order_by(desc: :inserted_at)
     |> limit(1)
-    |> Repo.one()
   end
 
   def latest_grant_request_by_data_structures(data_structure_ids, user_id) do
@@ -331,7 +355,13 @@ defmodule TdDd.Grants.Requests do
 
   def create_approval(
         %{user_id: user_id} = claims,
-        %GrantRequest{id: id, domain_ids: domain_ids, current_status: status} = grant_request,
+        %GrantRequest{
+          id: id,
+          domain_ids: domain_ids,
+          current_status: status,
+          request_type: request_type,
+          grant: grant
+        } = grant_request,
         params,
         approval_rule_id \\ nil
       ) do
@@ -351,10 +381,27 @@ defmodule TdDd.Grants.Requests do
     Multi.new()
     |> Multi.insert(:approval, changeset)
     |> maybe_insert_status(grant_request, Changeset.fetch_field!(changeset, :is_rejection))
+    |> Multi.run(:grant, fn _repo, %{status: status} ->
+      maybe_update_pending_removal(request_type, grant, status, claims)
+    end)
     |> Multi.run(:audit, Audit, :grant_request_approval_created, [])
     |> Repo.transaction()
     |> on_upsert()
     |> enrich()
+  end
+
+  defp maybe_update_pending_removal(
+         :grant_removal,
+         %Grant{} = grant,
+         %{status: "approved"},
+         claims
+       ) do
+    {:ok, %{grant: grant}} = Grants.update_grant(grant, %{pending_removal: true}, claims)
+    {:ok, grant}
+  end
+
+  defp maybe_update_pending_removal(_request_type, _grant, _status, _claims) do
+    {:ok, nil}
   end
 
   def bulk_create_approvals(
@@ -641,12 +688,17 @@ defmodule TdDd.Grants.Requests do
   end
 
   defp enrich(
-         %GrantRequest{group: group, data_structure: data_structure, approvals: approvals} =
-           request
+         %GrantRequest{
+           group: group,
+           data_structure: data_structure,
+           approvals: approvals,
+           grant: grant
+         } = request
        ) do
     %{
       request
       | group: enrich(group),
+        grant: enrich(grant),
         data_structure: enrich(data_structure),
         approvals: enrich(approvals)
     }
@@ -661,6 +713,14 @@ defmodule TdDd.Grants.Requests do
     else
       _ -> group
     end
+  end
+
+  defp enrich(%{data_structure_version: data_structure_version} = grant) do
+    %{grant | data_structure_version: enrich(data_structure_version)}
+  end
+
+  defp enrich(%DataStructureVersion{id: id}) do
+    DataStructures.enriched_structure_versions(ids: [id]) |> hd()
   end
 
   defp enrich(%DataStructure{current_version: %{id: id}} = ds) do

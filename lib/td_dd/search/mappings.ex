@@ -135,10 +135,18 @@ defmodule TdDd.Search.Mappings do
       },
       data_structure_id: %{type: "long"},
       data_structure_version: %{type: "object", properties: dsv_properties},
+      grant: %{
+        type: "object",
+        properties: %{
+          id: %{type: "long", index: false},
+          data_structure_version: %{type: "object", properties: dsv_properties}
+        }
+      },
       inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       type: %{type: "keyword"},
       metadata: content_mappings,
-      modification_grant_id: %{type: "long"}
+      modification_grant_id: %{type: "long"},
+      request_type: %{type: "keyword"}
     }
 
     settings = Cluster.setting(:grant_requests)

@@ -14,7 +14,7 @@ defmodule TdDd.Grants.Audit do
         group: group
       }) do
     %{id: id, created_by_id: created_by_id, requests: requests} =
-      Repo.preload(group, requests: [data_structure: [:current_version]])
+      Repo.preload(group, requests: [grant: [:data_structure], data_structure: [:current_version]])
 
     payload =
       Enum.reduce(
@@ -36,6 +36,17 @@ defmodule TdDd.Grants.Audit do
       requests,
       &take_from_grant_request/1
     )
+  end
+
+  defp take_from_grant_request(%{
+         id: id,
+         grant_id: grant_id
+       })
+       when not is_nil(grant_id) do
+    %{
+      id: id,
+      grant_id: grant_id
+    }
   end
 
   defp take_from_grant_request(%{
@@ -172,6 +183,10 @@ defmodule TdDd.Grants.Audit do
          data_structure: %{domain_ids: domain_ids}
        }) do
     Map.put(payload, :domain_ids, [get_domain_ids(domain_ids) | acc_domain_ids])
+  end
+
+  defp with_acc_domain_ids(%{} = payload, %{grant: %{data_structure: %{domain_ids: domain_ids}}}) do
+    Map.put(payload, :domain_ids, [get_domain_ids(domain_ids)])
   end
 
   defp with_acc_domain_ids(%{} = payload, %{data_structure: %{domain_ids: domain_ids}}) do

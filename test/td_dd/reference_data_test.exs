@@ -1,6 +1,8 @@
 defmodule TdDd.ReferenceDataTest do
   use TdDd.DataCase
 
+  import TdDd.TestOperators
+
   alias TdDd.ReferenceData
 
   describe "ReferenceData.get!/1" do
@@ -22,15 +24,16 @@ defmodule TdDd.ReferenceDataTest do
       assert %{name: "Countries", headers: headers, rows: rows, row_count: 5, domain_ids: [1]} =
                dataset
 
-      assert headers == ["CODE", "DESC_ES", "DESC_EN"]
+      assert headers ||| ["CODE", "DESC_ES", "DESC_EN"]
 
-      assert rows == [
-               ["DE", "Alemania", "Germany"],
-               ["ES", "España", "Spain"],
-               ["FR", "Francia", "France"],
-               ["NL", "Holanda", "Netherlands"],
-               ["UK", "Reino Unido", "United Kingdom"]
-             ]
+      assert rows |||
+               [
+                 ["DE", "Alemania", "Germany"],
+                 ["ES", "España", "Spain"],
+                 ["FR", "Francia", "France"],
+                 ["NL", "Holanda", "Netherlands"],
+                 ["UK", "Reino Unido", "United Kingdom"]
+               ]
     end
   end
 
@@ -46,15 +49,16 @@ defmodule TdDd.ReferenceDataTest do
                })
 
       assert %{name: ^name, headers: headers, rows: rows, row_count: 5, domain_ids: [1]} = dataset
-      assert headers == ["CODE", "DESC_ES", "DESC_EN"]
+      assert headers ||| ["CODE", "DESC_ES", "DESC_EN"]
 
-      assert rows == [
-               ["DE", "Alemania", "Germany"],
-               ["ES", "España", "Spain"],
-               ["FR", "Francia", "France"],
-               ["NL", "Holanda", "Netherlands"],
-               ["UK", "Reino Unido", "United Kingdom"]
-             ]
+      assert rows |||
+               [
+                 ["DE", "Alemania", "Germany"],
+                 ["ES", "España", "Spain"],
+                 ["FR", "Francia", "France"],
+                 ["NL", "Holanda", "Netherlands"],
+                 ["UK", "Reino Unido", "United Kingdom"]
+               ]
     end
   end
 

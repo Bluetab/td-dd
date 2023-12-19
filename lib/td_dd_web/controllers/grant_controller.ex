@@ -12,7 +12,7 @@ defmodule TdDdWeb.GrantController do
 
   action_fallback(TdDdWeb.FallbackController)
 
-  @grant_actions [:request_removal, :cancel_removal, :update]
+  @grant_actions [:manage_grant_removal, :manage_grant_removal_request, :update]
 
   def swagger_definitions do
     SwaggerDefinitions.grant_swagger_definitions()
@@ -118,20 +118,20 @@ defmodule TdDdWeb.GrantController do
     response(422, "Unprocessable Entity")
   end
 
-  def update(conn, %{"id" => id, "action" => "request_removal"}) do
+  def update(conn, %{"id" => id, "action" => "mark_pending_removal"}) do
     with claims <- conn.assigns[:current_resource],
          %Grant{} = grant <- Grants.get_grant!(id, preload: :data_structure),
-         :ok <- Bodyguard.permit(Grants, :request_removal, claims, grant),
+         :ok <- Bodyguard.permit(Grants, :manage_grant_removal, claims, grant),
          {:ok, %{grant: _}} <- Grants.update_grant(grant, %{pending_removal: true}, claims),
          %Grant{} = grant <- Grants.get_grant!(id, preload: [:data_structure, :system]) do
       render(conn, "show.json", grant: grant)
     end
   end
 
-  def update(conn, %{"id" => id, "action" => "cancel_removal"}) do
+  def update(conn, %{"id" => id, "action" => "unmark_pending_removal"}) do
     with claims <- conn.assigns[:current_resource],
          %Grant{} = grant <- Grants.get_grant!(id, preload: :data_structure),
-         :ok <- Bodyguard.permit(Grants, :cancel_removal, claims, grant),
+         :ok <- Bodyguard.permit(Grants, :manage_grant_removal, claims, grant),
          {:ok, %{grant: _}} <- Grants.update_grant(grant, %{pending_removal: false}, claims),
          %Grant{} = grant <- Grants.get_grant!(id, preload: [:data_structure, :system]) do
       render(conn, "show.json", grant: grant)
