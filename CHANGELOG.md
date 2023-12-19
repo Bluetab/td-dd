@@ -1,5 +1,19 @@
 # Changelog
 
+## [5.20.0] 2023-12-19
+
+### Added
+
+- [TD-5505] Grant removal request workflow
+
+### Removed
+
+- [TD-6217] Remove process that automatically deprecates implementations
+
+### Fixed
+
+- [TD-5505] Remove :manage_grant permission for grant removal request group
+
 ## [5.19.0] 2023-11-28
 
 ### Added
@@ -52,6 +66,7 @@
 - [TD-6088] Improve implementations reindex
 
 ## [5.16.2] 2023-10-19
+
 ## [5.16.1] 2023-10-18
 
 ### Fixed

@@ -243,7 +243,7 @@ defmodule TdDd.GrantsTest do
       assert detail == %{}
     end
 
-    test "request_removal of a grant with user_id", %{claims: claims} do
+    test "manage_grant_removal of a grant with user_id", %{claims: claims} do
       grant = insert(:grant, user_id: 123)
 
       params = %{pending_removal: true}
@@ -252,7 +252,9 @@ defmodule TdDd.GrantsTest do
       assert %{pending_removal: true} = grant
     end
 
-    test "request_removal of a grant with source_user_name but not user_id", %{claims: claims} do
+    test "manage_grant_removal of a grant with source_user_name but not user_id", %{
+      claims: claims
+    } do
       grant = insert(:grant, source_user_name: "test_source_user_name")
 
       params = %{

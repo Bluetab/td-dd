@@ -1,8 +1,10 @@
 defmodule TdDd.Grants.RequestsTest do
+  alias TdDd.Grants
   use TdDd.DataCase
 
   import TdDd.TestOperators
 
+  alias TdDd.Grants
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestApproval
   alias TdDd.Grants.GrantRequestGroup
@@ -74,17 +76,17 @@ defmodule TdDd.Grants.RequestsTest do
       %{id: domain_id} = CacheHelpers.insert_domain()
       %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain_id])
       %{user_id: user_id} = build(:claims)
-      %{id: grant_id} = modification_grant = insert(:grant, data_structure_id: data_structure_id)
+      %{id: grant_id} = insert(:grant, data_structure_id: data_structure_id)
 
       params = %{
         type: @template_name,
         requests: [%{data_structure_id: data_structure_id, metadata: @valid_metadata}],
         user_id: user_id,
-        created_by_id: user_id
+        created_by_id: user_id,
+        modification_grant_id: grant_id
       }
 
-      assert {:ok, %{group: group}} =
-               Requests.create_grant_request_group(params, modification_grant)
+      assert {:ok, %{group: group}} = Requests.create_grant_request_group(params)
 
       assert %{
                type: @template_name,
@@ -405,7 +407,7 @@ defmodule TdDd.Grants.RequestsTest do
   end
 
   describe "Requests.create_approval/2" do
-    setup :setup_grant_request
+    setup :setup_request_access
 
     test "approves grant request", %{
       claims: %{user_id: user_id} = claims,
@@ -478,7 +480,64 @@ defmodule TdDd.Grants.RequestsTest do
     end
   end
 
-  defp setup_grant_request(%{claims: %{user_id: user_id}}) do
+  describe "Requests.create_approval/2 Grant request type removal" do
+    setup :setup_request_grant_removal
+
+    test "approves grant request", %{
+      claims: %{user_id: user_id} = claims,
+      domain_id: domain_id,
+      grant: %{id: grant_id} = grant,
+      request: request
+    } do
+      CacheHelpers.put_grant_request_approvers([
+        %{user_id: user_id, domain_id: domain_id, role: "approver"}
+      ])
+
+      assert %{pending_removal: false} = grant
+
+      grant_request_params = %{
+        domain_id: domain_id,
+        role: "approver",
+        request_type: :grant_removal,
+        grant: grant
+      }
+
+      assert {:ok, %{approval: approval}} =
+               Requests.create_approval(claims, request, grant_request_params)
+
+      assert %{is_rejection: false, user: user} = approval
+      assert %{id: ^user_id, user_name: _} = user
+
+      assert %{pending_removal: true} = Grants.get_grant(grant_id)
+
+      assert MockIndexWorker.calls() == [{:reindex_grant_requests, [request.id]}]
+    end
+  end
+
+  defp setup_request_grant_removal(%{claims: %{user_id: user_id}}) do
+    %{id: domain_id} = CacheHelpers.insert_domain()
+    CacheHelpers.insert_user(user_id: user_id)
+
+    %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain_id])
+
+    insert(:data_structure_version, data_structure_id: data_structure_id)
+
+    grant = insert(:grant, data_structure_id: data_structure_id)
+
+    [
+      domain_id: domain_id,
+      grant: grant,
+      request:
+        insert(:grant_request,
+          grant: grant,
+          request_type: :grant_removal,
+          current_status: "pending",
+          domain_ids: [domain_id]
+        )
+    ]
+  end
+
+  defp setup_request_access(%{claims: %{user_id: user_id}}) do
     %{id: domain_id} = CacheHelpers.insert_domain()
     CacheHelpers.insert_user(user_id: user_id)
 

@@ -190,6 +190,63 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
              |> json_response(:created)
     end
 
+    @tag authentication: [
+           user: "non_admin",
+           permissions: [
+             :create_grant_request_group,
+             :view_data_structure,
+             :manage_grants,
+             :create_grant_request
+           ]
+         ]
+    test "creates grant_request_group for grant removal request", %{
+      conn: conn,
+      claims: %{user_id: user_id},
+      domain: %{id: domain_id}
+    } do
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain_id])
+      %{id: grant_id} = insert(:grant, data_structure_id: data_structure_id)
+
+      params = %{
+        "requests" => [
+          %{
+            "grant_id" => grant_id,
+            "filters" => %{},
+            "request_type" => "grant_removal"
+          }
+        ],
+        "type" => "grant_template"
+      }
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.grant_request_group_path(conn, :create),
+                 grant_request_group: params
+               )
+               |> json_response(:created)
+
+      assert %{"id" => id} = data
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.grant_request_group_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "id" => ^id,
+               "user_id" => ^user_id,
+               "_embedded" => %{
+                 "requests" => [
+                   %{
+                     "domain_ids" => [^domain_id],
+                     "filters" => %{},
+                     "request_type" => "grant_removal"
+                   }
+                 ]
+               }
+             } = data
+    end
+
     @tag authentication: [role: "admin"]
     test "renders grant_request_group when data is valid with modification_grant", %{
       conn: conn,

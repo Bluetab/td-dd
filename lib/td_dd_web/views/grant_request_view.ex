@@ -9,9 +9,10 @@ defmodule TdDdWeb.GrantRequestView do
   alias TdDdWeb.GrantRequestApprovalView
   alias TdDdWeb.GrantRequestGroupView
   alias TdDdWeb.GrantRequestView
+  alias TdDdWeb.GrantView
   alias TdDfLib.Format
 
-  @default_embeddings [:data_structure, :group, :approvals]
+  @default_embeddings [:data_structure, :grant, :group, :approvals]
 
   def render("index.json", %{grant_requests: grant_requests}) do
     %{data: render_many(grant_requests, GrantRequestView, "grant_request.json")}
@@ -38,7 +39,8 @@ defmodule TdDdWeb.GrantRequestView do
       :updated_at,
       :pending_roles,
       :all_pending_roles,
-      :domain_ids
+      :domain_ids,
+      :request_type
     ])
     |> Map.put(:status, status)
     |> Map.put(:status_reason, status_reason)
@@ -53,11 +55,14 @@ defmodule TdDdWeb.GrantRequestView do
       :user_id,
       :created_by_id,
       :data_structure_id,
+      :grant,
       :metadata,
       :inserted_at,
       :current_status,
+      :request_type,
       :domain_ids,
-      :modification_grant_id
+      :modification_grant_id,
+      :request_type
     ])
     |> add_structure_version(grant_request)
     |> add_system(grant_request)
@@ -87,6 +92,9 @@ defmodule TdDdWeb.GrantRequestView do
 
       {:group, %{} = group}, acc ->
         Map.put(acc, :group, render_one(group, GrantRequestGroupView, "embedded.json"))
+
+      {:grant, %{} = grant}, acc ->
+        Map.put(acc, :grant, render_one(grant, GrantView, "grant.json"))
 
       {:approvals, approvals}, acc when is_list(approvals) ->
         Map.put(

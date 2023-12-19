@@ -6,11 +6,10 @@ defmodule TdDdWeb.Resolvers.GrantRequests do
   alias TdDd.Grants
   alias TdDd.Grants.Requests
 
-  def latest_grant_request(_parent, %{data_structure_id: data_structure_id}, resolution) do
+  def latest_grant_request(_parent, args, resolution) do
     with {:claims, %{user_id: user_id} = claims} <- {:claims, claims(resolution)},
          {:grant_request, grant_request} <-
-           {:grant_request,
-            Requests.latest_grant_request_by_data_structure(data_structure_id, user_id)},
+           {:grant_request, Requests.latest_grant_request(args, user_id)},
          :ok <- Bodyguard.permit(Requests, :view, claims, grant_request) do
       {:ok, grant_request}
     else
