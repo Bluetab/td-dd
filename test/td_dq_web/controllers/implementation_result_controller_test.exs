@@ -2,10 +2,12 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
   use TdDqWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger_dq.json"
 
-  alias TdDd.Search.MockIndexWorker
+  alias TdCore.Search.MockIndexWorker
 
   setup_all do
-    start_supervised(MockIndexWorker)
+    start_supervised!(TdCore.Search.Cluster)
+    start_supervised!(TdCore.Search.IndexWorker)
+
     :ok
   end
 
@@ -182,10 +184,10 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
         rule_result: params
       )
 
-      assert MockIndexWorker.calls() == [
-               {:reindex_rules, rule_id},
-               {:reindex_implementations, implementation_id}
-             ]
+      assert [
+               {:reindex, :rules, [^rule_id]},
+               {:reindex, :implementations, [^implementation_id]}
+             ] = MockIndexWorker.calls()
     end
 
     @tag authentication: [role: "admin"]

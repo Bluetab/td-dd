@@ -5,7 +5,6 @@ defmodule TdDd.GrantRequests.AuditTest do
   alias TdCache.Redix.Stream
   alias TdDd.Grants.Requests
   alias TdDd.Grants.Statuses
-  alias TdDd.Search.MockIndexWorker
 
   @stream TdCache.Audit.stream()
 
@@ -13,7 +12,9 @@ defmodule TdDd.GrantRequests.AuditTest do
   @valid_metadata %{"list" => "one", "string" => "bar"}
 
   setup do
-    start_supervised(MockIndexWorker)
+    start_supervised!(TdCore.Search.Cluster)
+    start_supervised!(TdCore.Search.IndexWorker)
+
     claims = build(:claims, role: "admin")
     on_exit(fn -> Redix.del!(@stream) end)
     [claims: claims]

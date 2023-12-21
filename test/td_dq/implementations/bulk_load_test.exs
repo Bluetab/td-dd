@@ -52,7 +52,9 @@ defmodule TdDq.Implementations.BulkLoadTest do
   ]
 
   setup do
-    start_supervised!(TdDd.Search.MockIndexWorker)
+    start_supervised!(TdCore.Search.Cluster)
+    start_supervised!(TdCore.Search.IndexWorker)
+
     %{name: template_name} = CacheHelpers.insert_template(scope: "dq")
 
     %{name: hierarchy_template_name} =

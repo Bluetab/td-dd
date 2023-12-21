@@ -9,6 +9,7 @@ defmodule TdDq.Rules do
   alias TdCache.ConceptCache
   alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
+  alias TdCore.Search.IndexWorker
   alias TdDd.Repo
   alias TdDfLib.Format
   alias TdDq.Cache.RuleLoader
@@ -16,8 +17,6 @@ defmodule TdDq.Rules do
   alias TdDq.Rules.Audit
   alias TdDq.Rules.Rule
   alias Truedat.Auth.Claims
-
-  @index_worker Application.compile_env(:td_dd, :dq_index_worker)
 
   defdelegate authorize(action, user, params), to: __MODULE__.Policy
 
@@ -206,7 +205,7 @@ defmodule TdDq.Rules do
   defp on_update(res) do
     with {:ok, %{implementations: {_, implementation_ids}, rule: %{id: rule_id}}} <- res do
       RuleLoader.refresh(rule_id)
-      @index_worker.reindex_implementations(implementation_ids)
+      IndexWorker.reindex(:implementations, implementation_ids)
       res
     end
   end

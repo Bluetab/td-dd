@@ -1,14 +1,15 @@
 defmodule TdDdWeb.GrantRequestControllerTest do
   use TdDdWeb.ConnCase
 
-  alias TdDd.Search.MockIndexWorker
+  alias TdCore.Search.MockIndexWorker
 
   @moduletag sandbox: :shared
   @template_name "grant_request_controller_test_template"
 
   setup do
+    start_supervised!(TdCore.Search.Cluster)
+    start_supervised!(TdCore.Search.IndexWorker)
     start_supervised!(TdDd.Search.StructureEnricher)
-    start_supervised(MockIndexWorker)
     CacheHelpers.insert_template(name: @template_name)
     :ok
   end
@@ -302,7 +303,7 @@ defmodule TdDdWeb.GrantRequestControllerTest do
         get(conn, Routes.grant_request_path(conn, :show, grant_request))
       end
 
-      assert MockIndexWorker.calls() == [{:delete_grant_requests, [grant_request_id]}]
+      assert [{:delete, :grant_requests, [^grant_request_id]}] = MockIndexWorker.calls()
     end
 
     @tag authentication: [user_name: "non_admin"]
@@ -314,7 +315,7 @@ defmodule TdDdWeb.GrantRequestControllerTest do
              |> delete(Routes.grant_request_path(conn, :delete, grant_request))
              |> response(:forbidden)
 
-      assert MockIndexWorker.calls() == []
+      assert [] = MockIndexWorker.calls()
     end
   end
 

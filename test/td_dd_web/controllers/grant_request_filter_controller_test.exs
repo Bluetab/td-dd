@@ -10,7 +10,9 @@ defmodule TdDdWeb.GrantRequestFilterControllerTest do
   }
 
   setup_all do
-    start_supervised(TdDd.Search.Cluster)
+    start_supervised!(TdCore.Search.Cluster)
+    start_supervised!(TdCore.Search.IndexWorker)
+
     :ok
   end
 
@@ -22,7 +24,7 @@ defmodule TdDdWeb.GrantRequestFilterControllerTest do
       ElasticsearchMock
       |> expect(:request, fn
         _, :post, "/grant_requests/_search", %{query: query, size: 0, aggs: _}, _ ->
-          assert query == %{bool: %{filter: %{match_all: %{}}}}
+          assert query == %{bool: %{must: %{match_all: %{}}}}
 
           SearchHelpers.aggs_response(@aggregations)
       end)
@@ -42,7 +44,7 @@ defmodule TdDdWeb.GrantRequestFilterControllerTest do
         _, :post, "/grant_requests/_search", %{query: query, size: 0, aggs: _}, _ ->
           assert %{
                    bool: %{
-                     filter: %{
+                     must: %{
                        bool: %{
                          should: [
                            %{term: %{"domain_ids" => _}}
@@ -69,7 +71,7 @@ defmodule TdDdWeb.GrantRequestFilterControllerTest do
       _, :post, "/grant_requests/_search", %{query: query, size: 0}, _ ->
         assert %{
                  bool: %{
-                   filter: [
+                   must: [
                      %{term: %{"foo" => "bar"}},
                      _permission_filter
                    ]
@@ -92,7 +94,7 @@ defmodule TdDdWeb.GrantRequestFilterControllerTest do
     ElasticsearchMock
     |> expect(:request, fn
       _, :post, "/grant_requests/_search", %{query: query, size: 0, aggs: _}, _ ->
-        assert %{bool: %{filter: %{match_none: %{}}}} = query
+        assert %{bool: %{must: %{match_none: %{}}}} = query
         SearchHelpers.aggs_response()
     end)
 

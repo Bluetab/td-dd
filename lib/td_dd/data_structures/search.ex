@@ -3,12 +3,14 @@ defmodule TdDd.DataStructures.Search do
   The Data Structures Search context
   """
 
-  alias TdDd.DataStructures.Search.Aggregations
+  alias TdCore.Search
+  alias TdCore.Search.ElasticDocument
+  alias TdCore.Search.ElasticDocumentProtocol
+  alias TdCore.Search.Permissions
+  alias TdCore.Utils.CollectionUtils
+  alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Search.Query
-  alias TdDd.Utils.CollectionUtils
   alias Truedat.Auth.Claims
-  alias Truedat.Search
-  alias Truedat.Search.Permissions
 
   require Logger
 
@@ -17,7 +19,7 @@ defmodule TdDd.DataStructures.Search do
   def get_filter_values(claims, permission, params)
 
   def get_filter_values(%Claims{} = claims, permission, %{} = params) do
-    aggs = Aggregations.aggregations()
+    aggs = ElasticDocumentProtocol.aggregations(%DataStructureVersion{})
     query = build_query(claims, permission, params, aggs)
     search = %{query: query, aggs: aggs, size: 0}
     Search.get_filters(search, @index)
@@ -37,7 +39,7 @@ defmodule TdDd.DataStructures.Search do
   end
 
   def scroll_data_structures(params, %Claims{} = claims, permission) do
-    aggs = Aggregations.aggregations()
+    aggs = ElasticDocumentProtocol.aggregations(%DataStructureVersion{})
     query = build_query(claims, permission, params, aggs)
     sort = Map.get(params, "sort", ["_score", "name.raw", "id"])
 
@@ -79,7 +81,7 @@ defmodule TdDd.DataStructures.Search do
 
     {filters, without} =
       params
-      |> Enum.find(fn {_key, val} -> val == Aggregations.missing_term_name() end)
+      |> Enum.find(fn {_key, val} -> val == ElasticDocument.missing_term_name() end)
       |> Kernel.then(fn
         {key, _val} -> {Map.drop(params, [key]), ["#{key}" | initial_without]}
         nil -> {params, initial_without}
@@ -94,7 +96,7 @@ defmodule TdDd.DataStructures.Search do
   def search_data_structures(params, claims, permission, page \\ 0, size \\ 50)
 
   def search_data_structures(params, %Claims{} = claims, permission, page, size) do
-    aggs = Aggregations.aggregations()
+    aggs = ElasticDocumentProtocol.aggregations(%DataStructureVersion{})
 
     query = build_query(claims, permission, params, aggs)
     sort = Map.get(params, "sort", ["_score", "name.raw"])

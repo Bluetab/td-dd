@@ -1,13 +1,14 @@
 defmodule TdDd.ClassifiersTest do
   use TdDd.DataCase
 
+  alias TdCore.Search.MockIndexWorker
   alias TdDd.Classifiers
   alias TdDd.Classifiers.Classifier
   alias TdDd.Repo
-  alias TdDd.Search.MockIndexWorker
 
   setup do
-    start_supervised(MockIndexWorker)
+    start_supervised!(TdCore.Search.Cluster)
+    start_supervised!(TdCore.Search.IndexWorker)
     %{id: system_id} = system = insert(:system)
     [system: system, system_id: system_id]
   end
@@ -102,7 +103,7 @@ defmodule TdDd.ClassifiersTest do
       assert %{"foo" => {_, [classification]}} = classifications
       assert %{data_structure_version_id: ^data_structure_version_id} = classification
       assert structure_ids == [data_structure_id]
-      assert MockIndexWorker.calls() == [{:reindex, [data_structure_id]}]
+      assert [{:reindex, :structures, ^structure_ids}] = MockIndexWorker.calls()
     end
   end
 
@@ -121,7 +122,7 @@ defmodule TdDd.ClassifiersTest do
 
       assert {:ok, %{structure_ids: structure_ids}} = Classifiers.delete_classifier(classifier)
       assert structure_ids == [id]
-      assert MockIndexWorker.calls() == [{:reindex, structure_ids}]
+      assert [{:reindex, :structures, ^structure_ids}] = MockIndexWorker.calls()
     end
   end
 

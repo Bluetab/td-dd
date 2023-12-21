@@ -30,7 +30,7 @@ defmodule TdCxWeb.JobController do
 
   def index(conn, %{"source_external_id" => source_id}) do
     claims = conn.assigns[:current_resource]
-    params = %{"filters" => %{"source.external_id" => source_id}}
+    params = %{"must" => %{"source.external_id" => source_id}}
 
     with :ok <- Bodyguard.permit(Jobs, :search, claims),
          %{results: results} <- Search.search_jobs(params, claims, 0, 10_000) do

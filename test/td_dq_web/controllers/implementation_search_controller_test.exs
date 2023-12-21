@@ -6,7 +6,9 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
   @business_concept_id "42"
 
   setup do
-    start_supervised!(TdDd.Search.Cluster)
+    start_supervised!(TdCore.Search.Cluster)
+    start_supervised!(TdCore.Search.IndexWorker)
+
     :ok
   end
 
@@ -96,7 +98,7 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
       |> expect(:request, fn _, :post, "/implementations/_search", %{query: query}, _ ->
         assert %{
                  bool: %{
-                   filter: [
+                   must: [
                      %{term: %{"_confidential" => false}},
                      %{term: %{"domain_ids" => _}}
                    ],

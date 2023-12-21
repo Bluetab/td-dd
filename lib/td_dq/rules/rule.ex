@@ -11,7 +11,6 @@ defmodule TdDq.Rules.Rule do
   alias TdDd.Repo
   alias TdDfLib.Validation
   alias TdDq.Implementations.Implementation
-  alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleResult
 
   import Ecto.Query
@@ -152,55 +151,6 @@ defmodule TdDq.Rules.Rule do
       _, nil -> []
       _, value when value == %{} -> []
       field, _ -> [{field, :missing_type}]
-    end
-  end
-
-  defimpl Elasticsearch.Document do
-    alias TdCache.TemplateCache
-    alias TdDfLib.Format
-    alias TdDfLib.RichText
-    alias TdDq.Rules.Rule
-    alias TdDq.Search.Helpers
-
-    @impl Elasticsearch.Document
-    def id(%Rule{id: id}), do: id
-
-    @impl Elasticsearch.Document
-    def routing(_), do: false
-
-    @impl Elasticsearch.Document
-    def encode(%Rule{domain_id: domain_id} = rule) do
-      template = TemplateCache.get_by_name!(rule.df_name) || %{content: []}
-      updated_by = Helpers.get_user(rule.updated_by)
-      confidential = Helpers.confidential?(rule)
-      bcv = Helpers.get_business_concept_version(rule)
-      domain = Helpers.get_domain(rule)
-      domain_ids = List.wrap(domain_id)
-
-      df_content =
-        rule
-        |> Map.get(:df_content)
-        |> Format.search_values(template, domain_id: domain_id)
-
-      %{
-        id: rule.id,
-        business_concept_id: rule.business_concept_id,
-        _confidential: confidential,
-        domain: Map.take(domain, [:id, :external_id, :name]),
-        domain_ids: domain_ids,
-        current_business_concept_version: bcv,
-        version: rule.version,
-        name: rule.name,
-        active: rule.active,
-        description: RichText.to_plain_text(rule.description),
-        deleted_at: rule.deleted_at,
-        updated_by: updated_by,
-        updated_at: rule.updated_at,
-        inserted_at: rule.inserted_at,
-        df_name: rule.df_name,
-        df_label: Map.get(template, :label),
-        df_content: df_content
-      }
     end
   end
 end

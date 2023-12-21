@@ -31,8 +31,10 @@ defmodule TdDqWeb.RuleControllerTest do
 
   setup tags do
     start_supervised!(TdDq.MockRelationCache)
-    start_supervised!(TdDd.Search.MockIndexWorker)
+    start_supervised!(TdCore.Search.IndexWorker)
+    start_supervised!(TdCore.Search.Cluster)
     start_supervised!(TdDq.Cache.RuleLoader)
+
     on_exit(fn -> Redix.del!(Audit.stream()) end)
 
     %{id: domain_id} =

@@ -1,9 +1,12 @@
 defmodule TdDq.Rules.Search.AggregationsTest do
   use TdDd.DataCase
 
-  alias TdDq.Rules.Search.Aggregations
+  alias TdCore.Search.ElasticDocumentProtocol
+  alias TdDq.Rules.Rule
 
   setup do
+    start_supervised!(TdCore.Search.Cluster)
+
     fields = [
       build(:template_field, name: "my_string", type: "string"),
       build(:template_field, name: "my_system", type: "system"),
@@ -23,7 +26,7 @@ defmodule TdDq.Rules.Search.AggregationsTest do
 
   describe "aggregations/0" do
     test "includes static aggregations" do
-      assert %{"active.raw" => _, "taxonomy" => _} = Aggregations.aggregations()
+      assert %{"active.raw" => _, "taxonomy" => _} = ElasticDocumentProtocol.aggregations(%Rule{})
     end
 
     test "includes dynamic content" do
@@ -41,7 +44,7 @@ defmodule TdDq.Rules.Search.AggregationsTest do
                  nested: %{path: "df_content.my_system"}
                },
                "taxonomy" => _
-             } = aggs = Aggregations.aggregations()
+             } = aggs = ElasticDocumentProtocol.aggregations(%Rule{})
 
       refute Map.has_key?(aggs, "my_string")
     end

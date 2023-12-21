@@ -3,8 +3,8 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
 
   import Mox
 
+  alias TdCore.Search.MockIndexWorker
   alias TdDd.DataStructures.Hierarchy
-  alias TdDd.Search.MockIndexWorker
 
   @moduletag sandbox: :shared
 
@@ -12,8 +12,9 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
 
   setup do
     start_supervised!(TdDd.Search.StructureEnricher)
-    start_supervised!(TdDd.Search.Cluster)
-    start_supervised(MockIndexWorker)
+    start_supervised!(TdCore.Search.Cluster)
+    start_supervised!(TdCore.Search.IndexWorker)
+
     :ok
   end
 
@@ -33,7 +34,7 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
                              "/grant_requests/_search",
                              %{query: query, size: @query_size},
                              _ ->
-        assert %{bool: %{filter: %{match_all: %{}}}} == query
+        assert %{bool: %{must: %{match_all: %{}}}} == query
 
         SearchHelpers.hits_response([grant_request])
       end)
@@ -59,7 +60,7 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
                              _ ->
         assert %{
                  bool: %{
-                   filter: %{
+                   must: %{
                      bool: %{
                        should: [%{term: %{"domain_ids" => ^domain_id}}]
                      }
@@ -88,7 +89,7 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
                              "/grant_requests/_search",
                              %{query: query, size: @query_size},
                              _ ->
-        assert %{bool: %{filter: %{match_none: %{}}}} = query
+        assert %{bool: %{must: %{match_none: %{}}}} = query
 
         SearchHelpers.hits_response([grant_request])
       end)
@@ -112,7 +113,7 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
                |> get(Routes.grant_request_search_path(conn, :reindex_all))
                |> response(:accepted)
 
-        assert MockIndexWorker.calls() == [{:reindex_grant_requests, :all}]
+        assert [{:reindex, :grant_requests, :all}] = MockIndexWorker.calls()
       end
     end
 
@@ -124,7 +125,7 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
              |> get(Routes.grant_request_search_path(conn, :reindex_all))
              |> response(:forbidden)
 
-      refute MockIndexWorker.calls() == [{:reindex_grant_requests, :all}]
+      assert [] = MockIndexWorker.calls()
     end
   end
 

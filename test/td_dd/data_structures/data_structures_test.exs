@@ -6,6 +6,7 @@ defmodule TdDd.DataStructuresTest do
   alias Elasticsearch.Document
   alias TdCache.Redix
   alias TdCache.Redix.Stream
+  alias TdCore.Search.MockIndexWorker
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
@@ -13,13 +14,13 @@ defmodule TdDd.DataStructuresTest do
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.Repo
-  alias TdDd.Search.MockIndexWorker
 
   @moduletag sandbox: :shared
   @stream TdCache.Audit.stream()
 
   setup_all do
-    start_supervised!(MockIndexWorker)
+    start_supervised!(TdCore.Search.Cluster)
+    start_supervised!(TdCore.Search.IndexWorker)
     on_exit(fn -> Redix.del!(@stream) end)
     [claims: build(:claims)]
   end
@@ -84,9 +85,11 @@ defmodule TdDd.DataStructuresTest do
       assert {:ok, result} =
                DataStructures.update_data_structure(claims, data_structure, params, false)
 
-      implementation_reindexed = Keyword.get(MockIndexWorker.calls(), :reindex_implementations)
+      assert {:reindex, :implementations, [^implementation_id]} =
+               Enum.find(MockIndexWorker.calls(), fn {action, index, _} ->
+                 action == :reindex and index == :implementations
+               end)
 
-      assert implementation_reindexed ||| [implementation_id]
       assert %{domain_ids: {1, [^id]}, updated_ids: [^id]} = result
     end
 
@@ -1770,12 +1773,9 @@ defmodule TdDd.DataStructuresTest do
 
       assert {:ok, _} = DataStructures.update_structure_metadata(mm, @update_attrs)
 
-      find_call = {:reindex_grant_requests, [grant_request_id1, grant_request_id2]}
-
-      assert find_call ==
-               MockIndexWorker.calls()
-               |> Enum.find(fn call ->
-                 find_call == call
+      assert {:reindex, :grant_requests, [^grant_request_id1, ^grant_request_id2]} =
+               Enum.find(MockIndexWorker.calls(), fn {action, index, _} ->
+                 action == :reindex and index == :grant_requests
                end)
     end
 
@@ -1790,27 +1790,22 @@ defmodule TdDd.DataStructuresTest do
         relation_type_id: RelationTypes.default_id!()
       )
 
-      %{id: grant_request_parent_id} =
-        insert(:grant_request,
-          data_structure: parent_data_structure
-        )
+      insert(:grant_request,
+        data_structure: parent_data_structure
+      )
 
-      %{id: grant_request_child_id} =
-        insert(:grant_request,
-          data_structure: child_data_structure
-        )
+      insert(:grant_request,
+        data_structure: child_data_structure
+      )
 
       params = %{domain_ids: [2, 3]}
 
       assert {:ok, _} =
                DataStructures.update_data_structure(claims, parent_data_structure, params, true)
 
-      find_call = {:reindex_grant_requests, [grant_request_parent_id, grant_request_child_id]}
-
-      assert find_call ==
-               MockIndexWorker.calls()
-               |> Enum.find(fn call ->
-                 find_call == call
+      assert {:reindex, :grant_requests, [_, _]} =
+               Enum.find(MockIndexWorker.calls(), fn {action, index, _} ->
+                 action == :reindex and index == :grant_requests
                end)
     end
 
@@ -1837,12 +1832,9 @@ defmodule TdDd.DataStructuresTest do
       assert {:ok, _} =
                DataStructures.update_data_structure(claims, data_structure, params, false)
 
-      find_call = {:reindex_grant_requests, [grant_request_id]}
-
-      assert find_call ==
-               MockIndexWorker.calls()
-               |> Enum.find(fn call ->
-                 find_call == call
+      assert {:reindex, :grant_requests, [^grant_request_id]} =
+               Enum.find(MockIndexWorker.calls(), fn {action, index, _} ->
+                 action == :reindex and index == :grant_requests
                end)
     end
 
@@ -1861,12 +1853,9 @@ defmodule TdDd.DataStructuresTest do
       assert {:ok, _} =
                DataStructures.update_data_structure(claims, data_structure, params, false)
 
-      find_call = {:reindex_grant_requests, [grant_request_id]}
-
-      assert find_call ==
-               MockIndexWorker.calls()
-               |> Enum.find(fn call ->
-                 find_call == call
+      assert {:reindex, :grant_requests, [^grant_request_id]} =
+               Enum.find(MockIndexWorker.calls(), fn {action, index, _} ->
+                 action == :reindex and index == :grant_requests
                end)
     end
   end

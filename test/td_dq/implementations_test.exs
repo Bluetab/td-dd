@@ -7,7 +7,7 @@ defmodule TdDq.ImplementationsTest do
   alias TdCache.ImplementationCache
   alias TdCache.Redix
   alias TdCache.Redix.Stream
-  alias TdDd.Search.MockIndexWorker
+  alias TdCore.Search.MockIndexWorker
   alias TdDq.Implementations
   alias TdDq.Implementations.Implementation
   alias TdDq.Implementations.ImplementationStructure
@@ -20,7 +20,8 @@ defmodule TdDq.ImplementationsTest do
     on_exit(fn -> Redix.del!(@stream) end)
 
     start_supervised!(TdDq.MockRelationCache)
-    start_supervised!(MockIndexWorker)
+    start_supervised!(TdCore.Search.IndexWorker)
+    start_supervised!(TdCore.Search.Cluster)
     start_supervised!(TdDq.Cache.RuleLoader)
     start_supervised!(TdDd.Search.StructureEnricher)
     %{id: domain_id} = CacheHelpers.insert_domain()
@@ -1830,8 +1831,11 @@ defmodule TdDq.ImplementationsTest do
 
       Implementations.delete_implementation(implementation_v2, claims)
 
-      assert [implementation_ref_id, implementation_v2_id] |||
-               MockIndexWorker.calls()[:delete_implementations]
+      {:delete, _, data} =
+        MockIndexWorker.calls()
+        |> Enum.find(fn {action, index, _} -> action == :delete and index == :implementations end)
+
+      assert [implementation_ref_id, implementation_v2_id] ||| data
     end
   end
 
@@ -2272,9 +2276,7 @@ defmodule TdDq.ImplementationsTest do
         %{type: :dataset}
       )
 
-      [
-        {:reindex_implementations, implementation_reindexed}
-      ] = MockIndexWorker.calls()
+      [{:reindex, :implementations, implementation_reindexed}] = MockIndexWorker.calls()
 
       assert implementation_reindexed ||| [implementation_id, implementation_ref_id]
     end
@@ -2327,9 +2329,7 @@ defmodule TdDq.ImplementationsTest do
           claims
         )
 
-      [
-        {:reindex_implementations, implementation_reindexed}
-      ] = MockIndexWorker.calls()
+      [{:reindex, :implementations, implementation_reindexed}] = MockIndexWorker.calls()
 
       assert implementation_reindexed ||| [implementation_v1_id, implementation_v2_id]
     end
@@ -2348,9 +2348,7 @@ defmodule TdDq.ImplementationsTest do
 
       Implementations.reindex_implementations_structures([data_structure_id])
 
-      [
-        {:reindex_implementations, implementation_reindexed}
-      ] = MockIndexWorker.calls()
+      [{:reindex, :implementations, implementation_reindexed}] = MockIndexWorker.calls()
 
       assert implementation_reindexed ||| [implementation_id]
     end
@@ -2415,9 +2413,7 @@ defmodule TdDq.ImplementationsTest do
       assert {:ok, %ImplementationStructure{}} =
                Implementations.delete_implementation_structure(implementation_structure)
 
-      [
-        {:reindex_implementations, implementation_reindexed}
-      ] = MockIndexWorker.calls()
+      [{:reindex, :implementations, implementation_reindexed}] = MockIndexWorker.calls()
 
       assert implementation_reindexed ||| [implementation_id, implementation_ref_id]
     end

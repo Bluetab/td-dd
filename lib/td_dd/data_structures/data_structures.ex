@@ -11,6 +11,8 @@ defmodule TdDd.DataStructures do
   alias TdCache.LinkCache
   alias TdCache.TemplateCache
   alias TdCache.UserCache
+  alias TdCore.Search.IndexWorker
+  alias TdCore.Search.Permissions
   alias TdCx.Sources
   alias TdCx.Sources.Source
   alias TdDd.DataStructures.Audit
@@ -30,9 +32,8 @@ defmodule TdDd.DataStructures do
   alias TdDfLib.Format
   alias TdDq.Implementations
   alias Truedat.Auth.Claims
-  alias Truedat.Search.Permissions
 
-  @index_worker Application.compile_env(:td_dd, :index_worker)
+  @index :structures
 
   @protected "_protected"
 
@@ -749,8 +750,8 @@ defmodule TdDd.DataStructures do
     {:ok, ids}
   end
 
-  defp on_update({:ok, %{updated_ids: ids}}), do: @index_worker.reindex(ids)
-  defp on_update(ids) when is_list(ids), do: @index_worker.reindex(ids)
+  defp on_update({:ok, %{updated_ids: ids}}), do: IndexWorker.reindex(@index, ids)
+  defp on_update(ids) when is_list(ids), do: IndexWorker.reindex(@index, ids)
 
   defp on_update(_), do: :ok
 
@@ -786,11 +787,11 @@ defmodule TdDd.DataStructures do
 
   defp on_delete({:ok, %{} = res}) do
     with %{delete_versions: {_count, data_structure_ids}} <- res do
-      @index_worker.delete(data_structure_ids)
+      IndexWorker.delete(@index, data_structure_ids)
     end
 
     with %{descendents: %{data_structures_ids: structures_ids}} <- res do
-      @index_worker.delete(structures_ids)
+      IndexWorker.delete(@index, structures_ids)
     end
 
     {:ok, res}

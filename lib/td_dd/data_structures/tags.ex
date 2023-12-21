@@ -8,6 +8,7 @@ defmodule TdDd.DataStructures.Tags do
 
   alias Ecto.Multi
   alias TdCache.TaxonomyCache
+  alias TdCore.Search.IndexWorker
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
@@ -16,7 +17,6 @@ defmodule TdDd.DataStructures.Tags do
   alias TdDd.DataStructures.Tags.StructureTag
   alias TdDd.DataStructures.Tags.Tag
   alias TdDd.Repo
-  alias TdDd.Search.IndexWorker
 
   defdelegate authorize(action, user, params), to: TdDd.DataStructures.Tags.Policy
 
@@ -231,19 +231,21 @@ defmodule TdDd.DataStructures.Tags do
          {:ok, %{structures_tags: [_ | _] = structure_tags} = tag},
          true
        ) do
-    structure_tags
-    |> Enum.group_by(& &1.inherit, & &1.data_structure_id)
-    |> Enum.flat_map(fn {inherit, ids} -> tagged_structure_ids(ids, inherit) end)
-    |> Enum.uniq()
-    |> IndexWorker.reindex()
+    ids =
+      structure_tags
+      |> Enum.group_by(& &1.inherit, & &1.data_structure_id)
+      |> Enum.flat_map(fn {inherit, ids} -> tagged_structure_ids(ids, inherit) end)
+      |> Enum.uniq()
+
+    IndexWorker.reindex(:structures, ids)
 
     {:ok, tag}
   end
 
   defp maybe_reindex({:ok, %{structure_tag: structure_tag} = multi}, true) do
-    structure_tag
-    |> tagged_structure_ids()
-    |> IndexWorker.reindex()
+    ids = tagged_structure_ids(structure_tag)
+
+    IndexWorker.reindex(:structures, ids)
 
     {:ok, multi}
   end

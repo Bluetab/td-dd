@@ -6,6 +6,7 @@ defmodule TdDq.Rules.RuleResults do
   import Ecto.Query
 
   alias Ecto.Multi
+  alias TdCore.Search.IndexWorker
   alias TdDd.Repo
   alias TdDq.Cache.ImplementationLoader
   alias TdDq.Cache.RuleLoader
@@ -17,7 +18,6 @@ defmodule TdDq.Rules.RuleResults do
 
   require Logger
 
-  @index_worker Application.compile_env(:td_dd, :dq_index_worker)
   @pagination_params [:limit, :before, :after]
 
   defdelegate authorize(action, user, params), to: __MODULE__.Policy
@@ -219,11 +219,11 @@ defmodule TdDq.Rules.RuleResults do
         rule: %{id: rule_id},
         implementation: %{id: implementation_id}
       } ->
-        @index_worker.reindex_rules(rule_id)
-        @index_worker.reindex_implementations(implementation_id)
+        IndexWorker.reindex(:rules, [rule_id])
+        IndexWorker.reindex(:implementations, [implementation_id])
 
       %{implementation: %{id: implementation_id}} ->
-        @index_worker.reindex_implementations(implementation_id)
+        IndexWorker.reindex(:implementations, implementation_id)
     end
 
     result

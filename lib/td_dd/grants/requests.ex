@@ -9,6 +9,7 @@ defmodule TdDd.Grants.Requests do
   alias Ecto.Multi
   alias TdCache.Permissions
   alias TdCache.UserCache
+  alias TdCore.Search.IndexWorker
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
@@ -23,7 +24,7 @@ defmodule TdDd.Grants.Requests do
   alias TdDd.Repo
   alias Truedat.Auth.Claims
 
-  @index_worker Application.compile_env(:td_dd, :index_worker)
+  @index :grant_requests
 
   defdelegate authorize(action, user, params), to: TdDd.Grants.Policy
 
@@ -460,7 +461,7 @@ defmodule TdDd.Grants.Requests do
       |> Enum.map(fn %{id: id} -> id end)
 
     if length(grand_request_ids) > 0 do
-      @index_worker.reindex_grant_requests(grand_request_ids)
+      IndexWorker.reindex(@index, grand_request_ids)
     end
   end
 
@@ -547,23 +548,24 @@ defmodule TdDd.Grants.Requests do
   end
 
   defp on_upsert({:ok, %{approval: %{grant_request_id: grant_request_id}}} = result) do
-    @index_worker.reindex_grant_requests([grant_request_id])
+    IndexWorker.reindex(@index, [grant_request_id])
 
     result
   end
 
   defp on_upsert({:ok, %{requests: {_, ids}}} = result) do
-    @index_worker.reindex_grant_requests(ids)
-
+    IndexWorker.reindex(@index, ids)
     result
   end
 
   defp on_upsert({:ok, %{approvals: {_, approvals}}} = result) do
-    approvals
-    |> Enum.map(fn %{grant_request_id: grant_request_id} ->
-      grant_request_id
-    end)
-    |> @index_worker.call_reindex_grant_requests()
+    ids =
+      approvals
+      |> Enum.map(fn %{grant_request_id: grant_request_id} ->
+        grant_request_id
+      end)
+
+    IndexWorker.reindex(@index, ids)
 
     result
   end
@@ -571,16 +573,18 @@ defmodule TdDd.Grants.Requests do
   defp on_upsert(result), do: result
 
   defp on_delete({:ok, %GrantRequest{id: id}} = result) do
-    @index_worker.delete_grant_requests([id])
+    IndexWorker.delete(@index, [id])
 
     result
   end
 
   defp on_delete({:ok, %{requests: [_ | _] = requests}} = result) do
-    requests
-    |> Enum.map(& &1.id)
-    |> Enum.uniq()
-    |> @index_worker.delete_grant_requests()
+    ids =
+      requests
+      |> Enum.map(& &1.id)
+      |> Enum.uniq()
+
+    IndexWorker.delete(@index, ids)
 
     result
   end

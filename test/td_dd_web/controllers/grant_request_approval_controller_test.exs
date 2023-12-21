@@ -1,9 +1,11 @@
 defmodule TdDdWeb.GrantRequestApprovalControllerTest do
   use TdDdWeb.ConnCase
-  alias TdDd.Search.MockIndexWorker
+
+  alias TdCore.Search.MockIndexWorker
 
   setup do
-    start_supervised(MockIndexWorker)
+    start_supervised!(TdCore.Search.Cluster)
+    start_supervised!(TdCore.Search.IndexWorker)
     :ok
   end
 
@@ -43,7 +45,7 @@ defmodule TdDdWeb.GrantRequestApprovalControllerTest do
       assert %{"is_rejection" => false, "comment" => "foo", "_embedded" => embedded} = data
       assert %{"user" => %{"id" => ^user_id}} = embedded
 
-      assert MockIndexWorker.calls() == [{:reindex_grant_requests, [grant_request_id]}]
+      assert [{:reindex, :grant_requests, [^grant_request_id]}] = MockIndexWorker.calls()
     end
   end
 end

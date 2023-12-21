@@ -8,7 +8,9 @@ defmodule TdDq.Rules.SearchTest do
   @aggs %{"active.raw" => %{"buckets" => [%{"key" => "true"}, %{"key" => "false"}]}}
 
   setup do
-    start_supervised!(TdDd.Search.Cluster)
+    start_supervised!(TdCore.Search.Cluster)
+    start_supervised!(TdCore.Search.IndexWorker)
+
     :ok
   end
 
@@ -36,7 +38,7 @@ defmodule TdDq.Rules.SearchTest do
         _, :post, "/rules/_search", %{aggs: _, query: query, size: 0}, _ ->
           assert %{
                    bool: %{
-                     filter: [
+                     must: [
                        %{term: %{"_confidential" => false}},
                        %{term: %{"domain_ids" => _}}
                      ]
@@ -59,7 +61,7 @@ defmodule TdDq.Rules.SearchTest do
         _, :post, "/rules/_search", %{aggs: _, query: query, size: 0}, _ ->
           assert %{
                    bool: %{
-                     filter: [
+                     must: [
                        %{
                          bool: %{
                            should: [
@@ -96,7 +98,7 @@ defmodule TdDq.Rules.SearchTest do
         _, :post, "/implementations/_search", %{query: query, size: 0}, _ ->
           assert %{
                    bool: %{
-                     filter: [
+                     must: [
                        %{term: %{"_confidential" => false}},
                        %{terms: %{"domain_ids" => [_, _]}}
                      ]
@@ -109,7 +111,7 @@ defmodule TdDq.Rules.SearchTest do
         _, :post, "/implementations/_search", %{query: query, size: 0}, _ ->
           assert %{
                    bool: %{
-                     filter: [
+                     must: [
                        %{term: %{"domain_ids" => ^executable_domain_id}},
                        %{term: %{"executable" => true}},
                        %{term: %{"_confidential" => false}},
@@ -166,12 +168,12 @@ defmodule TdDq.Rules.SearchTest do
       ElasticsearchMock
       |> expect(:request, fn
         _, :post, "/implementations/_search", %{query: query, size: 0}, _ ->
-          assert query == %{bool: %{filter: %{term: %{"status" => "published"}}}}
+          assert query == %{bool: %{must: %{term: %{"status" => "published"}}}}
           SearchHelpers.aggs_response(@aggs)
       end)
       |> expect(:request, fn
         _, :post, "/implementations/_search", %{query: query, size: 0}, _ ->
-          assert query == %{bool: %{filter: %{term: %{"status" => "foo"}}}}
+          assert query == %{bool: %{must: %{term: %{"status" => "foo"}}}}
           SearchHelpers.aggs_response(@aggs)
       end)
 
@@ -227,7 +229,7 @@ defmodule TdDq.Rules.SearchTest do
         _, :post, "/rules/_search", %{from: 0, size: 50, query: query}, _ ->
           assert %{
                    bool: %{
-                     filter: [
+                     must: [
                        %{term: %{"_confidential" => false}},
                        %{term: %{"domain_ids" => _}}
                      ]
@@ -273,7 +275,7 @@ defmodule TdDq.Rules.SearchTest do
         _, :post, "/rules/_search", %{query: query}, _ ->
           assert %{
                    bool: %{
-                     filter: [
+                     must: [
                        %{
                          bool: %{
                            should: [
@@ -378,7 +380,7 @@ defmodule TdDq.Rules.SearchTest do
         _, :post, "/implementations/_search", %{from: 0, size: 50, query: query}, _ ->
           assert %{
                    bool: %{
-                     filter: [
+                     must: [
                        %{term: %{"_confidential" => false}},
                        %{term: %{"domain_ids" => _}}
                      ]
@@ -404,7 +406,7 @@ defmodule TdDq.Rules.SearchTest do
         _, :post, "/implementations/_search", %{query: query}, _ ->
           assert %{
                    bool: %{
-                     filter: [
+                     must: [
                        %{
                          bool: %{
                            should: [
@@ -442,7 +444,7 @@ defmodule TdDq.Rules.SearchTest do
         _, :post, "/implementations/_search", %{query: query}, _ ->
           assert %{
                    bool: %{
-                     filter: [
+                     must: [
                        %{term: %{"domain_ids" => ^executable_domain_id}},
                        %{term: %{"executable" => true}},
                        %{term: %{"_confidential" => false}},

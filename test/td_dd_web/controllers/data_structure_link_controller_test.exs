@@ -2,6 +2,12 @@ defmodule TdDdWeb.DataStructureLinkControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
+  setup do
+    start_supervised!(TdCore.Search.Cluster)
+    start_supervised!(TdCore.Search.IndexWorker)
+    :ok
+  end
+
   describe "index" do
     setup do
       ds1 = insert(:data_structure, external_id: "ds1_external_id")

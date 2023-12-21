@@ -7,6 +7,7 @@ defmodule TdDq.Search.Store do
 
   import Ecto.Query
 
+  alias TdCluster.Cluster.TdDd.Tasks
   alias TdDd.DataStructures
   alias TdDd.Repo
   alias TdDq.Implementations.Implementation
@@ -14,22 +15,36 @@ defmodule TdDq.Search.Store do
 
   @impl true
   def stream(Rule = schema) do
-    schema
-    |> where([r], is_nil(r.deleted_at))
-    |> Repo.stream()
+    count = Repo.aggregate(Rule, :count, :id)
+    Tasks.log_start_stream(count)
+
+    response =
+      schema
+      |> where([r], is_nil(r.deleted_at))
+      |> Repo.stream()
+
+    Tasks.log_progress(count)
+    response
   end
 
   @impl true
   def stream(Implementation = schema) do
-    schema
-    |> Repo.stream()
-    |> Repo.stream_preload(1000, :rule)
-    |> Repo.stream_preload(1000,
-      implementation_ref_struct: [:data_structures],
-      data_structures: []
-    )
-    |> Stream.chunk_every(chunk_size())
-    |> Stream.flat_map(&enrich_chunk_data_structures(&1))
+    count = Repo.aggregate(Implementation, :count, :id)
+    Tasks.log_start_stream(count)
+
+    response =
+      schema
+      |> Repo.stream()
+      |> Repo.stream_preload(1000, :rule)
+      |> Repo.stream_preload(1000,
+        implementation_ref_struct: [:data_structures],
+        data_structures: []
+      )
+      |> Stream.chunk_every(chunk_size())
+      |> Stream.flat_map(&enrich_chunk_data_structures(&1))
+
+    Tasks.log_progress(count)
+    response
   end
 
   def stream(Rule = schema, ids) do

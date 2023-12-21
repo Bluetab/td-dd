@@ -6,11 +6,11 @@ defmodule TdCx.Events do
   import Ecto.Query
 
   alias Ecto.Multi
+  alias TdCore.Search.IndexWorker
   alias TdCx.Cache.SourcesLatestEvent
   alias TdCx.Events.Event
   alias TdCx.Jobs.Audit
   alias TdCx.Jobs.Job
-  alias TdCx.Search.IndexWorker
   alias TdDd.Repo
   alias Truedat.Auth.Claims
 
@@ -76,7 +76,7 @@ defmodule TdCx.Events do
   end
 
   defp on_create({:ok, %{event: event} = res}) do
-    IndexWorker.reindex(event.job_id)
+    IndexWorker.reindex(:jobs, [event.job_id])
     {:ok, res}
   end
 
