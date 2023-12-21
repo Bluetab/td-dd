@@ -3,18 +3,19 @@ defmodule TdDd.GrantRequests.Search do
   The Grant Rquest Search context
   """
 
-  alias TdDd.GrantRequests.Search.Aggregations
+  alias TdCore.Search
+  alias TdCore.Search.ElasticDocumentProtocol
+  alias TdCore.Search.Permissions
   alias TdDd.GrantRequests.Search.Query
+  alias TdDd.Grants.GrantRequest
   alias Truedat.Auth.Claims
-  alias Truedat.Search
-  alias Truedat.Search.Permissions
 
   require Logger
 
   @index :grant_requests
 
   def get_filter_values(%Claims{} = claims, params) do
-    aggs = Aggregations.aggregations()
+    aggs = ElasticDocumentProtocol.aggregations(%GrantRequest{})
 
     query =
       claims
@@ -29,7 +30,7 @@ defmodule TdDd.GrantRequests.Search do
   def search(params, claims, page \\ 0, size \\ 1000)
 
   def search(params, claims, _page, size) do
-    aggs = Aggregations.aggregations()
+    aggs = ElasticDocumentProtocol.aggregations(%GrantRequest{})
     sort = Map.get(params, "sort", ["_score", "inserted_at"])
 
     query =

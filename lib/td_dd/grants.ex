@@ -7,13 +7,15 @@ defmodule TdDd.Grants do
 
   alias Ecto.Multi
   alias TdCache.UserCache
+  alias TdCore.Search.IndexWorker
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructureQueries
   alias TdDd.Grants.Grant
   alias TdDd.Repo
-  alias TdDd.Search.IndexWorker
   alias Truedat.Auth.Claims
+
+  @index :grants
 
   @pagination_params [:order_by, :limit, :before, :after]
 
@@ -174,7 +176,7 @@ defmodule TdDd.Grants do
   defp reindex_grants(result, is_bulk \\ false)
 
   defp reindex_grants({:ok, %{grant: %Grant{id: id}} = multi}, false) do
-    IndexWorker.reindex_grants(id)
+    IndexWorker.reindex(@index, [id])
     {:ok, multi}
   end
 
@@ -183,7 +185,7 @@ defmodule TdDd.Grants do
   defp reindex_grants(error, _), do: error
 
   defp on_delete({:ok, %{grant: %Grant{id: id}} = multi}) do
-    IndexWorker.delete_grants(id)
+    IndexWorker.delete(@index, [id])
     {:ok, multi}
   end
 

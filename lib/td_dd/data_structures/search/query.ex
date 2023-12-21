@@ -3,7 +3,7 @@ defmodule TdDd.DataStructures.Search.Query do
   Support for building data structure search queries.
   """
 
-  alias Truedat.Search.Query
+  alias TdCore.Search.Query
 
   @match_all %{match_all: %{}}
   @match_none %{match_none: %{}}

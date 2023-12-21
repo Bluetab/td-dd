@@ -4,7 +4,7 @@ defmodule Truedat.Search.IndexerTest do
   import ExUnit.CaptureLog
   require Logger
 
-  alias Truedat.Search.Indexer
+  alias TdCore.Search.Indexer
 
   describe "log_bulk_post" do
     setup do

@@ -1,5 +1,12 @@
 # Changelog
 
+
+## [Unreleased]
+
+### Added
+
+- [TD-6181] Refactor for elastic search
+
 ## [5.20.0] 2023-12-19
 
 ### Added

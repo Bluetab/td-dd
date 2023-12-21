@@ -17,9 +17,9 @@ defmodule TdDdWeb.MetadataControllerTest do
   @protected DataStructures.protected()
 
   setup_all do
-    start_supervised!(TdDd.Search.Cluster)
-    start_supervised!(TdDd.Search.MockIndexWorker)
-    start_supervised!(TdDd.Cache.StructureLoader)
+    start_supervised!(TdCore.Search.Cluster)
+    start_supervised!(TdCore.Search.IndexWorker)
+
     start_supervised!(Worker)
     start_supervised!(TdDd.Lineage.GraphData)
     start_supervised!({Task.Supervisor, name: TdDd.TaskSupervisor})

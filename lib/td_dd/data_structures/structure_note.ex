@@ -6,10 +6,10 @@ defmodule TdDd.DataStructures.StructureNote do
 
   import Ecto.Changeset
 
+  alias TdCore.Utils.CollectionUtils
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.Validation
-  alias TdDd.Utils.CollectionUtils
   alias TdDfLib.Content
 
   @typedoc "A data structure note"

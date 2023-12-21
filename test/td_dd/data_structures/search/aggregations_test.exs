@@ -1,9 +1,16 @@
 defmodule TdDd.DataStructures.Search.AggregationsTest do
   use TdDd.DataCase
 
-  alias TdDd.DataStructures.Search.Aggregations
+  alias TdCore.Search.ElasticDocument
+  alias TdCore.Search.ElasticDocumentProtocol
+  alias TdDd.DataStructures.DataStructureVersion
 
-  @missing_term_name Aggregations.missing_term_name()
+  @missing_term_name ElasticDocument.missing_term_name()
+
+  setup do
+    start_supervised!(TdCore.Search.Cluster)
+    :ok
+  end
 
   @static_fields [
     "class.raw",
@@ -40,7 +47,7 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
 
   describe "aggregations/0" do
     test "includes static aggregations" do
-      aggs = Aggregations.aggregations()
+      aggs = ElasticDocumentProtocol.aggregations(%DataStructureVersion{})
 
       for field <- @static_fields do
         assert Map.has_key?(aggs, field)
@@ -48,7 +55,8 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
     end
 
     test "includes dynamic aggregations" do
-      dynamic_aggs = Aggregations.aggregations() |> Map.drop(@static_fields)
+      dynamic_aggs =
+        ElasticDocumentProtocol.aggregations(%DataStructureVersion{}) |> Map.drop(@static_fields)
 
       assert dynamic_aggs == %{
                "my_domain" => %{
@@ -58,7 +66,7 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
                "my_list" => %{terms: %{field: "note.my_list.raw"}},
                "my_system" => %{
                  aggs: %{
-                   distinct_search: %{terms: %{field: "note.my_system.external_id.raw"}}
+                   distinct_search: %{terms: %{field: "note.my_system.external_id.raw", size: 50}}
                  },
                  nested: %{path: "note.my_system"}
                },
@@ -70,7 +78,7 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
       insert(:data_structure_type, filters: ["foo"])
       insert(:data_structure_type, filters: ["bar", "baz"])
 
-      aggs = Aggregations.aggregations()
+      aggs = ElasticDocumentProtocol.aggregations(%DataStructureVersion{})
 
       assert_maps_equal(
         aggs,
@@ -93,7 +101,7 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
           terms: %{field: "_filters.host", missing: @missing_term_name}
         },
         "note.layer" => %{terms: %{field: "note.layer.raw", missing: @missing_term_name}}
-      } = Aggregations.aggregations()
+      } = ElasticDocumentProtocol.aggregations(%DataStructureVersion{})
     end
   end
 end

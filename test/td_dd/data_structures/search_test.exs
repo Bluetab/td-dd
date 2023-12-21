@@ -14,7 +14,7 @@ defmodule TdDd.DataStructures.SearchTest do
   setup :verify_on_exit!
 
   setup do
-    start_supervised!(TdDd.Search.Cluster)
+    start_supervised!(TdCore.Search.Cluster)
     :ok
   end
 
@@ -26,7 +26,7 @@ defmodule TdDd.DataStructures.SearchTest do
           ElasticsearchMock
           |> expect(:request, fn
             _, :post, "/structures/_search", %{size: 0, query: query, aggs: _}, _ ->
-              assert %{bool: %{filter: %{match_all: %{}}}} = query
+              assert %{bool: %{must: %{match_all: %{}}}} = query
               SearchHelpers.aggs_response(@aggregations)
           end)
 
@@ -42,7 +42,7 @@ defmodule TdDd.DataStructures.SearchTest do
         ElasticsearchMock
         |> expect(:request, fn
           _, :post, "/structures/_search", %{size: 0, query: query, aggs: _}, _ ->
-            assert %{bool: %{filter: %{match_none: %{}}}} = query
+            assert %{bool: %{must: %{match_none: %{}}}} = query
             SearchHelpers.aggs_response()
         end)
 
@@ -61,7 +61,7 @@ defmodule TdDd.DataStructures.SearchTest do
           _, :post, "/structures/_search", %{size: 0, query: query, aggs: _}, _ ->
             assert %{
                      bool: %{
-                       filter: [
+                       must: [
                          %{term: %{"confidential" => false}},
                          %{term: %{"domain_ids" => _}}
                        ]

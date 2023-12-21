@@ -38,7 +38,7 @@ if config_env() == :prod do
   config :td_cache, :event_stream, consumer_id: System.fetch_env!("HOSTNAME")
 
   config :td_dd, import_dir: System.get_env("IMPORT_DIR")
-  config :td_dd, TdDd.Search.Cluster, url: System.fetch_env!("ES_URL")
+  config :td_core, TdCore.Search.Cluster, url: System.fetch_env!("ES_URL")
 
   config :td_dd, TdDd.DataStructures.HistoryManager,
     history_depth_days:
@@ -138,7 +138,7 @@ if config_env() == :prod do
       password: password
   end
 
-  config :td_dd, TdDd.Search.Cluster,
+  config :td_core, TdCore.Search.Cluster,
     aliases: %{
       grants: System.get_env("ES_ALIAS_GRANTS", "grants"),
       jobs: System.get_env("ES_ALIAS_JOBS", "jobs"),
@@ -171,7 +171,7 @@ if config_env() == :prod do
         System.get_env("ES_MAPPING_TOTAL_FIELDS_LIMIT", "3000")
     }
 
-  config :td_dd, TdDd.DataStructures.Search,
+  config :td_core, TdCore.Search.Cluster,
     es_scroll_size: System.get_env("ES_SCROLL_SIZE", "10000") |> String.to_integer(),
     es_scroll_ttl: System.get_env("ES_SCROLL_TTL", "1m"),
     max_bulk_results: System.get_env("MAX_BULK_RESULTS", "100000") |> String.to_integer()

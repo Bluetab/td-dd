@@ -11,7 +11,7 @@ defmodule TdDq.Implementations.Workflow do
   alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Audit
 
-  @index_worker Application.compile_env(:td_dd, :dq_index_worker)
+  alias TdCore.Search.IndexWorker
 
   @status_order "published, pending_approval, draft, rejected, deprecated, versioned"
 
@@ -137,12 +137,12 @@ defmodule TdDq.Implementations.Workflow do
   def maybe_version_existing(multi, _changeset, _user_id), do: multi
 
   defp on_upsert({:ok, %{versioned: {_count, ids}, implementation: %{id: id}}} = result) do
-    @index_worker.reindex_implementations([id | ids])
+    IndexWorker.reindex(:implementations, [id | ids])
     result
   end
 
   defp on_upsert({:ok, %{implementation: %{id: id}}} = result) do
-    @index_worker.reindex_implementations(id)
+    IndexWorker.reindex(:implementations, [id])
     result
   end
 

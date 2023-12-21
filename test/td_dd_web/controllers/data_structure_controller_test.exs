@@ -5,15 +5,14 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
   import Mox
   import Routes
-  import TdDd.TestOperators
 
   alias Path
+  alias TdCore.Search.ElasticDocument
+  alias TdCore.Search.MockIndexWorker
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.RelationTypes
-  alias TdDd.DataStructures.Search.Aggregations
   alias TdDd.DataStructures.StructureNotes
-  alias TdDd.Search.MockIndexWorker
 
   @moduletag sandbox: :shared
   @template_name "data_structure_controller_test_template"
@@ -22,10 +21,12 @@ defmodule TdDdWeb.DataStructureControllerTest do
   @protected DataStructures.protected()
 
   setup_all do
-    start_supervised(MockIndexWorker)
+    start_supervised!(TdCore.Search.Cluster)
+    start_supervised!(TdCore.Search.IndexWorker)
+
     start_supervised({Task.Supervisor, name: TdDd.TaskSupervisor})
     start_supervised!(TdDd.Lineage.GraphData)
-    start_supervised!(TdDd.Search.Cluster)
+
     :ok
   end
 
@@ -133,7 +134,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
         assert query == %{
                  bool: %{
-                   filter: %{match_all: %{}},
+                   must: %{match_all: %{}},
                    must_not: %{exists: %{field: "deleted_at"}}
                  }
                }
@@ -175,7 +176,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
-        assert %{bool: %{must: %{multi_match: _}}} = query
+        assert %{bool: %{must: [%{multi_match: _}, %{match_all: %{}}]}} = query
         SearchHelpers.hits_response([dsv])
       end)
 
@@ -193,7 +194,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
         assert %{
                  bool: %{
-                   filter: [
+                   must: [
                      %{term: %{"parent_id" => ""}},
                      %{term: %{"metadata.region" => "eu-west-1"}}
                    ],
@@ -225,7 +226,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
         assert %{
                  bool: %{
-                   filter: %{term: %{"parent_id" => ""}},
+                   must: %{term: %{"parent_id" => ""}},
                    must_not: [
                      %{exists: %{field: "deleted_at"}},
                      %{exists: %{field: "metadata.region"}}
@@ -241,7 +242,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                |> post(
                  data_structure_path(conn, :get_bucket_structures),
                  %{
-                   "metadata.region" => Aggregations.missing_term_name(),
+                   "metadata.region" => ElasticDocument.missing_term_name(),
                    "parent_id" => ""
                  }
                )
@@ -617,11 +618,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert %{domain_ids: [^new_domain_id]} = DataStructures.get_data_structure!(id)
 
-      [
-        {:reindex, structure_reindex}
-      ] = MockIndexWorker.calls()
-
-      assert structure_reindex ||| [id]
+      assert [{:reindex, :structures, [^id]}] = MockIndexWorker.calls()
     end
 
     @tag authentication: [role: "user"]
@@ -658,9 +655,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert %{domain_ids: [^new_domain_id]} = DataStructures.get_data_structure!(id)
 
-      implementation_reindexed = Keyword.get(MockIndexWorker.calls(), :reindex_implementations)
-
-      assert implementation_reindexed ||| [implementation_id]
+      assert {:reindex, :implementations, [^implementation_id]} =
+               Enum.find(MockIndexWorker.calls(), fn {action, index, _} ->
+                 action == :reindex and index == :implementations
+               end)
     end
 
     @tag authentication: [role: "user"]
@@ -969,7 +967,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
           assert query == %{
                    bool: %{
-                     filter: %{term: %{"type.raw" => "Field"}},
+                     must: %{term: %{"type.raw" => "Field"}},
                      must_not: %{exists: %{field: "deleted_at"}}
                    }
                  }
@@ -1008,7 +1006,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
         assert query == %{
                  bool: %{
-                   filter: %{terms: %{"id" => [id1, id2]}},
+                   must: %{terms: %{"id" => [id1, id2]}},
                    must_not: %{exists: %{field: "deleted_at"}}
                  }
                }
@@ -1053,7 +1051,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
         assert query == %{
                  bool: %{
-                   filter: %{term: %{"note_id" => 123}},
+                   must: %{term: %{"note_id" => 123}},
                    must_not: %{exists: %{field: "deleted_at"}}
                  }
                }
@@ -1213,7 +1211,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                ]
              }
 
-      find_call = {:reindex_grant_requests, [grant_request_id]}
+      find_call = {:reindex, :grant_requests, [grant_request_id]}
 
       assert find_call ==
                MockIndexWorker.calls()
@@ -1256,9 +1254,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
       )
       |> json_response(:ok)
 
-      implementation_reindexed = Keyword.get(MockIndexWorker.calls(), :reindex_implementations)
-
-      assert implementation_reindexed ||| [implementation_id_1, implementation_id_2]
+      assert {:reindex, :implementations, [^implementation_id_1, ^implementation_id_2]} =
+               Enum.find(MockIndexWorker.calls(), fn {action, index, _} ->
+                 action == :reindex and index == :implementations
+               end)
     end
 
     @tag authentication: [role: "user", permissions: [:manage_structures_domain]]
@@ -1432,7 +1431,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
         assert %{
                  bool: %{
-                   filter: [
+                   must: [
                      # The query taxonomy filter gets converted to the field "domain_ids"
                      %{terms: %{"domain_ids" => [_domain_id, _child_domain_id]}},
                      %{term: %{"confidential" => false}}
@@ -1485,7 +1484,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
         assert %{
                  bool: %{
-                   filter: [
+                   must: [
                      # The query taxonomy filter gets converted to the field "domain_ids"
                      %{terms: %{"domain_ids" => [_domain_id, _child_domain_id]}},
                      %{term: %{"confidential" => false}}

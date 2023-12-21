@@ -38,10 +38,8 @@ defmodule TdDd.DataCase do
         else
           parent = self()
 
-          allow(parent, [
-            TdCx.Search.IndexWorker,
-            TdDq.Search.IndexWorker
-          ])
+          allow(parent, [TdCore.Search.IndexWorker])
+          # [TdCx.Search.IndexWorker,TdDq.Search.IndexWorker]
         end
 
       {:already, :owner} ->

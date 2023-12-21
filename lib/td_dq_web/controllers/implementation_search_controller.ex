@@ -1,13 +1,13 @@
 defmodule TdDqWeb.ImplementationSearchController do
   use TdDqWeb, :controller
 
+  alias TdCore.Search.IndexWorker
   alias TdDq.Implementations
   alias TdDq.Implementations.Actions
   alias TdDq.Rules.Search
 
   action_fallback(TdDqWeb.FallbackController)
 
-  @index_worker Application.compile_env(:td_dd, :dq_index_worker)
   @default_page 0
   @default_size 20
 
@@ -51,7 +51,7 @@ defmodule TdDqWeb.ImplementationSearchController do
     claims = conn.assigns[:current_resource]
 
     with :ok <- Bodyguard.permit(Implementations, :reindex, claims) do
-      @index_worker.reindex_implementations(:all)
+      IndexWorker.reindex(:implementations, :all)
       send_resp(conn, :accepted, "")
     end
   end

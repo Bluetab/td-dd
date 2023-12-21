@@ -7,6 +7,7 @@ defmodule TdDq.Implementations.BulkLoad do
   alias TdCache.DomainCache
   alias TdCache.I18nCache
   alias TdCache.TemplateCache
+  alias TdCore.Search.IndexWorker
   alias TdDdWeb.ErrorHelpers
   alias TdDfLib.Format
   alias TdDfLib.Parser
@@ -14,8 +15,6 @@ defmodule TdDq.Implementations.BulkLoad do
   alias TdDq.Rules
 
   require Logger
-
-  @index_worker Application.compile_env(:td_dd, :dq_index_worker)
 
   @required_headers [
     "implementation_key",
@@ -55,7 +54,7 @@ defmodule TdDq.Implementations.BulkLoad do
     %{ids_to_reindex: ids} =
       result = upsert_implementations(implementations, claims, auto_publish, lang)
 
-    @index_worker.reindex_implementations(ids)
+    IndexWorker.reindex(:implementations, ids)
     {:ok, result}
   end
 

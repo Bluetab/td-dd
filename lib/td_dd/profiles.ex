@@ -6,12 +6,12 @@ defmodule TdDd.Profiles do
   import Ecto.Query
 
   alias Ecto.Multi
+  alias TdCore.Search.IndexWorker
   alias TdDd.DataStructures
   alias TdDd.Executions
   alias TdDd.Executions.ProfileEvents
   alias TdDd.Profiles.Profile
   alias TdDd.Repo
-  alias TdDd.Search.IndexWorker
 
   defdelegate authorize(action, user, params), to: __MODULE__.Policy
 
@@ -147,10 +147,10 @@ defmodule TdDd.Profiles do
     case version do
       %{parents: [_ | _] = parents} ->
         data_structure_ids = Enum.map(parents, & &1.data_structure_id) ++ [data_structure_id]
-        IndexWorker.reindex(data_structure_ids)
+        IndexWorker.reindex(:structures, data_structure_ids)
 
       _ ->
-        IndexWorker.reindex(data_structure_id)
+        IndexWorker.reindex(:structures, data_structure_id)
     end
 
     reply

@@ -119,7 +119,7 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
   """
 
   setup_all do
-    start_supervised!(TdDd.Search.MockIndexWorker)
+    start_supervised!(TdCore.Search.MockIndexWorker)
     :ok
   end
 

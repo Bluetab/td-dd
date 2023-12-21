@@ -18,13 +18,14 @@ config :td_dd, TdDd.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: 1
 
-config :td_dd, index_worker: TdDd.Search.MockIndexWorker
+config :td_core, TdCore.Search.Cluster, api: ElasticsearchMock
 
-config :td_dd, cx_index_worker: TdDd.Search.MockIndexWorker
-
-config :td_dd, dq_index_worker: TdDd.Search.MockIndexWorker
-
-config :td_dd, TdDd.Search.Cluster, api: ElasticsearchMock
+config :td_core, TdCore.Search.Cluster,
+  aggregations: %{
+    "domain" => 50,
+    "user" => 50,
+    "system" => 50
+  }
 
 config :td_dd, :vault,
   token: "vault_secret_token1234",
@@ -40,11 +41,11 @@ config :td_cache, :audit, stream: "audit:events:test"
 
 config :td_cache, redis_host: "redis", port: 6380
 
-config :td_cache, :event_stream, streams: []
-
 # Print only warnings and errors during test
 config :logger, level: :warn
 
 # config :logger, :console, level: :debug
 
 config :td_cluster, groups: [:dd]
+
+config :td_cache, :event_stream, streams: []

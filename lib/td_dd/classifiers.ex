@@ -6,6 +6,7 @@ defmodule TdDd.Classifiers do
   import Ecto.Query
 
   alias Ecto.Multi
+  alias TdCore.Search.IndexWorker
   alias TdDd.Classifiers.Classifier
   alias TdDd.Classifiers.Filter
   alias TdDd.Classifiers.Rule
@@ -13,8 +14,6 @@ defmodule TdDd.Classifiers do
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Repo
   alias TdDd.Systems.System
-
-  @index_worker Application.compile_env(:td_dd, :index_worker)
 
   @typep multi_result ::
            {:ok, map} | {:error, Multi.name(), any(), %{required(Multi.name()) => any()}}
@@ -197,7 +196,7 @@ defmodule TdDd.Classifiers do
   def reindex(result)
 
   def reindex({:ok, %{structure_ids: structure_ids}} = result) do
-    @index_worker.reindex(structure_ids)
+    IndexWorker.reindex(:structures, structure_ids)
     result
   end
 

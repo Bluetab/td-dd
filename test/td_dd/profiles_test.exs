@@ -7,6 +7,12 @@ defmodule TdDd.DataStructures.ProfilesTest do
   alias TdDd.Profiles
   alias TdDd.Profiles.Profile
 
+  setup do
+    start_supervised!(TdCore.Search.Cluster)
+    start_supervised!(TdCore.Search.IndexWorker)
+    :ok
+  end
+
   describe "TdDd.Profiles" do
     @valid_attrs %{value: %{}, data_structure_id: 0}
     @update_attrs %{value: %{"foo" => "bar"}}

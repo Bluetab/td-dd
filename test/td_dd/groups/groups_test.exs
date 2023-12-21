@@ -3,10 +3,10 @@ defmodule TdDd.GroupsTest do
 
   alias TdDd.DataStructures
   alias TdDd.Groups
-  alias TdDd.Search.MockIndexWorker
 
   setup_all do
-    start_supervised(MockIndexWorker)
+    start_supervised!(TdCore.Search.Cluster)
+    start_supervised!(TdCore.Search.IndexWorker)
     :ok
   end
 

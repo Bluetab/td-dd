@@ -1,10 +1,10 @@
 defmodule TdDdWeb.GrantRequestStatusControllerTest do
   use TdDdWeb.ConnCase
 
-  alias TdDd.Search.MockIndexWorker
-
   setup do
-    start_supervised(MockIndexWorker)
+    start_supervised!(TdCore.Search.Cluster)
+    start_supervised!(TdCore.Search.IndexWorker)
+
     :ok
   end
 

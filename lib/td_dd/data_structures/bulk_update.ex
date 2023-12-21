@@ -7,12 +7,12 @@ defmodule TdDd.DataStructures.BulkUpdate do
   alias Ecto.Changeset
   alias Ecto.Multi
   alias TdCache.TaxonomyCache
+  alias TdCore.Search.IndexWorker
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.StructureNotesWorkflow
   alias TdDd.Repo
-  alias TdDd.Search.IndexWorker
   alias TdDfLib.Parser
   alias TdDfLib.Templates
   alias Truedat.Auth.Claims
@@ -360,11 +360,13 @@ defmodule TdDd.DataStructures.BulkUpdate do
   end
 
   defp on_complete({:ok, %{} = result}) do
-    result
-    |> Map.take([:updates, :update_notes])
-    |> Enum.flat_map(fn {_, v} -> Map.keys(v) end)
-    |> Enum.uniq()
-    |> IndexWorker.reindex()
+    ids =
+      result
+      |> Map.take([:updates, :update_notes])
+      |> Enum.flat_map(fn {_, v} -> Map.keys(v) end)
+      |> Enum.uniq()
+
+    IndexWorker.reindex(:structures, ids)
 
     {:ok, result}
   end

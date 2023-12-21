@@ -9,7 +9,7 @@ defmodule TdDd.Grants.Statuses do
   alias TdDd.Grants.GrantRequestStatus
   alias TdDd.Repo
 
-  @index_worker Application.compile_env(:td_dd, :index_worker)
+  alias TdCore.Search.IndexWorker
 
   def create_grant_request_status(
         %{id: grant_request_id, current_status: current_status} = _grant_request,
@@ -35,7 +35,7 @@ defmodule TdDd.Grants.Statuses do
   end
 
   defp on_upsert({:ok, %{grant_request_status: %{grant_request_id: grant_request_id}}} = result) do
-    @index_worker.reindex_grant_requests([grant_request_id])
+    IndexWorker.reindex(:grant_requests, [grant_request_id])
 
     result
   end
