@@ -45,6 +45,35 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
                |> json_response(:ok)
     end
 
+    @tag authentication: [role: "admin"]
+    test "admin can search all grant requests with pending status with mut not approved_by", %{
+      conn: conn,
+      grant_request: grant_request
+    } do
+      ElasticsearchMock
+      |> expect(:request, fn _,
+                             :post,
+                             "/grant_requests/_search",
+                             %{query: query, size: @query_size},
+                             _ ->
+        assert %{bool: %{must: %{match_all: %{}}, must_not: %{term: %{"approved_by" => "rol1"}}}} ==
+                 query
+
+        SearchHelpers.hits_response([grant_request])
+      end)
+
+      params = %{
+        "must" => %{
+          "must_not_approved_by" => ["rol1"]
+        }
+      }
+
+      assert %{"data" => [_]} =
+               conn
+               |> post(Routes.grant_request_search_path(conn, :search, params))
+               |> json_response(:ok)
+    end
+
     @tag authentication: [user_name: "non_admin_user", permissions: ["approve_grant_request"]]
     test "user with permissions filters by domain_id",
          %{
