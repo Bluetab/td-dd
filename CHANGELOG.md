@@ -1,5 +1,99 @@
 # Changelog
 
+## [4.48.1] 2022-08-02
+
+### Fixed
+
+- [TD-5106] An implementation's domain id couldn't be changed
+
+## [4.48.0] 2022-07-26
+
+### Added
+
+- [TD-4987]
+  - `api/rule_results/search` now include ruleless implementation results
+  - Add pagination for updated_at
+- [TD-5053] Add implementation_ref on `api/implementations/search`
+- [TD-4441] Send grant_approval event when grant approval is created with rejection
+- [TD-4922] Force cache to add implementations workflow status
+
+### Fixed
+
+- [TD-5011] `TemplateCache.list/0` was returning duplicate entries
+- [TD-5042] Removal request for grant created through /api/bulk_grants with
+  source_user_name and without user_id
+
+### Changed
+
+- [TD-5072] Remove deprecated `type_params` from `rules` table and corresponding
+  mappings
+- [TD-5001] Improved support for data structure alias:
+  - Data structure alias is now persisted and returned in responses. The alias
+    is obtained or removed when a structure note containing an `alias` field is
+    published or deprecated, respectively
+  - Metadata fields (e.g. `order`, `precision`, `nullable`) in data structure
+    responses are now returned within the `metadata` property
+- [TD-3614] Support for access token revocation
+- [TD-4925] Create new draft when editing a published implementation only if it
+  has changes
+- [TD-4997] Change search executions API sources list filter from 'AND' to 'OR'
+- [TD-4987] `/api/rule_results/search` now include ruleless implementation
+  results and supports pagination
+- [TD-4175] Data structure tags may now be inherited by descendents of the
+  tagged data structure
+
+## [4.47.1] 2022-07-18
+
+### Added
+
+- [TD-5053] Add implementation_ref on `api/implementations/search`
+
+## [4.47.0] 2022-07-05
+
+### Changed
+
+- [TD-4412] Update td-cache for changes in templates preprocessing
+
+### Added
+
+- [TD-4920] Add results to implementation query api/v2
+- [TD-4921] Add implementation workflow events
+- [TD-4894] Multiple field validations
+- [TD-4993] Add last_quality_event to implementation api/v2
+- [TD-4176]
+  - Added descrition in data structure tag
+  - Changed description for comment in data structures tags link
+- [TD-4661] Support for ReferenceDatasets on Implementations
+
+### Fixed
+
+- [TD-4959] Use implementation_ref instead of implementation_key for status changes
+- [TD-4952] Missing code from [TD-4655]
+
+## [4.46.1] 2022-06-23
+
+### Fixed
+
+- [TD-4962] Submit results only for published implementations
+
+## [4.46.0] 2022-06-21
+
+### Changed
+
+- [TD-4739] Validate dynamic content for safety to prevent XSS attacks
+- [TD-4923] Remove implementation_key dependency for version management
+
+### Added
+
+- [TD-4431] Support for requesting removal of grants
+- [TD-4919] Allow query implementation versions using /api/v2
+
+### Fixed
+
+- [TD-4918] Implementations permissions
+- [TD-4911] Implementations download was failing for ruleless implementations
+- [TD-4950] Implementations move and clone actions for admin
+
 ## [4.45.0] 2022-06-06
 
 ### Added
@@ -45,7 +139,7 @@
 
 ### Added
 
-- [TD-4089] Support for Implementations without Rules
+- [TD-4089] Support for implementations without rules
 
 ## [4.43.0] 2022-05-09
 

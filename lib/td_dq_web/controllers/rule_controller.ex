@@ -126,8 +126,8 @@ defmodule TdDqWeb.RuleController do
   defp is_allowed_domain(%{"domain_id" => domain_id, "business_concept_id" => business_concept_id})
        when not is_nil(domain_id) and not is_nil(business_concept_id) do
     case TdCache.ConceptCache.get(business_concept_id) do
-      {:ok, %{shared_to_ids: shared_to_ids, domain: %{id: bussines_domain_id}}} ->
-        [bussines_domain_id | shared_to_ids]
+      {:ok, %{shared_to_ids: shared_to_ids, domain: %{id: bc_domain_id}}} ->
+        [bc_domain_id | shared_to_ids]
         |> Enum.uniq()
         |> Enum.member?(domain_id)
 
@@ -138,13 +138,8 @@ defmodule TdDqWeb.RuleController do
 
   defp is_allowed_domain(%{}), do: true
 
-  defp get_user_permissions(claims, %Rule{} = rule) do
-    %{
-      manage_quality_rules: can?(claims, manage(Rule)),
-      manage_quality_rule_implementations: can?(claims, create_implementation(rule)),
-      manage_raw_quality_rule_implementations: can?(claims, create_raw_implementation(rule)),
-      manage_segments: can?(claims, manage_segments_action(rule))
-    }
+  defp get_user_permissions(claims, %Rule{}) do
+    %{manage_quality_rules: can?(claims, manage(Rule))}
   end
 
   swagger_path :show do

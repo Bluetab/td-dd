@@ -12,7 +12,6 @@ defmodule TdDd.Factory do
   alias TdCx.Sources.Source
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
-  alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.MetadataField
@@ -20,6 +19,7 @@ defmodule TdDd.Factory do
   alias TdDd.DataStructures.RelationType
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.DataStructures.StructureNote
+  alias TdDd.DataStructures.Tags.Tag
   alias TdDd.Lineage.Units
   alias TdDd.Profiles.Profile
   alias TdDd.UserSearchFilters.UserSearchFilter
@@ -96,7 +96,11 @@ defmodule TdDd.Factory do
 
   def raw_implementation_factory(attrs) do
     {content_attrs, attrs} = Map.split(attrs, [:source_id])
-    attrs = default_assoc(attrs, :rule_id, :rule)
+
+    attrs =
+      attrs
+      |> default_assoc(:rule_id, :rule)
+      |> merge_attrs_with_ref()
 
     %TdDq.Implementations.Implementation{
       implementation_key: sequence("ri"),
@@ -124,7 +128,10 @@ defmodule TdDd.Factory do
   end
 
   def implementation_factory(attrs) do
-    attrs = default_assoc(attrs, :rule_id, :rule)
+    attrs =
+      attrs
+      |> default_assoc(:rule_id, :rule)
+      |> merge_attrs_with_ref()
 
     %TdDq.Implementations.Implementation{
       implementation_key: sequence("implementation_key"),
@@ -142,7 +149,33 @@ defmodule TdDd.Factory do
     |> merge_attributes(attrs)
   end
 
+  defp merge_attrs_with_ref(attrs) do
+    id = Map.get(attrs, :id, System.unique_integer([:positive]))
+
+    with_ref_attrs = %{
+      id: id,
+      implementation_ref: Map.get(attrs, :implementation_ref, id)
+    }
+
+    attrs
+    |> merge_attributes(with_ref_attrs)
+  end
+
+  # def implementation_with_ref_factory(attrs) do
+  #   id = Map.get(attrs, :id, System.unique_integer([:positive]))
+  #   with_ref_attrs = %{
+  #     id: id,
+  #     implementation_ref: Map.get(attrs, :implementation_ref, id)
+  #   }
+
+  #   :implementation
+  #   |> build(attrs)
+  #   |> merge_attributes(with_ref_attrs)
+  # end
+
   def ruleless_implementation_factory(attrs) do
+    attrs = merge_attrs_with_ref(attrs)
+
     %TdDq.Implementations.Implementation{
       implementation_key: sequence("implementation_key"),
       implementation_type: "default",
@@ -181,9 +214,10 @@ defmodule TdDd.Factory do
     |> merge_attributes(attrs)
   end
 
-  def data_structure_tag_factory do
-    %DataStructureTag{
-      name: sequence("structure_tag_name")
+  def tag_factory do
+    %Tag{
+      name: sequence("tag_name"),
+      description: sequence("tag_description")
     }
   end
 
@@ -460,20 +494,21 @@ defmodule TdDd.Factory do
     }
   end
 
-  def quality_event_factory do
+  def quality_event_factory(attrs) do
     %TdDq.Events.QualityEvent{
       type: "PENDING"
     }
+    |> merge_attributes(attrs)
   end
 
-  def data_structures_tags_factory(attrs) do
+  def structure_tag_factory(attrs) do
     attrs =
       attrs
       |> default_assoc(:data_structure_id, :data_structure)
-      |> default_assoc(:data_structure_tag_id, :data_structure_tag)
+      |> default_assoc(:tag_id, :tag)
 
-    %TdDd.DataStructures.DataStructuresTags{
-      description: sequence("description")
+    %TdDd.DataStructures.Tags.StructureTag{
+      comment: sequence("foo")
     }
     |> merge_attributes(attrs)
   end
@@ -503,7 +538,7 @@ defmodule TdDd.Factory do
     attrs = default_assoc(attrs, :data_structure_id, :data_structure)
 
     %TdDd.Grants.Grant{
-      user_id: sequence(:user_id, & &1, start_at: 1),
+      source_user_name: sequence("grant_source_user_name"),
       detail: %{"foo" => "bar"},
       start_date: "2020-01-02",
       end_date: "2021-02-03"

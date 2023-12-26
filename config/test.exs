@@ -1,13 +1,10 @@
-use Mix.Config
+import Config
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
 config :td_dd, TdDdWeb.Endpoint, server: false
 config :td_dd, TdCxWeb.Endpoint, server: false
 config :td_dd, TdDqWeb.Endpoint, server: false
-
-# Print only warnings and errors during test
-config :logger, level: :warn
 
 # Configure your database
 config :td_dd, TdDd.Repo,
@@ -39,3 +36,8 @@ config :td_cache, :audit, stream: "audit:events:test"
 config :td_cache, redis_host: "redis", port: 6380
 
 config :td_cache, :event_stream, streams: []
+
+# Print only warnings and errors during test
+config :logger, level: :warn
+
+# config :logger, :console, level: :debug

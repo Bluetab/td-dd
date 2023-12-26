@@ -100,14 +100,14 @@ defmodule TdDd.Search.Store do
     Repo.vacuum([
       "data_structures",
       "data_structure_relations",
-      "data_structure_tags",
       "data_structure_types",
       "data_structure_versions",
       "relation_types",
       "sources",
       "structure_metadata",
       "structure_classifications",
-      "systems"
+      "systems",
+      "tags"
     ])
   end
 end

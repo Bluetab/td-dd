@@ -27,7 +27,7 @@ defmodule TdDd.Grants do
       ) do
     changeset =
       %Grant{data_structure_id: data_structure_id}
-      |> Grant.changeset(params, is_bulk)
+      |> Grant.create_changeset(params, is_bulk)
       |> Grant.put_data_structure(data_structure)
 
     Multi.new()
@@ -57,7 +57,7 @@ defmodule TdDd.Grants do
   end
 
   def update_grant(%Grant{} = grant, params, %Claims{user_id: user_id}) do
-    changeset = Grant.changeset(grant, params, false)
+    changeset = Grant.update_changeset(grant, params)
 
     Multi.new()
     |> Multi.update(:grant, changeset)
@@ -92,7 +92,7 @@ defmodule TdDd.Grants do
         where(
           q,
           [g],
-          fragment("daterange(?, ?, '[]') @> ?::date", g.start_date, g.end_date, ^date)
+          fragment("daterange(?, ?, '[)') @> ?::date", g.start_date, g.end_date, ^date)
         )
 
       {:preload, preloads}, q ->

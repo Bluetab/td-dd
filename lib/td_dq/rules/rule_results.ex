@@ -13,7 +13,6 @@ defmodule TdDq.Rules.RuleResults do
   alias TdDq.Executions.Execution
   alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Audit
-  alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleResult
 
   require Logger
@@ -28,23 +27,18 @@ defmodule TdDq.Rules.RuleResults do
   def list_rule_results(params \\ %{}) do
     RuleResult
     |> join(:inner, [rr, ri], ri in Implementation, on: rr.implementation_id == ri.id)
-    |> join(:inner, [_, ri, r], r in Rule, on: r.id == ri.rule_id)
-    |> where([_, _, r], is_nil(r.deleted_at))
     |> where([_, ri, _], is_nil(ri.deleted_at))
-    |> get_results_gt_date(params)
-    |> Repo.all()
+    |> add_filters(params)
+    |> order(params)
+    |> paginate_all(params)
   end
 
   def list_segment_results(params \\ %{}) do
-    cursor_params = get_cursor_params(params)
-
     RuleResult
     |> where([rr], not is_nil(rr.parent_id))
-    |> where_cursor(cursor_params)
-    |> page_limit(cursor_params)
-    |> order(cursor_params)
     |> add_filters(params)
-    |> Repo.all()
+    |> order(params)
+    |> paginate_all(params)
   end
 
   def list_segment_results_by_parent_id(parent_id, _params \\ %{}) do
@@ -53,12 +47,35 @@ defmodule TdDq.Rules.RuleResults do
     |> Repo.all()
   end
 
-  def has_segments(parent_ids) do
+  def has_segments(parent_ids) when is_list(parent_ids) do
     RuleResult
     |> where([rr], rr.parent_id in ^parent_ids)
     |> select([rr], rr.parent_id)
     |> group_by([rr], rr.parent_id)
     |> Repo.all()
+  end
+
+  def get_by(%Implementation{id: implementation_id} = _implementation) do
+    RuleResult
+    |> where([rr], rr.implementation_id == ^implementation_id)
+    |> where([rr], is_nil(rr.parent_id))
+    |> order_by([rr], desc: rr.date)
+    |> Repo.all()
+  end
+
+  def has_segments?(%RuleResult{id: implementation_id}) do
+    RuleResult
+    |> where([rr], rr.parent_id == ^implementation_id)
+    |> limit(1)
+    |> Repo.one() != nil
+  end
+
+  def has_remediation?(%RuleResult{id: implementation_id}) do
+    RuleResult
+    |> where([rr], rr.id == ^implementation_id)
+    |> join(:inner, [rr], rm in assoc(rr, :remediation))
+    |> limit(1)
+    |> Repo.one() != nil
   end
 
   @doc """
@@ -248,13 +265,6 @@ defmodule TdDq.Rules.RuleResults do
 
   defp refresh_on_delete(res, _), do: res
 
-  defp get_results_gt_date(query, %{"since" => ts}) do
-    query
-    |> where([rr, _, _], rr.date > ^ts)
-  end
-
-  defp get_results_gt_date(query, _params), do: query
-
   defp add_filters(query, %{"since" => ts, "from" => "updated_at"}) do
     query
     |> where([rr, _, _], rr.updated_at >= ^ts)
@@ -279,12 +289,10 @@ defmodule TdDq.Rules.RuleResults do
 
   defp page_limit(query, _), do: query
 
-  defp order(query, cursor_params) do
-    case Map.has_key?(cursor_params, :cursor) do
-      true -> order_by(query, [sn], asc: sn.updated_at, asc: sn.id)
-      false -> query
-    end
-  end
+  defp order(query, %{"from" => "updated_at"}),
+    do: order_by(query, [rr], asc: rr.updated_at, asc: rr.id)
+
+  defp order(query, _params), do: order_by(query, [rr], asc: rr.date, asc: rr.id)
 
   defp get_cursor_params(%{"cursor" => %{} = cursor}) do
     offset = Map.get(cursor, "offset")
@@ -294,4 +302,20 @@ defmodule TdDq.Rules.RuleResults do
   end
 
   defp get_cursor_params(params), do: params
+
+  defp paginate_all(query, params) do
+    cursor_params = get_cursor_params(params)
+
+    cursor_query =
+      query
+      |> where_cursor(cursor_params)
+      |> page_limit(cursor_params)
+
+    total_query = select(subquery(query), [rr], count())
+
+    Multi.new()
+    |> Multi.all(:all, cursor_query)
+    |> Multi.one(:total, total_query)
+    |> Repo.transaction()
+  end
 end

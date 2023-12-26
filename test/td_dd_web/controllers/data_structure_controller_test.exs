@@ -101,6 +101,28 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert [%{"id" => ^id, "name" => ^name, "external_id" => ^external_id}] = data
     end
+
+    @tag authentication: [role: "admin"]
+    test "response includes alias as name and original name", %{conn: conn} do
+      %{name: name} =
+        data_structure_version =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, alias: "my_alias"),
+          type: @template_name
+        )
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", _, [] ->
+        SearchHelpers.hits_response([data_structure_version])
+      end)
+
+      assert %{"data" => data} =
+               conn
+               |> get(data_structure_path(conn, :index))
+               |> json_response(:ok)
+
+      assert [%{"name" => "my_alias", "original_name" => ^name}] = data
+    end
   end
 
   describe "search" do
@@ -1151,7 +1173,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
            permissions: [
              :edit_structure_note,
              :view_data_structure,
-             # csv_bulk_update_event_path
              :create_structure_note
            ]
          ]

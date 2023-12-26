@@ -33,7 +33,7 @@ defmodule TdDq.Implementations.ConditionRow do
     |> cast_embed(:operator, with: &Operator.changeset/2, required: true)
     |> cast_embed(:population, with: &__MODULE__.changeset/2)
     |> cast_embed(:value_modifier, with: &Modifier.changeset/2)
-    |> validate_required([:value])
+    |> validate_required(:value)
     |> validate_value(params)
   end
 
@@ -134,12 +134,25 @@ defmodule TdDq.Implementations.ConditionRow do
     end
   end
 
+  # One field
   defp valid_attribute(%{"id" => id}, _params) do
     is_integer(id)
   end
 
+  # Several fields
+  defp valid_attribute(%{"fields" => fields}, %{"operator" => %{"value_type" => value_type}}) do
+    is_valid_type_value(value_type, fields)
+  end
+
   defp valid_attribute(%{"raw" => raw}, %{"operator" => %{"value_type" => value_type}}) do
     is_valid_type_value(value_type, raw)
+  end
+
+  defp valid_attribute(
+         %{"name" => name, "type" => "reference_dataset_field", "parent_index" => parent_index},
+         _params
+       ) do
+    is_integer(parent_index) and is_binary(name) and String.trim(name) != ""
   end
 
   defp valid_attribute(_, _), do: false
@@ -162,6 +175,14 @@ defmodule TdDq.Implementations.ConditionRow do
 
   defp is_valid_type_value("string_list", value) do
     is_list(value)
+  end
+
+  defp is_valid_type_value("field_list", value) do
+    is_list(value) and
+      Enum.all?(value, fn
+        %{"id" => id} -> is_integer(id)
+        value -> valid_attribute(value, nil)
+      end)
   end
 
   defp is_valid_type_value(_other_type, _value) do

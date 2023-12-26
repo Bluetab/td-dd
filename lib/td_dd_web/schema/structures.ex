@@ -22,6 +22,12 @@ defmodule TdDdWeb.Schema.Structures do
       resolve(&Resolvers.Structures.data_structures/3)
     end
 
+    @desc "Get a data structure"
+    field :data_structure, :data_structure do
+      arg(:id, non_null(:id))
+      resolve(&Resolvers.Structures.data_structure/3)
+    end
+
     @desc "Get a list of data structure versions"
     field :data_structure_versions, list_of(:data_structure_version) do
       arg(:since, :datetime)
@@ -54,6 +60,11 @@ defmodule TdDdWeb.Schema.Structures do
     field :system, :system, resolve: dataloader(TdDd.DataStructures)
     field :current_version, :data_structure_version, resolve: dataloader(TdDd.DataStructures)
     field :units, list_of(:unit), resolve: dataloader(TdDd.DataStructures)
+
+    field :structure_tags, list_of(:structure_tag),
+      resolve: &Resolvers.Structures.structure_tags/3
+
+    field :available_tags, list_of(:tag), resolve: &Resolvers.Structures.available_tags/3
   end
 
   object :data_structure_version do

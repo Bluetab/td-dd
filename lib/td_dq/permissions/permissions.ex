@@ -25,4 +25,8 @@ defmodule TdDq.Permissions do
   def authorized?(%TdDdClaims{jti: jti}, permission) do
     TdCache.Permissions.has_permission?(jti, permission)
   end
+
+  def authorized_any?(%TdDdClaims{jti: jti}, permissions) do
+    TdCache.Permissions.has_any_permission?(jti, permissions)
+  end
 end

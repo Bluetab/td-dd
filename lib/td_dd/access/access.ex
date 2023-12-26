@@ -3,11 +3,14 @@ defmodule TdDd.Access do
   Ecto Schema module for Access
   """
   use Ecto.Schema
-  @foreign_key_type :string
 
   import Ecto.Changeset
+
   alias TdCache.UserCache
   alias TdDd.DataStructures.DataStructure
+  alias TdDfLib.Validation
+
+  @foreign_key_type :string
 
   schema "accesses" do
     belongs_to(:data_structure, DataStructure,
@@ -40,6 +43,7 @@ defmodule TdDd.Access do
     ])
     |> validate_user_id(params)
     |> validate_required([:data_structure_external_id, :source_user_name, :accessed_at])
+    |> validate_change(:details, &Validation.validate_safe/2)
     |> foreign_key_constraint(:data_structure_external_id)
   end
 

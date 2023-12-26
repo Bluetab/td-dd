@@ -11,12 +11,14 @@ defmodule TdDdWeb.GrantControllerTest do
     detail: %{},
     end_date: "2010-04-17",
     start_date: "2010-04-17",
-    user_id: @user_id
+    user_id: @user_id,
+    source_user_name: "some source_user_name"
   }
   @update_attrs %{
     detail: %{},
     end_date: "2011-05-18",
-    start_date: "2011-05-18"
+    start_date: "2011-05-18",
+    source_user_name: "other source_user_name"
   }
   @invalid_attrs %{detail: nil, end_date: nil, start_date: nil}
 
@@ -92,6 +94,7 @@ defmodule TdDdWeb.GrantControllerTest do
                "detail" => %{},
                "end_date" => "2010-04-17",
                "start_date" => "2010-04-17",
+               "source_user_name" => "some source_user_name",
                "user_id" => @user_id
              } = data
     end
@@ -254,6 +257,117 @@ defmodule TdDdWeb.GrantControllerTest do
                "end_date" => "2011-05-18",
                "start_date" => "2011-05-18"
              } = data
+    end
+
+    @tag authentication: [role: "non_admin", permissions: [:request_grant_removal, :view_grants]]
+    test "user with permissions can request removal of a grant", %{
+      conn: conn,
+      grant: %Grant{id: id} = grant
+    } do
+      assert %{"data" => %{"id" => ^id}} =
+               conn
+               |> put(Routes.grant_path(conn, :update, grant), action: "request_removal")
+               |> json_response(:ok)
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.grant_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "id" => ^id,
+               "pending_removal" => true
+             } = data
+    end
+
+    @tag authentication: [role: "non_admin"]
+    test "user without permissions can request_removal of own grant", %{
+      conn: conn,
+      claims: %{user_id: user_id}
+    } do
+      %{id: id} = grant = insert(:grant, user_id: user_id)
+
+      assert %{"data" => %{"id" => ^id}} =
+               conn
+               |> put(Routes.grant_path(conn, :update, grant), action: "request_removal")
+               |> json_response(:ok)
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.grant_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "id" => ^id,
+               "pending_removal" => true
+             } = data
+    end
+
+    @tag authentication: [role: "non_admin"]
+    test "user without permissions can cancel removal of own grant", %{
+      conn: conn,
+      claims: %{user_id: user_id}
+    } do
+      %{id: id} = grant = insert(:grant, user_id: user_id, pending_removal: true)
+
+      assert %{"data" => %{"id" => ^id}} =
+               conn
+               |> put(Routes.grant_path(conn, :update, grant), action: "cancel_removal")
+               |> json_response(:ok)
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.grant_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "id" => ^id,
+               "pending_removal" => false
+             } = data
+    end
+
+    @tag authentication: [role: "admin"]
+    test "set_removed action will update pending_removal and end_date properties", %{
+      conn: conn,
+      grant: %Grant{id: id} = grant
+    } do
+      assert %{"data" => %{"id" => ^id}} =
+               conn
+               |> put(Routes.grant_path(conn, :update, grant),
+                 grant: %{
+                   pending_removal: true,
+                   end_date: nil
+                 }
+               )
+               |> json_response(:ok)
+
+      assert %{
+               "data" => %{
+                 "end_date" => nil,
+                 "pending_removal" => true
+               }
+             } =
+               conn
+               |> get(Routes.grant_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{"data" => %{"id" => ^id}} =
+               conn
+               |> put(Routes.grant_path(conn, :update, grant), action: "set_removed")
+               |> json_response(:ok)
+
+      assert %{
+               "data" => %{
+                 "end_date" => end_date,
+                 "pending_removal" => pending_removal
+               }
+             } =
+               conn
+               |> get(Routes.grant_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert not is_nil(end_date)
+      assert not pending_removal
     end
 
     @tag authentication: [role: "non_admin", permissions: [:manage_grants]]

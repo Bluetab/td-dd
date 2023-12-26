@@ -22,7 +22,7 @@ defmodule TdCx.Events.Event do
   def changeset(%__MODULE__{} = struct, %{} = params) do
     struct
     |> cast(params, [:type, :message, :job_id])
-    |> validate_required([:job_id])
+    |> validate_required(:job_id)
     |> validate_length(:message, max: 1_000)
   end
 end

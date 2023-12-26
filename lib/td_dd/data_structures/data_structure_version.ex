@@ -33,11 +33,12 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     field(:profile_source, :map, virtual: true)
     field(:classes, :map, virtual: true)
     field(:mutable_metadata, :map, virtual: true)
-    field(:latest_note, :map, virtual: true)
+    field(:note, :map, virtual: true)
     field(:grants, {:array, :map}, virtual: true)
     field(:grant, :map, virtual: true)
     field(:with_profiling, :boolean, virtual: true)
     field(:_filters, :map, virtual: true)
+    field(:tag_names, {:array, :string}, virtual: true)
 
     belongs_to(:data_structure, DataStructure)
 
@@ -144,15 +145,16 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     def encode(
           %DataStructureVersion{
             data_structure:
-              %{search_content: content, tags: tags, domain_ids: _domain_ids} = data_structure,
-            path: path
+              %{alias: alias_name, search_content: content, domain_ids: _domain_ids} =
+                data_structure,
+            path: path,
+            tag_names: tags
           } = dsv
         ) do
       # IMPORTANT: Avoid enriching structs one-by-one in this function.
       # Instead, enrichment should be performed as efficiently as possible on
       # chunked data using `TdDd.DataStructures.enriched_structure_versions/1`.
       name_path = Enum.map(path, & &1["name"])
-      tags = tags(tags)
 
       data_structure
       |> Map.take([
@@ -165,8 +167,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
         :source_id,
         :system_id
       ])
-      |> Map.put(:latest_note, content)
-      |> Map.put(:published_note, content)
+      |> Map.put(:note, content)
       |> Map.put(:domain, first_domain(data_structure))
       |> Map.put(:field_type, field_type(dsv))
       |> Map.put(:path_sort, path_sort(name_path))
@@ -193,6 +194,15 @@ defmodule TdDd.DataStructures.DataStructureVersion do
           :with_profiling
         ])
       )
+      |> maybe_put_alias(alias_name)
+    end
+
+    defp maybe_put_alias(map, nil), do: map
+
+    defp maybe_put_alias(%{name: original_name} = map, alias_name) do
+      map
+      |> Map.put(:name, alias_name)
+      |> Map.put(:original_name, original_name)
     end
 
     defp path_sort(name_path) when is_list(name_path) do
@@ -216,8 +226,5 @@ defmodule TdDd.DataStructures.DataStructureVersion do
 
     defp source_alias(%{metadata: %{"alias" => value}}), do: value
     defp source_alias(_), do: nil
-
-    defp tags([_ | _] = tags), do: Enum.map(tags, & &1.name)
-    defp tags(_tags), do: nil
   end
 end

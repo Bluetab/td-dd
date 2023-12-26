@@ -4,6 +4,8 @@ defmodule TdDq.Executions.GroupTest do
   alias TdDd.Repo
   alias TdDq.Executions.Group
 
+  @unsafe "javascript:alert(document)"
+
   describe "changeset/2" do
     test "validates required fields" do
       assert %{errors: errors} = Group.changeset(%{})
@@ -14,6 +16,19 @@ defmodule TdDq.Executions.GroupTest do
       params = %{"created_by_id" => 0, "executions" => []}
       assert %{errors: errors} = Group.changeset(params)
       assert {_, [validation: :required]} = errors[:executions]
+    end
+
+    test "validates unsafe content" do
+      %{id: id} = insert(:implementation)
+
+      params = %{
+        "created_by_id" => 0,
+        "executions" => [%{"implementation_id" => id}],
+        "df_content" => %{"doc" => @unsafe}
+      }
+
+      assert %{valid?: false, errors: errors} = Group.changeset(params)
+      assert errors[:df_content] == {"invalid content", []}
     end
 
     test "casts execution params and inserts correctly" do

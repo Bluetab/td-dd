@@ -38,7 +38,7 @@ defmodule TdDd.Grants.BulkLoadTest do
         %{
           "op" => "add",
           "detail" => %{},
-          "end_date" => Date.utc_today(),
+          "end_date" => Date.utc_today() |> Date.add(1),
           "start_date" => "2010-04-17",
           "data_structure_external_id" => data_structure_external_id_1,
           "user_id" => user_id_1,
@@ -47,7 +47,7 @@ defmodule TdDd.Grants.BulkLoadTest do
         %{
           "op" => "add",
           "detail" => %{},
-          "end_date" => Date.utc_today(),
+          "end_date" => Date.utc_today() |> Date.add(1),
           "start_date" => "2010-04-17",
           "data_structure_external_id" => data_structure_external_id_2,
           "user_id" => user_id_2,
@@ -109,7 +109,7 @@ defmodule TdDd.Grants.BulkLoadTest do
         %{
           "op" => "add",
           "detail" => %{},
-          "end_date" => Date.utc_today(),
+          "end_date" => Date.utc_today() |> Date.add(1),
           "start_date" => "2010-04-17",
           "data_structure_external_id" => data_structure_external_id_1,
           "user_id" => user_id_1,

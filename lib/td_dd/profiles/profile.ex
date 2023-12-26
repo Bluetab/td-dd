@@ -7,6 +7,7 @@ defmodule TdDd.Profiles.Profile do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Profiles.Count
   alias TdDd.Profiles.Distribution
+  alias TdDfLib.Validation
 
   @value_fields [:max, :min, :most_frequent, :null_count, :patterns, :total_count, :unique_count]
 
@@ -32,6 +33,7 @@ defmodule TdDd.Profiles.Profile do
     profile
     |> cast(params, [:value, :data_structure_id])
     |> validate_required([:value, :data_structure_id])
+    |> validate_change(:value, &Validation.validate_safe/2)
     |> expand_value()
     |> foreign_key_constraint(:data_structure_id)
   end

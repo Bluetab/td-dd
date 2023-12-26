@@ -24,8 +24,7 @@ defmodule TdDq.Rules.BulkLoad do
     "active" => false,
     "activeSelection" => false,
     "business_concept_id" => nil,
-    "type" => "",
-    "type_params" => %{}
+    "type" => ""
   }
 
   require Logger
@@ -78,8 +77,7 @@ defmodule TdDq.Rules.BulkLoad do
     end)
     |> ensure_template()
     |> convert_description()
-    |> Map.put("domain_id", get_domain_id(rule))
-    |> Map.delete("domain_external_id")
+    |> maybe_put_domain_id(rule)
     |> Map.merge(@default_rule)
   end
 
@@ -101,10 +99,10 @@ defmodule TdDq.Rules.BulkLoad do
 
   defp convert_description(rule), do: Map.put(rule, "description", %{})
 
-  defp get_domain_id(%{"domain_external_id" => domain_external_id}) do
+  defp maybe_put_domain_id(params, %{"domain_external_id" => domain_external_id}) do
     case DomainCache.external_id_to_id(domain_external_id) do
-      {:ok, domain_id} -> domain_id
-      _ -> nil
+      {:ok, domain_id} -> Map.put(params, "domain_id", domain_id)
+      _ -> params
     end
   end
 

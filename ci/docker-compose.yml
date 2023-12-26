@@ -35,7 +35,7 @@ services:
       start_period: 10s
 
   redis:
-    image: library/redis:5.0-alpine
+    image: library/redis:6.2-alpine
     command: redis-server --port 6380 --appendonly yes
     healthcheck:
       test: redis-cli -h localhost -p 6380 ping | grep -q PONG || exit 1

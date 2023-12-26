@@ -25,6 +25,7 @@ defmodule TdDq.Implementations.Implementation do
 
   @valid_result_types ~w(percentage errors_number deviation)
   @cast_fields [
+    :domain_id,
     :deleted_at,
     :df_content,
     :df_name,
@@ -51,6 +52,7 @@ defmodule TdDq.Implementations.Implementation do
     field(:domain, :map, virtual: true)
     field(:df_name, :string)
     field(:df_content, :map)
+    field(:template, :map, virtual: true)
     field(:goal, :float)
     field(:minimum, :float)
     field(:result_type, :string, default: "percentage")
@@ -60,6 +62,12 @@ defmodule TdDq.Implementations.Implementation do
     )
 
     field(:version, :integer)
+
+    field :implementation_ref, :integer
+
+    has_many :versions, Implementation,
+      foreign_key: :implementation_ref,
+      references: :implementation_ref
 
     embeds_one(:raw_content, RawContent, on_replace: :delete)
     embeds_many(:dataset, DatasetRow, on_replace: :delete)
@@ -94,12 +102,6 @@ defmodule TdDq.Implementations.Implementation do
     changeset(implementation, %{params | "populations" => populations})
   end
 
-  def changeset(%__MODULE__{domain_id: nil} = implementation, params) do
-    implementation
-    |> cast(params, @cast_fields ++ [:domain_id])
-    |> changeset_validations(implementation, params)
-  end
-
   def changeset(%__MODULE__{} = implementation, params) do
     implementation
     |> cast(params, @cast_fields)
@@ -110,6 +112,12 @@ defmodule TdDq.Implementations.Implementation do
     implementation
     |> cast(params, [:status, :version, :deleted_at])
     |> validate_required([:status, :version])
+  end
+
+  def implementation_ref_changeset(%__MODULE__{} = implementation, params) do
+    implementation
+    |> cast(params, [:implementation_ref])
+    |> validate_required([:implementation_ref])
   end
 
   def changeset_validations(%Ecto.Changeset{} = changeset, %__MODULE__{} = implementation, params) do
@@ -182,7 +190,7 @@ defmodule TdDq.Implementations.Implementation do
 
       _ ->
         changeset
-        |> validate_required([:implementation_key])
+        |> validate_required(:implementation_key)
         |> validate_length(:implementation_key, max: 255)
         |> unique_constraint(:implementation_key,
           name: :published_implementation_key_index,
@@ -279,18 +287,28 @@ defmodule TdDq.Implementations.Implementation do
   end
 
   defp raw_changeset(changeset) do
-    changeset
-    |> cast_embed(:raw_content, with: &RawContent.changeset/2, required: true)
+    maybe_cast_embed(changeset, :raw_content, with: &RawContent.changeset/2, required: true)
   end
 
   defp draft_changeset(changeset), do: changeset
 
   def default_changeset(changeset) do
     changeset
-    |> cast_embed(:dataset, with: &DatasetRow.changeset/2, required: true)
-    |> cast_embed(:populations, with: &Populations.changeset/2)
-    |> cast_embed(:validations, with: &ConditionRow.changeset/2, required: true)
-    |> cast_embed(:segments, with: &SegmentsRow.changeset/2)
+    |> maybe_cast_embed(:dataset, with: &DatasetRow.changeset/2, required: true)
+    |> maybe_cast_embed(:populations, with: &Populations.changeset/2)
+    |> maybe_cast_embed(:validations, with: &ConditionRow.changeset/2, required: true)
+    |> maybe_cast_embed(:segments, with: &SegmentsRow.changeset/2)
+  end
+
+  defp maybe_cast_embed(%{data: data} = changeset, field, opts) do
+    cs = cast_embed(changeset, field, opts)
+
+    original_value = Map.get(data, field)
+
+    case Changeset.fetch_field(cs, field) do
+      {:changes, ^original_value} -> changeset
+      _ -> cs
+    end
   end
 
   def get_execution_result_info(_implementation, %{type: "FAILED", inserted_at: inserted_at}) do
@@ -353,6 +371,7 @@ defmodule TdDq.Implementations.Implementation do
       :domain_id,
       :id,
       :implementation_key,
+      :implementation_ref,
       :implementation_type,
       :populations,
       :rule_id,
@@ -411,7 +430,7 @@ defmodule TdDq.Implementations.Implementation do
       |> transform_populations()
       |> transform_validations()
       |> transform_segments()
-      |> with_rule(rule)
+      |> maybe_rule(rule)
       |> Map.put(:raw_content, get_raw_content(implementation))
       |> Map.put(:structure_aliases, structure_aliases)
       |> Map.put(:execution_result_info, execution_result_info)
@@ -527,7 +546,7 @@ defmodule TdDq.Implementations.Implementation do
 
     defp with_populations(data, _condition), do: data
 
-    defp with_rule(data, %Rule{} = rule) do
+    defp maybe_rule(data, %Rule{} = rule) do
       template = TemplateCache.get_by_name!(rule.df_name) || %{content: []}
 
       df_content =
@@ -549,7 +568,10 @@ defmodule TdDq.Implementations.Implementation do
       |> Map.put(:business_concept_id, Map.get(rule, :business_concept_id))
     end
 
-    defp with_rule(data, _), do: data
+    defp maybe_rule(data, _) do
+      data
+      |> Map.put(:_confidential, false)
+    end
 
     defp get_structure_ids(structures) do
       structures

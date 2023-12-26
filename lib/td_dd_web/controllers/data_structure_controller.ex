@@ -15,6 +15,7 @@ defmodule TdDdWeb.DataStructureController do
   alias TdDd.DataStructures.Search
   alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.StructureNotesWorkflow
+  alias TdDd.DataStructures.Tags
   alias TdDd.Utils.FileHash
   alias TdDdWeb.SwaggerDefinitions
 
@@ -33,8 +34,7 @@ defmodule TdDdWeb.DataStructureController do
     :system,
     :versions,
     :metadata_versions,
-    :data_structure_type,
-    :tags
+    :data_structure_type
   ]
 
   @structures_actions [:update_domain_ids]
@@ -476,7 +476,14 @@ defmodule TdDdWeb.DataStructureController do
         view_profiling_permission: can?(claims, view_data_structures_profile(data_structure))
       }
 
-      render(conn, "show.json", data_structure: data_structure, user_permissions: user_permissions)
+      # TODO: tags not consumed by front?
+      tags = Tags.tags(data_structure)
+
+      render(conn, "show.json",
+        data_structure: data_structure,
+        user_permissions: user_permissions,
+        tags: tags
+      )
     else
       render_error(conn, :forbidden)
     end

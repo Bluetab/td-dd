@@ -24,8 +24,9 @@ defmodule TdDq.Implementations.BulkLoadTest do
   setup do
     start_supervised!(TdDd.Search.MockIndexWorker)
     %{name: template_name} = CacheHelpers.insert_template(scope: "dq")
+    domain = CacheHelpers.insert_domain()
 
-    [rule: insert(:rule), claims: build(:dq_claims), template_name: template_name]
+    [rule: insert(:rule), claims: build(:dq_claims), template_name: template_name, domain: domain]
   end
 
   describe "bulk_load/2" do
@@ -79,12 +80,23 @@ defmodule TdDq.Implementations.BulkLoadTest do
       assert %{df_content: ^df_content} = Implementations.get_implementation!(id2)
     end
 
-    test "return error when rule not exist", %{rule: %{name: rule_name}, claims: claims} do
+    test "return error when rule not exist", %{
+      rule: %{name: rule_name},
+      claims: claims,
+      domain: %{external_id: external_id}
+    } do
       [imp1, imp2] = @valid_implementation
-      imp1 = Map.put(imp1, "rule_name", rule_name)
+
+      imp1 =
+        imp1
+        |> Map.put("rule_name", rule_name)
+        |> Map.put("domain_external_id", external_id)
 
       %{"implementation_key" => implementation_key} =
-        imp2 = Map.put(imp2, "rule_name", "rule_not_exists")
+        imp2 =
+        imp2
+        |> Map.put("rule_name", "rule_not_exists")
+        |> Map.put("domain_external_id", external_id)
 
       assert {:ok, %{ids: [id1], errors: [error]}} = BulkLoad.bulk_load([imp1, imp2], claims)
 

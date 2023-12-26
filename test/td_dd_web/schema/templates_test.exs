@@ -72,7 +72,7 @@ defmodule TdDdWeb.Schema.TemplatesTest do
       assert %{"templates" => [template]} = data
       assert %{"content" => [%{"fields" => [%{"values" => values}]}]} = template
       assert %{"role_users" => ^role_name, "processed_users" => processed_users} = values
-      assert Enum.sort(processed_users) == [full_name_1, full_name_2, full_name_3]
+      assert Enum.sort(processed_users) == Enum.sort([full_name_1, full_name_2, full_name_3])
     end
 
     @tag authentication: [role: "user"]

@@ -12,7 +12,7 @@ defmodule TdDdWeb.Schema.DomainTest do
   }
   """
 
-  @variables %{"action" => "manage_tags"}
+  @variables %{"action" => "manageTags"}
 
   describe "domains query" do
     @tag authentication: [role: "user"]

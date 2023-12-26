@@ -22,7 +22,7 @@ defmodule TdDdWeb.Resolvers.Domains do
     TaxonomyCache.reachable_domain_ids(0)
   end
 
-  defp permitted_domain_ids(%{role: "user", jti: jti}, "manage_tags") do
+  defp permitted_domain_ids(%{role: "user", jti: jti}, "manageTags") do
     Permissions.permitted_domain_ids(jti, :link_data_structure_tag)
   end
 

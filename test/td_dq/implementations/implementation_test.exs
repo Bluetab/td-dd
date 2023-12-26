@@ -6,6 +6,7 @@ defmodule TdDq.Implementations.ImplementationTest do
   alias TdDq.Implementations.Implementation
 
   @implementation %Implementation{domain_id: 123}
+  @unsafe "javascript:alert(document)"
 
   setup do
     identifier_name = "identifier"
@@ -146,6 +147,13 @@ defmodule TdDq.Implementations.ImplementationTest do
     test "validates df_content is valid", %{template_name: template_name} do
       invalid_content = %{"list" => "foo", "string" => "whatever"}
       params = params_for(:implementation, df_name: template_name, df_content: invalid_content)
+      assert %{valid?: false, errors: errors} = Implementation.changeset(@implementation, params)
+      assert {"invalid content", _detail} = errors[:df_content]
+    end
+
+    test "validates df_content is safe", %{template_name: template_name} do
+      unsafe_content = %{"list" => "one", "string" => @unsafe}
+      params = params_for(:implementation, df_name: template_name, df_content: unsafe_content)
       assert %{valid?: false, errors: errors} = Implementation.changeset(@implementation, params)
       assert {"invalid content", _detail} = errors[:df_content]
     end

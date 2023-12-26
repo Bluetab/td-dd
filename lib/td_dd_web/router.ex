@@ -2,33 +2,27 @@ defmodule TdDdWeb.Router do
   use TdDdWeb, :router
 
   pipeline :api do
-    plug(TdDd.Auth.Pipeline.Unsecure)
-    plug(:accepts, ["json"])
+    plug TdDd.Auth.Pipeline.Unsecure
+    plug :accepts, ["json"]
   end
 
-  pipeline :api_secure do
-    plug(TdDd.Auth.Pipeline.Secure)
-  end
-
-  pipeline :api_authorized do
-    plug(TdDd.Auth.CurrentResource)
-    plug(Guardian.Plug.LoadResource)
+  pipeline :api_auth do
+    plug TdDd.Auth.Pipeline.Secure
   end
 
   scope "/api", TdDdWeb do
-    pipe_through(:api)
+    pipe_through :api
     get("/ping", PingController, :ping)
     post("/echo", EchoController, :echo)
   end
 
   scope "/api" do
-    pipe_through([:api, :api_secure, :api_authorized])
-
-    forward("/v2", Absinthe.Plug, schema: TdDdWeb.Schema)
+    pipe_through [:api, :api_auth]
+    forward "/v2", Absinthe.Plug, schema: TdDdWeb.Schema
   end
 
   scope "/api", TdDdWeb do
-    pipe_through([:api, :api_secure, :api_authorized])
+    pipe_through [:api, :api_auth]
 
     patch("/data_structures/metadata", MetadataController, :upload)
     post("/data_structures/metadata", MetadataController, :upload)
@@ -61,12 +55,6 @@ defmodule TdDdWeb.Router do
     resources "/data_structures", DataStructureController, except: [:new, :edit, :show] do
       resources("/versions", DataStructureVersionController, only: [:show])
       resources("/profile_results", ProfileController, only: [:create])
-
-      resources("/tags", DataStructuresTagsController,
-        only: [:delete, :index, :update],
-        name: :tags
-      )
-
       resources("/notes", StructureNoteController, except: [:new, :edit], name: :note)
       resources("/grants", GrantController, only: [:create])
     end
