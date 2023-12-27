@@ -6,6 +6,7 @@ defmodule TdDdWeb.MetadataControllerTest do
   import ExUnit.CaptureLog
   import Mox
 
+  alias TdCore.Search.MockIndexWorker
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
@@ -38,14 +39,7 @@ defmodule TdDdWeb.MetadataControllerTest do
         :ok
 
       fixture ->
-        %{
-          structures: "structures.csv",
-          fields: "fields.csv",
-          relations: "relations.csv"
-        }
-        |> Enum.map(fn {k, v} -> {k, Path.join([fixture, v])} end)
-        |> Enum.filter(fn {_, v} -> File.exists?(v) end)
-        |> Map.new(fn {k, v} -> {k, upload(v)} end)
+        process_fixture(fixture)
     end
   end
 
@@ -113,6 +107,45 @@ defmodule TdDdWeb.MetadataControllerTest do
         "parent_external_id/Field1",
         "field_with_external_id"
       ])
+    end
+
+    @tag authentication: [role: "service"]
+    @tag fixture: "test/fixtures/metadata/field_external_id"
+    test "delete elastic search index when structure is not loaded", %{
+      conn: conn,
+      structures: structures,
+      fields: fields
+    } do
+      MockIndexWorker.clear()
+
+      assert conn
+             |> post(Routes.metadata_path(conn, :upload),
+               data_structures: structures,
+               data_fields: fields
+             )
+             |> response(:accepted)
+
+      # waits for loader to complete
+      Worker.await(20_000)
+
+      %{structures: new_structures, fields: new_fields} =
+        process_fixture("test/fixtures/metadata/field_external_id_deleted")
+
+      assert conn
+             |> post(Routes.metadata_path(conn, :upload),
+               data_structures: new_structures,
+               data_fields: new_fields
+             )
+             |> response(:accepted)
+
+      # waits for loader to complete
+      Worker.await(20_000)
+
+      assert [
+               {:reindex, :structures, _},
+               {:reindex, :structures, _},
+               {:delete, :structures, [_, _, _]}
+             ] = MockIndexWorker.calls()
     end
 
     @tag authentication: [role: "service"]
@@ -333,5 +366,16 @@ defmodule TdDdWeb.MetadataControllerTest do
 
   defp create_source(_) do
     [source: insert(:source)]
+  end
+
+  defp process_fixture(fixture) do
+    %{
+      structures: "structures.csv",
+      fields: "fields.csv",
+      relations: "relations.csv"
+    }
+    |> Enum.map(fn {k, v} -> {k, Path.join([fixture, v])} end)
+    |> Enum.filter(fn {_, v} -> File.exists?(v) end)
+    |> Map.new(fn {k, v} -> {k, upload(v)} end)
   end
 end
