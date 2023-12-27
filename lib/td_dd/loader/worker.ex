@@ -220,7 +220,7 @@ defmodule TdDd.Loader.Worker do
       fn -> Loader.load(records, audit, opts) end,
       fn ms, res ->
         case res do
-          {:ok, %{structure_ids: structure_ids}} ->
+          {:ok, %{structure_ids: structure_ids, delete_versions: {_, deleted_ids}}} ->
             count = Enum.count(structure_ids)
             Logger.info("Bulk load process completed in #{ms}ms (#{count} structures upserted)")
 
@@ -233,7 +233,7 @@ defmodule TdDd.Loader.Worker do
               opts
             )
 
-            post_process(structure_ids, opts)
+            post_process(structure_ids, deleted_ids, opts)
 
           e ->
             Logger.warn("Bulk load failed after #{ms}ms (#{inspect(e)})")
@@ -272,7 +272,7 @@ defmodule TdDd.Loader.Worker do
           {:ok, %{structure_ids: structure_ids}} ->
             count = Enum.count(structure_ids)
             Logger.info("Bulk #{op} process completed in #{ms}ms (#{count} structures updated)")
-            post_process(structure_ids, opts)
+            post_process(structure_ids, [], opts)
 
           {:error, :missing_external_ids, [id | _ids], _} = e ->
             Logger.warn("Bulk #{op} failed after #{ms}ms (missing external_ids including #{id})")
@@ -304,26 +304,28 @@ defmodule TdDd.Loader.Worker do
     )
   end
 
-  defp post_process([], _), do: :ok
+  defp post_process([], [], _), do: :ok
 
-  defp post_process(structure_ids, opts) do
-    do_post_process(structure_ids, opts[:external_id])
+  defp post_process(structure_ids, deleted_ids, opts) do
+    do_post_process(structure_ids, deleted_ids, opts[:external_id])
   end
 
-  defp do_post_process(structure_ids, nil) do
+  defp do_post_process(structure_ids, deleted_ids, nil) do
     # If any ids have been returned by the bulk load process, these
     # data structures should be reindexed.
-    IndexWorker.reindex(:structures, structure_ids)
+
+    if structure_ids != [], do: IndexWorker.reindex(:structures, structure_ids)
+    if deleted_ids != [], do: IndexWorker.delete(:structures, deleted_ids)
   end
 
-  defp do_post_process(structure_ids, external_id) do
+  defp do_post_process(structure_ids, deleted_ids, external_id) do
     # As the ancestry of the loaded structure may have changed, also reindex
     # that data structure and it's descendents.
     external_id
     |> Ancestry.get_descendent_ids()
     |> Enum.concat(structure_ids)
     |> Enum.uniq()
-    |> do_post_process(nil)
+    |> do_post_process(deleted_ids, nil)
   end
 
   defp maybe_create_event(event, opts) do

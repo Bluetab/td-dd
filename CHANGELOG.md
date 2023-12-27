@@ -7,6 +7,10 @@
 
 - [TD-6181] Refactor for elastic search
 
+### Fixed 
+
+- [TD-6270] Reindex the deleted structures in bulk updates
+
 ## [5.20.0] 2023-12-19
 
 ### Added
