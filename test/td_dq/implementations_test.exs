@@ -1090,7 +1090,7 @@ defmodule TdDq.ImplementationsTest do
             dataset: "tAbLe_NaMe",
             validations: "#{data_structure_name} #{no_table_data_structure_name}",
             source_id: source_id,
-            database: "db_name"
+            database: "DB_NAME"
           }
         )
 

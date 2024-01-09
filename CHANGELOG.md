@@ -10,6 +10,7 @@
 ### Fixed 
 
 - [TD-6270] Reindex the deleted structures in bulk updates
+- [TD-6130] Database lowercase when implementation raw is created
 
 ## [5.20.0] 2023-12-19
 
