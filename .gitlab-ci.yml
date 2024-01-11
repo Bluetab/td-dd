@@ -110,7 +110,13 @@ deploy:
     - update-cicd-deploy
   dependencies: []
   before_script:
-    - ":"
+    - ALPHA_VERSION="${VERSION}-alpha.${CI_PIPELINE_ID}" # used if CI_COMMIT_TAG is not present
+    - export APP_VERSION="${CI_COMMIT_TAG:-${ALPHA_VERSION}}"
+    - export CURRENT_UID="$(id -u):$(id -g)"
+    - export ECR_NAMESPACE="truedat"
+    - export K8S_DEPLOYMENT="dd"
+    - export K8S_CONTAINER="dd"
+
   script:
     - aws eks --region eu-west-1 update-kubeconfig --name test-truedat-eks
     - kubectl set image deployment.v1.apps/${K8S_DEPLOYMENT} ${K8S_CONTAINER}=${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION} --record
