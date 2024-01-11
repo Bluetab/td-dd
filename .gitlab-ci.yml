@@ -7,6 +7,9 @@ variables:
   K8S_CONTAINER: dd
   ECR: 576759405678.dkr.ecr.eu-west-1.amazonaws.com
   ECR_NAMESPACE: truedat
+  ALPHA_VERSION: "${VERSION}-alpha.${CI_PIPELINE_ID}"
+  APP_VERSION: "${CI_COMMIT_TAG:-${ALPHA_VERSION}}"
+
   # See also variables set in ci/env.sh
 
 stages:
@@ -101,21 +104,7 @@ acceptance:branches:
     - docker-compose logs service
     - docker-compose down -v
 
-deploy:
-  stage: deploy
-  tags:
-    - dind
-  image: danielbluetab/helm-aws-cli:4
-  only:
-    - develop
-    - tags
-    - update-cicd-deploy
-  dependencies: []
-  before_script:
-    - ALPHA_VERSION="${VERSION}-alpha.${CI_PIPELINE_ID}" # used if CI_COMMIT_TAG is not present
-    - export APP_VERSION="${CI_COMMIT_TAG:-${ALPHA_VERSION}}"
-    - export CURRENT_UID="$(id -u):$(id -g)"
-
-  script:
-    - aws eks --region eu-west-1 update-kubeconfig --name test-truedat-eks
-    - kubectl set image deployment.v1.apps/${K8S_DEPLOYMENT} ${K8S_CONTAINER}=${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION} --record
+include:
+  - project: 'dgs-core/true-dat/td-tools/cicd-templates'
+    ref: core-services-deploy
+    file: 'core-deploy.gitlab-ci.yml'
