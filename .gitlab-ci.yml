@@ -8,8 +8,6 @@ variables:
   K8S_CONTAINER: dd
   ECR: 576759405678.dkr.ecr.eu-west-1.amazonaws.com
   ECR_NAMESPACE: truedat
-  ALPHA_VERSION: "${VERSION}-alpha.${CI_PIPELINE_ID}"
-  APP_VERSION: "${CI_COMMIT_TAG:-${ALPHA_VERSION}}"
 
   # See also variables set in ci/env.sh
 
@@ -20,6 +18,8 @@ stages:
   - deploy
 
 before_script:
+  - export ALPHA_VERSION="${VERSION}-alpha.${CI_PIPELINE_ID}"
+  - export APP_VERSION="${CI_COMMIT_TAG:-${ALPHA_VERSION}}"
   - source ci/env.sh ecr-login
 
 build:
