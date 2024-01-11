@@ -3,6 +3,7 @@ variables:
   APP_NAME: "td_dd"
   COMPOSE_FILE: "ci/docker-compose.yml"
   COMPOSE_PROJECT_NAME: "${APP_NAME}_${CI_JOB_ID}"
+  CLUSTER_NAME: test-truedat-eks
   K8S_DEPLOYMENT: dd
   K8S_CONTAINER: dd
   ECR: 576759405678.dkr.ecr.eu-west-1.amazonaws.com
