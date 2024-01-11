@@ -47,6 +47,20 @@ publish:
     - docker tag ${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${CI_COMMIT_SHA} ${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION}
     - docker push ${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION}
 
+publish:branches:
+  stage: deploy
+  except:
+    - develop
+    - main
+    - tags
+  when: manual
+  tags:
+    - docker
+  script:
+    - docker build --build-arg APP_NAME=${APP_NAME} --build-arg APP_VERSION=${APP_VERSION} -t ${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${CI_COMMIT_SHA} .
+    - docker tag ${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${CI_COMMIT_SHA} ${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION}
+    - docker push ${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION}    
+
 acceptance:
   stage: acceptance
   only:
@@ -83,27 +97,16 @@ acceptance:branches:
     - docker-compose logs service
     - docker-compose down -v
 
-publish:branches:
-  stage: deploy
-  except:
-    - develop
-    - main
-    - tags
-  when: manual
-  tags:
-    - docker
-  script:
-    - docker build --build-arg APP_NAME=${APP_NAME} --build-arg APP_VERSION=${APP_VERSION} -t ${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${CI_COMMIT_SHA} .
-    - docker tag ${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${CI_COMMIT_SHA} ${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION}
-    - docker push ${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION}
-
 deploy:
   stage: deploy
   tags:
-    - kubectl
+    - dind
+  image: danielbluetab/helm-aws-cli:4
   only:
     - develop
     - tags
+    - update-cicd-deploy
   dependencies: []
   script:
+    - aws eks --region eu-west-1 update-kubeconfig --name test-truedat-eks
     - kubectl set image deployment.v1.apps/${K8S_DEPLOYMENT} ${K8S_CONTAINER}=${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION} --record
