@@ -107,6 +107,8 @@ deploy:
     - tags
     - update-cicd-deploy
   dependencies: []
+  before_script:
+    - ":"
   script:
     - aws eks --region eu-west-1 update-kubeconfig --name test-truedat-eks
     - kubectl set image deployment.v1.apps/${K8S_DEPLOYMENT} ${K8S_CONTAINER}=${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION} --record
