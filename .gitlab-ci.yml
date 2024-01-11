@@ -3,6 +3,8 @@ variables:
   APP_NAME: "td_dd"
   COMPOSE_FILE: "ci/docker-compose.yml"
   COMPOSE_PROJECT_NAME: "${APP_NAME}_${CI_JOB_ID}"
+  K8S_DEPLOYMENT: dd
+  K8S_CONTAINER: dd
   # See also variables set in ci/env.sh
 
 stages:
