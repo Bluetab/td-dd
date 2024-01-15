@@ -124,6 +124,7 @@ defmodule TdDdWeb.Router do
     end
 
     post "/buckets/structures", DataStructureController, :get_bucket_structures
+    post "/buckets/paths", DataStructureFilterController, :get_bucket_paths
 
     get("/data_structures/search/reindex_all", SearchController, :reindex_all)
 

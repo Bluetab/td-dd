@@ -9,6 +9,7 @@ defmodule TdDd.DataStructures.Search do
   alias TdCore.Search.Permissions
   alias TdCore.Utils.CollectionUtils
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.ElasticDocument, as: DSElasticDocument
   alias TdDd.DataStructures.Search.Query
   alias Truedat.Auth.Claims
 
@@ -23,6 +24,78 @@ defmodule TdDd.DataStructures.Search do
     query = build_query(claims, permission, params, aggs)
     search = %{query: query, aggs: aggs, size: 0}
     Search.get_filters(search, @index)
+  end
+
+  def get_bucket_paths(%Claims{} = claims, permission, %{} = params) do
+    aggs =
+      Map.merge(
+        DSElasticDocument.id_path_agg(),
+        ElasticDocumentProtocol.aggregations(%DataStructureVersion{})
+      )
+
+    query = build_query(claims, permission, params, aggs)
+    search = %{query: query, aggs: aggs, size: 0}
+    {:ok, %{"id_path" => %{buckets: buckets}}} = Search.get_filters(search, @index)
+
+    buckets
+    |> Enum.reduce(
+      %{branches: [], filtered_children: %{}},
+      fn
+        %{
+          "key" => string_path,
+          "filtered_children_ids" => %{"buckets" => filtered_children_ids_buckets}
+        },
+        %{branches: branches, filtered_children: filtered_children} ->
+          path = to_array_path(string_path)
+
+          filtered_children_ids =
+            Enum.map(
+              filtered_children_ids_buckets,
+              &String.to_integer(&1["key"])
+            )
+
+          # Use 0 instead of nil as default for empty List.last (filtered_children of root element)
+          %{
+            branches: [path | branches],
+            filtered_children:
+              Map.put(filtered_children, List.last(path, 0), filtered_children_ids)
+          }
+      end
+    )
+    |> forest_with_filtered_children
+  end
+
+  defp to_array_path(""), do: []
+
+  defp to_array_path(string_path) do
+    string_path
+    |> String.split("-")
+    |> Enum.map(&String.to_integer/1)
+  end
+
+  defp forest_with_filtered_children(%{branches: branches, filtered_children: filtered_children}) do
+    %{
+      forest: to_forest(branches),
+      filtered_children: filtered_children
+    }
+  end
+
+  defp to_forest(branches) do
+    Enum.reduce(
+      branches,
+      %{},
+      fn path, tree ->
+        merge(tree, path)
+      end
+    )
+  end
+
+  # https://elixirforum.com/t/transform-list-into-nested-map/1001/2
+  defp merge(map, []), do: map
+
+  defp merge(map, [node | remaining_keys]) do
+    inner_map = merge(Map.get(map, node, %{}), remaining_keys)
+    Map.put(map, node, inner_map)
   end
 
   def get_aggregations(%Claims{} = claims, aggs) do
@@ -76,28 +149,37 @@ defmodule TdDd.DataStructures.Search do
     |> do_scroll(ttl, limit, acc ++ results)
   end
 
-  def bucket_structures(claims, permission, params) do
+  def bucket_structures(claims, permission, %{"filters" => filters} = params) do
     initial_without = ["deleted_at"]
 
+    # Currently not using ElasticDocument.missing_term_name as possible
+    # aggregation because it does not work at the moment with catalog views.
+    # Maybe will scrap it, not sure yet...
     {filters, without} =
-      params
+      filters
       |> Enum.find(fn {_key, val} -> val == ElasticDocument.missing_term_name() end)
       |> Kernel.then(fn
-        {key, _val} -> {Map.drop(params, [key]), ["#{key}" | initial_without]}
-        nil -> {params, initial_without}
+        {key, _val} -> {Map.drop(filters, [key]), ["#{key}" | initial_without]}
+        nil -> {filters, initial_without}
       end)
 
     %{}
+    |> maybe_put_query(params)
     |> Map.put("filters", filters)
     |> Map.put("without", without)
     |> search_data_structures(claims, permission, 0, 1_000)
   end
 
+  defp maybe_put_query(transformed_params, %{"query" => query}) do
+    Map.put(transformed_params, "query", query)
+  end
+
+  defp maybe_put_query(transformed_params, %{}), do: transformed_params
+
   def search_data_structures(params, claims, permission, page \\ 0, size \\ 50)
 
   def search_data_structures(params, %Claims{} = claims, permission, page, size) do
     aggs = ElasticDocumentProtocol.aggregations(%DataStructureVersion{})
-
     query = build_query(claims, permission, params, aggs)
     sort = Map.get(params, "sort", ["_score", "name.raw"])
 

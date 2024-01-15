@@ -210,8 +210,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                |> post(
                  data_structure_path(conn, :get_bucket_structures),
                  %{
-                   "metadata.region" => "eu-west-1",
-                   "parent_id" => ""
+                   "filters" => %{"metadata.region" => "eu-west-1", "parent_id" => ""}
                  }
                )
                |> json_response(:ok)
@@ -242,8 +241,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
                |> post(
                  data_structure_path(conn, :get_bucket_structures),
                  %{
-                   "metadata.region" => ElasticDocument.missing_term_name(),
-                   "parent_id" => ""
+                   "filters" => %{
+                     "metadata.region" => ElasticDocument.missing_term_name(),
+                     "parent_id" => ""
+                   }
                  }
                )
                |> json_response(:ok)

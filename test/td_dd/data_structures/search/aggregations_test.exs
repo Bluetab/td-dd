@@ -1,11 +1,8 @@
 defmodule TdDd.DataStructures.Search.AggregationsTest do
   use TdDd.DataCase
 
-  alias TdCore.Search.ElasticDocument
   alias TdCore.Search.ElasticDocumentProtocol
   alias TdDd.DataStructures.DataStructureVersion
-
-  @missing_term_name ElasticDocument.missing_term_name()
 
   setup do
     start_supervised!(TdCore.Search.Cluster)
@@ -83,9 +80,9 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
       assert_maps_equal(
         aggs,
         %{
-          "metadata.bar" => %{terms: %{field: "_filters.bar", missing: "_missing"}},
-          "metadata.baz" => %{terms: %{field: "_filters.baz", missing: "_missing"}},
-          "metadata.foo" => %{terms: %{field: "_filters.foo", missing: "_missing"}}
+          "metadata.bar" => %{terms: %{field: "_filters.bar"}},
+          "metadata.baz" => %{terms: %{field: "_filters.baz"}},
+          "metadata.foo" => %{terms: %{field: "_filters.foo"}}
         },
         ["metadata.foo", "metadata.bar", "metadata.baz"]
       )
@@ -98,9 +95,9 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
 
       %{
         "metadata.host" => %{
-          terms: %{field: "_filters.host", missing: @missing_term_name}
+          terms: %{field: "_filters.host"}
         },
-        "note.layer" => %{terms: %{field: "note.layer.raw", missing: @missing_term_name}}
+        "note.layer" => %{terms: %{field: "note.layer.raw"}}
       } = ElasticDocumentProtocol.aggregations(%DataStructureVersion{})
     end
   end
