@@ -6,6 +6,7 @@
 ### Added
 
 - [TD-6181] Refactor for elastic search
+- [TD-6272] Change timeout to use the environement variable
 
 ### Fixed 
 
