@@ -51,4 +51,11 @@ defmodule TdDdWeb.DataStructureFilterController do
     {:ok, filters} = Search.get_filter_values(claims, permission, params)
     render(conn, "show.json", filters: filters)
   end
+
+  def get_bucket_paths(conn, bucket_filters) do
+    claims = conn.assigns[:current_resource]
+    permission = conn.assigns[:search_permission]
+    bucket_paths = Search.get_bucket_paths(claims, permission, bucket_filters)
+    render(conn, "bucket_paths.json", bucket_paths: bucket_paths)
+  end
 end

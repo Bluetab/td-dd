@@ -11,6 +11,20 @@ defmodule TdDd.DataStructures.ElasticDocument do
   alias TdDd.DataStructures.DataStructureTypes
   alias TdDd.DataStructures.DataStructureVersion
 
+  @id_path_agg %{
+    terms: %{
+      script: "params._source.id_path.join('-')",
+      size: 65_535
+    },
+    aggs: %{
+      filtered_children_ids: %{
+        terms: %{field: "_id"}
+      }
+    }
+  }
+
+  def id_path_agg, do: %{"id_path" => @id_path_agg}
+
   defimpl Document, for: DataStructureVersion do
     @max_sortable_length 32_766
 
@@ -36,6 +50,7 @@ defmodule TdDd.DataStructures.ElasticDocument do
       # Instead, enrichment should be performed as efficiently as possible on
       # chunked data using `TdDd.DataStructures.enriched_structure_versions/1`.
       name_path = Enum.map(path, & &1["name"])
+      id_path = Enum.map(path, &Map.get(&1, "data_structure_id", 0))
       parent_id = List.last(Enum.map(path, &Integer.to_string(&1["data_structure_id"])), "")
 
       data_structure
@@ -55,6 +70,7 @@ defmodule TdDd.DataStructures.ElasticDocument do
       |> Map.put(:path_sort, path_sort(name_path))
       |> Map.put(:parent_id, parent_id)
       |> Map.put(:path, name_path)
+      |> Map.put(:id_path, id_path)
       |> Map.put(:source_alias, source_alias(dsv))
       |> Map.put(:system, system(data_structure))
       |> Map.put(:with_content, is_map(content) and map_size(content) > 0)
@@ -122,8 +138,6 @@ defmodule TdDd.DataStructures.ElasticDocument do
   defimpl ElasticDocumentProtocol, for: DataStructureVersion do
     use ElasticDocument
 
-    @missing_term_name ElasticDocument.missing_term_name()
-
     def mappings(_) do
       content_mappings = %{properties: get_dynamic_mappings("dd")}
 
@@ -163,7 +177,10 @@ defmodule TdDd.DataStructures.ElasticDocument do
         updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
         path: %{type: "keyword", fields: @text},
         path_sort: %{type: "keyword", normalizer: "sortable"},
-        parent_id: %{type: "text", analyzer: "keyword"},
+        parent_id: %{
+          type: "long",
+          null_value: 0
+        },
         note: content_mappings,
         class: %{type: "text", fields: %{raw: %{type: "keyword", null_value: ""}}},
         classes: %{enabled: true},
@@ -214,8 +231,7 @@ defmodule TdDd.DataStructures.ElasticDocument do
             {"note.#{field_name}",
              %{
                terms: %{
-                 field: "note.#{field_name}.raw",
-                 missing: @missing_term_name
+                 field: "note.#{field_name}.raw"
                }
              }}
         end)
@@ -227,8 +243,7 @@ defmodule TdDd.DataStructures.ElasticDocument do
         |> List.flatten()
         |> Enum.uniq()
         |> Map.new(fn filter ->
-          {"metadata.#{filter}",
-           %{terms: %{field: "_filters.#{filter}", missing: @missing_term_name}}}
+          {"metadata.#{filter}", %{terms: %{field: "_filters.#{filter}"}}}
         end)
 
       Map.merge(catalog_view_configs_filters, data_structure_types_filters)
