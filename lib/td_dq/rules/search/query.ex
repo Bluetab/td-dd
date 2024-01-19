@@ -3,7 +3,7 @@ defmodule TdDq.Rules.Search.Query do
   Support for building rule search queries.
   """
 
-  alias Truedat.Search.Query
+  alias TdCore.Search.Query
 
   @not_confidential %{term: %{"_confidential" => false}}
   @executable %{term: %{"executable" => true}}

@@ -11,6 +11,8 @@ defmodule TdDd.DataStructures do
   alias TdCache.LinkCache
   alias TdCache.TemplateCache
   alias TdCache.UserCache
+  alias TdCore.Search.IndexWorker
+  alias TdCore.Search.Permissions
   alias TdCx.Sources
   alias TdCx.Sources.Source
   alias TdDd.DataStructures.Audit
@@ -30,9 +32,8 @@ defmodule TdDd.DataStructures do
   alias TdDfLib.Format
   alias TdDq.Implementations
   alias Truedat.Auth.Claims
-  alias Truedat.Search.Permissions
 
-  @index_worker Application.compile_env(:td_dd, :index_worker)
+  @index :structures
 
   @protected "_protected"
 
@@ -62,6 +63,16 @@ defmodule TdDd.DataStructures do
     |> Enum.map(&{&1, Map.get(clauses, &1)})
     |> Enum.reduce(DataStructureVersion, fn
       {:since, since}, q ->
+        # TD-4757
+        # The metrics connector needs the structure domain(s), which is in the
+        # data_structures table, not in the data_structure_versions one.
+        # Therefore, if a structure domain is updated, ds.updated_at will be
+        # written, but not dsv.updated_at. Metrics uses the since parameter
+        # (since >= updated_at) to only get the information that has been
+        # changed/added since its last request. The
+        # "union(^join_ds_updated_at)" is used at the end in order to include
+        # the updated structure domain (or any other needed data_structures
+        # fields).
         join_ds_updated_at =
           q
           |> join(:inner, [dsv], ds in assoc(dsv, :data_structure))
@@ -749,8 +760,8 @@ defmodule TdDd.DataStructures do
     {:ok, ids}
   end
 
-  defp on_update({:ok, %{updated_ids: ids}}), do: @index_worker.reindex(ids)
-  defp on_update(ids) when is_list(ids), do: @index_worker.reindex(ids)
+  defp on_update({:ok, %{updated_ids: ids}}), do: IndexWorker.reindex(@index, ids)
+  defp on_update(ids) when is_list(ids), do: IndexWorker.reindex(@index, ids)
 
   defp on_update(_), do: :ok
 
@@ -786,11 +797,11 @@ defmodule TdDd.DataStructures do
 
   defp on_delete({:ok, %{} = res}) do
     with %{delete_versions: {_count, data_structure_ids}} <- res do
-      @index_worker.delete(data_structure_ids)
+      IndexWorker.delete(@index, data_structure_ids)
     end
 
     with %{descendents: %{data_structures_ids: structures_ids}} <- res do
-      @index_worker.delete(structures_ids)
+      IndexWorker.delete(@index, structures_ids)
     end
 
     {:ok, res}
@@ -1201,8 +1212,13 @@ defmodule TdDd.DataStructures do
 
   ## Dataloader
 
+  def timeout do
+    System.get_env("DB_TIMEOUT_MILLIS", Integer.to_string(Dataloader.default_timeout()))
+    |> String.to_integer()
+  end
+
   def datasource do
-    Dataloader.Ecto.new(TdDd.Repo, query: &query/2, timeout: Dataloader.default_timeout())
+    Dataloader.Ecto.new(TdDd.Repo, query: &query/2, timeout: timeout())
   end
 
   defp query(queryable, params) do

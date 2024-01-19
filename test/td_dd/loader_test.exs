@@ -15,8 +15,9 @@ defmodule TdDd.LoaderTest do
   @moduletag sandbox: :shared
 
   setup do
+    start_supervised!(TdCore.Search.Cluster)
     start_supervised!(TdDd.Search.StructureEnricher)
-    start_supervised!(TdDd.Search.MockIndexWorker)
+    start_supervised!(TdCore.Search.IndexWorker)
     :ok
   end
 

@@ -9,12 +9,11 @@ defmodule TdDq.Cache.ImplementationLoader do
 
   alias TdCache.ImplementationCache
   alias TdCache.LinkCache
+  alias TdCore.Search.IndexWorker
   alias TdDq.Events.QualityEvents
   alias TdDq.Implementations
   alias TdDq.Implementations.Implementation
   alias TdDq.Rules.RuleResults
-
-  @index_worker Application.compile_env(:td_dd, :dq_index_worker)
 
   require Logger
 
@@ -114,11 +113,13 @@ defmodule TdDq.Cache.ImplementationLoader do
   ## Private functions
   defp reindex_implementations(%{event: event, source: source, target: target})
        when event in ["add_link", "remove_link"] do
-    [source, target]
-    |> extract_implementation_refs()
-    |> Enum.map(&Implementations.get_implementation_versions_ids_by_ref(&1))
-    |> List.flatten()
-    |> @index_worker.reindex_implementations()
+    ids =
+      [source, target]
+      |> extract_implementation_refs()
+      |> Enum.map(&Implementations.get_implementation_versions_ids_by_ref(&1))
+      |> List.flatten()
+
+    IndexWorker.reindex(:implementations, ids)
   end
 
   defp reindex_implementations(_), do: nil

@@ -3,10 +3,12 @@ defmodule TdDqWeb.ImplementationStructureControllerTest do
 
   import TdDd.TestOperators
 
-  alias TdDd.Search.MockIndexWorker
+  alias TdCore.Search.MockIndexWorker
 
   setup %{conn: conn} do
-    start_supervised!(MockIndexWorker)
+    start_supervised!(TdCore.Search.Cluster)
+    start_supervised!(TdCore.Search.IndexWorker)
+
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
 
@@ -153,7 +155,7 @@ defmodule TdDqWeb.ImplementationStructureControllerTest do
       assert response(conn, 201)
 
       [
-        {:reindex_implementations, implementation_reindexed}
+        {:reindex, :implementations, implementation_reindexed}
       ] = MockIndexWorker.calls()
 
       assert implementation_reindexed ||| [implementation_id, implementation_ref_id]
@@ -433,7 +435,7 @@ defmodule TdDqWeb.ImplementationStructureControllerTest do
       assert response(conn, 204)
 
       [
-        {:reindex_implementations, implementation_reindexed}
+        {:reindex, :implementations, implementation_reindexed}
       ] = MockIndexWorker.calls()
 
       assert implementation_reindexed ||| [implementation_id, implementation_ref_id]

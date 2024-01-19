@@ -2,13 +2,14 @@ defmodule Truedat.Search.PermissionsTest do
   use ExUnit.Case
   use TdDd.DataCase
 
+  alias TdCore.Search.Permissions, as: TdCorePermissions
   alias Truedat.Search.Permissions
 
   describe "Permissions.get_search_permissions/2" do
     test "returns a map with values :all for admin role" do
       claims = claims("admin")
 
-      assert Permissions.get_search_permissions(["foo", "bar"], claims) == %{
+      assert TdCorePermissions.get_search_permissions(["foo", "bar"], claims) == %{
                "foo" => :all,
                "bar" => :all
              }
@@ -17,7 +18,7 @@ defmodule Truedat.Search.PermissionsTest do
     test "returns a map with values :all for service role" do
       claims = claims("service")
 
-      assert Permissions.get_search_permissions(["foo", "bar"], claims) == %{
+      assert TdCorePermissions.get_search_permissions(["foo", "bar"], claims) == %{
                "foo" => :all,
                "bar" => :all
              }
@@ -26,7 +27,7 @@ defmodule Truedat.Search.PermissionsTest do
     test "returns a map with values :none for user role" do
       claims = claims()
 
-      assert Permissions.get_search_permissions(["foo", "bar"], claims) == %{
+      assert TdCorePermissions.get_search_permissions(["foo", "bar"], claims) == %{
                "foo" => :none,
                "bar" => :none
              }
@@ -36,7 +37,7 @@ defmodule Truedat.Search.PermissionsTest do
       claims = claims()
       CacheHelpers.put_default_permissions(["foo"])
 
-      assert Permissions.get_search_permissions(["foo", "bar"], claims) == %{
+      assert TdCorePermissions.get_search_permissions(["foo", "bar"], claims) == %{
                "foo" => :all,
                "bar" => :none
              }
@@ -56,12 +57,13 @@ defmodule Truedat.Search.PermissionsTest do
         "baz" => [id3]
       })
 
-      assert Permissions.get_search_permissions(["foo", "bar", "baz", "xyzzy"], claims) == %{
-               "foo" => [id2, id1],
-               "bar" => [id2],
-               "baz" => :all,
-               "xyzzy" => :none
-             }
+      assert TdCorePermissions.get_search_permissions(["foo", "bar", "baz", "xyzzy"], claims) ==
+               %{
+                 "foo" => [id2, id1],
+                 "bar" => [id2],
+                 "baz" => :all,
+                 "xyzzy" => :none
+               }
     end
   end
 

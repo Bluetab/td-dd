@@ -4,19 +4,20 @@ defmodule TdDd.Grants.RequestsTest do
 
   import TdDd.TestOperators
 
+  alias TdCore.Search.MockIndexWorker
   alias TdDd.Grants
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestApproval
   alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Grants.GrantRequestStatus
   alias TdDd.Grants.Requests
-  alias TdDd.Search.MockIndexWorker
 
   @template_name "grant_request_test_template"
   @valid_metadata %{"list" => "one", "string" => "bar"}
 
   setup tags do
-    start_supervised(MockIndexWorker)
+    start_supervised!(TdCore.Search.Cluster)
+    start_supervised!(TdCore.Search.IndexWorker)
 
     case Map.get(tags, :role, "user") do
       "admin" ->
@@ -69,7 +70,7 @@ defmodule TdDd.Grants.RequestsTest do
 
       assert %{status: "pending"} = Repo.get_by!(GrantRequestStatus, grant_request_id: request_id)
 
-      assert MockIndexWorker.calls() == [{:reindex_grant_requests, [request_id]}]
+      assert [{:reindex, :grant_requests, [^request_id]}] = MockIndexWorker.calls()
     end
 
     test "create_grant_request_group/2 with modification_grant" do
@@ -424,7 +425,7 @@ defmodule TdDd.Grants.RequestsTest do
       assert %{is_rejection: false, user: user} = approval
       assert %{id: ^user_id, user_name: _} = user
 
-      assert MockIndexWorker.calls() == [{:reindex_grant_requests, [request.id]}]
+      assert [{:reindex, :grant_requests, [_]}] = MockIndexWorker.calls()
     end
 
     test "admin can approve a grant request without having the role", %{
@@ -510,7 +511,8 @@ defmodule TdDd.Grants.RequestsTest do
 
       assert %{pending_removal: true} = Grants.get_grant(grant_id)
 
-      assert MockIndexWorker.calls() == [{:reindex_grant_requests, [request.id]}]
+      assert [{:reindex, :grants, [_]}, {:reindex, :grant_requests, [_]}] =
+               MockIndexWorker.calls()
     end
   end
 

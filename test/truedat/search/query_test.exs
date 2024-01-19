@@ -1,7 +1,7 @@
 defmodule Truedat.Search.QueryTest do
   use ExUnit.Case
 
-  alias Truedat.Search.Query
+  alias TdCore.Search.Query
 
   @match_all %{match_all: %{}}
   @match_none %{match_none: %{}}
@@ -12,7 +12,7 @@ defmodule Truedat.Search.QueryTest do
 
   describe "build_query/1" do
     test "returns a boolean query with a match_all filter by default" do
-      assert Query.build_query(@match_all, %{}, @aggs) == %{bool: %{filter: @match_all}}
+      assert Query.build_query(@match_all, %{}, @aggs) == %{bool: %{must: @match_all}}
     end
 
     test "returns a boolean query with user-defined filters" do
@@ -20,7 +20,7 @@ defmodule Truedat.Search.QueryTest do
 
       assert Query.build_query(@match_all, params, @aggs) == %{
                bool: %{
-                 filter: %{term: %{"type.raw" => "foo"}}
+                 must: %{term: %{"type.raw" => "foo"}}
                }
              }
 
@@ -28,7 +28,7 @@ defmodule Truedat.Search.QueryTest do
 
       assert Query.build_query(@match_all, params, @aggs) == %{
                bool: %{
-                 filter: [
+                 must: [
                    %{term: %{"type.raw" => "foo"}},
                    %{terms: %{"status.raw" => ["bar", "baz"]}}
                  ]
@@ -41,8 +41,8 @@ defmodule Truedat.Search.QueryTest do
 
       assert Query.build_query(@match_all, params, @aggs) == %{
                bool: %{
-                 filter: %{match_all: %{}},
-                 must: %{simple_query_string: %{query: "foo*"}}
+                 must: %{simple_query_string: %{query: "foo*"}},
+                 should: %{multi_match: %{operator: "and", query: "foo*", type: "best_fields"}}
                }
              }
     end
@@ -55,8 +55,8 @@ defmodule Truedat.Search.QueryTest do
 
       assert Query.build_query(@match_all, params, @aggs) == %{
                bool: %{
-                 filter: %{term: %{"type.raw" => "foo"}},
-                 must: %{simple_query_string: %{query: "foo*"}}
+                 must: [%{simple_query_string: %{query: "foo*"}}, %{term: %{"type.raw" => "foo"}}],
+                 should: %{multi_match: %{operator: "and", query: "foo*", type: "best_fields"}}
                }
              }
     end
@@ -69,7 +69,7 @@ defmodule Truedat.Search.QueryTest do
 
       assert Query.build_query(@match_none, params) == %{
                bool: %{
-                 filter: [%{exists: %{field: "bar"}}, %{exists: %{field: "foo"}}, @match_none],
+                 must: [%{exists: %{field: "bar"}}, %{exists: %{field: "foo"}}, @match_none],
                  must_not: %{exists: %{field: "baz"}}
                }
              }
@@ -98,7 +98,7 @@ defmodule Truedat.Search.QueryTest do
 
       assert Query.build_query(filters, params) == %{
                bool: %{
-                 filter: %{},
+                 must: %{},
                  must_not: %{term: %{"foo" => "bar"}}
                }
              }

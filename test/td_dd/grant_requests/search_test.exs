@@ -12,7 +12,9 @@ defmodule TdDd.GrantRequests.SearchTest do
   }
 
   setup do
-    start_supervised!(TdDd.Search.Cluster)
+    start_supervised!(TdCore.Search.Cluster)
+    start_supervised!(TdCore.Search.IndexWorker)
+
     :ok
   end
 
@@ -25,7 +27,7 @@ defmodule TdDd.GrantRequests.SearchTest do
         ElasticsearchMock
         |> expect(:request, fn
           _, :post, "/grant_requests/_search", %{aggs: _, query: query, size: 0}, _ ->
-            assert %{bool: %{filter: %{match_all: %{}}}} = query
+            assert %{bool: %{must: %{match_all: %{}}}} = query
             SearchHelpers.aggs_response(@aggs)
         end)
 
@@ -41,7 +43,7 @@ defmodule TdDd.GrantRequests.SearchTest do
         _, :post, "/grant_requests/_search", %{aggs: _, query: query, size: 0}, _ ->
           assert %{
                    bool: %{
-                     filter: %{
+                     must: %{
                        bool: %{should: [%{term: %{"domain_ids" => _}}]}
                      }
                    }
@@ -60,7 +62,7 @@ defmodule TdDd.GrantRequests.SearchTest do
         _, :post, "/grant_requests/_search", %{aggs: _, query: query, size: 0}, _ ->
           assert %{
                    bool: %{
-                     filter: [
+                     must: [
                        %{term: %{"foo" => "bar"}},
                        _
                      ]

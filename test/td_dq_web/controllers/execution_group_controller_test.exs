@@ -9,11 +9,8 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
   setup :verify_on_exit!
 
   setup do
-    start_supervised!(TdDd.Search.Cluster)
-    :ok
-  end
+    start_supervised!(TdCore.Search.Cluster)
 
-  setup do
     groups =
       1..5
       |> Enum.map(fn _ -> insert(:execution) end)
@@ -96,7 +93,7 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
         _, :post, "/implementations/_search", %{from: 0, size: 10_000, query: query}, _ ->
           assert %{
                    bool: %{
-                     filter: [
+                     must: [
                        %{terms: %{"id" => [_, _]}},
                        %{term: %{"domain_ids" => _}},
                        %{term: %{"executable" => true}},
@@ -139,7 +136,7 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
         _, :post, "/implementations/_search", %{from: 0, size: 10_000, query: query}, _ ->
           assert %{
                    bool: %{
-                     filter: [
+                     must: [
                        %{terms: %{"id" => [_, _, _]}},
                        %{term: %{"domain_ids" => ^allowed_domain_id}},
                        %{term: %{"executable" => true}},

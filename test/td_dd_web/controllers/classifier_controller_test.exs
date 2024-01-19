@@ -3,7 +3,8 @@ defmodule TdDdWeb.ClassifierControllerTest do
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   setup do
-    start_supervised(TdDd.Search.MockIndexWorker)
+    start_supervised!(TdCore.Search.Cluster)
+    start_supervised!(TdCore.Search.IndexWorker)
     system = insert(:system)
     [system: system]
   end

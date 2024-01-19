@@ -3,7 +3,7 @@ defmodule TdDd.Grants.Search.Query do
   Support for building grant search queries.
   """
 
-  alias Truedat.Search.Query
+  alias TdCore.Search.Query
 
   def build_filters(%{"manage_grants" => manage_scope, "view_grants" => view_scope}, user_id) do
     user_filter = %{term: %{"user_id" => user_id}}
