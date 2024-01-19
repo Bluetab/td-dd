@@ -5,9 +5,9 @@ defmodule TdDd.DataStructures.StructureNotesTest do
 
   alias Ecto.Changeset
   alias TdCache.Redix.Stream
+  alias TdCore.Search.MockIndexWorker
   alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.StructureNotes
-  alias TdDd.Search.MockIndexWorker
 
   @moduletag sandbox: :shared
   @stream TdCache.Audit.stream()
@@ -15,7 +15,8 @@ defmodule TdDd.DataStructures.StructureNotesTest do
 
   setup do
     start_supervised!(TdDd.Search.StructureEnricher)
-    start_supervised!(MockIndexWorker)
+    start_supervised!(TdCore.Search.Cluster)
+    start_supervised!(TdCore.Search.IndexWorker)
 
     alias_field = %{
       "cardinality" => "?",
@@ -155,7 +156,7 @@ defmodule TdDd.DataStructures.StructureNotesTest do
       assert structure_note.status == :draft
       assert structure_note.version == 42
 
-      find_call = {:reindex_grant_requests, [grant_request_id]}
+      find_call = {:reindex, :grant_requests, [grant_request_id]}
 
       assert find_call ==
                MockIndexWorker.calls()

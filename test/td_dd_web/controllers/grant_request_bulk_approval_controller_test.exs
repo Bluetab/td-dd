@@ -3,15 +3,15 @@ defmodule TdDdWeb.GrantRequestBulkApprovalControllerTest do
 
   import Mox
 
+  alias TdCore.Search.MockIndexWorker
   alias TdDd.DataStructures.Hierarchy
-  alias TdDd.Search.MockIndexWorker
 
   @moduletag sandbox: :shared
 
   setup do
     start_supervised!(TdDd.Search.StructureEnricher)
-    start_supervised!(TdDd.Search.Cluster)
-    start_supervised(MockIndexWorker)
+    start_supervised!(TdCore.Search.Cluster)
+    start_supervised!(TdCore.Search.IndexWorker)
     :ok
   end
 
@@ -37,7 +37,7 @@ defmodule TdDdWeb.GrantRequestBulkApprovalControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/grant_requests/_search", %{query: query, size: _}, _ ->
-        assert %{bool: %{filter: %{terms: %{"id" => grant_requests_ids}}}} == query
+        assert %{bool: %{must: %{terms: %{"id" => grant_requests_ids}}}} == query
 
         SearchHelpers.hits_response([grant_request1, grant_request2, grant_request3])
       end)
@@ -60,10 +60,10 @@ defmodule TdDdWeb.GrantRequestBulkApprovalControllerTest do
                "role" => params.role
              } == Map.take(first_approval, ["comment", "is_rejection", "role"])
 
-      assert MockIndexWorker.calls() == [
-               {:reindex_grant_requests,
-                [grant_request1_id, grant_request2_id, grant_request3_id]}
-             ]
+      assert [
+               {:reindex, :grant_requests,
+                [^grant_request1_id, ^grant_request2_id, ^grant_request3_id]}
+             ] = MockIndexWorker.calls()
     end
 
     @tag authentication: [role: "admin"]
@@ -91,7 +91,7 @@ defmodule TdDdWeb.GrantRequestBulkApprovalControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/grant_requests/_search", %{query: query, size: _}, _ ->
-        assert %{bool: %{filter: %{terms: %{"id" => grant_requests_ids}}}} == query
+        assert %{bool: %{must: %{terms: %{"id" => grant_requests_ids}}}} == query
 
         SearchHelpers.hits_response([grant_request1, grant_request2])
       end)
@@ -114,9 +114,9 @@ defmodule TdDdWeb.GrantRequestBulkApprovalControllerTest do
                "role" => params.role
              } == Map.take(first_approval, ["comment", "is_rejection", "role"])
 
-      assert MockIndexWorker.calls() == [
-               {:reindex_grant_requests, [grant_request1_id, grant_request2_id]}
-             ]
+      assert [
+               {:reindex, _grant_requests, [^grant_request1_id, ^grant_request2_id]}
+             ] = MockIndexWorker.calls()
     end
   end
 

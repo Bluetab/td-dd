@@ -15,6 +15,9 @@ defmodule TdDd.GrantsTest do
   end
 
   setup do
+    start_supervised!(TdCore.Search.Cluster)
+    start_supervised!(TdCore.Search.IndexWorker)
+
     %{id: user_id, user_name: user_name} = user = CacheHelpers.insert_user()
     %{id: data_structure_id} = data_structure = insert(:data_structure)
 

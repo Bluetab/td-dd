@@ -1,5 +1,18 @@
 # Changelog
 
+## [6.0.0] 2024-01-19
+
+### Added
+
+- [TD-6181] Refactor for elastic search
+- [TD-6165] Catalog view filtered/virtual path navigation
+- [TD-6272] Change timeout to use the environement variable
+
+### Fixed
+
+- [TD-6270] Reindex the deleted structures in bulk updates
+- [TD-6130] Database lowercase when implementation raw is created
+
 ## [5.20.0] 2023-12-19
 
 ### Added

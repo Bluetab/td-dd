@@ -4,7 +4,7 @@ defmodule TdCxWeb.SearchController do
 
   alias TdCx.Jobs
 
-  @index_worker Application.compile_env(:td_dd, :cx_index_worker)
+  alias TdCore.Search
 
   action_fallback(TdCxWeb.FallbackController)
 
@@ -20,7 +20,7 @@ defmodule TdCxWeb.SearchController do
     claims = conn.assigns[:current_resource]
 
     with :ok <- Bodyguard.permit(Jobs, :reindex, claims) do
-      @index_worker.reindex(:all)
+      Search.IndexWorker.reindex(:jobs, :all)
       send_resp(conn, :accepted, "")
     end
   end

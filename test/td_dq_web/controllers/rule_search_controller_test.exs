@@ -6,11 +6,8 @@ defmodule TdDqWeb.RuleSearchControllerTest do
   setup :verify_on_exit!
 
   setup do
-    start_supervised!(TdDd.Search.Cluster)
-    :ok
-  end
+    start_supervised!(TdCore.Search.Cluster)
 
-  setup do
     %{id: domain_id} = domain = CacheHelpers.insert_domain()
     %{id: concept_id} = CacheHelpers.insert_concept(name: "Concept", domain_id: domain_id)
     rule = insert(:rule, business_concept_id: concept_id, domain_id: domain_id)
@@ -24,7 +21,7 @@ defmodule TdDqWeb.RuleSearchControllerTest do
       ElasticsearchMock
       |> expect(:request, fn
         _, :post, "/rules/_search", %{query: query, size: 20}, _ ->
-          assert query == %{bool: %{filter: %{match_all: %{}}}}
+          assert query == %{bool: %{must: %{match_all: %{}}}}
           SearchHelpers.hits_response([rule])
       end)
 
@@ -54,7 +51,7 @@ defmodule TdDqWeb.RuleSearchControllerTest do
       ElasticsearchMock
       |> expect(:request, fn
         _, :post, "/rules/_search", %{query: query, size: 20}, _ ->
-          assert query == %{bool: %{filter: %{match_none: %{}}}}
+          assert query == %{bool: %{must: %{match_none: %{}}}}
           SearchHelpers.hits_response([])
       end)
 
@@ -84,11 +81,7 @@ defmodule TdDqWeb.RuleSearchControllerTest do
       ElasticsearchMock
       |> expect(:request, fn
         _, :post, "/rules/_search", %{query: query, size: 20}, _ ->
-          assert %{
-                   bool: %{
-                     filter: [_not_confidential, %{term: %{"domain_ids" => _}}]
-                   }
-                 } = query
+          assert %{bool: %{must: [_not_confidential, %{term: %{"domain_ids" => _}}]}} = query
 
           SearchHelpers.hits_response([rule])
       end)

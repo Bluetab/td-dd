@@ -3,7 +3,7 @@ defmodule TdDd.GrantRequests.Search.Query do
   Support for building grant search queries.
   """
 
-  alias Truedat.Search.Query
+  alias TdCore.Search.Query
 
   def build_query(%{} = permissions, params, aggs) do
     permissions

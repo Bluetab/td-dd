@@ -1,7 +1,7 @@
 defmodule Truedat.Search.FiltersTest do
   use ExUnit.Case
 
-  alias Truedat.Search.Filters
+  alias TdCore.Search.Filters
 
   describe "build_filters/3" do
     test "creates filter clauses matching aggregations" do
@@ -21,8 +21,8 @@ defmodule Truedat.Search.FiltersTest do
 
       assert filters
              |> Enum.sort()
-             |> Filters.build_filters(aggs, %{filter: %{wtf: %{}}}) == %{
-               filter: [
+             |> Filters.build_filters(aggs, %{must: %{wtf: %{}}}) == %{
+               must: [
                  %{term: %{"foo_field" => "foo"}},
                  %{term: %{"baz" => "baz"}},
                  %{
@@ -67,7 +67,7 @@ defmodule Truedat.Search.FiltersTest do
     test "handles updated_at, start_date and end_date as ranges" do
       for field <- ["updated_at", "start_date", "end_date"] do
         assert Filters.build_filters(%{field => %{"gte" => "now-1d/d"}}, %{}, %{}) ==
-                 %{filter: %{range: %{field => %{"gte" => "now-1d/d"}}}}
+                 %{must: %{range: %{field => %{"gte" => "now-1d/d"}}}}
       end
     end
   end

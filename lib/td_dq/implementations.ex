@@ -10,6 +10,7 @@ defmodule TdDq.Implementations do
   alias TdCache.LinkCache
   alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
+  alias TdCore.Search.IndexWorker
   alias TdCx.Sources
   alias TdDd.Cache.StructureEntry
   alias TdDd.DataStructures
@@ -30,8 +31,6 @@ defmodule TdDq.Implementations do
   alias TdDq.Rules.RuleResults
   alias TdDq.Search.Helpers
   alias Truedat.Auth.Claims
-
-  @index_worker Application.compile_env(:td_dd, :dq_index_worker)
 
   @typep multi_result ::
            {:ok, map} | {:error, Multi.name(), any(), %{required(Multi.name()) => any()}}
@@ -425,9 +424,8 @@ defmodule TdDq.Implementations do
   defp on_deprecate(result) do
     case result do
       {:ok, %{deprecated: {_, [_ | _] = impls}}} ->
-        impls
-        |> Enum.map(& &1.id)
-        |> @index_worker.reindex_implementations()
+        ids = Enum.map(impls, & &1.id)
+        IndexWorker.reindex(:implementations, ids)
 
         result
 
@@ -505,7 +503,7 @@ defmodule TdDq.Implementations do
       end)
 
     RuleLoader.refresh(rule_ids)
-    @index_worker.delete_implementations(implementation_ids)
+    IndexWorker.delete(:implementations, implementation_ids)
 
     result
   end
@@ -516,19 +514,19 @@ defmodule TdDq.Implementations do
   defp on_upsert(result, is_bulk \\ false)
 
   defp on_upsert({:ok, %{versioned: {_count, ids}, implementation: %{id: id}}} = result, false) do
-    @index_worker.reindex_implementations([id | ids])
+    IndexWorker.reindex(:implementations, [id | ids])
     result
   end
 
   defp on_upsert({:ok, %{implementation: %{id: id}}} = result, false) do
-    @index_worker.reindex_implementations(id)
+    IndexWorker.reindex(:implementations, [id])
     result
   end
 
   defp on_upsert({:ok, %{implementations_moved: {_, implementations}}} = result, false) do
-    implementations
-    |> Enum.map(fn %{id: id} -> id end)
-    |> @index_worker.reindex_implementations()
+    ids = Enum.map(implementations, fn %{id: id} -> id end)
+
+    IndexWorker.reindex(:implementations, ids)
 
     result
   end
@@ -753,7 +751,7 @@ defmodule TdDq.Implementations do
       {:not_deleted, nil},
       {:name_in, names},
       {:source_id, source_id},
-      {:metadata_field, {"database", database}},
+      {:metadata_field, {"database", lower_case(database)}},
       {:metadata_field_in, {"table", dataset_names}}
     ]
     |> DataStructures.list_data_structure_versions_by_criteria()
@@ -768,6 +766,12 @@ defmodule TdDq.Implementations do
 
   defp string_split_space_lower(str),
     do: str |> String.split(~r/[\s\.\*\&\|\^\%\/()><!=,+-]+/) |> Enum.map(&String.downcase/1)
+
+  defp lower_case(nil), do: nil
+
+  defp lower_case(database) do
+    String.downcase(database)
+  end
 
   defp create_implementation_structures(_repo, %{implementation: implementation}) do
     results_dataset =
@@ -1192,7 +1196,7 @@ defmodule TdDq.Implementations do
 
       implementation_structure ->
         implementations_ids = get_implementation_versions_ids_by_ref(implementation_ref.id)
-        @index_worker.reindex_implementations(implementations_ids)
+        IndexWorker.reindex(:implementations, implementations_ids)
         implementation_structure
     end
   end
@@ -1209,7 +1213,7 @@ defmodule TdDq.Implementations do
         implementations_ids =
           get_implementation_versions_ids_by_ref(implementation_structure.implementation_id)
 
-        @index_worker.reindex_implementations(implementations_ids)
+        IndexWorker.reindex(:implementations, implementations_ids)
         deleted_implementation_structure
     end
   end
@@ -1221,7 +1225,7 @@ defmodule TdDq.Implementations do
       |> Enum.map(&Map.get(&1, :implementation_id))
 
     if implementations_ids !== [] do
-      @index_worker.reindex_implementations(implementations_ids)
+      IndexWorker.reindex(:implementations, implementations_ids)
     else
       :ok
     end

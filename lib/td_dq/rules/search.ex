@@ -3,10 +3,13 @@ defmodule TdDq.Rules.Search do
   The Rules Search context
   """
 
+  alias TdCore.Search
+  alias TdCore.Search.ElasticDocumentProtocol
+  alias TdCore.Search.Permissions
+  alias TdDq.Implementations.Implementation
+  alias TdDq.Rules.Rule
   alias TdDq.Rules.Search.Query
   alias Truedat.Auth.Claims
-  alias Truedat.Search
-  alias Truedat.Search.Permissions
 
   require Logger
 
@@ -128,11 +131,11 @@ defmodule TdDq.Rules.Search do
   end
 
   defp aggregations(:rules) do
-    TdDq.Rules.Search.Aggregations.aggregations()
+    ElasticDocumentProtocol.aggregations(%Rule{})
   end
 
   defp aggregations(:implementations) do
-    TdDq.Implementations.Search.Aggregations.aggregations()
+    ElasticDocumentProtocol.aggregations(%Implementation{})
   end
 
   defp put_default_filters(%{"must" => _} = params, %{role: "service"}) do

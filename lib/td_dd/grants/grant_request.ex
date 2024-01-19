@@ -7,7 +7,6 @@ defmodule TdDd.Grants.GrantRequest do
   import Ecto.Changeset
 
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Grants.Grant
   alias TdDd.Grants.GrantRequestApproval
   alias TdDd.Grants.GrantRequestGroup
@@ -116,95 +115,4 @@ defmodule TdDd.Grants.GrantRequest do
   end
 
   defp validate_content(%{} = changeset, nil = _no_template_name), do: changeset
-
-  defimpl Elasticsearch.Document do
-    alias TdCache.TemplateCache
-    alias TdDd.Grants.GrantRequest
-    alias TdDfLib.Format
-
-    @impl Elasticsearch.Document
-    def id(%GrantRequest{id: id}), do: id
-
-    @impl Elasticsearch.Document
-    def routing(_), do: false
-
-    @impl Elasticsearch.Document
-    def encode(
-          %{
-            data_structure_version: dsv,
-            group: %GrantRequestGroup{} = group,
-            grant_id: grant_id,
-            grant: grant,
-            request_type: request_type
-          } = grant_request
-        ) do
-      template =
-        TemplateCache.get_by_name!(group.type) ||
-          %{content: []}
-
-      user = get_user(grant_request.user)
-      created_by = get_user(grant_request.created_by)
-
-      metadata =
-        grant_request
-        |> Map.get(:metadata)
-        |> Format.search_values(template)
-
-      %{
-        id: grant_request.id,
-        current_status: grant_request.current_status,
-        approved_by: grant_request.approved_by,
-        domain_ids: grant_request.domain_ids,
-        user_id: group.user_id,
-        user: %{
-          id: Map.get(user, :id),
-          user_name: Map.get(user, :user_name, ""),
-          email: Map.get(user, :email, ""),
-          full_name: user_full_name(user)
-        },
-        created_by_id: group.created_by_id,
-        created_by: %{
-          id: Map.get(created_by, :id),
-          email: Map.get(created_by, :email, ""),
-          user_name: Map.get(created_by, :user_name, ""),
-          full_name: user_full_name(created_by)
-        },
-        data_structure_id: grant_request.data_structure_id,
-        data_structure_version: encode_data_structure_version(dsv),
-        grant_id: grant_id,
-        grant: encode_grant(grant),
-        inserted_at: grant_request.inserted_at,
-        type: group.type,
-        metadata: metadata,
-        modification_grant_id: group.modification_grant_id,
-        request_type: request_type
-      }
-    end
-
-    defp encode_grant(%Grant{id: id, data_structure_version: grant_dsv}) do
-      %{
-        id: id,
-        data_structure_version: encode_data_structure_version(grant_dsv)
-      }
-    end
-
-    defp encode_grant(%Ecto.Association.NotLoaded{}), do: nil
-
-    defp encode_grant(nil), do: nil
-
-    defp encode_data_structure_version(%DataStructureVersion{} = dsv) do
-      Elasticsearch.Document.encode(dsv)
-    end
-
-    defp encode_data_structure_version(_), do: nil
-
-    defp user_full_name(%{full_name: full_name}) do
-      full_name
-    end
-
-    defp user_full_name(_), do: ""
-
-    defp get_user(nil), do: %{}
-    defp get_user(user), do: user
-  end
 end

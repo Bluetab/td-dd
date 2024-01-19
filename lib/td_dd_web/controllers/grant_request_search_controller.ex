@@ -1,12 +1,11 @@
 defmodule TdDdWeb.GrantRequestSearchController do
   use TdDdWeb, :controller
 
+  alias TdCore.Search.IndexWorker
   alias TdDd.GrantRequests.Search
   alias Truedat.Search.Permissions
 
   action_fallback(TdDdWeb.FallbackController)
-
-  @index_worker Application.compile_env(:td_dd, :index_worker)
 
   def search(conn, params) do
     claims = conn.assigns[:current_resource]
@@ -27,7 +26,7 @@ defmodule TdDdWeb.GrantRequestSearchController do
     claims = conn.assigns[:current_resource]
 
     with :ok <- Bodyguard.permit(TdDd.Grants, :reindex, claims) do
-      @index_worker.reindex_grant_requests(:all)
+      IndexWorker.reindex(:grant_requests, :all)
       send_resp(conn, :accepted, "")
     end
   end

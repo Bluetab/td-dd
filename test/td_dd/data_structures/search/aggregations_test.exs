@@ -1,9 +1,13 @@
 defmodule TdDd.DataStructures.Search.AggregationsTest do
   use TdDd.DataCase
 
-  alias TdDd.DataStructures.Search.Aggregations
+  alias TdCore.Search.ElasticDocumentProtocol
+  alias TdDd.DataStructures.DataStructureVersion
 
-  @missing_term_name Aggregations.missing_term_name()
+  setup do
+    start_supervised!(TdCore.Search.Cluster)
+    :ok
+  end
 
   @static_fields [
     "class.raw",
@@ -40,7 +44,7 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
 
   describe "aggregations/0" do
     test "includes static aggregations" do
-      aggs = Aggregations.aggregations()
+      aggs = ElasticDocumentProtocol.aggregations(%DataStructureVersion{})
 
       for field <- @static_fields do
         assert Map.has_key?(aggs, field)
@@ -48,7 +52,8 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
     end
 
     test "includes dynamic aggregations" do
-      dynamic_aggs = Aggregations.aggregations() |> Map.drop(@static_fields)
+      dynamic_aggs =
+        ElasticDocumentProtocol.aggregations(%DataStructureVersion{}) |> Map.drop(@static_fields)
 
       assert dynamic_aggs == %{
                "my_domain" => %{
@@ -58,7 +63,7 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
                "my_list" => %{terms: %{field: "note.my_list.raw"}},
                "my_system" => %{
                  aggs: %{
-                   distinct_search: %{terms: %{field: "note.my_system.external_id.raw"}}
+                   distinct_search: %{terms: %{field: "note.my_system.external_id.raw", size: 50}}
                  },
                  nested: %{path: "note.my_system"}
                },
@@ -70,14 +75,14 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
       insert(:data_structure_type, filters: ["foo"])
       insert(:data_structure_type, filters: ["bar", "baz"])
 
-      aggs = Aggregations.aggregations()
+      aggs = ElasticDocumentProtocol.aggregations(%DataStructureVersion{})
 
       assert_maps_equal(
         aggs,
         %{
-          "metadata.bar" => %{terms: %{field: "_filters.bar", missing: "_missing"}},
-          "metadata.baz" => %{terms: %{field: "_filters.baz", missing: "_missing"}},
-          "metadata.foo" => %{terms: %{field: "_filters.foo", missing: "_missing"}}
+          "metadata.bar" => %{terms: %{field: "_filters.bar"}},
+          "metadata.baz" => %{terms: %{field: "_filters.baz"}},
+          "metadata.foo" => %{terms: %{field: "_filters.foo"}}
         },
         ["metadata.foo", "metadata.bar", "metadata.baz"]
       )
@@ -90,10 +95,10 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
 
       %{
         "metadata.host" => %{
-          terms: %{field: "_filters.host", missing: @missing_term_name}
+          terms: %{field: "_filters.host"}
         },
-        "note.layer" => %{terms: %{field: "note.layer.raw", missing: @missing_term_name}}
-      } = Aggregations.aggregations()
+        "note.layer" => %{terms: %{field: "note.layer.raw"}}
+      } = ElasticDocumentProtocol.aggregations(%DataStructureVersion{})
     end
   end
 end

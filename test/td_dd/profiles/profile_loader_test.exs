@@ -4,6 +4,12 @@ defmodule TdDd.Profiles.ProfileLoaderTest do
   alias TdDd.Profiles
   alias TdDd.Profiles.ProfileLoader
 
+  setup do
+    start_supervised!(TdCore.Search.Cluster)
+    start_supervised!(TdCore.Search.IndexWorker)
+    :ok
+  end
+
   describe "TdDd.Profiles.ProfileLoader" do
     test "load/1 loads changes in data profiles" do
       sys1 = insert(:system, external_id: "SYS1", name: "SYS1")

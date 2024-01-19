@@ -3,8 +3,8 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
 
   import Mox
 
+  alias TdCore.Search.MockIndexWorker
   alias TdDd.DataStructures.Hierarchy
-  alias TdDd.Search.MockIndexWorker
 
   @moduletag sandbox: :shared
 
@@ -12,8 +12,9 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
 
   setup do
     start_supervised!(TdDd.Search.StructureEnricher)
-    start_supervised!(TdDd.Search.Cluster)
-    start_supervised(MockIndexWorker)
+    start_supervised!(TdCore.Search.Cluster)
+    start_supervised!(TdCore.Search.IndexWorker)
+
     :ok
   end
 
@@ -33,7 +34,7 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
                              "/grant_requests/_search",
                              %{query: query, size: @query_size},
                              _ ->
-        assert %{bool: %{filter: %{match_all: %{}}}} == query
+        assert %{bool: %{must: %{match_all: %{}}}} == query
 
         SearchHelpers.hits_response([grant_request])
       end)
@@ -41,6 +42,35 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
       assert %{"data" => [_]} =
                conn
                |> post(Routes.grant_request_search_path(conn, :search))
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "admin can search all grant requests with pending status with mut not approved_by", %{
+      conn: conn,
+      grant_request: grant_request
+    } do
+      ElasticsearchMock
+      |> expect(:request, fn _,
+                             :post,
+                             "/grant_requests/_search",
+                             %{query: query, size: @query_size},
+                             _ ->
+        assert %{bool: %{must: %{match_all: %{}}, must_not: %{term: %{"approved_by" => "rol1"}}}} ==
+                 query
+
+        SearchHelpers.hits_response([grant_request])
+      end)
+
+      params = %{
+        "must" => %{
+          "must_not_approved_by" => ["rol1"]
+        }
+      }
+
+      assert %{"data" => [_]} =
+               conn
+               |> post(Routes.grant_request_search_path(conn, :search, params))
                |> json_response(:ok)
     end
 
@@ -59,7 +89,7 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
                              _ ->
         assert %{
                  bool: %{
-                   filter: %{
+                   must: %{
                      bool: %{
                        should: [%{term: %{"domain_ids" => ^domain_id}}]
                      }
@@ -88,7 +118,7 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
                              "/grant_requests/_search",
                              %{query: query, size: @query_size},
                              _ ->
-        assert %{bool: %{filter: %{match_none: %{}}}} = query
+        assert %{bool: %{must: %{match_none: %{}}}} = query
 
         SearchHelpers.hits_response([grant_request])
       end)
@@ -112,7 +142,7 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
                |> get(Routes.grant_request_search_path(conn, :reindex_all))
                |> response(:accepted)
 
-        assert MockIndexWorker.calls() == [{:reindex_grant_requests, :all}]
+        assert [{:reindex, :grant_requests, :all}] = MockIndexWorker.calls()
       end
     end
 
@@ -124,7 +154,7 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
              |> get(Routes.grant_request_search_path(conn, :reindex_all))
              |> response(:forbidden)
 
-      refute MockIndexWorker.calls() == [{:reindex_grant_requests, :all}]
+      assert [] = MockIndexWorker.calls()
     end
   end
 

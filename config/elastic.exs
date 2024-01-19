@@ -5,7 +5,7 @@ config :td_dd, TdDd.DataStructures.Search,
   es_scroll_ttl: "1m",
   max_bulk_results: 100_000
 
-config :td_dd, TdDd.Search.Cluster,
+config :td_core, TdCore.Search.Cluster,
   # The default URL where Elasticsearch is hosted on your system.
   # Will be overridden by the `ES_URL` environment variable if set.
   url: "http://elastic:9200",
@@ -14,6 +14,13 @@ config :td_dd, TdDd.Search.Cluster,
   # for testing or other purposes, you can inject a different module
   # here. It must implement the Elasticsearch.API behaviour.
   api: Elasticsearch.API.HTTP,
+
+  # Aggregations default
+  aggregations: %{
+    "domain" => 50,
+    "user" => 50,
+    "system" => 50
+  },
 
   # The library used for JSON encoding/decoding.
   json_library: Jason,
@@ -72,6 +79,7 @@ config :td_dd, TdDd.Search.Cluster,
       }
     },
     implementations: %{
+      template_scope: :ri,
       store: TdDq.Search.Store,
       sources: [TdDq.Implementations.Implementation],
       bulk_page_size: 100,
@@ -93,6 +101,7 @@ config :td_dd, TdDd.Search.Cluster,
       }
     },
     jobs: %{
+      template_scope: :cx,
       store: TdCx.Search.Store,
       sources: [TdCx.Jobs.Job],
       bulk_page_size: 100,
@@ -107,6 +116,7 @@ config :td_dd, TdDd.Search.Cluster,
       }
     },
     rules: %{
+      template_scope: :dq,
       store: TdDq.Search.Store,
       sources: [TdDq.Rules.Rule],
       bulk_page_size: 100,
@@ -128,6 +138,7 @@ config :td_dd, TdDd.Search.Cluster,
       }
     },
     structures: %{
+      template_scope: :dd,
       store: TdDd.Search.Store,
       sources: [TdDd.DataStructures.DataStructureVersion],
       bulk_page_size: 1000,
@@ -156,6 +167,7 @@ config :td_dd, TdDd.Search.Cluster,
       }
     },
     grant_requests: %{
+      template_scope: :gr,
       store: TdDd.Search.Store,
       sources: [TdDd.Grants.GrantRequest],
       bulk_page_size: 500,

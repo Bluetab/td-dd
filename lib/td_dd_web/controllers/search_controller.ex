@@ -6,7 +6,7 @@ defmodule TdDdWeb.SearchController do
 
   action_fallback(TdDdWeb.FallbackController)
 
-  @index_worker Application.compile_env(:td_dd, :index_worker)
+  alias TdCore.Search.IndexWorker
 
   swagger_path :reindex_all do
     description("Reindex all ES indexes with DB content")
@@ -19,7 +19,7 @@ defmodule TdDdWeb.SearchController do
     claims = conn.assigns[:current_resource]
 
     with :ok <- Bodyguard.permit(DataStructures, :reindex, claims) do
-      @index_worker.reindex(:all)
+      IndexWorker.reindex(:structures, :all)
       send_resp(conn, :accepted, "")
     end
   end

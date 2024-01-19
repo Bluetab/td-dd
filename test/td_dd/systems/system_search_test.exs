@@ -6,7 +6,8 @@ defmodule TdDD.Systems.SystemSearchTest do
   alias TdDd.Systems.SystemSearch
 
   setup do
-    start_supervised!(TdDd.Search.Cluster)
+    start_supervised!(TdCore.Search.Cluster)
+    start_supervised!(TdCore.Search.IndexWorker)
     :ok
   end
 
@@ -31,7 +32,7 @@ defmodule TdDD.Systems.SystemSearchTest do
 
           assert %{
                    bool: %{
-                     filter: [
+                     must: [
                        %{term: %{"confidential" => false}},
                        %{term: %{"domain_ids" => _}}
                      ]

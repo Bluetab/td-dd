@@ -1,10 +1,9 @@
 defmodule TdDqWeb.RuleSearchController do
   use TdDqWeb, :controller
 
+  alias TdCore.Search.IndexWorker
   alias TdDq.Rules
   alias TdDq.Rules.Search
-
-  @index_worker Application.compile_env(:td_dd, :dq_index_worker)
 
   swagger_path :reindex do
     description("Reindex rule index with DB content")
@@ -18,7 +17,7 @@ defmodule TdDqWeb.RuleSearchController do
     claims = conn.assigns[:current_resource]
 
     with :ok <- Bodyguard.permit(Rules, :reindex, claims) do
-      @index_worker.reindex_rules(:all)
+      IndexWorker.reindex(:rules, :all)
       send_resp(conn, :accepted, "")
     end
   end
