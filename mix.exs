@@ -74,7 +74,7 @@ defmodule TdDd.MixProject do
       {:tzdata, "~> 1.1"},
       {:nimble_csv, "~> 1.2"},
       {:flow, "~> 1.0"},
-      {:phoenix_swagger, "~> 0.8.3"},
+      {:phoenix_swagger, git: "https://github.com/Bluetab/phx_swagger.git", tag: "6.0.0"},
       {:ex_json_schema, "~> 0.7.3"},
       {:codepagex, "~> 0.1.4"},
       {:bimap, "~> 1.1"},
