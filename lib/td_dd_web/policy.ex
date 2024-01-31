@@ -19,6 +19,20 @@ defmodule TdDdWeb.Policy do
     :delete_grant_approval_rule
   ]
 
+  @user_allowed_resources [
+    :catalog_view_config,
+    :catalog_view_configs,
+    :current_roles,
+    :domain,
+    :domains,
+    :has_any_domain,
+    :me,
+    :remediation,
+    :structure_notes,
+    :template,
+    :templates
+  ]
+
   # Extract claims from Absinthe Resolution context
   def authorize(action, %{context: %{claims: claims}} = _resolution, params) do
     authorize(action, claims, params)
@@ -28,15 +42,9 @@ defmodule TdDdWeb.Policy do
   def authorize(:query, %{role: "admin"}, _resource), do: true
   def authorize(:query, %{role: "service"}, _resource), do: true
 
-  def authorize(:query, %{role: "user"}, :me), do: true
-  def authorize(:query, %{role: "user"}, :current_roles), do: true
-  def authorize(:query, %{role: "user"}, :domain), do: true
-  def authorize(:query, %{role: "user"}, :domains), do: true
-  def authorize(:query, %{role: "user"}, :has_any_domain), do: true
-  def authorize(:query, %{role: "user"}, :templates), do: true
-  def authorize(:query, %{role: "user"}, :template), do: true
-  def authorize(:query, %{role: "user"}, :structure_notes), do: true
-  def authorize(:query, %{role: "user"}, :remediation), do: true
+  def authorize(:query, %{role: "user"}, resource) when resource in @user_allowed_resources,
+    do: true
+
   def authorize(:query, %{role: "user"}, :remediations_connection), do: false
 
   def authorize(:query, %{} = claims, :data_structure),
