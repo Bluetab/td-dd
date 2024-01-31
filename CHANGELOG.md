@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-6342] Use td-core Elasticsearch.Document Integer implementation
+
 ## [6.0.0] 2024-01-19
 
 ### Added
