@@ -12,10 +12,8 @@ defmodule TdDdWeb.Authentication do
     |> Conn.put_req_header("authorization", "Bearer #{jwt}")
   end
 
-  def create_user_auth_conn(%Claims{role: role} = claims) do
-    {:ok, jwt, full_claims} = Guardian.encode_and_sign(claims, %{role: role})
-    {:ok, claims} = Guardian.resource_from_claims(full_claims)
-    register_token(jwt)
+  def create_user_auth_conn(%{} = claims) do
+    %{jwt: jwt, claims: claims} = authenticate(claims)
 
     conn =
       Phoenix.ConnTest.build_conn()
@@ -44,12 +42,13 @@ defmodule TdDdWeb.Authentication do
 
   def assign_permissions(state, _), do: state
 
-  defp register_token(token) do
-    case Guardian.decode_and_verify(token) do
-      {:ok, _} -> :ok
-      _ -> raise "Problems decoding and verifying token"
-    end
+  defp authenticate(%{role: role} = claims) do
+    {:ok, jwt, %{"jti" => jti, "exp" => exp} = full_claims} =
+      Guardian.encode_and_sign(claims, %{role: role})
 
-    token
+    {:ok, claims} = Guardian.resource_from_claims(full_claims)
+    {:ok, _} = Guardian.decode_and_verify(jwt)
+    TdCache.SessionCache.put(jti, exp)
+    %{jwt: jwt, claims: claims}
   end
 end

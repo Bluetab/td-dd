@@ -98,7 +98,7 @@ services:
       - redis
       - vault
       - elastic
-  
+
   wait_for_elastic:
     image: bluetab/wait-for:20190507133127
     command: elastic:9200 -t 60 -- curl --silent elastic:9200

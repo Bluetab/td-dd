@@ -52,11 +52,6 @@ defmodule TdDq.Implementations.BulkLoad do
   defp create_implementations(implementations, claims) do
     implementations
     |> Enum.reduce(%{ids: [], errors: []}, fn imp, acc ->
-      rule =
-        imp
-        |> Map.get("rule_name")
-        |> Rules.get_rule_by_name()
-
       domain_id =
         imp
         |> Map.get("domain_external_id")
@@ -69,11 +64,11 @@ defmodule TdDq.Implementations.BulkLoad do
       imp =
         imp
         |> enrich_implementation()
-        |> Map.put("domain_id", domain_id)
+        |> maybe_put_domain_id(domain_id)
         |> Map.put("status", "draft")
         |> Map.put("version", 1)
 
-      case Implementations.create_implementation(rule, imp, claims, true) do
+      case create_implementation(imp, claims) do
         {:ok, %{implementation: %{id: id}}} ->
           %{acc | ids: [id | acc.ids]}
 
@@ -85,10 +80,28 @@ defmodule TdDq.Implementations.BulkLoad do
             acc
             | errors: [%{implementation_key: implementation_key, message: error} | acc.errors]
           }
+
+        {:error, {implementation_key, error}} ->
+          %{
+            acc
+            | errors: [%{implementation_key: implementation_key, message: error} | acc.errors]
+          }
       end
     end)
     |> Map.update!(:ids, &Enum.reverse/1)
     |> Map.update!(:errors, &Enum.reverse/1)
+  end
+
+  defp create_implementation(%{"rule_name" => rule_name} = imp, claims)
+       when is_binary(rule_name) do
+    case Rules.get_rule_by_name(rule_name) do
+      nil -> {:error, {imp["implementation_key"], "rule #{rule_name} not exists"}}
+      rule -> Implementations.create_implementation(rule, imp, claims, true)
+    end
+  end
+
+  defp create_implementation(imp, claims) do
+    Implementations.create_ruleless_implementation(imp, claims, true)
   end
 
   defp enrich_implementation(implementation) do
@@ -116,4 +129,7 @@ defmodule TdDq.Implementations.BulkLoad do
       implementation
     end
   end
+
+  defp maybe_put_domain_id(params, nil), do: params
+  defp maybe_put_domain_id(params, domain_id), do: Map.put(params, "domain_id", domain_id)
 end

@@ -85,13 +85,13 @@ defmodule TdDd.CSV.Download do
 
   defp type_editable_fields(_type), do: []
 
-  defp editable_structure_values(%{latest_note: nil} = structure, type_headers) do
+  defp editable_structure_values(%{note: nil} = structure, type_headers) do
     structure_values = Enum.map(@editable_headers, &editable_structure_value(structure, &1))
     empty_values = List.duplicate(nil, length(type_headers))
     structure_values ++ empty_values
   end
 
-  defp editable_structure_values(%{latest_note: content} = structure, type_fields) do
+  defp editable_structure_values(%{note: content} = structure, type_fields) do
     structure_values = Enum.map(@editable_headers, &editable_structure_value(structure, &1))
     content_values = Enum.map(type_fields, &get_content_field(&1, content))
     structure_values ++ content_values
@@ -159,7 +159,7 @@ defmodule TdDd.CSV.Download do
 
   defp structures_to_list(structures, content_fields \\ []) do
     Enum.map(structures, fn structure ->
-      content = structure.latest_note
+      content = structure.note
 
       values = [
         structure.type,

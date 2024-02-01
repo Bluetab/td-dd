@@ -121,10 +121,6 @@ defmodule TdDq.Implementations do
     |> on_upsert(is_bulk)
   end
 
-  def create_implementation(nil, params, claims, is_bulk) do
-    create_ruleless_implementation(params, claims, is_bulk)
-  end
-
   @spec create_ruleless_implementation(map, Claims.t(), boolean) :: multi_result
   def create_ruleless_implementation(params, claims, is_bulk \\ false)
 

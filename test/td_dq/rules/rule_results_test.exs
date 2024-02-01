@@ -75,7 +75,8 @@ defmodule TdDq.RuleResultsTest do
       insert(:rule_result, implementation: implementation1)
       result = insert(:rule_result, implementation: implementation2)
 
-      assert RuleResults.list_rule_results() <|> [result]
+      {:ok, %{all: rule_results}} = RuleResults.list_rule_results()
+      assert rule_results <|> [result]
     end
 
     test "retrieves results with date gt condition" do
@@ -84,7 +85,11 @@ defmodule TdDq.RuleResultsTest do
 
       insert(:rule_result, implementation: implementation1, date: "2000-01-01T00:00:00")
       result = insert(:rule_result, implementation: implementation2, date: "2000-02-01T11:11:11")
-      assert RuleResults.list_rule_results(%{"since" => "2000-01-11T11:11:11"}) <|> [result]
+
+      {:ok, %{all: rule_results}} =
+        RuleResults.list_rule_results(%{"since" => "2000-01-11T11:11:11"})
+
+      assert rule_results <|> [result]
     end
   end
 
@@ -292,7 +297,7 @@ defmodule TdDq.RuleResultsTest do
       %{id: segment_id_1} = insert(:segment_result, parent_id: parent_id_1)
       %{id: segment_id_2} = insert(:segment_result, parent_id: parent_id_2)
 
-      segment_results = RuleResults.list_segment_results()
+      {:ok, %{all: segment_results}} = RuleResults.list_segment_results()
 
       assert [
                %{id: ^segment_id_1, parent_id: ^parent_id_1},
@@ -309,8 +314,10 @@ defmodule TdDq.RuleResultsTest do
       insert(:segment_result, parent_id: parent_id_1, date: "2000-01-01T00:00:00")
       result = insert(:segment_result, parent_id: parent_id_2, date: "2000-02-01T11:11:11")
 
-      assert RuleResults.list_segment_results(%{"since" => "2000-01-11T11:11:11"})
-             <|> [result]
+      {:ok, %{all: segment_results}} =
+        RuleResults.list_segment_results(%{"since" => "2000-01-11T11:11:11"})
+
+      assert segment_results <|> [result]
     end
 
     test "retrieves results paginated by offset ordered by updated_at and segment result id" do
@@ -325,19 +332,20 @@ defmodule TdDq.RuleResultsTest do
       Enum.reduce(segment_results, 0, fn chunk, offset ->
         {last_chunk_id, _} = get_last_id_updated_at_segments(chunk)
 
-        segment_result =
+        {:ok, %{all: results, total: total}} =
           RuleResults.list_segment_results(%{
             "cursor" => %{"offset" => offset, "size" => page_size}
           })
 
-        assert ^page_size = Enum.count(segment_result)
-        {last_segment_id, _} = get_last_id_updated_at_segments(segment_result)
+        assert 1_000 = total
+        assert ^page_size = Enum.count(results)
+        {last_segment_id, _} = get_last_id_updated_at_segments(results)
         assert ^last_chunk_id = last_segment_id
-        offset + Enum.count(segment_result)
+        offset + Enum.count(results)
       end)
     end
 
-    test "retrieves  ordered results paginated by updated_at and id cursor" do
+    test "retrieves ordered segment results paginated by updated_at and id cursor" do
       page_size = 200
       %{id: parent_id} = insert(:rule_result)
 
@@ -356,20 +364,22 @@ defmodule TdDq.RuleResultsTest do
         |> Enum.count()
 
       assert {^total_segment_result, _} =
-               Enum.reduce(inserted_segment_results, {0, last_chunk_updated_at}, fn _chunk,
-                                                                                    {offset,
-                                                                                     updated_at} ->
-                 segment_results =
-                   RuleResults.list_segment_results(%{
-                     "since" => updated_at,
-                     "from" => "updated_at",
-                     "cursor" => %{"offset" => offset, "size" => page_size}
-                   })
+               Enum.reduce(
+                 inserted_segment_results,
+                 {0, last_chunk_updated_at},
+                 fn _chunk, {offset, updated_at} ->
+                   {:ok, %{all: segment_results}} =
+                     RuleResults.list_segment_results(%{
+                       "since" => updated_at,
+                       "from" => "updated_at",
+                       "cursor" => %{"offset" => offset, "size" => page_size}
+                     })
 
-                 Enum.count(segment_results)
+                   Enum.count(segment_results)
 
-                 {offset + Enum.count(segment_results), updated_at}
-               end)
+                   {offset + Enum.count(segment_results), updated_at}
+                 end
+               )
     end
   end
 

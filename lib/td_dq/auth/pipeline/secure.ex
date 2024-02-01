@@ -1,5 +1,6 @@
 defmodule TdDq.Auth.Pipeline.Secure do
-  @moduledoc false
+ @moduledoc false
+
   use Guardian.Plug.Pipeline,
     otp_app: :td_dd,
     error_handler: TdDq.Auth.ErrorHandler,

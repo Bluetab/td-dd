@@ -34,6 +34,60 @@ defmodule TdDqWeb.RuleResultControllerTest do
                |> get(Routes.rule_result_path(conn, :index))
                |> json_response(:ok)
     end
+
+    @tag authentication: [role: "user", permissions: [:view_quality_rule]]
+    test "user with only view_quality_rule permissions can not view rule results ", %{conn: conn} do
+      insert(:rule_result, implementation: build(:implementation))
+
+      assert conn
+             |> get(Routes.rule_result_path(conn, :index))
+             |> response(:forbidden)
+    end
+
+    @tag authentication: [role: "service"]
+    test "service account can filter rule results", %{conn: conn} do
+      implementation_135 =
+        insert(:implementation, implementation_key: "ri135", status: :published)
+
+      implementation_136 =
+        insert(:implementation, implementation_key: "ri136", status: :published)
+
+      %{id: id_135} =
+        insert(:rule_result,
+          implementation: implementation_135,
+          date: "2019-08-30 00:00:00Z",
+          updated_at: "2019-08-30 00:00:00Z"
+        )
+
+      %{id: id_136_1} =
+        insert(:rule_result,
+          implementation: implementation_136,
+          date: "2019-08-30 00:00:00Z",
+          updated_at: "2019-09-30 00:00:00Z"
+        )
+
+      %{id: id_136_2} =
+        insert(:rule_result,
+          implementation: implementation_136,
+          date: "2019-07-30 00:00:00Z",
+          updated_at: "2019-10-30 00:00:00Z"
+        )
+
+      date_to_filter = "2019-08-30 00:00:00Z"
+
+      assert %{"data" => [%{"id" => ^id_135}, %{"id" => ^id_136_1}]} =
+               conn
+               |> get(Routes.rule_result_path(conn, :index), since: date_to_filter)
+               |> json_response(:ok)
+
+      assert %{"data" => [%{"id" => ^id_135}, %{"id" => ^id_136_1}, %{"id" => ^id_136_2}]} =
+               conn
+               |> get(Routes.rule_result_path(conn, :index),
+                 since: date_to_filter,
+                 from: "updated_at"
+               )
+               |> json_response(:ok)
+    end
   end
 
   describe "delete rule results" do

@@ -11,6 +11,7 @@ defmodule TdDd.Grants.Requests do
   alias TdCache.UserCache
   alias TdDd.Auth.Claims
   alias TdDd.DataStructures
+  alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestApproval
@@ -224,6 +225,7 @@ defmodule TdDd.Grants.Requests do
     Multi.new()
     |> Multi.insert(:approval, changeset)
     |> maybe_insert_status(grant_request, Changeset.fetch_field!(changeset, :is_rejection))
+    |> Multi.run(:audit, Audit, :grant_request_approval_created, [])
     |> Repo.transaction()
     |> enrich()
   end

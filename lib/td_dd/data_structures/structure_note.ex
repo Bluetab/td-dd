@@ -27,7 +27,7 @@ defmodule TdDd.DataStructures.StructureNote do
     field(:domain_ids, {:array, :integer}, virtual: true, default: [])
     belongs_to(:data_structure, DataStructure)
 
-    timestamps()
+    timestamps(type: :utc_datetime_usec)
   end
 
   def bulk_update_changeset(%{df_content: old_content} = structure_note, attrs) do

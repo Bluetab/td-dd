@@ -28,4 +28,6 @@ defmodule TdDq.Canada.RuleResultAbilities do
   def can?(%Claims{} = claims, :manage_remediation, %RuleResult{rule: %{domain_id: domain_id}}) do
     Permissions.authorized?(claims, :manage_remediations, domain_id)
   end
+
+  def can?(%Claims{}, _action, _entity), do: false
 end

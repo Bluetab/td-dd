@@ -7,7 +7,7 @@ defmodule TdCxWeb.Router do
     plug :accepts, ["json"]
   end
 
-  pipeline :api_secure do
+  pipeline :api_secure do 
     plug TdCx.Auth.Pipeline.Secure
   end
 

@@ -45,9 +45,7 @@ defmodule TdDd.CSV.DownloadTest do
         name: "1. 4. 4 Primas Bajas (grafico)",
         description: "Gráfico de evolución mensual de la prima",
         template: %{"name" => template_name},
-        latest_note: %{
-          field_name => ["field_value"]
-        },
+        note: %{field_name => ["field_value"]},
         domain: %{"external_id" => "ex_id_1", "name" => domain_name},
         inserted_at: "2018-05-05",
         external_id: "myext_292929",
@@ -94,9 +92,7 @@ defmodule TdDd.CSV.DownloadTest do
           name: "name",
           path: ["foo", "bar"],
           template: %{"name" => "template"},
-          latest_note: %{
-            "field_name" => ["field_value"]
-          },
+          note: %{"field_name" => ["field_value"]},
           external_id: "ext_id",
           type: "type"
         }
@@ -157,7 +153,7 @@ defmodule TdDd.CSV.DownloadTest do
           name: "name",
           path: ["foo", "bar"],
           template: %{"name" => "template"},
-          latest_note: %{
+          note: %{
             "field_numbers" => [1, 2],
             "field_texts" => ["multi", "field"],
             "field_text" => ["field"],
@@ -220,7 +216,7 @@ defmodule TdDd.CSV.DownloadTest do
         name: "1. 4. 4 Primas Bajas (grafico)",
         description: "Gráfico de evolución mensual de la prima",
         template: %{"name" => template_name},
-        latest_note: %{
+        note: %{
           "field_numbers" => [1, 2],
           "field_texts" => ["multi", "field"],
           "field_text" => ["field"]

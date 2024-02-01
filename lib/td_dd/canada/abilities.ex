@@ -6,7 +6,6 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Auth.Claims
   alias TdDd.Canada.AccessAbilities
   alias TdDd.Canada.DataStructureAbilities
-  alias TdDd.Canada.DataStructureTagAbilities
   alias TdDd.Canada.DataStructureTypeAbilities
   alias TdDd.Canada.DataStructureVersionAbilities
   alias TdDd.Canada.ExecutionAbilities
@@ -15,14 +14,17 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Canada.LinkAbilities
   alias TdDd.Canada.ReferenceDataAbilities
   alias TdDd.Canada.StructureNoteAbilities
+  alias TdDd.Canada.StructureTagAbilities
   alias TdDd.Canada.SystemAbilities
+  alias TdDd.Canada.TagAbilities
   alias TdDd.Canada.UnitAbilities
   alias TdDd.Classifiers.Classifier
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.StructureNote
+  alias TdDd.DataStructures.Tags.StructureTag
+  alias TdDd.DataStructures.Tags.Tag
   alias TdDd.Executions.ProfileEvent
   alias TdDd.Executions.ProfileExecution
   alias TdDd.Executions.ProfileGroup
@@ -48,6 +50,8 @@ defmodule TdDd.Canada.Abilities do
       :submit_implementation
     ]
 
+    @structure_tag_mutations [:tag_structure, :delete_structure_tag]
+
     # service accounts can upload metadata and profiling
     def can?(%Claims{role: "service"}, :upload, _resource), do: true
 
@@ -62,8 +66,11 @@ defmodule TdDd.Canada.Abilities do
     def can?(%Claims{role: "user"} = claims, :query, :sources),
       do: SourceAbilities.can?(claims, :list, Source)
 
-    def can?(%Claims{role: "user"} = claims, :query, :structure_tags),
-      do: DataStructureTagAbilities.can?(claims, :index, DataStructureTag)
+    def can?(%Claims{role: "user"} = claims, :query, :tags),
+      do: TagAbilities.can?(claims, :index, Tag)
+
+    def can?(%Claims{role: "user"} = claims, :query, :data_structure),
+      do: DataStructureAbilities.can?(claims, :query, DataStructure)
 
     def can?(%Claims{role: "user"} = claims, :query, :implementation),
       do: ImplementationAbilities.can?(claims, :list, Implementation)
@@ -81,6 +88,10 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%{} = claims, :mutation, mutation) when mutation in @implementation_mutations do
       ImplementationAbilities.can?(claims, :mutation, mutation)
+    end
+
+    def can?(%{} = claims, :mutation, mutation) when mutation in @structure_tag_mutations do
+      StructureTagAbilities.can?(claims, :mutation, mutation)
     end
 
     def can?(%{role: role}, :mutation, _mutation), do: role == "admin"
@@ -210,12 +221,16 @@ defmodule TdDd.Canada.Abilities do
       StructureNoteAbilities.can?(claims, action, StructureNote)
     end
 
-    def can?(%Claims{} = claims, action, DataStructureTag) do
-      DataStructureTagAbilities.can?(claims, action, DataStructureTag)
+    def can?(%Claims{} = claims, action, Tag) do
+      TagAbilities.can?(claims, action, Tag)
     end
 
-    def can?(%Claims{} = claims, action, %DataStructureTag{} = data_structure_tag) do
-      DataStructureTagAbilities.can?(claims, action, data_structure_tag)
+    def can?(%Claims{} = claims, action, %Tag{} = tag) do
+      TagAbilities.can?(claims, action, tag)
+    end
+
+    def can?(%Claims{} = claims, action, %StructureTag{} = structure_tag) do
+      StructureTagAbilities.can?(claims, action, structure_tag)
     end
 
     def can?(%Claims{} = claims, action, %DataStructureType{} = data_structure_type) do

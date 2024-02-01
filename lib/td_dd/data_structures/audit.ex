@@ -9,6 +9,7 @@ defmodule TdDd.DataStructures.Audit do
 
   alias Ecto.Changeset
   alias TdCache.TaxonomyCache
+  alias TdDd.Repo
 
   @doc """
   Publishes a `:structure_note_updated` event when modifying a StructureNote. Should be called using `Ecto.Multi.run/5`.
@@ -135,89 +136,117 @@ defmodule TdDd.DataStructures.Audit do
   end
 
   @doc """
-  Publishes `:tag_linked` events for all created links
+  Publishes `:structure_tag_created` events for all created links
   between a structure and its tags.
   """
-  def tag_linked(
+  def structure_tag_created(
         _repo,
         %{
-          linked_tag: %{data_structure_id: id, data_structure_tag: %{name: name}} = tag,
+          structure_tag: %{data_structure_id: id, tag: %{name: tag_name}} = structure_tag,
           latest: latest
         },
         user_id
       ) do
     payload =
-      tag
+      structure_tag
       |> with_resource(latest)
-      |> with_domain_ids(tag)
-      |> Map.put(:tag, name)
+      |> with_domain_ids(structure_tag)
+      |> Map.put(:tag, tag_name)
       |> Map.take([
         :id,
         :data_structure_id,
-        :data_structure_tag_id,
         :comment,
         :domain_ids,
         :inserted_at,
         :updated_at,
         :resource,
-        :tag
+        :tag,
+        :tag_id
       ])
 
     publish("structure_tag_linked", "data_structure", id, user_id, payload)
   end
 
   @doc """
-  Publishes `:tag_link_updated` events for all changed links
+  Publishes `:structure_tag_updated` events for all changed links
   between a structure and its tags.
   """
-  def tag_link_updated(
+  def structure_tag_updated(
         _repo,
         %{
-          linked_tag: %{data_structure_id: id, data_structure_tag: %{name: name}} = tag,
+          structure_tag: %{data_structure_id: id, tag: %{name: tag_name}} = structure_tag,
           latest: latest
         },
-        %{} = changeset,
+        %{changes: changes},
         user_id
       ) do
-    changeset =
-      changeset
-      |> with_resource(tag, latest)
-      |> with_domain_ids(tag)
-      |> Changeset.put_change(:tag, name)
+    payload =
+      changes
+      |> with_resource(latest)
+      |> with_domain_ids(structure_tag)
+      |> Map.put(:tag, tag_name)
 
-    publish("structure_tag_link_updated", "data_structure", id, user_id, changeset)
+    publish("structure_tag_link_updated", "data_structure", id, user_id, payload)
   end
 
   @doc """
-  Publishes a `:tag_link_deleted` event. Should be called using `Ecto.Multi.run/5`.
+  Publishes a `:structure_tag_deleted` event. Should be called using `Ecto.Multi.run/5`.
   """
-  def tag_link_deleted(
+  def structure_tag_deleted(
         _repo,
         %{
-          deleted_link_tag: %{data_structure_id: id, data_structure_tag: %{name: name}} = tag,
+          structure_tag: %{data_structure_id: id, tag: %{name: name}} = structure_tag,
           latest: latest
         },
         user_id
       ) do
     payload =
-      tag
+      structure_tag
       |> with_resource(latest)
-      |> with_domain_ids(tag)
+      |> with_domain_ids(structure_tag)
       |> Map.put(:tag, name)
       |> Map.take([
         :id,
         :data_structure_id,
-        :data_structure_tag_id,
         :comment,
         :domain_ids,
         :inserted_at,
         :updated_at,
         :resource,
-        :tag
+        :tag,
+        :tag_id
       ])
 
     publish("structure_tag_link_deleted", "data_structure", id, user_id, payload)
   end
+
+  @doc """
+  Publishes a `:grant_approvals` event when creating a Grant. Should be called using `Ecto.Multi.run/5`.
+  """
+
+  def grant_request_approval_created(_repo, %{
+        approval: %{grant_request_id: id, user_id: user_id, comment: comment} = approval,
+        status: %{status: "rejected" = status}
+      }) do
+    %{
+      grant_request: %{
+        group: %{user_id: recipient_id},
+        data_structure: %{current_version: %{name: data_structure_name}}
+      }
+    } = Repo.preload(approval, grant_request: [:group, data_structure: :current_version])
+
+    payload = %{
+      name: data_structure_name,
+      status: status,
+      recipient_ids: [recipient_id],
+      comment: comment,
+      user_id: user_id
+    }
+
+    publish("grant_approval", "grant_requests", id, user_id, payload)
+  end
+
+  def grant_request_approval_created(_repo, _), do: {:ok, nil}
 
   @doc """
   Publishes a `:grant_created` event when creating a Grant. Should be called using `Ecto.Multi.run/5`.
@@ -293,19 +322,19 @@ defmodule TdDd.DataStructures.Audit do
     Map.put(payload, :resource, resource)
   end
 
-  defp with_resource(%Changeset{} = changeset, structure, latest) do
-    resource = build_resource(structure, latest)
-    Changeset.put_change(changeset, :resource, resource)
-  end
-
-  defp build_resource(%{data_structure: data_structure}, %{} = latest) do
+  defp build_resource(%{data_structure: data_structure}, %{name: name} = latest) do
     path = Enum.map(latest.path, fn %{"name" => name} -> name end)
 
-    %{}
-    |> Map.put(:external_id, data_structure.external_id)
-    |> Map.put(:name, latest.name)
-    |> Map.put(:path, path)
+    %{
+      external_id: data_structure.external_id,
+      name: name,
+      path: path
+    }
   end
 
-  defp build_resource(_tag, _latest), do: %{}
+  defp build_resource(_, %{data_structure: data_structure} = latest) do
+    build_resource(%{data_structure: data_structure}, latest)
+  end
+
+  defp build_resource(_payload, _latest), do: %{}
 end

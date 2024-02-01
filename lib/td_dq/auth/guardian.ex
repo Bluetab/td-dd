@@ -22,4 +22,6 @@ defmodule TdDq.Auth.Guardian do
 
     {:ok, resource}
   end
+
+  
 end

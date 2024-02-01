@@ -25,30 +25,6 @@ defmodule TdDq.CSV.Reader do
     {:ok, ReaderCsvParser.parse_stream(stream, skip_headers: false)}
   end
 
-  # defp validate_headers([required_headers_element | _] = required_headers, headers)
-  #      when is_list(required_headers_element) do
-  #   required_headers
-  #   |> Enum.reduce_while(
-  #     [],
-  #     fn required_header, errors ->
-  #       case validate_headers(required_header, headers) do
-  #         {:ok, headers} ->
-  #           {:halt, {:ok, headers}}
-
-  #         {:error, %{expected: required_headers_error}} ->
-  #           {:cont, [required_headers_error | errors]}
-  #       end
-  #     end
-  #     |> case do
-  #       {:ok, headers} ->
-  #         {:ok, headers}
-
-  #       expected ->
-  #         {:error, %{error: :misssing_required_columns, expected: expected, found: headers}}
-  #     end
-  #   )
-  # end
-
   defp validate_headers(required_headers, headers) do
     if Enum.all?(required_headers, &Enum.member?(headers, &1)) do
       {:ok, headers}

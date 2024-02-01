@@ -1,9 +1,7 @@
 defmodule TdDdWeb.Schema.DataStructuresQueryTest do
   use TdDdWeb.ConnCase
 
-  @moduletag sandbox: :shared
-
-  @query """
+  @structures_query """
   query LineageStructures($since: DateTime) {
     dataStructures(since: $since, lineage: true) {
       id
@@ -15,6 +13,7 @@ defmodule TdDdWeb.Schema.DataStructuresQueryTest do
     }
   }
   """
+
   @external_id_query """
   query StructuresByExternalId($externalId: [String]) {
     dataStructures(externalId: $externalId) {
@@ -23,14 +22,13 @@ defmodule TdDdWeb.Schema.DataStructuresQueryTest do
     }
   }
   """
-  @variables %{"since" => "2020-01-01T00:00:00Z"}
 
   describe "dataStructures query" do
     @tag authentication: [role: "user"]
     test "returns forbidden when queried by user role", %{conn: conn} do
       assert %{"data" => data, "errors" => errors} =
                conn
-               |> post("/api/v2", %{"query" => @query, "variables" => %{}})
+               |> post("/api/v2", %{"query" => @structures_query, "variables" => %{}})
                |> json_response(:ok)
 
       assert data == %{"dataStructures" => nil}
@@ -45,10 +43,12 @@ defmodule TdDdWeb.Schema.DataStructuresQueryTest do
       %{units: [%{name: unit_name}]} =
         insert(:node, structure_id: structure_id, units: [build(:unit)])
 
+      variables = %{"since" => "2020-01-01T00:00:00Z"}
+
       assert %{"data" => data} =
                response =
                conn
-               |> post("/api/v2", %{"query" => @query, "variables" => @variables})
+               |> post("/api/v2", %{"query" => @structures_query, "variables" => variables})
                |> json_response(:ok)
 
       assert response["errors"] == nil

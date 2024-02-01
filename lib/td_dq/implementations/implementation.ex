@@ -25,6 +25,7 @@ defmodule TdDq.Implementations.Implementation do
 
   @valid_result_types ~w(percentage errors_number deviation)
   @cast_fields [
+    :domain_id,
     :deleted_at,
     :df_content,
     :df_name,
@@ -99,12 +100,6 @@ defmodule TdDq.Implementations.Implementation do
       |> Enum.map(&%{"population" => &1})
 
     changeset(implementation, %{params | "populations" => populations})
-  end
-
-  def changeset(%__MODULE__{domain_id: nil} = implementation, params) do
-    implementation
-    |> cast(params, @cast_fields ++ [:domain_id])
-    |> changeset_validations(implementation, params)
   end
 
   def changeset(%__MODULE__{} = implementation, params) do
@@ -376,6 +371,7 @@ defmodule TdDq.Implementations.Implementation do
       :domain_id,
       :id,
       :implementation_key,
+      :implementation_ref,
       :implementation_type,
       :populations,
       :rule_id,

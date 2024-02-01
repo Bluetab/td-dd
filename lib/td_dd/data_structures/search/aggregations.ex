@@ -45,10 +45,10 @@ defmodule TdDd.DataStructures.Search.Aggregations do
         [{field, nested_agg(field)}]
 
       %{"name" => field, "type" => "user"} ->
-        [{field, %{terms: %{field: "latest_note.#{field}.raw", size: 50}}}]
+        [{field, %{terms: %{field: "note.#{field}.raw", size: 50}}}]
 
       %{"name" => field, "values" => %{}} ->
-        [{field, %{terms: %{field: "latest_note.#{field}.raw"}}}]
+        [{field, %{terms: %{field: "note.#{field}.raw"}}}]
 
       _ ->
         []
@@ -57,8 +57,8 @@ defmodule TdDd.DataStructures.Search.Aggregations do
 
   defp nested_agg(field) do
     %{
-      nested: %{path: "latest_note.#{field}"},
-      aggs: %{distinct_search: %{terms: %{field: "latest_note.#{field}.external_id.raw"}}}
+      nested: %{path: "note.#{field}"},
+      aggs: %{distinct_search: %{terms: %{field: "note.#{field}.external_id.raw"}}}
     }
   end
 end

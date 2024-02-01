@@ -51,18 +51,18 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
       assert dynamic_aggs == %{
                "my_domain" => %{
                  aggs: %{
-                   distinct_search: %{terms: %{field: "latest_note.my_domain.external_id.raw"}}
+                   distinct_search: %{terms: %{field: "note.my_domain.external_id.raw"}}
                  },
-                 nested: %{path: "latest_note.my_domain"}
+                 nested: %{path: "note.my_domain"}
                },
-               "my_list" => %{terms: %{field: "latest_note.my_list.raw"}},
+               "my_list" => %{terms: %{field: "note.my_list.raw"}},
                "my_system" => %{
                  aggs: %{
-                   distinct_search: %{terms: %{field: "latest_note.my_system.external_id.raw"}}
+                   distinct_search: %{terms: %{field: "note.my_system.external_id.raw"}}
                  },
-                 nested: %{path: "latest_note.my_system"}
+                 nested: %{path: "note.my_system"}
                },
-               "my_user" => %{terms: %{field: "latest_note.my_user.raw", size: 50}}
+               "my_user" => %{terms: %{field: "note.my_user.raw", size: 50}}
              }
     end
 
