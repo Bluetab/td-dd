@@ -5,7 +5,7 @@ defmodule TdDd.Repo.Migrations.DropImplementationRefToRuleImplementations do
 
   def change do
     alter table("rule_implementations") do
-      remove implementation_ref
+      remove :implementation_ref
     end   
   end
 end
