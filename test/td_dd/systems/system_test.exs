@@ -6,6 +6,7 @@ defmodule TdDd.Systems.SystemTest do
   # alias TdDd.Systems.System # clashes with Elixir's System core module
 
   @template_name TdDd.Systems.System._test_get_template_name()
+  @unsafe "javascript:alert(document)"
 
   setup do
     identifier_name = "identifier"
@@ -85,6 +86,19 @@ defmodule TdDd.Systems.SystemTest do
       assert length(errors) == 2
       assert {_message, [validation: :required]} = errors[:external_id]
       assert {_message, [validation: :required]} = errors[:name]
+    end
+
+    test "detects unsafe content" do
+      system = insert(:system)
+
+      assert %{valid?: false, errors: errors} =
+               TdDd.Systems.System.changeset(system, %{
+                 external_id: "foo",
+                 name: "foo",
+                 df_content: %{"text" => @unsafe}
+               })
+
+      assert errors[:df_content] == {"invalid content", []}
     end
 
     test "detects unique constraint violation" do

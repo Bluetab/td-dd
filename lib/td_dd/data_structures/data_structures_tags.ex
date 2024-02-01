@@ -12,7 +12,7 @@ defmodule TdDd.DataStructures.DataStructuresTags do
   schema "data_structures_tags" do
     belongs_to(:data_structure, DataStructure)
     belongs_to(:data_structure_tag, DataStructureTag)
-    field(:description, :string)
+    field(:comment, :string)
     field(:resource, :map, virtual: true, default: %{})
     field(:tag, :string, virtual: true)
     field(:domain_ids, {:array, :integer}, virtual: true, default: [])
@@ -26,9 +26,8 @@ defmodule TdDd.DataStructures.DataStructuresTags do
 
   def changeset(tag_link, attrs) do
     tag_link
-    |> cast(attrs, [:description])
-    |> validate_required([:description])
-    |> validate_length(:description, max: 1_000, message: "max.length.1000")
+    |> cast(attrs, [:comment])
+    |> validate_length(:comment, max: 1_000, message: "max.length.1000")
   end
 
   def put_data_structure(changeset, data_structure) do

@@ -5,6 +5,8 @@ defmodule TdDd.DataStructures.CsvBulkUpdateEvent do
 
   import Ecto.Changeset
 
+  alias TdDfLib.Validation
+
   schema "csv_bulk_update_events" do
     field(:user_id, :integer)
     field(:response, :map)
@@ -33,6 +35,7 @@ defmodule TdDd.DataStructures.CsvBulkUpdateEvent do
     ])
     |> put_node
     |> validate_required([:user_id, :csv_hash, :task_reference, :status, :node])
+    |> validate_change(:response, &Validation.validate_safe/2)
     |> validate_length(:message, max: 1_000)
   end
 

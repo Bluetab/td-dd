@@ -10,6 +10,7 @@ defmodule TdDd.DataStructures.DataStructureTag do
 
   schema "data_structure_tags" do
     field :name, :string
+    field :description, :string
     field :domain_ids, {:array, :integer}, default: []
     field :structure_count, :integer, virtual: true
 
@@ -20,8 +21,9 @@ defmodule TdDd.DataStructures.DataStructureTag do
 
   def changeset(data_structure_tag, params) do
     data_structure_tag
-    |> cast(params, [:name, :domain_ids])
-    |> validate_required([:name])
+    |> cast(params, [:name, :domain_ids, :description])
+    |> validate_required(:name)
     |> unique_constraint(:name)
+    |> validate_length(:description, max: 1_000, message: "max.length.1000")
   end
 end

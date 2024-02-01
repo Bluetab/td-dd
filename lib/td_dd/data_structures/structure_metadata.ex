@@ -8,6 +8,7 @@ defmodule TdDd.DataStructures.StructureMetadata do
   import Ecto.Changeset
 
   alias TdDd.DataStructures.DataStructure
+  alias TdDfLib.Validation
 
   schema "structure_metadata" do
     field(:version, :integer, default: 0)
@@ -27,6 +28,7 @@ defmodule TdDd.DataStructures.StructureMetadata do
     struct
     |> cast(params, [:version, :fields, :data_structure_id, :deleted_at])
     |> validate_required([:version, :fields, :data_structure_id])
+    |> validate_change(:fields, &Validation.validate_safe/2)
     |> unique_constraint([:data_structure_id, :version])
   end
 end

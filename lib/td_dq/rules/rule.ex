@@ -25,12 +25,12 @@ defmodule TdDq.Rules.Rule do
     field(:updated_by, :integer)
     field(:domain_id, :integer)
     field(:domain, :map, virtual: true)
+    field(:df_name, :string)
+    field(:df_content, :map)
+    field(:template, :map, virtual: true)
 
     has_many(:rule_implementations, Implementation)
     has_many(:rule_results, RuleResult)
-
-    field(:df_name, :string)
-    field(:df_content, :map)
 
     timestamps()
   end
@@ -54,6 +54,7 @@ defmodule TdDq.Rules.Rule do
     ])
     |> validate_required([:name, :domain_id], message: "required")
     |> validate_inclusion(:domain_id, TaxonomyCache.get_domain_ids())
+    |> validate_change(:description, &Validation.validate_safe/2)
     |> validate_content(rule)
     |> unique_constraint(
       :rule_name_bc_id,

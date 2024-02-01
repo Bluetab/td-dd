@@ -16,6 +16,6 @@ defmodule TdDq.Implementations.StructureAlias do
   def changeset(%__MODULE__{} = struct, %{} = params) do
     struct
     |> cast(params, [:index, :text])
-    |> validate_required([:index])
+    |> validate_required(:index)
   end
 end

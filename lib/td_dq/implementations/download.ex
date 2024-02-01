@@ -10,52 +10,23 @@ defmodule TdDq.Implementations.Download do
   def to_csv([], _, _), do: ""
 
   def to_csv(implementations, header_labels, content_labels) do
-    rule_types = Enum.map(implementations, &get_rule_types(&1)) |> List.flatten() |> Enum.uniq()
-
-    implementation_types =
-      Enum.map(implementations, &get_implementation_types(&1)) |> List.flatten() |> Enum.uniq()
-
-    templates = [
-      List.flatten(
-        Map.values(Enum.reduce(rule_types, %{}, &Map.put(&2, &1, TemplateCache.get_by_name!(&1))))
-      ),
-      List.flatten(
-        Map.values(
-          Enum.reduce(implementation_types, %{}, &Map.put(&2, &1, TemplateCache.get_by_name!(&1)))
-        )
-      )
-    ]
-
-    build_csv(implementations, templates, header_labels, content_labels)
+    implementations
+    |> enrich_templates()
+    |> build_csv(header_labels, content_labels)
   end
 
-  defp get_rule_types(implementation) do
-    implementation
-    |> Map.get(:rule)
-    |> Map.get(:df_name)
-  end
-
-  defp get_implementation_types(implementation) do
-    implementation
-    |> Map.get(:df_name)
-  end
-
-  defp build_csv(implementations, templates, header_labels, content_labels) do
-    templates
-    |> csv_format(implementations, header_labels, content_labels)
+  defp build_csv(implementations, header_labels, content_labels) do
+    implementations
+    |> csv_format(header_labels, content_labels)
     |> to_string()
   end
 
-  defp csv_format(
-         [rule_templates, implementation_templates],
-         implementations,
-         header_labels,
-         content_labels
-       ) do
-    [rule_fields, rule_field_headers] = get_template_info(rule_templates)
+  defp csv_format(implementations, header_labels, content_labels) do
+    {rule_fields, rule_field_headers} =
+      fields_with_headers(implementations, &rule_template_content/1)
 
-    [implementation_fields, implementation_field_headers] =
-      get_template_info(implementation_templates)
+    {implementation_fields, implementation_field_headers} =
+      fields_with_headers(implementations, &template_content/1)
 
     headers =
       header_labels
@@ -66,37 +37,30 @@ defmodule TdDq.Implementations.Download do
     headers = headers ++ rule_field_headers ++ implementation_field_headers
 
     implementations =
-      format_implementations(content_labels, implementations, [rule_fields, implementation_fields])
+      format_implementations(content_labels, implementations, rule_fields, implementation_fields)
 
     export(headers, implementations)
   end
 
-  defp get_template_info(templates) do
-    content =
-      templates
-      |> Enum.filter(fn template -> template != nil end)
-      |> Enum.map(fn template -> Format.flatten_content_fields(template.content) end)
-      |> List.flatten()
-      |> Enum.uniq()
-
-    fields = Enum.reduce(content, [], &(&2 ++ [Map.take(&1, ["name", "values", "type"])]))
-
-    field_headers = Enum.reduce(content, [], &(&2 ++ [Map.get(&1, "label")]))
-
-    [fields, field_headers]
+  defp fields_with_headers(records, fun) do
+    records
+    |> Enum.group_by(fun)
+    |> Map.delete(nil)
+    |> Map.keys()
+    |> Enum.flat_map(&Format.flatten_content_fields/1)
+    |> Enum.uniq()
+    |> Enum.map(&{Map.take(&1, ["name", "values", "type"]), Map.get(&1, "label")})
+    |> Enum.unzip()
   end
 
-  defp format_implementations(content_labels, implementations, [
-         rule_fields,
-         implementation_fields
-       ]) do
+  defp format_implementations(content_labels, implementations, rule_fields, implementation_fields) do
     number_of_dataset_external_ids = count_implementations_items(implementations, :datasets)
     number_of_validations_fields = count_implementations_items(implementations, :validations)
     time_zone = Application.get_env(:td_dd, :time_zone)
 
-    Enum.reduce(implementations, [], fn implementation, acc ->
-      rule = Map.get(implementation, :rule)
-      rule_content = Map.get(rule, :df_content)
+    Enum.map(implementations, fn implementation ->
+      rule = Map.get(implementation, :rule, %{})
+      rule_content = Map.get(rule, :df_content, %{})
       implementation_content = Map.get(implementation, :df_content)
 
       values =
@@ -104,20 +68,18 @@ defmodule TdDq.Implementations.Download do
           implementation.implementation_key,
           implementation.implementation_type,
           translate("executable.#{implementation.executable}", content_labels),
-          rule.name,
-          rule.df_name,
-          Map.get(implementation, :df_name),
+          Map.get(rule, :name, ""),
+          Map.get(rule, :df_name, ""),
+          implementation.df_name,
           implementation.goal,
           implementation.minimum,
           get_in(implementation, [:current_business_concept_version, :name]),
-          implementation
-          |> get_in([:execution_result_info, :date])
+          get_in(implementation, [:execution_result_info, :date])
           |> TdDd.Helpers.shift_zone(time_zone),
           get_in(implementation, [:execution_result_info, :records]),
           get_in(implementation, [:execution_result_info, :errors]),
           get_in(implementation, [:execution_result_info, :result]),
-          implementation
-          |> get_in([:execution_result_info, :result_text])
+          get_in(implementation, [:execution_result_info, :result_text])
           |> translate(content_labels),
           TdDd.Helpers.shift_zone(implementation.inserted_at, time_zone)
         ] ++
@@ -135,14 +97,11 @@ defmodule TdDq.Implementations.Download do
       values_with_rule_content =
         Enum.reduce(rule_fields, values, &(&2 ++ [get_content_field(&1, rule_content)]))
 
-      values_with_rule_and_implementation_content =
-        Enum.reduce(
-          implementation_fields,
-          values_with_rule_content,
-          &(&2 ++ [get_content_field(&1, implementation_content)])
-        )
-
-      acc ++ [values_with_rule_and_implementation_content]
+      Enum.reduce(
+        implementation_fields,
+        values_with_rule_content,
+        &(&2 ++ [get_content_field(&1, implementation_content)])
+      )
     end)
   end
 
@@ -286,4 +245,48 @@ defmodule TdDq.Implementations.Download do
   defp translate(nil, _content_labels), do: nil
 
   defp translate(content, content_labels), do: Map.get(content_labels, content, content)
+
+  defp enrich_templates(implementations) do
+    implementations
+    |> Enum.group_by(&rule_type/1)
+    |> Enum.flat_map(&enrich_rule_templates/1)
+    |> Enum.group_by(&implementation_type/1)
+    |> Enum.flat_map(&enrich_implementation_templates/1)
+  end
+
+  defp enrich_rule_templates({nil, implementations}), do: implementations
+
+  defp enrich_rule_templates({type, implementations}) when is_binary(type) do
+    template = TemplateCache.get_by_name!(type)
+    enrich_rule_templates({template, implementations})
+  end
+
+  defp enrich_rule_templates({%{} = template, implementations}) do
+    Enum.map(implementations, fn %{rule: rule} = implementation ->
+      %{implementation | rule: Map.put(rule, :template, template)}
+    end)
+  end
+
+  defp enrich_implementation_templates({nil, implementations}), do: implementations
+
+  defp enrich_implementation_templates({type, implementations}) when is_binary(type) do
+    template = TemplateCache.get_by_name!(type)
+    enrich_implementation_templates({template, implementations})
+  end
+
+  defp enrich_implementation_templates({%{} = template, implementations}) do
+    Enum.map(implementations, &Map.put(&1, :template, template))
+  end
+
+  defp rule_type(%{rule: %{df_name: rule_type}}), do: rule_type
+  defp rule_type(_), do: nil
+
+  defp implementation_type(%{df_name: implementation_type}), do: implementation_type
+  defp implementation_type(_), do: nil
+
+  defp rule_template_content(%{rule: %{template: %{content: content}}}), do: content
+  defp rule_template_content(_), do: nil
+
+  defp template_content(%{template: %{content: content}}), do: content
+  defp template_content(_), do: nil
 end

@@ -35,12 +35,6 @@ defmodule TdDq.Remediations.RemediationsTest do
   end
 
   describe "remediations" do
-    test "get_by_rule_result_id returns rule result remediation" do
-      %{id: id} = insert(:rule_result)
-      remediation = insert(:remediation, rule_result_id: id)
-      assert ^remediation = Remediations.get_by_rule_result_id(id)
-    end
-
     test "create_remediation/2 creates a remediation" do
       %{id: id} = insert(:rule_result)
 

@@ -53,12 +53,35 @@ defmodule TdDq.Rules.RuleResults do
     |> Repo.all()
   end
 
-  def has_segments(parent_ids) do
+  def has_segments(parent_ids) when is_list(parent_ids) do
     RuleResult
     |> where([rr], rr.parent_id in ^parent_ids)
     |> select([rr], rr.parent_id)
     |> group_by([rr], rr.parent_id)
     |> Repo.all()
+  end
+
+  def get_by(%Implementation{id: implementation_id} = _implementation) do
+    RuleResult
+    |> where([rr], rr.implementation_id == ^implementation_id)
+    |> where([rr], is_nil(rr.parent_id))
+    |> order_by([rr], desc: rr.date)
+    |> Repo.all()
+  end
+
+  def has_segments?(%RuleResult{id: implementation_id}) do
+    RuleResult
+    |> where([rr], rr.parent_id == ^implementation_id)
+    |> limit(1)
+    |> Repo.one() != nil
+  end
+
+  def has_remediation?(%RuleResult{id: implementation_id}) do
+    RuleResult
+    |> where([rr], rr.id == ^implementation_id)
+    |> join(:inner, [rr], rm in assoc(rr, :remediation))
+    |> limit(1)
+    |> Repo.one() != nil
   end
 
   @doc """

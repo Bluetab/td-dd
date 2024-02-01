@@ -21,6 +21,7 @@ defmodule TdDdWeb.GrantView do
       :detail,
       :start_date,
       :end_date,
+      :pending_removal,
       :user_id,
       :source_user_name,
       :inserted_at,

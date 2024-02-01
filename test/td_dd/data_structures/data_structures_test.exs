@@ -749,18 +749,18 @@ defmodule TdDd.DataStructuresTest do
     test "get_data_structure_version!/2 with options: tags" do
       d = insert(:data_structure)
 
-      %{id: id1, description: d1, data_structure_tag: %{name: n1}} =
-        insert(:data_structures_tags, data_structure: d, description: "foo")
+      %{id: id1, comment: d1, data_structure_tag: %{name: n1, description: dt1}} =
+        insert(:data_structures_tags, data_structure: d, comment: "foo")
 
-      %{id: id2, description: d2, data_structure_tag: %{name: n2}} =
-        insert(:data_structures_tags, data_structure: d, description: "bar")
+      %{id: id2, comment: d2, data_structure_tag: %{name: n2, description: dt2}} =
+        insert(:data_structures_tags, data_structure: d, comment: "bar")
 
       version = insert(:data_structure_version, data_structure: d)
 
       assert %{
                tags: [
-                 %{id: ^id1, description: ^d1, data_structure_tag: %{name: ^n1}},
-                 %{id: ^id2, description: ^d2, data_structure_tag: %{name: ^n2}}
+                 %{id: ^id1, comment: ^d1, data_structure_tag: %{name: ^n1, description: ^dt1}},
+                 %{id: ^id2, comment: ^d2, data_structure_tag: %{name: ^n2, description: ^dt2}}
                ]
              } = DataStructures.get_data_structure_version!(version.id, [:tags])
     end
@@ -1457,17 +1457,24 @@ defmodule TdDd.DataStructuresTest do
 
   describe "link_tag/3" do
     test "links tag to a given structure", %{claims: claims} do
-      description = "foo"
+      comment = "foo"
       structure = %{id: data_structure_id, external_id: external_id} = insert(:data_structure)
       %{name: version_name} = insert(:data_structure_version, data_structure: structure)
-      tag = %{id: tag_id, name: tag_name} = insert(:data_structure_tag)
-      params = %{description: description}
+
+      tag =
+        %{
+          id: tag_id,
+          name: tag_name,
+          description: _tag_description
+        } = insert(:data_structure_tag)
+
+      params = %{comment: comment}
 
       {:ok,
        %{
          audit: event_id,
          linked_tag: %{
-           description: ^description,
+           comment: ^comment,
            data_structure: %{id: ^data_structure_id},
            data_structure_tag: %{id: ^tag_id}
          }
@@ -1477,7 +1484,7 @@ defmodule TdDd.DataStructuresTest do
                Stream.range(:redix, @stream, event_id, event_id, transform: :range)
 
       assert %{
-               "description" => ^description,
+               "comment" => ^comment,
                "tag" => ^tag_name,
                "resource" => %{
                  "external_id" => ^external_id,
@@ -1488,24 +1495,31 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "updates link information when it already exists", %{claims: claims} do
-      description = "bar"
+      comment = "bar"
       structure = %{id: data_structure_id, external_id: external_id} = insert(:data_structure)
-      tag = %{id: tag_id, name: tag_name} = insert(:data_structure_tag)
+
+      tag =
+        %{
+          id: tag_id,
+          name: tag_name,
+          description: _tag_description
+        } = insert(:data_structure_tag)
+
       %{name: version_name} = insert(:data_structure_version, data_structure: structure)
 
       insert(:data_structures_tags,
         data_structure_tag: tag,
         data_structure: structure,
-        description: "foo"
+        comment: "foo"
       )
 
-      params = %{description: description}
+      params = %{comment: comment}
 
       {:ok,
        %{
          audit: event_id,
          linked_tag: %{
-           description: ^description,
+           comment: ^comment,
            data_structure: %{id: ^data_structure_id},
            data_structure_tag: %{id: ^tag_id}
          }
@@ -1515,7 +1529,7 @@ defmodule TdDd.DataStructuresTest do
                Stream.range(:redix, @stream, event_id, event_id, transform: :range)
 
       assert %{
-               "description" => ^description,
+               "comment" => ^comment,
                "tag" => ^tag_name,
                "resource" => %{
                  "external_id" => ^external_id,
@@ -1525,40 +1539,36 @@ defmodule TdDd.DataStructuresTest do
              } = Jason.decode!(payload)
     end
 
-    test "gets error when description is invalid", %{claims: claims} do
+    test "gets error when comment is invalid", %{claims: claims} do
       structure = insert(:data_structure)
       tag = insert(:data_structure_tag)
-      params = %{}
 
-      {:error, _,
-       %{errors: [description: {"can't be blank", [validation: :required]}], valid?: false},
-       _} = DataStructures.link_tag(structure, tag, params, claims)
+      params = %{comment: String.duplicate("foo", 334)}
 
-      params = %{description: nil}
-
-      {:error, _,
-       %{errors: [description: {"can't be blank", [validation: :required]}], valid?: false},
-       _} = DataStructures.link_tag(structure, tag, params, claims)
-
-      params = %{description: String.duplicate("foo", 334)}
-
-      {:error, _,
-       %{
-         errors: [
-           description:
-             {"max.length.1000", [count: 1000, validation: :length, kind: :max, type: :string]}
-         ],
-         valid?: false
-       }, _} = DataStructures.link_tag(structure, tag, params, claims)
+      assert {:error, _,
+              %{
+                errors: [
+                  comment:
+                    {"max.length.1000",
+                     [count: 1000, validation: :length, kind: :max, type: :string]}
+                ],
+                valid?: false
+              }, _} = DataStructures.link_tag(structure, tag, params, claims)
     end
   end
 
   describe "get_links_tag/2" do
     test "gets a list of links between a structure and its tags" do
       structure = %{id: data_structure_id} = insert(:data_structure)
-      tag = %{id: data_structure_tag_id, name: name} = insert(:data_structure_tag)
 
-      %{id: link_id, description: description} =
+      tag =
+        %{
+          id: data_structure_tag_id,
+          name: name,
+          description: _description
+        } = insert(:data_structure_tag)
+
+      %{id: link_id, comment: comment} =
         insert(:data_structures_tags, data_structure: structure, data_structure_tag: tag)
 
       assert [
@@ -1566,7 +1576,7 @@ defmodule TdDd.DataStructuresTest do
                  id: ^link_id,
                  data_structure: %{id: ^data_structure_id},
                  data_structure_tag: %{id: ^data_structure_tag_id, name: ^name},
-                 description: ^description
+                 comment: ^comment
                }
              ] = DataStructures.get_links_tag(structure)
     end
@@ -1575,10 +1585,17 @@ defmodule TdDd.DataStructuresTest do
   describe "delete_link_tag/2" do
     test "deletes link between tag and structure", %{claims: claims} do
       structure = %{id: data_structure_id, external_id: external_id} = insert(:data_structure)
-      tag = %{id: data_structure_tag_id, name: tag_name} = insert(:data_structure_tag)
+
+      tag =
+        %{
+          id: data_structure_tag_id,
+          name: tag_name,
+          description: _description
+        } = insert(:data_structure_tag)
+
       %{name: version_name} = insert(:data_structure_version, data_structure: structure)
 
-      %{description: description} =
+      %{comment: comment} =
         insert(:data_structures_tags, data_structure: structure, data_structure_tag: tag)
 
       assert {:ok,
@@ -1594,7 +1611,7 @@ defmodule TdDd.DataStructuresTest do
                Stream.range(:redix, @stream, event_id, event_id, transform: :range)
 
       assert %{
-               "description" => ^description,
+               "comment" => ^comment,
                "tag" => ^tag_name,
                "resource" => %{
                  "external_id" => ^external_id,

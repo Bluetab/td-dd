@@ -11,6 +11,7 @@ defmodule TdDdWeb.Schema do
   import_types(Absinthe.Type.Custom)
   import_types(TdDdWeb.Schema.Domains)
   import_types(TdDdWeb.Schema.Implementations)
+  import_types(TdDdWeb.Schema.ImplementationResults)
   import_types(TdDdWeb.Schema.ReferenceData)
   import_types(TdDdWeb.Schema.Rules)
   import_types(TdDdWeb.Schema.Sources)
@@ -30,6 +31,8 @@ defmodule TdDdWeb.Schema do
     import_fields(:structure_queries)
     import_fields(:structure_tag_queries)
     import_fields(:template_queries)
+    import_fields(:implementation_queries)
+    import_fields(:implementation_results_queries)
   end
 
   mutation do

@@ -81,6 +81,7 @@ defmodule TdDd.Search.Mappings do
       data_structure_id: %{type: "long"},
       detail: %{type: "object"},
       user_id: %{type: "long"},
+      pending_removal: %{type: "boolean", fields: @raw},
       start_date: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       end_date: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},

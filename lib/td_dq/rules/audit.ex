@@ -91,18 +91,27 @@ defmodule TdDq.Rules.Audit do
         user_id,
         event \\ "implementation_deleted"
       ) do
-    payload = Map.take(implementation, [:implementation_key, :rule_id, :domain_id])
+    payload =
+      implementation
+      |> with_domain_ids()
+      |> Map.take([:implementation_key, :rule_id, :domain_id, :domain_ids])
+
     publish(event, "implementation", id, user_id, payload)
   end
 
   @doc """
-  Publishes `:implementation_deprecated` events. Should be called using `Ecto.Multi.run/5`.
+  Publishes `:implementations_deprecated` events. Should be called using `Ecto.Multi.run/5`.
   """
   def implementations_deprecated(_repo, %{deprecated: {_, [_ | _] = impls}}) do
     impls
     |> Enum.map(fn %{id: id} = implementation ->
-      payload = Map.take(implementation, [:implementation_key, :rule_id, :domain_id])
-      publish("implementation_deprecated", "implementation", id, 0, payload)
+      payload =
+        implementation
+        |> with_domain_ids()
+        |> Map.take([:implementation_key, :rule_id, :domain_id, :domain_ids])
+        |> Map.put(:status, :deprecated)
+
+      publish("implementation_status_updated", "implementation", id, 0, payload)
     end)
     |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
     |> case do
@@ -119,24 +128,6 @@ defmodule TdDq.Rules.Audit do
   Should be called using `Ecto.Multi.run/5`.
   """
   def implementation_updated(repo, implementation, changeset, user_id)
-
-  def implementation_updated(
-        _repo,
-        %{implementation: %{id: id} = implementation},
-        %{changes: %{deleted_at: deleted_at}},
-        user_id
-      ) do
-    payload = Map.take(implementation, [:implementation_key, :rule_id, :domain_id])
-
-    event =
-      if is_nil(deleted_at) do
-        "implementation_restored"
-      else
-        "implementation_deprecated"
-      end
-
-    publish(event, "implementation", id, user_id, payload)
-  end
 
   def implementation_updated(
         _repo,
@@ -176,9 +167,46 @@ defmodule TdDq.Rules.Audit do
         _changeset,
         user_id
       ) do
-    payload = Map.take(implementation, [:implementation_key, :rule_id, :domain_id])
+    payload =
+      implementation
+      |> with_domain_ids()
+      |> Map.take([:implementation_key, :rule_id, :domain_id, :domain_ids])
+
     # TODO: TD-4455 Why aren't any changes included in the payload
     publish("implementation_updated", "implementation", id, user_id, payload)
+  end
+
+  def implementation_versioned(_repo, %{versioned: {_, [id | _]}}, implementation, user_id) do
+    payload =
+      implementation
+      |> with_domain_ids()
+      |> Map.take([:implementation_key, :rule_id, :domain_id, :domain_ids])
+      |> Map.put(:status, :versioned)
+
+    publish("implementation_status_updated", "implementation", id, user_id, payload)
+  end
+
+  def implementation_versioned(_repo, _, _implementation, _user_id) do
+    {:ok, :unchanged}
+  end
+
+  def implementation_status_updated(
+        _repo,
+        %{implementation: %{id: id} = implementation},
+        %{changes: %{status: status}},
+        user_id
+      ) do
+    payload =
+      implementation
+      |> with_domain_ids()
+      |> Map.take([:implementation_key, :domain_ids])
+      |> Map.put(:status, status)
+
+    publish("implementation_status_updated", "implementation", id, user_id, payload)
+  end
+
+  def implementation_status_updated(_repo, _implementation, _changeset, _user_id) do
+    {:ok, :unchanged}
   end
 
   @doc """

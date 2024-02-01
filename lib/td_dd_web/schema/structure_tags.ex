@@ -43,12 +43,14 @@ defmodule TdDdWeb.Schema.StructureTags do
   input_object :structure_tag_input do
     field :id, :id
     field :name, non_null(:string)
+    field :description, :string
     field :domain_ids, list_of(:id)
   end
 
   object :structure_tag do
     field :id, non_null(:id)
     field :name, :string
+    field :description, :string
     field :domain_ids, list_of(:id)
     field :structure_count, :integer
   end

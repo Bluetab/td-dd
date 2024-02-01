@@ -472,7 +472,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   describe "GET /api/data_structures/:id/versions/latest with actions" do
     @tag authentication: [role: "admin"]
     test "includes actions in the response", %{conn: conn} do
-      %{id: tag_id, name: tag_name} = insert(:data_structure_tag)
+      %{id: tag_id, name: tag_name, description: tag_description} = insert(:data_structure_tag)
       %{data_structure_id: id, version: version} = insert(:data_structure_version)
 
       for v <- ["latest", version] do
@@ -482,7 +482,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                  |> json_response(:ok)
 
         assert %{"manage_tags" => %{"data" => [tag]}} = actions
-        assert %{"id" => ^tag_id, "name" => ^tag_name} = tag
+        assert %{"id" => ^tag_id, "name" => ^tag_name, "description" => ^tag_description} = tag
       end
     end
   end
@@ -636,6 +636,41 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                |> json_response(:ok)
 
       assert %{"request_grant" => false} = permissions
+    end
+
+    @tag authentication: [
+           role: "user",
+           permissions: [:view_data_structure, :request_grant_removal]
+         ]
+    test "user with permission can update grant removal", %{
+      conn: conn,
+      data_structure: %{id: id}
+    } do
+      CacheHelpers.insert_template(%{name: "foo", label: "foo", scope: "gr", content: []})
+
+      assert %{"user_permissions" => permissions} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
+               )
+               |> json_response(:ok)
+
+      assert %{"update_grant_removal" => true} = permissions
+    end
+
+    @tag authentication: [role: "user", permissions: [:view_data_structure]]
+    test "user without permission can not update grant removal", %{
+      conn: conn,
+      data_structure: %{id: id}
+    } do
+      assert %{"user_permissions" => permissions} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
+               )
+               |> json_response(:ok)
+
+      assert %{"update_grant_removal" => false} = permissions
     end
 
     @tag authentication: [

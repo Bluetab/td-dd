@@ -1,9 +1,7 @@
 defmodule TdDqWeb.ImplementationSearchController do
   use TdDqWeb, :controller
 
-  import Canada.Can, only: [can?: 3]
-
-  alias TdDq.Implementations.Implementation
+  alias TdDq.Implementations
   alias TdDq.Rules.Search
 
   action_fallback(TdDqWeb.FallbackController)
@@ -31,7 +29,7 @@ defmodule TdDqWeb.ImplementationSearchController do
     response = search_assigns(response)
 
     conn
-    |> assign(:actions, build_actions(conn, params))
+    |> assign(:actions, Implementations.build_actions(claims, params))
     |> put_view(TdDqWeb.SearchView)
     |> put_resp_header("x-total-count", "#{total}")
     |> render("search.json", response)
@@ -74,28 +72,5 @@ defmodule TdDqWeb.ImplementationSearchController do
     |> Map.put("without", "deleted_at")
     |> Map.drop(["page", "size"])
     |> Search.search_implementations(claims, page, size)
-  end
-
-  defp build_actions(conn, %{} = params) do
-    claims = conn.assigns[:current_resource]
-
-    params
-    |> available_actions()
-    |> Enum.filter(&can?(claims, &1, Implementation))
-    |> Map.new(&{&1, build_action(conn, &1)})
-  end
-
-  defp build_action(conn, "uploadResults"),
-    do: %{href: Routes.rule_result_path(conn, :create), method: "POST"}
-
-  defp build_action(_conn, _action), do: %{method: "POST"}
-
-  defp available_actions(%{"filters" => %{"status" => ["published"]}}) do
-    # TODO: maybe exclude "execute" if no implementations are executable?
-    ["uploadResults", "execute", "createRaw", "create", "download"]
-  end
-
-  defp available_actions(_) do
-    ["createRaw", "create", "download", "load"]
   end
 end

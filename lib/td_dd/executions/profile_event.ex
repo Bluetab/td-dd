@@ -28,7 +28,7 @@ defmodule TdDd.Executions.ProfileEvent do
   def create_changeset(%{} = params) do
     %__MODULE__{}
     |> cast(params, [:type, :message, :profile_execution_id])
-    |> validate_required([:profile_execution_id])
+    |> validate_required(:profile_execution_id)
     |> validate_length(:message, max: 1_000)
   end
 end

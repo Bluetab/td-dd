@@ -14,6 +14,7 @@ defmodule TdDq.Implementations do
   alias TdCx.Sources
   alias TdDd.Cache.StructureEntry
   alias TdDd.DataStructures
+  alias TdDd.ReferenceData
   alias TdDd.Repo
   alias TdDq.Auth.Claims
   alias TdDq.Cache.ImplementationLoader
@@ -60,25 +61,27 @@ defmodule TdDq.Implementations do
     Repo.get(Implementation, id)
   end
 
-  def get_implementation_by_key!(implementation_key, deleted \\ nil)
-
-  def get_implementation_by_key!(implementation_key, true) do
+  def get_versions(%{implementation_ref: implementation_ref}) do
     Implementation
-    |> join(:inner, [ri], r in assoc(ri, :rule))
-    |> Repo.get_by!(implementation_key: implementation_key)
-    |> Repo.preload(:rule)
+    |> where([i], i.implementation_ref == ^implementation_ref)
+    |> order_by(desc: :version)
+    |> Repo.all()
   end
 
-  def get_implementation_by_key!(implementation_key, _deleted) do
+  def get_published_implementation_by_key(implementation_key) do
     Implementation
-    |> where([ri], is_nil(ri.deleted_at))
-    |> Repo.get_by!(implementation_key: implementation_key)
+    |> where([ri], ri.status == :published)
+    |> Repo.get_by(implementation_key: implementation_key)
     |> Repo.preload(:rule)
+    |> case do
+      nil -> {:error, :not_found}
+      implementation -> {:ok, implementation}
+    end
   end
 
-  def last?(%Implementation{id: id, implementation_key: implementation_key}) do
+  def last?(%Implementation{id: id, implementation_ref: implementation_ref}) do
     Implementation
-    |> where([ri], ri.implementation_key == ^implementation_key)
+    |> where([ri], ri.implementation_ref == ^implementation_ref)
     |> order_by(desc: :version)
     |> select([ri], ri.id == ^id)
     |> limit(1)
@@ -111,7 +114,7 @@ defmodule TdDq.Implementations do
     |> Multi.run(:can, fn _, _ ->
       multi_can(can?(claims, create(changeset)) and can?(claims, edit_segments(changeset)))
     end)
-    |> Multi.insert(:implementation, changeset)
+    |> Multi.run(:implementation, fn _, _ -> insert_implementation(changeset) end)
     |> Multi.run(:data_structures, &create_implementation_structures/2)
     |> Multi.run(:audit, Audit, :implementation_created, [changeset, user_id])
     |> Repo.transaction()
@@ -149,7 +152,7 @@ defmodule TdDq.Implementations do
         )
       )
     end)
-    |> Multi.insert(:implementation, changeset)
+    |> Multi.run(:implementation, fn _, _ -> insert_implementation(changeset) end)
     |> Multi.run(:data_structures, &create_implementation_structures/2)
     |> Multi.run(:audit, Audit, :implementation_created, [changeset, user_id])
     |> Repo.transaction()
@@ -176,21 +179,22 @@ defmodule TdDq.Implementations do
         ])
       )
     end)
-    |> upsert(changeset, status)
+    |> upsert(changeset, status, user_id)
     |> Multi.run(:data_structures, &create_implementation_structures/2)
+    |> Multi.run(:audit_status, Audit, :implementation_status_updated, [changeset, user_id])
     |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
     |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
     |> Repo.transaction()
     |> on_upsert()
   end
 
-  defp upsert(multi, changeset, :published) do
+  defp upsert(multi, changeset, :published, _) do
     Multi.insert(multi, :implementation, changeset)
   end
 
-  defp upsert(multi, %{data: implementation} = changeset, _not_published) do
+  defp upsert(multi, %{data: implementation} = changeset, _not_published, user_id) do
     case Changeset.get_change(changeset, :status) do
-      :published -> Workflow.maybe_version_existing(multi, implementation, "published")
+      :published -> Workflow.maybe_version_existing(multi, implementation, "published", user_id)
       _ -> multi
     end
     |> Multi.update(:implementation, changeset)
@@ -203,7 +207,8 @@ defmodule TdDq.Implementations do
            rule: rule,
            rule_id: rule_id,
            status: :published,
-           version: v
+           version: v,
+           implementation_ref: implementation_ref
          },
          %{} = params
        ) do
@@ -213,10 +218,10 @@ defmodule TdDq.Implementations do
         implementation_type: type,
         rule: rule,
         rule_id: rule_id,
-        status: :draft,
-        version: v + 1
+        version: v + 1,
+        implementation_ref: implementation_ref
       },
-      params
+      Map.put(params, "status", "draft")
     )
   end
 
@@ -258,6 +263,26 @@ defmodule TdDq.Implementations do
     |> deprecate()
   end
 
+  @doc """
+  Deprecate a list of implementations by ids
+
+  This function is used for automatic deprecation.
+  When a data structure is deleted and is related to an Implementation
+
+  ## Examples
+
+      iex> deprecate([1,2,3])
+      {:ok,
+      %{
+        audit: ["1656487740089-0"],
+        audit_status: :unchanged,
+        deprecated: {1,[%Implementation{}, ...]}
+      }}
+
+      iex> deprecate([])
+      {:ok, %{audit: [], audit_status: :unchanged, deprecated: {0, []}}}
+
+  """
   @spec deprecate(list(integer())) ::
           :ok | {:ok, map} | {:error, Multi.name(), any, %{required(Multi.name()) => any}}
   def deprecate([]), do: :ok
@@ -303,7 +328,7 @@ defmodule TdDq.Implementations do
 
     Multi.new()
     |> Multi.update(:implementation, changeset)
-    |> Multi.run(:audit, Audit, :implementation_deprecated, [changeset, user_id])
+    |> Multi.run(:audit_status, Audit, :implementation_status_updated, [changeset, user_id])
     |> Repo.transaction()
     |> on_delete()
   end
@@ -346,6 +371,52 @@ defmodule TdDq.Implementations do
   end
 
   defp on_upsert(result, _), do: result
+
+  defp get_available_actions(_params, %Implementation{}) do
+    [
+      :clone,
+      :delete,
+      :edit,
+      :execute,
+      :link_concept,
+      :link_structure,
+      :manage_segments,
+      :move,
+      :publish,
+      :reject,
+      :submit
+    ]
+  end
+
+  defp get_available_actions(%{"filters" => %{"status" => ["published"]}}, Implementation) do
+    [
+      "download",
+      "execute",
+      "create",
+      "createRaw",
+      "createRawRuleLess",
+      "createRuleLess",
+      "uploadResults"
+    ]
+  end
+
+  defp get_available_actions(_params, Implementation) do
+    ["create", "createRaw", "createRawRuleLess", "createRuleLess", "download", "load"]
+  end
+
+  def build_actions(claims), do: build_actions(claims, %{}, Implementation)
+
+  def build_actions(claims, %Implementation{} = implementation),
+    do: build_actions(claims, %{}, implementation)
+
+  def build_actions(claims, params), do: build_actions(claims, params, Implementation)
+
+  def build_actions(claims, params, implementation) do
+    params
+    |> get_available_actions(implementation)
+    |> Enum.filter(&can?(claims, &1, implementation))
+    |> Enum.reduce(%{}, &Map.put(&2, &1, %{method: "POST"}))
+  end
 
   def get_sources(%Implementation{implementation_type: "raw", raw_content: %{source_id: nil}}) do
     []
@@ -490,6 +561,9 @@ defmodule TdDq.Implementations do
 
   def valid_dataset_implementation_structures(%Implementation{dataset: [_ | _] = dataset}) do
     dataset
+    |> Enum.reject(fn dataset_row ->
+      dataset_row |> Map.get(:structure) |> Map.get(:type) == "reference_dataset"
+    end)
     |> Enum.map(fn dataset_row -> dataset_row |> Map.get(:structure) |> Map.get(:id) end)
     |> Enum.reject(&is_nil/1)
     |> Enum.map(&DataStructures.get_data_structure/1)
@@ -526,6 +600,9 @@ defmodule TdDq.Implementations do
         validations: [_ | _] = validations
       }) do
     validations
+    |> Enum.reject(fn dataset_row ->
+      dataset_row |> Map.get(:structure) |> Map.get(:type) == "reference_dataset_field"
+    end)
     |> Enum.map(fn dataset_row -> dataset_row |> Map.get(:structure) |> Map.get(:id) end)
     |> Enum.reject(&is_nil/1)
     |> Enum.map(&DataStructures.get_data_structure/1)
@@ -589,24 +666,34 @@ defmodule TdDq.Implementations do
     end
   end
 
+  defp insert_implementation(changeset) do
+    with {:ok, %{id: id} = implementation} <- Repo.insert(changeset),
+         {:ok, _} <- can_create_implementation_key(changeset) do
+      implementation
+      |> Implementation.implementation_ref_changeset(%{implementation_ref: id})
+      |> Repo.update()
+    end
+  end
+
+  defp can_create_implementation_key(
+         %{changes: %{implementation_key: implementation_key}} = changeset
+       ) do
+    Implementation
+    |> where([i], i.implementation_key == ^implementation_key)
+    |> where([i], i.status == :published)
+    |> limit(1)
+    |> Repo.one()
+    |> case do
+      nil -> {:ok, changeset}
+      _ -> {:error, Changeset.add_error(changeset, :implementation_key, "duplicated")}
+    end
+  end
+
   def enrich_implementation_structures(%Implementation{} = implementation) do
     enriched_dataset =
-      Enum.map(implementation.dataset, fn dataset_row ->
-        case dataset_row |> Map.get(:structure) |> Map.get(:id) do
-          nil ->
-            dataset_row
-
-          id ->
-            cached_structure = StructureEntry.cache_entry(id, system: true)
-
-            dataset_row
-            |> Map.put(
-              :structure,
-              put_structure_cached_attributes(Map.get(dataset_row, :structure), cached_structure)
-            )
-            |> enrich_joined_structures
-        end
-      end)
+      implementation
+      |> Map.get(:dataset)
+      |> Enum.map(&enrich_dataset_row/1)
 
     enriched_populations = Enum.map(implementation.populations, &enrich_populations/1)
     enriched_validations = Enum.map(implementation.validations, &enrich_condition/1)
@@ -621,6 +708,31 @@ defmodule TdDq.Implementations do
     |> Map.put(:segments, enriched_segments)
     |> Map.put(:data_structures, enriched_data_structures)
   end
+
+  defp enrich_implementation_structure(%{id: id, type: "reference_dataset"})
+       when not is_nil(id) do
+    id
+    |> ReferenceData.get!()
+    |> Map.take([:id, :name, :headers])
+    |> Map.put(:type, "reference_dataset")
+  end
+
+  defp enrich_implementation_structure(%{id: id} = structure) when not is_nil(id) do
+    cached_structure = StructureEntry.cache_entry(id, system: true)
+    put_structure_cached_attributes(structure, cached_structure)
+  end
+
+  defp enrich_implementation_structure(structure), do: structure
+
+  defp enrich_dataset_row(%{structure: structure} = dataset_row) do
+    enriched_structure = enrich_implementation_structure(structure)
+
+    dataset_row
+    |> Map.put(:structure, enriched_structure)
+    |> enrich_joined_structures
+  end
+
+  defp enrich_dataset_row(dataset_row), do: dataset_row
 
   defp enrich_data_structures_path(%{data_structures: [_ | _] = data_structures}) do
     data_structure_ids =
@@ -665,15 +777,10 @@ defmodule TdDq.Implementations do
   defp enrich_populations(populations), do: populations
 
   defp enrich_condition(%{structure: structure = %{}} = condition) do
-    cached_structure = StructureEntry.cache_entry(Map.get(structure, :id), system: true)
-
-    enriched_info =
-      condition
-      |> Map.get(:structure)
-      |> put_structure_cached_attributes(cached_structure)
+    enriched_structure = enrich_implementation_structure(structure)
 
     condition
-    |> Map.put(:structure, enriched_info)
+    |> Map.put(:structure, enriched_structure)
     |> enrich_value_structures()
     |> with_population()
   end
@@ -689,24 +796,10 @@ defmodule TdDq.Implementations do
     structure_map
   end
 
-  defp enrich_clause_structures(
-         %{left: %{id: left_id} = left, right: %{id: right_id} = right} = structure_map
-       ) do
+  defp enrich_clause_structures(%{left: left, right: right} = structure_map) do
     structure_map
-    |> Map.put(
-      :left,
-      put_structure_cached_attributes(
-        %{id: left_id, parent_index: Map.get(left, :parent_index)},
-        StructureEntry.cache_entry(left_id, system: true)
-      )
-    )
-    |> Map.put(
-      :right,
-      put_structure_cached_attributes(
-        %{id: right_id, parent_index: Map.get(right, :parent_index)},
-        StructureEntry.cache_entry(right_id, system: true)
-      )
-    )
+    |> Map.put(:left, enrich_implementation_structure(left))
+    |> Map.put(:right, enrich_implementation_structure(right))
   end
 
   defp enrich_value_structure(%{"id" => id} = value_map) do

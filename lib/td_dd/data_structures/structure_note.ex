@@ -97,11 +97,12 @@ defmodule TdDd.DataStructures.StructureNote do
         add_error(changeset, :df_content, "invalid_content", errors)
 
       _ ->
-        changeset
+        validate_change(changeset, :df_content, &TdDfLib.Validation.validate_safe/2)
     end
   end
 
-  defp validate_content(changeset, _structure_note, _params), do: changeset
+  defp validate_content(changeset, _structure_note, _params),
+    do: validate_change(changeset, :df_content, &TdDfLib.Validation.validate_safe/2)
 
   defp maybe_put_identifier(
          changeset,

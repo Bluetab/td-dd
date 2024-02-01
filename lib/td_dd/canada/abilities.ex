@@ -36,7 +36,9 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.ReferenceData.Dataset, as: ReferenceDataset
   alias TdDd.Systems.System
   alias TdDq.Canada.ImplementationAbilities
+  alias TdDq.Canada.RuleResultAbilities
   alias TdDq.Implementations.Implementation
+  alias TdDq.Rules.RuleResult
 
   defimpl Canada.Can, for: Claims do
     @implementation_mutations [
@@ -63,6 +65,18 @@ defmodule TdDd.Canada.Abilities do
     def can?(%Claims{role: "user"} = claims, :query, :structure_tags),
       do: DataStructureTagAbilities.can?(claims, :index, DataStructureTag)
 
+    def can?(%Claims{role: "user"} = claims, :query, :implementation),
+      do: ImplementationAbilities.can?(claims, :list, Implementation)
+
+    def can?(%Claims{role: "user"} = claims, :query, :implementation_result),
+      do: RuleResultAbilities.can?(claims, :view, RuleResult)
+
+    def can?(%Claims{role: "user"} = claims, :query, :reference_dataset),
+      do: ReferenceDataAbilities.can?(claims, :show, ReferenceDataset)
+
+    def can?(%Claims{role: "user"} = claims, :query, :reference_datasets),
+      do: ReferenceDataAbilities.can?(claims, :list, ReferenceDataset)
+
     def can?(%Claims{}, _action, nil), do: false
 
     def can?(%{} = claims, :mutation, mutation) when mutation in @implementation_mutations do
@@ -73,6 +87,10 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%Claims{} = claims, action, %Implementation{} = implementation) do
       ImplementationAbilities.can?(claims, action, implementation)
+    end
+
+    def can?(%Claims{} = claims, action, %RuleResult{} = ruleResult) do
+      RuleResultAbilities.can?(claims, action, ruleResult)
     end
 
     def can?(%Claims{} = claims, action, ReferenceDataset) do
@@ -148,6 +166,12 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%Claims{} = claims, action, %GrantRequest{} = target) do
       GrantAbilities.can?(claims, action, target)
+    end
+
+    def can?(%Claims{role: "admin"}, :update_grant_removal, %DataStructure{}), do: true
+
+    def can?(%Claims{} = claims, :update_grant_removal, %DataStructure{domain_ids: domain_ids}) do
+      GrantAbilities.can?(claims, :update_pending_removal, domain_ids)
     end
 
     def can?(%Claims{role: "admin"}, :create_grant_request, %DataStructure{}), do: true

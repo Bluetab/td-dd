@@ -207,30 +207,33 @@ defmodule TdDq.ImplementationsTest do
     end
   end
 
-  describe "get_implementation_by_key/1" do
-    test "returns the implementation with given implementation key" do
+  describe "get_published_implementation_by_key/2" do
+    test "returns the implementation with given implementation key with status published" do
       %{implementation_key: implementation_key} =
-        implementation = insert(:implementation, implementation_key: "My implementation key")
+        implementation =
+        insert(:implementation, implementation_key: "My implementation key", status: :published)
 
-      assert Implementations.get_implementation_by_key!(implementation_key)
-             <~> implementation
+      assert Implementations.get_published_implementation_by_key(implementation_key)
+             <~> {:ok, implementation}
     end
 
-    test "returns the implementation with executable flag" do
-      %{implementation_key: implementation_key} = insert(:implementation)
-      assert %{executable: true} = Implementations.get_implementation_by_key!(implementation_key)
+    test "returns the implementation with executable flag " do
+      %{implementation_key: implementation_key} = insert(:implementation, status: :published)
+
+      assert {:ok, %{executable: true}} =
+               Implementations.get_published_implementation_by_key(implementation_key)
     end
 
-    test "raises if the implementation with given implementation key has been soft deleted" do
+    test "not found if the implementation with given implementation key has been deprecated" do
       %{implementation_key: implementation_key} =
         insert(:implementation,
           implementation_key: "My implementation key",
-          deleted_at: DateTime.utc_now()
+          deleted_at: DateTime.utc_now(),
+          status: :deprecated
         )
 
-      assert_raise Ecto.NoResultsError, fn ->
-        Implementations.get_implementation_by_key!(implementation_key)
-      end
+      assert {:error, :not_found} =
+               Implementations.get_published_implementation_by_key(implementation_key)
     end
   end
 
@@ -246,6 +249,7 @@ defmodule TdDq.ImplementationsTest do
                Implementations.create_implementation(rule, params, claims)
 
       assert implementation.rule_id == params["rule_id"]
+      assert implementation.implementation_ref == implementation.id
     end
 
     test "with valid data creates a implementation with rule domain_id", %{rule: rule} do
@@ -260,6 +264,7 @@ defmodule TdDq.ImplementationsTest do
 
       assert implementation.rule_id == params["rule_id"]
       assert implementation.domain_id == rule.domain_id
+      assert implementation.implementation_ref == implementation.id
     end
 
     test "with duplicated draft implementation key returns an error", %{rule: rule} do
@@ -508,6 +513,207 @@ defmodule TdDq.ImplementationsTest do
     end
   end
 
+  describe "enrich_implementation_structures/1" do
+    test "enriches implementation dataset structures" do
+      %{data_structure_id: data_structure_id, name: structure_name} =
+        insert(:data_structure_version)
+
+      implementation =
+        insert(:implementation,
+          dataset: [%{structure: %{id: data_structure_id}}]
+        )
+
+      assert %{dataset: [%{structure: %{name: ^structure_name}}]} =
+               Implementations.enrich_implementation_structures(implementation)
+    end
+
+    test "enriches implementation dataset clauses structures" do
+      %{data_structure_id: data_structure_id, name: structure_name} =
+        insert(:data_structure_version)
+
+      %{data_structure_id: left_data_structure_id, name: left_structure_name} =
+        insert(:data_structure_version)
+
+      %{data_structure_id: right_data_structure_id, name: right_structure_name} =
+        insert(:data_structure_version)
+
+      implementation =
+        insert(:implementation,
+          dataset: [
+            %{
+              structure: %{id: data_structure_id},
+              clauses: [
+                %{left: %{id: left_data_structure_id}, right: %{id: right_data_structure_id}}
+              ]
+            }
+          ]
+        )
+
+      assert %{
+               dataset: [
+                 %{
+                   structure: %{name: ^structure_name},
+                   clauses: [
+                     %{left: %{name: ^left_structure_name}, right: %{name: ^right_structure_name}}
+                   ]
+                 }
+               ]
+             } = Implementations.enrich_implementation_structures(implementation)
+    end
+
+    test "enriches implementation dataset with reference_dataset" do
+      %{id: id, name: dataset_name} = insert(:reference_dataset)
+
+      implementation =
+        insert(:implementation,
+          dataset: [%{structure: %{id: id, type: "reference_dataset"}}]
+        )
+
+      assert %{dataset: [%{structure: %{name: ^dataset_name, type: "reference_dataset"}}]} =
+               Implementations.enrich_implementation_structures(implementation)
+    end
+
+    test "enriches implementation dataset clauses with reference_dataset_field" do
+      %{id: id, name: dataset_name} = insert(:reference_dataset)
+
+      %{data_structure_id: left_data_structure_id, name: left_structure_name} =
+        insert(:data_structure_version)
+
+      implementation =
+        insert(:implementation,
+          dataset: [
+            %{
+              structure: %{id: id, type: "reference_dataset"},
+              clauses: [
+                %{
+                  left: %{id: left_data_structure_id},
+                  right: %{name: "reference_dataset_field_name", type: "reference_dataset_field"}
+                }
+              ]
+            }
+          ]
+        )
+
+      assert %{
+               dataset: [
+                 %{
+                   structure: %{name: ^dataset_name, type: "reference_dataset"},
+                   clauses: [
+                     %{
+                       left: %{name: ^left_structure_name},
+                       right: %{
+                         name: "reference_dataset_field_name",
+                         type: "reference_dataset_field"
+                       }
+                     }
+                   ]
+                 }
+               ]
+             } = Implementations.enrich_implementation_structures(implementation)
+    end
+
+    test "enriches implementation validations" do
+      %{data_structure_id: data_structure_id, name: structure_name} =
+        insert(:data_structure_version)
+
+      implementation =
+        insert(:implementation,
+          validations: [%{build(:condition_row) | structure: %{id: data_structure_id}}]
+        )
+
+      assert %{validations: [%{structure: %{name: ^structure_name}}]} =
+               Implementations.enrich_implementation_structures(implementation)
+    end
+
+    test "enriches implementation validations with reference_dataset_field" do
+      implementation =
+        insert(:implementation,
+          validations: [
+            %{
+              build(:condition_row)
+              | structure: %{
+                  name: "reference_dataset_field_name",
+                  type: "reference_dataset_field"
+                }
+            }
+          ]
+        )
+
+      assert %{
+               validations: [
+                 %{
+                   structure: %{
+                     name: "reference_dataset_field_name",
+                     type: "reference_dataset_field"
+                   }
+                 }
+               ]
+             } = Implementations.enrich_implementation_structures(implementation)
+    end
+
+    test "enriches implementation populations" do
+      %{data_structure_id: data_structure_id, name: structure_name} =
+        insert(:data_structure_version)
+
+      implementation =
+        insert(:implementation,
+          populations: [
+            %{population: [%{build(:condition_row) | structure: %{id: data_structure_id}}]}
+          ]
+        )
+
+      assert %{populations: [%{population: [%{structure: %{name: ^structure_name}}]}]} =
+               Implementations.enrich_implementation_structures(implementation)
+    end
+
+    test "enriches implementation populations with reference_dataset_field" do
+      implementation =
+        insert(:implementation,
+          populations: [
+            %{
+              population: [
+                %{
+                  build(:condition_row)
+                  | structure: %{
+                      name: "reference_dataset_field_name",
+                      type: "reference_dataset_field"
+                    }
+                }
+              ]
+            }
+          ]
+        )
+
+      assert %{
+               populations: [
+                 %{
+                   population: [
+                     %{
+                       structure: %{
+                         name: "reference_dataset_field_name",
+                         type: "reference_dataset_field"
+                       }
+                     }
+                   ]
+                 }
+               ]
+             } = Implementations.enrich_implementation_structures(implementation)
+    end
+
+    test "enriches implementation segments" do
+      %{data_structure_id: data_structure_id, name: structure_name} =
+        insert(:data_structure_version)
+
+      implementation =
+        insert(:implementation,
+          segments: [%{structure: %{id: data_structure_id}}]
+        )
+
+      assert %{segments: [%{structure: %{name: ^structure_name}}]} =
+               Implementations.enrich_implementation_structures(implementation)
+    end
+  end
+
   describe "valid_dataset_implementation_structures/1" do
     test "returns implementation's dataset structure" do
       %{id: data_structure_id} = insert(:data_structure)
@@ -611,6 +817,17 @@ defmodule TdDq.ImplementationsTest do
                Implementations.valid_dataset_implementation_structures(implementation)
     end
 
+    test "reference_dataset structures will be filtered" do
+      %{id: data_structure_id} = insert(:data_structure)
+
+      implementation =
+        insert(:implementation,
+          dataset: [%{structure: %{id: data_structure_id, type: "reference_dataset"}}]
+        )
+
+      assert [] == Implementations.valid_dataset_implementation_structures(implementation)
+    end
+
     test "invalid structure will be filtered" do
       implementation =
         insert(:implementation,
@@ -651,6 +868,22 @@ defmodule TdDq.ImplementationsTest do
 
       assert [%{id: ^data_structure_id}] =
                Implementations.valid_validation_implementation_structures(implementation)
+    end
+
+    test "filters reference_dataset_field structures" do
+      %{id: data_structure_id} = insert(:data_structure)
+
+      implementation =
+        insert(:implementation,
+          validations: [
+            %{
+              build(:condition_row)
+              | structure: %{id: data_structure_id, type: "reference_dataset_field"}
+            }
+          ]
+        )
+
+      assert [] = Implementations.valid_validation_implementation_structures(implementation)
     end
 
     test "returns validation field structures for raw implementatation" do
@@ -1345,13 +1578,13 @@ defmodule TdDq.ImplementationsTest do
 
   describe "last?/1" do
     test "returns true if the given implementation is the latest version with the same key" do
-      %{implementation_key: key} =
+      %{implementation_ref: implementation_ref} =
         first = insert(:implementation, version: 1, status: "deprecated")
 
-      second = insert(:implementation, implementation_key: key, version: 2)
+      second = insert(:implementation, implementation_ref: implementation_ref, version: 2)
       refute Implementations.last?(first)
       assert Implementations.last?(second)
-      assert Implementations.last?(%Implementation{id: 0, implementation_key: "foo"})
+      assert Implementations.last?(%Implementation{id: 0, implementation_ref: 0})
     end
   end
 end

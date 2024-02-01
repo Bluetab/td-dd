@@ -28,7 +28,7 @@ defmodule TdDqWeb.ImplementationResultController do
   def create(conn, %{"implementation_id" => key, "rule_result" => params}) do
     claims = conn.assigns[:current_resource]
 
-    with implementation <- Implementations.get_implementation_by_key!(key),
+    with {:ok, implementation} <- Implementations.get_published_implementation_by_key(key),
          {:can, true} <- {:can, can?(claims, manage_rule_results(implementation))},
          {:ok, %{result: %{id: id} = result, segments: segments}} <-
            RuleResults.create_rule_result(implementation, params) do

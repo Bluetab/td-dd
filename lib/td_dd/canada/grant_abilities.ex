@@ -52,6 +52,20 @@ defmodule TdDd.Canada.GrantAbilities do
     Permissions.authorized?(claims, :manage_grants, domain_ids)
   end
 
+  def can?(%Claims{user_id: user_id}, :update_pending_removal, %Grant{user_id: user_id}) do
+    true
+  end
+
+  def can?(%Claims{} = claims, :update_pending_removal, %Grant{
+        data_structure: %{domain_ids: domain_ids}
+      }) do
+    Permissions.authorized?(claims, :request_grant_removal, domain_ids)
+  end
+
+  def can?(%Claims{} = claims, :update_pending_removal, domain_ids) when is_list(domain_ids) do
+    Permissions.authorized?(claims, :request_grant_removal, domain_ids)
+  end
+
   def can?(%Claims{} = claims, :delete, %Grant{data_structure: %{domain_ids: domain_ids}}) do
     Permissions.authorized?(claims, :manage_grants, domain_ids)
   end
