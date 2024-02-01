@@ -23,15 +23,23 @@ defmodule TdDq.Implementations.Structure do
     type = Map.get(params, :type, Map.get(params, "type"))
 
     struct
-    |> cast(params, [:id, :type, :name, :parent_index])
-    |> validate_required_by_type(type)
+    |> cast(params, [:id, :name, :parent_index])
+    |> validate_required_by_type(type, params)
   end
 
-  defp validate_required_by_type(struct, "reference_dataset_field") do
-    validate_required(struct, [:name, :parent_index])
+  defp validate_required_by_type(struct, "reference_dataset_field", params) do
+    struct
+    |> cast(params, [:type])
+    |> validate_required([:name, :parent_index])
   end
 
-  defp validate_required_by_type(struct, _) do
+  defp validate_required_by_type(struct, "reference_dataset", params) do
+    struct
+    |> cast(params, [:type])
+    |> validate_required([:id])
+  end
+
+  defp validate_required_by_type(struct, _, _) do
     validate_required(struct, [:id])
   end
 end

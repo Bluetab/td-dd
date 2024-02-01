@@ -843,7 +843,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert {:ok, %{implementation: %{id: ^id}}} =
                Implementations.update_implementation(
                  implementation,
-                 %{status: :published},
+                 %{status: :published, minimum: implementation.minimum - 1},
                  claims
                )
 
@@ -872,6 +872,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
         @rule_implementation_attr
         |> Map.put(:rule_id, rule.id)
         |> Map.Helpers.stringify_keys()
+        |> Map.drop(["status"])
 
       assert %{"data" => %{"id" => id}} =
                conn
@@ -896,7 +897,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert %{"data" => %{"id" => new_id}} =
                conn
                |> put(Routes.implementation_path(conn, :update, implementation),
-                 rule_implementation: Map.put(creation_attrs, :implementation_key, "fuaah!")
+                 rule_implementation: Map.put(creation_attrs, "implementation_key", "fuaah!")
                )
                |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
@@ -905,6 +906,42 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       assert %{implementation_ref: ^imp_ref, version: 2, status: :draft} =
                Implementations.get_implementation!(new_id)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "return 200 but does not create a new draft when editing published implementation with same information",
+         %{
+           conn: conn,
+           swagger_schema: schema,
+           claims: claims
+         } do
+      rule_implementation_attr = string_params_for(:implementation) |> Map.drop(["status"])
+
+      assert %{"data" => %{"id" => id}} =
+               conn
+               |> post(Routes.implementation_path(conn, :create),
+                 rule_implementation: rule_implementation_attr
+               )
+               |> json_response(:created)
+
+      implementation = Implementations.get_implementation(id)
+
+      Implementations.update_implementation(
+        implementation,
+        %{status: :published},
+        claims
+      )
+
+      assert %{
+               "data" => %{"id" => ^id, "status" => "published"},
+               "message" => "implementation_unchanged"
+             } =
+               conn
+               |> put(Routes.implementation_path(conn, :update, implementation),
+                 rule_implementation: rule_implementation_attr
+               )
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
     end
 
     @tag authentication: [role: "admin"]
@@ -2183,7 +2220,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
         conn: conn,
         swagger_schema: schema
       } do
-        %{id: id, implementation_ref: ref} = implementation = insert(:implementation)
+        %{id: id} = implementation = insert(:implementation)
 
         ElasticsearchMock
         |> expect(:request, fn
@@ -2204,7 +2241,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
                  |> validate_resp_schema(schema, "ImplementationsResponse")
                  |> json_response(:ok)
 
-        assert [%{"id" => ^id, "implementation_ref" => ^ref}] = data
+        assert [%{"id" => ^id}] = data
       end
     end
 

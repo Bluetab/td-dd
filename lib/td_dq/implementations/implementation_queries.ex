@@ -20,9 +20,7 @@ defmodule TdDq.Implementations.ImplementationQueries do
     |> where(
       [s],
       fragment(
-        "(? <@ ? and ? @> ?)",
-        ^external_ids,
-        s.external_ids,
+        "(? && ?)",
         ^external_ids,
         s.external_ids
       )

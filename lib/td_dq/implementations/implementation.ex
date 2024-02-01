@@ -292,18 +292,28 @@ defmodule TdDq.Implementations.Implementation do
   end
 
   defp raw_changeset(changeset) do
-    changeset
-    |> cast_embed(:raw_content, with: &RawContent.changeset/2, required: true)
+    maybe_cast_embed(changeset, :raw_content, with: &RawContent.changeset/2, required: true)
   end
 
   defp draft_changeset(changeset), do: changeset
 
   def default_changeset(changeset) do
     changeset
-    |> cast_embed(:dataset, with: &DatasetRow.changeset/2, required: true)
-    |> cast_embed(:populations, with: &Populations.changeset/2)
-    |> cast_embed(:validations, with: &ConditionRow.changeset/2, required: true)
-    |> cast_embed(:segments, with: &SegmentsRow.changeset/2)
+    |> maybe_cast_embed(:dataset, with: &DatasetRow.changeset/2, required: true)
+    |> maybe_cast_embed(:populations, with: &Populations.changeset/2)
+    |> maybe_cast_embed(:validations, with: &ConditionRow.changeset/2, required: true)
+    |> maybe_cast_embed(:segments, with: &SegmentsRow.changeset/2)
+  end
+
+  defp maybe_cast_embed(%{data: data} = changeset, field, opts) do
+    cs = cast_embed(changeset, field, opts)
+
+    original_value = Map.get(data, field)
+
+    case Changeset.fetch_field(cs, field) do
+      {:changes, ^original_value} -> changeset
+      _ -> cs
+    end
   end
 
   def get_execution_result_info(_implementation, %{type: "FAILED", inserted_at: inserted_at}) do
@@ -366,7 +376,6 @@ defmodule TdDq.Implementations.Implementation do
       :domain_id,
       :id,
       :implementation_key,
-      :implementation_ref,
       :implementation_type,
       :populations,
       :rule_id,

@@ -162,6 +162,14 @@ defmodule TdDq.Implementations do
   defp multi_can(true), do: {:ok, nil}
   defp multi_can(false), do: {:error, false}
 
+  def maybe_update_implementation(%Implementation{} = implementation, params, %Claims{} = claims) do
+    if need_update?(implementation, params) do
+      update_implementation(implementation, params, claims)
+    else
+      {:ok, %{implementation: implementation, error: :implementation_unchanged}}
+    end
+  end
+
   def update_implementation(
         %Implementation{status: status} = implementation,
         params,
@@ -186,6 +194,12 @@ defmodule TdDq.Implementations do
     |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
     |> Repo.transaction()
     |> on_upsert()
+  end
+
+  defp need_update?(implementation, params) do
+    implementation
+    |> Implementation.changeset(params)
+    |> Map.get(:changes) != %{}
   end
 
   defp upsert(multi, changeset, :published, _) do

@@ -29,6 +29,16 @@ defmodule TdDqWeb.ImplementationView do
     }
   end
 
+  def render("show.json", %{implementation: implementation, error: :nothing}),
+    do: render("show.json", %{implementation: implementation})
+
+  def render("show.json", %{implementation: implementation, error: error}) do
+    %{
+      data: render_one(implementation, __MODULE__, "implementation.json"),
+      message: Atom.to_string(error)
+    }
+  end
+
   def render("show.json", %{implementation: implementation}) do
     %{data: render_one(implementation, __MODULE__, "implementation.json")}
   end
@@ -53,7 +63,6 @@ defmodule TdDqWeb.ImplementationView do
       :goal,
       :id,
       :implementation_key,
-      :implementation_ref,
       :implementation_type,
       :inserted_at,
       :links,
@@ -93,7 +102,6 @@ defmodule TdDqWeb.ImplementationView do
       :goal,
       :id,
       :implementation_key,
-      :implementation_ref,
       :implementation_type,
       :inserted_at,
       :links,
