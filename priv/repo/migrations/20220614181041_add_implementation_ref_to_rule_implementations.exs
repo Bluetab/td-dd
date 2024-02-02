@@ -21,7 +21,6 @@ defmodule TdDd.Repo.Migrations.AddImplementationRefToRuleImplementations do
         null: true
       )
     end
-
     execute(@set_implementation_ref, "")
   end
 end

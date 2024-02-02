@@ -2,12 +2,12 @@ defmodule TdDqWeb.Router do
   use TdDqWeb, :router
 
   pipeline :api do
-    plug TdDq.Auth.Pipeline.Unsecure
-    plug :accepts, ["json"]
+    plug(TdDq.Auth.Pipeline.Unsecure)
+    plug(:accepts, ["json"])
   end
 
-  pipeline :api_auth do
-    plug TdDq.Auth.Pipeline.Secure
+  pipeline :api_secure do
+    plug(TdDq.Auth.Pipeline.Secure)
   end
 
   scope "/api/swagger" do
@@ -15,13 +15,13 @@ defmodule TdDqWeb.Router do
   end
 
   scope "/api", TdDqWeb do
-    pipe_through :api
+    pipe_through(:api)
     get("/ping", PingController, :ping)
     post("/echo", EchoController, :echo)
   end
 
   scope "/api", TdDqWeb do
-    pipe_through [:api, :api_auth]
+    pipe_through([:api, :api_secure])
 
     resources "/execution_groups", ExecutionGroupController, except: [:new, :edit] do
       resources("/executions", ExecutionController, only: [:index])
