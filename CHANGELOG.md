@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.1.0] 2023-02-08
+
+### Changed
+
+- [TD-6342] Use td-core Elasticsearch.Document Integer implementation
+- [TD-6306] Allow Catalog View config listing for non-admin users
+
 ## [6.0.0] 2024-01-19
 
 ### Added
