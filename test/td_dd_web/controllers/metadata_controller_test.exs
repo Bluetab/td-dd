@@ -3,6 +3,7 @@ defmodule TdDdWeb.MetadataControllerTest do
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   import Ecto.Query
+  import ExUnit.CaptureLog
   import Mox
 
   alias TdDd.DataStructures
@@ -13,6 +14,7 @@ defmodule TdDdWeb.MetadataControllerTest do
   alias TdDd.Repo
 
   @moduletag sandbox: :shared
+  @protected DataStructures.protected()
 
   setup_all do
     start_supervised!(TdDd.Search.Cluster)
@@ -210,6 +212,49 @@ defmodule TdDdWeb.MetadataControllerTest do
     end
   end
 
+  @tag authentication: [role: "service"]
+  test "protected metadata", %{conn: conn} do
+    insert(:system, external_id: "test1", name: "test1")
+
+    assert conn
+           |> post(Routes.metadata_path(conn, :upload),
+             data_structures: upload("test/fixtures/td5082/structures_protected_metadata.csv")
+           )
+           |> response(:accepted)
+
+    # wait for loader to complete
+    Worker.await(20_000)
+
+    assert %DataStructure{
+             id: id,
+             current_metadata: %{
+               fields: %{
+                 @protected => %{
+                   "mmp1" => "mmp1_value",
+                   "mmp2" => "mmp2_value"
+                 }
+               }
+             }
+           } =
+             DataStructures.get_data_structure_by_external_id("structure_mp")
+             |> Repo.preload(:current_metadata)
+
+    assert %DataStructureVersion{
+             mutable_metadata: %{
+               @protected => %{
+                 "mmp1" => "mmp1_value",
+                 "mmp2" => "mmp2_value"
+               }
+             },
+             metadata: %{
+               @protected => %{
+                 "mp1" => "mp1_value",
+                 "mp2" => "mp2_value"
+               }
+             }
+           } = DataStructures.get_latest_version(id, [:with_protected_metadata])
+  end
+
   describe "td-2520" do
     @tag authentication: [role: "service"]
     test "synchronous load with parent_external_id and external_id", %{conn: conn} do
@@ -257,13 +302,36 @@ defmodule TdDdWeb.MetadataControllerTest do
       assert %{"children" => children} = data
       assert_lists_equal(children, ["Child1", "Child2"], &(&1["name"] == &2))
     end
+
+    @tag authentication: [role: "service"]
+    test "validate_graph", %{conn: conn} do
+      insert(:system, external_id: "test1", name: "test1")
+
+      assert conn
+             |> post(Routes.metadata_path(conn, :upload),
+               data_structures: upload("test/fixtures/td2520/structures2.csv"),
+               data_structure_relations: upload("test/fixtures/td2520/relations2.csv")
+             )
+             |> response(:accepted)
+
+      # wait for loader to complete
+      Worker.await(20_000)
+
+      assert capture_log(fn ->
+               assert %{"message" => "vertex exists: td-2520.fieldchild1"} =
+                        conn
+                        |> post(Routes.metadata_path(conn, :upload),
+                          data_structures: upload("test/fixtures/td2520/structures2.csv"),
+                          data_structure_relations: upload("test/fixtures/td2520/relations2.csv"),
+                          parent_external_id: "td-2520.fieldchild1",
+                          external_id: "td-2520.child1"
+                        )
+                        |> json_response(:unprocessable_entity)
+             end) =~ "vertex exists: td-2520.fieldchild1"
+    end
   end
 
   defp create_source(_) do
     [source: insert(:source)]
-  end
-
-  defp upload(path) do
-    %Plug.Upload{path: path, filename: Path.basename(path)}
   end
 end

@@ -3,12 +3,17 @@ defmodule TdDd.DataStructures.Search.Aggregations do
   Aggregations for elasticsearch
   """
   alias TdCache.TemplateCache
+  alias TdDd.DataStructures.CatalogViewConfigs
   alias TdDd.DataStructures.DataStructureTypes
   alias TdDfLib.Format
 
+  @missing_term_name "_missing"
+
+  def missing_term_name, do: @missing_term_name
+
   def aggregations do
     static_aggs = %{
-      "system.name.raw" => %{terms: %{field: "system.name.raw", size: 50}},
+      "system.name.raw" => %{terms: %{field: "system.name.raw", size: 500}},
       "group.raw" => %{terms: %{field: "group.raw", size: 50}},
       "type.raw" => %{terms: %{field: "type.raw", size: 50}},
       "confidential.raw" => %{terms: %{field: "confidential.raw"}},
@@ -31,24 +36,52 @@ defmodule TdDd.DataStructures.Search.Aggregations do
   end
 
   defp filter_aggs do
-    DataStructureTypes.metadata_filters()
-    |> Map.values()
-    |> Enum.flat_map(& &1)
-    |> Map.new(fn filter -> {"metadata.#{filter}", %{terms: %{field: "_filters.#{filter}"}}} end)
+    catalog_view_configs_filters =
+      CatalogViewConfigs.list()
+      |> Enum.filter(&(&1.field_type == "note"))
+      |> Enum.map(fn
+        %{field_type: "note", field_name: field_name} ->
+          {"note.#{field_name}",
+           %{
+             terms: %{
+               field: "note.#{field_name}.raw",
+               missing: @missing_term_name
+             }
+           }}
+      end)
+      |> Map.new()
+
+    data_structure_types_filters =
+      DataStructureTypes.metadata_filters()
+      |> Map.values()
+      |> List.flatten()
+      |> Enum.uniq()
+      |> Map.new(fn filter ->
+        {"metadata.#{filter}",
+         %{terms: %{field: "_filters.#{filter}", missing: @missing_term_name}}}
+      end)
+
+    Map.merge(catalog_view_configs_filters, data_structure_types_filters)
   end
 
   defp content_terms(%{content: content}) do
     content
     |> Format.flatten_content_fields()
     |> Enum.flat_map(fn
-      %{"name" => field, "type" => type} when type in ["domain", "system"] ->
+      %{"name" => field, "type" => "domain"} ->
+        [{field, %{terms: %{field: "note.#{field}", size: 50}, meta: %{type: "domain"}}}]
+
+      %{"name" => field, "type" => "hierarchy"} ->
+        [{field, %{terms: %{field: "note.#{field}.raw"}, meta: %{type: "hierarchy"}}}]
+
+      %{"name" => field, "type" => "system"} ->
         [{field, nested_agg(field)}]
 
       %{"name" => field, "type" => "user"} ->
-        [{field, %{terms: %{field: "latest_note.#{field}.raw", size: 50}}}]
+        [{field, %{terms: %{field: "note.#{field}.raw", size: 50}}}]
 
       %{"name" => field, "values" => %{}} ->
-        [{field, %{terms: %{field: "latest_note.#{field}.raw"}}}]
+        [{field, %{terms: %{field: "note.#{field}.raw"}}}]
 
       _ ->
         []
@@ -57,8 +90,8 @@ defmodule TdDd.DataStructures.Search.Aggregations do
 
   defp nested_agg(field) do
     %{
-      nested: %{path: "latest_note.#{field}"},
-      aggs: %{distinct_search: %{terms: %{field: "latest_note.#{field}.external_id.raw"}}}
+      nested: %{path: "note.#{field}"},
+      aggs: %{distinct_search: %{terms: %{field: "note.#{field}.external_id.raw"}}}
     }
   end
 end

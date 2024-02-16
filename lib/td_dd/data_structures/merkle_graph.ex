@@ -86,10 +86,11 @@ defmodule TdDd.DataStructures.MerkleGraph do
   """
   def new(structures, relations) do
     graph = Graph.new([], acyclic: true)
-    graph = Enum.reduce(structures, graph, &add_structure/2)
-    graph = Enum.reduce(relations, graph, &add_relation/2)
-    graph = propagate_hashes(graph)
-    {:ok, graph}
+
+    with {:ok, graph} <- Enum.reduce_while(structures, {:ok, graph}, &add_structure/2),
+         {:ok, graph} <- Enum.reduce_while(relations, {:ok, graph}, &add_relation/2) do
+      {:ok, propagate_hashes(graph)}
+    end
   end
 
   @doc """
@@ -116,30 +117,28 @@ defmodule TdDd.DataStructures.MerkleGraph do
   def add(graph, {[], []}), do: {:ok, graph}
 
   def add(graph, {structures, relations}) do
-    case validate_graph(graph, structures) do
-      :ok ->
-        graph = Enum.reduce(structures, graph, &add_structure/2)
-        graph = Enum.reduce(relations, graph, &add_relation/2)
+    with :ok <- validate_graph(graph, structures),
+         {:ok, graph} <- Enum.reduce_while(structures, {:ok, graph}, &add_structure/2),
+         {:ok, graph} <- Enum.reduce_while(relations, {:ok, graph}, &add_relation/2) do
+      # identify vertices to be refreshed
+      to_refresh =
+        structures
+        |> Enum.reject(fn {_, record} -> Map.has_key?(record, :ghash) end)
+        |> Enum.map(fn {id, _} -> id end)
 
-        # identify vertices to be refreshed
-        to_refresh =
-          structures
-          |> Enum.reject(fn {_, record} -> Map.has_key?(record, :ghash) end)
-          |> Enum.map(fn {id, _} -> id end)
+      # update their hashes
+      graph =
+        graph
+        |> bottom_up()
+        |> Enum.filter(&Enum.member?(to_refresh, &1))
+        |> Enum.reduce(graph, &propagate_hashes/2)
 
-        # update their hashes
-        graph =
-          graph
-          |> bottom_up()
-          |> Enum.filter(&Enum.member?(to_refresh, &1))
-          |> Enum.reduce(graph, &propagate_hashes/2)
-
-        {:ok, graph}
+      {:ok, graph}
     end
   end
 
   @doc """
-  Reads a record with a given external_id from a graph, including it's hashes in the
+  Reads a record with a given external_id from a graph, including its hashes in the
   resulting struct.
   """
   def get(graph, external_id) do
@@ -162,9 +161,10 @@ defmodule TdDd.DataStructures.MerkleGraph do
 
   defp validate_nil(nil), do: :ok
 
-  defp validate_nil({external_id, _labels}) do
-    Logger.warn("#{external_id} :vertex_exists")
-    raise ":vertex_exists"
+  defp validate_nil(%Graph.Vertex{id: external_id}) do
+    message = "vertex exists: #{external_id}"
+    Logger.warn(message)
+    {:error, message}
   end
 
   defp propagate_hashes(g) do
@@ -218,6 +218,10 @@ defmodule TdDd.DataStructures.MerkleGraph do
     |> Hasher.hash()
   end
 
+  defp add_structure(structure, {:ok, %Graph{} = graph}) do
+    add_structure(structure, graph)
+  end
+
   defp add_structure({external_id, %{} = struct}, graph) do
     labels =
       struct
@@ -236,8 +240,14 @@ defmodule TdDd.DataStructures.MerkleGraph do
     |> add_vertex(graph, record: structure, hash: hash)
   end
 
+  defp add_relation(ids, {:ok, %Graph{} = graph}) do
+    add_relation(ids, graph)
+  end
+
   defp add_relation(%{parent_external_id: id, child_external_id: id}, _graph) do
-    raise("reflexive relations are not permitted (#{id})")
+    message = "reflexive relations are not permitted (#{id})"
+    Logger.warn(message)
+    {:halt, {:error, message}}
   end
 
   defp add_relation(
@@ -248,14 +258,16 @@ defmodule TdDd.DataStructures.MerkleGraph do
          },
          graph
        ) do
-    Graph.add_edge(graph, parent, child, relation_type_id: relation_type_id)
+    {:cont, {:ok, Graph.add_edge(graph, parent, child, relation_type_id: relation_type_id)}}
   end
 
   defp add_vertex(id, graph, labels) do
     if Graph.has_vertex?(graph, id) do
-      raise("duplicate #{id}")
+      message = "duplicate #{id}"
+      Logger.warn(message)
+      {:halt, {:error, message}}
     else
-      Graph.add_vertex(graph, id, labels)
+      {:cont, {:ok, Graph.add_vertex(graph, id, labels)}}
     end
   end
 

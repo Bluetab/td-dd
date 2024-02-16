@@ -2,8 +2,6 @@ defmodule TdDdWeb.SystemController do
   use TdDdWeb, :controller
   use PhoenixSwagger
 
-  import Canada, only: [can?: 2]
-
   alias TdDd.Systems
   alias TdDd.Systems.System
   alias TdDd.Systems.SystemSearch
@@ -45,7 +43,7 @@ defmodule TdDdWeb.SystemController do
 
   def create(conn, %{"system" => params}) do
     with claims <- conn.assigns[:current_resource],
-         {:can, true} <- {:can, can?(claims, create(System))},
+         :ok <- Bodyguard.permit(Systems, :create, claims, System),
          {:ok, %{system: system}} <- Systems.create_system(params, claims) do
       conn
       |> put_status(:created)
@@ -90,7 +88,7 @@ defmodule TdDdWeb.SystemController do
   def update(conn, %{"id" => id, "system" => params}) do
     with claims <- conn.assigns[:current_resource],
          {:ok, system} <- Systems.get_system(id),
-         {:can, true} <- {:can, can?(claims, update(system))},
+         :ok <- Bodyguard.permit(Systems, :update, claims, system),
          {:ok, %{system: updated_system}} <- Systems.update_system(system, params, claims) do
       render(conn, "show.json", system: updated_system)
     end
@@ -112,7 +110,7 @@ defmodule TdDdWeb.SystemController do
   def delete(conn, %{"id" => id}) do
     with claims <- conn.assigns[:current_resource],
          {:ok, system} <- Systems.get_system(id),
-         {:can, true} <- {:can, can?(claims, delete(system))},
+         :ok <- Bodyguard.permit(Systems, :delete, claims, system),
          {:ok, %{system: _deleted_system}} <- Systems.delete_system(system, claims) do
       send_resp(conn, :no_content, "")
     end

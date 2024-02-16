@@ -87,6 +87,19 @@ defmodule TdDq.Search.HelpersTest do
       assert result_text == "quality_result.over_goal"
     end
 
+    test "percentage, without records" do
+      result_map = %{
+        date: ~U[2021-08-06 01:34:00Z],
+        records: 0
+      }
+
+      result_text =
+        Helpers.with_result_text(result_map, 0, 0, "percentage")
+        |> Map.get(:result_text)
+
+      assert result_text == "quality_result.empty_dataset"
+    end
+
     test "deviation, under_minimum" do
       result_map = %{
         date: ~U[2021-08-06 01:34:00Z],
@@ -152,6 +165,19 @@ defmodule TdDq.Search.HelpersTest do
       assert result_text == "quality_result.over_goal"
     end
 
+    test "deviation without records" do
+      result_map = %{
+        date: ~U[2021-08-06 01:34:00Z],
+        records: 0
+      }
+
+      result_text =
+        Helpers.with_result_text(result_map, 0, 0, "deviation")
+        |> Map.get(:result_text)
+
+      assert result_text == "quality_result.empty_dataset"
+    end
+
     test "errors_number, under_minimum" do
       result_map = %{
         date: ~U[2021-08-06 01:34:00Z],
@@ -215,6 +241,19 @@ defmodule TdDq.Search.HelpersTest do
         |> Map.get(:result_text)
 
       assert result_text == "quality_result.over_goal"
+    end
+
+    test "errors_number without records" do
+      result_map = %{
+        date: ~U[2021-08-06 01:34:00Z],
+        records: 0
+      }
+
+      result_text =
+        Helpers.with_result_text(result_map, 0, 0, "errors_number")
+        |> Map.get(:result_text)
+
+      assert result_text == "quality_result.empty_dataset"
     end
   end
 end

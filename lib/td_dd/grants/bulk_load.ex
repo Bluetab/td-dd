@@ -3,8 +3,6 @@ defmodule TdDd.Grants.BulkLoad do
   Bulk load grants.
   """
 
-  import Canada, only: [can?: 2]
-
   alias Ecto.Multi
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
@@ -28,11 +26,8 @@ defmodule TdDd.Grants.BulkLoad do
     |> Multi.run(:ids, fn _, _ -> bulk_insert_grants(claims, grants) end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{ids: ids}} ->
-        {:ok, %{ids: ids}}
-
-      {:error, _, error, _} ->
-        {:error, error}
+      {:ok, %{ids: ids}} -> {:ok, %{ids: ids}}
+      {:error, _, error, _} -> {:error, error}
     end
     |> do_reindex()
   end
@@ -62,19 +57,14 @@ defmodule TdDd.Grants.BulkLoad do
     with {:data_structure, %DataStructure{} = data_structure} <-
            {:data_structure,
             DataStructures.get_data_structure_by_external_id(data_structure_external_id)},
-         {:can, true} <- {:can, can?(claims, create_grant(data_structure))},
+         :ok <- Bodyguard.permit(DataStructures, :manage_grants, claims, data_structure),
          {:ok, %{grant: %{id: id}}} <-
            Grants.create_grant(grant_params, data_structure, claims, true) do
       reduce_insert_grant(tail, claims, acc ++ [id])
     else
-      {:data_structure, nil} ->
-        {:error, {:not_found, "DataStructure"}}
-
-      {:error, :grant, err, _} ->
-        {:error, err}
-
-      error ->
-        {:error, error}
+      {:data_structure, nil} -> {:error, {:not_found, "DataStructure"}}
+      {:error, :grant, error, _} -> {:error, error}
+      {:error, error} -> {:error, error}
     end
   end
 

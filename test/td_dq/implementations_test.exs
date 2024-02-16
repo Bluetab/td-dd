@@ -4,15 +4,23 @@ defmodule TdDq.ImplementationsTest do
   import TdDd.TestOperators
 
   alias Ecto.Changeset
+  alias TdCache.ImplementationCache
+  alias TdCache.Redix
+  alias TdCache.Redix.Stream
+  alias TdDd.Search.MockIndexWorker
   alias TdDq.Implementations
   alias TdDq.Implementations.Implementation
   alias TdDq.Implementations.ImplementationStructure
+  alias TdDq.Rules.RuleResults
 
   @moduletag sandbox: :shared
+  @stream TdCache.Audit.stream()
 
   setup do
+    on_exit(fn -> Redix.del!(@stream) end)
+
     start_supervised!(TdDq.MockRelationCache)
-    start_supervised!(TdDd.Search.MockIndexWorker)
+    start_supervised!(MockIndexWorker)
     start_supervised!(TdDq.Cache.RuleLoader)
     start_supervised!(TdDd.Search.StructureEnricher)
     %{id: domain_id} = CacheHelpers.insert_domain()
@@ -31,7 +39,7 @@ defmodule TdDq.ImplementationsTest do
     test "returns all implementations" do
       implementation = insert(:implementation)
 
-      assert Implementations.list_implementations() <|> [implementation]
+      assert Implementations.list_implementations() ||| [implementation]
     end
   end
 
@@ -115,14 +123,14 @@ defmodule TdDq.ImplementationsTest do
         rule: rule,
         implementation_key: "ri11",
         dataset: [dataset_row],
-        validations: [validation_row]
+        validation: [%{conditions: [validation_row]}]
       )
 
       insert(:implementation,
         rule: rule,
         implementation_key: "ri12",
         dataset: [dataset_row],
-        validations: [validation_row]
+        validation: [%{conditions: [validation_row]}]
       )
 
       assert length(Implementations.list_implementations(%{"structure_id" => structure_id})) ==
@@ -146,6 +154,26 @@ defmodule TdDq.ImplementationsTest do
                Implementations.list_implementations(%{}, enrich: :source)
 
       assert %{source: ^source} = content
+    end
+  end
+
+  describe "get_implementations_ref" do
+    test "return implementation list with implementation_ref relation" do
+      %{id: id1} = insert(:implementation)
+      %{id: id2} = insert(:implementation)
+      %{id: id3} = insert(:implementation, implementation_ref: id2)
+      %{id: id4} = insert(:implementation)
+      %{id: id5} = insert(:implementation, implementation_ref: id4)
+
+      [id1, id2, id3, id4, id5]
+      |> Implementations.get_implementations_ref()
+      |> assert_lists_equal([
+        [id1, id1],
+        [id2, id2],
+        [id3, id2],
+        [id4, id4],
+        [id5, id4]
+      ])
     end
   end
 
@@ -192,8 +220,14 @@ defmodule TdDq.ImplementationsTest do
         updated_at: DateTime.utc_now()
       })
 
-      %{id: id} = insert(:implementation)
-      CacheHelpers.insert_link(id, "implementation", "business_concept", concept_id)
+      %{id: id, implementation_ref: implementation_ref} = insert(:implementation)
+
+      CacheHelpers.insert_link(
+        implementation_ref,
+        "implementation_ref",
+        "business_concept",
+        concept_id
+      )
 
       assert %{links: links} = Implementations.get_implementation!(id, enrich: [:links])
       string_concept_id = Integer.to_string(concept_id)
@@ -207,30 +241,33 @@ defmodule TdDq.ImplementationsTest do
     end
   end
 
-  describe "get_implementation_by_key/1" do
-    test "returns the implementation with given implementation key" do
+  describe "get_published_implementation_by_key/2" do
+    test "returns the implementation with given implementation key with status published" do
       %{implementation_key: implementation_key} =
-        implementation = insert(:implementation, implementation_key: "My implementation key")
+        implementation =
+        insert(:implementation, implementation_key: "My implementation key", status: :published)
 
-      assert Implementations.get_implementation_by_key!(implementation_key)
-             <~> implementation
+      assert Implementations.get_published_implementation_by_key(implementation_key)
+             <~> {:ok, implementation}
     end
 
-    test "returns the implementation with executable flag" do
-      %{implementation_key: implementation_key} = insert(:implementation)
-      assert %{executable: true} = Implementations.get_implementation_by_key!(implementation_key)
+    test "returns the implementation with executable flag " do
+      %{implementation_key: implementation_key} = insert(:implementation, status: :published)
+
+      assert {:ok, %{executable: true}} =
+               Implementations.get_published_implementation_by_key(implementation_key)
     end
 
-    test "raises if the implementation with given implementation key has been soft deleted" do
+    test "not found if the implementation with given implementation key has been deprecated" do
       %{implementation_key: implementation_key} =
         insert(:implementation,
           implementation_key: "My implementation key",
-          deleted_at: DateTime.utc_now()
+          deleted_at: DateTime.utc_now(),
+          status: :deprecated
         )
 
-      assert_raise Ecto.NoResultsError, fn ->
-        Implementations.get_implementation_by_key!(implementation_key)
-      end
+      assert {:error, :not_found} =
+               Implementations.get_published_implementation_by_key(implementation_key)
     end
   end
 
@@ -240,12 +277,13 @@ defmodule TdDq.ImplementationsTest do
         string_params_for(:implementation, rule_id: rule.id)
         |> Map.delete("domain_id")
 
-      claims = build(:dq_claims)
+      claims = build(:claims)
 
       assert {:ok, %{implementation: implementation}} =
                Implementations.create_implementation(rule, params, claims)
 
       assert implementation.rule_id == params["rule_id"]
+      assert implementation.implementation_ref == implementation.id
     end
 
     test "with valid data creates a implementation with rule domain_id", %{rule: rule} do
@@ -253,13 +291,14 @@ defmodule TdDq.ImplementationsTest do
         string_params_for(:implementation, rule_id: rule.id)
         |> Map.delete("domain_id")
 
-      claims = build(:dq_claims)
+      claims = build(:claims)
 
       assert {:ok, %{implementation: implementation}} =
                Implementations.create_implementation(rule, params, claims)
 
       assert implementation.rule_id == params["rule_id"]
       assert implementation.domain_id == rule.domain_id
+      assert implementation.implementation_ref == implementation.id
     end
 
     test "with duplicated draft implementation key returns an error", %{rule: rule} do
@@ -272,13 +311,11 @@ defmodule TdDq.ImplementationsTest do
           implementation_key: impl.implementation_key
         )
 
-      claims = build(:dq_claims)
+      claims = build(:claims)
 
       assert {:error, :implementation,
-              %{valid?: false, errors: [implementation_key: {"duplicated", constraint}]},
+              %{valid?: false, errors: [implementation_key: {"duplicated", []}]},
               _} = Implementations.create_implementation(rule, params, claims)
-
-      assert "draft_implementation_key_index" = constraint[:constraint_name]
     end
 
     test "with duplicated pending_approval implementation key returns an error", %{rule: rule} do
@@ -292,13 +329,11 @@ defmodule TdDq.ImplementationsTest do
           status: "pending_approval"
         )
 
-      claims = build(:dq_claims)
+      claims = build(:claims)
 
       assert {:error, :implementation,
-              %{valid?: false, errors: [implementation_key: {"duplicated", constraint}]},
+              %{valid?: false, errors: [implementation_key: {"duplicated", _}]},
               _} = Implementations.create_implementation(rule, params, claims)
-
-      assert "draft_implementation_key_index" = constraint[:constraint_name]
     end
 
     test "with duplicated rejected implementation key returns an error", %{rule: rule} do
@@ -312,13 +347,11 @@ defmodule TdDq.ImplementationsTest do
           status: "rejected"
         )
 
-      claims = build(:dq_claims)
+      claims = build(:claims)
 
       assert {:error, :implementation,
-              %{valid?: false, errors: [implementation_key: {"duplicated", constraint}]},
+              %{valid?: false, errors: [implementation_key: {"duplicated", _}]},
               _} = Implementations.create_implementation(rule, params, claims)
-
-      assert "draft_implementation_key_index" = constraint[:constraint_name]
     end
 
     test "with duplicated published draft implementation key returns an error", %{rule: rule} do
@@ -332,13 +365,11 @@ defmodule TdDq.ImplementationsTest do
           status: "published"
         )
 
-      claims = build(:dq_claims)
+      claims = build(:claims)
 
       assert {:error, :implementation,
-              %{valid?: false, errors: [implementation_key: {"duplicated", constraint}]},
+              %{valid?: false, errors: [implementation_key: {"duplicated", _}]},
               _} = Implementations.create_implementation(rule, params, claims)
-
-      assert "published_implementation_key_index" = constraint[:constraint_name]
     end
 
     test "can be more than one deprecated implementation", %{rule: rule} do
@@ -352,7 +383,7 @@ defmodule TdDq.ImplementationsTest do
           status: "deprecated"
         )
 
-      claims = build(:dq_claims)
+      claims = build(:claims)
 
       assert {:ok, %{implementation: _implementation}} =
                Implementations.create_implementation(rule, params, claims)
@@ -361,7 +392,7 @@ defmodule TdDq.ImplementationsTest do
     test "with invalid keywords in raw content of raw implementation returns error", %{rule: rule} do
       raw_content = build(:raw_content, validations: "drop cliente")
       params = string_params_for(:raw_implementation, raw_content: raw_content)
-      claims = build(:dq_claims)
+      claims = build(:claims)
 
       assert {:error, :implementation, %Changeset{valid?: false} = changeset, _} =
                Implementations.create_implementation(rule, params, claims)
@@ -377,7 +408,7 @@ defmodule TdDq.ImplementationsTest do
       %{id: rule_id, domain_id: domain_id} = rule
 
       params = string_params_for(:raw_implementation, rule_id: rule_id, domain_id: domain_id)
-      claims = build(:dq_claims, role: "admin")
+      claims = build(:claims, role: "admin")
 
       assert {:ok, %{implementation: implementation}} =
                Implementations.create_implementation(rule, params, claims)
@@ -393,7 +424,7 @@ defmodule TdDq.ImplementationsTest do
           domain_id: rule.domain_id
         )
 
-      claims = build(:dq_claims, role: "admin")
+      claims = build(:claims, role: "admin")
 
       assert {:ok, %{implementation: implementation}} =
                Implementations.create_implementation(rule, params, claims)
@@ -409,17 +440,44 @@ defmodule TdDq.ImplementationsTest do
 
       params =
         string_params_for(:implementation,
-          validations: [validation],
+          validation: [[validation]],
           rule_id: rule.id,
           domain_id: rule.domain_id
         )
 
-      claims = build(:dq_claims)
+      claims = build(:claims)
 
       assert {:ok, %{implementation: implementation}} =
                Implementations.create_implementation(rule, params, claims)
 
       assert implementation.rule_id == params["rule_id"]
+    end
+
+    test "with valid data with reference data creates a implementation", %{rule: rule} do
+      operator = build(:operator, name: "eq", value_type: "field")
+
+      validation_value = %{
+        id: 1,
+        name: "foo_reference_dataset",
+        parent_index: 2,
+        type: "reference_dataset_field"
+      }
+
+      validation = build(:condition_row, value: [validation_value], operator: operator)
+
+      params =
+        string_params_for(:implementation,
+          validation: [[validation]],
+          rule_id: rule.id,
+          domain_id: rule.domain_id
+        )
+
+      claims = build(:claims)
+
+      assert {:ok, %{implementation: %{validation: [%{conditions: [%{value: [value]}]}]}}} =
+               Implementations.create_implementation(rule, params, claims)
+
+      assert [[%{"value" => [^value]}]] = params["validation"]
     end
 
     test "with population in validations", %{rule: rule} do
@@ -429,19 +487,29 @@ defmodule TdDq.ImplementationsTest do
         "value" => value
       } = condition = string_params_for(:condition_row)
 
-      validations = [string_params_for(:condition_row, population: [condition])]
+      validation = [[string_params_for(:condition_row, population: [condition])]]
 
       params =
         string_params_for(:implementation,
           rule_id: rule.id,
-          validations: validations,
+          validation: validation,
           domain_id: rule.domain_id
         )
 
-      claims = build(:dq_claims, role: "admin")
+      claims = build(:claims, role: "admin")
 
-      assert {:ok, %{implementation: %Implementation{validations: [%{population: [clause]}]}}} =
-               Implementations.create_implementation(rule, params, claims)
+      assert {:ok,
+              %{
+                implementation: %Implementation{
+                  validation: [
+                    %{
+                      conditions: [
+                        %{population: [clause]}
+                      ]
+                    }
+                  ]
+                }
+              }} = Implementations.create_implementation(rule, params, claims)
 
       assert %{
                operator: %{name: ^name, value_type: ^type},
@@ -457,12 +525,18 @@ defmodule TdDq.ImplementationsTest do
       params =
         string_params_for(:implementation,
           dataset: [%{structure: %{id: dataset_data_structure_id}}],
-          validations: [%{build(:condition_row) | structure: %{id: validation_data_structure_id}}],
+          validation: [
+            %{
+              conditions: [
+                %{build(:condition_row) | structure: %{id: validation_data_structure_id}}
+              ]
+            }
+          ],
           rule_id: rule.id,
           domain_id: rule.domain_id
         )
 
-      claims = build(:dq_claims, role: "admin")
+      claims = build(:claims, role: "admin")
 
       assert {:ok, %{implementation: %{id: id}}} =
                Implementations.create_implementation(rule, params, claims)
@@ -498,13 +572,262 @@ defmodule TdDq.ImplementationsTest do
           }
         )
 
-      claims = build(:dq_claims, role: "admin")
+      claims = build(:claims, role: "admin")
 
       assert {:ok, %{implementation: %{id: id}}} =
                Implementations.create_implementation(rule, params, claims)
 
       assert %Implementation{data_structures: [%{data_structure_id: ^data_structure_id}]} =
                Implementations.get_implementation!(id, preload: :data_structures)
+    end
+  end
+
+  describe "enrich_implementation_structures/1" do
+    test "enriches implementation dataset structures" do
+      %{data_structure_id: data_structure_id, name: structure_name} =
+        insert(:data_structure_version)
+
+      implementation =
+        insert(:implementation,
+          dataset: [%{structure: %{id: data_structure_id}}]
+        )
+
+      assert %{dataset: [%{structure: %{name: ^structure_name}}]} =
+               Implementations.enrich_implementation_structures(implementation)
+    end
+
+    test "enriches implementation dataset clauses structures" do
+      %{data_structure_id: data_structure_id, name: structure_name} =
+        insert(:data_structure_version)
+
+      %{data_structure_id: left_data_structure_id, name: left_structure_name} =
+        insert(:data_structure_version)
+
+      %{data_structure_id: right_data_structure_id, name: right_structure_name} =
+        insert(:data_structure_version)
+
+      implementation =
+        insert(:implementation,
+          dataset: [
+            %{
+              structure: %{id: data_structure_id},
+              clauses: [
+                %{left: %{id: left_data_structure_id}, right: %{id: right_data_structure_id}}
+              ]
+            }
+          ]
+        )
+
+      assert %{
+               dataset: [
+                 %{
+                   structure: %{name: ^structure_name},
+                   clauses: [
+                     %{left: %{name: ^left_structure_name}, right: %{name: ^right_structure_name}}
+                   ]
+                 }
+               ]
+             } = Implementations.enrich_implementation_structures(implementation)
+    end
+
+    test "enriches implementation dataset with reference_dataset" do
+      %{id: id, name: dataset_name} = insert(:reference_dataset)
+
+      implementation =
+        insert(:implementation,
+          dataset: [%{structure: %{id: id, type: "reference_dataset"}}]
+        )
+
+      assert %{dataset: [%{structure: %{name: ^dataset_name, type: "reference_dataset"}}]} =
+               Implementations.enrich_implementation_structures(implementation)
+    end
+
+    test "implementation with invalid reference_dataset will simply return the invalid structure withou enriching" do
+      implementation =
+        insert(:implementation,
+          dataset: [%{structure: %{id: 1, type: "reference_dataset"}}]
+        )
+
+      assert %{dataset: [%{structure: %{type: "reference_dataset"}}]} =
+               Implementations.enrich_implementation_structures(implementation)
+    end
+
+    test "enriches implementation dataset clauses with reference_dataset_field" do
+      %{id: id, name: dataset_name} = insert(:reference_dataset)
+
+      %{data_structure_id: left_data_structure_id, name: left_structure_name} =
+        insert(:data_structure_version)
+
+      implementation =
+        insert(:implementation,
+          dataset: [
+            %{
+              structure: %{id: id, type: "reference_dataset"},
+              clauses: [
+                %{
+                  left: %{id: left_data_structure_id},
+                  right: %{name: "reference_dataset_field_name", type: "reference_dataset_field"}
+                }
+              ]
+            }
+          ]
+        )
+
+      assert %{
+               dataset: [
+                 %{
+                   structure: %{name: ^dataset_name, type: "reference_dataset"},
+                   clauses: [
+                     %{
+                       left: %{name: ^left_structure_name},
+                       right: %{
+                         name: "reference_dataset_field_name",
+                         type: "reference_dataset_field"
+                       }
+                     }
+                   ]
+                 }
+               ]
+             } = Implementations.enrich_implementation_structures(implementation)
+    end
+
+    test "enriches implementation validations" do
+      %{data_structure_id: data_structure_id, name: structure_name} =
+        insert(:data_structure_version)
+
+      implementation =
+        insert(:implementation,
+          validation: [
+            %{conditions: [%{build(:condition_row) | structure: %{id: data_structure_id}}]}
+          ]
+        )
+
+      assert %{validation: [%{conditions: [%{structure: %{name: ^structure_name}}]}]} =
+               Implementations.enrich_implementation_structures(implementation)
+    end
+
+    test "enriches implementation validations with reference_dataset_field" do
+      implementation =
+        insert(:implementation,
+          validation: [
+            %{
+              validations: [
+                %{
+                  build(:condition_row)
+                  | structure: %{
+                      name: "reference_dataset_field_name",
+                      type: "reference_dataset_field"
+                    }
+                }
+              ]
+            }
+          ]
+        )
+
+      assert %{
+               validation: [
+                 %{
+                   validations: [
+                     %{
+                       structure: %{
+                         name: "reference_dataset_field_name",
+                         type: "reference_dataset_field"
+                       }
+                     }
+                   ]
+                 }
+               ]
+             } = Implementations.enrich_implementation_structures(implementation)
+    end
+
+    test "implementation with invalida reference_dataset_field validation value
+          will simply return the invalid structure withou enriching" do
+      operator = build(:operator, name: "eq", value_type: "field")
+
+      validation_value = %{
+        "id" => 1,
+        "name" => "foo_reference_dataset",
+        "parent_index" => 2,
+        "type" => "reference_dataset_field"
+      }
+
+      condition = build(:condition_row, value: [validation_value], operator: operator)
+
+      implementation =
+        insert(
+          :implementation,
+          dataset: [%{structure: %{id: 1, type: "reference_dataset"}}],
+          populations: [],
+          segments: [],
+          validation: [
+            %{conditions: [condition]}
+          ]
+        )
+
+      assert %{validation: [%{conditions: [%{value: [_]}]}]} =
+               Implementations.enrich_implementation_structures(implementation)
+    end
+
+    test "enriches implementation populations" do
+      %{data_structure_id: data_structure_id, name: structure_name} =
+        insert(:data_structure_version)
+
+      implementation =
+        insert(:implementation,
+          populations: [
+            %{conditions: [%{build(:condition_row) | structure: %{id: data_structure_id}}]}
+          ]
+        )
+
+      assert %{populations: [%{conditions: [%{structure: %{name: ^structure_name}}]}]} =
+               Implementations.enrich_implementation_structures(implementation)
+    end
+
+    test "enriches implementation populations with reference_dataset_field" do
+      implementation =
+        insert(:implementation,
+          populations: [
+            %{
+              population: [
+                %{
+                  build(:condition_row)
+                  | structure: %{
+                      name: "reference_dataset_field_name",
+                      type: "reference_dataset_field"
+                    }
+                }
+              ]
+            }
+          ]
+        )
+
+      assert %{
+               populations: [
+                 %{
+                   population: [
+                     %{
+                       structure: %{
+                         name: "reference_dataset_field_name",
+                         type: "reference_dataset_field"
+                       }
+                     }
+                   ]
+                 }
+               ]
+             } = Implementations.enrich_implementation_structures(implementation)
+    end
+
+    test "enriches implementation segments" do
+      %{data_structure_id: data_structure_id, name: structure_name} =
+        insert(:data_structure_version)
+
+      implementation =
+        insert(:implementation,
+          segments: [%{structure: %{id: data_structure_id}}]
+        )
+
+      assert %{segments: [%{structure: %{name: ^structure_name}}]} =
+               Implementations.enrich_implementation_structures(implementation)
     end
   end
 
@@ -611,6 +934,17 @@ defmodule TdDq.ImplementationsTest do
                Implementations.valid_dataset_implementation_structures(implementation)
     end
 
+    test "reference_dataset structures will be filtered" do
+      %{id: data_structure_id} = insert(:data_structure)
+
+      implementation =
+        insert(:implementation,
+          dataset: [%{structure: %{id: data_structure_id, type: "reference_dataset"}}]
+        )
+
+      assert [] == Implementations.valid_dataset_implementation_structures(implementation)
+    end
+
     test "invalid structure will be filtered" do
       implementation =
         insert(:implementation,
@@ -646,11 +980,33 @@ defmodule TdDq.ImplementationsTest do
 
       implementation =
         insert(:implementation,
-          validations: [%{build(:condition_row) | structure: %{id: data_structure_id}}]
+          validation: [
+            %{conditions: [%{build(:condition_row) | structure: %{id: data_structure_id}}]}
+          ]
         )
 
       assert [%{id: ^data_structure_id}] =
                Implementations.valid_validation_implementation_structures(implementation)
+    end
+
+    test "filters reference_dataset_field structures" do
+      %{id: data_structure_id} = insert(:data_structure)
+
+      implementation =
+        insert(:implementation,
+          validation: [
+            %{
+              validations: [
+                %{
+                  build(:condition_row)
+                  | structure: %{id: data_structure_id, type: "reference_dataset_field"}
+                }
+              ]
+            }
+          ]
+        )
+
+      assert [] = Implementations.valid_validation_implementation_structures(implementation)
     end
 
     test "returns validation field structures for raw implementatation" do
@@ -744,7 +1100,7 @@ defmodule TdDq.ImplementationsTest do
 
   describe "create_ruleless_implementation/3" do
     setup do
-      [claims: build(:dq_claims, role: "admin")]
+      [claims: build(:claims, role: "admin")]
     end
 
     test "with valid data creates a implementation", %{claims: claims} do
@@ -781,7 +1137,7 @@ defmodule TdDq.ImplementationsTest do
   describe "update_implementation/3" do
     test "with valid data updates the implementation" do
       implementation = insert(:implementation)
-      claims = build(:dq_claims)
+      claims = build(:claims)
 
       validations = [
         %{
@@ -796,7 +1152,7 @@ defmodule TdDq.ImplementationsTest do
 
       update_attrs =
         %{
-          validations: validations
+          validation: [%{conditions: validations}]
         }
         |> Map.Helpers.stringify_keys()
 
@@ -809,21 +1165,71 @@ defmodule TdDq.ImplementationsTest do
       assert updated_implementation.implementation_key ==
                implementation.implementation_key
 
-      assert updated_implementation.validations == [
-               %TdDq.Implementations.ConditionRow{
-                 operator: %TdDq.Implementations.Operator{
-                   name: "gt",
-                   value_type: "timestamp"
-                 },
-                 structure: %TdDq.Implementations.Structure{id: 12_554},
-                 value: [%{"raw" => "2019-12-30 05:35:00"}]
+      assert updated_implementation.validation == [
+               %TdDq.Implementations.Conditions{
+                 conditions: [
+                   %TdDq.Implementations.ConditionRow{
+                     operator: %TdDq.Implementations.Operator{
+                       name: "gt",
+                       value_type: "timestamp"
+                     },
+                     structure: %TdDq.Implementations.Structure{id: 12_554},
+                     value: [%{"raw" => "2019-12-30 05:35:00"}]
+                   }
+                 ]
+               }
+             ]
+    end
+
+    test "update a implementations when it is a rejected state" do
+      implementation = insert(:implementation, status: :rejected)
+      claims = build(:claims)
+
+      validations = [
+        %{
+          operator: %{
+            name: "gt",
+            value_type: "timestamp"
+          },
+          structure: %{id: 12_554},
+          value: [%{raw: "2019-12-30 05:35:00"}]
+        }
+      ]
+
+      update_attrs =
+        %{
+          validation: [%{conditions: validations}]
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert {:ok, %{implementation: updated_implementation}} =
+               Implementations.update_implementation(implementation, update_attrs, claims)
+
+      assert %Implementation{} = updated_implementation
+      assert updated_implementation.rule_id == implementation.rule_id
+
+      assert updated_implementation.implementation_key ==
+               implementation.implementation_key
+
+      assert updated_implementation.validation == [
+               %TdDq.Implementations.Conditions{
+                 conditions: [
+                   %TdDq.Implementations.ConditionRow{
+                     operator: %TdDq.Implementations.Operator{
+                       name: "gt",
+                       value_type: "timestamp"
+                     },
+                     structure: %TdDq.Implementations.Structure{id: 12_554},
+                     value: [%{"raw" => "2019-12-30 05:35:00"}]
+                   }
+                 ]
                }
              ]
     end
 
     test "with population in validations updates data" do
       implementation = insert(:implementation)
-      claims = build(:dq_claims)
+      claims = build(:claims)
 
       %{
         "operator" => %{"name" => name, "value_type" => type},
@@ -831,11 +1237,15 @@ defmodule TdDq.ImplementationsTest do
         "value" => value
       } = condition = string_params_for(:condition_row)
 
-      validations = [string_params_for(:condition_row, population: [condition])]
-      update_attrs = %{"validations" => validations}
+      validation = [[string_params_for(:condition_row, population: [condition])]]
+      update_attrs = %{"validation" => validation}
 
-      assert {:ok, %{implementation: %Implementation{validations: [%{population: [clause]}]}}} =
-               Implementations.update_implementation(implementation, update_attrs, claims)
+      assert {:ok,
+              %{
+                implementation: %Implementation{
+                  validation: [%{conditions: [%{population: [clause]}]}]
+                }
+              }} = Implementations.update_implementation(implementation, update_attrs, claims)
 
       assert %{
                operator: %{name: ^name, value_type: ^type},
@@ -844,22 +1254,55 @@ defmodule TdDq.ImplementationsTest do
              } = clause
     end
 
-    test "domain change when moving to another rule" do
-      implementation = insert(:implementation)
-      claims = build(:dq_claims)
+    test "domain change for all implementations when moving one to another rule" do
+      implementation_ref = insert(:implementation, status: "versioned")
+
+      implementation =
+        insert(:implementation, status: "published", implementation_ref: implementation_ref.id)
+
+      claims = build(:claims)
       domain_id = System.unique_integer([:positive])
       %{id: rule_id} = insert(:rule, domain_id: domain_id)
       update_attrs = string_params_for(:implementation, rule_id: rule_id)
 
-      assert {:ok, %{implementation: updated}} =
+      assert {:ok, %{implementations_moved: {2, updated}}} =
                Implementations.update_implementation(implementation, update_attrs, claims)
 
-      assert %{domain_id: ^domain_id, rule_id: ^rule_id} = updated
+      updated
+      |> Enum.each(fn updated_implementation ->
+        assert %{domain_id: ^domain_id} = updated_implementation
+      end)
+    end
+
+    test "childs implementations are moved when moving any implementation to another rule" do
+      claims = build(:claims)
+      domain_id = System.unique_integer([:positive])
+      rule_from = insert(:rule, domain_id: domain_id)
+      %{id: rule_id} = insert(:rule, domain_id: domain_id)
+      implementation_ref = insert(:implementation, status: "versioned", rule: rule_from)
+
+      implementation =
+        insert(
+          :implementation,
+          status: "published",
+          implementation_ref: implementation_ref.id,
+          rule: rule_from
+        )
+
+      update_attrs = string_params_for(:implementation, rule_id: rule_id)
+
+      assert {:ok, %{implementations_moved: {2, updated}}} =
+               Implementations.update_implementation(implementation, update_attrs, claims)
+
+      updated
+      |> Enum.each(fn updated_implementation ->
+        assert %{rule_id: ^rule_id} = updated_implementation
+      end)
     end
 
     test "with invalid data returns error changeset" do
       implementation = insert(:implementation)
-      claims = build(:dq_claims)
+      claims = build(:claims)
       udpate_attrs = Map.put(%{}, :dataset, nil)
 
       assert {:error, :implementation, %Changeset{}, _} =
@@ -875,20 +1318,24 @@ defmodule TdDq.ImplementationsTest do
       update_attrs =
         %{
           dataset: [%{structure: %{id: dataset_data_structure_id}}],
-          validations: [
+          validation: [
             %{
-              operator: %{
-                name: "gt",
-                value_type: "timestamp"
-              },
-              structure: %{id: validation_data_structure_id},
-              value: [%{raw: "2019-12-30 05:35:00"}]
+              conditions: [
+                %{
+                  operator: %{
+                    name: "gt",
+                    value_type: "timestamp"
+                  },
+                  structure: %{id: validation_data_structure_id},
+                  value: [%{raw: "2019-12-30 05:35:00"}]
+                }
+              ]
             }
           ]
         }
         |> Map.Helpers.stringify_keys()
 
-      claims = build(:dq_claims, role: "admin")
+      claims = build(:claims, role: "admin")
 
       assert {:ok, %{implementation: %{id: id}}} =
                Implementations.update_implementation(implementation, update_attrs, claims)
@@ -917,7 +1364,44 @@ defmodule TdDq.ImplementationsTest do
       update_attrs =
         %{
           dataset: [%{structure: %{id: dataset_data_structure_id}}],
-          validations: [
+          validation: [
+            %{
+              conditions: [
+                %{
+                  operator: %{
+                    name: "gt",
+                    value_type: "timestamp"
+                  },
+                  structure: %{id: validation_data_structure_id},
+                  value: [%{raw: "2019-12-30 05:35:00"}]
+                }
+              ]
+            }
+          ]
+        }
+        |> Map.Helpers.stringify_keys()
+
+      claims = build(:claims, role: "admin")
+
+      assert {:ok, _} =
+               Implementations.update_implementation(implementation, update_attrs, claims)
+
+      assert %Implementation{
+               data_structures: [
+                 %{data_structure_id: ^validation_data_structure_id, type: :validation}
+               ]
+             } = Implementations.get_implementation!(implementation.id, preload: :data_structures)
+    end
+
+    test "update basic implementation to default implementation" do
+      implementation = insert(:basic_implementation, status: "published")
+      claims = build(:claims, role: "admin")
+      %{id: dataset_data_structure_id} = insert(:data_structure)
+      %{id: validation_data_structure_id} = insert(:data_structure)
+
+      validations = [
+        %{
+          conditions: [
             %{
               operator: %{
                 name: "gt",
@@ -928,50 +1412,294 @@ defmodule TdDq.ImplementationsTest do
             }
           ]
         }
+      ]
+
+      update_attrs =
+        %{
+          dataset: [%{structure: %{id: dataset_data_structure_id}}],
+          validation: validations,
+          implementation_type: "default",
+          executable: true,
+          implementation_key: implementation.implementation_key,
+          goal: implementation.goal,
+          minimum: implementation.minimum,
+          status: :published
+        }
         |> Map.Helpers.stringify_keys()
 
-      claims = build(:dq_claims, role: "admin")
-
-      assert {:ok, %{implementation: %{id: id}}} =
+      assert {:ok, %{implementation: updated_implementation}} =
                Implementations.update_implementation(implementation, update_attrs, claims)
 
-      assert %Implementation{
-               data_structures: [
-                 %{data_structure_id: ^validation_data_structure_id, type: :validation}
-               ]
-             } = Implementations.get_implementation!(id, preload: :data_structures)
+      assert %Implementation{} = updated_implementation
+      assert updated_implementation.rule_id == implementation.rule_id
+
+      assert updated_implementation.implementation_key ==
+               implementation.implementation_key
+
+      assert updated_implementation.implementation_type == "default"
+      assert updated_implementation.version == implementation.version + 1
+
+      assert [_ | _] = updated_implementation.dataset
+
+      assert updated_implementation.validation == [
+               %TdDq.Implementations.Conditions{
+                 conditions: [
+                   %TdDq.Implementations.ConditionRow{
+                     operator: %TdDq.Implementations.Operator{
+                       name: "gt",
+                       value_type: "timestamp"
+                     },
+                     structure: %TdDq.Implementations.Structure{id: validation_data_structure_id},
+                     value: [%{"raw" => "2019-12-30 05:35:00"}]
+                   }
+                 ]
+               }
+             ]
+    end
+
+    test "validate that can not update implementation_key to an existing implementation_key" do
+      claims = build(:claims)
+
+      implementation_1_params =
+        string_params_for(:implementation,
+          status: :published,
+          implementation_key: "key_changed_1"
+        )
+
+      Implementations.create_ruleless_implementation(
+        implementation_1_params,
+        claims
+      )
+
+      implementation_2_create_params =
+        string_params_for(:implementation,
+          status: :published,
+          implementation_key: "key_changed_2"
+        )
+
+      {:ok, %{implementation: implementation_2_v1}} =
+        Implementations.create_ruleless_implementation(
+          implementation_2_create_params,
+          claims
+        )
+
+      implementation_v2_update_params =
+        string_params_for(:implementation,
+          status: :published,
+          implementation_key: "key_changed_1"
+        )
+
+      MockIndexWorker.clear()
+
+      assert {:error, :implementation, %{errors: errors}, %{}} =
+               Implementations.update_implementation(
+                 implementation_2_v1,
+                 implementation_v2_update_params,
+                 claims
+               )
+
+      assert length(errors) == 1
+      assert errors == [implementation_key: {"duplicated", []}]
     end
   end
 
   describe "delete_implementation/2" do
-    test "deletes the implementation" do
-      implementation = insert(:implementation)
-      claims = build(:dq_claims)
+    setup do
+      claims = build(:claims)
+      domain = build(:domain)
 
-      assert {:ok, %{implementation: %{__meta__: meta}}} =
-               Implementations.delete_implementation(implementation, claims)
+      %{id: rule_id} = rule = insert(:rule)
 
-      assert %{state: :deleted} = meta
+      %{id: implementation_ref_id} =
+        implementation_v1 =
+        insert(
+          :implementation,
+          rule: rule,
+          version: 1,
+          domain_id: domain.id,
+          status: :versioned
+        )
+
+      implementation_v2 =
+        insert(
+          :implementation,
+          rule: rule,
+          version: 2,
+          domain_id: domain.id,
+          status: :deprecated,
+          implementation_ref: implementation_ref_id
+        )
+
+      [
+        claims: claims,
+        implementation_v1: implementation_v1,
+        implementation_v2: implementation_v2,
+        rule_id: rule_id
+      ]
+    end
+
+    test "delete published implementation changes status to deprecated",
+         %{
+           claims: claims
+         } do
+      %{id: implementation_v1_id, implementation_ref: implementation_ref_id} =
+        insert(
+          :implementation,
+          version: 1,
+          status: :versioned
+        )
+
+      %{id: implementation_v2_id} =
+        implementation_v2 =
+        insert(
+          :implementation,
+          version: 2,
+          status: :published,
+          implementation_ref: implementation_ref_id
+        )
+
+      assert {:ok,
+              %{implementation: %Implementation{id: ^implementation_v2_id, status: :deprecated}}} =
+               Implementations.delete_implementation(implementation_v2, claims)
+
+      assert %{id: ^implementation_v1_id} =
+               Implementations.get_implementation!(implementation_v1_id)
+    end
+
+    test "delete deprecated implementation do hard delete of all implementation",
+         %{
+           claims: claims,
+           implementation_v1: %{implementation_ref: implementation_ref_id} = implementation_v1,
+           implementation_v2: implementation_v2
+         } do
+      assert {
+               :ok,
+               %{
+                 implementations: {2, deleted_implementations}
+               }
+             } = Implementations.delete_implementation(implementation_v2, claims)
+
+      assert [implementation_v1, implementation_v2] ||| deleted_implementations
+
+      versions = Implementations.get_versions(%{implementation_ref: implementation_ref_id})
+
+      assert Enum.empty?(versions)
+    end
+
+    test "delete draft implementation removes only draft implementation",
+         %{
+           claims: claims,
+           implementation_v1: %{implementation_ref: implementation_ref_id}
+         } do
+      %{id: implementation_v3_id} =
+        implementation_v3 =
+        insert(
+          :implementation,
+          version: 3,
+          status: :draft,
+          implementation_ref: implementation_ref_id
+        )
+
+      assert {
+               :ok,
+               %{
+                 implementations: {1, deleted_implementations}
+               }
+             } = Implementations.delete_implementation(implementation_v3, claims)
+
+      assert [%{id: ^implementation_v3_id}] = deleted_implementations
+
+      versions = Implementations.get_versions(%{implementation_ref: implementation_ref_id})
+
+      assert length(versions) == 2
+    end
+
+    test "delete rejected implementation removes only rejected implementation",
+         %{
+           claims: claims,
+           implementation_v1: %{implementation_ref: implementation_ref_id}
+         } do
+      %{id: implementation_v3_id} =
+        implementation_v3 =
+        insert(
+          :implementation,
+          version: 3,
+          status: :rejected,
+          implementation_ref: implementation_ref_id
+        )
+
+      {
+        :ok,
+        %{
+          implementations: {1, deleted_implementations}
+        }
+      } = Implementations.delete_implementation(implementation_v3, claims)
+
+      assert [%{id: ^implementation_v3_id}] = deleted_implementations
+
+      versions = Implementations.get_versions(%{implementation_ref: implementation_ref_id})
+
+      assert length(versions) == 2
+    end
+
+    test "delete pending_approval implementation removes only pending_approval implementation",
+         %{
+           claims: claims,
+           implementation_v1: %{implementation_ref: implementation_ref_id}
+         } do
+      %{id: implementation_v3_id} =
+        implementation_v3 =
+        insert(
+          :implementation,
+          version: 3,
+          status: :pending_approval,
+          implementation_ref: implementation_ref_id
+        )
+
+      {
+        :ok,
+        %{
+          implementations: {1, deleted_implementations}
+        }
+      } = Implementations.delete_implementation(implementation_v3, claims)
+
+      assert [%{id: ^implementation_v3_id}] = deleted_implementations
+
+      versions = Implementations.get_versions(%{implementation_ref: implementation_ref_id})
+
+      assert length(versions) == 2
+    end
+
+    test "delete versioned implementation don't remove nothing",
+         %{
+           claims: claims,
+           implementation_v1: %{implementation_ref: implementation_ref_id} = implementation_v1
+         } do
+      Implementations.delete_implementation(implementation_v1, claims)
+
+      versions = Implementations.get_versions(%{implementation_ref: implementation_ref_id})
+
+      assert length(versions) == 2
     end
 
     test "deletes the implementation and related data_structures" do
-      implementation = insert(:implementation)
+      %{id: implementation_ref_id} = implementation = insert(:implementation)
 
       %{id: implementation_structure_id} =
         insert(:implementation_structure, implementation: implementation)
 
-      claims = build(:dq_claims)
+      claims = build(:claims)
 
-      assert {:ok, %{implementation: %{__meta__: meta}}} =
+      assert {:ok, %{implementations: {1, _}}} =
                Implementations.delete_implementation(implementation, claims)
 
-      assert %{state: :deleted} = meta
+      assert nil == Implementations.get_implementation(implementation_ref_id)
       assert is_nil(Repo.get(ImplementationStructure, implementation_structure_id))
     end
 
     test "deletes the implementation linked to executions" do
       %{id: id} = insert(:execution_group)
-      implementation = %{id: implementation_id} = insert(:implementation)
+      implementation = %{id: implementation_id} = insert(:implementation, status: :draft)
 
       %{id: execution_id} =
         insert(:execution,
@@ -980,13 +1708,130 @@ defmodule TdDq.ImplementationsTest do
           result: insert(:rule_result)
         )
 
-      claims = build(:dq_claims)
+      claims = build(:claims)
 
-      assert {:ok, %{implementation: %{__meta__: meta}}} =
+      assert {:ok, %{implementations: {1, _}}} =
                Implementations.delete_implementation(implementation, claims)
 
-      assert %{state: :deleted} = meta
+      assert nil == Implementations.get_implementation(implementation_id)
       assert is_nil(Repo.get(TdDq.Executions.Execution, execution_id))
+    end
+
+    test "deleting a deprecated implementation also deletes everything related with implementation_ref, including previous versions",
+         %{
+           implementation_v1: implementation_v1,
+           implementation_v2: implementation_v2,
+           rule_id: rule_id,
+           claims: claims
+         } do
+      %{id: implementation_ref_id} = implementation_v1
+      %{data_structure_id: ds_id} = insert(:data_structure_version)
+
+      insert(:implementation_structure,
+        data_structure_id: ds_id,
+        implementation_id: implementation_ref_id
+      )
+
+      %{id: implementation_v2_id} = implementation_v2
+
+      %{id: rule_result_id} =
+        insert(:rule_result,
+          rule_id: rule_id,
+          implementation_id: implementation_v2_id
+        )
+
+      %{id: remediation_id} =
+        insert(
+          :remediation,
+          rule_result_id: rule_result_id
+        )
+
+      Implementations.delete_implementation(implementation_v2, claims)
+
+      assert nil == Implementations.get_implementation(implementation_ref_id)
+
+      assert [] =
+               ImplementationStructure
+               |> where([i], i.implementation_id == ^implementation_ref_id)
+               |> Repo.all()
+
+      assert nil == RuleResults.get_rule_result(rule_result_id)
+
+      assert nil == TdDq.Remediations.get_remediation(remediation_id)
+    end
+
+    test "deleting a deprecated implementation also deletes its previous versions from cache",
+         %{
+           implementation_v1: implementation_v1,
+           implementation_v2: implementation_v2,
+           claims: claims
+         } do
+      %{id: implementation_ref_id} = implementation_v1
+      %{id: implementation_v2_id} = implementation_v2
+
+      CacheHelpers.put_implementation(implementation_v1)
+      CacheHelpers.put_implementation(implementation_v2)
+
+      %{id: concept_id} = CacheHelpers.insert_concept()
+
+      CacheHelpers.insert_link(
+        implementation_ref_id,
+        "implementation_ref",
+        "business_concept",
+        concept_id
+      )
+
+      Implementations.delete_implementation(implementation_v2, claims)
+
+      assert {:ok, nil} = ImplementationCache.get(implementation_v2_id)
+      assert {:ok, nil} = ImplementationCache.get(implementation_ref_id)
+    end
+
+    test "deleted deprecated implementation generates audit events",
+         %{
+           implementation_v1: implementation_v1,
+           implementation_v2: implementation_v2,
+           claims: claims
+         } do
+      %{id: implementation_v1_id} = implementation_v1
+      implementation_v1_id_string = "#{implementation_v1_id}"
+
+      %{id: implementation_v2_id} = implementation_v2
+      implementation_v2_id_string = "#{implementation_v2_id}"
+
+      {:ok, %{audit: [event_id1, event_id2]}} =
+        Implementations.delete_implementation(implementation_v2, claims)
+
+      assert {:ok,
+              [
+                %{
+                  event: "implementation_deleted",
+                  resource_id: ^implementation_v1_id_string
+                }
+              ]} = Stream.range(:redix, @stream, event_id1, event_id1, transform: :range)
+
+      assert {:ok,
+              [
+                %{
+                  event: "implementation_deleted",
+                  resource_id: ^implementation_v2_id_string
+                }
+              ]} = Stream.range(:redix, @stream, event_id2, event_id2, transform: :range)
+    end
+
+    test "deleted deprecated implementation calls elastic reindex",
+         %{
+           implementation_v1: implementation_v1,
+           implementation_v2: implementation_v2,
+           claims: claims
+         } do
+      %{id: implementation_ref_id} = implementation_v1
+      %{id: implementation_v2_id} = implementation_v2
+
+      Implementations.delete_implementation(implementation_v2, claims)
+
+      assert [implementation_ref_id, implementation_v2_id] |||
+               MockIndexWorker.calls()[:delete_implementations]
     end
   end
 
@@ -1003,7 +1848,7 @@ defmodule TdDq.ImplementationsTest do
         ],
         populations: [
           %{
-            population: [
+            conditions: [
               %{
                 operator: %{
                   name: "timestamp_gt_timestamp",
@@ -1015,22 +1860,26 @@ defmodule TdDq.ImplementationsTest do
             ]
           }
         ],
-        validations: [
+        validation: [
           %{
-            operator: %{
-              name: "timestamp_gt_timestamp",
-              value_type: "timestamp",
-              value_type_filter: "timestamp"
-            },
-            structure: %{id: 7, name: "s7"},
-            value: [%{raw: "2019-12-02 05:35:00"}]
-          },
-          %{
-            operator: %{
-              name: "not_empty"
-            },
-            structure: %{id: 8, name: "s8"},
-            value: nil
+            conditions: [
+              %{
+                operator: %{
+                  name: "timestamp_gt_timestamp",
+                  value_type: "timestamp",
+                  value_type_filter: "timestamp"
+                },
+                structure: %{id: 7, name: "s7"},
+                value: [%{raw: "2019-12-02 05:35:00"}]
+              },
+              %{
+                operator: %{
+                  name: "not_empty"
+                },
+                structure: %{id: 8, name: "s8"},
+                value: nil
+              }
+            ]
           }
         ],
         segments: [
@@ -1051,7 +1900,7 @@ defmodule TdDq.ImplementationsTest do
           rule: rule,
           dataset: creation_attrs.dataset,
           populations: creation_attrs.populations,
-          validations: creation_attrs.validations,
+          validation: creation_attrs.validation,
           segments: creation_attrs.segments
         )
 
@@ -1076,7 +1925,7 @@ defmodule TdDq.ImplementationsTest do
         ],
         populations: [
           %{
-            population: [
+            conditions: [
               %{
                 operator: %{
                   name: "timestamp_gt_timestamp",
@@ -1096,7 +1945,7 @@ defmodule TdDq.ImplementationsTest do
             ]
           },
           %{
-            population: [
+            conditions: [
               %{
                 operator: %{
                   name: "timestamp_gt_timestamp",
@@ -1108,22 +1957,46 @@ defmodule TdDq.ImplementationsTest do
             ]
           }
         ],
-        validations: [
+        validation: [
           %{
-            operator: %{
-              name: "timestamp_gt_timestamp",
-              value_type: "timestamp",
-              value_type_filter: "timestamp"
-            },
-            structure: %{id: 7},
-            value: [%{raw: "2019-12-02 05:35:00"}]
+            conditions: [
+              %{
+                operator: %{
+                  name: "timestamp_gt_timestamp",
+                  value_type: "timestamp",
+                  value_type_filter: "timestamp"
+                },
+                structure: %{id: 7},
+                value: [%{raw: "2019-12-02 05:35:00"}]
+              },
+              %{
+                operator: %{
+                  name: "not_empty"
+                },
+                structure: %{id: 8},
+                value: nil
+              }
+            ]
           },
           %{
-            operator: %{
-              name: "not_empty"
-            },
-            structure: %{id: 8},
-            value: nil
+            conditions: [
+              %{
+                operator: %{
+                  name: "timestamp_gt_timestamp",
+                  value_type: "timestamp",
+                  value_type_filter: "timestamp"
+                },
+                structure: %{id: 13},
+                value: [%{raw: "2019-12-02 05:35:00"}]
+              },
+              %{
+                operator: %{
+                  name: "not_empty"
+                },
+                structure: %{id: 14},
+                value: nil
+              }
+            ]
           }
         ],
         segments: [
@@ -1144,13 +2017,13 @@ defmodule TdDq.ImplementationsTest do
           rule: rule,
           dataset: creation_attrs.dataset,
           populations: creation_attrs.populations,
-          validations: creation_attrs.validations,
+          validation: creation_attrs.validation,
           segments: creation_attrs.segments
         )
 
       structures_ids = Implementations.get_structure_ids(rule_implementaton)
 
-      assert Enum.sort(structures_ids) == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+      assert Enum.sort(structures_ids) == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
     end
   end
 
@@ -1176,10 +2049,9 @@ defmodule TdDq.ImplementationsTest do
       %{id: id2} = insert(:implementation, rule: build(:rule), deleted_at: deleted_at)
       %{id: id3} = insert(:implementation, rule: build(:rule))
 
-      assert {:ok, %{deprecated: deprecated}} = Implementations.deprecate([id1, id2, id3])
+      assert {:ok, %{deprecated: {2, deprecated}}} = Implementations.deprecate([id1, id2, id3])
 
-      assert {2, [%{id: ^id1, status: :deprecated}, %{id: ^id3, status: :deprecated}]} =
-               deprecated
+      assert_lists_equal(deprecated, [id1, id3], &(&1.id == &2 and &1.status == :deprecated))
     end
 
     test "publishes audit events" do
@@ -1203,7 +2075,7 @@ defmodule TdDq.ImplementationsTest do
       insert(:implementation,
         dataset: [build(:dataset_row, structure: build(:dataset_structure, id: structure_id1))],
         populations: [],
-        validations: [],
+        validation: [],
         segments: []
       )
 
@@ -1213,7 +2085,7 @@ defmodule TdDq.ImplementationsTest do
         insert(:implementation,
           dataset: [build(:dataset_row, structure: build(:dataset_structure, id: structure_id2))],
           populations: [],
-          validations: [],
+          validation: [],
           segments: []
         )
 
@@ -1224,6 +2096,88 @@ defmodule TdDq.ImplementationsTest do
       assert ids = Enum.map(implementations, & &1.id)
       assert id2 in ids
       assert id3 in ids
+    end
+
+    test "deprecates implementations ruleless which don't reference existing structure ids" do
+      %{data_structure_id: structure_id1} = insert(:data_structure_version)
+
+      %{data_structure_id: structure_id2} =
+        insert(:data_structure_version, deleted_at: DateTime.utc_now())
+
+      insert(:implementation,
+        dataset: [build(:dataset_row, structure: build(:dataset_structure, id: structure_id1))],
+        populations: [],
+        validation: [],
+        segments: [],
+        rule: nil,
+        rule_id: nil
+      )
+
+      assert :ok = Implementations.deprecate_implementations()
+
+      %{id: id2} =
+        insert(:implementation,
+          dataset: [build(:dataset_row, structure: build(:dataset_structure, id: structure_id2))],
+          populations: [],
+          validation: [],
+          segments: [],
+          rule: nil,
+          rule_id: nil
+        )
+
+      %{id: id3} = insert(:implementation, rule: nil, rule_id: nil)
+
+      assert {:ok, %{deprecated: deprecated}} = Implementations.deprecate_implementations()
+      assert {2, implementations} = deprecated
+      assert ids = Enum.map(implementations, & &1.id)
+      assert id2 in ids
+      assert id3 in ids
+    end
+
+    test "only deprecates implementations with unexisting reference dataset" do
+      %{id: id} = insert(:reference_dataset)
+
+      insert(:implementation,
+        dataset: [build(:dataset_row, structure: %{id: id, type: "reference_dataset"})],
+        populations: [],
+        validation: [],
+        segments: []
+      )
+
+      assert :ok = Implementations.deprecate_implementations()
+
+      %{id: id_to_deprecate} =
+        insert(:implementation,
+          dataset: [%{structure: %{id: id + 1, type: "reference_dataset"}}]
+        )
+
+      assert {:ok, %{deprecated: deprecated}} = Implementations.deprecate_implementations()
+      assert {1, [%{id: ^id_to_deprecate}]} = deprecated
+    end
+
+    test "only deprecates implementations ruleless with unexisting reference dataset" do
+      %{id: id} = insert(:reference_dataset)
+
+      insert(:implementation,
+        dataset: [build(:dataset_row, structure: %{id: id, type: "reference_dataset"})],
+        populations: [],
+        validation: [],
+        segments: [],
+        rule_id: nil,
+        rule: nil
+      )
+
+      assert :ok = Implementations.deprecate_implementations()
+
+      %{id: id_to_deprecate} =
+        insert(:implementation,
+          dataset: [%{structure: %{id: id + 1, type: "reference_dataset"}}],
+          rule_id: nil,
+          rule: nil
+        )
+
+      assert {:ok, %{deprecated: deprecated}} = Implementations.deprecate_implementations()
+      assert {1, [%{id: ^id_to_deprecate}]} = deprecated
     end
   end
 
@@ -1249,11 +2203,12 @@ defmodule TdDq.ImplementationsTest do
       condition_row =
         build(:condition_row, structure: build(:dataset_structure, id: structure_id2))
 
+      validation = [%{conditions: [condition_row]}]
+
       raw_content1 = build(:raw_content, source_id: sid1)
       raw_content2 = build(:raw_content, source_id: sid2)
 
-      implementation1 =
-        insert(:implementation, dataset: [dataset_row], validations: [condition_row])
+      implementation1 = insert(:implementation, dataset: [dataset_row], validation: validation)
 
       implementation2 = insert(:raw_implementation, raw_content: raw_content1)
       implementation3 = insert(:raw_implementation, raw_content: raw_content2)
@@ -1266,7 +2221,7 @@ defmodule TdDq.ImplementationsTest do
     end
 
     test "get sources of default implementation", %{implementations: [impl | _]} do
-      assert Implementations.get_sources(impl) == ["foo", "bar"]
+      assert Implementations.get_sources(impl) ||| ["foo", "bar"]
     end
 
     test "get sources of raw implementation", %{implementations: [_, impl1, impl2]} do
@@ -1300,9 +2255,109 @@ defmodule TdDq.ImplementationsTest do
                )
     end
 
+    test "reindex implementation after create implementation_structure" do
+      MockIndexWorker.clear()
+
+      %{id: implementation_ref_id} = insert(:implementation, version: 1)
+
+      %{id: implementation_id} =
+        implementation =
+        insert(:implementation, version: 2, implementation_ref: implementation_ref_id)
+
+      data_structure = insert(:data_structure)
+
+      Implementations.create_implementation_structure(
+        implementation,
+        data_structure,
+        %{type: :dataset}
+      )
+
+      [
+        {:reindex_implementations, implementation_reindexed}
+      ] = MockIndexWorker.calls()
+
+      assert implementation_reindexed ||| [implementation_id, implementation_ref_id]
+    end
+
+    test "load results to implementation and then search in elastic the threshold in it" do
+      claims = build(:claims)
+      %{id: domain_id} = CacheHelpers.insert_domain()
+      rule = insert(:rule, domain_id: domain_id)
+
+      implementation_v1_published_params =
+        string_params_for(:implementation,
+          rule_id: rule.id,
+          minimum: 20,
+          goal: 40,
+          result_type: "percentage",
+          status: :published
+        )
+
+      rule_result_params =
+        string_params_for(
+          :rule_result,
+          errors: 30,
+          records: 100
+        )
+
+      {:ok, %{implementation: %{id: implementation_v1_id}}} =
+        {:ok, %{implementation: implementation_v1}} =
+        Implementations.create_implementation(
+          rule,
+          implementation_v1_published_params,
+          claims
+        )
+
+      RuleResults.create_rule_result(implementation_v1, rule_result_params)
+
+      implementation_v2_params =
+        string_params_for(:implementation,
+          minimum: 40,
+          goal: 80,
+          version: 2,
+          status: :published
+        )
+
+      MockIndexWorker.clear()
+
+      {:ok, %{implementation: %{id: implementation_v2_id}}} =
+        Implementations.maybe_update_implementation(
+          implementation_v1,
+          implementation_v2_params,
+          claims
+        )
+
+      [
+        {:reindex_implementations, implementation_reindexed}
+      ] = MockIndexWorker.calls()
+
+      assert implementation_reindexed ||| [implementation_v1_id, implementation_v2_id]
+    end
+
+    test "reindex implementation by structures ids related to implementation_structure" do
+      MockIndexWorker.clear()
+
+      %{id: implementation_id} = insert(:implementation, version: 1, status: :published)
+
+      %{id: data_structure_id} = insert(:data_structure)
+
+      insert(:implementation_structure,
+        data_structure_id: data_structure_id,
+        implementation_id: implementation_id
+      )
+
+      Implementations.reindex_implementations_structures([data_structure_id])
+
+      [
+        {:reindex_implementations, implementation_reindexed}
+      ] = MockIndexWorker.calls()
+
+      assert implementation_reindexed ||| [implementation_id]
+    end
+
     test "create_implementation_structure/1 with invalid data returns error changeset" do
       assert {:error, %Ecto.Changeset{}} =
-               Implementations.create_implementation_structure(nil, nil, %{})
+               Implementations.create_implementation_structure(%Implementation{}, nil, %{})
     end
 
     test "creating a deleted implementation_structure will undelete it" do
@@ -1341,17 +2396,184 @@ defmodule TdDq.ImplementationsTest do
 
       refute is_nil(deleted_at)
     end
+
+    test "reindex implementation when delete_implementation_structure/1" do
+      MockIndexWorker.clear()
+      domain = build(:domain)
+
+      %{id: implementation_ref_id} = implementation_ref = insert(:implementation, version: 1)
+
+      %{id: implementation_id} =
+        insert(:implementation, version: 2, implementation_ref: implementation_ref_id)
+
+      implementation_structure =
+        insert(:implementation_structure,
+          implementation: implementation_ref,
+          data_structure: build(:data_structure, domain_ids: [domain.id])
+        )
+
+      assert {:ok, %ImplementationStructure{}} =
+               Implementations.delete_implementation_structure(implementation_structure)
+
+      [
+        {:reindex_implementations, implementation_reindexed}
+      ] = MockIndexWorker.calls()
+
+      assert implementation_reindexed ||| [implementation_id, implementation_ref_id]
+    end
+
+    test "when update implementation new implementation_structures will be created linked to implementation ref" do
+      claims = build(:claims)
+      domain = build(:domain)
+
+      %{id: dataset_structure_id} =
+        dataset_structure = insert(:data_structure, domain_ids: [domain.id])
+
+      %{id: validation_structure_id} = insert(:data_structure, domain_ids: [domain.id])
+
+      dataset_row =
+        build(
+          :dataset_row,
+          structure: build(:dataset_structure, id: dataset_structure_id)
+        )
+
+      %{id: implementation_ref_id} =
+        implementation_ref =
+        insert(:implementation,
+          status: :versioned,
+          version: 1,
+          domain_id: domain.id,
+          dataset: [dataset_row]
+        )
+
+      implementation =
+        insert(:implementation,
+          status: :published,
+          version: 2,
+          domain_id: domain.id,
+          dataset: [dataset_row],
+          implementation_ref: implementation_ref_id
+        )
+
+      insert(:implementation_structure,
+        implementation: implementation_ref,
+        data_structure: insert(:data_structure, domain_ids: [domain.id])
+      )
+
+      deleted_data_structure_link =
+        insert(:implementation_structure,
+          deleted_at: DateTime.utc_now(),
+          implementation: implementation_ref,
+          data_structure: dataset_structure
+        )
+
+      validations = [
+        %{
+          operator: %{
+            name: "gt",
+            value_type: "timestamp"
+          },
+          structure: %{id: validation_structure_id},
+          value: [%{raw: "2019-12-30 05:35:00"}]
+        }
+      ]
+
+      update_attrs =
+        %{
+          validation: [%{conditions: validations}],
+          status: :draft
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert {:ok, _} =
+               implementation
+               |> Repo.preload(data_structures: :data_structure, rule: [])
+               |> Implementations.update_implementation(
+                 update_attrs,
+                 claims
+               )
+
+      assert %{data_structures: data_structures_links} =
+               Implementation
+               |> where([i], i.id == ^implementation_ref_id)
+               |> preload(:data_structures)
+               |> Repo.one()
+
+      assert length(data_structures_links) == 2
+
+      assert Enum.all?(data_structures_links, fn dsl ->
+               dsl.implementation_id == implementation_ref_id
+             end)
+
+      assert %{data_structure_id: ^dataset_structure_id} =
+               deleted_link =
+               ImplementationStructure
+               |> where(
+                 [is],
+                 is.data_structure_id == ^deleted_data_structure_link.data_structure_id
+               )
+               |> where([is], is.implementation_id == ^implementation_ref_id)
+               |> Repo.one()
+
+      refute is_nil(deleted_link.deleted_at)
+    end
   end
 
   describe "last?/1" do
     test "returns true if the given implementation is the latest version with the same key" do
-      %{implementation_key: key} =
+      %{implementation_ref: implementation_ref} =
         first = insert(:implementation, version: 1, status: "deprecated")
 
-      second = insert(:implementation, implementation_key: key, version: 2)
+      second = insert(:implementation, implementation_ref: implementation_ref, version: 2)
       refute Implementations.last?(first)
       assert Implementations.last?(second)
-      assert Implementations.last?(%Implementation{id: 0, implementation_key: "foo"})
+      assert Implementations.last?(%Implementation{id: 0, implementation_ref: 0})
+    end
+  end
+
+  describe "get_linked_implementation/1" do
+    test "return draft if are not published implementation" do
+      %{id: implementation_id, implementation_ref: implementation_ref} =
+        insert(:implementation, version: 1, status: "draft")
+
+      %{id: linked_implementation_id} =
+        Implementations.get_linked_implementation!(implementation_ref)
+
+      assert ^implementation_id = linked_implementation_id
+    end
+
+    test "return published implementation if exists" do
+      %{implementation_ref: implementation_ref} =
+        insert(:implementation, version: 1, status: "draft")
+
+      %{id: implementation_id} =
+        insert(:implementation,
+          version: 2,
+          status: "published",
+          implementation_ref: implementation_ref
+        )
+
+      %{id: linked_implementation_id} =
+        Implementations.get_linked_implementation!(implementation_ref)
+
+      assert ^implementation_id = linked_implementation_id
+    end
+
+    test "return deprecated implementation if are not published implementation" do
+      %{implementation_ref: implementation_ref} =
+        insert(:implementation, version: 1, status: "versioned")
+
+      %{id: implementation_id} =
+        insert(:implementation,
+          version: 2,
+          status: "deprecated",
+          implementation_ref: implementation_ref
+        )
+
+      %{id: linked_implementation_id} =
+        Implementations.get_linked_implementation!(implementation_ref)
+
+      assert ^implementation_id = linked_implementation_id
     end
   end
 end

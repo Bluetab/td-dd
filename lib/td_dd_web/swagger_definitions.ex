@@ -4,15 +4,6 @@ defmodule TdDdWeb.SwaggerDefinitions do
   """
   import PhoenixSwagger
 
-  @spec relation_type_definitions :: %{
-          CreateRelationType: any,
-          RelationType: any,
-          RelationTypeEdit: any,
-          RelationTypeResponse: any,
-          RelationTypes: any,
-          RelationTypesResponse: any,
-          UpdateRelationType: any
-        }
   def relation_type_definitions do
     %{
       RelationTypeResponse:
@@ -185,127 +176,6 @@ defmodule TdDdWeb.SwaggerDefinitions do
             deleted_at(:string, "Deletion date")
             data_structure_id(:string, "Structure Id")
             fields(:object, "Fields composing the metadata")
-          end
-        end
-    }
-  end
-
-  def data_structure_tag_definitions do
-    %{
-      DataStructureTag:
-        swagger_schema do
-          title("Data Structure Tag")
-          description("A Data Structure Tag")
-
-          properties do
-            id(:integer, "Data Structure Tag unique identifier", required: true)
-            name(:string, "Tag name")
-            structure_count(:integer, "Linked structures count")
-          end
-
-          example(%{
-            id: 88,
-            name: "Tag1",
-            domain_ids: [1, 2]
-          })
-        end,
-      DataStructureTags:
-        swagger_schema do
-          title("DataStructureTags")
-          description("A collection of data structure tags")
-          type(:array)
-          items(Schema.ref(:DataStructureTag))
-        end,
-      CreateDataStructureTag:
-        swagger_schema do
-          properties do
-            data_structure_tag(
-              Schema.new do
-                properties do
-                  name(:string, "Data Structure name", required: true)
-                end
-              end
-            )
-          end
-        end,
-      UpdateDataStructureTag:
-        swagger_schema do
-          properties do
-            data_structure_tag(
-              Schema.new do
-                properties do
-                  name(:string, "Data Structure name", required: true)
-                end
-              end
-            )
-          end
-        end,
-      DataStructureTagResponse:
-        swagger_schema do
-          properties do
-            data(Schema.ref(:DataStructureTag))
-          end
-        end,
-      DataStructureTagsResponse:
-        swagger_schema do
-          properties do
-            data(Schema.ref(:DataStructureTags))
-          end
-        end,
-      UpdateLinkDataStructureTag:
-        swagger_schema do
-          properties do
-            tag(
-              Schema.new do
-                properties do
-                  description(:string, "Tag description", required: true)
-                end
-              end
-            )
-          end
-        end,
-      LinksDataStructureTagResponse:
-        swagger_schema do
-          properties do
-            data(Schema.ref(:LinksDataStructureTag))
-          end
-        end,
-      LinksDataStructureTag:
-        swagger_schema do
-          title("LinksDataStructureTagResponse")
-          description("Links between a structure and its tags")
-          type(:array)
-          items(Schema.ref(:LinkDataStructureTag))
-        end,
-      LinkDataStructureTag:
-        swagger_schema do
-          title("LinkDataStructureTag")
-          description("Link between a structure and its tags")
-
-          properties do
-            id(:integer, "Id link")
-            description(:string, "Tag description")
-            _embedded(Schema.ref(:LinkDataStructureTagEmbeddings))
-          end
-        end,
-      LinkDataStructureTagResponse:
-        swagger_schema do
-          properties do
-            data(Schema.ref(:LinkDataStructureTag))
-          end
-        end,
-      LinkDataStructureTagEmbeddings:
-        swagger_schema do
-          properties do
-            data_structure(Schema.ref(:EmbeddedLinkedDataStructure))
-            data_structure_tag(Schema.ref(:DataStructureTag))
-          end
-        end,
-      EmbeddedLinkedDataStructure:
-        swagger_schema do
-          properties do
-            id(:integer, "Data structure id")
-            external_id(:string, "Data structure external id")
           end
         end
     }
@@ -1224,6 +1094,86 @@ defmodule TdDdWeb.SwaggerDefinitions do
               }
             ]
           })
+        end
+    }
+  end
+
+  def data_structure_link_swagger_definitions do
+    %{
+      BulkCreateDataStructureLinksRequest:
+        swagger_schema do
+          title("Bulk Data Structure Link request")
+          description("A data_structure_links list to create")
+
+          properties do
+            data_structure_links(Schema.ref(:BulkCreateDataStructureLinks))
+          end
+        end,
+      BulkCreateDataStructureLinks:
+        swagger_schema do
+          title("Bulk creation of Data Structure Links")
+          description("A collection of Data Structure Links")
+          type(:array)
+          items(Schema.ref(:BulkCreateDataStructureLink))
+        end,
+      BulkCreateDataStructureLink:
+        swagger_schema do
+          properties do
+            source_external_id(:string, "Relation source data structure external ID")
+            target_external_id(:string, "Relation target data structure external ID")
+
+            label_names(
+              Schema.new do
+                type(:array)
+                items(Schema.array(:string))
+                example(["label1", "label2"])
+              end
+            )
+          end
+        end,
+      BulkCreateDataStructureLinksResponse:
+        swagger_schema do
+          title("Data Structure Link bulk creation summary")
+
+          properties do
+            inserted(Schema.ref(:BulkCreateInserted))
+            not_inserted(Schema.ref(:BulkCreateNotInserted))
+          end
+        end,
+      BulkCreateInserted:
+        swagger_schema do
+          title("Inserted Data Structure Links")
+          type(:array)
+
+          items(
+            Schema.new do
+              properties do
+                source_external_id(:string, "Relation source data structure external ID")
+                target_external_id(:string, "Relation target data structure external ID")
+              end
+            end
+          )
+        end,
+      BulkCreateNotInserted:
+        swagger_schema do
+          title("Bulk creation changeset invalid links")
+          description("Cast validation changeset errors")
+          type(:array)
+          items(Schema.ref(:ChangetsetInvalidLinks))
+        end,
+      ChangetsetInvalidLinks:
+        swagger_schema do
+          properties do
+            field(:string, "Invalid field")
+            value(:object, "Invalid field value")
+            message(:string, "Invalidity reason")
+          end
+        end,
+      Label:
+        swagger_schema do
+          properties do
+            name(:string, "Label name")
+          end
         end
     }
   end

@@ -7,6 +7,7 @@ defmodule TdDd.Grants.GrantRequestApproval do
   import Ecto.Changeset
 
   alias TdCache.TaxonomyCache
+  alias TdDd.Grants.ApprovalRule
   alias TdDd.Grants.GrantRequest
 
   schema "grant_request_approvals" do
@@ -18,6 +19,7 @@ defmodule TdDd.Grants.GrantRequestApproval do
     field :current_status, :string, virtual: true
     field :domain_ids, {:array, :integer}, virtual: true
 
+    belongs_to :approval_rule, ApprovalRule
     belongs_to :grant_request, GrantRequest
 
     timestamps type: :utc_datetime_usec, updated_at: false

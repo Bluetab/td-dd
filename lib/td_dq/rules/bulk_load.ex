@@ -5,7 +5,10 @@ defmodule TdDq.Rules.BulkLoad do
 
   alias Ecto.Changeset
   alias TdCache.DomainCache
+  alias TdCache.TemplateCache
   alias TdDdWeb.ErrorHelpers
+  alias TdDfLib.Format
+  alias TdDfLib.Parser
   alias TdDq.Cache.RuleLoader
   alias TdDq.Rules
 
@@ -24,33 +27,32 @@ defmodule TdDq.Rules.BulkLoad do
     "active" => false,
     "activeSelection" => false,
     "business_concept_id" => nil,
-    "type" => "",
-    "type_params" => %{}
+    "type" => ""
   }
 
   require Logger
 
   def required_headers, do: @required_headers
 
-  def bulk_load(rules, claims) do
+  def bulk_load(rules, claims, lang) do
     Logger.info("Loading Rules...")
 
     Timer.time(
-      fn -> do_bulk_load(rules, claims) end,
+      fn -> do_bulk_load(rules, claims, lang) end,
       fn millis, _ -> Logger.info("Rules loaded in #{millis}ms") end
     )
   end
 
-  defp do_bulk_load(rules, claims) do
-    %{ids: ids} = results = create_rules(rules, claims)
+  defp do_bulk_load(rules, claims, lang) do
+    %{ids: ids} = results = create_rules(rules, claims, lang)
     RuleLoader.refresh(ids)
     {:ok, results}
   end
 
-  defp create_rules(rules, claims) do
+  defp create_rules(rules, claims, lang) do
     rules
     |> Enum.reduce(%{ids: [], errors: []}, fn %{"name" => rule_name} = rule, acc ->
-      enriched_rule = enrich_rule(rule)
+      enriched_rule = enrich_rule(rule, lang)
 
       case Rules.create_rule(enriched_rule, claims, true) do
         {:ok, %{rule: %{id: id}}} ->
@@ -66,7 +68,7 @@ defmodule TdDq.Rules.BulkLoad do
     |> Map.update!(:errors, &Enum.reverse(&1))
   end
 
-  defp enrich_rule(rule) do
+  defp enrich_rule(rule, lang) do
     rule
     |> Enum.reduce(%{"df_content" => %{}}, fn {head, value}, acc ->
       if Enum.member?(@required_headers ++ @optional_headers, head) do
@@ -76,10 +78,9 @@ defmodule TdDq.Rules.BulkLoad do
         Map.put(acc, "df_content", df_content)
       end
     end)
-    |> ensure_template()
+    |> maybe_put_domain_id(rule)
+    |> ensure_template(lang)
     |> convert_description()
-    |> Map.put("domain_id", get_domain_id(rule))
-    |> Map.delete("domain_external_id")
     |> Map.merge(@default_rule)
   end
 
@@ -101,21 +102,42 @@ defmodule TdDq.Rules.BulkLoad do
 
   defp convert_description(rule), do: Map.put(rule, "description", %{})
 
-  defp get_domain_id(%{"domain_external_id" => domain_external_id}) do
+  defp maybe_put_domain_id(params, %{"domain_external_id" => domain_external_id}) do
     case DomainCache.external_id_to_id(domain_external_id) do
-      {:ok, domain_id} -> domain_id
-      _ -> nil
+      {:ok, domain_id} -> Map.put(params, "domain_id", domain_id)
+      _ -> params
     end
   end
 
-  defp ensure_template(%{"df_content" => df_content} = rule) do
-    if Enum.empty?(df_content) or
-         (!Enum.empty?(df_content) && Map.has_key?(rule, "template")) do
+  defp ensure_template(%{"df_content" => df_content, "domain_id" => domain_id} = rule, lang) do
+    template = Map.get(rule, "template")
+
+    rule =
       rule
-      |> Map.put("df_name", rule["template"])
+      |> Map.put("df_name", template)
       |> Map.delete("template")
-    else
-      rule
+
+    case TemplateCache.get_by_name!(template) do
+      nil ->
+        rule
+
+      template ->
+        content_schema =
+          template
+          |> Map.get(:content)
+          |> Format.flatten_content_fields()
+
+        content =
+          Parser.format_content(%{
+            content: df_content,
+            content_schema: content_schema,
+            domain_ids: [domain_id],
+            lang: lang
+          })
+
+        Map.put(rule, "df_content", content)
     end
   end
+
+  defp ensure_template(rule, _lang), do: rule
 end

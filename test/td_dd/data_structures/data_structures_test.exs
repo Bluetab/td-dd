@@ -8,19 +8,18 @@ defmodule TdDd.DataStructuresTest do
   alias TdCache.Redix.Stream
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureMetadata
-  alias TdDd.DataStructures.StructureNote
-  alias TdDd.DataStructures.StructureNotes
   alias TdDd.Repo
+  alias TdDd.Search.MockIndexWorker
 
   @moduletag sandbox: :shared
   @stream TdCache.Audit.stream()
 
   setup_all do
+    start_supervised!(MockIndexWorker)
     on_exit(fn -> Redix.del!(@stream) end)
     [claims: build(:claims)]
   end
@@ -65,6 +64,30 @@ defmodule TdDd.DataStructuresTest do
 
       assert %{confidential: {1, [^id]}, domain_ids: {1, [^id]}, updated_ids: [^id]} = result
       assert %DataStructure{confidential: true} = Repo.get(DataStructure, id)
+    end
+
+    test "reindex implementations if updated domain_ids and has implementation_structure relation",
+         %{
+           data_structure: %{id: id} = data_structure,
+           claims: claims
+         } do
+      MockIndexWorker.clear()
+      %{id: implementation_id} = insert(:implementation, version: 1, status: :published)
+
+      insert(:implementation_structure,
+        data_structure_id: id,
+        implementation_id: implementation_id
+      )
+
+      params = %{domain_ids: [1, 2, 3]}
+
+      assert {:ok, result} =
+               DataStructures.update_data_structure(claims, data_structure, params, false)
+
+      implementation_reindexed = Keyword.get(MockIndexWorker.calls(), :reindex_implementations)
+
+      assert implementation_reindexed ||| [implementation_id]
+      assert %{domain_ids: {1, [^id]}, updated_ids: [^id]} = result
     end
 
     test "applies changes to descendents", %{claims: claims} do
@@ -284,6 +307,79 @@ defmodule TdDd.DataStructuresTest do
       assert %{mutable_metadata: ^fields} = DataStructures.get_latest_version(id)
     end
 
+    test "enriches with filtered protected mutable_metadata" do
+      %{data_structure_id: id} =
+        insert(
+          :data_structure_version,
+          metadata: %{
+            "m_foo" => "m_bar",
+            DataStructures.protected() => %{
+              "m_field1" => "m_field1",
+              "m_field2" => "m_field2"
+            }
+          }
+        )
+
+      %{fields: _fields_with_protected} =
+        insert(
+          :structure_metadata,
+          data_structure_id: id,
+          fields: %{
+            "mm_foo" => "mm_bar",
+            DataStructures.protected() => %{
+              "mm_field1" => "mm_field1",
+              "mm_field2" => "mm_field2"
+            }
+          }
+        )
+
+      %{
+        metadata: metadata,
+        mutable_metadata: mutable_metadata
+      } = DataStructures.get_latest_version(id)
+
+      assert metadata == %{"m_foo" => "m_bar"}
+      assert mutable_metadata == %{"mm_foo" => "mm_bar"}
+    end
+
+    test "enriches with protected mutable_metadata" do
+      metadata = %{
+        "m_foo" => "m_bar",
+        DataStructures.protected() => %{
+          "m_field1" => "m_field1",
+          "m_field2" => "m_field2"
+        }
+      }
+
+      mutable_metadata = %{
+        "mm_foo" => "mm_bar",
+        DataStructures.protected() => %{
+          "mm_field1" => "mm_field1",
+          "mm_field2" => "mm_field2"
+        }
+      }
+
+      %{data_structure_id: id} =
+        insert(
+          :data_structure_version,
+          metadata: metadata
+        )
+
+      insert(
+        :structure_metadata,
+        data_structure_id: id,
+        fields: mutable_metadata
+      )
+
+      assert %{
+               metadata: dsv_m,
+               mutable_metadata: dsv_mm
+             } = DataStructures.get_latest_version(id, [:with_protected_metadata])
+
+      assert metadata == dsv_m
+      assert mutable_metadata == dsv_mm
+    end
+
     test "enriches with parents", %{
       data_structure_version: %{
         id: parent_id,
@@ -303,7 +399,7 @@ defmodule TdDd.DataStructuresTest do
 
   describe "enriched_structure_versions/1" do
     setup %{template: %{name: template_name}, domain: %{id: domain_id}} do
-      data_structure = insert(:data_structure, domain_ids: [domain_id])
+      data_structure = insert(:data_structure, domain_ids: [domain_id], alias: "baz")
 
       %{id: id, data_structure_id: data_structure_id} =
         data_structure_version =
@@ -352,9 +448,7 @@ defmodule TdDd.DataStructuresTest do
       ]
     end
 
-    test "formats data_structure search_content", %{
-      data_structure_version: %{id: id}
-    } do
+    test "formats data_structure search_content and alias", %{data_structure_version: %{id: id}} do
       assert [dsv] =
                DataStructures.enriched_structure_versions(
                  ids: [id],
@@ -364,11 +458,12 @@ defmodule TdDd.DataStructuresTest do
 
       assert %{data_structure: data_structure} = dsv
       assert %{search_content: search_content} = data_structure
+      assert %{alias: "baz"} = data_structure
       assert search_content == %{"string" => "initial", "list" => "one"}
     end
 
     test "returns values suitable for bulk-indexing encoding", %{
-      data_structure_version: %{id: id},
+      data_structure_version: %{id: id, name: original_name},
       domain: %{id: domain_id, name: domain_name, external_id: domain_external_id}
     } do
       assert %{} =
@@ -384,16 +479,18 @@ defmodule TdDd.DataStructuresTest do
       assert %{
                with_content: true,
                classes: %{"foo" => "bar"},
-               latest_note: latest_note,
+               note: note,
                domain_ids: [^domain_id],
-               mutable_metadata: %{"foo" => "bar"},
+               metadata: %{"foo" => "bar"},
                domain: %{id: ^domain_id, name: ^domain_name, external_id: ^domain_external_id},
                path: path,
                path_sort: "yayo~papa",
-               system: %{external_id: _, id: _, name: _}
+               system: %{external_id: _, id: _, name: _},
+               name: "baz",
+               original_name: ^original_name
              } = document
 
-      assert latest_note == %{"list" => "one", "string" => "initial"}
+      assert note == %{"list" => "one", "string" => "initial"}
 
       assert ["yayo", "papa"] = path
     end
@@ -432,6 +529,76 @@ defmodule TdDd.DataStructuresTest do
                )
 
       assert filters == %{"baz" => ["baz1", "baz2"], "foo" => "foo"}
+    end
+
+    test "gets protected metadata" do
+      metadata = %{
+        "m_foo" => "m_bar",
+        DataStructures.protected() => %{
+          "m_field1" => "m_field1",
+          "m_field2" => "m_field2"
+        }
+      }
+
+      mutable_metadata = %{
+        "mm_foo" => "mm_bar",
+        DataStructures.protected() => %{
+          "mm_field1" => "mm_field1",
+          "mm_field2" => "mm_field2"
+        }
+      }
+
+      %{data_structure_id: id} = insert(:data_structure_version, metadata: metadata)
+
+      insert(:structure_metadata,
+        data_structure_id: id,
+        fields: mutable_metadata
+      )
+
+      assert [%{metadata: result_metadata, mutable_metadata: result_mm}] =
+               DataStructures.enriched_structure_versions(
+                 data_structure_ids: [id],
+                 relation_type_id: RelationTypes.default_id!(),
+                 with_protected_metadata: true
+               )
+
+      assert result_metadata == metadata
+      assert result_mm == mutable_metadata
+    end
+
+    test "filters protected metadata" do
+      metadata = %{
+        "m_foo" => "m_bar",
+        DataStructures.protected() => %{
+          "m_field1" => "m_field1",
+          "m_field2" => "m_field2"
+        }
+      }
+
+      mutable_metadata = %{
+        "mm_foo" => "mm_bar",
+        DataStructures.protected() => %{
+          "mm_field1" => "mm_field1",
+          "mm_field2" => "mm_field2"
+        }
+      }
+
+      %{data_structure_id: id} = insert(:data_structure_version, metadata: metadata)
+
+      insert(:structure_metadata,
+        data_structure_id: id,
+        fields: mutable_metadata
+      )
+
+      assert [%{metadata: result_metadata, mutable_metadata: result_mm}] =
+               DataStructures.enriched_structure_versions(
+                 data_structure_ids: [id],
+                 relation_type_id: RelationTypes.default_id!(),
+                 with_protected_metadata: false
+               )
+
+      assert result_metadata == %{"m_foo" => "m_bar"}
+      assert result_mm == %{"mm_foo" => "mm_bar"}
     end
   end
 
@@ -475,6 +642,98 @@ defmodule TdDd.DataStructuresTest do
       search_params = %{external_id: [data_structure.external_id]}
 
       assert DataStructures.list_data_structures(search_params), [data_structure]
+    end
+
+    test "list_data_structures_data_fields/1 returns all data_fields by data_structure" do
+      domain1 = CacheHelpers.insert_domain()
+      domain2 = CacheHelpers.insert_domain()
+      domain3 = CacheHelpers.insert_domain()
+
+      claims = build(:claims, role: "user")
+
+      CacheHelpers.put_session_permissions(claims, %{
+        "view_data_structure" => [domain2.id, domain3.id],
+        "manage_confidential_structures" => [domain3.id]
+      })
+
+      [%{data_structure_id: data_structure_id} = dsv] =
+        ["structure"]
+        |> Enum.map(&insert(:data_structure, external_id: &1))
+        |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id))
+
+      fields =
+        [
+          %{external_id: "domain_1_not_conf", domain_id: domain1.id, confidential: false},
+          %{external_id: "domain_1_conf", domain_id: domain1.id, confidential: true},
+          %{external_id: "domain_2_not_conf", domain_id: domain2.id, confidential: false},
+          %{external_id: "domain_2_conf", domain_id: domain2.id, confidential: true},
+          %{external_id: "domain_3_not_conf", domain_id: domain3.id, confidential: false},
+          %{external_id: "domain_3_conf", domain_id: domain3.id, confidential: true}
+        ]
+        |> Enum.map(
+          &insert(:data_structure,
+            external_id: &1.external_id,
+            domain_ids: [&1.domain_id],
+            confidential: &1.confidential
+          )
+        )
+        |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id, class: "field"))
+
+      relation_type_id = RelationTypes.default_id!()
+
+      Enum.map(
+        fields,
+        &insert(:data_structure_relation,
+          parent_id: dsv.id,
+          child_id: &1.id,
+          relation_type_id: relation_type_id
+        )
+      )
+
+      assert [
+               %{
+                 id: ^data_structure_id,
+                 data_field: %{data_structure: %{external_id: "domain_2_not_conf"}}
+               },
+               %{
+                 id: ^data_structure_id,
+                 data_field: %{data_structure: %{external_id: "domain_3_not_conf"}}
+               },
+               %{
+                 id: ^data_structure_id,
+                 data_field: %{data_structure: %{external_id: "domain_3_conf"}}
+               }
+             ] = DataStructures.list_data_structures_data_fields([data_structure_id], claims)
+
+      admin_claims = build(:claims)
+
+      assert [
+               %{
+                 id: ^data_structure_id,
+                 data_field: %{data_structure: %{external_id: "domain_1_not_conf"}}
+               },
+               %{
+                 id: ^data_structure_id,
+                 data_field: %{data_structure: %{external_id: "domain_1_conf"}}
+               },
+               %{
+                 id: ^data_structure_id,
+                 data_field: %{data_structure: %{external_id: "domain_2_not_conf"}}
+               },
+               %{
+                 id: ^data_structure_id,
+                 data_field: %{data_structure: %{external_id: "domain_2_conf"}}
+               },
+               %{
+                 id: ^data_structure_id,
+                 data_field: %{data_structure: %{external_id: "domain_3_not_conf"}}
+               },
+               %{
+                 id: ^data_structure_id,
+                 data_field: %{data_structure: %{external_id: "domain_3_conf"}}
+               }
+             ] =
+               DataStructures.list_data_structures_data_fields([data_structure_id], admin_claims)
     end
 
     test "get_data_structure!/1 returns the data_structure with given id", %{
@@ -535,9 +794,9 @@ defmodule TdDd.DataStructuresTest do
       end)
 
       assert DataStructures.get_siblings(dsv1) == []
-      assert DataStructures.get_siblings(dsv2) <|> [dsv2, dsv3]
-      assert DataStructures.get_siblings(dsv3) <|> [dsv2, dsv3]
-      assert DataStructures.get_siblings(dsv4) <|> [dsv4]
+      assert DataStructures.get_siblings(dsv2) ||| [dsv2, dsv3]
+      assert DataStructures.get_siblings(dsv3) ||| [dsv2, dsv3]
+      assert DataStructures.get_siblings(dsv4) ||| [dsv4]
     end
 
     test "delete_data_structure/1 deletes a data_structure with relations", %{claims: claims} do
@@ -612,9 +871,103 @@ defmodule TdDd.DataStructuresTest do
              } = DataStructures.get_data_structure_version!(dsv.id, enrich_opts)
 
       assert id == dsv.id
-      assert parents <|> [parent]
-      assert children <|> [child]
-      assert siblings <|> [sibling, dsv]
+      assert parents ||| [parent]
+      assert children ||| [child]
+      assert siblings ||| [sibling, dsv]
+      assert relations.parents == []
+      assert relations.children == []
+    end
+
+    test "get_data_structure_version!/2 enriches with protecting metadata, except parents, siblings and children." do
+      %{
+        dsv: dsv,
+        parent_dsv: parent,
+        child_dsv: child,
+        sibling_dsv: sibling,
+        metadata: metadata_with_protected,
+        mutable_metadata: mutable_metadata_with_protected
+      } = create_hierarchy_with_protected_metadata()
+
+      enrich_opts = [:parents, :children, :siblings, :relations, :with_protected_metadata]
+
+      assert %{
+               id: id,
+               parents: [result_parent] = parents,
+               children: [result_child] = children,
+               siblings: [result_sibling, result_dsv] = siblings,
+               relations: relations,
+               metadata: dsv_m,
+               mutable_metadata: dsv_mm
+             } = DataStructures.get_data_structure_version!(dsv.id, enrich_opts)
+
+      assert dsv_m == metadata_with_protected
+      assert dsv_mm == mutable_metadata_with_protected
+      assert id == dsv.id
+      # Parents, children and siblings have always their metadata removed, even
+      # when enriched :with_protected_metadata
+      assert parents ||| [%{parent | metadata: %{"m_foo" => "m_bar"}}]
+      assert result_parent.metadata == %{"m_foo" => "m_bar"}
+      # Enriched parents, children and siblings do not have mutable_metadata loaded.
+      assert result_parent.mutable_metadata == nil
+      assert children ||| [%{child | metadata: %{"m_foo" => "m_bar"}}]
+      assert result_child.metadata == %{"m_foo" => "m_bar"}
+      assert result_child.mutable_metadata == nil
+
+      assert siblings |||
+               [
+                 %{sibling | metadata: %{"m_foo" => "m_bar"}},
+                 %{dsv | metadata: %{"m_foo" => "m_bar"}}
+               ]
+
+      assert result_sibling.metadata == %{"m_foo" => "m_bar"}
+      assert result_sibling.mutable_metadata == nil
+      assert result_dsv.metadata == %{"m_foo" => "m_bar"}
+      assert result_dsv.mutable_metadata == nil
+      assert relations.parents == []
+      assert relations.children == []
+    end
+
+    test "get_data_structure_version!/2 enriches with parents, children, siblings and relations, filtering protected metadata" do
+      %{
+        dsv: dsv,
+        parent_dsv: parent,
+        child_dsv: child,
+        sibling_dsv: sibling
+      } = create_hierarchy_with_protected_metadata()
+
+      enrich_opts = [:parents, :children, :siblings, :relations]
+
+      assert %{
+               id: id,
+               parents: [result_parent] = parents,
+               children: [result_child] = children,
+               siblings: [result_sibling, result_dsv] = siblings,
+               relations: relations,
+               metadata: dsv_m,
+               mutable_metadata: dsv_mm
+             } = DataStructures.get_data_structure_version!(dsv.id, enrich_opts)
+
+      assert dsv_m == %{"m_foo" => "m_bar"}
+      assert dsv_mm == %{"mm_foo" => "mm_bar"}
+      assert id == dsv.id
+      assert parents ||| [%{parent | metadata: %{"m_foo" => "m_bar"}}]
+      assert result_parent.metadata == %{"m_foo" => "m_bar"}
+      # Enriched parents, children and siblings do not have mutable_metadata loaded.
+      assert result_parent.mutable_metadata == nil
+      assert children ||| [%{child | metadata: %{"m_foo" => "m_bar"}}]
+      assert result_child.metadata == %{"m_foo" => "m_bar"}
+      assert result_child.mutable_metadata == nil
+
+      assert siblings |||
+               [
+                 %{sibling | metadata: %{"m_foo" => "m_bar"}},
+                 %{dsv | metadata: %{"m_foo" => "m_bar"}}
+               ]
+
+      assert result_sibling.metadata == %{"m_foo" => "m_bar"}
+      assert result_sibling.mutable_metadata == nil
+      assert result_dsv.metadata == %{"m_foo" => "m_bar"}
+      assert result_dsv.mutable_metadata == nil
       assert relations.parents == []
       assert relations.children == []
     end
@@ -718,10 +1071,10 @@ defmodule TdDd.DataStructuresTest do
              } = DataStructures.get_data_structure_version!(dsv.id, enrich_opts)
 
       assert id == dsv.id
-      assert parents <|> [parent]
-      assert children <|> ([child] ++ fields)
-      assert siblings <|> [sibling, dsv]
-      assert data_fields <|> fields
+      assert parents ||| [parent]
+      assert children ||| [child] ++ fields
+      assert siblings ||| [sibling, dsv]
+      assert data_fields ||| fields
       assert %{children: [child_relation]} = relations
       assert child_relation.version <~> r_child
 
@@ -736,33 +1089,14 @@ defmodule TdDd.DataStructuresTest do
              } = DataStructures.get_data_structure_version!(dsv.id, enrich_opts)
 
       assert id == dsv.id
-      assert parents <|> [parent]
-      assert children <|> ([child, child_confidential] ++ fields ++ field_confidential)
-      assert siblings <|> [sibling, dsv, sibling_confidential]
+      assert parents ||| [parent]
+      assert children ||| [child, child_confidential] ++ fields ++ field_confidential
+      assert siblings ||| [sibling, dsv, sibling_confidential]
       assert %{children: child_rels} = relations
       assert Enum.find(child_rels, &(&1.version.id == r_child.id)).version <~> r_child
 
       assert Enum.find(child_rels, &(&1.version.id == r_child_confidential.id)).version
              <~> r_child_confidential
-    end
-
-    test "get_data_structure_version!/2 with options: tags" do
-      d = insert(:data_structure)
-
-      %{id: id1, description: d1, data_structure_tag: %{name: n1}} =
-        insert(:data_structures_tags, data_structure: d, description: "foo")
-
-      %{id: id2, description: d2, data_structure_tag: %{name: n2}} =
-        insert(:data_structures_tags, data_structure: d, description: "bar")
-
-      version = insert(:data_structure_version, data_structure: d)
-
-      assert %{
-               tags: [
-                 %{id: ^id1, description: ^d1, data_structure_tag: %{name: ^n1}},
-                 %{id: ^id2, description: ^d2, data_structure_tag: %{name: ^n2}}
-               ]
-             } = DataStructures.get_data_structure_version!(version.id, [:tags])
     end
 
     test "get_data_structure_version!/1 returns the data_structure with given id", %{
@@ -785,23 +1119,13 @@ defmodule TdDd.DataStructuresTest do
 
     test "get_data_structure_version!/1 enriches with path and aliases" do
       dsvs =
-        ["foo", "bar", "baz", "xyzzy", "spqr"]
+        ["foo", "original_name", "baz", "xyzzy", "spqr"]
         |> create_hierarchy()
-
-      alias_name = "alias_name"
-
-      insert(:structure_note,
-        data_structure: Enum.at(dsvs, 1).data_structure,
-        df_content: %{"alias" => alias_name},
-        status: :published
-      )
 
       %{id: id} = Enum.at(dsvs, 4)
 
-      Hierarchy.update_hierarchy([id])
       assert %{path: path} = DataStructures.get_data_structure_version!(id)
-      assert Enum.map(path, & &1["name"]) == ["foo", "bar", "baz", "xyzzy"]
-      assert Enum.map(path, & &1["published_note"]) == [nil, %{"alias" => alias_name}, nil, nil]
+      assert Enum.map(path, & &1["name"]) == ["foo", "alias_name", "baz", "xyzzy"]
     end
 
     test "get_data_structure_version!/2 excludes deleted children if structure is not deleted" do
@@ -831,7 +1155,7 @@ defmodule TdDd.DataStructuresTest do
       assert %{children: children} =
                DataStructures.get_data_structure_version!(dsv.id, [:children])
 
-      assert children <|> [child]
+      assert children ||| [child]
     end
 
     test "get_data_structure_version!/2 gets custom relations", %{
@@ -899,9 +1223,9 @@ defmodule TdDd.DataStructuresTest do
              } = DataStructures.get_data_structure_version!(dsv.id, enrich_opts)
 
       assert id == dsv.id
-      assert parents <|> [parent]
-      assert children <|> [child]
-      assert siblings <|> [sibling, dsv]
+      assert parents ||| [parent]
+      assert children ||| [child]
+      assert siblings ||| [sibling, dsv]
       assert %{parents: [parent_relation], children: [child_relation]} = relations
       assert parent_relation.version <~> parent_custom_relation
       assert child_relation.version <~> child_custom_relation
@@ -938,7 +1262,7 @@ defmodule TdDd.DataStructuresTest do
       assert %{children: children} =
                DataStructures.get_data_structure_version!(dsv.id, [:children])
 
-      assert children <|> deleted_children
+      assert children ||| deleted_children
     end
 
     test "get_data_structure_version!/2 enriches with fields" do
@@ -961,7 +1285,7 @@ defmodule TdDd.DataStructuresTest do
       assert %{data_fields: data_fields} =
                DataStructures.get_data_structure_version!(dsv.id, [:data_fields])
 
-      assert data_fields <|> fields
+      assert data_fields ||| fields
     end
 
     test "get_data_structure_version!/2 enriches with versions", %{system: system} do
@@ -974,7 +1298,7 @@ defmodule TdDd.DataStructuresTest do
       assert %{versions: versions} =
                DataStructures.get_data_structure_version!(dsv.id, [:versions])
 
-      assert versions <|> [dsv | dsvs]
+      assert versions ||| [dsv | dsvs]
     end
 
     test "get_data_structure_version!/2 enriches with system", %{
@@ -997,6 +1321,36 @@ defmodule TdDd.DataStructuresTest do
       assert %{data_structure: data_structure} = DataStructures.get_data_structure_version!(id)
       assert %{domains: [domain]} = data_structure
       assert %{id: ^domain_id, name: ^domain_name, external_id: ^domain_external_id} = domain
+    end
+
+    test "get_data_structure_version!/1 enriches data structure with domain parents", _ do
+      %{id: d1_id, name: d1_name, external_id: d1_ext_id} = CacheHelpers.insert_domain()
+
+      %{id: d2_id, name: d2_name, external_id: d2_ext_id} =
+        CacheHelpers.insert_domain(%{parent_id: d1_id})
+
+      %{id: d3_id, name: d3_name, external_id: d3_ext_id} =
+        CacheHelpers.insert_domain(%{parent_id: d2_id})
+
+      %{id: id} =
+        insert(:data_structure_version,
+          data_structure:
+            build(:data_structure,
+              domain_ids: [d3_id]
+            )
+        )
+
+      assert %{data_structure: data_structure} = DataStructures.get_data_structure_version!(id)
+      assert %{domains: [domain]} = data_structure
+
+      assert %{
+               name: ^d3_name,
+               external_id: ^d3_ext_id,
+               parents: [
+                 %{id: ^d1_id, name: ^d1_name, external_id: ^d1_ext_id},
+                 %{id: ^d2_id, name: ^d2_name, external_id: ^d2_ext_id}
+               ]
+             } = domain
     end
 
     test "get_data_structure_version!/1 enriches with empty map when there is no domain",
@@ -1357,6 +1711,13 @@ defmodule TdDd.DataStructuresTest do
       assert [_] = DataStructures.get_children(parent, with_confidential: false)
       assert [] = DataStructures.get_children(parent, with_confidential: false, default: false)
     end
+
+    test "finds non-default relation" do
+      %{parent: parent} = insert(:data_structure_relation)
+
+      assert [_] = DataStructures.get_children(parent, default: false)
+      assert [] = DataStructures.get_children(parent)
+    end
   end
 
   describe "get_parents/2" do
@@ -1364,6 +1725,13 @@ defmodule TdDd.DataStructuresTest do
       %{child: child} = create_relation()
       assert [_] = DataStructures.get_parents(child, with_confidential: false)
       assert [] = DataStructures.get_parents(child, with_confidential: false, default: false)
+    end
+
+    test "finds non-default relation" do
+      %{child: child} = insert(:data_structure_relation)
+
+      assert [_] = DataStructures.get_parents(child, default: false)
+      assert [] = DataStructures.get_parents(child)
     end
   end
 
@@ -1382,236 +1750,124 @@ defmodule TdDd.DataStructuresTest do
     end
   end
 
-  describe "data_structure_tags" do
-    @valid_attrs %{name: "some name"}
-    @update_attrs %{name: "some updated name"}
-    @invalid_attrs %{name: nil}
+  describe "grant request reindex" do
+    test "grant request reindex on data structure metadata update",
+         %{
+           data_structure: data_structure
+         } do
+      MockIndexWorker.clear()
+      mm = insert(:structure_metadata, data_structure: data_structure)
 
-    def data_structure_tag_fixture(attrs \\ %{}) do
-      {:ok, data_structure_tag} =
-        attrs
-        |> Enum.into(@valid_attrs)
-        |> DataStructures.create_data_structure_tag()
+      %{id: grant_request_id1} =
+        insert(:grant_request,
+          data_structure: data_structure
+        )
 
-      data_structure_tag
+      %{id: grant_request_id2} =
+        insert(:grant_request,
+          data_structure: data_structure
+        )
+
+      assert {:ok, _} = DataStructures.update_structure_metadata(mm, @update_attrs)
+
+      find_call = {:reindex_grant_requests, [grant_request_id1, grant_request_id2]}
+
+      assert find_call ==
+               MockIndexWorker.calls()
+               |> Enum.find(fn call ->
+                 find_call == call
+               end)
     end
 
-    test "list_data_structure_tags/0 returns all data_structure_tags" do
-      data_structure_tag = data_structure_tag_fixture()
-      assert DataStructures.list_data_structure_tags() == [data_structure_tag]
-    end
+    test "grant request reindex when applies changes to descendents", %{claims: claims} do
+      MockIndexWorker.clear()
+      %{data_structure: parent_data_structure, id: parent_id} = insert(:data_structure_version)
+      %{data_structure: child_data_structure, id: child_id} = insert(:data_structure_version)
 
-    test "list_data_structure_tags/1 returns all data_structure_tags with structure count" do
-      %{data_structure_tag: %{id: id, name: name}} = insert(:data_structures_tags)
-
-      assert [%{id: ^id, name: ^name, structure_count: 1}] =
-               DataStructures.list_data_structure_tags(structure_count: true)
-    end
-
-    test "get_data_structure_tag/1 returns the data_structure_tag with given id" do
-      %{id: id} = data_structure_tag = data_structure_tag_fixture()
-      assert DataStructures.get_data_structure_tag(id: id) == data_structure_tag
-    end
-
-    test "create_data_structure_tag/1 with valid data creates a data_structure_tag" do
-      assert {:ok, %DataStructureTag{} = data_structure_tag} =
-               DataStructures.create_data_structure_tag(@valid_attrs)
-
-      assert data_structure_tag.name == "some name"
-    end
-
-    test "create_data_structure_tag/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} =
-               DataStructures.create_data_structure_tag(@invalid_attrs)
-    end
-
-    test "update_data_structure_tag/2 with valid data updates the data_structure_tag" do
-      data_structure_tag = data_structure_tag_fixture()
-
-      assert {:ok, %DataStructureTag{} = data_structure_tag} =
-               DataStructures.update_data_structure_tag(data_structure_tag, @update_attrs)
-
-      assert data_structure_tag.name == "some updated name"
-    end
-
-    test "update_data_structure_tag/2 with invalid data returns error changeset" do
-      %{id: id} = data_structure_tag = data_structure_tag_fixture()
-
-      assert {:error, %Ecto.Changeset{}} =
-               DataStructures.update_data_structure_tag(data_structure_tag, @invalid_attrs)
-
-      assert data_structure_tag == DataStructures.get_data_structure_tag!(id: id)
-    end
-
-    test "delete_data_structure_tag/1 deletes the data_structure_tag" do
-      %{id: id} = data_structure_tag = data_structure_tag_fixture()
-
-      assert {:ok, %DataStructureTag{}} =
-               DataStructures.delete_data_structure_tag(data_structure_tag)
-
-      assert_raise Ecto.NoResultsError, fn ->
-        DataStructures.get_data_structure_tag!(id: id)
-      end
-    end
-  end
-
-  describe "link_tag/3" do
-    test "links tag to a given structure", %{claims: claims} do
-      description = "foo"
-      structure = %{id: data_structure_id, external_id: external_id} = insert(:data_structure)
-      %{name: version_name} = insert(:data_structure_version, data_structure: structure)
-      tag = %{id: tag_id, name: tag_name} = insert(:data_structure_tag)
-      params = %{description: description}
-
-      {:ok,
-       %{
-         audit: event_id,
-         linked_tag: %{
-           description: ^description,
-           data_structure: %{id: ^data_structure_id},
-           data_structure_tag: %{id: ^tag_id}
-         }
-       }} = DataStructures.link_tag(structure, tag, params, claims)
-
-      assert {:ok, [%{id: ^event_id, payload: payload}]} =
-               Stream.range(:redix, @stream, event_id, event_id, transform: :range)
-
-      assert %{
-               "description" => ^description,
-               "tag" => ^tag_name,
-               "resource" => %{
-                 "external_id" => ^external_id,
-                 "name" => ^version_name,
-                 "path" => []
-               }
-             } = Jason.decode!(payload)
-    end
-
-    test "updates link information when it already exists", %{claims: claims} do
-      description = "bar"
-      structure = %{id: data_structure_id, external_id: external_id} = insert(:data_structure)
-      tag = %{id: tag_id, name: tag_name} = insert(:data_structure_tag)
-      %{name: version_name} = insert(:data_structure_version, data_structure: structure)
-
-      insert(:data_structures_tags,
-        data_structure_tag: tag,
-        data_structure: structure,
-        description: "foo"
+      insert(:data_structure_relation,
+        parent_id: parent_id,
+        child_id: child_id,
+        relation_type_id: RelationTypes.default_id!()
       )
 
-      params = %{description: description}
+      %{id: grant_request_parent_id} =
+        insert(:grant_request,
+          data_structure: parent_data_structure
+        )
 
-      {:ok,
-       %{
-         audit: event_id,
-         linked_tag: %{
-           description: ^description,
-           data_structure: %{id: ^data_structure_id},
-           data_structure_tag: %{id: ^tag_id}
-         }
-       }} = DataStructures.link_tag(structure, tag, params, claims)
+      %{id: grant_request_child_id} =
+        insert(:grant_request,
+          data_structure: child_data_structure
+        )
 
-      assert {:ok, [%{id: ^event_id, payload: payload}]} =
-               Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+      params = %{domain_ids: [2, 3]}
 
-      assert %{
-               "description" => ^description,
-               "tag" => ^tag_name,
-               "resource" => %{
-                 "external_id" => ^external_id,
-                 "name" => ^version_name,
-                 "path" => []
-               }
-             } = Jason.decode!(payload)
+      assert {:ok, _} =
+               DataStructures.update_data_structure(claims, parent_data_structure, params, true)
+
+      find_call = {:reindex_grant_requests, [grant_request_parent_id, grant_request_child_id]}
+
+      assert find_call ==
+               MockIndexWorker.calls()
+               |> Enum.find(fn call ->
+                 find_call == call
+               end)
     end
 
-    test "gets error when description is invalid", %{claims: claims} do
-      structure = insert(:data_structure)
-      tag = insert(:data_structure_tag)
-      params = %{}
+    test "reindex grant request if updated domain_ids and has implementation_structure relation",
+         %{
+           data_structure: %{id: id} = data_structure,
+           claims: claims
+         } do
+      MockIndexWorker.clear()
+      %{id: implementation_id} = insert(:implementation, version: 1, status: :published)
 
-      {:error, _,
-       %{errors: [description: {"can't be blank", [validation: :required]}], valid?: false},
-       _} = DataStructures.link_tag(structure, tag, params, claims)
+      insert(:implementation_structure,
+        data_structure_id: id,
+        implementation_id: implementation_id
+      )
 
-      params = %{description: nil}
+      %{id: grant_request_id} =
+        insert(:grant_request,
+          data_structure: data_structure
+        )
 
-      {:error, _,
-       %{errors: [description: {"can't be blank", [validation: :required]}], valid?: false},
-       _} = DataStructures.link_tag(structure, tag, params, claims)
+      params = %{domain_ids: [1, 2, 3]}
 
-      params = %{description: String.duplicate("foo", 334)}
+      assert {:ok, _} =
+               DataStructures.update_data_structure(claims, data_structure, params, false)
 
-      {:error, _,
-       %{
-         errors: [
-           description:
-             {"max.length.1000", [count: 1000, validation: :length, kind: :max, type: :string]}
-         ],
-         valid?: false
-       }, _} = DataStructures.link_tag(structure, tag, params, claims)
-    end
-  end
+      find_call = {:reindex_grant_requests, [grant_request_id]}
 
-  describe "get_links_tag/2" do
-    test "gets a list of links between a structure and its tags" do
-      structure = %{id: data_structure_id} = insert(:data_structure)
-      tag = %{id: data_structure_tag_id, name: name} = insert(:data_structure_tag)
-
-      %{id: link_id, description: description} =
-        insert(:data_structures_tags, data_structure: structure, data_structure_tag: tag)
-
-      assert [
-               %{
-                 id: ^link_id,
-                 data_structure: %{id: ^data_structure_id},
-                 data_structure_tag: %{id: ^data_structure_tag_id, name: ^name},
-                 description: ^description
-               }
-             ] = DataStructures.get_links_tag(structure)
-    end
-  end
-
-  describe "delete_link_tag/2" do
-    test "deletes link between tag and structure", %{claims: claims} do
-      structure = %{id: data_structure_id, external_id: external_id} = insert(:data_structure)
-      tag = %{id: data_structure_tag_id, name: tag_name} = insert(:data_structure_tag)
-      %{name: version_name} = insert(:data_structure_version, data_structure: structure)
-
-      %{description: description} =
-        insert(:data_structures_tags, data_structure: structure, data_structure_tag: tag)
-
-      assert {:ok,
-              %{
-                audit: event_id,
-                deleted_link_tag: %{
-                  data_structure_id: ^data_structure_id,
-                  data_structure_tag_id: ^data_structure_tag_id
-                }
-              }} = DataStructures.delete_link_tag(structure, tag, claims)
-
-      assert {:ok, [%{id: ^event_id, payload: payload}]} =
-               Stream.range(:redix, @stream, event_id, event_id, transform: :range)
-
-      assert %{
-               "description" => ^description,
-               "tag" => ^tag_name,
-               "resource" => %{
-                 "external_id" => ^external_id,
-                 "name" => ^version_name,
-                 "path" => []
-               }
-             } = Jason.decode!(payload)
-
-      assert is_nil(DataStructures.get_link_tag_by(data_structure_id, data_structure_tag_id))
+      assert find_call ==
+               MockIndexWorker.calls()
+               |> Enum.find(fn call ->
+                 find_call == call
+               end)
     end
 
-    test "not_found if link does not exist", %{claims: claims} do
-      structure = %{id: data_structure_id} = insert(:data_structure)
-      tag = %{id: data_structure_tag_id} = insert(:data_structure_tag)
+    test "reindex grants when updates confidential and domain_ids", %{
+      data_structure: data_structure,
+      claims: claims
+    } do
+      MockIndexWorker.clear()
+      params = %{confidential: true, domain_ids: [1, 2, 3]}
 
-      assert {:error, :not_found} = DataStructures.delete_link_tag(structure, tag, claims)
-      assert is_nil(DataStructures.get_link_tag_by(data_structure_id, data_structure_tag_id))
+      %{id: grant_request_id} =
+        insert(:grant_request,
+          data_structure: data_structure
+        )
+
+      assert {:ok, _} =
+               DataStructures.update_data_structure(claims, data_structure, params, false)
+
+      find_call = {:reindex_grant_requests, [grant_request_id]}
+
+      assert find_call ==
+               MockIndexWorker.calls()
+               |> Enum.find(fn call ->
+                 find_call == call
+               end)
     end
   end
 
@@ -1628,104 +1884,72 @@ defmodule TdDd.DataStructuresTest do
     )
   end
 
-  describe "structure_notes" do
-    @user_id 1
-    @valid_attrs %{df_content: %{}, status: :draft, version: 42}
-    @update_attrs %{df_content: %{}, status: :published}
-    @invalid_attrs %{df_content: nil, status: nil, version: nil}
-
-    test "list_structure_notes/0 returns all structure_notes" do
-      structure_note = insert(:structure_note)
-      assert StructureNotes.list_structure_notes() <|> [structure_note]
-    end
-
-    test "list_structure_notes/1 returns all structure_notes for a data_structure" do
-      %{data_structure_id: data_structure_id} = structure_note = insert(:structure_note)
-      insert(:structure_note)
-      assert StructureNotes.list_structure_notes(data_structure_id) <|> [structure_note]
-    end
-
-    test "list_structure_notes/1 returns all structure_notes filtered by params" do
-      n1 = insert(:structure_note, status: :versioned, updated_at: ~N[2021-01-10 10:00:00])
-      n2 = insert(:structure_note, status: :versioned, updated_at: ~N[2021-01-10 11:00:00])
-      n3 = insert(:structure_note, status: :versioned, updated_at: ~N[2021-01-01 10:00:00])
-      n4 = insert(:structure_note, status: :draft, updated_at: ~N[2021-01-10 10:00:00])
-
-      filters = %{
-        "updated_at" => "2021-01-02 10:00:00",
-        "status" => "versioned"
+  defp create_hierarchy_with_protected_metadata do
+    metadata = %{
+      "m_foo" => "m_bar",
+      DataStructures.protected() => %{
+        "m_field1" => "m_field1",
+        "m_field2" => "m_field2"
       }
+    }
 
-      assert StructureNotes.list_structure_notes(filters) <|> [n1, n2]
-      assert StructureNotes.list_structure_notes(%{}) <|> [n1, n2, n3, n4]
-      assert StructureNotes.list_structure_notes(%{"status" => :draft}) <|> [n4]
-    end
+    mutable_metadata = %{
+      "mm_foo" => "mm_bar",
+      DataStructures.protected() => %{
+        "mm_field1" => "mm_field1",
+        "mm_field2" => "mm_field2"
+      }
+    }
 
-    test "get_structure_note!/1 returns the structure_note with given id" do
-      structure_note = insert(:structure_note)
-      assert StructureNotes.get_structure_note!(structure_note.id) <~> structure_note
-    end
+    data_structures =
+      Enum.map(
+        ["structure", "parent", "child", "sibling"],
+        &insert(:data_structure, external_id: &1)
+      )
 
-    test "get_latest_structure_note/1 returns the latest structure_note for a data_structure" do
-      %{data_structure: data_structure} = insert(:structure_note, version: 1)
-      insert(:structure_note, version: 2, data_structure: data_structure)
-      latest_structure_note = insert(:structure_note, version: 3, data_structure: data_structure)
-      insert(:structure_note)
-      assert StructureNotes.get_latest_structure_note(data_structure.id) <~> latest_structure_note
-    end
+    _inserted_mutable_metadata =
+      Enum.map(
+        data_structures,
+        &insert(
+          :structure_metadata,
+          data_structure_id: &1.id,
+          fields: mutable_metadata
+        )
+      )
 
-    test "create_structure_note/3 with valid data creates a structure_note and publishes event" do
-      data_structure = insert(:data_structure)
+    [dsv, parent, child, sibling] =
+      Enum.map(
+        data_structures,
+        &insert(:data_structure_version, data_structure_id: &1.id, metadata: metadata)
+      )
 
-      assert {:ok, %StructureNote{} = structure_note} =
-               StructureNotes.create_structure_note(data_structure, @valid_attrs, @user_id)
+    relation_type_id = RelationTypes.default_id!()
 
-      assert structure_note.df_content == %{}
-      assert structure_note.status == :draft
-      assert structure_note.version == 42
-    end
+    insert(:data_structure_relation,
+      parent_id: parent.id,
+      child_id: dsv.id,
+      relation_type_id: relation_type_id
+    )
 
-    test "create_structure_note/3 with invalid data returns error changeset" do
-      data_structure = insert(:data_structure)
+    insert(:data_structure_relation,
+      parent_id: parent.id,
+      child_id: sibling.id,
+      relation_type_id: relation_type_id
+    )
 
-      assert {:error, %Ecto.Changeset{}} =
-               StructureNotes.create_structure_note(data_structure, @invalid_attrs, @user_id)
-    end
+    insert(:data_structure_relation,
+      parent_id: dsv.id,
+      child_id: child.id,
+      relation_type_id: relation_type_id
+    )
 
-    test "update_structure_note/3 with valid data updates the structure_note" do
-      structure_note = insert(:structure_note)
-
-      assert {:ok, %StructureNote{} = structure_note} =
-               StructureNotes.update_structure_note(structure_note, @update_attrs, @user_id)
-
-      assert structure_note.df_content == %{}
-      assert structure_note.status == :published
-    end
-
-    test "update_structure_note/3 with invalid data returns error changeset" do
-      structure_note = insert(:structure_note)
-
-      assert {:error, %Ecto.Changeset{}} =
-               StructureNotes.update_structure_note(structure_note, @invalid_attrs, @user_id)
-
-      assert structure_note <~> StructureNotes.get_structure_note!(structure_note.id)
-    end
-
-    test "delete_structure_note/1 deletes the structure_note" do
-      %{user_id: user_id} = build(:claims)
-      structure_note = insert(:structure_note)
-
-      assert {:ok, %StructureNote{}} =
-               StructureNotes.delete_structure_note(structure_note, user_id)
-
-      assert_raise Ecto.NoResultsError, fn ->
-        StructureNotes.get_structure_note!(structure_note.id)
-      end
-    end
-
-    test "change_structure_note/1 returns a structure_note changeset" do
-      structure_note = insert(:structure_note)
-      assert %Ecto.Changeset{} = StructureNotes.change_structure_note(structure_note)
-    end
+    %{
+      dsv: dsv,
+      parent_dsv: parent,
+      child_dsv: child,
+      sibling_dsv: sibling,
+      metadata: metadata,
+      mutable_metadata: mutable_metadata
+    }
   end
 end

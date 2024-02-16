@@ -11,16 +11,21 @@ defmodule TdDd.TestOperators do
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Profiles.Profile
+  alias TdDd.UserSearchFilters.UserSearchFilter
   alias TdDq.Implementations.Implementation
   alias TdDq.Implementations.ImplementationStructure
   alias TdDq.Rules.RuleResult
 
   def a <~> b, do: approximately_equal(a, b)
-  def a <|> b, do: approximately_equal(sorted(a), sorted(b))
+  def a ||| b, do: approximately_equal(sorted(a), sorted(b))
 
   ## Sort by id if present
   defp sorted([%{id: _} | _] = list) do
     Enum.sort_by(list, & &1.id)
+  end
+
+  defp sorted([%{"id" => _} | _] = list) do
+    Enum.sort_by(list, &Map.get(&1, "id"))
   end
 
   defp sorted([%Hierarchy{} | _] = list) do
@@ -36,7 +41,6 @@ defmodule TdDd.TestOperators do
       :system,
       :domain,
       :linked_concepts,
-      :latest_note,
       :published_note
     ]
 
@@ -51,7 +55,6 @@ defmodule TdDd.TestOperators do
       :classifications,
       :data_structure,
       :external_id,
-      :latest_note,
       :parents,
       :path,
       :with_profiling,
@@ -91,12 +94,12 @@ defmodule TdDd.TestOperators do
   end
 
   defp approximately_equal(%GrantRequest{} = a, %GrantRequest{} = b) do
-    drop_fields = [:data_structure, :group, :pending_roles, :approvals]
+    drop_fields = [:data_structure, :group, :pending_roles, :all_pending_roles, :approvals]
     Map.drop(a, drop_fields) == Map.drop(b, drop_fields)
   end
 
   defp approximately_equal(%GrantRequestGroup{} = a, %GrantRequestGroup{} = b) do
-    Map.drop(a, [:requests]) == Map.drop(b, [:requests])
+    Map.drop(a, [:requests, :modification_grant]) == Map.drop(b, [:requests, :modification_grant])
   end
 
   defp approximately_equal(%Profile{} = a, %Profile{} = b) do
@@ -109,9 +112,16 @@ defmodule TdDd.TestOperators do
     Map.take(a, test_fields) == Map.take(b, test_fields)
   end
 
+  defp approximately_equal(%UserSearchFilter{} = a, %UserSearchFilter{} = b) do
+    drop_fields = [:filters]
+    Map.drop(a, drop_fields) == Map.drop(b, drop_fields)
+  end
+
   defp approximately_equal([h | t], [h2 | t2]) do
     approximately_equal(h, h2) && approximately_equal(t, t2)
   end
+
+  defp approximately_equal(%{"id" => id1}, %{"id" => id2}), do: id1 == id2
 
   defp approximately_equal(a, b), do: a == b
 end

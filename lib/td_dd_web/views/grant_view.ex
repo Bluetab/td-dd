@@ -10,6 +10,13 @@ defmodule TdDdWeb.GrantView do
     %{data: render_many(grants, __MODULE__, "grant.json")}
   end
 
+  def render("show.json", %{grant: grant, actions: actions}) do
+    %{
+      data: render_one(grant, __MODULE__, "grant.json"),
+      _actions: actions
+    }
+  end
+
   def render("show.json", %{grant: grant}) do
     %{data: render_one(grant, __MODULE__, "grant.json")}
   end
@@ -21,10 +28,12 @@ defmodule TdDdWeb.GrantView do
       :detail,
       :start_date,
       :end_date,
+      :pending_removal,
       :user_id,
       :source_user_name,
       :inserted_at,
-      :updated_at
+      :updated_at,
+      :external_ref
     ])
     |> add_structure(grant)
     |> add_structure_version(grant)

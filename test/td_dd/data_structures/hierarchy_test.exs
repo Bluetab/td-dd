@@ -28,7 +28,7 @@ defmodule TdDd.DataStructures.HierarchyTest do
         %Hierarchy{dsv_id: dsv_id_c, ancestor_dsv_id: dsv_id_a, ancestor_level: 2}
       ]
 
-      assert expected <|> Hierarchy.list_hierarchy()
+      assert expected ||| Hierarchy.list_hierarchy()
 
       [
         dsv_id_x,
@@ -53,10 +53,10 @@ defmodule TdDd.DataStructures.HierarchyTest do
             %Hierarchy{dsv_id: dsv_id_z, ancestor_dsv_id: dsv_id_x, ancestor_level: 2}
           ]
 
-      assert expected <|> Hierarchy.list_hierarchy()
+      assert expected ||| Hierarchy.list_hierarchy()
     end
 
-    test "it should not insert duplicates", %{} do
+    test "running twice, it should not insert duplicates", %{} do
       [
         dsv_id_a,
         dsv_id_b,
@@ -79,7 +79,7 @@ defmodule TdDd.DataStructures.HierarchyTest do
         %Hierarchy{dsv_id: dsv_id_c, ancestor_dsv_id: dsv_id_a, ancestor_level: 2}
       ]
 
-      assert expected <|> Hierarchy.list_hierarchy()
+      assert expected ||| Hierarchy.list_hierarchy()
     end
   end
 end

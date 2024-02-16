@@ -1,6 +1,5 @@
 defmodule TdDd.Repo.Migrations.CreateRemediation do
   use Ecto.Migration
-  alias TdDq.Rules.RuleResult
 
   def change do
     create table("remediations") do

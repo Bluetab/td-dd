@@ -4,10 +4,14 @@ defmodule TdDd.Access.BulkLoad do
   """
 
   import Ecto.Query
+
   require Logger
 
+  alias Ecto.Changeset
   alias TdDd.Access
   alias TdDd.Repo
+
+  defdelegate authorize(action, user, params), to: TdDd.Access.Policy
 
   def bulk_load(accesses) do
     Logger.info("Loading Accesses")
@@ -20,92 +24,71 @@ defmodule TdDd.Access.BulkLoad do
 
   defp do_bulk_load(accesses) do
     external_ids =
-      Enum.reduce(
-        accesses,
-        MapSet.new(),
-        fn
-          %{"data_structure_external_id" => data_structure_external_id}, acc ->
-            MapSet.put(acc, data_structure_external_id)
+      accesses
+      |> MapSet.new(fn
+        %{"data_structure_external_id" => external_id} -> external_id
+        _ -> nil
+      end)
+      |> MapSet.delete(nil)
 
-          _, acc ->
-            acc
-        end
-      )
-
-    external_ids_list = MapSet.to_list(external_ids)
-
-    existing_external_ids =
+    external_id_map =
       from(ds in TdDd.DataStructures.DataStructure,
-        where: ds.external_id in ^external_ids_list,
-        select: ds.external_id
+        where: ds.external_id in ^MapSet.to_list(external_ids),
+        select: {ds.external_id, ds.id}
       )
       |> Repo.all()
-      |> MapSet.new()
+      |> Map.new()
 
-    inexistent_external_ids = MapSet.difference(external_ids, existing_external_ids)
-
-    accesses_existing_ds_external_id =
-      Stream.filter(accesses, fn
-        %{"data_structure_external_id" => data_structure_external_id} ->
-          data_structure_external_id not in inexistent_external_ids
-
-        _ ->
-          true
-      end)
+    existing_external_ids = external_id_map |> Map.keys() |> MapSet.new()
+    missing_external_ids = MapSet.difference(external_ids, existing_external_ids)
 
     now = DateTime.utc_now()
 
-    {valid_item_changesets, invalid_item_changesets} =
-      accesses_existing_ds_external_id
-      |> Stream.map(fn access_attrs ->
-        access_attrs
-        |> Map.put("inserted_at", now)
-        |> Map.put("updated_at", now)
-        |> Access.changeset()
+    {valid_changesets, invalid_changesets} =
+      accesses
+      |> Stream.reject(fn
+        %{"data_structure_external_id" => external_id} -> external_id in missing_external_ids
+        _ -> false
       end)
-      |> Enum.split_with(fn %Ecto.Changeset{} = access_changeset -> access_changeset.valid? end)
+      |> Stream.map(&changeset(&1, external_id_map, now))
+      |> Enum.split_with(fn %{valid?: valid?} -> valid? end)
 
-    list =
-      valid_item_changesets
-      |> apply()
-      |> Enum.to_list()
+    entries = Enum.map(valid_changesets, &changeset_to_entry/1)
 
-    {inserted_count, _result} =
-      Repo.insert_all(Access, list,
-        conflict_target: [:data_structure_external_id, :source_user_name, :accessed_at],
+    {count, _result} =
+      Repo.insert_all(Access, entries,
+        conflict_target: [:data_structure_id, :source_user_name, :accessed_at],
         on_conflict: {:replace, [:user_id, :updated_at]}
       )
 
-    {inserted_count, invalid_item_changesets, MapSet.to_list(inexistent_external_ids)}
+    {count, invalid_changesets, MapSet.to_list(missing_external_ids)}
   end
 
-  def apply(valid_item_changesets) do
-    valid_item_changesets
-    |> Stream.map(fn %Ecto.Changeset{} = changeset ->
-      changeset
-      |> Ecto.Changeset.apply_changes()
-      |> clean()
-    end)
+  defp changeset(params, external_id_map, ts) do
+    external_id = Map.get(external_id_map, Map.get(params, "data_structure_external_id"))
+
+    params
+    |> Map.put("data_structure_id", external_id)
+    |> Map.put("inserted_at", ts)
+    |> Map.put("updated_at", ts)
+    |> Access.changeset()
   end
 
-  # turns %Access{} into a map with only non-nil item values (no association or __meta__ structs)
-  def clean(item) do
-    item
-    |> Map.from_struct()
-    # or something similar
-    |> Enum.reject(fn
-      {_key, nil} ->
-        true
-
-      {_key, %{:__struct__ => struct}}
-      when struct in [Ecto.Schema.Metadata, Ecto.Association.NotLoaded] ->
-        # rejects __meta__: #Ecto.Schema.Metadata<:built, "items">
-        # and association: #Ecto.Association.NotLoaded<association :association is not loaded>
-        true
-
-      _other ->
-        false
-    end)
-    |> Enum.into(%{})
+  defp changeset_to_entry(changeset) do
+    changeset
+    |> Changeset.apply_changes()
+    |> Map.take([
+      :data_structure_id,
+      # :data_structure_external_id,
+      :accessed_at,
+      :details,
+      :id,
+      :inserted_at,
+      :source_user_name,
+      :updated_at,
+      :user_id
+    ])
+    |> Enum.reject(fn {_, v} -> is_nil(v) end)
+    |> Map.new()
   end
 end

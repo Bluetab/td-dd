@@ -2,11 +2,10 @@ defmodule TdDdWeb.DataStructureView do
   use TdDdWeb, :view
 
   alias TdDd.DataStructures
-  alias TdDdWeb.DataStructuresTagsView
-  alias TdDdWeb.DataStructureTagView
   alias TdDdWeb.DataStructureVersionView
-
-  require Logger
+  alias TdDdWeb.GrantRequestView
+  alias TdDdWeb.GrantView
+  alias TdDdWeb.StructureTagView
 
   def render("index.json", %{actions: %{} = actions} = assigns) when map_size(actions) > 0 do
     "index.json"
@@ -31,27 +30,20 @@ defmodule TdDdWeb.DataStructureView do
     %{data: render_many(data_structures, __MODULE__, "data_structure.json")}
   end
 
-  def render("show.json", %{actions: actions} = assigns) do
-    "show.json"
-    |> render(Map.delete(assigns, :actions))
-    |> put_actions(actions)
-  end
-
   def render("show.json", %{data_structure: data_structure, user_permissions: user_permissions}) do
     "show.json"
     |> render(%{data_structure: data_structure})
     |> Map.put(:user_permissions, user_permissions)
   end
 
-  def render("show.json", %{data_structure: data_structure}) do
+  def render("show.json", %{data_structure: data_structure} = assigns) do
     %{
       data:
         data_structure
         |> data_structure_json()
+        |> add_tags(assigns)
         |> add_metadata_versions(data_structure)
         |> add_system_with_keys(data_structure, [:external_id, :id, :name])
-        |> add_dynamic_content(data_structure, :latest_note)
-        |> add_dynamic_content(data_structure, :published_note)
         |> add_data_fields(data_structure)
         |> add_versions(data_structure)
         |> add_parents(data_structure)
@@ -67,13 +59,17 @@ defmodule TdDdWeb.DataStructureView do
     |> data_structure_json()
     |> add_metadata(data_structure)
     |> add_system_with_keys(data_structure, ["external_id", "id", "name"])
-    |> add_dynamic_content(data_structure, :latest_note)
-    |> add_dynamic_content(data_structure, :published_note)
+    |> add_data_fields(data_structure)
+    |> maybe_put_note(data_structure)
+    |> maybe_put_my_grants(data_structure)
+    |> maybe_put_my_grant_request(data_structure)
+    |> maybe_put_grant_user_permissions(data_structure)
   end
 
-  def render("implementation_data_structure.json", %{
+  def render(name, %{
         data_structure: %{current_version: current_version} = data_structure
-      }) do
+      })
+      when name in ["with_current_version.json", "implementation_data_structure.json"] do
     data_structure
     |> data_structure_json()
     |> add_system_with_keys(data_structure, [:external_id, :id, :name])
@@ -136,12 +132,13 @@ defmodule TdDdWeb.DataStructureView do
       :linked_concepts,
       :links,
       :name,
+      :original_name,
       :parent,
+      :parent_id,
       :path,
       :source_id,
       :source,
       :system_id,
-      :tags,
       :type,
       :updated_at,
       :mutable_metadata,
@@ -152,7 +149,6 @@ defmodule TdDdWeb.DataStructureView do
     |> Map.put_new(:metadata, %{})
     |> Map.put_new(:path, [])
     |> add_source()
-    |> add_tags()
   end
 
   defp add_system_with_keys(json, data_structure, keys) do
@@ -167,18 +163,36 @@ defmodule TdDdWeb.DataStructureView do
   defp data_structure_version_embedded(dsv) do
     dsv
     |> Map.take([:data_structure_id, :id, :name, :type, :deleted_at, :metadata])
-    |> lift_metadata()
   end
 
-  defp add_dynamic_content(json, data_structure, key) do
+  defp maybe_put_note(json, data_structure) do
     latest_note =
       data_structure
-      |> Map.get(key, %{})
+      |> Map.get(:note, %{})
       |> DataStructures.get_cached_content(data_structure)
 
-    %{key => latest_note}
-    |> Map.merge(json)
+    Map.put_new(json, :note, latest_note)
   end
+
+  defp maybe_put_my_grant_request(json, %{my_grant_request: [%{} = my_grant_request]}),
+    do:
+      Map.put_new(
+        json,
+        :my_grant_request,
+        render_one(my_grant_request, GrantRequestView, "grant_request.json")
+      )
+
+  defp maybe_put_my_grant_request(json, _), do: json
+
+  defp maybe_put_my_grants(json, %{my_grants: [_ | _] = my_grants}),
+    do: Map.put_new(json, :my_grants, render_many(my_grants, GrantView, "grant.json"))
+
+  defp maybe_put_my_grants(json, _), do: json
+
+  defp maybe_put_grant_user_permissions(json, %{user_permissions: %{} = user_permissions}),
+    do: Map.put_new(json, :user_permissions, user_permissions)
+
+  defp maybe_put_grant_user_permissions(json, _), do: json
 
   defp add_children(data_structure_json, data_structure),
     do: add_relations(data_structure_json, data_structure, :children)
@@ -285,7 +299,7 @@ defmodule TdDdWeb.DataStructureView do
          %{
            data_structure_id: data_structure_id,
            class: "field",
-           data_structure: %{latest_note: latest_note, external_id: external_id}
+           data_structure: %{external_id: external_id}
          } = dsv
        ) do
     dsv
@@ -300,18 +314,8 @@ defmodule TdDdWeb.DataStructureView do
       :links,
       :degree
     ])
-    |> lift_metadata()
     |> Map.put(:id, data_structure_id)
     |> Map.put(:external_id, external_id)
-    |> Map.put(:has_note, not is_nil(latest_note))
-  end
-
-  defp lift_metadata(%{metadata: metadata} = dsv) do
-    metadata = Map.new(metadata, fn {k, v} -> {String.to_atom(k), v} end)
-
-    dsv
-    |> Map.delete(:metadata)
-    |> Map.merge(metadata)
   end
 
   defp add_metadata_versions(data_structure_json, %{metadata_versions: versions})
@@ -334,28 +338,10 @@ defmodule TdDdWeb.DataStructureView do
     Map.put(ds, :source, source)
   end
 
-  defp add_tags(ds) do
-    tags =
-      case Map.get(ds, :tags) do
-        [_ | _] = tags -> render_many(tags, DataStructuresTagsView, "data_structures_tags.json")
-        _ -> []
-      end
-
-    Map.put(ds, :tags, tags)
+  # TODO: tags not consumed by front?
+  defp add_tags(ds, %{tags: tags} = _assigns) do
+    Map.put(ds, :tags, render_many(tags, StructureTagView, "structure_tag.json"))
   end
 
-  defp put_actions(ds, actions) do
-    actions =
-      actions
-      |> Map.take([:manage_tags])
-      |> Enum.reduce(%{}, fn
-        {:manage_tags, %{tags: tags}}, acc when is_list(tags) ->
-          Map.put(acc, :manage_tags, render_many(tags, DataStructureTagView, "embedded.json"))
-
-        _, acc ->
-          acc
-      end)
-
-    Map.put(ds, :_actions, actions)
-  end
+  defp add_tags(ds, _), do: ds
 end

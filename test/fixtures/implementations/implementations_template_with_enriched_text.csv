@@ -1,0 +1,3 @@
+rule_name;implementation_key;template;enriched_field;result_type;goal;minimum
+rule_foo;boo_key_1;enriched_template;foo;percentage;90;10
+rule_foo;boo_key_2;enriched_template;;errors_number;10;90

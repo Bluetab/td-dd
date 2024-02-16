@@ -2,7 +2,6 @@ defmodule TdDd.Loader.MetadataTest do
   use TdDd.DataCase
 
   import Ecto.Query
-  import TdDd.TestOperators
 
   alias TdDd.CSV.Reader
   alias TdDd.DataStructures.StructureMetadata
@@ -155,7 +154,7 @@ defmodule TdDd.Loader.MetadataTest do
       ]
 
       assert {:ok, updated_ids} = Metadata.merge_metadata(records, DateTime.utc_now())
-      assert updated_ids <~> [id2, id3, id4]
+      assert_lists_equal(updated_ids, [id2, id3, id4])
     end
   end
 

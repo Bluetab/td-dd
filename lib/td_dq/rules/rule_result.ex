@@ -7,7 +7,7 @@ defmodule TdDq.Rules.RuleResult do
 
   import Ecto.Changeset
 
-  alias Decimal
+  alias TdDfLib.Validation
   alias TdDq.DateParser
   alias TdDq.Executions.Execution
   alias TdDq.Implementations.Implementation
@@ -32,6 +32,8 @@ defmodule TdDq.Rules.RuleResult do
     field(:row_number, :integer, virtual: true)
     field(:result_type, :string)
     field(:details, :map, default: %{})
+    field(:minimum, :float, virtual: true)
+    field(:goal, :float, virtual: true)
 
     belongs_to(:implementation, Implementation)
     belongs_to(:rule, Rule)
@@ -42,6 +44,14 @@ defmodule TdDq.Rules.RuleResult do
     has_one(:remediation, Remediation)
 
     timestamps()
+  end
+
+  def changeset(:non_existing_nor_published, params) do
+    %__MODULE__{}
+    |> cast(params, [
+      :row_number
+    ])
+    |> add_error(:implementation, "implementation does not exist or is not published")
   end
 
   def changeset(implementation, %{} = params) do
@@ -68,6 +78,8 @@ defmodule TdDq.Rules.RuleResult do
     |> add_validations()
     |> validate_number(:records, greater_than_or_equal_to: 0)
     |> validate_number(:errors, greater_than_or_equal_to: 0)
+    |> validate_change(:details, &Validation.validate_safe/2)
+    |> validate_change(:params, &Validation.validate_safe/2)
     |> with_foreign_key_constraint()
   end
 

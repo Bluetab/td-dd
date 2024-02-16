@@ -124,9 +124,23 @@ defmodule TdDdWeb.GraphControllerTest do
     end
 
     @tag authentication: [role: "admin"]
+    test "returns not found for non-existent graph",
+         %{conn: conn} do
+      assert conn
+             |> get(Routes.graph_path(conn, :show, 1234))
+             |> json_response(:not_found)
+    end
+
+    @tag authentication: [role: "admin"]
     @tag contains: %{"foo" => ["bar", "baz"]}
     @tag depends: [{"bar", "baz", metadata: %{}}]
     test "create existing graph returns the graph drawing", %{conn: conn} do
+      insert(:unit_event,
+        event: "LoadSucceeded",
+        inserted_at: ~U[2007-08-31 01:39:00Z],
+        unit: build(:unit)
+      )
+
       assert %{
                "graph_hash" => _graph_hash,
                "status" => "JUST_STARTED",
@@ -160,6 +174,12 @@ defmodule TdDdWeb.GraphControllerTest do
     @tag contains: %{"foo" => ["bar", "baz"]}
     @tag depends: [{"bar", "baz", metadata: %{"foo" => "bar"}}]
     test "create existing graph returns the graph drawing with metadata", %{conn: conn} do
+      insert(:unit_event,
+        event: "LoadSucceeded",
+        inserted_at: ~U[2007-08-31 01:39:00Z],
+        unit: build(:unit)
+      )
+
       assert %{
                "graph_hash" => _graph_hash,
                "status" => "JUST_STARTED",

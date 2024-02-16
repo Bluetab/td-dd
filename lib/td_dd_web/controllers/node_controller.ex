@@ -16,6 +16,11 @@ defmodule TdDdWeb.NodeController do
     query_nodes(conn)
   end
 
+  def show(conn, %{"id" => id, "domain_id" => domain_id} = _params) do
+    opts = [domain_id: String.to_integer(domain_id)]
+    query_nodes(conn, id, opts)
+  end
+
   def show(conn, %{"id" => id} = _params) do
     query_nodes(conn, id)
   end

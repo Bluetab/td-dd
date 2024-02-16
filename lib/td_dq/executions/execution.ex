@@ -32,7 +32,7 @@ defmodule TdDq.Executions.Execution do
   def changeset(%__MODULE__{} = struct, %{} = params) do
     struct
     |> cast(params, [:group_id, :implementation_id, :result_id, :structure_aliases])
-    |> validate_required([:implementation_id])
+    |> validate_required(:implementation_id)
     |> foreign_key_constraint(:group_id)
     |> foreign_key_constraint(:implementation_id)
     |> foreign_key_constraint(:result_id)

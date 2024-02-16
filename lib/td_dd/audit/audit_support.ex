@@ -45,7 +45,7 @@ defmodule TdDd.Audit.AuditSupport do
         resource_id,
         user_id,
         %Changeset{changes: changes, data: data},
-        data_structure_id
+        event_payload
       ) do
     if map_size(changes) == 0 do
       {:ok, :unchanged}
@@ -55,7 +55,7 @@ defmodule TdDd.Audit.AuditSupport do
         resource_type: resource_type,
         resource_id: resource_id,
         user_id: user_id,
-        payload: payload(changes, data) |> Map.put(:data_structure_id, data_structure_id)
+        payload: payload(changes, data) |> Map.merge(event_payload)
       )
     end
   end

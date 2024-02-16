@@ -2,9 +2,9 @@ defmodule TdDd.Systems.SystemSearch do
   @moduledoc """
   The Systems context.
   """
-  alias TdDd.Auth.Claims
   alias TdDd.DataStructures.Search
   alias TdDd.Systems
+  alias Truedat.Auth.Claims
 
   def search_systems(%Claims{role: role} = claims, permission, params)
       when role in ["admin", "service"] do
@@ -34,7 +34,7 @@ defmodule TdDd.Systems.SystemSearch do
   def get_systems_with_count(%Claims{} = claims, _permission, _params) do
     agg_terms = %{
       "system_id" => %{
-        terms: %{field: "system_id", size: 50},
+        terms: %{field: "system_id", size: 200},
         aggs: %{"types" => %{terms: %{field: "type.raw", size: 50}}}
       }
     }

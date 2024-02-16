@@ -1,6 +1,5 @@
 defmodule TdDqWeb.SearchView do
   use TdDqWeb, :view
-  use TdHypermedia, :view
 
   alias TdDqWeb.ImplementationView
   alias TdDqWeb.RuleView

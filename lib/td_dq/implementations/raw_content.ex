@@ -54,7 +54,10 @@ defmodule TdDq.Implementations.RawContent do
 
   def has_invalid_content(text) do
     result =
-      Regex.run(~r/(?i)(\b(DROP|DELETE|INSERT|UPDATE|CALL|EXEC|EXECUTE|ALTER)\b|;|--|#)/, text)
+      Regex.run(
+        ~r/(?i)(\b(DROP|DELETE|DEL|INSERT|UPDATE|CALL|EXEC|EXECUTE|ALTER|CREATE)\b|--)(?=(?:[^"]*"[^"]*")*[^"]*$)(?=(?:[^']*'[^']*')*[^']*$)/,
+        text
+      )
 
     result != nil && length(result) > 0
   end

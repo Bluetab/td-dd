@@ -23,6 +23,13 @@ defmodule TdDd.DataStructures.Search.Query do
     do_build_filters(view_scope, confidential_scope)
   end
 
+  def build_filters(%{
+        "create_grant_request" => view_scope,
+        "manage_confidential_structures" => confidential_scope
+      }) do
+    do_build_filters(view_scope, confidential_scope)
+  end
+
   def build_filters(%{} = _permissions), do: @match_none
 
   defp do_build_filters(:none, _), do: @match_none
@@ -66,13 +73,22 @@ defmodule TdDd.DataStructures.Search.Query do
 
   defp do_build_query(query, []), do: query
 
-  defp do_build_query(%{bool: bool} = query, words) do
-    must =
-      words
-      |> Enum.map(&multi_match/1)
-      |> maybe_bool_query()
+  defp do_build_query(%{bool: %{must: must} = bool} = query, words) do
+    must_query = build_bool_query(words)
 
-    %{query | bool: Map.put(bool, :must, must)}
+    %{query | bool: Map.put(bool, :must, List.flatten([must_query, must]))}
+  end
+
+  defp do_build_query(%{bool: bool} = query, words) do
+    must_query = build_bool_query(words)
+
+    %{query | bool: Map.put(bool, :must, must_query)}
+  end
+
+  defp build_bool_query(words) do
+    words
+    |> Enum.map(&multi_match/1)
+    |> maybe_bool_query()
   end
 
   defp multi_match(query) do
@@ -84,10 +100,12 @@ defmodule TdDd.DataStructures.Search.Query do
         fields: [
           "name^2",
           "name.ngram",
+          "original_name^1.5",
+          "original_name.ngram",
           "system.name",
           "path.text",
           "description",
-          "latest_note.*"
+          "note.*"
         ]
       }
     }
@@ -101,4 +119,14 @@ defmodule TdDd.DataStructures.Search.Query do
     # 75% are required.
     %{bool: %{should: should, minimum_should_match: "2<-75%"}}
   end
+
+  def maybe_add_search_after(query, [_ | _] = results) do
+    maybe_add_search_after(query, List.last(results))
+  end
+
+  def maybe_add_search_after(query, %{"sort" => last_element}) do
+    Map.put(query, :search_after, last_element)
+  end
+
+  def maybe_add_search_after(query, _), do: query
 end

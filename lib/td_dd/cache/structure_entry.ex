@@ -20,20 +20,35 @@ defmodule TdDd.Cache.StructureEntry do
     |> cache_entry(opts)
   end
 
-  def cache_entry(%DataStructureVersion{data_structure_id: id, data_structure: ds} = dsv, opts) do
-    %{external_id: external_id, system_id: system_id, domain_ids: domain_ids} = ds
+  def cache_entry(
+        %DataStructureVersion{data_structure_id: id, data_structure: ds, name: original_name} =
+          dsv,
+        opts
+      ) do
+    %{external_id: external_id, system_id: system_id, domain_ids: domain_ids, alias: alias_name} =
+      ds
 
     acc =
       dsv
-      |> Map.take([:group, :name, :type, :description, :metadata, :updated_at, :deleted_at, :path])
+      |> Map.take([:group, :name, :type, :description, :metadata, :deleted_at, :path])
       |> Map.put(:id, id)
       |> Map.update(:path, [], fn path -> Enum.map(path, & &1["name"]) end)
       |> Map.put(:external_id, external_id)
       |> Map.put(:system_id, system_id)
       |> Map.put(:domain_ids, domain_ids)
       |> Map.put(:parent_id, get_first_parent_id(dsv))
+      |> Map.put(:updated_at, max_updated_at(dsv))
+      |> Map.put(:original_name, original_name)
+      |> maybe_put_alias(alias_name)
 
     Enum.reduce(opts, acc, &put_cache_opt(ds, &1, &2))
+  end
+
+  defp maybe_put_alias(map, value) when is_binary(value), do: Map.put(map, :name, value)
+  defp maybe_put_alias(map, _nil), do: map
+
+  defp max_updated_at(%DataStructureVersion{data_structure: %{updated_at: ts1}, updated_at: ts2}) do
+    Enum.max([ts1, ts2], DateTime)
   end
 
   @spec get_first_parent_id(DataStructureVersion.t()) :: nil | non_neg_integer

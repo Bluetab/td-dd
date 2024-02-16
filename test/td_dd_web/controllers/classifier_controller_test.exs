@@ -12,7 +12,7 @@ defmodule TdDdWeb.ClassifierControllerTest do
     setup :create_classifier
 
     @tag authentication: [role: "user"]
-    test "admin can lists system classifiers", %{
+    test "user can list system classifiers", %{
       conn: conn,
       swagger_schema: schema,
       system: system,

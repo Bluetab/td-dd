@@ -31,24 +31,50 @@ defmodule TdDd.Search.IndexWorker do
     GenServer.cast(__MODULE__, {:reindex_grants, :all})
   end
 
-  def reindex_grants(grant_ids) when is_list(grant_ids) do
-    GenServer.cast(__MODULE__, {:reindex_grants, grant_ids})
+  def reindex_grants(ids) when is_list(ids) do
+    GenServer.cast(__MODULE__, {:reindex_grants, ids})
   end
 
-  def reindex_grants(grant_id) do
-    reindex_grants([grant_id])
+  def reindex_grants(id) do
+    reindex_grants([id])
+  end
+
+  def reindex_grant_requests(:all) do
+    GenServer.cast(__MODULE__, {:reindex_grant_requests, :all})
+  end
+
+  def reindex_grant_requests(ids) when is_list(ids) do
+    GenServer.cast(__MODULE__, {:reindex_grant_requests, ids})
+  end
+
+  def reindex_grant_requests(id), do: reindex_grant_requests([id])
+
+  def call_reindex_grant_requests(ids) when is_list(ids) do
+    GenServer.call(__MODULE__, {:reindex_grant_requests, ids})
   end
 
   def delete(data_structure_version_ids) do
     GenServer.cast(__MODULE__, {:delete, data_structure_version_ids})
   end
 
-  def delete_grants(grant_ids) when is_list(grant_ids) do
-    GenServer.cast(__MODULE__, {:delete_grants, grant_ids})
+  def delete_grants([]), do: :ok
+
+  def delete_grants(ids) when is_list(ids) do
+    GenServer.cast(__MODULE__, {:delete_grants, ids})
   end
 
-  def delete_grants(grant_id) do
-    delete_grants([grant_id])
+  def delete_grants(id), do: delete_grants([id])
+
+  def delete_grant_requests([]), do: :ok
+
+  def delete_grant_requests(ids) when is_list(ids) do
+    GenServer.cast(__MODULE__, {:delete_grant_requests, ids})
+  end
+
+  def delete_grant_requests(id), do: delete_grant_requests([id])
+
+  def quiesce(timeout \\ 5_000) do
+    GenServer.call(__MODULE__, :quiesce, timeout)
   end
 
   ## EventStream.Consumer Callbacks
@@ -65,8 +91,6 @@ defmodule TdDd.Search.IndexWorker do
     unless Application.get_env(:td_dd, :env) == :test do
       Process.send_after(self(), :migrate, 0)
     end
-
-    Logger.info("started")
 
     {:ok, :no_state}
   end
@@ -90,9 +114,9 @@ defmodule TdDd.Search.IndexWorker do
   end
 
   @impl true
-  def handle_cast({:delete_grants, grant_ids}, state) do
+  def handle_cast({:delete_grants, ids}, state) do
     Timer.time(
-      fn -> Indexer.delete_grants(grant_ids) end,
+      fn -> Indexer.delete_grants(ids) end,
       fn ms, value ->
         case value do
           {:ok, %{"deleted" => deleted}} ->
@@ -108,25 +132,56 @@ defmodule TdDd.Search.IndexWorker do
   end
 
   @impl true
+  def handle_cast({:delete_grant_requests, ids}, state) do
+    Timer.time(
+      fn -> Indexer.delete_grant_requests(ids) end,
+      fn ms, value ->
+        case value do
+          {:ok, %{"deleted" => deleted}} ->
+            Logger.info("Deleted #{deleted} grant request documents in #{ms}ms")
+
+          {:error, %Elasticsearch.Exception{message: message}} ->
+            Logger.info("Failed to delete grant request documents (#{ms}ms): #{message}")
+        end
+      end
+    )
+
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_cast({:reindex, :all}, state) do
     do_reindex_structures(:all)
     {:noreply, state}
   end
 
   @impl true
-  def handle_cast({:reindex, data_structure_ids}, state) do
-    do_reindex_structures(data_structure_ids)
+  def handle_cast({:reindex, ids}, state) do
+    do_reindex_structures(ids)
     {:noreply, state}
   end
 
+  @impl true
   def handle_cast({:reindex_grants, :all}, state) do
     do_reindex_grants(:all)
     {:noreply, state}
   end
 
   @impl true
-  def handle_cast({:reindex_grants, grant_ids}, state) do
-    do_reindex_grants(grant_ids)
+  def handle_cast({:reindex_grants, ids}, state) do
+    do_reindex_grants(ids)
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_cast({:reindex_grant_requests, :all}, state) do
+    do_reindex_grant_requests(:all)
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_cast({:reindex_grant_requests, ids}, state) do
+    do_reindex_grant_requests(ids)
     {:noreply, state}
   end
 
@@ -138,6 +193,17 @@ defmodule TdDd.Search.IndexWorker do
     end
 
     {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_call(:quiesce, _from, state) do
+    {:reply, :ok, state}
+  end
+
+  @impl true
+  def handle_call({:reindex_grant_requests, ids}, _from, state) do
+    do_reindex_grant_requests(ids)
+    {:reply, :ok, state}
   end
 
   defp do_reindex_structures(:all) do
@@ -174,15 +240,32 @@ defmodule TdDd.Search.IndexWorker do
     )
   end
 
-  defp do_reindex_grants([]), do: :ok
-
-  defp do_reindex_grants(grant_ids) when is_list(grant_ids) do
-    count = Enum.count(grant_ids)
+  defp do_reindex_grants(ids) when is_list(ids) do
+    count = Enum.count(ids)
     Logger.info("Reindexing #{count} grants")
 
     Timer.time(
-      fn -> Indexer.reindex_grants(grant_ids) end,
+      fn -> Indexer.reindex_grants(ids) end,
       fn ms, _ -> Logger.info("Reindexed #{count} grants in #{ms}ms") end
+    )
+  end
+
+  defp do_reindex_grant_requests(:all) do
+    Logger.info("Reindexing all grant requests")
+
+    Timer.time(
+      fn -> Indexer.reindex_grant_requests(:all) end,
+      fn ms, _ -> Logger.info("Reindexed all grant requests in #{ms}ms") end
+    )
+  end
+
+  defp do_reindex_grant_requests(ids) when is_list(ids) do
+    count = Enum.count(ids)
+    Logger.info("Reindexing #{count} grant requests")
+
+    Timer.time(
+      fn -> Indexer.reindex_grant_requests(ids) end,
+      fn ms, _ -> Logger.info("Reindexed #{count} grant requests in #{ms}ms") end
     )
   end
 end

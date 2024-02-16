@@ -6,6 +6,8 @@ defmodule TdCx.Jobs do
   alias TdCx.Search.IndexWorker
   alias TdDd.Repo
 
+  defdelegate authorize(action, user, params), to: __MODULE__.Policy
+
   @doc """
   Returns the list of jobs.
 

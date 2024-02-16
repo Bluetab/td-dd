@@ -29,7 +29,7 @@ defmodule TdDd.Executions.ProfileExecution do
   def changeset(%__MODULE__{} = struct, %{} = params) do
     struct
     |> cast(params, [:profile_group_id, :data_structure_id, :profile_id])
-    |> validate_required([:data_structure_id])
+    |> validate_required(:data_structure_id)
     |> foreign_key_constraint(:profile_group_id)
     |> foreign_key_constraint(:data_structure_id)
     |> foreign_key_constraint(:profile_id)

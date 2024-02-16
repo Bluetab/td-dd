@@ -1,8 +1,11 @@
 defmodule TdCx.SourcesTest do
   use TdDd.DataCase
 
+  alias TdCx.Cache.SourcesLatestEvent
   alias TdCx.Sources
   alias TdCx.Sources.Source
+
+  @moduletag sandbox: :shared
 
   @valid_attrs %{
     "config" => %{"a" => "1"},
@@ -34,6 +37,7 @@ defmodule TdCx.SourcesTest do
   }
 
   setup do
+    start_supervised!(TdCx.Cache.SourcesLatestEvent)
     [template: CacheHelpers.insert_template(@template)]
   end
 
@@ -131,7 +135,23 @@ defmodule TdCx.SourcesTest do
       assert source == Sources.get_source!(source.external_id)
     end
 
-    test "delete_source/1 deletes the source" do
+    test "delete_source/1 with related jobs logically deletes the source" do
+      %{id: source_id} = source = insert(:source)
+      job = insert(:job, source_id: source_id)
+      event = insert(:event, job: job)
+
+      # Manually insert latest event into cache
+      SourcesLatestEvent.refresh(source_id, event)
+
+      assert %{
+               source_id => event
+             } == SourcesLatestEvent.state()
+
+      assert {:ok, %Source{deleted_at: _}} = Sources.delete_source(source)
+      assert %{} == SourcesLatestEvent.state()
+    end
+
+    test "delete_source/1 without related jobs deletes the source" do
       source = source_fixture()
       assert {:ok, %Source{}} = Sources.delete_source(source)
       assert_raise Ecto.NoResultsError, fn -> Sources.get_source!(source.external_id) end
@@ -163,16 +183,15 @@ defmodule TdCx.SourcesTest do
       assert source.type == Map.get(attrs, "type")
     end
 
-    test "job_types/0 with valid an invalid data" do
-      claims = build(:cx_claims)
+    test "job_types/1 with valid and invalid data" do
       source = insert(:source, config: %{"job_types" => ["catalog"]})
-      assert ["catalog"] = Sources.job_types(claims, source)
+      assert ["catalog"] = Sources.job_types(source)
 
       source = insert(:source, config: %{"a" => "1"})
-      assert [] = Sources.job_types(claims, source)
+      assert [] = Sources.job_types(source)
 
       source = insert(:source, config: %{"job_types" => nil})
-      assert [] = Sources.job_types(claims, source)
+      assert [] = Sources.job_types(source)
     end
   end
 
@@ -209,6 +228,92 @@ defmodule TdCx.SourcesTest do
       assert [%{id: ^id, config: ^config}] = Sources.query_sources(%{aliases: "foo"})
 
       assert [] = Sources.query_sources(%{alias: "baz"})
+    end
+  end
+
+  describe "sources with latest events" do
+    setup do
+      %{id: source_1_id} = source_1 = insert(:source)
+      job_source_1 = insert(:job, source_id: source_1_id)
+      source_1_event_1 = insert(:event, job: job_source_1)
+      source_1_event_2 = insert(:event, job: job_source_1)
+
+      %{id: source_2_id} = source_2 = insert(:source)
+      # job with events
+      job_source_2_1 = insert(:job, source_id: source_2_id)
+      source_2_event_1 = insert(:event, job: job_source_2_1)
+      source_2_event_2 = insert(:event, job: job_source_2_1)
+      # job without events
+      insert(:job, source_id: source_2_id)
+
+      %{id: deleted_source_id} =
+        deleted_source = insert(:source, deleted_at: ~U[2007-08-31 01:39:00Z])
+
+      job_deleted_source = insert(:job, source_id: deleted_source_id)
+      deleted_source_event_1 = insert(:event, job: job_deleted_source)
+      deleted_source_event_2 = insert(:event, job: job_deleted_source)
+
+      source_without_events = insert(:source)
+
+      %{
+        sources_events: [
+          %{source: source_1, events: [source_1_event_1, source_1_event_2]},
+          %{source: source_2, events: [source_2_event_1, source_2_event_2]},
+          %{source: deleted_source, events: [deleted_source_event_1, deleted_source_event_2]},
+          %{source: source_without_events, events: []}
+        ]
+      }
+    end
+
+    test "returns a list of sources with their latests events", %{sources_events: sources_events} do
+      [
+        %{source: %{id: source_1_id}, events: [_source_1_event_1, %{id: source_1_event_2_id}]},
+        %{source: %{id: source_2_id}, events: [_source_2_event_1, %{id: source_2_event_2_id}]},
+        %{
+          source: %{id: deleted_source_id},
+          events: [_source_3_event_1, %{id: deleted_source_event_2_id}]
+        },
+        %{source: %{id: source_without_events_id}, events: []}
+      ] = sources_events
+
+      assert [
+               %{
+                 id: ^source_1_id,
+                 events: [%{id: ^source_1_event_2_id}]
+               },
+               %{
+                 id: ^source_2_id,
+                 events: [%{id: ^source_2_event_2_id}]
+               },
+               %{
+                 id: ^deleted_source_id,
+                 events: [%{id: ^deleted_source_event_2_id}]
+               },
+               %{
+                 id: ^source_without_events_id,
+                 events: []
+               }
+             ] = Sources.query_sources(%{with_latest_event: true})
+    end
+
+    test "returns a list of sources and their latest events as a map, excluding logically deleted",
+         %{sources_events: sources_events} do
+      [
+        %{source: %{id: source_1_id}, events: [_source_1_event_1, %{id: source_1_event_2_id}]},
+        %{source: %{id: source_2_id}, events: [_source_2_event_1, %{id: source_2_event_2_id}]},
+        %{source: %{id: deleted_source_id}, events: _events},
+        %{source: %{id: source_without_events_id}, events: []}
+      ] = sources_events
+
+      sources = Sources.list_sources_with_latest_event()
+
+      assert %{
+               ^source_1_id => %{id: ^source_1_event_2_id},
+               ^source_2_id => %{id: ^source_2_event_2_id},
+               ^source_without_events_id => nil
+             } = sources
+
+      refute Map.has_key?(sources, deleted_source_id)
     end
   end
 

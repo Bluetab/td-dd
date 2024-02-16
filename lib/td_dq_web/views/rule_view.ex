@@ -1,6 +1,5 @@
 defmodule TdDqWeb.RuleView do
   use TdDqWeb, :view
-  use TdHypermedia, :view
 
   alias TdCache.ConceptCache
   alias TdDq.Rules
@@ -26,21 +25,6 @@ defmodule TdDqWeb.RuleView do
 
   def render("index.json", %{rules: rules}) do
     %{data: render_many(rules, RuleView, "rule.json")}
-  end
-
-  def render("show.json", %{
-        hypermedia: hypermedia,
-        rule: rule,
-        user_permissions: user_permissions
-      }) do
-    Map.merge(
-      %{"user_permissions" => user_permissions},
-      render_one_hypermedia(rule, hypermedia, RuleView, "rule.json")
-    )
-  end
-
-  def render("show.json", %{hypermedia: hypermedia, rule: rule}) do
-    render_one_hypermedia(rule, hypermedia, RuleView, "rule.json")
   end
 
   def render("show.json", %{rule: rule, user_permissions: user_permissions}) do

@@ -9,27 +9,32 @@ defmodule TdDd.DataStructures do
   alias Ecto.Changeset
   alias Ecto.Multi
   alias TdCache.LinkCache
-  alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
   alias TdCache.UserCache
   alias TdCx.Sources
   alias TdCx.Sources.Source
-  alias TdDd.Auth.Claims
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureLinks
   alias TdDd.DataStructures.DataStructureQueries
   alias TdDd.DataStructures.DataStructureRelation
-  alias TdDd.DataStructures.DataStructuresTags
-  alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.DataStructures.StructureNote
   alias TdDd.Grants
+  alias TdDd.Grants.Requests
   alias TdDd.Lineage.GraphData
   alias TdDd.Repo
-  alias TdDd.Search.IndexWorker
   alias TdDd.Search.StructureVersionEnricher
   alias TdDfLib.Format
+  alias TdDq.Implementations
+  alias Truedat.Auth.Claims
+  alias Truedat.Search.Permissions
+
+  @index_worker Application.compile_env(:td_dd, :index_worker)
+
+  @protected "_protected"
 
   # Data structure version associations preloaded for some views
   @preload_dsv_assocs [
@@ -39,6 +44,10 @@ defmodule TdDd.DataStructures do
     data_structure: :system
   ]
 
+  defdelegate authorize(action, user, params), to: __MODULE__.Policy
+
+  def protected, do: @protected
+
   def list_data_structures(clauses \\ %{}) do
     clauses
     |> DataStructureQueries.data_structures_query()
@@ -46,12 +55,41 @@ defmodule TdDd.DataStructures do
   end
 
   def list_data_structure_versions(clauses \\ %{}) do
-    clauses
+    criteria_apply_order = [:min_id, :since, :order_by, :limit]
+
+    criteria_apply_order
+    |> Enum.filter(&Map.has_key?(clauses, &1))
+    |> Enum.map(&{&1, Map.get(clauses, &1)})
     |> Enum.reduce(DataStructureVersion, fn
-      {:since, since}, q -> where(q, [dsv], dsv.updated_at >= ^since or dsv.deleted_at >= ^since)
-      {:min_id, id}, q -> where(q, [dsv], dsv.id >= ^id)
-      {:order_by, "id"}, q -> order_by(q, :id)
-      {:limit, limit}, q -> limit(q, ^limit)
+      {:since, since}, q ->
+        join_ds_updated_at =
+          q
+          |> join(:inner, [dsv], ds in assoc(dsv, :data_structure))
+          |> where(
+            [_dsv, ds],
+            ds.updated_at >= ^since
+          )
+
+        q
+        |> join(:inner, [dsv], ds in assoc(dsv, :data_structure))
+        |> where(
+          [dsv, _ds],
+          dsv.updated_at >= ^since or dsv.deleted_at >= ^since
+        )
+        |> union(^join_ds_updated_at)
+
+      {:min_id, id}, q ->
+        where(q, [dsv], dsv.id >= ^id)
+
+      {:order_by, "id"}, q ->
+        # Use literal instead of named field in case order_by is used with
+        # the union from the :since clause above, to avoid this error:
+        # ** (Postgrex.Error) ERROR 42P01 (undefined_table) missing
+        # FROM-clause entry for table "d0"
+        order_by(q, fragment("id"))
+
+      {:limit, limit}, q ->
+        limit(q, ^limit)
     end)
     |> Repo.all()
   end
@@ -93,6 +131,63 @@ defmodule TdDd.DataStructures do
     |> Repo.all()
   end
 
+  def list_data_structures_data_fields(data_structure_ids, claims) do
+    %{
+      "view_data_structure" => view_domain_ids,
+      "manage_confidential_structures" => manage_confidential_domain_ids
+    } =
+      ["view_data_structure", "manage_confidential_structures"]
+      |> Permissions.get_search_permissions(claims)
+
+    DataStructure
+    |> where([ds], ds.id in ^data_structure_ids)
+    |> join(:inner, [ds], dsv in assoc(ds, :current_version))
+    |> join(:inner, [_, dsv], child in assoc(dsv, :children))
+    |> where([_, _, child], child.class == "field")
+    |> join(:inner, [_, _, child], child_ds in assoc(child, :data_structure), as: :child_ds)
+    |> handle_permission_filter(view_domain_ids, manage_confidential_domain_ids)
+    |> select([ds, _, child, child_ds], %{
+      id: ds.id,
+      data_field: %{child | data_structure: child_ds}
+    })
+    |> Repo.all()
+  end
+
+  defp handle_permission_filter(query, :all, :all), do: query
+  defp handle_permission_filter(query, :none, _), do: where(query, [], false)
+
+  defp handle_permission_filter(query, :all, :none),
+    do: where(query, [_, _, _, child_ds], not child_ds.confidential)
+
+  defp handle_permission_filter(query, :all, domain_ids),
+    do:
+      where(
+        query,
+        [_, _, _, child_ds],
+        not child_ds.confidential or fragment("? && ?", child_ds.domain_ids, ^domain_ids)
+      )
+
+  defp handle_permission_filter(query, view_domain_ids, :none),
+    do:
+      where(
+        query,
+        [_, _, _, child_ds],
+        not child_ds.confidential and fragment("? && ?", child_ds.domain_ids, ^view_domain_ids)
+      )
+
+  defp handle_permission_filter(query, view_domain_ids, :all),
+    do:
+      where(query, [_, _, _, child_ds], fragment("? && ?", child_ds.domain_ids, ^view_domain_ids))
+
+  defp handle_permission_filter(query, view_domain_ids, confidential_domain_ids),
+    do:
+      where(
+        query,
+        [_, _, _, child_ds],
+        (not child_ds.confidential and fragment("? && ?", child_ds.domain_ids, ^view_domain_ids)) or
+          fragment("? && ?", child_ds.domain_ids, ^confidential_domain_ids)
+      )
+
   @doc "Gets a single data_structure by external_id"
   def get_data_structure_by_external_id(external_id, preload \\ []) do
     Repo.get_by(DataStructure, external_id: external_id)
@@ -110,16 +205,23 @@ defmodule TdDd.DataStructures do
   end
 
   def get_data_structure_version!(data_structure_version_id, opts) do
+    with_protected_metadata = Enum.member?(opts, :with_protected_metadata)
+
     data_structure_version_id
-    |> get_data_structure_version!()
+    |> enriched_structure_version!(with_protected_metadata: with_protected_metadata)
     |> enrich(opts)
   end
 
   def get_data_structure_version!(data_structure_id, version, opts) do
+    with_protected_metadata = Enum.member?(opts, :with_protected_metadata)
+
     DataStructureVersion
     |> Repo.get_by!(data_structure_id: data_structure_id, version: version)
     |> Map.get(:id)
-    |> enriched_structure_version!(preload: @preload_dsv_assocs)
+    |> enriched_structure_version!(
+      with_protected_metadata: with_protected_metadata,
+      preload: @preload_dsv_assocs
+    )
     |> enrich(opts)
   end
 
@@ -130,7 +232,7 @@ defmodule TdDd.DataStructures do
   def get_cached_content(%{} = content, %{data_structure_type: %{template_id: template_id}}) do
     case TemplateCache.get(template_id) do
       {:ok, template} ->
-        Format.enrich_content_values(content, template)
+        Format.enrich_content_values(content, template, [:system, :hierarchy])
 
       _ ->
         content
@@ -139,36 +241,60 @@ defmodule TdDd.DataStructures do
 
   def get_cached_content(content, _structure), do: content
 
+  defp enrich(
+         %DataStructureVersion{id: id} = _data_structure_version,
+         with_protected_metadata,
+         :defaults
+       ) do
+    enriched_structure_version!(id,
+      with_protected_metadata: with_protected_metadata,
+      preload: [data_structure: :source]
+    )
+  end
+
   defp enrich(nil = _target, _opts), do: nil
 
   defp enrich(target, nil = _opts), do: target
 
-  defp enrich(%DataStructureVersion{id: id} = _data_structure_version, :defaults) do
-    enriched_structure_version!(id, preload: [data_structure: :source])
-  end
-
   defp enrich(%DataStructureVersion{} = dsv, opts) do
     deleted = not is_nil(Map.get(dsv, :deleted_at))
     with_confidential = Enum.member?(opts, :with_confidential)
+    with_protected_metadata = Enum.member?(opts, :with_protected_metadata)
 
     dsv
-    |> enrich(:defaults)
+    |> enrich(with_protected_metadata, :defaults)
     |> enrich(opts, :classifications, &get_classifications!/1)
     |> enrich(opts, :system, &get_system!/1)
+    |> enrich(opts, :parent_relations, &get_parent_relations!/1)
     |> enrich(
       opts,
       :parents,
-      &get_parents(&1, deleted: deleted, with_confidential: with_confidential)
+      &get_parents(
+        &1,
+        deleted: deleted,
+        with_confidential: with_confidential,
+        with_protected_metadata: false
+      )
     )
     |> enrich(
       opts,
       :children,
-      &get_children(&1, deleted: deleted, with_confidential: with_confidential)
+      &get_children(
+        &1,
+        deleted: deleted,
+        with_confidential: with_confidential,
+        with_protected_metadata: false
+      )
     )
     |> enrich(
       opts,
       :siblings,
-      &get_siblings(&1, deleted: deleted, with_confidential: with_confidential)
+      &get_siblings(
+        &1,
+        deleted: deleted,
+        with_confidential: with_confidential,
+        with_protected_metadata: false
+      )
     )
     |> enrich(
       opts,
@@ -178,9 +304,10 @@ defmodule TdDd.DataStructures do
         preload:
           if(Enum.member?(opts, :profile),
             do: [:published_note, data_structure: :profile],
-            else: []
+            else: [:published_note]
           ),
-        with_confidential: with_confidential
+        with_confidential: with_confidential,
+        with_protected_metadata: with_protected_metadata
       )
     )
     |> enrich(opts, :data_field_degree, &get_field_degree/1)
@@ -188,20 +315,33 @@ defmodule TdDd.DataStructures do
     |> enrich(
       opts,
       :relations,
-      &get_relations(&1, deleted: deleted, default: false, with_confidential: with_confidential)
+      &get_relations(
+        &1,
+        deleted: deleted,
+        default: false,
+        with_confidential: with_confidential,
+        with_protected_metadata: with_protected_metadata
+      )
     )
     |> enrich(opts, :relation_links, &get_relation_links/1)
-    |> enrich(opts, :versions, &get_versions!/1)
+    |> enrich(opts, :versions, &get_versions!(&1, with_protected_metadata))
     |> enrich(opts, :degree, &get_degree/1)
     |> enrich(opts, :profile, &get_profile!/1)
     |> enrich(opts, :links, &get_structure_links/1)
+    |> enrich(opts, :data_structure_link_count, &get_data_structure_link_count/1)
     |> enrich(opts, :source, &get_source!/1)
-    |> enrich(opts, :metadata_versions, &get_metadata_versions!/1)
+    |> enrich(
+      opts,
+      :metadata_versions,
+      &get_metadata_versions!(
+        &1,
+        with_protected_metadata: with_protected_metadata
+      )
+    )
     |> enrich(opts, :data_structure_type, &get_data_structure_type!/1)
-    |> enrich(opts, :tags, &get_tags!/1)
     |> enrich(opts, :grants, &get_grants/1)
     |> enrich(opts, :grant, &get_grant(&1, opts[:user_id]))
-    |> enrich(opts, :implementations, &get_implementations!/1)
+    |> enrich(opts, :implementation_count, &get_implementation_count!/1)
     |> enrich(opts, :published_note, &get_published_note!/1)
   end
 
@@ -237,9 +377,15 @@ defmodule TdDd.DataStructures do
     end
   end
 
-  defp get_profile!(%DataStructureVersion{} = dsv) do
+  def get_profile!(%DataStructureVersion{} = dsv) do
     case Repo.preload(dsv, data_structure: :profile) do
       %{data_structure: %{profile: profile}} -> profile
+    end
+  end
+
+  defp get_parent_relations!(%DataStructureVersion{} = dsv) do
+    case Repo.preload(dsv, parent_relations: :parent) do
+      %{parent_relations: parent_relations} -> parent_relations
     end
   end
 
@@ -258,111 +404,127 @@ defmodule TdDd.DataStructures do
   def get_field_structures(data_structure_version, opts) do
     data_structure_version
     |> Ecto.assoc(:children)
-    |> where([child], child.class == "field")
-    |> join(:inner, [child], child in assoc(child, :data_structure))
+    |> where(class: "field")
+    |> join(:inner, [child], child_ds in assoc(child, :data_structure), as: :child_ds)
     |> with_confidential(
       Keyword.get(opts, :with_confidential),
-      dynamic([_child, _parent, child_ds], child_ds.confidential == false)
+      dynamic([child_ds: child_ds], child_ds.confidential == false)
     )
     |> with_deleted(opts, dynamic([child], is_nil(child.deleted_at)))
     |> select([child], child)
     |> Repo.all()
     |> Repo.preload(opts[:preload] || [])
+    |> protect_metadata(Keyword.get(opts, :with_protected_metadata))
+  end
+
+  def get_mutable_metadata(nil, _), do: []
+  def get_mutable_metadata([], _), do: []
+
+  def get_mutable_metadata(dsv, opts) when is_list(dsv) do
+    Enum.map(dsv, &get_mutable_metadata(&1, opts))
+  end
+
+  def get_mutable_metadata(dsv, opts) do
+    metadata_versions = get_metadata_versions!(dsv, opts)
+    Map.put(dsv, :metadata_versions, metadata_versions)
   end
 
   def get_children(%DataStructureVersion{id: id}, opts \\ []) do
+    default = Keyword.get(opts, :default)
+    deleted = Keyword.get(opts, :deleted)
+    confidential = Keyword.get(opts, :with_confidential)
+    default_relation_type_id = RelationTypes.default_id!()
+
     DataStructureRelation
     |> where([r], r.parent_id == ^id)
-    |> join(:inner, [r], child in assoc(r, :child))
-    |> join(:inner, [r], relation_type in assoc(r, :relation_type))
-    |> join(:inner, [_, child, _], ds_child in assoc(child, :data_structure))
-    |> with_deleted(Keyword.get(opts, :deleted), dynamic([_, child], is_nil(child.deleted_at)))
-    |> with_confidential(
-      Keyword.get(opts, :with_confidential),
-      dynamic([_, _, _, ds_child], ds_child.confidential == false)
-    )
+    |> join(:inner, [r], child in assoc(r, :child), as: :child)
+    |> join(:inner, [r], relation_type in assoc(r, :relation_type), as: :relation_type)
+    |> join(:inner, [child: child], ds in assoc(child, :data_structure), as: :child_ds)
+    |> with_deleted(deleted, dynamic([child: c], is_nil(c.deleted_at)))
+    |> with_confidential(confidential, dynamic([child_ds: ds], ds.confidential == false))
     |> relation_type_condition(
-      Keyword.get(opts, :default),
-      dynamic([_, _, relation_type, _], relation_type.name == "default"),
-      dynamic([_, _, relation_type, _], relation_type.name != "default")
+      default,
+      dynamic([relation_type: rt], rt.id == ^default_relation_type_id),
+      dynamic([relation_type: rt], rt.id != ^default_relation_type_id)
     )
-    |> order_by([_, child, _, _], asc: child.data_structure_id, desc: child.version)
-    |> distinct([_, child, _, _], child)
-    |> select([r, child, relation_type, _], %{
-      version: child,
+    |> order_by([child: c], asc: c.data_structure_id, desc: c.version)
+    |> distinct([child: c], c)
+    |> select([r, child: c, relation_type: rt], %{
+      version: c,
       relation: r,
-      relation_type: relation_type
+      relation_type: rt
     })
     |> Repo.all()
-    |> select_structures(Keyword.get(opts, :default))
+    |> select_structures(default)
+    |> protect_metadata(Keyword.get(opts, :with_protected_metadata))
   end
 
   def get_parents(%DataStructureVersion{id: id}, opts \\ []) do
+    default = Keyword.get(opts, :default)
+    deleted = Keyword.get(opts, :deleted)
+    confidential = Keyword.get(opts, :with_confidential)
+    default_relation_type_id = RelationTypes.default_id!()
+
     DataStructureRelation
     |> where([r], r.child_id == ^id)
-    |> join(:inner, [r], parent in assoc(r, :parent))
-    |> join(:inner, [r, _], relation_type in assoc(r, :relation_type))
-    |> join(:inner, [_, parent, _], parent in assoc(parent, :data_structure))
-    |> with_deleted(
-      Keyword.get(opts, :deleted),
-      dynamic([_, parent, _, _], is_nil(parent.deleted_at))
-    )
+    |> join(:inner, [r], parent in assoc(r, :parent), as: :parent)
+    |> join(:inner, [r], relation_type in assoc(r, :relation_type), as: :relation_type)
+    |> join(:inner, [parent: parent], parent_ds in assoc(parent, :data_structure), as: :parent_ds)
+    |> with_deleted(deleted, dynamic([parent: parent], is_nil(parent.deleted_at)))
     |> relation_type_condition(
-      Keyword.get(opts, :default),
-      dynamic([_, _, relation_type, _], relation_type.name == "default"),
-      dynamic([_, _, relation_type, _], relation_type.name != "default")
+      default,
+      dynamic([relation_type: rt], rt.id == ^default_relation_type_id),
+      dynamic([relation_type: rt], rt.id != ^default_relation_type_id)
     )
-    |> with_confidential(
-      Keyword.get(opts, :with_confidential),
-      dynamic([_, _, _, parent_ds], parent_ds.confidential == false)
-    )
-    |> order_by([_, parent, _, _], asc: parent.data_structure_id, desc: parent.version)
-    |> distinct([_, parent, _, _], parent)
-    |> select([r, parent, relation_type], %{
-      version: parent,
+    |> with_confidential(confidential, dynamic([parent_ds: ds], ds.confidential == false))
+    |> order_by([parent: p], asc: p.data_structure_id, desc: p.version)
+    |> distinct([parent: p], p)
+    |> select([r, parent: p, relation_type: rt], %{
+      version: p,
       relation: r,
-      relation_type: relation_type
+      relation_type: rt
     })
     |> Repo.all()
-    |> select_structures(Keyword.get(opts, :default))
+    |> select_structures(default)
+    |> protect_metadata(Keyword.get(opts, :with_protected_metadata))
   end
 
   def get_siblings(%DataStructureVersion{id: id}, opts \\ []) do
+    default = Keyword.get(opts, :default)
+    confidential = Keyword.get(opts, :with_confidential)
+    default_relation_type_id = RelationTypes.default_id!()
+
     DataStructureRelation
     |> where([r], r.child_id == ^id)
-    |> join(:inner, [r], parent in assoc(r, :parent))
-    |> join(:inner, [r, _], parent_rt in assoc(r, :relation_type))
-    |> join(:inner, [_, parent, _, r_c], r_c in DataStructureRelation,
-      on: parent.id == r_c.parent_id
+    |> join(:inner, [r], parent in assoc(r, :parent), as: :parent)
+    |> join(:inner, [r], parent_rt in assoc(r, :relation_type), as: :parent_rt)
+    |> join(:inner, [parent: parent], sib_rel in DataStructureRelation,
+      as: :sib_rel,
+      on: parent.id == sib_rel.parent_id
     )
-    |> join(:inner, [_, _, _, r_c], child_rt in assoc(r_c, :relation_type))
-    |> join(:inner, [_, _, _, r_c, _], sibling in assoc(r_c, :child))
-    |> join(:inner, [_, _, _, _, _, sibling], sibling in assoc(sibling, :data_structure))
-    |> with_deleted(opts, dynamic([_, parent, _, _, _, _, _], is_nil(parent.deleted_at)))
-    |> with_deleted(opts, dynamic([_, _, _, _, _, sibling, _], is_nil(sibling.deleted_at)))
-    |> with_confidential(
-      Keyword.get(opts, :with_confidential),
-      dynamic([_, _, _, _, _, _, sibling_ds], sibling_ds.confidential == false)
+    |> join(:inner, [sib_rel: r], child_rt in assoc(r, :relation_type), as: :child_rt)
+    |> join(:inner, [sib_rel: r], sibling in assoc(r, :child), as: :sibling)
+    |> join(:inner, [sibling: s], ds in assoc(s, :data_structure), as: :sibling_ds)
+    |> with_deleted(opts, dynamic([parent: p], is_nil(p.deleted_at)))
+    |> with_deleted(opts, dynamic([sibling: s], is_nil(s.deleted_at)))
+    |> with_confidential(confidential, dynamic([sibling_ds: ds], ds.confidential == false))
+    |> relation_type_condition(
+      default,
+      dynamic([parent_rt: rt], rt.id == ^default_relation_type_id),
+      dynamic([parent_rt: rt], rt.id != ^default_relation_type_id)
     )
     |> relation_type_condition(
-      Keyword.get(opts, :default),
-      dynamic([_, _, parent_rt, _, _, _, _], parent_rt.name == "default"),
-      dynamic([_, _, parent_rt, _, _, _, _], parent_rt.name != "default")
+      default,
+      dynamic([child_rt: rt], rt.id == ^default_relation_type_id),
+      dynamic([child_rt: rt], rt.id != ^default_relation_type_id)
     )
-    |> relation_type_condition(
-      Keyword.get(opts, :default),
-      dynamic([_, _, _, _, child_rt, _, _], child_rt.name == "default"),
-      dynamic([_, _, _, _, child_rt, _, _], child_rt.name != "default")
-    )
-    |> order_by([_, _, _, _, _, sibling, _],
-      asc: sibling.data_structure_id,
-      desc: sibling.version
-    )
-    |> distinct([_, _, _, _, _, sibling, _], sibling)
-    |> select([_, _, _, _, _, sibling, _], sibling)
+    |> order_by([sibling: s], asc: s.data_structure_id, desc: s.version)
+    |> distinct([sibling: s], s)
+    |> select([sibling: s], s)
     |> Repo.all()
     |> Repo.preload(@preload_dsv_assocs)
     |> Enum.uniq_by(& &1.data_structure_id)
+    |> protect_metadata(Keyword.get(opts, :with_protected_metadata))
   end
 
   defp get_relations(%DataStructureVersion{} = version, opts) do
@@ -390,9 +552,10 @@ defmodule TdDd.DataStructures do
     |> Map.put(:parents, parents)
   end
 
-  defp get_versions!(%DataStructureVersion{} = dsv) do
+  defp get_versions!(%DataStructureVersion{} = dsv, with_protected_metadata) do
     case Repo.preload(dsv, data_structure: :versions) do
-      %{data_structure: %{versions: versions}} -> versions
+      %{data_structure: %{versions: versions}} ->
+        protect_metadata(versions, with_protected_metadata)
     end
   end
 
@@ -404,7 +567,7 @@ defmodule TdDd.DataStructures do
     clauses
     |> Map.put(:data_structure_ids, ids)
     |> Map.put(:preload, [:system, :data_structure, data_structure_version: dsv_preloader])
-    |> Grants.list_grants()
+    |> Grants.list_active_grants()
     |> Enum.map(fn %{user_id: user_id} = grant ->
       case UserCache.get(user_id) do
         {:ok, %{} = user} -> %{grant | user: user}
@@ -429,8 +592,8 @@ defmodule TdDd.DataStructures do
 
   defp select_structures(versions, _not_false) do
     versions
-    |> Enum.map(& &1.version)
-    |> Enum.uniq_by(& &1.data_structure_id)
+    |> Enum.uniq_by(& &1.version.data_structure_id)
+    |> Enum.map(fn %{version: version} -> version end)
     |> Repo.preload(@preload_dsv_assocs)
   end
 
@@ -445,24 +608,67 @@ defmodule TdDd.DataStructures do
     end
   end
 
-  defp get_metadata_versions!(%DataStructureVersion{} = dsv) do
+  defp get_metadata_versions!(%DataStructureVersion{} = dsv, opts) do
+    with_protected_metadata = Keyword.get(opts, :with_protected_metadata)
+
     case Repo.preload(dsv, data_structure: :metadata_versions) do
-      %{data_structure: %{metadata_versions: metadata_versions}} -> metadata_versions
+      %{data_structure: %{metadata_versions: metadata_versions}} ->
+        protect_metadata(
+          metadata_versions,
+          with_protected_metadata
+        )
     end
   end
 
-  defp get_implementations!(%DataStructureVersion{} = dsv) do
-    case Repo.preload(dsv, data_structure: [implementations: [implementation: [:rule, :results]]]) do
-      %{data_structure: %{implementations: implementations}} -> implementations
-    end
+  def protect_metadata(dsv_or_sm_or_sm_list_or_map, with_protected_metadata)
+
+  def protect_metadata(nil, _with_protected_metadata), do: nil
+
+  def protect_metadata(dsv_or_sm_or_sm_list_or_map, nil) do
+    protect_metadata(dsv_or_sm_or_sm_list_or_map, false)
   end
 
-  defp get_tags!(%DataStructureVersion{} = dsv) do
-    case Repo.preload(dsv,
-           data_structure: [data_structures_tags: [:data_structure_tag, :data_structure]]
-         ) do
-      %{data_structure: %{data_structures_tags: data_structures_tags}} -> data_structures_tags
-    end
+  def protect_metadata(dsv_or_sm_or_sm_list_or_map, true) do
+    dsv_or_sm_or_sm_list_or_map
+  end
+
+  def protect_metadata(structuremetadata_or_dsv_with_mutable_metadata, false)
+      when is_list(structuremetadata_or_dsv_with_mutable_metadata) do
+    Enum.map(structuremetadata_or_dsv_with_mutable_metadata, &protect_metadata(&1, false))
+  end
+
+  def protect_metadata(
+        %DataStructureVersion{
+          metadata: metadata,
+          # From DataStructureQueries.enriched_structure_versions
+          mutable_metadata: enriched_mm
+        } = dsv,
+        false
+      ) do
+    %DataStructureVersion{
+      dsv
+      | metadata: protect_metadata(metadata, false),
+        mutable_metadata: protect_metadata(enriched_mm, false)
+    }
+  end
+
+  def protect_metadata(%StructureMetadata{fields: fields} = mutable_metadata, false) do
+    %StructureMetadata{
+      mutable_metadata
+      | fields: protect_metadata(fields, false)
+    }
+  end
+
+  def protect_metadata(metadata, false) do
+    Map.drop(metadata, [@protected])
+  end
+
+  defp get_implementation_count!(%DataStructureVersion{data_structure_id: id}) do
+    TdDq.Implementations.ImplementationStructure
+    |> where([i], is_nil(i.deleted_at))
+    |> where([i], i.data_structure_id == ^id)
+    |> select([i], count(i.implementation_id, :distinct))
+    |> Repo.one!()
   end
 
   def update_changeset(%Claims{user_id: user_id}, %DataStructure{} = data_structure, %{} = params) do
@@ -488,7 +694,10 @@ defmodule TdDd.DataStructures do
         %Changeset{data: %DataStructure{id: id}} = changeset,
         inherit
       ) do
-    do_update_data_structure(id, changeset, inherit, user_id)
+    id
+    |> do_update_data_structure(changeset, inherit, user_id)
+    |> maybe_reindex_implementations()
+    |> maybe_reindex_grant_requests()
     |> tap(&on_update/1)
   end
 
@@ -508,6 +717,8 @@ defmodule TdDd.DataStructures do
           acc
       end)
       |> List.flatten()
+      |> maybe_reindex_implementations()
+      |> maybe_reindex_grant_requests()
       |> on_update
     end)
   end
@@ -538,8 +749,22 @@ defmodule TdDd.DataStructures do
     {:ok, ids}
   end
 
-  defp on_update({:ok, %{updated_ids: ids}}), do: IndexWorker.reindex(ids)
+  defp on_update({:ok, %{updated_ids: ids}}), do: @index_worker.reindex(ids)
+  defp on_update(ids) when is_list(ids), do: @index_worker.reindex(ids)
+
   defp on_update(_), do: :ok
+
+  defp maybe_reindex_implementations({:ok, %{domain_ids: {_, structures_ids}}} = result) do
+    Implementations.reindex_implementations_structures(structures_ids)
+    result
+  end
+
+  defp maybe_reindex_implementations(structures_ids) when is_list(structures_ids) do
+    Implementations.reindex_implementations_structures(structures_ids)
+    structures_ids
+  end
+
+  defp maybe_reindex_implementations(result), do: result
 
   def delete_data_structure(%DataStructure{} = data_structure, %Claims{user_id: user_id}) do
     Multi.new()
@@ -561,11 +786,11 @@ defmodule TdDd.DataStructures do
 
   defp on_delete({:ok, %{} = res}) do
     with %{delete_versions: {_count, data_structure_ids}} <- res do
-      IndexWorker.delete(data_structure_ids)
+      @index_worker.delete(data_structure_ids)
     end
 
     with %{descendents: %{data_structures_ids: structures_ids}} <- res do
-      IndexWorker.delete(structures_ids)
+      @index_worker.delete(structures_ids)
     end
 
     {:ok, res}
@@ -676,6 +901,10 @@ defmodule TdDd.DataStructures do
     Enum.map(data_fields, &Map.put(&1, :links, get_structure_links(&1)))
   end
 
+  def get_data_structure_link_count(%{data_structure_id: this_ds_id} = _dsv) do
+    DataStructureLinks.link_count(this_ds_id)
+  end
+
   def get_structure_links(%{data_structure_id: id}) do
     case LinkCache.list("data_structure", id) do
       {:ok, links} -> links
@@ -781,6 +1010,7 @@ defmodule TdDd.DataStructures do
     structure_metadata
     |> StructureMetadata.changeset(params)
     |> Repo.update()
+    |> maybe_reindex_grant_requests()
   end
 
   def get_metadata_version(%DataStructureVersion{
@@ -876,194 +1106,6 @@ defmodule TdDd.DataStructures do
 
   defp do_profile_source(dsv, _source), do: dsv
 
-  def list_available_tags(%DataStructure{domain_ids: domain_ids}) do
-    domain_ids = TaxonomyCache.reaching_domain_ids(domain_ids)
-    list_data_structure_tags(domain_ids: domain_ids)
-  end
-
-  def list_data_structure_tags(params \\ %{}) do
-    params
-    |> data_structure_tags_query()
-    |> Repo.all()
-  end
-
-  def get_data_structure_tag(params) do
-    params
-    |> data_structure_tags_query()
-    |> Repo.one()
-  end
-
-  def get_data_structure_tag!(params) do
-    params
-    |> data_structure_tags_query()
-    |> Repo.one!()
-  end
-
-  defp data_structure_tags_query(params) do
-    params
-    |> Enum.reduce(DataStructureTag, fn
-      {:id, id}, q ->
-        where(q, [t], t.id == ^id)
-
-      {:domain_ids, []}, q ->
-        where(q, [t], fragment("? = '{}'", t.domain_ids))
-
-      {:domain_ids, domain_ids}, q ->
-        where(q, [t], fragment("(? = '{}' OR ? && ?)", t.domain_ids, t.domain_ids, ^domain_ids))
-
-      {:structure_count, true}, q ->
-        sq =
-          DataStructuresTags
-          |> group_by(:data_structure_tag_id)
-          |> select([g], %{
-            id: g.data_structure_tag_id,
-            count: count(g.data_structure_id)
-          })
-
-        q
-        |> join(:left, [t], c in subquery(sq), on: c.id == t.id)
-        |> select_merge([t, c], %{structure_count: fragment("coalesce(?, 0)", c.count)})
-    end)
-  end
-
-  def create_data_structure_tag(attrs \\ %{}) do
-    %DataStructureTag{}
-    |> DataStructureTag.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  def update_data_structure_tag(%DataStructureTag{} = data_structure_tag, %{} = params) do
-    data_structure_tag
-    |> Repo.preload(:tagged_structures)
-    |> DataStructureTag.changeset(params)
-    |> Repo.update()
-    |> on_tag_update()
-  end
-
-  def delete_data_structure_tag(%DataStructureTag{} = data_structure_tag) do
-    data_structure_tag
-    |> Repo.preload(:tagged_structures)
-    |> Repo.delete()
-    |> on_tag_delete()
-  end
-
-  def get_links_tag(%DataStructure{} = data_structure) do
-    data_structure
-    |> Ecto.assoc(:data_structures_tags)
-    |> preload([:data_structure, :data_structure_tag])
-    |> Repo.all()
-  end
-
-  def link_tag(
-        %DataStructure{id: data_structure_id} = data_structure,
-        %DataStructureTag{id: tag_id} = data_structure_tag,
-        params,
-        claims
-      ) do
-    data_structure_id
-    |> get_link_tag_by(tag_id)
-    |> case do
-      nil -> create_link(data_structure, data_structure_tag, params, claims)
-      %DataStructuresTags{} = tag_link -> update_link(tag_link, params, claims)
-    end
-  end
-
-  def delete_link_tag(
-        %DataStructure{id: data_structure_id} = structure,
-        %DataStructureTag{id: tag_id},
-        %Claims{user_id: user_id}
-      ) do
-    data_structure_id
-    |> get_link_tag_by(tag_id)
-    |> case do
-      nil ->
-        {:error, :not_found}
-
-      %DataStructuresTags{} = tag_link ->
-        Multi.new()
-        |> Multi.run(:latest, fn _, _ ->
-          {:ok, get_latest_version(structure, [:path])}
-        end)
-        |> Multi.delete(:deleted_link_tag, tag_link)
-        |> Multi.run(:audit, Audit, :tag_link_deleted, [user_id])
-        |> Repo.transaction()
-        |> on_link_delete()
-    end
-  end
-
-  def get_link_tag_by(data_structure_id, tag_id) do
-    DataStructuresTags
-    |> Repo.get_by(
-      data_structure_tag_id: tag_id,
-      data_structure_id: data_structure_id
-    )
-    |> Repo.preload([:data_structure, :data_structure_tag])
-  end
-
-  defp on_tag_update({:ok, %{tagged_structures: [_ | _] = structures} = tag}) do
-    structures
-    |> Enum.map(& &1.id)
-    |> IndexWorker.reindex()
-
-    {:ok, tag}
-  end
-
-  defp on_tag_update(reply), do: reply
-
-  defp on_tag_delete({:ok, %{tagged_structures: [_ | _] = structures} = tag}) do
-    structures
-    |> Enum.map(& &1.id)
-    |> IndexWorker.reindex()
-
-    {:ok, tag}
-  end
-
-  defp on_tag_delete(reply), do: reply
-
-  defp create_link(data_structure, data_structure_tag, params, %Claims{user_id: user_id}) do
-    changeset =
-      params
-      |> DataStructuresTags.changeset()
-      |> DataStructuresTags.put_data_structure(data_structure)
-      |> DataStructuresTags.put_data_structure_tag(data_structure_tag)
-
-    Multi.new()
-    |> Multi.run(:latest, fn _, _ ->
-      {:ok, get_latest_version(data_structure, [:path])}
-    end)
-    |> Multi.insert(:linked_tag, changeset)
-    |> Multi.run(:audit, Audit, :tag_linked, [user_id])
-    |> Repo.transaction()
-    |> on_link_insert()
-  end
-
-  defp update_link(link, params, %Claims{user_id: user_id}) do
-    link = Repo.preload(link, [:data_structure_tag, :data_structure])
-    changeset = DataStructuresTags.changeset(link, params)
-
-    Multi.new()
-    |> Multi.run(:latest, fn _, _ ->
-      {:ok, get_latest_version(link.data_structure, [:path])}
-    end)
-    |> Multi.update(:linked_tag, changeset)
-    |> Multi.run(:audit, Audit, :tag_link_updated, [changeset, user_id])
-    |> Repo.transaction()
-  end
-
-  defp on_link_insert({:ok, %{linked_tag: link} = multi}) do
-    IndexWorker.reindex(link.data_structure_id)
-    {:ok, multi}
-  end
-
-  defp on_link_insert(reply), do: reply
-
-  defp on_link_delete({:ok, %{deleted_link_tag: link} = multi}) do
-    IndexWorker.reindex(link.data_structure_id)
-    {:ok, multi}
-  end
-
-  defp on_link_delete(reply), do: reply
-
   # Returns a data structure version enriched for indexing or rendering
   @spec enriched_structure_version!(binary() | integer(), keyword) ::
           DataStructureVersion.t()
@@ -1089,10 +1131,73 @@ defmodule TdDd.DataStructures do
 
     opts
     |> Map.new()
+    |> Map.drop([:with_protected_metadata])
     |> DataStructureQueries.enriched_structure_versions()
     |> Repo.all()
-    |> Enum.map(&enrich.(&1))
+    |> Enum.map(
+      &(&1
+        |> enrich.()
+        |> protect_metadata(Keyword.get(opts, :with_protected_metadata)))
+    )
   end
+
+  def streamed_enriched_structure_versions(opts \\ []) do
+    {enrich_opts, opts} = Keyword.split(opts, [:content, :filters])
+    enrich = StructureVersionEnricher.enricher(enrich_opts)
+
+    opts
+    |> Map.new()
+    |> Map.drop([:with_protected_metadata])
+    |> DataStructureQueries.enriched_structure_versions()
+    |> Repo.stream()
+    |> Stream.map(
+      &(&1
+        |> enrich.()
+        |> protect_metadata(Keyword.get(opts, :with_protected_metadata)))
+    )
+  end
+
+  def maybe_reindex_grant_requests(
+        {:ok,
+         %{
+           data_structure_id: data_structure_id
+         }} = data
+      ) do
+    Requests.reindex_on_data_structure_update(data_structure_id)
+
+    data
+  end
+
+  def maybe_reindex_grant_requests(
+        {:ok,
+         %{
+           updated_ids: data_structure_ids
+         }} = data
+      ) do
+    Requests.reindex_on_data_structure_update(data_structure_ids)
+
+    data
+  end
+
+  def maybe_reindex_grant_requests(
+        {:ok,
+         %{
+           structure_note: %{
+             data_structure_id: data_structure_id
+           }
+         }} = data
+      ) do
+    Requests.reindex_on_data_structure_update(data_structure_id)
+
+    data
+  end
+
+  def maybe_reindex_grant_requests(data_structure_ids) when is_list(data_structure_ids) do
+    Requests.reindex_on_data_structure_update(data_structure_ids)
+    data_structure_ids
+  end
+
+  def maybe_reindex_grant_requests(data), do: data
 
   ## Dataloader
 
@@ -1104,6 +1209,29 @@ defmodule TdDd.DataStructures do
     Enum.reduce(params, queryable, fn
       {:deleted, false}, q -> where(q, [dsv], is_nil(dsv.deleted_at))
       {:deleted, true}, q -> where(q, [dsv], not is_nil(dsv.deleted_at))
+      {:add_children, parent}, q -> add_children(q, parent)
+      {:add_parents, child}, q -> add_parents(q, child)
+      {:preload, preload}, q -> preload(q, ^preload)
     end)
+  end
+
+  defp add_children(q, %{id: parent_id}) do
+    default_type = RelationTypes.default_id!()
+
+    q
+    |> join(:inner, [dsv], r in DataStructureRelation,
+      on: r.child_id == dsv.id and r.parent_id == ^parent_id
+    )
+    |> where([_dsv, r], r.relation_type_id == ^default_type)
+  end
+
+  defp add_parents(q, %{id: child_id}) do
+    default_type = RelationTypes.default_id!()
+
+    q
+    |> join(:inner, [dsv], r in DataStructureRelation,
+      on: r.parent_id == dsv.id and r.child_id == ^child_id
+    )
+    |> where([_dsv, r], r.relation_type_id == ^default_type)
   end
 end

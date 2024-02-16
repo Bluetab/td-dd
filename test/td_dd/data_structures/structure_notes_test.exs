@@ -3,27 +3,44 @@ defmodule TdDd.DataStructures.StructureNotesTest do
 
   import TdDd.TestOperators
 
+  alias Ecto.Changeset
+  alias TdCache.Redix.Stream
+  alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.StructureNotes
+  alias TdDd.Search.MockIndexWorker
 
   @moduletag sandbox: :shared
+  @stream TdCache.Audit.stream()
+  @user_id 1
+
+  setup do
+    start_supervised!(TdDd.Search.StructureEnricher)
+    start_supervised!(MockIndexWorker)
+
+    alias_field = %{
+      "cardinality" => "?",
+      "label" => "alias",
+      "name" => "alias",
+      "type" => "string"
+    }
+
+    content = [%{"name" => "g1", "fields" => [alias_field]}]
+    %{id: template_id} = CacheHelpers.insert_template(scope: "dd", content: content)
+    data_structure_type = insert(:data_structure_type, template_id: template_id)
+
+    [data_structure_type: data_structure_type]
+  end
 
   describe "structure_notes" do
-    alias TdDd.DataStructures.StructureNote
-
-    @user_id 1
-    @valid_attrs %{df_content: %{}, status: :draft, version: 42}
-    @update_attrs %{df_content: %{}, status: :published}
-    @invalid_attrs %{df_content: nil, status: nil, version: nil}
-
     test "list_structure_notes/0 returns all structure_notes" do
       structure_note = insert(:structure_note)
-      assert StructureNotes.list_structure_notes() <|> [structure_note]
+      assert StructureNotes.list_structure_notes() ||| [structure_note]
     end
 
     test "list_structure_notes/1 returns all structure_notes for a data_structure" do
       %{data_structure_id: data_structure_id} = structure_note = insert(:structure_note)
       insert(:structure_note)
-      assert StructureNotes.list_structure_notes(data_structure_id) <|> [structure_note]
+      assert StructureNotes.list_structure_notes(data_structure_id) ||| [structure_note]
     end
 
     test "list_structure_notes/1 returns all structure_notes filtered by params" do
@@ -37,9 +54,22 @@ defmodule TdDd.DataStructures.StructureNotesTest do
         "status" => "versioned"
       }
 
-      assert StructureNotes.list_structure_notes(filters) <|> [n1, n2]
-      assert StructureNotes.list_structure_notes(%{}) <|> [n1, n2, n3, n4]
-      assert StructureNotes.list_structure_notes(%{"status" => :draft}) <|> [n4]
+      assert StructureNotes.list_structure_notes(filters) ||| [n1, n2]
+      assert StructureNotes.list_structure_notes(%{}) ||| [n1, n2, n3, n4]
+      assert StructureNotes.list_structure_notes(%{"status" => :draft}) ||| [n4]
+    end
+
+    test "list_structure_notes/1 returns all structure_notes filtered by until and to_date" do
+      n1 = insert(:structure_note, status: :versioned, updated_at: ~N[2021-01-01 10:00:00])
+      n2 = insert(:structure_note, status: :versioned, updated_at: ~N[2021-01-02 10:00:00])
+      insert(:structure_note, status: :versioned, updated_at: ~N[2021-01-03 10:00:00])
+      insert(:structure_note, status: :draft, updated_at: ~N[2021-01-04 10:00:00])
+
+      until_filters = %{
+        "until" => "2021-01-02 10:00:00"
+      }
+
+      assert StructureNotes.list_structure_notes(until_filters) ||| [n1, n2]
     end
 
     test "list_structure_notes/1 return results paginated by offset ordered by updated_at and note id" do
@@ -108,29 +138,48 @@ defmodule TdDd.DataStructures.StructureNotesTest do
       assert StructureNotes.get_latest_structure_note(data_structure.id) <~> latest_structure_note
     end
 
-    test "create_structure_note/3 with valid data creates a structure_note and publishes event" do
+    test "create_structure_note/3 with valid data creates a structure_note" do
       data_structure = insert(:data_structure)
 
+      %{id: grant_request_id} =
+        insert(:grant_request,
+          data_structure: data_structure
+        )
+
+      params = %{"df_content" => %{}, "status" => "draft", "version" => 42}
+
       assert {:ok, %StructureNote{} = structure_note} =
-               StructureNotes.create_structure_note(data_structure, @valid_attrs, @user_id)
+               StructureNotes.create_structure_note(data_structure, params, @user_id)
 
       assert structure_note.df_content == %{}
       assert structure_note.status == :draft
       assert structure_note.version == 42
+
+      find_call = {:reindex_grant_requests, [grant_request_id]}
+
+      assert find_call ==
+               MockIndexWorker.calls()
+               |> Enum.find(fn call ->
+                 find_call == call
+               end)
     end
 
     test "create_structure_note/3 with invalid data returns error changeset" do
       data_structure = insert(:data_structure)
 
-      assert {:error, %Ecto.Changeset{}} =
-               StructureNotes.create_structure_note(data_structure, @invalid_attrs, @user_id)
+      params = %{"df_content" => nil, "status" => nil, "version" => nil}
+
+      assert {:error, %Changeset{}} =
+               StructureNotes.create_structure_note(data_structure, params, @user_id)
     end
 
     test "update_structure_note/3 with valid data updates the structure_note" do
       structure_note = insert(:structure_note)
 
-      assert {:ok, %StructureNote{} = structure_note} =
-               StructureNotes.update_structure_note(structure_note, @update_attrs, @user_id)
+      params = %{"df_content" => %{}, "status" => "published"}
+
+      assert {:ok, %{structure_note_update: structure_note}} =
+               StructureNotes.update_structure_note(structure_note, params, @user_id)
 
       assert structure_note.df_content == %{}
       assert structure_note.status == :published
@@ -139,10 +188,109 @@ defmodule TdDd.DataStructures.StructureNotesTest do
     test "update_structure_note/3 with invalid data returns error changeset" do
       structure_note = insert(:structure_note)
 
-      assert {:error, %Ecto.Changeset{}} =
-               StructureNotes.update_structure_note(structure_note, @invalid_attrs, @user_id)
+      params = %{"df_content" => nil, "status" => nil, "version" => nil}
+
+      assert {:error, :structure_note, %Changeset{}, _} =
+               StructureNotes.update_structure_note(structure_note, params, @user_id)
 
       assert structure_note <~> StructureNotes.get_structure_note!(structure_note.id)
+    end
+
+    test "update_structure_note/3 updates structure alias when published", %{
+      data_structure_type: type
+    } do
+      %{data_structure_id: data_structure_id} = insert(:data_structure_version, type: type.name)
+      structure_note = insert(:structure_note, data_structure_id: data_structure_id)
+      params = %{"df_content" => %{"alias" => "foo"}, "status" => "published"}
+
+      assert {:ok, %{update_alias: structure}} =
+               StructureNotes.update_structure_note(structure_note, params, @user_id)
+
+      assert %{alias: "foo"} = structure
+    end
+
+    test "update_structure_note/3 publishes Audit structure_note_updated event", %{
+      data_structure_type: type
+    } do
+      [
+        %{data_structure_id: parent_id},
+        %{data_structure: %{id: data_structure_id}}
+      ] =
+        create_hierarchy(["PARENT_DS", "CHILD_DS"],
+          class_map: %{"CHILD_DS" => "field"},
+          type_map: %{"CHILD_DS" => type.name}
+        )
+
+      %{id: note_id} =
+        structure_note = insert(:structure_note, data_structure_id: data_structure_id)
+
+      params = %{"df_content" => %{"alias" => "foo_baz"}}
+
+      assert {:ok, %{audit: event_id}} =
+               StructureNotes.update_structure_note(structure_note, params, @user_id)
+
+      assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+
+      user_id = "#{@user_id}"
+      resource_id = "#{note_id}"
+
+      assert %{
+               event: "structure_note_updated",
+               payload: payload,
+               resource_id: ^resource_id,
+               resource_type: "data_structure_note",
+               service: "td_dd",
+               ts: _ts,
+               user_id: ^user_id
+             } = event
+
+      assert %{
+               "data_structure_id" => ^data_structure_id,
+               "field_parent_id" => ^parent_id
+             } = Jason.decode!(payload)
+    end
+
+    test "update_structure_note/3 publishes Audit structure_note_published event", %{
+      data_structure_type: type
+    } do
+      [
+        _,
+        %{data_structure_id: parent_id},
+        %{data_structure: %{id: data_structure_id}}
+      ] =
+        create_hierarchy(["GRAMPA_DS", "PARENT_DS", "CHILD_DS"],
+          class_map: %{"CHILD_DS" => "field"},
+          type_map: %{"CHILD_DS" => type.name}
+        )
+
+      %{id: note_id} =
+        structure_note = insert(:structure_note, data_structure_id: data_structure_id)
+
+      params = %{"df_content" => %{"alias" => "foo"}, "status" => "published"}
+
+      assert {:ok, %{audit: event_id}} =
+               StructureNotes.update_structure_note(structure_note, params, @user_id)
+
+      assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+
+      user_id = "#{@user_id}"
+      resource_id = "#{note_id}"
+
+      assert %{
+               event: "structure_note_published",
+               payload: payload,
+               resource_id: ^resource_id,
+               resource_type: "data_structure_note",
+               service: "td_dd",
+               ts: _ts,
+               user_id: ^user_id
+             } = event
+
+      assert %{
+               "resource" => %{"path" => ["GRAMPA_DS", "PARENT_DS"]},
+               "data_structure_id" => ^data_structure_id,
+               "field_parent_id" => ^parent_id
+             } = Jason.decode!(payload)
     end
 
     test "delete_structure_note/1 deletes the structure_note" do
@@ -156,10 +304,103 @@ defmodule TdDd.DataStructures.StructureNotesTest do
         StructureNotes.get_structure_note!(structure_note.id)
       end
     end
+  end
 
-    test "change_structure_note/1 returns a structure_note changeset" do
-      structure_note = insert(:structure_note)
-      assert %Ecto.Changeset{} = StructureNotes.change_structure_note(structure_note)
+  describe "suggestion_fields_for_template" do
+    test "suggestion_fields_for_template returns a list of fields enabled for suggestions" do
+      template = %{
+        id: System.unique_integer([:positive]),
+        label: "suggestions_test",
+        name: "suggestions_test",
+        scope: "dd",
+        content: [
+          %{
+            "name" => "Identifier Template",
+            "fields" => [
+              %{
+                "cardinality" => "1",
+                "description" => "field description",
+                "label" => "suggestion_field",
+                "name" => "suggestion_field",
+                "type" => "string",
+                "ai_suggestion" => true
+              },
+              %{
+                "cardinality" => "1",
+                "label" => "not_suggestion_field",
+                "name" => "not_suggestion_field",
+                "type" => "string"
+              }
+            ]
+          }
+        ]
+      }
+
+      %{id: template_id} = CacheHelpers.insert_template(template)
+
+      assert [%{"description" => "field description", "name" => "suggestion_field"}] ==
+               StructureNotes.suggestion_fields_for_template(template_id)
+    end
+
+    test "fixed values field will return possible_values" do
+      build_field = fn name, map ->
+        Map.merge(
+          %{
+            "cardinality" => "1",
+            "label" => name,
+            "name" => name,
+            "type" => "string",
+            "ai_suggestion" => true
+          },
+          map
+        )
+      end
+
+      template = %{
+        id: System.unique_integer([:positive]),
+        label: "suggestions_test",
+        name: "suggestions_test",
+        scope: "dd",
+        content: [
+          %{
+            "name" => "test",
+            "fields" => [
+              build_field.("fixed_list", %{
+                "values" => %{
+                  "fixed" => ["foo", "bar"]
+                }
+              }),
+              build_field.("key_value_list", %{
+                "values" => %{
+                  "fixed_tuple" => [
+                    %{
+                      "text" => "t1",
+                      "value" => "v1"
+                    },
+                    %{
+                      "text" => "t2",
+                      "value" => "v2"
+                    }
+                  ]
+                }
+              })
+            ]
+          }
+        ]
+      }
+
+      %{id: template_id} = CacheHelpers.insert_template(template)
+
+      assert [
+               %{
+                 "name" => "fixed_list",
+                 "possible_values" => ["foo", "bar"]
+               },
+               %{
+                 "name" => "key_value_list",
+                 "possible_values" => ["v1", "v2"]
+               }
+             ] = StructureNotes.suggestion_fields_for_template(template_id)
     end
   end
 

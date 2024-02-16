@@ -14,6 +14,8 @@ defmodule TdDq.Rules.RuleResults.BulkLoad do
   alias TdDq.Rules.RuleResult
   alias TdDq.Rules.RuleResults
 
+  @index_worker Application.compile_env(:td_dd, :dq_index_worker)
+
   require Logger
 
   def bulk_load(records) do
@@ -31,8 +33,8 @@ defmodule TdDq.Rules.RuleResults.BulkLoad do
     |> Multi.run(:results, fn _, %{ids: ids} -> RuleResults.select_results(ids) end)
     |> Multi.run(:cache, fn _, %{results: results} ->
       {:ok,
-       Enum.map(results, fn %{implementation_id: implementation_id} ->
-         ImplementationLoader.maybe_update_implementation_cache(implementation_id)
+       Enum.map(results, fn %{implementation_ref: implementation_ref} ->
+         ImplementationLoader.maybe_update_implementation_cache(implementation_ref)
        end)}
     end)
     |> Multi.run(:audit, Audit, :rule_results_created, [0])
@@ -42,21 +44,32 @@ defmodule TdDq.Rules.RuleResults.BulkLoad do
 
   defp bulk_refresh(res) do
     with {:ok, %{results: results}} <- res,
-         rule_ids <- rule_ids_from_results(results) do
+         {rule_ids, implementation_ids} <- split_results_by_has_rule_id(results) do
       RuleLoader.refresh(rule_ids)
+      @index_worker.reindex_implementations(implementation_ids)
       res
     end
   end
 
-  defp rule_ids_from_results(results) do
+  defp split_results_by_has_rule_id(results) do
+    {implementations_ruleless, implementations_with_rules} =
+      Enum.split_with(results, fn result -> is_nil(result.rule_id) end)
+
+    rule_ids = get_ids_from_results(implementations_with_rules, :rule_id)
+
+    implementation_ids = get_ids_from_results(implementations_ruleless, :implementation_id)
+
+    {rule_ids, implementation_ids}
+  end
+
+  defp get_ids_from_results(results, id_type) do
     results
-    |> Enum.map(&Map.get(&1, :rule_id))
-    |> Enum.reject(&is_nil/1)
+    |> Enum.map(&Map.get(&1, id_type))
     |> Enum.uniq()
   end
 
   defp bulk_insert(records) do
-    implementation_by_key = implementation_by_key(records)
+    implementation_by_key = published_implementation_by_key(records)
 
     records
     |> Enum.with_index(2)
@@ -69,7 +82,7 @@ defmodule TdDq.Rules.RuleResults.BulkLoad do
     end
   end
 
-  defp implementation_by_key(records) do
+  defp published_implementation_by_key(records) do
     keys =
       records
       |> Enum.map(&Map.get(&1, "implementation_key"))
@@ -78,18 +91,19 @@ defmodule TdDq.Rules.RuleResults.BulkLoad do
 
     Implementation
     |> where([ri], ri.implementation_key in ^keys)
+    |> where([ri], ri.status == :published)
     |> select([ri], {ri.implementation_key, ri})
     |> Repo.all()
     |> Map.new()
   end
 
-  defp changeset(%{} = params, %{} = implementation_by_key) do
+  defp changeset(%{} = params, %{} = implementations_by_key) do
     with %{"implementation_key" => key} <- params,
          %Implementation{result_type: type, rule_id: rule_id} = impl <-
-           Map.get(implementation_by_key, key) do
+           Map.get(implementations_by_key, key) do
       RuleResult.changeset(%RuleResult{result_type: type, rule_id: rule_id}, impl, params)
     else
-      _ -> RuleResult.changeset(nil, params)
+      _ -> RuleResult.changeset(:non_existing_nor_published, params)
     end
   end
 

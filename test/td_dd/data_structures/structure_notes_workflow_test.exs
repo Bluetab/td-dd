@@ -133,7 +133,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
         "version" => 3
       }
 
-      assert {:error, %{errors: [df_content: {"invalid content", _}]}} =
+      assert {:error, %{errors: [df_content: {"foo: can't be blank", _}]}} =
                StructureNotesWorkflow.create(data_structure, create_attrs, @user_id)
     end
 
@@ -480,7 +480,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
 
       data_structure = create_data_structure_with_version()
 
-      assert {:error, %{errors: [df_content: {"invalid content", _}]}} =
+      assert {:error, %{errors: [df_content: {"foo: can't be blank", _}]}} =
                :structure_note
                |> insert(status: :draft, data_structure: data_structure)
                |> StructureNotesWorkflow.update(attrs, @is_strict, @user_id)

@@ -18,7 +18,7 @@ defmodule TdDqWeb.ImplementationFilterControllerTest do
     test "maps filters from request parameters", %{conn: conn} do
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/implementations/_search", %{query: query, size: 0}, [] ->
+        _, :post, "/implementations/_search", %{query: query, size: 0}, _ ->
           assert query == %{
                    bool: %{
                      filter: %{term: %{"rule.name.raw" => "foo"}},
@@ -37,19 +37,19 @@ defmodule TdDqWeb.ImplementationFilterControllerTest do
                |> post(Routes.implementation_filter_path(conn, :search, %{"filters" => filters}))
                |> json_response(:ok)
 
-      assert data == %{"rule.name.raw" => ["foo", "bar"]}
+      assert %{"rule.name.raw" => %{"values" => ["foo", "bar"]}} = data
     end
 
     @tag authentication: [role: "user", permissions: ["view_quality_rule"]]
     test "user with permissions filters by domain_ids and not confidential", %{conn: conn} do
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/implementations/_search", %{query: query, size: 0}, [] ->
+        _, :post, "/implementations/_search", %{query: query, size: 0}, _ ->
           assert %{
                    bool: %{
                      filter: [
-                       %{term: %{"domain_ids" => _}},
-                       %{term: %{"_confidential" => false}}
+                       %{term: %{"_confidential" => false}},
+                       %{term: %{"domain_ids" => _}}
                      ]
                    }
                  } = query
@@ -78,11 +78,10 @@ defmodule TdDqWeb.ImplementationFilterControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/implementations/_search", %{query: query, size: 0}, [] ->
+        _, :post, "/implementations/_search", %{query: query, size: 0}, _ ->
           assert %{
                    bool: %{
                      filter: [
-                       %{terms: %{"domain_ids" => [_, _]}},
                        %{
                          bool: %{
                            should: [
@@ -90,7 +89,8 @@ defmodule TdDqWeb.ImplementationFilterControllerTest do
                              %{term: %{"_confidential" => false}}
                            ]
                          }
-                       }
+                       },
+                       %{terms: %{"domain_ids" => [_, _]}}
                      ]
                    }
                  } = query
@@ -108,7 +108,7 @@ defmodule TdDqWeb.ImplementationFilterControllerTest do
     test "user without permissions includes match_none", %{conn: conn} do
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/implementations/_search", %{query: query, size: 0}, [] ->
+        _, :post, "/implementations/_search", %{query: query, size: 0}, _ ->
           assert query == %{
                    bool: %{
                      filter: %{match_none: %{}},

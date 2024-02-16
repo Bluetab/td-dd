@@ -2,8 +2,6 @@ defmodule TdDdWeb.ProfileExecutionController do
   use PhoenixSwagger
   use TdDdWeb, :controller
 
-  import Canada, only: [can?: 2]
-
   alias TdDd.Executions
   alias TdDd.Executions.ProfileExecution
   alias TdDdWeb.SwaggerDefinitions
@@ -22,13 +20,13 @@ defmodule TdDdWeb.ProfileExecutionController do
   def index(conn, params) do
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(claims, list(ProfileExecution))},
+    with :ok <- Bodyguard.permit(TdDd.Profiles, :search, claims),
          executions <-
            params
            |> Executions.list_profile_executions(
              preload: [{:data_structure, :source}, :profile, :profile_events]
            )
-           |> Enum.filter(&can?(claims, show(&1))) do
+           |> Enum.filter(&Bodyguard.permit?(TdDd.Profiles, :view, claims, &1)) do
       render(conn, "index.json", profile_executions: executions)
     end
   end
@@ -47,7 +45,7 @@ defmodule TdDdWeb.ProfileExecutionController do
              preload: [:data_structure, :profile, :profile_events],
              enrich: [:latest]
            ),
-         {:can, true} <- {:can, can?(claims, show(execution))} do
+         :ok <- Bodyguard.permit(TdDd.Profiles, :view, claims, execution) do
       render(conn, "show.json", profile_execution: execution)
     else
       nil -> {:error, :not_found}

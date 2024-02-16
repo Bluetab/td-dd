@@ -23,8 +23,12 @@ defmodule TdDdWeb.UserSearchFilterController do
   end
 
   def index(conn, params) do
-    user_search_filters = UserSearchFilters.list_user_search_filters(params)
-    render(conn, "index.json", user_search_filters: user_search_filters)
+    claims = conn.assigns[:current_resource]
+
+    with :ok <- Bodyguard.permit(UserSearchFilters, :list, claims) do
+      user_search_filters = UserSearchFilters.list_user_search_filters(params)
+      render(conn, "index.json", user_search_filters: user_search_filters)
+    end
   end
 
   swagger_path :index_by_user do
@@ -37,10 +41,9 @@ defmodule TdDdWeb.UserSearchFilterController do
   end
 
   def index_by_user(conn, params) do
-    %{user_id: user_id} = conn.assigns[:current_resource]
-    params_with_user = Map.put(params, "user_id", user_id)
+    claims = conn.assigns[:current_resource]
 
-    user_search_filters = UserSearchFilters.list_user_search_filters(params_with_user)
+    user_search_filters = UserSearchFilters.list_user_search_filters(params, claims)
     render(conn, "index.json", user_search_filters: user_search_filters)
   end
 
@@ -62,11 +65,12 @@ defmodule TdDdWeb.UserSearchFilterController do
   end
 
   def create(conn, %{"user_search_filter" => user_search_filter_params}) do
-    %{user_id: user_id} = conn.assigns[:current_resource]
+    %{user_id: user_id} = claims = conn.assigns[:current_resource]
 
     create_params = Map.put(user_search_filter_params, "user_id", user_id)
 
-    with {:ok, %UserSearchFilter{} = user_search_filter} <-
+    with :ok <- Bodyguard.permit(UserSearchFilters, :create, claims, create_params),
+         {:ok, %UserSearchFilter{} = user_search_filter} <-
            UserSearchFilters.create_user_search_filter(create_params) do
       conn
       |> put_status(:created)
@@ -115,15 +119,18 @@ defmodule TdDdWeb.UserSearchFilterController do
   end
 
   def delete(conn, %{"id" => id}) do
-    %{user_id: user_id} = conn.assigns[:current_resource]
+    claims = conn.assigns[:current_resource]
     user_search_filter = UserSearchFilters.get_user_search_filter!(id)
 
-    with true <- user_id == user_search_filter.user_id,
+    with :ok <-
+           Bodyguard.permit(UserSearchFilters, :delete, claims, %{
+             user_id: user_search_filter.user_id
+           }),
          {:ok, %UserSearchFilter{}} <-
            UserSearchFilters.delete_user_search_filter(user_search_filter) do
       send_resp(conn, :no_content, "")
     else
-      false ->
+      {:error, :forbidden} ->
         conn
         |> put_status(:forbidden)
         |> put_view(ErrorView)

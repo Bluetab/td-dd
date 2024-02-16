@@ -3,11 +3,17 @@ defmodule TdDq.Implementations.ImplementationTest do
 
   alias Ecto.Changeset
   alias Elasticsearch.Document
+  alias TdDd.Repo
   alias TdDq.Implementations.Implementation
+  alias TdDq.Search.Store
+
+  @moduletag sandbox: :shared
 
   @implementation %Implementation{domain_id: 123}
+  @unsafe "javascript:alert(document)"
 
   setup do
+    start_supervised!(TdDd.Search.StructureEnricher)
     identifier_name = "identifier"
 
     with_identifier = %{
@@ -146,6 +152,13 @@ defmodule TdDq.Implementations.ImplementationTest do
     test "validates df_content is valid", %{template_name: template_name} do
       invalid_content = %{"list" => "foo", "string" => "whatever"}
       params = params_for(:implementation, df_name: template_name, df_content: invalid_content)
+      assert %{valid?: false, errors: errors} = Implementation.changeset(@implementation, params)
+      assert {"list: is invalid", _detail} = errors[:df_content]
+    end
+
+    test "validates df_content is safe", %{template_name: template_name} do
+      unsafe_content = %{"list" => "one", "string" => @unsafe}
+      params = params_for(:implementation, df_name: template_name, df_content: unsafe_content)
       assert %{valid?: false, errors: errors} = Implementation.changeset(@implementation, params)
       assert {"invalid content", _detail} = errors[:df_content]
     end
@@ -371,17 +384,21 @@ defmodule TdDq.Implementations.ImplementationTest do
       rule = insert(:rule)
 
       creation_attrs = %{
-        validations: [
+        validation: [
           %{
-            operator: %{
-              name: "timestamp_gt_timestamp",
-              value_type: "timestamp",
-              value_type_filter: "timestamp"
-            },
-            structure: %{id: 7, name: "s7"},
-            value: [%{raw: "2019-12-02 05:35:00"}],
-            modifier: build(:modifier),
-            value_modifier: [build(:modifier)]
+            conditions: [
+              %{
+                operator: %{
+                  name: "timestamp_gt_timestamp",
+                  value_type: "timestamp",
+                  value_type_filter: "timestamp"
+                },
+                structure: %{id: 7, name: "s7"},
+                value: [%{raw: "2019-12-02 05:35:00"}],
+                modifier: build(:modifier),
+                value_modifier: [build(:modifier)]
+              }
+            ]
           }
         ]
       }
@@ -392,8 +409,9 @@ defmodule TdDq.Implementations.ImplementationTest do
         insert(:implementation,
           implementation_key: implementation_key,
           rule: rule,
-          validations: creation_attrs.validations
+          validation: creation_attrs.validation
         )
+        |> Repo.preload(:implementation_ref_struct)
 
       assert %{
                validations: [
@@ -413,6 +431,73 @@ defmodule TdDq.Implementations.ImplementationTest do
              } = Document.encode(rule_implementation)
     end
 
+    test "encoded implementation includes linked structures" do
+      %{id: domain_1_id} = CacheHelpers.insert_domain()
+      %{id: domain_2_id} = CacheHelpers.insert_domain()
+
+      %{id: ds_1_id, external_id: ds_1_external_id} =
+        insert(:data_structure, domain_ids: [domain_1_id, domain_2_id])
+
+      %{name: dsv_1_name, path: dsv_1_path, type: dsv_1_type} =
+        insert(:data_structure_version, data_structure_id: ds_1_id)
+
+      %{id: ds_2_id, external_id: ds_2_external_id} =
+        insert(:data_structure, domain_ids: [domain_1_id, domain_2_id])
+
+      %{name: dsv_2_name, path: dsv_2_path, type: dsv_2_type} =
+        insert(:data_structure_version, data_structure_id: ds_2_id)
+
+      %{id: implementation_id} = insert(:implementation)
+
+      insert(
+        :implementation_structure,
+        data_structure_id: ds_1_id,
+        implementation_id: implementation_id,
+        type: :dataset
+      )
+
+      insert(
+        :implementation_structure,
+        data_structure_id: ds_2_id,
+        implementation_id: implementation_id,
+        type: :validation
+      )
+
+      [implementation_stream] =
+        Store.transaction(fn ->
+          Implementation
+          |> Store.stream([implementation_id])
+          |> Enum.to_list()
+        end)
+
+      assert %{
+               structure_links: [
+                 %{
+                   link_type: :dataset,
+                   structure: %{
+                     domain_ids: [^domain_1_id, ^domain_2_id],
+                     external_id: ^ds_1_external_id,
+                     id: ^ds_1_id,
+                     name: ^dsv_1_name,
+                     path: ^dsv_1_path,
+                     type: ^dsv_1_type
+                   }
+                 },
+                 %{
+                   link_type: :validation,
+                   structure: %{
+                     domain_ids: [^domain_1_id, ^domain_2_id],
+                     external_id: ^ds_2_external_id,
+                     id: ^ds_2_id,
+                     name: ^dsv_2_name,
+                     path: ^dsv_2_path,
+                     type: ^dsv_2_type
+                   }
+                 }
+               ]
+             } = Document.encode(implementation_stream)
+    end
+
     test "encoded implementation includes populations" do
       rule = insert(:rule)
 
@@ -428,7 +513,7 @@ defmodule TdDq.Implementations.ImplementationTest do
       creation_attrs = %{
         populations: [
           %{
-            population: [
+            conditions: [
               %{
                 operator: operator,
                 structure: structure,
@@ -442,7 +527,7 @@ defmodule TdDq.Implementations.ImplementationTest do
             ]
           },
           %{
-            population: [
+            conditions: [
               %{
                 operator: operator,
                 structure: structure,
@@ -461,11 +546,12 @@ defmodule TdDq.Implementations.ImplementationTest do
           rule: rule,
           populations: creation_attrs.populations
         )
+        |> Repo.preload(:implementation_ref_struct)
 
       assert %{
                populations: [
                  %{
-                   population: [
+                   conditions: [
                      %{
                        operator: ^operator,
                        structure: %{id: ^structure_id, name: ^structure_name},
@@ -479,7 +565,7 @@ defmodule TdDq.Implementations.ImplementationTest do
                    ]
                  },
                  %{
-                   population: [
+                   conditions: [
                      %{
                        operator: ^operator,
                        structure: %{id: ^structure_id, name: ^structure_name},
@@ -506,7 +592,7 @@ defmodule TdDq.Implementations.ImplementationTest do
       creation_attrs = %{
         populations: [
           %{
-            population: [
+            conditions: [
               %{
                 operator: operator,
                 structure: structure,
@@ -520,7 +606,7 @@ defmodule TdDq.Implementations.ImplementationTest do
             ]
           },
           %{
-            population: [
+            conditions: [
               %{
                 operator: operator,
                 structure: structure,
@@ -539,6 +625,7 @@ defmodule TdDq.Implementations.ImplementationTest do
           rule: rule,
           populations: creation_attrs.populations
         )
+        |> Repo.preload(:implementation_ref_struct)
 
       assert %{
                population: [
@@ -556,59 +643,210 @@ defmodule TdDq.Implementations.ImplementationTest do
              } = Document.encode(rule_implementation)
     end
 
-    test "encoded implementation includes segments" do
+    test "encoded implementation includes validation" do
       rule = insert(:rule)
 
-      structure_1 = %{
-        id: 9,
-        name: "s9",
-        external_id: nil,
-        parent_index: nil,
-        path: [],
-        system: nil,
-        type: nil
+      operator = %{
+        name: "timestamp_gt_timestamp",
+        value_type: "timestamp",
+        value_type_filter: "timestamp"
       }
 
-      structure_2 = %{
-        id: 10,
-        name: "s10",
-        external_id: nil,
-        parent_index: nil,
-        path: [],
-        system: nil,
-        type: nil
-      }
+      modifier = build(:modifier)
+
+      value = [%{raw: "2019-12-02 05:35:00"}]
 
       creation_attrs = %{
-        segments: [
+        validation: [
           %{
-            structure: structure_1
+            conditions: [
+              %{
+                operator: operator,
+                structure: %{id: 7, name: "s7"},
+                value: value,
+                modifier: modifier,
+                value_modifier: [modifier]
+              }
+            ]
           },
           %{
-            structure: structure_2
+            conditions: [
+              %{
+                operator: operator,
+                structure: %{id: 8, name: "s8"},
+                value: value,
+                modifier: modifier,
+                value_modifier: [modifier]
+              }
+            ]
           }
         ]
       }
 
-      implementation_key = "seg1"
+      implementation_key = "rik1"
 
       rule_implementation =
         insert(:implementation,
           implementation_key: implementation_key,
           rule: rule,
-          segments: creation_attrs.segments
+          validation: creation_attrs.validation
         )
+        |> Repo.preload(:implementation_ref_struct)
 
       assert %{
-               segments: [
+               validation: [
                  %{
-                   structure: ^structure_1
+                   conditions: [
+                     %{
+                       modifier: ^modifier,
+                       operator: ^operator,
+                       structure: %{
+                         id: 7,
+                         name: "s7"
+                       },
+                       value: ^value,
+                       value_modifier: [^modifier]
+                     }
+                   ]
                  },
                  %{
-                   structure: ^structure_2
+                   conditions: [
+                     %{
+                       modifier: ^modifier,
+                       operator: ^operator,
+                       structure: %{
+                         id: 8,
+                         name: "s8"
+                       },
+                       value: ^value,
+                       value_modifier: [^modifier]
+                     }
+                   ]
                  }
                ]
              } = Document.encode(rule_implementation)
+    end
+
+    test "encoded implementation includes validations (backward compatibility)" do
+      rule = insert(:rule)
+
+      operator = %{
+        name: "timestamp_gt_timestamp",
+        value_type: "timestamp",
+        value_type_filter: "timestamp"
+      }
+
+      modifier = build(:modifier)
+
+      value = [%{raw: "2019-12-02 05:35:00"}]
+
+      creation_attrs = %{
+        validation: [
+          %{
+            conditions: [
+              %{
+                operator: operator,
+                structure: %{id: 7, name: "s7"},
+                value: value,
+                modifier: modifier,
+                value_modifier: [modifier]
+              }
+            ]
+          },
+          %{
+            conditions: [
+              %{
+                operator: operator,
+                structure: %{id: 8, name: "s8"},
+                value: value,
+                modifier: modifier,
+                value_modifier: [modifier]
+              }
+            ]
+          }
+        ]
+      }
+
+      implementation_key = "rik1"
+
+      rule_implementation =
+        insert(:implementation,
+          implementation_key: implementation_key,
+          rule: rule,
+          validation: creation_attrs.validation
+        )
+        |> Repo.preload(:implementation_ref_struct)
+
+      assert %{
+               validations: [
+                 %{
+                   modifier: ^modifier,
+                   operator: ^operator,
+                   structure: %{
+                     id: 7,
+                     name: "s7"
+                   },
+                   value: ^value,
+                   value_modifier: [^modifier]
+                 }
+               ]
+             } = Document.encode(rule_implementation)
+    end
+
+    test "encoded implementation includes segments" do
+      %{data_structure_id: id1} =
+        dsv1 =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, alias: nil)
+        )
+
+      %{data_structure_id: id2} =
+        dsv2 =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, alias: "some_alias")
+        )
+
+      structure_1 = build(:dataset_structure, id: id1)
+      structure_2 = build(:dataset_structure, id: id2)
+
+      %{id: id} =
+        insert(:implementation,
+          segments: [%{structure: structure_1}, %{structure: structure_2}]
+        )
+
+      assert %{segments: [%{structure: s1}, %{structure: s2}]} =
+               Implementation
+               |> Repo.get(id)
+               |> Repo.preload(:implementation_ref_struct)
+               |> Document.encode()
+
+      assert_maps_equal(s1, dsv1, &structures_equal/2)
+      assert_maps_equal(s2, dsv2, &structures_equal/2)
+    end
+
+    test "encoded implementation includes alias and original name of aliased structure" do
+      %{name: name, data_structure_id: id} = insert(:data_structure_version, alias: "some_alias")
+      dataset_row = build(:dataset_row, structure: build(:dataset_structure, id: id))
+
+      implementation = insert(:implementation, dataset: [dataset_row])
+
+      assert %{dataset: [%{structure: structure}]} =
+               implementation |> Repo.preload(:implementation_ref_struct) |> Document.encode()
+
+      assert %{alias: "some_alias", name: ^name} = structure
+    end
+
+    test "encoded implementation includes alias and original name of unaliased structure" do
+      %{name: name, data_structure_id: id} = insert(:data_structure_version)
+      dataset_row = build(:dataset_row, structure: build(:dataset_structure, id: id))
+
+      implementation = insert(:implementation, dataset: [dataset_row])
+
+      assert %{dataset: [%{structure: structure}]} =
+               implementation |> Repo.preload(:implementation_ref_struct) |> Document.encode()
+
+      assert %{name: ^name} = structure
+      refute Map.has_key?(structure, :alias)
     end
 
     test "encodes ruleless implementations" do
@@ -624,7 +862,7 @@ defmodule TdDq.Implementations.ImplementationTest do
       creation_attrs = %{
         populations: [
           %{
-            population: [
+            conditions: [
               %{
                 operator: operator,
                 structure: structure,
@@ -638,7 +876,7 @@ defmodule TdDq.Implementations.ImplementationTest do
             ]
           },
           %{
-            population: [
+            conditions: [
               %{
                 operator: operator,
                 structure: structure,
@@ -652,10 +890,12 @@ defmodule TdDq.Implementations.ImplementationTest do
       implementation_key = "rik1"
 
       rule_implementation =
-        insert(:ruleless_implementation,
+        :ruleless_implementation
+        |> insert(
           implementation_key: implementation_key,
           populations: creation_attrs.populations
         )
+        |> Repo.preload(:implementation_ref_struct)
 
       assert %{
                population: [
@@ -673,4 +913,55 @@ defmodule TdDq.Implementations.ImplementationTest do
              } = Document.encode(rule_implementation)
     end
   end
+
+  defp structures_equal(
+         %{
+           alias: alias_name,
+           external_id: external_id,
+           id: id,
+           metadata: metadata,
+           name: name,
+           system: %{external_id: system_external_id, id: system_id, name: system_name},
+           type: type
+         },
+         %{
+           data_structure: %{
+             alias: alias_name,
+             external_id: external_id,
+             id: id,
+             system: %{external_id: system_external_id, id: system_id, name: system_name}
+           },
+           metadata: metadata,
+           name: name,
+           type: type
+         }
+       )
+       when is_binary(alias_name),
+       do: true
+
+  defp structures_equal(
+         %{
+           external_id: external_id,
+           id: id,
+           metadata: metadata,
+           name: name,
+           system: %{external_id: system_external_id, id: system_id, name: system_name},
+           type: type
+         } = map,
+         %{
+           data_structure: %{
+             alias: nil,
+             external_id: external_id,
+             id: id,
+             system: %{external_id: system_external_id, id: system_id, name: system_name}
+           },
+           metadata: metadata,
+           name: name,
+           type: type
+         }
+       )
+       when not is_map_key(map, :alias),
+       do: true
+
+  defp structures_equal(_, _), do: false
 end

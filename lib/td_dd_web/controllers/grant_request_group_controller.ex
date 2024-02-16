@@ -1,10 +1,9 @@
 defmodule TdDdWeb.GrantRequestGroupController do
   use TdDdWeb, :controller
 
-  import Canada, only: [can?: 2]
-
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.Grants
   alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Grants.Requests
 
@@ -22,19 +21,33 @@ defmodule TdDdWeb.GrantRequestGroupController do
 
   def create(conn, %{"grant_request_group" => params}) do
     with claims <- conn.assigns[:current_resource],
+         params <- with_created_by_id(params, claims),
          {:ok, params} <- with_valid_requests(params),
-         {:ok, _} <- can_create_on_structures(claims, params),
-         {:ok, %{group: %{id: id}}} <- Requests.create_grant_request_group(params, claims),
+         :ok <- can_create_on_structures(claims, params),
+         :ok <- Bodyguard.permit(Requests, :create_grant_request_group, claims, params),
+         modification_grant <- with_modification_grant(params),
+         {:ok, %{group: %{id: id}}} <-
+           Requests.create_grant_request_group(params, modification_grant),
          %{} = group <- Requests.get_grant_request_group!(id) do
       conn
       |> put_status(:created)
-      |> put_resp_header(
-        "location",
-        Routes.grant_request_group_path(conn, :show, group)
-      )
+      |> put_resp_header("location", Routes.grant_request_group_path(conn, :show, group))
       |> render("show.json", grant_request_group: group)
     end
   end
+
+  defp with_created_by_id(params, %{user_id: created_by_id}) do
+    user_id = Map.get(params, "user_id", created_by_id)
+
+    params
+    |> Map.put("user_id", user_id)
+    |> Map.put("created_by_id", created_by_id)
+  end
+
+  defp with_modification_grant(%{"modification_grant_id" => grant_id}) when not is_nil(grant_id),
+    do: Grants.get_grant!(grant_id)
+
+  defp with_modification_grant(_), do: nil
 
   defp with_valid_requests(%{"requests" => [_ | _] = requests, "type" => type} = params)
        when is_list(requests) do
@@ -84,27 +97,26 @@ defmodule TdDdWeb.GrantRequestGroupController do
   end
 
   defp can_create_on_structure(claims, %{"data_structure" => data_structure}) do
-    if can?(claims, create_grant_request(data_structure)) do
-      {:cont, {:ok, nil}}
-    else
-      {:halt, {:can, false}}
+    case Bodyguard.permit(DataStructures, :create_grant_request, claims, data_structure) do
+      :ok -> {:cont, :ok}
+      error -> {:halt, error}
     end
   end
 
   def show(conn, %{"id" => id}) do
+    claims = conn.assigns[:current_resource]
     group = Requests.get_grant_request_group!(id)
 
-    with claims <- conn.assigns[:current_resource],
-         {:can, true} <- {:can, can?(claims, show(group))} do
+    with :ok <- Bodyguard.permit(Requests, :view, claims, group) do
       render(conn, "show.json", grant_request_group: group)
     end
   end
 
   def delete(conn, %{"id" => id}) do
+    claims = conn.assigns[:current_resource]
     group = Requests.get_grant_request_group!(id)
 
-    with claims <- conn.assigns[:current_resource],
-         {:can, true} <- {:can, can?(claims, delete(GrantRequestGroup))},
+    with :ok <- Bodyguard.permit(Requests, :delete, claims, group),
          {:ok, %GrantRequestGroup{}} <- Requests.delete_grant_request_group(group) do
       send_resp(conn, :no_content, "")
     end

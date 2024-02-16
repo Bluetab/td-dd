@@ -8,6 +8,7 @@ defmodule TdDq.Executions.Group do
 
   import Ecto.Changeset
 
+  alias TdDfLib.Validation
   alias TdDq.Executions.Execution
   alias TdDq.Implementations.Implementation
 
@@ -16,8 +17,9 @@ defmodule TdDq.Executions.Group do
     field(:created_by_id, :integer)
     field(:df_content, :map)
     has_many(:executions, Execution)
+    field(:status_count, {:array, :map}, virtual: true)
     many_to_many(:implementations, Implementation, join_through: Execution)
-    timestamps(updated_at: false)
+    timestamps(updated_at: false, type: :utc_datetime_usec)
   end
 
   def changeset(%{} = params) do
@@ -27,7 +29,8 @@ defmodule TdDq.Executions.Group do
   def changeset(%__MODULE__{} = struct, %{} = params) do
     struct
     |> cast(params, [:created_by_id, :filters, :df_content])
-    |> validate_required([:created_by_id])
+    |> validate_required(:created_by_id)
     |> cast_assoc(:executions, with: &Execution.changeset/2, required: true)
+    |> validate_change(:df_content, &Validation.validate_safe/2)
   end
 end

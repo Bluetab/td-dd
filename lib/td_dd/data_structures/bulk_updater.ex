@@ -20,10 +20,10 @@ defmodule TdDd.DataStructures.BulkUpdater do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
-  def bulk_csv_update(csv_hash, structures_content_upload, user_id, auto_publish) do
+  def bulk_csv_update(csv_hash, structures_content_upload, user_id, auto_publish, lang) do
     GenServer.call(
       __MODULE__,
-      {:bulk_csv_update, csv_hash, structures_content_upload, user_id, auto_publish},
+      {:bulk_csv_update, csv_hash, structures_content_upload, user_id, auto_publish, lang},
       60_000
     )
   end
@@ -48,31 +48,43 @@ defmodule TdDd.DataStructures.BulkUpdater do
 
   @impl true
   def handle_call(
-        {:bulk_csv_update, csv_hash, structures_content_upload, user_id, auto_publish},
+        {:bulk_csv_update, csv_hash, structures_content_upload, user_id, auto_publish, lang},
         _from,
         state
       ) do
     %{reply: update_state, state: new_state} =
-      pending_update(csv_hash)
-      |> launch_task(csv_hash, state, structures_content_upload, user_id, auto_publish)
+      csv_hash
+      |> pending_update()
+      |> launch_task(csv_hash, state, structures_content_upload, user_id, auto_publish, lang)
 
     {:reply, update_state, new_state}
   end
 
-  def launch_task(:not_pending, csv_hash, state, structures_content_upload, user_id, auto_publish) do
+  def launch_task(
+        :not_pending,
+        csv_hash,
+        state,
+        %{filename: filename} = structures_content_upload,
+        user_id,
+        auto_publish,
+        lang
+      ) do
     Task.Supervisor.children(TdDd.TaskSupervisor)
 
     task =
       Task.Supervisor.async_nolink(
         TdDd.TaskSupervisor,
         fn ->
-          contents = BulkUpdate.from_csv(structures_content_upload)
-
-          {:ok, %{updates: updates, update_notes: update_notes}} =
-            BulkUpdate.do_csv_bulk_update(contents, user_id, auto_publish)
-
-          [updated_notes, not_updated_notes] = BulkUpdate.split_succeeded_errors(update_notes)
-          make_summary(updates, updated_notes, not_updated_notes)
+          with [_ | _] = contents <-
+                 BulkUpdate.from_csv(structures_content_upload, lang),
+               {:ok, %{updates: updates, update_notes: update_notes}} <-
+                 BulkUpdate.do_csv_bulk_update(contents, user_id, auto_publish),
+               [updated_notes, not_updated_notes] <-
+                 BulkUpdate.split_succeeded_errors(update_notes) do
+            make_summary(updates, updated_notes, not_updated_notes)
+          else
+            error -> error
+          end
         end
       )
 
@@ -84,11 +96,12 @@ defmodule TdDd.DataStructures.BulkUpdater do
       user_id: user_id,
       status: "STARTED",
       csv_hash: csv_hash,
-      task_reference: task.ref |> ref_to_string
+      task_reference: ref_to_string(task.ref),
+      filename: filename
     })
 
     %{
-      reply: {:just_started, csv_hash, task.ref |> ref_to_string},
+      reply: {:just_started, csv_hash, ref_to_string(task.ref)},
       state:
         put_in(
           state.tasks[task.ref],
@@ -96,6 +109,7 @@ defmodule TdDd.DataStructures.BulkUpdater do
             task: task,
             task_timer: task_timer,
             csv_hash: csv_hash,
+            filename: filename,
             user_id: user_id,
             auto_publish: auto_publish
           }
@@ -109,7 +123,8 @@ defmodule TdDd.DataStructures.BulkUpdater do
         state,
         _structures_content_upload,
         _user_id,
-        _auto_publish
+        _auto_publish,
+        _lang
       ) do
     %{reply: update_state, state: state}
   end
@@ -151,6 +166,19 @@ defmodule TdDd.DataStructures.BulkUpdater do
 
   # If the task succeeds...
   @impl true
+  def handle_info({ref, {:error, error}} = msg, %{notify: notify} = state) do
+    # The task succeed so we can cancel the monitoring and discard the DOWN message
+    Process.demonitor(ref, [:flush])
+    {task_info, state} = pop_in(state.tasks[ref])
+
+    Process.cancel_timer(task_info.task_timer)
+
+    create_event(task_info, :DOWN, error)
+    maybe_notify(notify, msg)
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_info({ref, summary} = msg, %{notify: notify} = state) when is_reference(ref) do
     # The task succeed so we can cancel the monitoring and discard the DOWN message
     Process.demonitor(ref, [:flush])
@@ -163,6 +191,7 @@ defmodule TdDd.DataStructures.BulkUpdater do
   end
 
   # If the task fails...
+  @impl true
   def handle_info({:DOWN, ref, _, _pid, reason}, state) when is_reference(ref) do
     {task_info, state} = pop_in(state.tasks[ref])
     create_event(task_info, :DOWN, reason)
@@ -170,6 +199,7 @@ defmodule TdDd.DataStructures.BulkUpdater do
   end
 
   # This handle function executes when the task has timed out
+  @impl true
   def handle_info({:timeout, %{ref: ref} = task}, state) when is_reference(ref) do
     {task_info, state} = pop_in(state.tasks[ref])
 
@@ -194,23 +224,25 @@ defmodule TdDd.DataStructures.BulkUpdater do
   end
 
   def create_event(summary, task_info) do
-    %{csv_hash: csv_hash, user_id: user_id, task: %{ref: ref}} = task_info
+    %{csv_hash: csv_hash, filename: filename, user_id: user_id, task: %{ref: ref}} = task_info
 
     CsvBulkUpdateEvents.create_event(%{
       response: summary,
       user_id: user_id,
       csv_hash: csv_hash,
+      filename: filename,
       status: "COMPLETED",
       task_reference: ref_to_string(ref)
     })
   end
 
   def create_event(task_info, fail_type, message) do
-    %{csv_hash: csv_hash, user_id: user_id, task: %{ref: ref}} = task_info
+    %{csv_hash: csv_hash, filename: filename, user_id: user_id, task: %{ref: ref}} = task_info
 
     CsvBulkUpdateEvents.create_event(%{
       user_id: user_id,
       csv_hash: csv_hash,
+      filename: filename,
       status: fail_type_to_str(fail_type),
       task_reference: ref_to_string(ref),
       message: "#{fail_type}, #{inspect(message)}"
@@ -224,7 +256,7 @@ defmodule TdDd.DataStructures.BulkUpdater do
     end
   end
 
-  def make_summary(updates, updated_notes, not_updated_notes) do
+  defp make_summary(updates, updated_notes, not_updated_notes) do
     %{
       ids: Enum.uniq(Map.keys(updates) ++ Map.keys(updated_notes)),
       errors:
@@ -259,11 +291,15 @@ defmodule TdDd.DataStructures.BulkUpdater do
   end
 
   defp get_message_from_nested_errors(k, nested_errors) do
-    Enum.map(nested_errors, fn {field, {_, [{_, e} | _]}} ->
-      %{
-        field: field,
-        message: "#{k}.#{e}"
-      }
+    Enum.map(nested_errors, fn
+      {field, {_, [{_, e} | _]}} ->
+        %{field: field, message: "#{k}.#{e}"}
+
+      {field, {e}} ->
+        %{field: field, message: "#{k}.#{e}"}
+
+      {field, e} ->
+        %{field: field, message: e}
     end)
   end
 end

@@ -1,49 +1,44 @@
 defmodule TdDdWeb.Resolvers.StructureTags do
   @moduledoc """
-  Absinthe resolvers for structure tags
+  Absinthe resolvers for data structure tags
   """
 
-  import Canada, only: [can?: 2]
-
   alias TdDd.DataStructures
+  alias TdDd.DataStructures.Tags
 
-  def structure_tags(_parent, args, _resolution) do
-    args = Map.put_new(args, :structure_count, true)
-    {:ok, DataStructures.list_data_structure_tags(args)}
-  end
-
-  def structure_tag(_parent, %{id: id} = _args, _resolution) do
-    {:ok, DataStructures.get_data_structure_tag(id: id)}
-  end
-
-  def create_structure_tag(_parent, %{structure_tag: params} = _args, _resolution) do
-    case DataStructures.create_data_structure_tag(params) do
-      {:ok, %{id: id} = _tag} -> {:ok, DataStructures.get_data_structure_tag(id: id)}
-      {:error, changeset} -> {:error, changeset}
-    end
-  end
-
-  def update_structure_tag(_parent, %{structure_tag: %{id: id} = params} = _args, resolution) do
+  def tag_structure(
+        _parent,
+        %{structure_tag: %{data_structure_id: structure_id, tag_id: tag_id} = args},
+        resolution
+      ) do
     with {:claims, %{} = claims} <- {:claims, claims(resolution)},
-         {:tag, %{} = tag} <- {:tag, DataStructures.get_data_structure_tag(id: id)},
-         {:can, true} <- {:can, can?(claims, update(tag))} do
-      DataStructures.update_data_structure_tag(tag, params)
+         {:struct, %{} = structure} <- {:struct, DataStructures.get_data_structure(structure_id)},
+         {:tag, %{} = tag} <- {:tag, Tags.get_tag(id: tag_id)},
+         :ok <- Bodyguard.permit(DataStructures, :tag, claims, structure),
+         {:ok, %{structure_tag: %{} = structure_tag}} <-
+           Tags.tag_structure(structure, tag, args, claims) do
+      {:ok, structure_tag}
     else
       {:claims, nil} -> {:error, :unauthorized}
+      {:struct, nil} -> {:error, :not_found}
       {:tag, nil} -> {:error, :not_found}
-      {:can, false} -> {:error, :forbidden}
+      {:error, :forbidden} -> {:error, :forbidden}
+      {:error, _, changeset, _} -> {:error, changeset}
     end
   end
 
   def delete_structure_tag(_parent, %{id: id} = _args, resolution) do
     with {:claims, %{} = claims} <- {:claims, claims(resolution)},
-         {:tag, %{} = tag} <- {:tag, DataStructures.get_data_structure_tag(id: id)},
-         {:can, true} <- {:can, can?(claims, delete(tag))} do
-      DataStructures.delete_data_structure_tag(tag)
+         {:structure_tag, %{} = structure_tag} <- {:structure_tag, Tags.get_structure_tag(id)},
+         :ok <- Bodyguard.permit(Tags, :delete, claims, structure_tag),
+         {:ok, %{structure_tag: %{} = structure_tag}} <-
+           Tags.delete_structure_tag(structure_tag, claims) do
+      {:ok, structure_tag}
     else
       {:claims, nil} -> {:error, :unauthorized}
-      {:tag, nil} -> {:error, :not_found}
-      {:can, false} -> {:error, :forbidden}
+      {:structure_tag, nil} -> {:error, :not_found}
+      {:error, error} -> {:error, error}
+      {:error, _, changeset, _} -> {:error, changeset}
     end
   end
 

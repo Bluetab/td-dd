@@ -15,7 +15,7 @@ defmodule TdDqWeb.ConnCase do
 
   use ExUnit.CaseTemplate
 
-  import TdDqWeb.Authentication, only: :functions
+  import AuthenticationSupport, only: :functions
 
   alias Ecto.Adapters.SQL.Sandbox
   alias Phoenix.ConnTest
@@ -49,7 +49,7 @@ defmodule TdDqWeb.ConnCase do
         auth_opts
         |> create_claims()
         |> create_user_auth_conn()
-        |> assign_permissions(auth_opts[:permissions])
+        |> assign_permissions(auth_opts[:permissions], auth_opts[:domain_params])
     end
   end
 end

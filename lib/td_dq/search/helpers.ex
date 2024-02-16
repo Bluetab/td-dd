@@ -21,6 +21,14 @@ defmodule TdDq.Search.Helpers do
 
   def get_domain(_), do: %{}
 
+  def get_domains([_ | _] = domain_ids) do
+    Enum.map(domain_ids, fn domain_id ->
+      get_domain(domain_id)
+    end)
+  end
+
+  def get_domains(_), do: []
+
   def confidential?(%{business_concept_id: nil}), do: false
 
   def confidential?(%{business_concept_id: business_concept_id}) do
@@ -51,6 +59,11 @@ defmodule TdDq.Search.Helpers do
       _ ->
         %{name: ""}
     end
+  end
+
+  def with_result_text(%{records: records} = result_map, _minimum, _goal, _result_type)
+      when records === 0 do
+    Map.put(result_map, :result_text, "quality_result.empty_dataset")
   end
 
   def with_result_text(%{result: result} = result_map, minimum, goal, result_type)

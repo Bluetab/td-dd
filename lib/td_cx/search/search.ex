@@ -10,14 +10,17 @@ defmodule TdCx.Search do
   @index "jobs"
 
   def search(query) do
-    response = Elasticsearch.post(Cluster, "/#{@index}/_search", query)
+    response =
+      Elasticsearch.post(Cluster, "/#{@index}/_search", query,
+        params: %{"track_total_hits" => "true"}
+      )
 
     case response do
       {:ok, %{"aggregations" => aggregations, "hits" => %{"hits" => results, "total" => total}}} ->
-        %{results: results, total: total, aggregations: aggregations}
+        %{results: results, total: get_total(total), aggregations: aggregations}
 
       {:ok, %{"hits" => %{"hits" => results, "total" => total}}} ->
-        %{results: results, total: total, aggregations: %{}}
+        %{results: results, total: get_total(total), aggregations: %{}}
 
       {:error, %Elasticsearch.Exception{message: message} = error} ->
         Logger.warn("Error response from Elasticsearch: #{message}")
@@ -44,12 +47,15 @@ defmodule TdCx.Search do
   end
 
   defp filter_values({name, %{"buckets" => buckets}}) do
-    {name, Enum.map(buckets, & &1["key"])}
+    {name, %{values: Enum.map(buckets, & &1["key"])}}
   end
 
   defp filter_values({name, %{"distinct_search" => distinct_search}}) do
     filter_values({name, distinct_search})
   end
 
-  defp filter_values({name, %{"doc_count" => 0}}), do: {name, []}
+  defp filter_values({name, %{"doc_count" => 0}}), do: {name, %{values: []}}
+
+  defp get_total(value) when is_integer(value), do: value
+  defp get_total(%{"relation" => "eq", "value" => value}) when is_integer(value), do: value
 end

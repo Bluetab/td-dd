@@ -1,5 +1,719 @@
 # Changelog
 
+## [5.19.0] 2023-11-28
+
+### Added
+
+- [TD-6140] Support for AI suggestions on StructureNotes
+
+### Fixed
+
+- [TD-6176] Bulk upload deprecated implementations
+- [TD-6145] Deprecate implementation on rule soft deletion
+- [TD-6235] Fix regex new raw implementation sql
+
+## [5.18.0] 2023-11-13
+
+### Added
+
+- [TD-5390] Validate inplementation key unique when update implementation
+- [TD-4304] Added structures links aggregation in implementation search
+
+### Changed
+
+- [TD-6177] Update td-df-lib to fix format field
+- [TD-5319] Increment system aggregation size in data structures search
+
+## [5.17.2] 2023-11-07
+
+### Fixed
+
+- [TD-6173] Domain_ids grant_request filters and elastic config
+
+## [5.17.1] 2023-11-03
+
+### Fixed
+
+- [TD-6159] Elasticsearch upgrade configuration
+
+## [5.17.0] 2023-11-02
+
+### Added
+
+- [TD-6103] Allow empty option for domain type filter
+- [TD-6059] Support for reporting reindex tasks on the cluster
+
+### Changed
+
+- [TD-6059] Updated elasticsearch library version
+
+### Fixed
+
+- [TD-6088] Improve implementations reindex
+
+## [5.16.2] 2023-10-19
+## [5.16.1] 2023-10-18
+
+### Fixed
+
+- [TD-5540] GrantRequest approval bulk audit events and permissions issue
+
+## [5.16.0] 2023-10-18
+
+### Added
+
+- [TD-5582] Implementation clone copies original business concepts links
+- [TD-6082] Support to upload implementations with result type in browser
+  language
+- [TD-5540] GrantRequest approval bulk with elasticsearch
+
+### Changed
+
+- [TD-5958] Keep graph URL across lineage changes
+
+## [5.15.0] 2023-10-02
+
+### Added
+
+- [TD-5947] Support for DataViews
+- [TD-5532] Sources latest event cache
+- [TD-6042] Until filter for api/data_structure_notes/search
+
+## [5.14.0] 2023-09-19
+
+### Added
+
+- [TD-5929] Support to upload csv of implementations, rule and strucutures
+  in the browser language
+  - Download editable metadata is downloaded in the browser language
+
+### Fixed
+
+- [TD-5999] List implementations without rules
+
+## [5.13.1] 2023-09-14
+
+### Fixed
+
+- [TD-6051] Add searchable option for structures and rules
+
+## [5.13.0] 2023-09-05
+
+### Added
+
+- [TD-5979] Retrieve only children/parents using default relation type
+
+### Changed
+
+- [TD-5974] structure_domain_ids filtered by type = validation
+
+### Fixed
+
+- [TD-5898] Fix behavior of removing implementation based on status
+
+## [5.12.0] 2023-08-16
+
+### Fixed
+
+- [TD-6016] Restore missing data fields degree enrichment
+
+## [5.13.0] 2023-09-05
+
+### Added
+
+- [TD-5979] Retrieve only children/parents using default relation type
+- [TD-5935] Remediation GraphQL API, with pagination and filters.
+
+### Changed
+
+- [TD-5974] structure_domain_ids filtered by type = validation
+
+### Fixed
+
+- [TD-5898] Fix behavior of removing implementation based on status
+
+## [5.12.0] 2023-08-16
+
+### Added
+
+- [TD-5715] Add posibility for inherit domains when load new structures
+- [TD-5902] Ecto migration to remove index duplicity and reduce disk usage
+- [TD-5936] Add Note resolver for dataStructureVersion v2 queries
+- [TD-5938] Enable Edit as default/raw implementation for draft status implementations
+- [TD-5937] Limit Catalog Metadata Views to data structures filters
+- [TD-2778] The following:
+  - Bulk and complete reindex: better logging.
+  - Complete reindex: delete temporal index if there are any errors.
+- [TD-5891] Download csv i18n support
+
+## Changed
+
+- [TD-5913] Update td-df-lib to fix depends validation
+
+### Fixed
+
+- [TD-5867] Permit special caracters (Unicode, semicolon, hash) in raw implementations fields (dataset, population and validations)
+
+## [5.11.3] 2023-07-28
+
+### Fixed
+
+- [TD-5943] My grants query now retrieve only the user grants
+
+## [5.11.2] 2023-07-27
+
+### Fixed
+
+- [TD-5946] Add the keyword type and the sorteable in the mapping for `execution_result_info.result`
+
+## [5.11.1] 2023-07-27
+
+### Fixed
+
+- [TD-5952] Multiple filters and search text for elasticsearch in structures
+
+## [5.11.0] 2023-07-24
+
+### Added
+
+- [TD-5829] Add implementations linked structures in ElasticSearch
+- [TD-5907] Download Implementation CSV Execution Details for Non-Admin Users
+- [TD-5831] Add query with multiple must for structure grant request
+- [TD-5379] API Upload implementation result for specific execution
+
+### Changed
+
+- [TD-5844] CSV dynamic content domain fields:
+  - Structure notes domain: as name for non-editable CSV and as external id for editable CSV
+  - Implementation dynamic content domain: as name instead of external id.
+- [TD-5809] Fix td_cluster configuration
+
+### Fixed
+
+- [TD-5878] Fix: change permision check to domain id when a concept is marked as confidential
+- [TD-5837] Retrieve mutable metadata for children, data_fields and parents in v2
+
+## [5.10.2] 2023-07-14
+
+### Fixed
+
+- [TD-4986] Readd index.mapping.total_fields.limit deleted in [TD-5808]
+  (releases.exs to runtime.exs change)
+
+## [5.10.1] 2023-07-11
+
+### Fixed
+
+- [TD-4986] Note aggregations
+
+## [5.10.0] 2023-07-06
+
+### Added
+
+- [TD-4986] Configurable data catalog bucket views based on note and metadata
+  fields
+- [TD-5787] Add Elastic Search Boost option in templates
+- [TD-5840] Fix color of result in implementations search
+- [TD-5593] Add related concept in quality implementations list and implementation download
+- [TD-5808] Configured TdCluster
+
+## Changed
+
+- [TD-5912] `.gitlab-ci.yml` adaptations for develop and main branches
+
+### Fixed
+
+- [TD-5886] Sort criteria composition for `list_data_structure_versions` to
+  avoid undesired query due to a bad order applying the clauses
+
+## [5.9.0] 2023-06-20
+
+### Added
+
+- [TD-5770] Add database TSL configuration
+- [TD-4260] Rule content in implementation aggregations
+- [TD-5577] Add retrive global filters for default user
+
+## [5.8.0] 2023-06-05
+
+### Added
+
+- [TD-5752] Add force update control dates when update implementations by web or csv bulk update
+
+### Fixed
+
+- [TD-5810] Fix alias in data_fields v2
+
+### Changed
+
+- [TD-5796] Use domain implementations to check segmentation permissions
+- [TD-3916] Update td-df-lib version
+- [TD-5803]
+  - Upgrade to Elixir 1.14
+  - Support for setting Node name on releases
+- [TD-5697] Use `HierarchyCache.get_node/1`
+
+## [5.7.0] 2023-05-23
+
+### Added
+
+- [TD-5491] Add link to the structure and the technical name in the downloded files of structures metadata
+- [TD-5504] [TD-5141]:
+  - Domain Structures for implementations
+  - Implementation domain to csv donwload
+
+### Fixed
+
+- [TD-5751] Enrich domains parents in V2
+- [TD-5733] Enrich children's alias in V2
+
+## [5.6.0] 2023-05-09
+
+### Added
+
+- [TD-4217] Add result details for admins in implementations csv download
+- [TD-5602] Add migration to improve query perfance with 2 new indexes
+- [TD-5661] Multiple structures grant requests
+- [TD-3807] search filters returns types
+- [TD-4591] Add validation in the visibility of the structures that are displayed in the data catalog
+
+### Fixed
+
+- [TD-5732] Fixed reindex all implementation versions when add/delete links
+- [TD-5442] Fix hard delete implementation versions
+- [TD-5680] Fix Children Data Structure Versions populate their classes correctly
+
+### Changed
+
+- [TD-5744] Increase systems search size to 200
+
+## [5.5.1] 2023-04-18
+
+### Fixed
+
+- [TD-5641] foreign_key for implementation links
+
+## [5.5.0] 2023-04-18
+
+### Added
+
+- [TD-5650] Tests for hierarchy bulk uploads
+- [TD-5297] Added `DB_SSL` environment variable for Database SSL connection
+- [TD-5641]
+  - Move implementation structure links to implementation ref
+  - Reindex implementation when add new links
+
+### Fixed
+
+- [TD-5670] Structure notes bulk_update when has invalid external_id and template not found
+- [TD-5696] Rejected implementations cant be edited
+- [TD-5698] Ruleless implementations reindex when upload results
+
+## [5.4.0] 2023-03-28
+
+### Added
+
+- [TD-5481] Add filename for bulk update events for structure notes
+
+### Changed
+
+- [TD-4870] Implementations and Rule csv download and upload uses unified df_content parsing
+
+### Fixed
+
+- [TD-5685] Implementation df_content was being cleaned on cache enriching
+- [TD-5644] Added omitted data in v2 dataStructureVersion endpoint
+
+## [5.3.0] 2023-03-13
+
+### Added
+
+- [TD-4438] Included-in-parameters reference dataset validation
+- [TD-5509]
+  - Data structure link labels graphql query
+  - Data structure link creation using source and target structure IDs
+- [TD-3806] Add cached content for implementations, rules, remediations plan and structures notes
+
+### Changed
+
+- [TD-3879] All `raw keyword` indexing mappings uses empty string as null_value
+
+### Fixed
+
+- [TD-5575] Filter implementations with execution permission on execution groups creation
+- [TD-5566] Remove template content from Remediation plan audit payload
+
+## [5.2.1] 2023-03-08
+
+### Fixed
+
+- [TD-5645] Preserve previous implementation type on csv updates, use basic for creations
+
+## [5.2.0] 2023-02-28
+
+### Added
+
+- [TD-5471] Bulk update of quality implementations via csv
+- [TD-3541] Get data_structure_versions for `api/v2`
+- [TD-5599] Improve grant reindex memory usage and API for Task stats
+- [TD-5507] Grants API v2
+
+## [5.1.0] 2023-02-13
+
+### Added
+
+- [TD-5479] External_ref in grants to avoid duplicates in grant table
+- [TD-5560] LINEAGE_NODES_TIMEOUT releases environment variable for
+  TdDd.Lineage.GraphData nodes GenServer call
+
+## [5.0.0] 2023-01-30
+
+### Fixed
+
+- [TD-5472] Enrich template fields of type `domain` for Quality filters
+- [TD-5407] Aggregate `must_not` param on Elasticsearch filter
+
+### Changed
+
+- [TD-5300] ReferenceDatasets user management
+  - Added `domain_ids` fields
+  - Users with `view_data_structure` permission on domain can show, index and
+    download ReferenceDataset
+  - ReferenceDataset without domain_ids is only visible to `admins`
+- [TD-5478] Add `convert_raw` and `convert_default` action for basic
+  implementations
+- [TD-5493] Improve specific grant(s) reindex performance
+
+### Added
+
+- [TD-5473] `field_parent_id` for `StructureNote` events
+
+## [4.59.0] 2023-01-16
+
+### Changed
+
+- [TD-5344] Embedded structures in rule implementations are now indexed with
+  their original `name` regardless of whether they have an alias or not. `alias`
+  is indexed as an independent property if present.
+- [TD-5199] Soft delete for rule
+- [TD-5433] ignore ReferenceData enrich in Implementation if it doesn't exist
+- [TD-5432] Publish rule_result_created event using implementation_ref as
+  resource_id instead of implementation_id.
+
+### Added
+
+- [TD-5382]
+  - field `all_pending_roles` on `GrantRequest` that doesn't depend on the requesting user
+  - `GrantRequestApprovalRules` checks on `all_pending_roles`
+
+### Fixed
+
+- [TD-5402] Reference data info is not showed in implementation details
+- [TD-5455] Fixed Lineage selection is not displaying any domain in case that no
+  lineage structure is in the data catalog
+- [TD-5453] [TD-5219]:
+  - Correct pagination for Rule results
+  - Correct ordering by version and date in Rule results
+  - Show latest results on implementations view
+
+### Added
+
+- [TD-4109] On `nodes` show, also handle `domain_id` filter
+
+## [4.58.0] 2022-12-27
+
+### Added
+
+- [TD-5243] Use structures domain in data catalog for data lineage objects
+  that have been linked
+- [TD-5367] Enrich grant details with actions and user
+- [TD-5322] Allow to have multiple grants for the same user in the same structure
+- [TD-4300] Add `basic` type for implementations
+- [TD-5369] Audit events for Remediation creation
+- [TD-5348] Add update action to grant controller
+
+### Changed
+
+- [TD-2642] Improve search in rule names and implementation keys: boost these
+  fields and treat underscores as whitespace
+
+## [4.57.0] 2022-12-12
+
+### Added
+
+- [TD-5161] Get specific domains along with their children for `api/v2`
+
+### Changed
+
+- [TD-5365] Foreign key from `accesses` to `data_structures` now uses `id`
+  (primary key) instead of `external_id`
+- [TD-5391] Grant approval condition rules now use `values` instead of single
+  `value`
+
+## [4.56.1] 2022-11-29
+
+### Fixed
+
+- [TD-5374] Approve rule grant request for a structure with multiple domains
+
+## [4.56.0] 2022-11-28
+
+### Changed
+
+- [TD-5342] Refactor bulk operations to use Elasticsearch scroll API
+- [TD-5136] Download of structures include all structure domains with complete
+  path
+- [TD-5341] Created indices on foreign key constraints to improve performance
+  when physically deleting data structures
+- [TD-4179] Implementation indexing uses inserted_at of original ref
+- [TD-4711] Improved user feedback for errors in implementation upload
+
+### Added
+
+- [TD-5289] Elasticsearch 7 compatibility
+- [TD-5258] Approve grants request rules
+- [TD-5286] Implementation results pagination
+
+## [4.55.0] 2022-11-14
+
+### Added
+
+- [TD-5038] Links between structures
+- [TD-5037] Added diff information for draft and pending_aproval structure notes
+  in API response
+
+### Fixed
+
+- [TD-5279] Fixed some inconsistencies in implementation bulk upload
+
+## [4.54.0] 2022-10-31
+
+### Changed
+
+- [TD-5284] Phoenix 1.6.x
+
+### Fixed
+
+- [TD-5267] Bulk update was not reindexing changed structure notes
+- [TD-5265] `GET /api/user_search_filters/me` wasn't considering the `scope` of
+  global filters
+- [TD-4710] Domain type fields of templates it not working in bulk upload
+  implementations
+- [TD-5244] Admin user can't clone implementations
+
+### Added
+
+- [TD-3765] Support for empty_dataset in rule_results
+- [TD-5171] Enriches domain's parents on DataStructureVersion show
+- [TD-5245] Allow multiple fields for structure modifiers
+- [TD-4517] Adds `df_label` to Rule filters aggregation
+
+## [4.53.2] 2022-10-20
+
+### Changed
+
+- [TD-5234] `GET /api/data_structures/:id/versions/:version` now includes
+  `implementation_count` in response instead of embedded `implementations`
+
+### Fixed
+
+- [TD-4999] Serialization issue for data structures with profile but without
+  class field
+- [TD-5273] Allow request functions for grant request creators
+
+## [4.53.1] 2022-10-18
+
+### Fixed
+
+- [TD-5260] Avoid to create a draft with not changes for implementations
+
+## [4.53.0] 2022-10-18
+
+### Fixed
+
+- [TD-5250] GraphQL `latestGrantRequest` no longer returns `forbidden` for users
+  with `view_data_structure` permissions
+- [TD-5140] Changed implementations ids by implementations refs and links
+  migration
+- [TD-4927] Fix upload implementations file with and without rule raise an error
+
+### Added
+
+- [TD-4177] Support for querying the executions of an implementation
+- [TD-4558] Support for managing data quality functions using API
+- [TD-5027] support for restoring deprecated `Implementations`
+- [TD-5195] Support for global user filters
+- [TD-3087] OR/AND in implementations validations
+
+## [4.52.0] 2022-10-03
+
+### Changed
+
+- [TD-4871] Unify `Claims` structs, replace `canada` with `bodyguard` for
+  authorizations
+- [TD-5184] Removed dependency on td-hypermedia library
+
+### Added
+
+- [TD-4903] Include `sobelow` static code analysis in CI pipeline
+- [TD-4214] Publish grant requests workflow events
+- [TD-2430] Allow different join types on implementation dataset
+
+### Fixed
+
+- [TD-4587]
+  - Download implementations with reference_data
+  - Implementations download when dataset has a table joing itself
+- [TD-5183] Auto deprecate rule implementations based on
+  its referenced structures and datasets
+
+## [4.51.0] 2022-09-19
+
+### Added
+
+- [TD-5076] Allow to clone implementations for non admin users
+- [TD-5169] Improve list_data_structure_versions since query performance
+- [TD-5170] Capture graph tests Logger.warn output
+- [TD-5082] Filter protected metadata (field "\_protected")
+- [TD-5133] Support for creating grant requests for third parties
+
+### Changed
+
+- [TD-5168] GraphQL `source` query no longer enriches dynamic domain fields
+- [TD-4794] GraphQL `domains` query now supports additional actions
+
+### Fixed
+
+- [TD-4956] When downloading structures csv, fields with same name on templates were duplicated
+
+### Removed
+
+- [TD-4794] Removed `/api/unit_domains` (replaced by GraphQL `domains` query)
+
+## [4.50.0] 2022-09-05
+
+### Added
+
+- [TD-5078] Add request modification for Grants
+
+### Changed
+
+- [TD-3371] Catalog CSV download can now return more than 10,000 structures
+- [TD-4994] Performance improvements of lineage load process
+- [TD-4757] Take into account data structure `updated_at` in data structure
+  version since-claused listing
+- [TD-5091] Dynamic `domain` fields are now integer ids instead of embedded
+  documents
+
+### Fixed
+
+- [TD-4348] Return errors if load_graph fails, so that an event is created.
+- [TD-5075] Fixed implementation can't be moved to another rule
+
+## [4.49.0] 2022-08-16
+
+### Added
+
+- [TD-5113] Add data_structures_hierarchy ds_id index
+- [TD-4945] Allow to publish from creation and published implementations
+- [TD-5070]
+  - Added must_not filters for rule implementations
+  - Filter draf implementation for users without permissions
+
+## [4.48.1] 2022-08-02
+
+### Fixed
+
+- [TD-5106] An implementation's domain id couldn't be changed
+
+## [4.48.0] 2022-07-26
+
+### Added
+
+- [TD-4987]
+  - `api/rule_results/search` now include ruleless implementation results
+  - Add pagination for updated_at
+- [TD-5053] Add implementation_ref on `api/implementations/search`
+- [TD-4441] Send grant_approval event when grant approval is created with rejection
+- [TD-4922] Force cache to add implementations workflow status
+
+### Fixed
+
+- [TD-5011] `TemplateCache.list/0` was returning duplicate entries
+- [TD-5042] Removal request for grant created through /api/bulk_grants with
+  source_user_name and without user_id
+
+### Changed
+
+- [TD-5072] Remove deprecated `type_params` from `rules` table and corresponding
+  mappings
+- [TD-5001] Improved support for data structure alias:
+  - Data structure alias is now persisted and returned in responses. The alias
+    is obtained or removed when a structure note containing an `alias` field is
+    published or deprecated, respectively
+  - Metadata fields (e.g. `order`, `precision`, `nullable`) in data structure
+    responses are now returned within the `metadata` property
+- [TD-3614] Support for access token revocation
+- [TD-4925] Create new draft when editing a published implementation only if it
+  has changes
+- [TD-4997] Change search executions API sources list filter from 'AND' to 'OR'
+- [TD-4987] `/api/rule_results/search` now include ruleless implementation
+  results and supports pagination
+- [TD-4175] Data structure tags may now be inherited by descendents of the
+  tagged data structure
+
+## [4.47.1] 2022-07-18
+
+### Added
+
+- [TD-5053] Add implementation_ref on `api/implementations/search`
+
+## [4.47.0] 2022-07-05
+
+### Changed
+
+- [TD-4412] Update td-cache for changes in templates preprocessing
+
+### Added
+
+- [TD-4920] Add results to implementation query api/v2
+- [TD-4921] Add implementation workflow events
+- [TD-4894] Multiple field validations
+- [TD-4993] Add last_quality_event to implementation api/v2
+- [TD-4176]
+  - Added descrition in data structure tag
+  - Changed description for comment in data structures tags link
+- [TD-4661] Support for ReferenceDatasets on Implementations
+
+### Fixed
+
+- [TD-4959] Use implementation_ref instead of implementation_key for status changes
+- [TD-4952] Missing code from [TD-4655]
+
+## [4.46.1] 2022-06-23
+
+### Fixed
+
+- [TD-4962] Submit results only for published implementations
+
+## [4.46.0] 2022-06-21
+
+### Changed
+
+- [TD-4739] Validate dynamic content for safety to prevent XSS attacks
+- [TD-4923] Remove implementation_key dependency for version management
+
+### Added
+
+- [TD-4431] Support for requesting removal of grants
+- [TD-4919] Allow query implementation versions using /api/v2
+
+### Fixed
+
+- [TD-4918] Implementations permissions
+- [TD-4911] Implementations download was failing for ruleless implementations
+- [TD-4950] Implementations move and clone actions for admin
+
 ## [4.45.0] 2022-06-06
 
 ### Added
@@ -45,7 +759,7 @@
 
 ### Added
 
-- [TD-4089] Support for Implementations without Rules
+- [TD-4089] Support for implementations without rules
 
 ## [4.43.0] 2022-05-09
 

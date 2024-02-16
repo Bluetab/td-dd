@@ -4,12 +4,12 @@ defmodule TdCx.Sources do
   """
 
   import Ecto.Query
-  import Canada, only: [can?: 2]
 
   require Logger
 
+  alias Ecto.Multi
   alias TdCache.TemplateCache
-  alias TdCx.Auth.Claims
+  alias TdCx.Cache.SourcesLatestEvent
   alias TdCx.Events.Event
   alias TdCx.Jobs.Job
   alias TdCx.Sources.Source
@@ -17,6 +17,29 @@ defmodule TdCx.Sources do
   alias TdDd.Repo
   alias TdDfLib.Format
   alias TdDfLib.Validation
+  alias Truedat.Auth.Claims
+
+  defdelegate authorize(action, user, params), to: __MODULE__.Policy
+
+  @latest_events_ranking_query from s in Source,
+                                 left_join: j in assoc(s, :jobs),
+                                 left_join: e in assoc(j, :events),
+                                 # avoid jobs with no events
+                                 where:
+                                   (is_nil(e) and is_nil(j)) or (not is_nil(e) and not is_nil(j)),
+                                 select: %{
+                                   source_id: s.id,
+                                   latest_event_id: e.id,
+                                   event_rank: over(row_number(), :events_partition)
+                                 },
+                                 windows: [
+                                   events_partition: [partition_by: s.id, order_by: [desc: e.id]]
+                                 ]
+
+  @latest_source_event_query from e in Event,
+                               join: rank in subquery(@latest_events_ranking_query),
+                               on: rank.event_rank == 1,
+                               where: e.id == rank.latest_event_id
 
   @doc """
   Returns the list of sources.
@@ -31,6 +54,12 @@ defmodule TdCx.Sources do
     Source
     |> with_deleted(options, dynamic([s], is_nil(s.deleted_at)))
     |> Repo.all()
+  end
+
+  def list_sources_with_latest_event do
+    %{with_latest_event: true, deleted: false}
+    |> query_sources()
+    |> Enum.into(%{}, &{&1.id, List.first(&1.events)})
   end
 
   @doc """
@@ -125,6 +154,13 @@ defmodule TdCx.Sources do
 
       {:job_types, type}, q ->
         where(q, [s], fragment("(?) @> ?::jsonb", s.config, ^%{job_types: [type]}))
+
+      {:with_latest_event, true}, q ->
+        from s in q,
+          preload: [events: ^@latest_source_event_query]
+
+      {:with_latest_event, false}, q ->
+        q
     end)
   end
 
@@ -135,8 +171,8 @@ defmodule TdCx.Sources do
   defp source_params(list) when is_list(list), do: Map.new(list)
 
   def enrich_secrets(%Claims{} = claims, %Source{} = source) do
-    case can?(claims, view_secrets(source)) do
-      true -> enrich_secrets(source)
+    case Bodyguard.permit(__MODULE__, :view_secrets, claims, source) do
+      :ok -> enrich_secrets(source)
       _ -> source
     end
   end
@@ -262,16 +298,14 @@ defmodule TdCx.Sources do
         |> Map.put("secrets", secrets)
         |> Map.put("config", config)
 
-      do_update_source(source, params)
+      update_source_maybe_vault(source, params)
     else
       error -> error
     end
   end
 
   def update_source(%Source{} = source, params) do
-    source
-    |> Source.changeset(params)
-    |> Repo.update()
+    update_source_repo(source, params)
   end
 
   def update_source_config(%Source{} = source, config_params) do
@@ -286,14 +320,14 @@ defmodule TdCx.Sources do
     case check_valid_template_content(%{"type" => type, "config" => config}) do
       :ok ->
         attrs = separate_config(%{"type" => type, "config" => config})
-        do_update_source(source, attrs)
+        update_source_maybe_vault(source, attrs)
 
       error ->
         error
     end
   end
 
-  defp do_update_source(
+  defp update_source_maybe_vault(
          %Source{secrets_key: secrets_key} = source,
          %{"secrets" => secrets} = attrs
        )
@@ -305,16 +339,14 @@ defmodule TdCx.Sources do
 
     case Vault.delete_secrets(secrets_key) do
       :ok ->
-        source
-        |> Source.changeset(updateable_attrs)
-        |> Repo.update()
+        update_source_repo(source, updateable_attrs)
 
       {:vault_error, error} ->
         {:vault_error, error}
     end
   end
 
-  defp do_update_source(
+  defp update_source_maybe_vault(
          %Source{external_id: external_id} = source,
          %{"secrets" => secrets} = attrs
        ) do
@@ -328,19 +360,42 @@ defmodule TdCx.Sources do
           |> Map.put("secrets_key", secrets_key)
           |> Map.drop(["secrets", "external_id"])
 
-        source
-        |> Source.changeset(attrs)
-        |> Repo.update()
+        update_source_repo(source, attrs)
 
       error ->
         error
     end
   end
 
-  defp do_update_source(%Source{} = source, %{"config" => config}) do
+  defp update_source_maybe_vault(%Source{} = source, %{"config" => config}) do
     source
     |> Source.changeset(%{"config" => config})
     |> Repo.update()
+  end
+
+  def update_source_repo(%Source{} = source, params) do
+    changeset = Source.changeset(source, params)
+
+    {:ok, %{source: source}} =
+      Multi.new()
+      |> Multi.update(:source, changeset)
+      |> Multi.run(:delete_from_cache, fn _, %{source: %{id: source_id}} ->
+        maybe_delete_from_cache(params, source_id)
+      end)
+      |> Repo.transaction()
+
+    {:ok, source}
+  end
+
+  defp maybe_delete_from_cache(%{deleted_at: _}, source_id) do
+    case SourcesLatestEvent.delete(source_id) do
+      {:ok, info} -> {:ok, info}
+      error -> {:error, error}
+    end
+  end
+
+  defp maybe_delete_from_cache(_params, _source_id) do
+    {:ok, :unchanged_no_logical_deletion}
   end
 
   @doc """
@@ -373,9 +428,20 @@ defmodule TdCx.Sources do
   end
 
   defp do_delete_source(%Source{jobs: jobs} = source) when jobs == [] do
-    source
-    |> Source.delete_changeset()
-    |> Repo.delete()
+    changeset = Source.delete_changeset(source)
+
+    {:ok, %{source: source}} =
+      Multi.new()
+      |> Multi.delete(:source, changeset)
+      |> Multi.run(:delete_from_cache, fn _, %{source: %{id: source_id}} ->
+        case SourcesLatestEvent.delete(source_id) do
+          {:ok, info} -> {:ok, info}
+          error -> {:error, error}
+        end
+      end)
+      |> Repo.transaction()
+
+    {:ok, source}
   end
 
   defp do_delete_source(%Source{jobs: jobs} = source) when length(jobs) > 0 do
@@ -395,18 +461,11 @@ defmodule TdCx.Sources do
     Source.changeset(source, %{})
   end
 
-  def job_types(%Claims{} = claims, %Source{} = source) do
-    with true <- can?(claims, view_job_types(source)) do
-      source
-      |> Map.get(:config)
-      |> Map.get("job_types", [])
-      |> case do
-        nil -> []
-        job_types -> job_types
-      end
-      |> Enum.uniq()
-    end
+  def job_types(%Source{config: %{"job_types" => job_types}}) when is_list(job_types) do
+    Enum.uniq(job_types)
   end
+
+  def job_types(%Source{}), do: []
 
   @spec get_aliases(non_neg_integer) :: [binary]
   def get_aliases(source_id) do

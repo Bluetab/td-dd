@@ -58,11 +58,9 @@ defmodule TdDdWeb.ProfileControllerTest do
       id = System.unique_integer([:positive])
       profile = %{"foo" => "bar"}
 
-      assert conn
-             |> post(Routes.data_structure_profile_path(conn, :create, id),
-               profile: profile
-             )
-             |> response(:not_found)
+      assert_raise Ecto.NoResultsError, fn ->
+        post(conn, Routes.data_structure_profile_path(conn, :create, id), profile: profile)
+      end
     end
   end
 

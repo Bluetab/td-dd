@@ -13,6 +13,8 @@ defmodule TdDd.DataStructures.DataStructureTypes do
 
   @typep clauses :: map() | Keyword.t()
 
+  defdelegate authorize(action, user, params), to: __MODULE__.Policy
+
   @doc """
   Returns the list of `DataStructureType` structs.
   """

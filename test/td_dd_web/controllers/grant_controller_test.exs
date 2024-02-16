@@ -11,12 +11,14 @@ defmodule TdDdWeb.GrantControllerTest do
     detail: %{},
     end_date: "2010-04-17",
     start_date: "2010-04-17",
-    user_id: @user_id
+    user_id: @user_id,
+    source_user_name: "some source_user_name"
   }
   @update_attrs %{
     detail: %{},
     end_date: "2011-05-18",
-    start_date: "2011-05-18"
+    start_date: "2011-05-18",
+    source_user_name: "other source_user_name"
   }
   @invalid_attrs %{detail: nil, end_date: nil, start_date: nil}
 
@@ -66,7 +68,7 @@ defmodule TdDdWeb.GrantControllerTest do
              } = data
     end
 
-    @tag authentication: [role: "non_admin", permissions: [:manage_grants]]
+    @tag authentication: [permissions: [:view_data_structure, :manage_grants]]
     test "user with permissions can create a grant", %{
       conn: conn,
       data_structure: %{external_id: data_structure_external_id},
@@ -92,11 +94,12 @@ defmodule TdDdWeb.GrantControllerTest do
                "detail" => %{},
                "end_date" => "2010-04-17",
                "start_date" => "2010-04-17",
+               "source_user_name" => "some source_user_name",
                "user_id" => @user_id
              } = data
     end
 
-    @tag authentication: [role: "non_admin", permissions: [:manage_grants]]
+    @tag authentication: [permissions: [:manage_grants]]
     test "user with permissions cannot create a grant with a structure in other domain", %{
       conn: conn,
       domain: %{id: domain_id}
@@ -160,6 +163,7 @@ defmodule TdDdWeb.GrantControllerTest do
 
   describe "show grant" do
     setup :create_grant
+    setup :create_data_structure
 
     @tag authentication: [role: "admin"]
     test "can show grant", %{conn: conn, grant: %{id: id}, swagger_schema: schema} do
@@ -170,7 +174,7 @@ defmodule TdDdWeb.GrantControllerTest do
                |> json_response(:ok)
     end
 
-    @tag authentication: [role: "non_admin", permissions: [:view_grants]]
+    @tag authentication: [permissions: [:view_grants, :view_data_structure]]
     test "user with permissions can show grant", %{conn: conn, grant: %{id: id}} do
       conn = get(conn, Routes.grant_path(conn, :show, id))
 
@@ -195,12 +199,149 @@ defmodule TdDdWeb.GrantControllerTest do
       assert %{"id" => ^id} = json_response(conn, :ok)["data"]
     end
 
-    @tag authentication: [role: "non_admin", permissions: [:view_grants]]
+    @tag authentication: [permissions: [:view_grants]]
     test "user with permissions cannot show a grant with structure in other domain", %{conn: conn} do
       %{id: id} = insert(:grant)
       conn = get(conn, Routes.grant_path(conn, :show, id))
 
       assert json_response(conn, :forbidden)["errors"] != %{}
+    end
+
+    @tag authentication: [permissions: [:view_grants, :view_data_structure]]
+    test "grant has current version name", %{
+      conn: conn,
+      data_structure: %{id: data_structure_id} = data_structure
+    } do
+      name = "foo"
+      insert(:data_structure_version, data_structure_id: data_structure_id, name: name)
+      %{id: id} = insert(:grant, data_structure: data_structure)
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.grant_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{"id" => ^id, "data_structure_version" => %{"name" => ^name}} = data
+    end
+
+    @tag authentication: [
+           permissions: [:view_grants, :view_data_structure, :request_grant_removal]
+         ]
+    test "user with `request_grant_removal` premissions has actions to remove grant on show",
+         %{conn: conn, grant: %{id: id}} do
+      assert %{"_actions" => actions} =
+               get(conn, Routes.grant_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert actions == %{"request_removal" => %{}}
+    end
+
+    @tag authentication: [
+           role: "admin"
+         ]
+    test "admin has only available actions based on grant pending removal",
+         %{conn: conn, grant: %{id: id}} do
+      assert %{"_actions" => actions} =
+               get(conn, Routes.grant_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert actions == %{"request_removal" => %{}, "update" => %{}}
+    end
+
+    @tag authentication: [
+           permissions: [:view_grants, :view_data_structure, :request_grant_removal]
+         ]
+    test "user with `request_grant_removal` premissions has actions to cancel grant removal on show",
+         %{conn: conn, data_structure: data_structure} do
+      %{id: id} = insert(:grant, data_structure: data_structure, pending_removal: true)
+
+      assert %{"_actions" => actions} =
+               get(conn, Routes.grant_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert actions == %{"cancel_removal" => %{}}
+    end
+
+    @tag authentication: [
+           permissions: [:view_grants, :view_data_structure]
+         ]
+    test "user withouth `request_grant_removal` premissions has not actions to remove grant on show",
+         %{conn: conn, grant: %{id: id}} do
+      assert %{"_actions" => %{}} =
+               get(conn, Routes.grant_path(conn, :show, id))
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [
+           permissions: [:view_grants, :view_data_structure, :create_foreign_grant_request]
+         ]
+    test "user with create_foreign_grant_request permission in grant domain can update a grant
+          where granted user has allow_foreign_grant_request permission on the same domain",
+         %{conn: conn, domain: %{id: domain_id}} do
+      %{id: granted_user_id} = CacheHelpers.insert_user()
+      grant_receiver_role = "granted_role"
+      CacheHelpers.put_permission_on_role("allow_foreign_grant_request", grant_receiver_role)
+      CacheHelpers.insert_acl(domain_id, grant_receiver_role, [granted_user_id])
+
+      data_structure = insert(:data_structure, domain_ids: [domain_id])
+
+      %{id: grant_id} = insert(:grant, data_structure: data_structure, user_id: granted_user_id)
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.grant_path(conn, :show, grant_id))
+               |> json_response(:ok)
+
+      assert actions == %{"update" => %{}}
+    end
+
+    @tag authentication: [
+           permissions: [:create_foreign_grant_request]
+         ]
+    test "user without create_foreign_grant_request permission in grant domain can't update a grant
+        where granted user has allow_foreign_grant_request permission on the same domain",
+         %{conn: conn, claims: claims} do
+      %{id: domain_id} = CacheHelpers.insert_domain()
+      %{id: granted_user_id} = CacheHelpers.insert_user()
+      grant_receiver_role = "granted_role"
+      CacheHelpers.put_permission_on_role("allow_foreign_grant_request", grant_receiver_role)
+      CacheHelpers.insert_acl(domain_id, grant_receiver_role, [granted_user_id])
+
+      CacheHelpers.put_session_permissions(claims, domain_id, [
+        "view_data_structure",
+        "view_grants"
+      ])
+
+      data_structure = insert(:data_structure, domain_ids: [domain_id])
+
+      %{id: grant_id} = insert(:grant, data_structure: data_structure, user_id: granted_user_id)
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.grant_path(conn, :show, grant_id))
+               |> json_response(:ok)
+
+      assert actions == %{}
+    end
+
+    @tag authentication: [
+           permissions: [:view_grants, :view_data_structure, :create_foreign_grant_request]
+         ]
+    test "user with create_foreign_grant_request permission in grant domain can not update a grant
+        where granted user has not allow_foreign_grant_request permission on the same domain",
+         %{conn: conn, domain: %{id: domain_id}} do
+      %{id: granted_user_id} = CacheHelpers.insert_user()
+
+      data_structure = insert(:data_structure, domain_ids: [domain_id])
+
+      %{id: grant_id} = insert(:grant, data_structure: data_structure, user_id: granted_user_id)
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.grant_path(conn, :show, grant_id))
+               |> json_response(:ok)
+
+      assert actions == %{}
     end
   end
 
@@ -233,7 +374,7 @@ defmodule TdDdWeb.GrantControllerTest do
              } = data
     end
 
-    @tag authentication: [role: "non_admin", permissions: [:manage_grants]]
+    @tag authentication: [permissions: [:manage_grants, :view_data_structure]]
     test "user with permissions can update a grant", %{
       conn: conn,
       grant: %Grant{id: id} = grant
@@ -256,7 +397,120 @@ defmodule TdDdWeb.GrantControllerTest do
              } = data
     end
 
-    @tag authentication: [role: "non_admin", permissions: [:manage_grants]]
+    @tag authentication: [
+           permissions: [:request_grant_removal, :view_grants, :view_data_structure]
+         ]
+    test "user with permissions can request removal of a grant", %{
+      conn: conn,
+      grant: %Grant{id: id} = grant
+    } do
+      assert %{"data" => %{"id" => ^id}} =
+               conn
+               |> put(Routes.grant_path(conn, :update, grant), action: "request_removal")
+               |> json_response(:ok)
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.grant_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "id" => ^id,
+               "pending_removal" => true
+             } = data
+    end
+
+    @tag authentication: [role: "non_admin"]
+    test "user without permissions can request_removal of own grant", %{
+      conn: conn,
+      claims: %{user_id: user_id}
+    } do
+      %{id: id} = grant = insert(:grant, user_id: user_id)
+
+      assert %{"data" => %{"id" => ^id}} =
+               conn
+               |> put(Routes.grant_path(conn, :update, grant), action: "request_removal")
+               |> json_response(:ok)
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.grant_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "id" => ^id,
+               "pending_removal" => true
+             } = data
+    end
+
+    @tag authentication: [role: "non_admin"]
+    test "user without permissions can cancel removal of own grant", %{
+      conn: conn,
+      claims: %{user_id: user_id}
+    } do
+      %{id: id} = grant = insert(:grant, user_id: user_id, pending_removal: true)
+
+      assert %{"data" => %{"id" => ^id}} =
+               conn
+               |> put(Routes.grant_path(conn, :update, grant), action: "cancel_removal")
+               |> json_response(:ok)
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.grant_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "id" => ^id,
+               "pending_removal" => false
+             } = data
+    end
+
+    @tag authentication: [role: "admin"]
+    test "set_removed action will update pending_removal and end_date properties", %{
+      conn: conn,
+      grant: %Grant{id: id} = grant
+    } do
+      assert %{"data" => %{"id" => ^id}} =
+               conn
+               |> put(Routes.grant_path(conn, :update, grant),
+                 grant: %{
+                   pending_removal: true,
+                   end_date: nil
+                 }
+               )
+               |> json_response(:ok)
+
+      assert %{
+               "data" => %{
+                 "end_date" => nil,
+                 "pending_removal" => true
+               }
+             } =
+               conn
+               |> get(Routes.grant_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{"data" => %{"id" => ^id}} =
+               conn
+               |> put(Routes.grant_path(conn, :update, grant), action: "set_removed")
+               |> json_response(:ok)
+
+      assert %{
+               "data" => %{
+                 "end_date" => end_date,
+                 "pending_removal" => pending_removal
+               }
+             } =
+               conn
+               |> get(Routes.grant_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert not is_nil(end_date)
+      assert not pending_removal
+    end
+
+    @tag authentication: [permissions: [:manage_grants]]
     test "user with permissions cannot update a grant with a structure in other domain", %{
       conn: conn
     } do
@@ -300,23 +554,23 @@ defmodule TdDdWeb.GrantControllerTest do
              |> delete(Routes.grant_path(conn, :delete, grant))
              |> response(:no_content)
 
-      assert_error_sent(404, fn ->
+      assert_error_sent :not_found, fn ->
         get(conn, Routes.grant_path(conn, :show, grant))
-      end)
+      end
     end
 
-    @tag authentication: [role: "non_admin", permissions: [:manage_grants]]
+    @tag authentication: [permissions: [:manage_grants, :view_data_structure]]
     test "user with permissions can delete grant", %{conn: conn, grant: grant} do
       assert conn
              |> delete(Routes.grant_path(conn, :delete, grant))
              |> response(:no_content)
 
-      assert_error_sent(404, fn ->
+      assert_error_sent :not_found, fn ->
         get(conn, Routes.grant_path(conn, :show, grant))
-      end)
+      end
     end
 
-    @tag authentication: [role: "non_admin", permissions: [:manage_grants]]
+    @tag authentication: [permissions: [:manage_grants, :view_data_structure]]
     test "user with permissions cannot delete grant with structure in other domain", %{conn: conn} do
       grant = insert(:grant)
 

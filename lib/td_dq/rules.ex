@@ -3,7 +3,6 @@ defmodule TdDq.Rules do
   The Rules context.
   """
 
-  import Canada, only: [can?: 2]
   import Ecto.Query
 
   alias Ecto.Multi
@@ -12,15 +11,15 @@ defmodule TdDq.Rules do
   alias TdCache.TemplateCache
   alias TdDd.Repo
   alias TdDfLib.Format
-  alias TdDq.Auth.Claims
   alias TdDq.Cache.RuleLoader
   alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Audit
   alias TdDq.Rules.Rule
+  alias Truedat.Auth.Claims
 
   @index_worker Application.compile_env(:td_dd, :dq_index_worker)
 
-  require Logger
+  defdelegate authorize(action, user, params), to: __MODULE__.Policy
 
   @doc """
   Returns the list of rules.
@@ -153,12 +152,13 @@ defmodule TdDq.Rules do
   def create_rule(%{} = params, %Claims{user_id: user_id} = claims, is_bulk \\ false) do
     changeset = Rule.changeset(%Rule{updated_by: user_id}, params)
 
-    Multi.new()
-    |> Multi.run(:can, fn _, _ -> multi_can(can?(claims, create(changeset))) end)
-    |> Multi.insert(:rule, changeset)
-    |> Multi.run(:audit, Audit, :rule_created, [changeset, user_id])
-    |> Repo.transaction()
-    |> on_create(is_bulk)
+    with :ok <- Bodyguard.permit(__MODULE__, :create, claims, changeset) do
+      Multi.new()
+      |> Multi.insert(:rule, changeset)
+      |> Multi.run(:audit, Audit, :rule_created, [changeset, user_id])
+      |> Repo.transaction()
+      |> on_create(is_bulk)
+    end
   end
 
   defp on_create(res, true), do: res
@@ -185,17 +185,15 @@ defmodule TdDq.Rules do
   def update_rule(%Rule{} = rule, %{} = params, %Claims{user_id: user_id} = claims) do
     changeset = Rule.changeset(rule, params, user_id)
 
-    Multi.new()
-    |> Multi.run(:can, fn _, _ -> multi_can(can?(claims, update(changeset))) end)
-    |> Multi.update(:rule, changeset)
-    |> Multi.update_all(:implementations, &update_domain_id(&1.rule), [])
-    |> Multi.run(:audit, Audit, :rule_updated, [changeset, user_id])
-    |> Repo.transaction()
-    |> on_update()
+    with :ok <- Bodyguard.permit(__MODULE__, :update, claims, changeset) do
+      Multi.new()
+      |> Multi.update(:rule, changeset)
+      |> Multi.update_all(:implementations, &update_domain_id(&1.rule), [])
+      |> Multi.run(:audit, Audit, :rule_updated, [changeset, user_id])
+      |> Repo.transaction()
+      |> on_update()
+    end
   end
-
-  defp multi_can(true), do: {:ok, nil}
-  defp multi_can(false), do: {:error, false}
 
   defp update_domain_id(%{id: rule_id, domain_id: domain_id, updated_at: updated_at}) do
     Implementation
@@ -225,15 +223,16 @@ defmodule TdDq.Rules do
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_rule(%Rule{} = rule, %Claims{user_id: user_id} = claims) do
+  def delete_rule(%Rule{} = rule, %{user_id: user_id} = claims) do
     changeset = Rule.delete_changeset(rule)
 
-    Multi.new()
-    |> Multi.run(:can, fn _, _ -> multi_can(can?(claims, delete(changeset))) end)
-    |> Multi.delete(:rule, changeset)
-    |> Multi.run(:audit, Audit, :rule_deleted, [user_id])
-    |> Repo.transaction()
-    |> on_delete()
+    with :ok <- Bodyguard.permit(__MODULE__, :delete, claims, changeset) do
+      Multi.new()
+      |> Multi.update(:rule, changeset)
+      |> Multi.run(:audit, Audit, :rule_deleted, [user_id])
+      |> Repo.transaction()
+      |> on_delete()
+    end
   end
 
   defp on_delete(res) do
@@ -274,7 +273,7 @@ defmodule TdDq.Rules do
       |> select([ri, _], ri)
 
     Multi.new()
-    |> Multi.update_all(:deprecated, impls_to_delete, set: [deleted_at: ts])
+    |> Multi.update_all(:deprecated, impls_to_delete, set: [deleted_at: ts, status: "deprecated"])
     |> Multi.update_all(:rules, rules_to_delete, set: [deleted_at: ts])
     |> Multi.run(:audit, Audit, :implementations_deprecated, [])
     # TODO: audit rule deletion?
@@ -286,11 +285,8 @@ defmodule TdDq.Rules do
 
   def get_cached_content(%{} = content, type) when is_binary(type) do
     case TemplateCache.get_by_name!(type) do
-      template = %{} ->
-        Format.enrich_content_values(content, template)
-
-      _ ->
-        content
+      template = %{} -> Format.enrich_content_values(content, template, [:system, :hierarchy])
+      _ -> content
     end
   end
 
@@ -309,8 +305,6 @@ defmodule TdDq.Rules do
     end)
   end
 
-  @spec enrich(Rule.t() | [Rule.t()], nil | atom | [atom]) ::
-          Rule.t() | [Rule.t()]
   defp enrich(target, nil), do: target
 
   defp enrich(target, opts) when is_list(target) do

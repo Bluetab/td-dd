@@ -261,6 +261,40 @@ defmodule TdDqWeb.RuleControllerTest do
                |> validate_resp_schema(schema, "RulesResponse")
                |> json_response(:ok)
     end
+
+    @tag authentication: [
+           user_name: "not_an_admin",
+           permissions: [:view_quality_rule, :manage_confidential_business_concepts]
+         ]
+    test "lists all rules of a confidential concept", %{
+      conn: conn,
+      swagger_schema: schema,
+      domain: domain
+    } do
+      business_concept_id = System.unique_integer([:positive])
+
+      CacheHelpers.insert_concept(%{
+        id: business_concept_id,
+        domain_id: domain.id,
+        confidential: true
+      })
+
+      %{id: id1, business_concept_id: business_concept_id} =
+        insert(:rule, business_concept_id: business_concept_id, domain_id: domain.id)
+
+      %{id: id2} = insert(:rule, business_concept_id: business_concept_id, domain_id: domain.id)
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.rule_path(conn, :get_rules_by_concept, business_concept_id))
+               |> validate_resp_schema(schema, "RulesResponse")
+               |> json_response(:ok)
+
+      assert [
+               %{"id" => ^id1, "business_concept_id" => ^business_concept_id},
+               %{"id" => ^id2, "business_concept_id" => ^business_concept_id}
+             ] = Enum.sort_by(data, & &1["id"])
+    end
   end
 
   describe "verify token is required" do
@@ -582,61 +616,6 @@ defmodule TdDqWeb.RuleControllerTest do
       assert conn
              |> delete(Routes.rule_path(conn, :delete, rule))
              |> response(:forbidden)
-    end
-
-    @tag authentication: [
-           user_name: "non_admin",
-           permissions: [
-             "manage_quality_rule",
-             "view_quality_rule",
-             "manage_quality_rule_implementations"
-           ]
-         ]
-    test "user with permissions can create implementations", %{
-      conn: conn,
-      domain: %{id: domain_id}
-    } do
-      %{id: id} = insert(:rule, domain_id: domain_id)
-
-      assert %{"user_permissions" => user_permissions} =
-               conn
-               |> get(Routes.rule_path(conn, :show, id))
-               |> json_response(:ok)
-
-      assert user_permissions == %{
-               "manage_quality_rule_implementations" => true,
-               "manage_quality_rules" => true,
-               "manage_raw_quality_rule_implementations" => false,
-               "manage_segments" => false
-             }
-    end
-
-    @tag authentication: [
-           user_name: "non_admin",
-           permissions: [
-             "manage_quality_rule",
-             "view_quality_rule",
-             "manage_quality_rule_implementations",
-             "manage_raw_quality_rule_implementations"
-           ]
-         ]
-    test "user assigned manage_raw_quality_rule_implementations permission receives it", %{
-      conn: conn,
-      domain: %{id: domain_id}
-    } do
-      %{id: id} = insert(:rule, domain_id: domain_id)
-
-      assert %{"user_permissions" => user_permissions} =
-               conn
-               |> get(Routes.rule_path(conn, :show, id))
-               |> json_response(:ok)
-
-      assert user_permissions == %{
-               "manage_quality_rule_implementations" => true,
-               "manage_quality_rules" => true,
-               "manage_raw_quality_rule_implementations" => true,
-               "manage_segments" => false
-             }
     end
   end
 end

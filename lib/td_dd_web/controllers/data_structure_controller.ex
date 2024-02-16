@@ -2,8 +2,7 @@ defmodule TdDdWeb.DataStructureController do
   use TdDdWeb, :controller
   use PhoenixSwagger
 
-  import Canada, only: [can?: 2]
-  import Canada.Can, only: [can?: 3]
+  import Bodyguard, only: [permit?: 4]
 
   alias TdDd.CSV.Download
   alias TdDd.DataStructures
@@ -12,9 +11,13 @@ defmodule TdDdWeb.DataStructureController do
   alias TdDd.DataStructures.CsvBulkUpdateEvent
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.DataStructureVersions
   alias TdDd.DataStructures.Search
-  alias TdDd.DataStructures.StructureNote
+  alias TdDd.DataStructures.StructureNotes
   alias TdDd.DataStructures.StructureNotesWorkflow
+  alias TdDd.DataStructures.Tags
+  alias TdDd.Grants
+  alias TdDd.Grants.Requests
   alias TdDd.Utils.FileHash
   alias TdDdWeb.SwaggerDefinitions
 
@@ -32,12 +35,12 @@ defmodule TdDdWeb.DataStructureController do
     :siblings,
     :system,
     :versions,
+    :with_protected_metadata,
     :metadata_versions,
-    :data_structure_type,
-    :tags
+    :data_structure_type
   ]
 
-  @structures_actions [:update_domain_ids]
+  @default_lang Application.compile_env(:td_dd, :lang)
 
   plug(TdDdWeb.SearchPermissionPlug)
 
@@ -98,14 +101,26 @@ defmodule TdDdWeb.DataStructureController do
 
     with %{valid?: true} = changeset <-
            DataStructures.update_changeset(claims, structure, structure_params),
-         {:can, true} <- {:can, can?(claims, update_data_structure(changeset))},
+         :ok <- Bodyguard.permit(DataStructures, :update_data_structure, claims, changeset),
          {:ok, _} <- DataStructures.update_data_structure(claims, changeset, inherit) do
-      structure = get_data_structure(id)
+      claims = conn.assigns[:current_resource]
+      options = filter_opts(claims, structure)
+      structure = get_data_structure(id, options)
       do_render_data_structure(conn, claims, structure)
     else
       %{valid?: false} = changeset -> {:error, changeset}
       other -> other
     end
+  end
+
+  defp filter_opts(claims, structure) do
+    Enum.filter(@enrich_attrs, fn
+      :with_protected_metadata ->
+        Bodyguard.permit?(DataStructures, :view_protected_metadata, claims, structure)
+
+      _ ->
+        true
+    end)
   end
 
   swagger_path :delete do
@@ -126,16 +141,10 @@ defmodule TdDdWeb.DataStructureController do
   def delete(conn, %{"id" => id, "logical" => "true"}) do
     claims = conn.assigns[:current_resource]
 
-    with %DataStructure{} = data_structure <-
-           DataStructures.get_data_structure!(id),
-         {:can, true} <- {:can, can?(claims, delete_structure(data_structure))},
-         %DataStructureVersion{} = data_structure_version <-
-           DataStructures.get_latest_version(data_structure),
-         {:ok, _} <-
-           DataStructures.logical_delete_data_structure(
-             data_structure_version,
-             claims
-           ) do
+    with %DataStructure{} = ds <- DataStructures.get_data_structure!(id),
+         :ok <- Bodyguard.permit(DataStructures, :delete_data_structure, claims, ds),
+         %DataStructureVersion{} = dsv <- DataStructures.get_latest_version(ds),
+         {:ok, _} <- DataStructures.logical_delete_data_structure(dsv, claims) do
       send_resp(conn, :no_content, "")
     end
   end
@@ -144,7 +153,7 @@ defmodule TdDdWeb.DataStructureController do
     claims = conn.assigns[:current_resource]
     data_structure = DataStructures.get_data_structure!(id)
 
-    with {:can, true} <- {:can, can?(claims, delete_data_structure(data_structure))},
+    with :ok <- Bodyguard.permit(DataStructures, :delete_data_structure, claims, data_structure),
          {:ok, %{data_structure: _deleted_data_structure}} <-
            DataStructures.delete_data_structure(data_structure, claims) do
       send_resp(conn, :no_content, "")
@@ -170,6 +179,18 @@ defmodule TdDdWeb.DataStructureController do
       |> Map.put("filters", %{"system_id" => String.to_integer(system_id)})
       |> Map.put("without", ["path", "deleted_at"])
       |> Search.search_data_structures(claims, permission, 0, 1_000)
+
+    conn
+    |> put_resp_header("x-total-count", "#{total}")
+    |> render("index.json", data_structures: data_structures)
+  end
+
+  def get_bucket_structures(conn, params) do
+    claims = conn.assigns[:current_resource]
+    permission = conn.assigns[:search_permission]
+
+    %{results: data_structures, total: total} =
+      Search.bucket_structures(claims, permission, params)
 
     conn
     |> put_resp_header("x-total-count", "#{total}")
@@ -204,7 +225,7 @@ defmodule TdDdWeb.DataStructureController do
     permission = conn.assigns[:search_permission]
     auto_publish = bulk_update_request |> Map.get("auto_publish", false)
 
-    with {:can, true} <- {:can, can?(claims, create(BulkUpdate))},
+    with :ok <- Bodyguard.permit(BulkUpdate, :bulk_update_notes, claims),
          %{results: results} <- search_all_structures(claims, permission, search_params),
          ids <- Enum.map(results, & &1.id),
          {:ok, %{update_notes: update_notes}} <-
@@ -252,9 +273,8 @@ defmodule TdDdWeb.DataStructureController do
     headers = ["external_id", "domain_external_ids"]
 
     with claims <- conn.assigns[:current_resource],
-         {:can, true} <- {:can, can?(claims, update_domain_ids(DataStructure))},
-         :ok <-
-           BulkUpdate.check_csv_headers(structures_content_upload, headers),
+         :ok <- Bodyguard.permit(BulkUpdate, :bulk_upload_domains, claims),
+         :ok <- BulkUpdate.check_csv_headers(structures_content_upload, headers),
          [_ | _] = rows <- BulkUpdate.from_csv(structures_content_upload, :simple),
          info <- BulkUpdate.csv_bulk_update_domains(rows, claims),
          summary <- csv_bulk_upload_domains_summary(rows, info) do
@@ -297,6 +317,7 @@ defmodule TdDdWeb.DataStructureController do
 
   def bulk_update_template_content(conn, params) do
     %{user_id: user_id} = claims = conn.assigns[:current_resource]
+    {lang, params} = Map.pop(params, "lang", @default_lang)
     structures_content_upload = Map.get(params, "structures")
 
     auto_publish = params |> Map.get("auto_publish", "false") |> String.to_existing_atom()
@@ -309,7 +330,8 @@ defmodule TdDdWeb.DataStructureController do
                csv_hash,
                structures_content_upload,
                user_id,
-               auto_publish
+               auto_publish,
+               lang
              ) do
           {:just_started, ^csv_hash, task_reference} ->
             {
@@ -366,17 +388,16 @@ defmodule TdDdWeb.DataStructureController do
         true
 
       {_content, %{data_structure: data_structure}} ->
-        action = StructureNotesWorkflow.get_action_editable_action(data_structure)
-
         can_edit =
-          case action do
-            :create -> can?(claims, create_structure_note(data_structure))
-            :edit -> can?(claims, edit_structure_note(data_structure))
+          case StructureNotesWorkflow.get_action_editable_action(data_structure) do
+            :create -> permit?(StructureNotes, :create, claims, data_structure)
+            :edit -> permit?(StructureNotes, :edit, claims, data_structure)
             _ -> true
           end
 
         if auto_publish do
-          can_edit and can?(claims, publish_structure_note_from_draft(data_structure))
+          can_edit and
+            permit?(StructureNotes, :publish_draft, claims, data_structure)
         else
           can_edit
         end
@@ -395,7 +416,7 @@ defmodule TdDdWeb.DataStructureController do
     params
     |> Map.put("without", "deleted_at")
     |> Map.drop(["page", "size"])
-    |> Search.search_data_structures(claims, permission, 0, 10_000)
+    |> Search.scroll_data_structures(claims, permission)
   end
 
   swagger_path :csv do
@@ -413,7 +434,9 @@ defmodule TdDdWeb.DataStructureController do
 
   def csv(conn, params) do
     header_labels = Map.get(params, "header_labels", %{})
-    params = Map.drop(params, ["header_labels", "page", "size"])
+    {lang, params} = Map.pop(params, "lang", @default_lang)
+    structure_url_schema = Map.get(params, "structure_url_schema", nil)
+    params = Map.drop(params, ["header_labels", "page", "size", "structure_url_schema"])
 
     permission = conn.assigns[:search_permission]
     claims = conn.assigns[:current_resource]
@@ -428,12 +451,17 @@ defmodule TdDdWeb.DataStructureController do
         conn
         |> put_resp_content_type("text/csv", "utf-8")
         |> put_resp_header("content-disposition", "attachment; filename=\"structures.zip\"")
-        |> send_resp(:ok, Download.to_csv(data_structures, header_labels))
+        |> send_resp(
+          :ok,
+          Download.to_csv(data_structures, header_labels, structure_url_schema, lang)
+        )
     end
   end
 
   def editable_csv(conn, params) do
-    params = Map.drop(params, ["page", "size"])
+    {lang, params} = Map.pop(params, "lang", @default_lang)
+    structure_url_schema = Map.get(params, "structure_url_schema", nil)
+    params = Map.drop(params, ["page", "size", "structure_url_schema"])
     permission = conn.assigns[:search_permission]
     claims = conn.assigns[:current_resource]
 
@@ -447,12 +475,12 @@ defmodule TdDdWeb.DataStructureController do
         conn
         |> put_resp_content_type("text/csv", "utf-8")
         |> put_resp_header("content-disposition", "attachment; filename=\"structures.zip\"")
-        |> send_resp(:ok, Download.to_editable_csv(data_structures))
+        |> send_resp(:ok, Download.to_editable_csv(data_structures, structure_url_schema, lang))
     end
   end
 
-  defp get_data_structure(id) do
-    case DataStructures.get_latest_version(id, @enrich_attrs) do
+  defp get_data_structure(id, enrich_attrs) do
+    case DataStructures.get_latest_version(id, enrich_attrs) do
       nil ->
         DataStructures.get_data_structure!(id)
 
@@ -469,14 +497,23 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   defp do_render_data_structure(conn, claims, data_structure) do
-    if can?(claims, view_data_structure(data_structure)) do
+    if permit?(DataStructures, :view_data_structure, claims, data_structure) do
       user_permissions = %{
-        update: can?(claims, update_data_structure(data_structure)),
-        confidential: can?(claims, manage_confidential_structures(data_structure)),
-        view_profiling_permission: can?(claims, view_data_structures_profile(data_structure))
+        update: permit?(DataStructures, :update_data_structure, claims, data_structure),
+        confidential:
+          permit?(DataStructures, :manage_confidential_structures, claims, data_structure),
+        view_profiling_permission:
+          permit?(DataStructures, :view_data_structures_profile, claims, data_structure)
       }
 
-      render(conn, "show.json", data_structure: data_structure, user_permissions: user_permissions)
+      # TODO: tags not consumed by front?
+      tags = Tags.tags(data_structure)
+
+      render(conn, "show.json",
+        data_structure: data_structure,
+        user_permissions: user_permissions,
+        tags: tags
+      )
     else
       render_error(conn, :forbidden)
     end
@@ -489,8 +526,12 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   defp do_search(conn, search_params, page, size) do
+    my_grant_requests = Map.get(search_params, "my_grant_requests")
+    with_data_fields = Map.get(search_params, "with_data_fields")
     claims = conn.assigns[:current_resource]
-    permission = conn.assigns[:search_permission]
+
+    permission =
+      if my_grant_requests, do: :create_grant_request, else: conn.assigns[:search_permission]
 
     page = Map.get(search_params, "page", page)
     size = Map.get(search_params, "size", size)
@@ -499,6 +540,8 @@ defmodule TdDdWeb.DataStructureController do
     |> deleted_structures()
     |> Map.drop(["page", "size"])
     |> Search.search_data_structures(claims, permission, page, size)
+    |> maybe_load_my_grant_requests(my_grant_requests, claims)
+    |> maybe_load_data_fields(with_data_fields, claims)
   end
 
   defp search_assigns(%{results: data_structures, scroll_id: scroll_id}) do
@@ -513,9 +556,88 @@ defmodule TdDdWeb.DataStructureController do
     [data_structures: data_structures]
   end
 
+  defp maybe_load_my_grant_requests(
+         %{results: results} = search_results,
+         true,
+         %{user_id: user_id} = claims
+       ) do
+    data_structures_ids = Enum.map(results, & &1.id)
+
+    grants_by_ds =
+      %{
+        data_structure_ids: data_structures_ids,
+        user_id: user_id
+      }
+      |> Grants.list_active_grants()
+      |> Enum.group_by(& &1.data_structure_id)
+
+    requests_by_ds =
+      data_structures_ids
+      |> Requests.latest_grant_request_by_data_structures(user_id)
+      |> Enum.group_by(& &1.data_structure_id)
+
+    data_fields_by_ds =
+      data_structures_ids
+      |> DataStructures.list_data_structures_data_fields(claims)
+      |> Enum.group_by(& &1.id)
+      |> Enum.map(fn {data_structure_id, data_fields} ->
+        {data_structure_id, Enum.map(data_fields, & &1.data_field)}
+      end)
+      |> Map.new()
+
+    results =
+      results
+      |> Enum.map(
+        &(&1
+          |> Map.put(:my_grants, Map.get(grants_by_ds, &1.id))
+          |> Map.put(:my_grant_request, Map.get(requests_by_ds, &1.id))
+          |> Map.put(:data_fields, Map.get(data_fields_by_ds, &1.id))
+          |> Map.put(
+            :user_permissions,
+            DataStructureVersions.get_grant_user_permissions(&1, claims)
+          ))
+      )
+
+    Map.put(search_results, :results, results)
+  end
+
+  defp maybe_load_my_grant_requests(search_results, _, _), do: search_results
+
+  defp maybe_load_data_fields(%{results: results} = search_results, true, claims) do
+    data_structures_ids = Enum.map(results, & &1.id)
+
+    data_fields_by_ds =
+      data_structures_ids
+      |> DataStructures.list_data_structures_data_fields(claims)
+      |> Enum.group_by(& &1.id)
+      |> Enum.map(fn {data_structure_id, data_fields} ->
+        {data_structure_id, Enum.map(data_fields, & &1.data_field)}
+      end)
+      |> Map.new()
+
+    results = Enum.map(results, &Map.put(&1, :data_fields, Map.get(data_fields_by_ds, &1.id)))
+
+    Map.put(search_results, :results, results)
+  end
+
+  defp maybe_load_data_fields(search_results, _, _), do: search_results
+
+  defp deleted_structures(%{"must" => %{"all" => true} = filters} = search_params) do
+    must = Map.delete(filters, "all")
+    Map.put(search_params, "must", must)
+  end
+
   defp deleted_structures(%{"filters" => %{"all" => true} = filters} = search_params) do
     filters = Map.delete(filters, "all")
     Map.put(search_params, "filters", filters)
+  end
+
+  defp deleted_structures(%{"must" => _} = search_params) do
+    must = Map.delete(Map.get(search_params, "must", %{}), "all")
+
+    search_params
+    |> Map.put("must", must)
+    |> Map.put("without", "deleted_at")
   end
 
   defp deleted_structures(search_params) do
@@ -531,8 +653,8 @@ defmodule TdDdWeb.DataStructureController do
 
     actions =
       params
-      |> actions_notes(total)
-      |> Enum.filter(&can?(claims, &1, StructureNote))
+      |> bulk_actions(total)
+      |> Enum.filter(&Bodyguard.permit?(BulkUpdate, &1, claims))
       |> Enum.reduce(%{}, fn
         :bulk_update, acc ->
           Map.put(acc, "bulkUpdate", %{
@@ -551,28 +673,24 @@ defmodule TdDdWeb.DataStructureController do
             href: Routes.data_structure_path(conn, :bulk_update_template_content),
             method: "POST"
           })
+
+        :bulk_upload_domains, acc ->
+          Map.put(acc, "bulkUploadDomains", %{
+            href: Routes.data_structure_path(conn, :bulk_upload_domains),
+            method: "POST"
+          })
       end)
-      |> put_actions_structures(conn, claims)
 
     assign(conn, :actions, actions)
   end
 
-  defp put_actions_structures(actions, conn, claims) do
-    @structures_actions
-    |> Enum.filter(&can?(claims, &1, DataStructure))
-    |> Enum.reduce(%{}, fn
-      :update_domain_ids, acc ->
-        Map.put(acc, "bulkUploadDomains", %{
-          href: Routes.data_structure_path(conn, :bulk_upload_domains),
-          method: "POST"
-        })
-    end)
-    |> Map.merge(actions)
+  defp bulk_actions(%{"filters" => %{"type.raw" => [_]}} = _params, total) when total > 0 do
+    [:bulk_upload, :auto_publish, :bulk_update, :bulk_upload_domains]
   end
 
-  defp actions_notes(%{"filters" => %{"type.raw" => [_]}} = _params, total) when total > 0 do
-    [:bulk_upload, :auto_publish, :bulk_update]
+  defp bulk_actions(%{"must" => %{"type.raw" => [_]}} = _params, total) when total > 0 do
+    [:bulk_upload, :auto_publish, :bulk_update, :bulk_upload_domains]
   end
 
-  defp actions_notes(_params, _), do: [:bulk_upload, :auto_publish]
+  defp bulk_actions(_params, _), do: [:bulk_upload, :auto_publish, :bulk_upload_domains]
 end

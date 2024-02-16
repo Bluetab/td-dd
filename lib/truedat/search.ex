@@ -3,6 +3,7 @@ defmodule Truedat.Search do
   Performs search requests in the search engine and formats responses.
   """
 
+  alias TdCache.HierarchyCache
   alias TdCache.TaxonomyCache
   alias TdDd.Search.Cluster
 
@@ -16,6 +17,10 @@ defmodule Truedat.Search do
   end
 
   def search(body, index, opts) when is_binary(index) do
+    post(body, index, opts)
+  end
+
+  defp post(body, index, opts) do
     search_opts = search_opts(opts[:params])
 
     Cluster
@@ -37,9 +42,7 @@ defmodule Truedat.Search do
     [params: Map.take(query_params, ["scroll"])]
   end
 
-  defp search_opts(_params) do
-    []
-  end
+  defp search_opts(_params), do: [params: %{"track_total_hits" => "true"}]
 
   defp format_response(response, format \\ nil)
 
@@ -67,7 +70,7 @@ defmodule Truedat.Search do
       {"hits", %{"hits" => hits, "total" => total}}, acc ->
         acc
         |> Map.put(:results, hits)
-        |> Map.put(:total, total)
+        |> Map.put(:total, get_total(total))
     end)
   end
 
@@ -91,22 +94,83 @@ defmodule Truedat.Search do
       |> Enum.map(&get_domain/1)
       |> Enum.reject(&is_nil/1)
 
-    {"taxonomy", domains}
+    {"taxonomy",
+     %{
+       type: :domain,
+       values: domains
+     }}
+  end
+
+  defp filter_values({name, %{"meta" => %{"type" => "domain"}, "buckets" => buckets}}) do
+    domains =
+      buckets
+      |> Enum.map(fn %{"key" => domain_id} -> get_domain(domain_id) end)
+      |> Enum.reject(&is_nil/1)
+
+    {name,
+     %{
+       type: :domain,
+       values: domains
+     }}
+  end
+
+  defp filter_values({name, %{"meta" => %{"type" => "hierarchy"}, "buckets" => buckets}}) do
+    node_names =
+      buckets
+      |> Enum.map(fn %{"key" => key} -> get_hierarchy_node(key) end)
+      |> Enum.reject(&is_nil/1)
+
+    {name,
+     %{
+       type: :hierarchy,
+       values: node_names
+     }}
+  end
+
+  defp filter_values({name, %{"meta" => %{"type" => "search", "index" => index}}}) do
+    {name,
+     %{
+       type: :search,
+       index: index
+     }}
   end
 
   defp filter_values({name, %{"buckets" => buckets}}) do
-    {name, Enum.map(buckets, &bucket_key/1)}
+    {
+      name,
+      %{
+        values: Enum.map(buckets, &bucket_key/1),
+        # TODO: This is a redundant as values is already in buckets, but don't
+        # want to change front-end now.
+        buckets: buckets
+      }
+    }
   end
 
   defp filter_values({name, %{"distinct_search" => distinct_search}}) do
     filter_values({name, distinct_search})
   end
 
-  defp filter_values({name, %{"doc_count" => 0}}), do: {name, []}
+  defp filter_values({name, %{"doc_count" => 0}}), do: {name, %{values: []}}
 
   defp bucket_key(%{"key_as_string" => key}) when key in ["true", "false"], do: key
   defp bucket_key(%{"key" => key}), do: key
 
+  defp get_domain(""), do: nil
+  defp get_domain(0), do: ""
   defp get_domain(id) when is_integer(id), do: TaxonomyCache.get_domain(id)
   defp get_domain(_), do: nil
+
+  defp get_hierarchy_node(key) when is_binary(key) do
+    case HierarchyCache.get_node!(key) do
+      %{"name" => name} ->
+        %{id: key, name: name}
+
+      nil ->
+        nil
+    end
+  end
+
+  defp get_total(value) when is_integer(value), do: value
+  defp get_total(%{"relation" => "eq", "value" => value}) when is_integer(value), do: value
 end

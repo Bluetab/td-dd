@@ -8,12 +8,19 @@ defmodule TdDq.Rules.Rule do
   import Ecto.Changeset
 
   alias TdCache.TaxonomyCache
+  alias TdDd.Repo
   alias TdDfLib.Validation
   alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleResult
 
+  import Ecto.Query
+
   @type t :: %__MODULE__{}
+  @inactive_implementation_status [
+    :deprecated,
+    :versioned
+  ]
 
   schema "rules" do
     field(:business_concept_id, :integer)
@@ -25,12 +32,12 @@ defmodule TdDq.Rules.Rule do
     field(:updated_by, :integer)
     field(:domain_id, :integer)
     field(:domain, :map, virtual: true)
+    field(:df_name, :string)
+    field(:df_content, :map)
+    field(:template, :map, virtual: true)
 
     has_many(:rule_implementations, Implementation)
     has_many(:rule_results, RuleResult)
-
-    field(:df_name, :string)
-    field(:df_content, :map)
 
     timestamps()
   end
@@ -54,6 +61,7 @@ defmodule TdDq.Rules.Rule do
     ])
     |> validate_required([:name, :domain_id], message: "required")
     |> validate_inclusion(:domain_id, TaxonomyCache.get_domain_ids())
+    |> validate_change(:description, &Validation.validate_safe/2)
     |> validate_content(rule)
     |> unique_constraint(
       :rule_name_bc_id,
@@ -75,8 +83,8 @@ defmodule TdDq.Rules.Rule do
 
   def delete_changeset(%__MODULE__{} = rule) do
     rule
-    |> change()
-    |> no_assoc_constraint(:rule_implementations, message: "rule.delete.existing.implementations")
+    |> changeset(%{active: false, deleted_at: DateTime.utc_now()})
+    |> validate_inactive_implementations()
   end
 
   defp validate_content(%{valid?: true} = changeset, rule) do
@@ -95,6 +103,20 @@ defmodule TdDq.Rules.Rule do
   end
 
   defp validate_content(changeset, _), do: changeset
+
+  defp validate_inactive_implementations(%{data: %{id: rule_id}} = changeset) do
+    %{active_implementations?: active_implementations?} =
+      Implementation
+      |> where([ri], ri.rule_id == ^rule_id and ri.status not in ^@inactive_implementation_status)
+      |> select([ri], %{active_implementations?: count(ri) > 0})
+      |> Repo.one()
+
+    if active_implementations? do
+      add_error(changeset, :rule_implementations, "active_implementations")
+    else
+      changeset
+    end
+  end
 
   defp maybe_put_identifier(
          changeset,
@@ -176,6 +198,7 @@ defmodule TdDq.Rules.Rule do
         updated_at: rule.updated_at,
         inserted_at: rule.inserted_at,
         df_name: rule.df_name,
+        df_label: Map.get(template, :label),
         df_content: df_content
       }
     end

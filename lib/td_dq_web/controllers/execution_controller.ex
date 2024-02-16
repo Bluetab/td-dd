@@ -1,10 +1,7 @@
 defmodule TdDqWeb.ExecutionController do
   use TdDqWeb, :controller
 
-  import Canada, only: [can?: 2]
-
   alias TdDq.Executions
-  alias TdDq.Executions.Execution
 
   action_fallback(TdDqWeb.FallbackController)
 
@@ -20,7 +17,7 @@ defmodule TdDqWeb.ExecutionController do
   def index(conn, params) do
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(claims, list(Execution))},
+    with :ok <- Bodyguard.permit(Executions, :list_executions, claims),
          executions <-
            Executions.list_executions(params, preload: [:implementation, :result, :group]) do
       render(conn, "index.json", executions: executions)

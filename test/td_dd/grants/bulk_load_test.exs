@@ -38,26 +38,28 @@ defmodule TdDd.Grants.BulkLoadTest do
         %{
           "op" => "add",
           "detail" => %{},
-          "end_date" => Date.utc_today(),
+          "end_date" => Date.utc_today() |> Date.add(1),
           "start_date" => "2010-04-17",
           "data_structure_external_id" => data_structure_external_id_1,
           "user_id" => user_id_1,
-          "source_user_name" => source_user_name_1
+          "source_user_name" => source_user_name_1,
+          "external_ref" => "foo"
         },
         %{
           "op" => "add",
           "detail" => %{},
-          "end_date" => Date.utc_today(),
+          "end_date" => Date.utc_today() |> Date.add(1),
           "start_date" => "2010-04-17",
           "data_structure_external_id" => data_structure_external_id_2,
           "user_id" => user_id_2,
-          "source_user_name" => source_user_name_2
+          "source_user_name" => source_user_name_2,
+          "external_ref" => "bar"
         }
       ]
 
       assert {:ok, [id1, id2]} = BulkLoad.bulk_load(claims, grants)
 
-      assert length(Grants.list_grants([])) == 2
+      assert length(Grants.list_active_grants([])) == 2
 
       assert %Grant{id: ^id1, data_structure_id: ^structure_id_1} = Grants.get_grant!(id1)
       assert %Grant{id: ^id2, data_structure_id: ^structure_id_2} = Grants.get_grant!(id2)
@@ -95,33 +97,40 @@ defmodule TdDd.Grants.BulkLoadTest do
 
       assert {:error, {:not_found, "DataStructure"}} = BulkLoad.bulk_load(claims, grants)
 
-      assert [] = Grants.list_grants([])
+      assert [] = Grants.list_active_grants([])
     end
 
     @tag authentication: [role: "admin"]
-    test "return error when one of the grants exist", %{
-      data_structure_1: %{external_id: data_structure_external_id_1},
-      user_id_1: user_id_1,
-      source_user_name_1: source_user_name_1,
-      claims: claims
-    } do
+    test "return error when external_ref exists with same source_user_name, data_structure_external_id and date",
+         %{
+           data_structure_1: %{external_id: data_structure_external_id_1},
+           user_id_1: user_id_1,
+           source_user_name_1: source_user_name_1,
+           claims: claims
+         } do
       grants = [
         %{
           "op" => "add",
           "detail" => %{},
-          "end_date" => Date.utc_today(),
+          "end_date" => Date.utc_today() |> Date.add(1),
           "start_date" => "2010-04-17",
           "data_structure_external_id" => data_structure_external_id_1,
           "user_id" => user_id_1,
-          "source_user_name" => source_user_name_1
+          "source_user_name" => source_user_name_1,
+          "external_ref" => "foo"
         }
       ]
 
-      assert assert {:ok, [_]} = BulkLoad.bulk_load(claims, grants)
+      assert {:ok, [_]} = BulkLoad.bulk_load(claims, grants)
+      assert {:error, %Ecto.Changeset{errors: errors}} = BulkLoad.bulk_load(claims, grants)
 
-      assert assert {:error, %Ecto.Changeset{}} = BulkLoad.bulk_load(claims, grants)
+      assert [
+               source_user_name:
+                 {"violates an exclusion constraint",
+                  [constraint: :exclusion, constraint_name: "no_overlap_source_user_name"]}
+             ] = errors
 
-      assert length(Grants.list_grants([])) == 1
+      assert length(Grants.list_active_grants([])) == 1
     end
 
     @tag authentication: [role: "admin"]
@@ -154,7 +163,7 @@ defmodule TdDd.Grants.BulkLoadTest do
 
       assert {:error, %Ecto.Changeset{}} = BulkLoad.bulk_load(claims, grants)
 
-      assert [] == Grants.list_grants([])
+      assert [] == Grants.list_active_grants([])
     end
   end
 

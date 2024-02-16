@@ -1,7 +1,12 @@
 defmodule TdDqWeb.ImplementationStructureControllerTest do
   use TdDqWeb.ConnCase
 
+  import TdDd.TestOperators
+
+  alias TdDd.Search.MockIndexWorker
+
   setup %{conn: conn} do
+    start_supervised!(MockIndexWorker)
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
 
@@ -121,6 +126,89 @@ defmodule TdDqWeb.ImplementationStructureControllerTest do
         )
 
       assert response(conn, :forbidden)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "reindex implementation after create ImplementationStructure link", %{
+      conn: conn
+    } do
+      MockIndexWorker.clear()
+      domain = build(:domain)
+      %{id: implementation_ref_id} = insert(:implementation, version: 1)
+
+      %{id: implementation_id} =
+        implementation =
+        insert(:implementation, version: 2, implementation_ref: implementation_ref_id)
+
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
+
+      conn =
+        post(
+          conn,
+          Routes.implementation_implementation_structure_path(conn, :create, implementation),
+          data_structure_id: data_structure_id,
+          type: "dataset"
+        )
+
+      assert response(conn, 201)
+
+      [
+        {:reindex_implementations, implementation_reindexed}
+      ] = MockIndexWorker.calls()
+
+      assert implementation_reindexed ||| [implementation_id, implementation_ref_id]
+    end
+
+    @tag authentication: [role: "admin"]
+    test "create structure link for implementation ref", %{
+      conn: conn
+    } do
+      domain = build(:domain)
+
+      %{id: implementation_ref_id} =
+        insert(
+          :implementation,
+          domain_id: domain.id,
+          version: 1,
+          status: :versioned
+        )
+
+      implementation =
+        insert(
+          :implementation,
+          domain_id: domain.id,
+          version: 2,
+          status: :published,
+          implementation_ref: implementation_ref_id
+        )
+
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
+
+      conn =
+        post(
+          conn,
+          Routes.implementation_implementation_structure_path(conn, :create, implementation),
+          data_structure_id: data_structure_id,
+          type: "dataset"
+        )
+
+      assert response(conn, 201)
+
+      assert %{
+               "data" => %{
+                 "data_structures" => [
+                   %{
+                     "type" => "dataset",
+                     "data_structure" => %{
+                       "id" => ^data_structure_id
+                     }
+                   }
+                 ]
+               }
+             } =
+               conn
+               |> get(Routes.implementation_path(conn, :show, implementation_ref_id))
+               |> json_response(:ok)
     end
 
     @tag authentication: [role: "admin"]
@@ -312,6 +400,43 @@ defmodule TdDqWeb.ImplementationStructureControllerTest do
                conn
                |> get(Routes.implementation_path(conn, :show, implementation_id))
                |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "reindex implementation after delete ImplementationStructure link", %{
+      conn: conn
+    } do
+      MockIndexWorker.clear()
+      domain = build(:domain)
+
+      %{id: implementation_ref_id} = implementation_ref = insert(:implementation, version: 1)
+
+      %{id: implementation_id} =
+        insert(:implementation, version: 2, implementation_ref: implementation_ref_id)
+
+      %{id: id} =
+        insert(:implementation_structure,
+          implementation: implementation_ref,
+          data_structure: build(:data_structure, domain_ids: [domain.id])
+        )
+
+      conn =
+        delete(
+          conn,
+          Routes.implementation_structure_path(
+            conn,
+            :delete,
+            id
+          )
+        )
+
+      assert response(conn, 204)
+
+      [
+        {:reindex_implementations, implementation_reindexed}
+      ] = MockIndexWorker.calls()
+
+      assert implementation_reindexed ||| [implementation_id, implementation_ref_id]
     end
   end
 end

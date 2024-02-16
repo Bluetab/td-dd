@@ -22,7 +22,7 @@ defmodule TdDdWeb.GrantFilterControllerTest do
     test "includes a match_all filter and must_not on deleted_at (admin user)", %{conn: conn} do
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/grants/_search", %{query: query, size: 0}, [] ->
+        _, :post, "/grants/_search", %{query: query, size: 0}, _ ->
           assert query == %{
                    bool: %{
                      filter: %{match_all: %{}},
@@ -38,7 +38,7 @@ defmodule TdDdWeb.GrantFilterControllerTest do
                |> post(Routes.grant_filter_path(conn, :search, %{}))
                |> json_response(:ok)
 
-      assert data == %{"data_structure_version.name.raw" => ["foo", "baz"]}
+      assert %{"data_structure_version.name.raw" => %{"values" => ["foo", "baz"]}} = data
     end
 
     @tag authentication: [user_name: "non_admin_user", permissions: ["view_grants"]]
@@ -48,7 +48,7 @@ defmodule TdDdWeb.GrantFilterControllerTest do
     } do
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/grants/_search", %{query: query, size: 0}, [] ->
+        _, :post, "/grants/_search", %{query: query, size: 0}, _ ->
           assert %{
                    bool: %{
                      filter: %{
@@ -76,7 +76,7 @@ defmodule TdDdWeb.GrantFilterControllerTest do
     test "includes filters from request parameters", %{conn: conn} do
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/grants/_search", %{query: query, size: 0}, [] ->
+        _, :post, "/grants/_search", %{query: query, size: 0}, _ ->
           assert %{
                    bool: %{
                      filter: [%{term: %{"foo" => "bar"}}, _permission_filter]
@@ -98,7 +98,7 @@ defmodule TdDdWeb.GrantFilterControllerTest do
     test "includes system external_id filter from request parameters", %{conn: conn} do
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/grants/_search", %{query: query, size: 0}, [] ->
+        _, :post, "/grants/_search", %{query: query, size: 0}, _ ->
           assert %{
                    bool: %{
                      filter: [
@@ -133,7 +133,7 @@ defmodule TdDdWeb.GrantFilterControllerTest do
       } do
         ElasticsearchMock
         |> expect(:request, fn
-          _, :post, "/grants/_search", %{query: query, size: 0}, [] ->
+          _, :post, "/grants/_search", %{query: query, size: 0}, _ ->
             assert %{
                      bool: %{
                        filter: %{term: %{"user_id" => ^user_id}},
@@ -149,7 +149,7 @@ defmodule TdDdWeb.GrantFilterControllerTest do
                  |> post(Routes.grant_filter_path(conn, :search_mine, %{}))
                  |> json_response(:ok)
 
-        assert data == %{"data_structure_version.name.raw" => ["foo", "baz"]}
+        assert %{"data_structure_version.name.raw" => %{"values" => ["foo", "baz"]}} = data
       end
     end
   end

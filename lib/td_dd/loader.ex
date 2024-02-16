@@ -51,7 +51,12 @@ defmodule TdDd.Loader do
       |> Map.get(:relations, [])
       |> RelationTypes.with_relation_types()
 
-    multi(structure_records, relation_records, audit, opts)
+    multi(
+      structure_records,
+      relation_records,
+      audit,
+      opts
+    )
   end
 
   @spec replace_mutable_metadata([map], TdDd.Systems.System.t(), map, Keyword.t()) ::
@@ -76,6 +81,7 @@ defmodule TdDd.Loader do
     |> Multi.run(:insert_relations, Relations, :insert_new_relations, [ts])
     |> Multi.run(:update_hierarchy, Hierarchy, :update_hierarchy, [])
     |> Multi.run(:update_domain_ids, Structures, :update_domain_ids, [structure_records, ts])
+    |> Multi.run(:maybe_inherit_domains, __MODULE__, :maybe_inherit_domains, [ts, opts])
     |> Multi.run(:update_source_ids, Structures, :update_source_ids, [
       structure_records,
       opts[:source],
@@ -89,6 +95,16 @@ defmodule TdDd.Loader do
     end)
     |> Multi.run(:refresh_fields, Types, :refresh_fields, [])
     |> Repo.transaction()
+  end
+
+  def maybe_inherit_domains(_repo, changes, ts, opts) do
+    case {changes, Keyword.get(opts, :inherit_domains)} do
+      {%{insert_versions: {_, dsvs}}, true} ->
+        Structures.inherit_domain(dsvs, ts)
+
+      _ ->
+        {:ok, {0, []}}
+    end
   end
 
   @spec metadata_multi([map], TdDd.Systems.System.t(), map, binary()) :: multi_result()
@@ -119,7 +135,7 @@ defmodule TdDd.Loader do
   def structure_ids(_repo, %{} = changes) do
     structure_ids =
       changes
-      |> Map.drop([:context, :graph, :insert_relations, :update_hierarchy])
+      |> Map.drop([:context, :graph, :insert_relations, :update_hierarchy, :maybe_inherit_domains])
       |> Enum.flat_map(&structure_ids/1)
       |> Enum.uniq()
 

@@ -8,7 +8,7 @@ defmodule TdCx.Format do
   def get_cached_content(%{} = content, type) when is_binary(type) do
     case TemplateCache.get_by_name!(type) do
       template = %{} ->
-        Format.enrich_content_values(content, template)
+        Format.enrich_content_values(content, template, [:domain, :system, :hierarchy])
 
       _ ->
         content

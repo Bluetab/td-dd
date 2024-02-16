@@ -5,8 +5,6 @@ defmodule TdDdWeb.Schema.Middleware.Authorize do
 
   @behaviour Absinthe.Middleware
 
-  import Canada.Can, only: [can?: 3]
-
   alias Absinthe.Resolution
 
   def call(%{state: :resolved} = resolution, _opts) do
@@ -14,13 +12,15 @@ defmodule TdDdWeb.Schema.Middleware.Authorize do
   end
 
   def call(%{context: context} = resolution, opts) do
+    policy = Keyword.get(opts, :policy, TdDdWeb.Policy)
+
     with %{claims: claims} <- context,
          action when not is_nil(action) <- Keyword.get(opts, :action),
          resource when not is_nil(resource) <- Keyword.get(opts, :resource),
-         {:can, true} <- {:can, can?(claims, action, resource)} do
+         :ok <- Bodyguard.permit(policy, action, claims, resource) do
       resolution
     else
-      {:can, _} -> Resolution.put_result(resolution, {:error, :forbidden})
+      {:error, :forbidden} -> Resolution.put_result(resolution, {:error, :forbidden})
       _ -> Resolution.put_result(resolution, {:error, :unauthorized})
     end
   end

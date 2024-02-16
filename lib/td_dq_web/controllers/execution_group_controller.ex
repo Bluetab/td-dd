@@ -1,12 +1,10 @@
 defmodule TdDqWeb.ExecutionGroupController do
   use TdDqWeb, :controller
 
-  import Canada, only: [can?: 2]
-
-  alias TdDq.Auth.Claims
   alias TdDq.Executions
   alias TdDq.Executions.Group
   alias TdDq.Implementations.Search
+  alias Truedat.Auth.Claims
 
   action_fallback(TdDqWeb.FallbackController)
 
@@ -22,7 +20,7 @@ defmodule TdDqWeb.ExecutionGroupController do
   def index(conn, _params) do
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(claims, list(Group))},
+    with :ok <- Bodyguard.permit(Executions, :list_groups, claims),
          groups <- Executions.list_groups() do
       render(conn, "index.json", execution_groups: groups)
     end
@@ -37,7 +35,7 @@ defmodule TdDqWeb.ExecutionGroupController do
   def show(conn, %{} = params) do
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(claims, show(Group))},
+    with :ok <- Bodyguard.permit(Executions, :get_group, claims),
          %Group{} = group <-
            Executions.get_group(params,
              preload: [executions: [:implementation, :rule, :result, :quality_events]]
@@ -55,7 +53,7 @@ defmodule TdDqWeb.ExecutionGroupController do
   def create(conn, %{} = params) do
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(claims, create(Group))},
+    with :ok <- Bodyguard.permit(Executions, :create_group, claims, Group),
          %{} = creation_params <- creation_params(claims, params),
          {:ok, %{group: %{id: id}}} <- Executions.create_group(creation_params),
          %Group{} = group <-

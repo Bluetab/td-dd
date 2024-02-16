@@ -2,8 +2,7 @@ defmodule TdDd.Application do
   @moduledoc false
   use Application
 
-  # See https://hexdocs.pm/elixir/Application.html
-  # for more information on OTP Applications
+  @impl true
   def start(_type, _args) do
     env = Application.get_env(:td_dd, :env)
 
@@ -22,8 +21,7 @@ defmodule TdDd.Application do
     Supervisor.start_link(children, opts)
   end
 
-  # Tell Phoenix to update the endpoint configuration
-  # whenever the application is updated.
+  @impl true
   def config_change(changed, _new, removed) do
     TdCxWeb.Endpoint.config_change(changed, removed)
     TdDdWeb.Endpoint.config_change(changed, removed)
@@ -37,6 +35,7 @@ defmodule TdDd.Application do
     [
       # Task supervisor
       {Task.Supervisor, name: TdDd.TaskSupervisor},
+
       # Workers for search and indexing
       TdDd.Search.Cluster,
       TdDd.Search.IndexWorker,
@@ -46,6 +45,7 @@ defmodule TdDd.Application do
       # Task to recalculate data structure hashes on startup
       TdDd.DataStructures.Hasher,
       # Workers for cache loading
+      TdCx.Cache.SourcesLatestEvent,
       TdDd.Cache.SystemLoader,
       TdDd.Cache.StructureLoader,
       # Lineage workers
@@ -62,7 +62,8 @@ defmodule TdDd.Application do
       TdDq.Search.IndexWorker,
       # Scheduler for periodic tasks
       TdDd.Scheduler,
-      TdDq.Cache.RuleMigrator
+      TdDq.Cache.RuleMigrator,
+      TdDd.Search.Tasks
     ]
   end
 end

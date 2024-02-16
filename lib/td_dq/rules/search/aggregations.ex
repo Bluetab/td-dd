@@ -9,6 +9,7 @@ defmodule TdDq.Rules.Search.Aggregations do
   def aggregations do
     static_aggs = %{
       "active.raw" => %{terms: %{field: "active.raw"}},
+      "df_label.raw" => %{terms: %{field: "df_label.raw", size: 50}},
       "taxonomy" => %{terms: %{field: "domain_ids", size: 500}}
     }
 
@@ -22,7 +23,13 @@ defmodule TdDq.Rules.Search.Aggregations do
     content
     |> Format.flatten_content_fields()
     |> Enum.flat_map(fn
-      %{"name" => field, "type" => type} when type in ["domain", "system"] ->
+      %{"name" => field, "type" => "domain"} ->
+        [{field, %{terms: %{field: "df_content.#{field}", size: 50}, meta: %{type: "domain"}}}]
+
+      %{"name" => field, "type" => "hierarchy"} ->
+        [{field, %{terms: %{field: "df_content.#{field}.raw"}, meta: %{type: "hierarchy"}}}]
+
+      %{"name" => field, "type" => "system"} ->
         [{field, nested_agg(field)}]
 
       %{"name" => field, "type" => "user"} ->

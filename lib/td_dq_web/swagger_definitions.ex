@@ -64,9 +64,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
         swagger_schema do
           properties do
             structure(Schema.ref(:Structure))
-            left(Schema.ref(:Structure))
-            right(Schema.ref(:Structure))
-            join_type(:string)
+            join_type([:string, :null])
           end
         end,
       Structure:
@@ -185,9 +183,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
         swagger_schema do
           properties do
             structure(Schema.ref(:Structure), "dataset structure", required: true)
-            left(Schema.ref(:Structure))
-            right(Schema.ref(:Structure))
-            join_type(:string)
+            join_type([:string, :null])
           end
         end,
       Structure:
@@ -529,6 +525,83 @@ defmodule TdDqWeb.SwaggerDefinitions do
         swagger_schema do
           properties do
             data(Schema.ref(:Remediation))
+          end
+        end
+    }
+  end
+
+  def function_swagger_definitions do
+    %{
+      UpdateFunctions:
+        swagger_schema do
+          properties do
+            functions(Schema.ref(:CreateFunctionItems))
+          end
+        end,
+      CreateFunction:
+        swagger_schema do
+          properties do
+            function(Schema.ref(:CreateFunctionItem))
+          end
+        end,
+      CreateFunctionItem:
+        swagger_schema do
+          properties do
+            name(:string, "Name of the function", required: true)
+            return_type(:string, "Return type of the function", required: true)
+            scope(:string, "Optional scope")
+            group(:string, "Optional group")
+            args(Schema.ref(:Arguments))
+          end
+        end,
+      CreateFunctionItems:
+        swagger_schema do
+          title("Functions")
+          description("A collection of functions")
+          type(:array)
+          items(Schema.ref(:CreateFunctionItem))
+        end,
+      Functions:
+        swagger_schema do
+          title("Functions")
+          description("A collection of functions")
+          type(:array)
+          items(Schema.ref(:Function))
+        end,
+      Function:
+        swagger_schema do
+          properties do
+            id(:integer, "Function Id", required: true)
+            name(:string, "Name of the function", required: true)
+            return_type(:string, "Return type of the function", required: true)
+            scope(:string, "Optional scope")
+            group(:string, "Optional group")
+            args(Schema.ref(:Arguments))
+          end
+        end,
+      FunctionResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:Function))
+          end
+        end,
+      FunctionsResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:Functions))
+          end
+        end,
+      Arguments:
+        swagger_schema do
+          type(:array)
+          items(Schema.ref(:Argument))
+        end,
+      Argument:
+        swagger_schema do
+          properties do
+            type(:string, "Argument type", required: true)
+            name(:string, "Optional name")
+            values(:array, "Optional list of allowed values")
           end
         end
     }

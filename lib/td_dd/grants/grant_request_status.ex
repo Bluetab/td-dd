@@ -12,17 +12,28 @@ defmodule TdDd.Grants.GrantRequestStatus do
     field(:status, :string)
     field(:previous_status, :string, virtual: true)
     field(:reason, :string)
+    field(:user_id, :integer)
 
     belongs_to(:grant_request, GrantRequest)
 
     timestamps(type: :utc_datetime_usec, updated_at: false)
   end
 
-  @valid_statuses ["pending", "approved", "rejected", "processing", "processed", "failed"]
+  @valid_statuses [
+    "pending",
+    "approved",
+    "rejected",
+    "processing",
+    "processed",
+    "failed",
+    "cancelled"
+  ]
   @valid_status_changes [
     {"approved", "processing"},
     {"processing", "processed"},
-    {"processing", "failed"}
+    {"processing", "failed"},
+    {"pending", "cancelled"},
+    {"approved", "cancelled"}
   ]
 
   def changeset(%{} = params) do
@@ -32,6 +43,7 @@ defmodule TdDd.Grants.GrantRequestStatus do
   def changeset(%__MODULE__{} = struct, %{} = params) do
     struct
     |> cast(params, [])
+    |> validate_required(:user_id)
     |> validate_inclusion(:status, @valid_statuses)
     |> validate_status()
   end

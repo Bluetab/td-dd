@@ -2,33 +2,27 @@ defmodule TdDdWeb.Router do
   use TdDdWeb, :router
 
   pipeline :api do
-    plug(TdDd.Auth.Pipeline.Unsecure)
-    plug(:accepts, ["json"])
+    plug TdDd.Auth.Pipeline.Unsecure
+    plug :accepts, ["json"]
   end
 
-  pipeline :api_secure do
-    plug(TdDd.Auth.Pipeline.Secure)
-  end
-
-  pipeline :api_authorized do
-    plug(TdDd.Auth.CurrentResource)
-    plug(Guardian.Plug.LoadResource)
+  pipeline :api_auth do
+    plug TdDd.Auth.Pipeline.Secure
   end
 
   scope "/api", TdDdWeb do
-    pipe_through(:api)
+    pipe_through :api
     get("/ping", PingController, :ping)
     post("/echo", EchoController, :echo)
   end
 
   scope "/api" do
-    pipe_through([:api, :api_secure, :api_authorized])
-
-    forward("/v2", Absinthe.Plug, schema: TdDdWeb.Schema)
+    pipe_through [:api, :api_auth]
+    forward "/v2", Absinthe.Plug, schema: TdDdWeb.Schema
   end
 
   scope "/api", TdDdWeb do
-    pipe_through([:api, :api_secure, :api_authorized])
+    pipe_through [:api, :api_auth]
 
     patch("/data_structures/metadata", MetadataController, :upload)
     post("/data_structures/metadata", MetadataController, :upload)
@@ -49,31 +43,46 @@ defmodule TdDdWeb.Router do
       only: [:index]
     )
 
-    post(
-      "/data_structures/bulk_upload_domains",
-      DataStructureController,
-      :bulk_upload_domains
-    )
-
+    post("/data_structures/bulk_upload_domains", DataStructureController, :bulk_upload_domains)
     post("/data_structure_notes/search", StructureNoteController, :search)
     post("/data_structure_notes", StructureNoteController, :create_by_external_id)
 
     resources "/data_structures", DataStructureController, except: [:new, :edit, :show] do
       resources("/versions", DataStructureVersionController, only: [:show])
       resources("/profile_results", ProfileController, only: [:create])
-
-      resources("/tags", DataStructuresTagsController,
-        only: [:delete, :index, :update],
-        name: :tags
-      )
-
       resources("/notes", StructureNoteController, except: [:new, :edit], name: :note)
+      get("/note_suggestions", StructureNoteController, :note_suggestions)
       resources("/grants", GrantController, only: [:create])
+      resources("/structure_links", DataStructureLinkController, only: [:index])
     end
 
-    resources("/data_structure_versions", DataStructureVersionController, only: [:show]) do
-      post("/links", DataStructureLinkController, :create_link)
-    end
+    post("/data_structure_links", DataStructureLinkController, :create)
+    get("/data_structure_links/search_all", DataStructureLinkController, :index_by_external_id)
+
+    get(
+      "/data_structures/structure_links/source/:source_id/target/:target_id",
+      DataStructureLinkController,
+      :show
+    )
+
+    delete(
+      "/data_structures/structure_links/source/:source_id/target/:target_id",
+      DataStructureLinkController,
+      :delete
+    )
+
+    get("/data_structure_links/search_one", DataStructureLinkController, :show_by_external_ids)
+
+    delete(
+      "/data_structure_links/search_delete_one",
+      DataStructureLinkController,
+      :delete_by_external_ids
+    )
+
+    delete("/labels/search_delete_one", LabelController, :delete_by_name)
+    resources("/labels", LabelController)
+
+    resources("/data_structure_versions", DataStructureVersionController, only: [:show])
 
     resources("/profile_execution_groups", ProfileExecutionGroupController, except: [:new, :edit])
 
@@ -98,8 +107,6 @@ defmodule TdDdWeb.Router do
       resources("/events", UnitEventController, only: [:index], name: "event")
     end
 
-    resources("/unit_domains", UnitDomainController, only: [:index])
-
     post("/profiles/search", ProfileController, :search)
     post("/profiles/upload", ProfileController, :upload)
 
@@ -115,6 +122,8 @@ defmodule TdDdWeb.Router do
       resources("/groups", GroupController, only: [:index, :delete])
       resources("/classifiers", ClassifierController, only: [:index, :show, :create, :delete])
     end
+
+    post "/buckets/structures", DataStructureController, :get_bucket_structures
 
     get("/data_structures/search/reindex_all", SearchController, :reindex_all)
 
@@ -151,6 +160,11 @@ defmodule TdDdWeb.Router do
       resources("/approvals", GrantRequestApprovalController, only: [:create], name: "approval")
       resources("/status", GrantRequestStatusController, only: [:create], name: "status")
     end
+
+    post("/grant_requests/search", GrantRequestSearchController, :search)
+    post("/grant_requests_filters/search", GrantRequestFilterController, :search)
+    get("/grant_requests/search/reindex_all", GrantRequestSearchController, :reindex_all)
+    post("/grant_requests/bulk_approval", GrantRequestBulkApprovalController, :create)
 
     resources("/reference_data", ReferenceDataController, except: [:edit, :new]) do
       resources("/csv", ReferenceDataDownloadController, only: [:show], singleton: true)

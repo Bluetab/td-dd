@@ -8,11 +8,14 @@ defmodule TdDd.Grants.RequestsTest do
   alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Grants.GrantRequestStatus
   alias TdDd.Grants.Requests
+  alias TdDd.Search.MockIndexWorker
 
   @template_name "grant_request_test_template"
   @valid_metadata %{"list" => "one", "string" => "bar"}
 
   setup tags do
+    start_supervised(MockIndexWorker)
+
     case Map.get(tags, :role, "user") do
       "admin" ->
         claims = build(:claims, role: "admin")
@@ -32,7 +35,7 @@ defmodule TdDd.Grants.RequestsTest do
 
     test "list_grant_request_groups/0 returns all grant_request_groups" do
       grant_request_group = insert(:grant_request_group)
-      assert Requests.list_grant_request_groups() <|> [grant_request_group]
+      assert Requests.list_grant_request_groups() ||| [grant_request_group]
     end
 
     test "get_grant_request_group!/1 returns the grant_request_group with given id" do
@@ -41,16 +44,19 @@ defmodule TdDd.Grants.RequestsTest do
     end
 
     test "create_grant_request_group/2 with valid data creates a grant_request_group" do
-      %{id: data_structure_id} = insert(:data_structure)
-      %{user_id: user_id} = claims = build(:claims)
+      %{id: domain_id} = CacheHelpers.insert_domain()
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain_id])
+      %{user_id: user_id} = build(:claims)
 
       params = %{
         type: @template_name,
-        requests: [%{data_structure_id: data_structure_id, metadata: @valid_metadata}]
+        requests: [%{data_structure_id: data_structure_id, metadata: @valid_metadata}],
+        user_id: user_id,
+        created_by_id: user_id
       }
 
       assert {:ok, %{group: group, statuses: statuses, requests: {_count, [request_id]}}} =
-               Requests.create_grant_request_group(params, claims)
+               Requests.create_grant_request_group(params)
 
       assert %{
                type: @template_name,
@@ -60,11 +66,39 @@ defmodule TdDd.Grants.RequestsTest do
       assert {1, nil} = statuses
 
       assert %{status: "pending"} = Repo.get_by!(GrantRequestStatus, grant_request_id: request_id)
+
+      assert MockIndexWorker.calls() == [{:reindex_grant_requests, [request_id]}]
+    end
+
+    test "create_grant_request_group/2 with modification_grant" do
+      %{id: domain_id} = CacheHelpers.insert_domain()
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain_id])
+      %{user_id: user_id} = build(:claims)
+      %{id: grant_id} = modification_grant = insert(:grant, data_structure_id: data_structure_id)
+
+      params = %{
+        type: @template_name,
+        requests: [%{data_structure_id: data_structure_id, metadata: @valid_metadata}],
+        user_id: user_id,
+        created_by_id: user_id
+      }
+
+      assert {:ok, %{group: group}} =
+               Requests.create_grant_request_group(params, modification_grant)
+
+      assert %{
+               type: @template_name,
+               user_id: ^user_id,
+               modification_grant_id: ^grant_id
+             } = group
     end
 
     test "creates grant_request_group requests" do
-      %{id: ds_id_1} = insert(:data_structure)
-      %{id: ds_id_2} = insert(:data_structure)
+      %{id: domain_id} = CacheHelpers.insert_domain()
+      domain_ids = [domain_id]
+      %{id: ds_id_1} = insert(:data_structure, domain_ids: domain_ids)
+      %{id: ds_id_2} = insert(:data_structure, domain_ids: domain_ids)
+      %{user_id: user_id} = build(:claims)
 
       requests = [
         %{
@@ -77,11 +111,12 @@ defmodule TdDd.Grants.RequestsTest do
 
       params = %{
         type: @template_name,
-        requests: requests
+        requests: requests,
+        user_id: user_id,
+        created_by_id: user_id
       }
 
-      assert {:ok, %{group: %{requests: requests}}} =
-               Requests.create_grant_request_group(params, build(:claims))
+      assert {:ok, %{group: %{requests: requests}}} = Requests.create_grant_request_group(params)
 
       assert [
                %{
@@ -97,7 +132,7 @@ defmodule TdDd.Grants.RequestsTest do
       invalid_params = %{type: nil}
 
       assert {:error, :group, %Ecto.Changeset{}, _} =
-               Requests.create_grant_request_group(invalid_params, build(:claims))
+               Requests.create_grant_request_group(invalid_params)
     end
 
     test "delete_grant_request_group/1 deletes the grant_request_group" do
@@ -131,6 +166,25 @@ defmodule TdDd.Grants.RequestsTest do
       assert [%{current_status: "latest", status_reason: "reason2"}] = grant_requests
 
       assert {:ok, []} = Requests.list_grant_requests(claims, %{status: "earliest"})
+    end
+
+    test "latest_grant_request_by_data_structures/2 returns latest grant request of each structure for user_id" do
+      %{user_id: user_id} = build(:claims)
+
+      %{data_structure_id: data_structure_id} =
+        insert(:grant_request, group: build(:grant_request_group, user_id: user_id))
+
+      insert(:grant_request, group: build(:grant_request_group, user_id: user_id))
+      insert(:grant_request, data_structure_id: data_structure_id)
+
+      %{id: id} =
+        insert(:grant_request,
+          data_structure_id: data_structure_id,
+          group: build(:grant_request_group, user_id: user_id)
+        )
+
+      assert [%{id: ^id}] =
+               Requests.latest_grant_request_by_data_structures([data_structure_id], user_id)
     end
 
     test "includes domain_id and filters by domain_ids" do
@@ -314,11 +368,13 @@ defmodule TdDd.Grants.RequestsTest do
     end
 
     test "delete_grant_request/1 deletes the grant_request", %{claims: claims} do
-      grant_request = insert(:grant_request)
+      %{id: grant_request_id} = grant_request = insert(:grant_request)
       assert {:ok, %GrantRequest{}} = Requests.delete_grant_request(grant_request)
 
       assert_raise Ecto.NoResultsError, fn ->
         Requests.get_grant_request!(grant_request.id, claims)
+
+        assert MockIndexWorker.calls() == [{:delete_grant_request, [grant_request_id]}]
       end
     end
 
@@ -356,8 +412,6 @@ defmodule TdDd.Grants.RequestsTest do
       domain_id: domain_id,
       request: request
     } do
-      # CacheHelpers.put_session_permissions(claims, %{approve_grant_request: [d1, d2, d3]})
-
       CacheHelpers.put_grant_request_approvers([
         %{user_id: user_id, domain_id: domain_id, role: "approver"}
       ])
@@ -367,6 +421,8 @@ defmodule TdDd.Grants.RequestsTest do
       assert {:ok, %{approval: approval}} = Requests.create_approval(claims, request, params)
       assert %{is_rejection: false, user: user} = approval
       assert %{id: ^user_id, user_name: _} = user
+
+      assert MockIndexWorker.calls() == [{:reindex_grant_requests, [request.id]}]
     end
 
     test "admin can approve a grant request without having the role", %{
@@ -426,9 +482,22 @@ defmodule TdDd.Grants.RequestsTest do
     %{id: domain_id} = CacheHelpers.insert_domain()
     CacheHelpers.insert_user(user_id: user_id)
 
+    %{id: data_structure_id} =
+      data_structure =
+      insert(:data_structure,
+        domain_ids: [domain_id]
+      )
+
+    insert(:data_structure_version, data_structure_id: data_structure_id)
+
     [
       domain_id: domain_id,
-      request: insert(:grant_request, current_status: "pending", domain_ids: [domain_id])
+      request:
+        insert(:grant_request,
+          data_structure: data_structure,
+          current_status: "pending",
+          domain_ids: [domain_id]
+        )
     ]
   end
 end

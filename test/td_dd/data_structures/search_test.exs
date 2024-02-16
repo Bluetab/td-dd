@@ -25,12 +25,12 @@ defmodule TdDd.DataStructures.SearchTest do
         for permission <- ["link_data_structure", "view_data_structure"] do
           ElasticsearchMock
           |> expect(:request, fn
-            _, :post, "/structures/_search", %{size: 0, query: query, aggs: _}, [] ->
+            _, :post, "/structures/_search", %{size: 0, query: query, aggs: _}, _ ->
               assert %{bool: %{filter: %{match_all: %{}}}} = query
               SearchHelpers.aggs_response(@aggregations)
           end)
 
-          assert {:ok, %{"foo" => ["bar", "baz"]}} =
+          assert {:ok, %{"foo" => %{values: ["bar", "baz"]}}} =
                    Search.get_filter_values(claims, permission, %{})
         end
       end
@@ -41,7 +41,7 @@ defmodule TdDd.DataStructures.SearchTest do
       for permission <- ["link_data_structure", "view_data_structure"] do
         ElasticsearchMock
         |> expect(:request, fn
-          _, :post, "/structures/_search", %{size: 0, query: query, aggs: _}, [] ->
+          _, :post, "/structures/_search", %{size: 0, query: query, aggs: _}, _ ->
             assert %{bool: %{filter: %{match_none: %{}}}} = query
             SearchHelpers.aggs_response()
         end)
@@ -58,12 +58,12 @@ defmodule TdDd.DataStructures.SearchTest do
       for permission <- ["link_data_structure", "view_data_structure"] do
         ElasticsearchMock
         |> expect(:request, fn
-          _, :post, "/structures/_search", %{size: 0, query: query, aggs: _}, [] ->
+          _, :post, "/structures/_search", %{size: 0, query: query, aggs: _}, _ ->
             assert %{
                      bool: %{
                        filter: [
-                         %{term: %{"domain_ids" => _}},
-                         %{term: %{"confidential" => false}}
+                         %{term: %{"confidential" => false}},
+                         %{term: %{"domain_ids" => _}}
                        ]
                      }
                    } = query
@@ -71,7 +71,7 @@ defmodule TdDd.DataStructures.SearchTest do
             SearchHelpers.aggs_response(@aggregations)
         end)
 
-        assert {:ok, %{"foo" => ["bar", "baz"]}} =
+        assert {:ok, %{"foo" => %{values: ["bar", "baz"]}}} =
                  Search.get_filter_values(claims, permission, %{})
       end
     end

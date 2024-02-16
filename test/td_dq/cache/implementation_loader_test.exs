@@ -1,6 +1,8 @@
 defmodule TdDd.Cache.ImplementationLoaderTest do
   use TdDd.DataCase
 
+  import TdDd.TestOperators
+
   alias TdCache.ImplementationCache
   alias TdDq.Cache.ImplementationLoader
 
@@ -29,10 +31,6 @@ defmodule TdDd.Cache.ImplementationLoaderTest do
           result: 100.00
         )
 
-      on_exit(fn ->
-        Enum.each([id], &ImplementationCache.delete/1)
-      end)
-
       assert %{ok: 1} =
                [id]
                |> ImplementationLoader.cache_implementations()
@@ -59,14 +57,11 @@ defmodule TdDd.Cache.ImplementationLoaderTest do
 
     @tag sandbox: :shared
     test "encodes and puts cache entries with rule" do
-      %{id: id, rule: %{id: rule_id, name: rule_name}} = insert(:implementation)
-
-      on_exit(fn ->
-        Enum.each([id], &ImplementationCache.delete/1)
-      end)
+      %{id: id, implementation_ref: implementation_ref, rule: %{id: rule_id, name: rule_name}} =
+        insert(:implementation)
 
       assert %{ok: 1} =
-               [id]
+               [implementation_ref]
                |> ImplementationLoader.cache_implementations()
                |> Enum.frequencies_by(&elem(&1, 0))
 
@@ -77,6 +72,29 @@ defmodule TdDd.Cache.ImplementationLoaderTest do
                   name: ^rule_name
                 }
               }} = ImplementationCache.get(id)
+    end
+
+    @tag sandbox: :shared
+    test "add relations between implementation_id and implementation_ref" do
+      %{id: impl_id1} = impl1 = insert(:implementation)
+      %{id: impl_id2} = impl2 = insert(:implementation)
+      %{id: impl_id3} = impl3 = insert(:implementation, implementation_ref: impl_id2)
+      %{id: impl_id4} = impl4 = insert(:implementation)
+      impl5 = insert(:implementation, implementation_ref: impl_id4)
+
+      [impl1, impl2, impl3, impl4, impl5]
+      |> Enum.map(&CacheHelpers.put_implementation(&1))
+
+      [impl_id1, impl_id3, impl_id4]
+      |> Enum.map(&CacheHelpers.insert_link(&1, "implementation", "foo"))
+
+      assert 3 == ImplementationLoader.do_migration_implementation_id_to_implementation_ref()
+
+      result =
+        ImplementationCache.get_relation_impl_id_and_impl_ref()
+        |> Enum.map(&String.to_integer(&1))
+
+      assert [impl_id1, impl_id1, impl_id3, impl_id2, impl_id4, impl_id4] ||| result
     end
   end
 end

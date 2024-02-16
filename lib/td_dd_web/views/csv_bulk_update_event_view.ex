@@ -13,7 +13,8 @@ defmodule TdDdWeb.CsvBulkUpdateEventView do
       :status,
       :task_reference,
       :message,
-      :inserted_at
+      :inserted_at,
+      :filename
     ])
   end
 end

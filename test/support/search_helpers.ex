@@ -27,12 +27,16 @@ defmodule SearchHelpers do
 
   def hits_response(hits, total \\ nil) when is_list(hits) do
     hits = Enum.map(hits, &encode/1)
-    total = total || Enum.count(hits)
+    total = total || %{"relation" => "eq", "value" => Enum.count(hits)}
     {:ok, %{"hits" => %{"hits" => hits, "total" => total}}}
   end
 
   def aggs_response(aggs \\ %{}, total \\ 0) do
-    {:ok, %{"aggregations" => aggs, "hits" => %{"hits" => [], "total" => total}}}
+    {:ok,
+     %{
+       "aggregations" => aggs,
+       "hits" => %{"hits" => [], "total" => %{"relation" => "eq", "value" => total}}
+     }}
   end
 
   def scroll_response(hits, total \\ nil) do
@@ -51,7 +55,19 @@ defmodule SearchHelpers do
       |> Jason.encode!()
       |> Jason.decode!()
 
-    %{"id" => id, "_source" => source}
+    maybe_add_sort(%{"id" => id, "_source" => source}, doc)
+  end
+
+  defp maybe_add_sort(encoded, %DataStructureVersion{
+         name: name,
+         data_structure_id: data_structure_id
+       }) do
+    score = data_structure_id
+    Map.put(encoded, "sort", [score, name, data_structure_id])
+  end
+
+  defp maybe_add_sort(encoded, _doc) do
+    encoded
   end
 
   defp maybe_enrich(%DataStructureVersion{id: id}) do
@@ -72,7 +88,7 @@ defmodule SearchHelpers do
   end
 
   defp maybe_enrich(%Implementation{} = implementation) do
-    Repo.preload(implementation, :rule)
+    Repo.preload(implementation, [:rule, :implementation_ref_struct])
   end
 
   defp maybe_enrich(other), do: other

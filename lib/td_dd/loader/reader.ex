@@ -48,7 +48,7 @@ defmodule TdDd.Loader.Reader do
     Enum.map(data_structures, fn data_structure ->
       {%{}, @structure_import_schema}
       |> Changeset.cast(data_structure, Map.keys(@structure_import_schema))
-      |> Changeset.put_change(:domain_ids, [domain_id])
+      |> Changeset.put_change(:domain_ids, List.wrap(domain_id))
       |> Changeset.put_change(:system_id, system.id)
       |> Changeset.validate_required(@structure_import_required)
       |> put_default_metadata()

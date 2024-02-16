@@ -74,5 +74,53 @@ defmodule Truedat.Search.QueryTest do
                }
              }
     end
+
+    test "returns a query with must_not filters" do
+      filters = %{
+        must_not: [%{term: %{"foo" => "bar"}}]
+      }
+
+      params = %{}
+
+      assert Query.build_query(filters, params) == %{
+               bool: %{
+                 must_not: %{term: %{"foo" => "bar"}}
+               }
+             }
+    end
+
+    test "returns a query with must_not params" do
+      filters = %{}
+
+      params = %{
+        "filters" => %{"must_not" => %{"foo" => ["bar"]}}
+      }
+
+      assert Query.build_query(filters, params) == %{
+               bool: %{
+                 filter: %{},
+                 must_not: %{term: %{"foo" => "bar"}}
+               }
+             }
+    end
+
+    test "returns a query with must_not params and filter" do
+      filters = %{
+        must_not: [%{term: %{"foo" => "bar"}}]
+      }
+
+      params = %{
+        "filters" => %{"must_not" => %{"baz" => ["xyz"]}}
+      }
+
+      assert Query.build_query(filters, params) == %{
+               bool: %{
+                 must_not: [
+                   %{term: %{"baz" => "xyz"}},
+                   %{term: %{"foo" => "bar"}}
+                 ]
+               }
+             }
+    end
   end
 end

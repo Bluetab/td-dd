@@ -2,8 +2,6 @@ defmodule TdDqWeb.QualityEventController do
   # use PhoenixSwagger
   use TdDqWeb, :controller
 
-  import Canada, only: [can?: 2]
-
   alias TdDq.Events.QualityEvent
   alias TdDq.Events.QualityEvents
   alias TdDq.Executions
@@ -26,7 +24,7 @@ defmodule TdDqWeb.QualityEventController do
     %{"execution_id" => id, "quality_event" => event} = params
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(claims, create(QualityEvent))},
+    with :ok <- Bodyguard.permit(Executions, :create_event, claims),
          %Execution{id: id} <- Executions.get(id),
          {:ok, %QualityEvent{} = event} <-
            QualityEvents.create_event(Map.put(event, "execution_id", id)) do

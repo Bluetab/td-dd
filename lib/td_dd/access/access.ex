@@ -3,23 +3,21 @@ defmodule TdDd.Access do
   Ecto Schema module for Access
   """
   use Ecto.Schema
-  @foreign_key_type :string
 
   import Ecto.Changeset
+
   alias TdCache.UserCache
   alias TdDd.DataStructures.DataStructure
+  alias TdDfLib.Validation
 
   schema "accesses" do
-    belongs_to(:data_structure, DataStructure,
-      foreign_key: :data_structure_external_id,
-      type: :string,
-      references: :external_id
-    )
+    belongs_to :data_structure, DataStructure
 
-    field(:source_user_name, :string)
-    field(:user_id, :integer)
-    field(:details, :map)
-    field(:accessed_at, :utc_datetime)
+    field :source_user_name, :string
+    field :user_id, :integer
+    field :details, :map
+    field :accessed_at, :utc_datetime
+    field :data_structure_external_id, :string, virtual: true
 
     timestamps(type: :utc_datetime_usec)
   end
@@ -31,6 +29,7 @@ defmodule TdDd.Access do
   def changeset(%__MODULE__{} = access, %{} = params) do
     access
     |> cast(params, [
+      :data_structure_id,
       :data_structure_external_id,
       :source_user_name,
       :details,
@@ -38,18 +37,16 @@ defmodule TdDd.Access do
       :inserted_at,
       :updated_at
     ])
-    |> validate_user_id(params)
-    |> validate_required([:data_structure_external_id, :source_user_name, :accessed_at])
-    |> foreign_key_constraint(:data_structure_external_id)
+    |> maybe_put_user_id()
+    |> validate_required([:data_structure_id, :source_user_name, :accessed_at])
+    |> validate_change(:details, &Validation.validate_safe/2)
+    |> foreign_key_constraint(:data_structure_id)
   end
 
-  defp validate_user_id(changeset, %{} = params) do
+  defp maybe_put_user_id(%{params: params} = changeset) do
     case get_user_id(params) do
-      {:ok, user_id} ->
-        put_change(changeset, :user_id, user_id)
-
-      _ ->
-        changeset
+      {:ok, user_id} -> put_change(changeset, :user_id, user_id)
+      _ -> changeset
     end
   end
 

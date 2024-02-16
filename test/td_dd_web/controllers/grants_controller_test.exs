@@ -7,7 +7,7 @@ defmodule TdDdWeb.GrantsControllerTest do
   @user_id 123_456
   @create_attrs %{
     detail: %{},
-    end_date: Date.utc_today(),
+    end_date: Date.utc_today() |> Date.add(1),
     start_date: "2010-04-17",
     user_id: @user_id,
     source_user_name: "source_user_name_#{@user_id}"
@@ -146,9 +146,7 @@ defmodule TdDdWeb.GrantsControllerTest do
         |> Map.put(:data_structure_external_id, data_structure_external_id)
 
       assert conn
-             |> patch(Routes.grants_path(conn, :update),
-               grants: [create_attr]
-             )
+             |> patch(Routes.grants_path(conn, :update), grants: [create_attr])
              |> json_response(:forbidden)
     end
   end

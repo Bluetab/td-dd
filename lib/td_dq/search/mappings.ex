@@ -6,8 +6,11 @@ defmodule TdDq.Search.Mappings do
   alias TdDd.Search.Cluster
   alias TdDfLib.Format
 
-  @raw %{raw: %{type: "keyword"}}
-  @raw_sort %{raw: %{type: "keyword"}, sort: %{type: "keyword", normalizer: "sortable"}}
+  @raw %{raw: %{type: "keyword", null_value: ""}}
+  @raw_sort %{
+    raw: %{type: "keyword", null_value: ""},
+    sort: %{type: "keyword", normalizer: "sortable"}
+  }
 
   def get_rule_mappings do
     content_mappings = %{properties: get_dynamic_mappings("dq")}
@@ -24,7 +27,11 @@ defmodule TdDq.Search.Mappings do
       },
       domain_ids: %{type: "long"},
       version: %{type: "long"},
-      name: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
+      name: %{
+        type: "text",
+        boost: 2.0,
+        fields: %{raw: %{type: "keyword", normalizer: "sortable"}}
+      },
       active: %{type: "boolean", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       description: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       deleted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
@@ -47,18 +54,14 @@ defmodule TdDq.Search.Mappings do
       updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       df_name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
-      type_params: %{
-        properties: %{
-          name: %{fields: @raw, type: "text"}
-        }
-      },
+      df_label: %{type: "text", fields: %{raw: %{type: "keyword"}}},
       _confidential: %{type: "boolean"},
       df_content: content_mappings
     }
 
     settings = Cluster.setting(:rules)
 
-    %{mappings: %{_doc: %{properties: properties}}, settings: settings}
+    %{mappings: %{properties: properties}, settings: settings}
   end
 
   def get_implementation_mappings do
@@ -72,11 +75,22 @@ defmodule TdDq.Search.Mappings do
       structure_ids: %{type: "long", null_value: -1},
       structure_aliases: %{type: "text", fields: @raw},
       structure_names: %{type: "text", fields: @raw},
+      linked_structures_ids: %{type: "long", null_value: -1},
+      structure_links: %{
+        type: "nested",
+        properties: %{
+          link_type: %{type: "text"},
+          structure: %{
+            type: "nested",
+            properties: get_linked_structure_mapping()
+          }
+        }
+      },
       rule: %{
         properties: %{
           df_name: %{type: "text", fields: @raw},
           version: %{type: "long"},
-          name: %{type: "text", fields: @raw_sort},
+          name: %{type: "text", boost: 1.5, fields: @raw_sort},
           active: %{type: "boolean", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
           df_content: %{properties: get_dynamic_mappings("dq")}
         }
@@ -97,15 +111,19 @@ defmodule TdDq.Search.Mappings do
           }
         }
       },
+      concepts: %{type: "text", fields: @raw_sort},
       updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-      implementation_key: %{type: "text", fields: @raw},
+      implementation_key: %{type: "text", boost: 2.0, fields: @raw},
       implementation_type: %{type: "text", fields: @raw_sort},
       execution_result_info: %{
         properties: %{
-          result: %{type: "float"},
+          result: %{type: "text", fields: @raw_sort},
           errors: %{type: "long"},
           records: %{type: "long"},
+          minimum: %{type: "text"},
+          goal: %{type: "text"},
+          details: %{enabled: false},
           date: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
           result_text: %{
             type: "text",
@@ -138,9 +156,21 @@ defmodule TdDq.Search.Mappings do
         }
       },
       population: get_condition_mappings(),
-      populations: %{type: "nested", properties: %{population: get_condition_mappings()}},
+      populations: %{
+        type: "nested",
+        properties: %{
+          conditions: get_condition_mappings()
+        }
+      },
       validations:
         get_condition_mappings([:operator, :structure, :value, :population, :modifier]),
+      validation: %{
+        type: "nested",
+        properties: %{
+          conditions:
+            get_condition_mappings([:operator, :structure, :value, :population, :modifier])
+        }
+      },
       segments: %{properties: get_structure_mappings()},
       df_name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
       df_content: content_mappings,
@@ -154,7 +184,7 @@ defmodule TdDq.Search.Mappings do
 
     settings = Cluster.setting(:implementations)
 
-    %{mappings: %{_doc: %{properties: properties}}, settings: settings}
+    %{mappings: %{properties: properties}, settings: settings}
   end
 
   def get_dynamic_mappings(scope, type \\ nil) do
@@ -168,13 +198,23 @@ defmodule TdDq.Search.Mappings do
     content
     |> Format.flatten_content_fields()
     |> Enum.filter(&(Map.get(&1, "type") == type))
-    |> Enum.map(&field_mapping/1)
+    |> Enum.map(fn field ->
+      field
+      |> field_mapping
+      |> maybe_boost(field)
+      |> maybe_disable_search(field)
+    end)
   end
 
   defp get_mappings(%{content: content}, _scope, _type) do
     content
     |> Format.flatten_content_fields()
-    |> Enum.map(&field_mapping/1)
+    |> Enum.map(fn field ->
+      field
+      |> field_mapping
+      |> maybe_boost(field)
+      |> maybe_disable_search(field)
+    end)
   end
 
   defp field_mapping(%{"name" => name, "type" => "table"}) do
@@ -201,7 +241,11 @@ defmodule TdDq.Search.Mappings do
     {name, %{type: "keyword"}}
   end
 
-  defp field_mapping(%{"name" => name, "type" => type}) when type in ["domain", "system"] do
+  defp field_mapping(%{"name" => name, "type" => "domain"}) do
+    {name, %{type: "long", null_value: 0}}
+  end
+
+  defp field_mapping(%{"name" => name, "type" => "system"}) do
     {name,
      %{
        type: "nested",
@@ -221,6 +265,21 @@ defmodule TdDq.Search.Mappings do
     {name, mapping_type("string")}
   end
 
+  defp maybe_boost(field_tuple, %{"boost" => boost}) when boost in ["", "1"], do: field_tuple
+
+  defp maybe_boost({name, field_value}, %{"boost" => boost}) do
+    {boost_float, _} = Float.parse(boost)
+    {name, Map.put(field_value, :boost, boost_float)}
+  end
+
+  defp maybe_boost(field_tuple, _), do: field_tuple
+
+  defp maybe_disable_search({name, field_value}, %{"searchable" => false}) do
+    {name, Map.drop(field_value, [:fields])}
+  end
+
+  defp maybe_disable_search(field_tuple, _), do: field_tuple
+
   defp mapping_type(values) when is_map(values) do
     %{type: "text", fields: @raw}
   end
@@ -237,12 +296,24 @@ defmodule TdDq.Search.Mappings do
 
   defp get_structure_mappings do
     %{
+      alias: %{type: "text"},
       external_id: %{type: "text"},
       id: %{type: "long"},
       name: %{type: "text"},
       system: %{properties: get_system_mappings()},
       type: %{type: "text", fields: @raw},
       metadata: %{enabled: false}
+    }
+  end
+
+  defp get_linked_structure_mapping do
+    %{
+      domain_ids: %{type: "long"},
+      external_id: %{type: "text"},
+      id: %{type: "long"},
+      name: %{type: "text"},
+      type: %{type: "text", fields: @raw},
+      path: %{type: "text"}
     }
   end
 
@@ -266,7 +337,7 @@ defmodule TdDq.Search.Mappings do
         modifier: %{
           properties: %{
             name: %{type: "text", fields: @raw},
-            params: %{type: "object"}
+            params: %{type: "object", enabled: false}
           }
         },
         value_modifier: %{

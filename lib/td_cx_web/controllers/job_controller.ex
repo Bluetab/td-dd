@@ -2,14 +2,11 @@ defmodule TdCxWeb.JobController do
   use TdCxWeb, :controller
   use PhoenixSwagger
 
-  import Canada, only: [can?: 2]
-
   alias TdCx.Jobs
   alias TdCx.Jobs.Job
   alias TdCx.Jobs.Search
   alias TdCx.Sources
   alias TdCx.Sources.Source
-  alias TdCxWeb.ErrorView
   alias TdCxWeb.SwaggerDefinitions
 
   action_fallback(TdCxWeb.FallbackController)
@@ -35,7 +32,7 @@ defmodule TdCxWeb.JobController do
     claims = conn.assigns[:current_resource]
     params = %{"filters" => %{"source.external_id" => source_id}}
 
-    with {:can, true} <- {:can, can?(claims, index(Job))},
+    with :ok <- Bodyguard.permit(Jobs, :search, claims),
          %{results: results} <- Search.search_jobs(params, claims, 0, 10_000) do
       render(conn, "search.json", jobs: results)
     end
@@ -58,31 +55,13 @@ defmodule TdCxWeb.JobController do
   def create(conn, %{"source_external_id" => source_external_id} = params) do
     claims = conn.assigns[:current_resource]
 
-    with true <- can?(claims, create(Job)),
-         %Source{id: id} <- Sources.get_source!(source_external_id),
+    with %Source{id: id} = source <- Sources.get_source!(source_external_id),
+         :ok <- Bodyguard.permit(Jobs, :create, claims, source: source),
          {:ok, %Job{} = job} <- params |> Map.put("source_id", id) |> Jobs.create_job() do
       conn
       |> put_status(:created)
       |> render("show.json", job: job)
-    else
-      false ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
-
-      {:error, changeset} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(TdCxWeb.ChangesetView)
-        |> render("error.json", changeset: changeset)
     end
-  rescue
-    _e in Ecto.NoResultsError ->
-      conn
-      |> put_status(:not_found)
-      |> put_view(ErrorView)
-      |> render("404.json")
   end
 
   swagger_path :show do
@@ -101,22 +80,10 @@ defmodule TdCxWeb.JobController do
   def show(conn, %{"external_id" => external_id}) do
     claims = conn.assigns[:current_resource]
 
-    with true <- can?(claims, show(Job)),
-         %Job{} = job <- Jobs.get_job!(external_id, [:events, :source]) do
+    with %Job{} = job <- Jobs.get_job!(external_id, [:events, :source]),
+         :ok <- Bodyguard.permit(Jobs, :view, claims, job) do
       render(conn, "show.json", job: job)
-    else
-      false ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
     end
-  rescue
-    _e in Ecto.NoResultsError ->
-      conn
-      |> put_status(:not_found)
-      |> put_view(ErrorView)
-      |> render("404.json")
   end
 
   swagger_path :search do

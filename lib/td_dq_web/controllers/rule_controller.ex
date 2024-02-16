@@ -1,8 +1,5 @@
 defmodule TdDqWeb.RuleController do
-  use TdHypermedia, :controller
   use TdDqWeb, :controller
-
-  import Canada, only: [can?: 2]
 
   alias TdDq.Rules
   alias TdDq.Rules.Rule
@@ -23,13 +20,13 @@ defmodule TdDqWeb.RuleController do
 
   def index(conn, params) do
     claims = conn.assigns[:current_resource]
-    manage_permission = can?(claims, manage(Rule))
+    manage_permission = Bodyguard.permit?(TdDq.Rules, :manage_quality_rule, claims)
     user_permissions = %{manage_quality_rules: manage_permission}
 
     rules =
       params
       |> Rules.list_rules(enrich: [:domain])
-      |> Enum.filter(&can?(claims, show(&1)))
+      |> Enum.filter(&Bodyguard.permit?(Rules, :view, claims, &1))
 
     render(conn, "index.json",
       rules: rules,
@@ -53,7 +50,7 @@ defmodule TdDqWeb.RuleController do
     rules =
       params
       |> Rules.list_rules(enrich: [:domain])
-      |> Enum.filter(&can?(claims, show(&1)))
+      |> Enum.filter(&Bodyguard.permit?(Rules, :view, claims, &1))
 
     conn
     |> assign_actions(claims, params)
@@ -114,37 +111,13 @@ defmodule TdDqWeb.RuleController do
   def create(conn, %{"rule" => params}) do
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, is_allowed_domain(params)},
+    with :ok <- Bodyguard.permit(Rules, :upsert, claims, params),
          {:ok, %{rule: rule}} <- Rules.create_rule(params, claims) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", Routes.rule_path(conn, :show, rule))
       |> render("show.json", rule: rule, user_permissions: get_user_permissions(claims, rule))
     end
-  end
-
-  defp is_allowed_domain(%{"domain_id" => domain_id, "business_concept_id" => business_concept_id})
-       when not is_nil(domain_id) and not is_nil(business_concept_id) do
-    case TdCache.ConceptCache.get(business_concept_id) do
-      {:ok, %{shared_to_ids: shared_to_ids, domain: %{id: bussines_domain_id}}} ->
-        [bussines_domain_id | shared_to_ids]
-        |> Enum.uniq()
-        |> Enum.member?(domain_id)
-
-      {:ok, nil} ->
-        true
-    end
-  end
-
-  defp is_allowed_domain(%{}), do: true
-
-  defp get_user_permissions(claims, %Rule{} = rule) do
-    %{
-      manage_quality_rules: can?(claims, manage(Rule)),
-      manage_quality_rule_implementations: can?(claims, create_implementation(rule)),
-      manage_raw_quality_rule_implementations: can?(claims, create_raw_implementation(rule)),
-      manage_segments: can?(claims, manage_segments_action(rule))
-    }
   end
 
   swagger_path :show do
@@ -163,14 +136,8 @@ defmodule TdDqWeb.RuleController do
     claims = conn.assigns[:current_resource]
     rule = Rules.get_rule!(id, enrich: [:domain])
 
-    with {:can, true} <- {:can, can?(claims, show(rule))} do
-      render(
-        conn,
-        "show.json",
-        hypermedia: hypermedia("rule", conn, rule),
-        rule: rule,
-        user_permissions: get_user_permissions(claims, rule)
-      )
+    with :ok <- Bodyguard.permit(Rules, :view, claims, rule) do
+      render(conn, "show.json", rule: rule, user_permissions: get_user_permissions(claims, rule))
     end
   end
 
@@ -191,7 +158,7 @@ defmodule TdDqWeb.RuleController do
     claims = conn.assigns[:current_resource]
     rule = Rules.get_rule!(id)
 
-    with {:can, true} <- {:can, is_allowed_domain(params)},
+    with :ok <- Bodyguard.permit(Rules, :upsert, claims, params),
          {:ok, %{rule: rule}} <- Rules.update_rule(rule, params, claims) do
       render(conn, "show.json", rule: rule, user_permissions: get_user_permissions(claims, rule))
     end
@@ -216,5 +183,9 @@ defmodule TdDqWeb.RuleController do
     with {:ok, _res} <- Rules.delete_rule(rule, claims) do
       send_resp(conn, :no_content, "")
     end
+  end
+
+  defp get_user_permissions(claims, %Rule{}) do
+    %{manage_quality_rules: Bodyguard.permit?(TdDq.Rules, :manage_quality_rule, claims)}
   end
 end

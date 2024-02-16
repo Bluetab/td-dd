@@ -4,6 +4,8 @@ defmodule TdDq.RemediationTest do
   alias TdDd.Repo
   alias TdDq.Remediations.Remediation
 
+  @unsafe "javascript:alert(document)"
+
   setup do
     rule_result = insert(:rule_result)
     %{rule_result: rule_result}
@@ -35,9 +37,7 @@ defmodule TdDq.RemediationTest do
               ]} = errors[:rule_result_id]
     end
 
-    test "can be inserted if valid", %{
-      rule_result: %{id: rule_result_id}
-    } do
+    test "can be inserted if valid", %{rule_result: %{id: rule_result_id}} do
       params = %{
         "df_name" => "template_name",
         "df_content" => %{},
@@ -55,9 +55,7 @@ defmodule TdDq.RemediationTest do
              } = remediation
     end
 
-    test "validates df_content is valid", %{
-      rule_result: %{id: rule_result_id}
-    } do
+    test "validates df_content is valid", %{rule_result: %{id: rule_result_id}} do
       %{name: template_name} = CacheHelpers.insert_template(scope: "remediation")
 
       invalid_content = %{"list" => "foo", "string" => "whatever"}
@@ -69,7 +67,22 @@ defmodule TdDq.RemediationTest do
       }
 
       assert %{valid?: false, errors: errors} = Remediation.changeset(params)
-      assert {"invalid content", _detail} = errors[:df_content]
+      assert {"list: is invalid", _detail} = errors[:df_content]
+    end
+
+    test "validates df_content is safe", %{rule_result: %{id: rule_result_id}} do
+      %{name: template_name} = CacheHelpers.insert_template(scope: "remediation")
+
+      unsafe_content = %{"list" => "foo", "string" => @unsafe}
+
+      params = %{
+        "df_name" => template_name,
+        "df_content" => unsafe_content,
+        "rule_result_id" => rule_result_id
+      }
+
+      assert %{valid?: false, errors: errors} = Remediation.changeset(params)
+      assert {"list: is invalid", _detail} = errors[:df_content]
     end
   end
 end

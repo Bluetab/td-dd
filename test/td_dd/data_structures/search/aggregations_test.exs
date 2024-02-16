@@ -3,6 +3,8 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
 
   alias TdDd.DataStructures.Search.Aggregations
 
+  @missing_term_name Aggregations.missing_term_name()
+
   @static_fields [
     "class.raw",
     "confidential.raw",
@@ -50,19 +52,17 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
 
       assert dynamic_aggs == %{
                "my_domain" => %{
-                 aggs: %{
-                   distinct_search: %{terms: %{field: "latest_note.my_domain.external_id.raw"}}
-                 },
-                 nested: %{path: "latest_note.my_domain"}
+                 meta: %{type: "domain"},
+                 terms: %{field: "note.my_domain", size: 50}
                },
-               "my_list" => %{terms: %{field: "latest_note.my_list.raw"}},
+               "my_list" => %{terms: %{field: "note.my_list.raw"}},
                "my_system" => %{
                  aggs: %{
-                   distinct_search: %{terms: %{field: "latest_note.my_system.external_id.raw"}}
+                   distinct_search: %{terms: %{field: "note.my_system.external_id.raw"}}
                  },
-                 nested: %{path: "latest_note.my_system"}
+                 nested: %{path: "note.my_system"}
                },
-               "my_user" => %{terms: %{field: "latest_note.my_user.raw", size: 50}}
+               "my_user" => %{terms: %{field: "note.my_user.raw", size: 50}}
              }
     end
 
@@ -75,12 +75,25 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
       assert_maps_equal(
         aggs,
         %{
-          "metadata.bar" => %{terms: %{field: "_filters.bar"}},
-          "metadata.baz" => %{terms: %{field: "_filters.baz"}},
-          "metadata.foo" => %{terms: %{field: "_filters.foo"}}
+          "metadata.bar" => %{terms: %{field: "_filters.bar", missing: "_missing"}},
+          "metadata.baz" => %{terms: %{field: "_filters.baz", missing: "_missing"}},
+          "metadata.foo" => %{terms: %{field: "_filters.foo", missing: "_missing"}}
         },
         ["metadata.foo", "metadata.bar", "metadata.baz"]
       )
+    end
+
+    test "includes custom catalog view configs field aggregations" do
+      insert(:data_structure_type, filters: ["host"])
+      insert(:catalog_view_config, field_type: "metadata", field_name: "host")
+      insert(:catalog_view_config, field_type: "note", field_name: "layer")
+
+      %{
+        "metadata.host" => %{
+          terms: %{field: "_filters.host", missing: @missing_term_name}
+        },
+        "note.layer" => %{terms: %{field: "note.layer.raw", missing: @missing_term_name}}
+      } = Aggregations.aggregations()
     end
   end
 end

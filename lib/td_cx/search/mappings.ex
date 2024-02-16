@@ -27,6 +27,6 @@ defmodule TdCx.Search.Mappings do
 
     settings = Cluster.setting(:jobs)
 
-    %{mappings: %{_doc: %{properties: mapping_type}}, settings: settings}
+    %{mappings: %{properties: mapping_type}, settings: settings}
   end
 end

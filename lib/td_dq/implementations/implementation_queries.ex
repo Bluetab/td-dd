@@ -13,6 +13,7 @@ defmodule TdDq.Implementations.ImplementationQueries do
 
     Implementation
     |> where(implementation_type: "default")
+    |> where(status: :published)
     |> join(:inner, [i], s in assoc(i, :dataset_sources))
     |> source_external_ids()
     |> union(^raw_sources_query)
@@ -20,9 +21,7 @@ defmodule TdDq.Implementations.ImplementationQueries do
     |> where(
       [s],
       fragment(
-        "(? <@ ? and ? @> ?)",
-        ^external_ids,
-        s.external_ids,
+        "(? && ?)",
         ^external_ids,
         s.external_ids
       )
@@ -33,8 +32,15 @@ defmodule TdDq.Implementations.ImplementationQueries do
   def raw_implementation_sources_query do
     Implementation
     |> where(implementation_type: "raw")
+    |> where(status: :published)
     |> join(:inner, [i], s in Source, on: s.id == type(i.raw_content["source_id"], :integer))
     |> source_external_ids()
+  end
+
+  def implementation_ids_by_ref_query(ref) do
+    Implementation
+    |> where(implementation_ref: ^ref)
+    |> select([i], i.id)
   end
 
   defp source_external_ids(q) do

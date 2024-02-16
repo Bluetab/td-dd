@@ -2,9 +2,6 @@ defmodule TdDdWeb.DataStructureTypeController do
   use TdDdWeb, :controller
   use PhoenixSwagger
 
-  import Canada, only: [can?: 2]
-
-  alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureTypes
   alias TdDdWeb.SwaggerDefinitions
 
@@ -26,7 +23,7 @@ defmodule TdDdWeb.DataStructureTypeController do
   def index(conn, _params) do
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(claims, index(%DataStructureType{}))} do
+    with :ok <- Bodyguard.permit(DataStructureTypes, :index, claims) do
       data_structure_types =
         DataStructureTypes.list_data_structure_types(preload: :metadata_fields)
 
@@ -51,7 +48,7 @@ defmodule TdDdWeb.DataStructureTypeController do
     claims = conn.assigns[:current_resource]
 
     with data_structure_type <- DataStructureTypes.get!(id),
-         {:can, true} <- {:can, can?(claims, show(data_structure_type))} do
+         :ok <- Bodyguard.permit(DataStructureTypes, :view, claims, data_structure_type) do
       render(conn, "show.json", data_structure_type: data_structure_type)
     end
   end
@@ -79,7 +76,7 @@ defmodule TdDdWeb.DataStructureTypeController do
     claims = conn.assigns[:current_resource]
     data_structure_type = DataStructureTypes.get!(id)
 
-    with {:can, true} <- {:can, can?(claims, update(data_structure_type))},
+    with :ok <- Bodyguard.permit(DataStructureTypes, :update, claims, data_structure_type),
          {:ok, data_structure_type} <-
            DataStructureTypes.update_data_structure_type(data_structure_type, params) do
       render(conn, "show.json", data_structure_type: data_structure_type)

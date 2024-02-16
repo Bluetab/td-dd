@@ -3,8 +3,8 @@ defmodule TdDd.Grants.Search do
   The Grants Search context
   """
 
-  alias TdDd.Auth.Claims
   alias TdDd.Grants.Search.Query
+  alias Truedat.Auth.Claims
   alias Truedat.Search
   alias Truedat.Search.Permissions
 
@@ -15,6 +15,7 @@ defmodule TdDd.Grants.Search do
   @aggs %{
     "taxonomy" => %{terms: %{field: "data_structure_version.domain_ids", size: 500}},
     "type.raw" => %{terms: %{field: "data_structure_version.type.raw", size: 50}},
+    "pending_removal.raw" => %{terms: %{field: "pending_removal.raw"}},
     "system_external_id" => %{
       terms: %{field: "data_structure_version.system.external_id.raw", size: 50}
     }
@@ -66,6 +67,10 @@ defmodule TdDd.Grants.Search do
     params
     |> put_filter("user_id", user_id)
     |> search(claims, page, size)
+  end
+
+  defp put_filter(%{"must" => _} = params, field, condition) do
+    Map.update(params, "must", %{field => condition}, &Map.put_new(&1, field, condition))
   end
 
   defp put_filter(params, field, condition) do

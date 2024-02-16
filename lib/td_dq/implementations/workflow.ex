@@ -6,13 +6,18 @@ defmodule TdDq.Implementations.Workflow do
   import Ecto.Query
 
   alias Ecto.Multi
-  alias TdDd.Auth.Claims, as: TdDdClaims
   alias TdDd.Repo
+  alias TdDq.Cache.ImplementationLoader
   alias TdDq.Implementations.Implementation
+  alias TdDq.Rules.Audit
 
   @index_worker Application.compile_env(:td_dd, :dq_index_worker)
 
-  def submit_implementation(%Implementation{} = implementation, %TdDdClaims{} = claims) do
+  @status_order "published, pending_approval, draft, rejected, deprecated, versioned"
+
+  def get_workflow_status_order, do: @status_order
+
+  def submit_implementation(%Implementation{} = implementation, %{} = claims) do
     update_implementation_status(
       implementation,
       "pending_approval",
@@ -21,15 +26,19 @@ defmodule TdDq.Implementations.Workflow do
     )
   end
 
-  def reject_implementation(%Implementation{} = implementation, %TdDdClaims{} = claims) do
+  def reject_implementation(%Implementation{} = implementation, %{} = claims) do
     update_implementation_status(implementation, "rejected", :implementation_rejected, claims)
   end
 
-  def publish_implementation(%Implementation{} = implementation, %TdDdClaims{} = claims) do
+  def publish_implementation(%Implementation{} = implementation, %{} = claims) do
     update_implementation_status(implementation, "published", :implementation_published, claims)
   end
 
-  def deprecate_implementation(%Implementation{} = implementation, %TdDdClaims{} = claims) do
+  def restore_implementation(%Implementation{} = implementation, %{} = claims) do
+    update_implementation_status(implementation, "restored", :implementation_published, claims)
+  end
+
+  def deprecate_implementation(%Implementation{} = implementation, %{} = claims) do
     update_implementation_status(implementation, "deprecated", :implementation_deprecated, claims)
   end
 
@@ -37,15 +46,15 @@ defmodule TdDq.Implementations.Workflow do
          implementation,
          status,
          _audit_event,
-         _claims
+         %{user_id: user_id}
        ) do
     changeset = status_changeset(implementation, status)
 
     Multi.new()
-    |> maybe_version_existing(implementation, status)
+    |> maybe_version_existing(changeset, user_id)
     |> Multi.update(:implementation, changeset)
-    ### TODO: Audit events
-    # |> Multi.run(:audit, Audit, audit_event, [changeset, user_id])
+    |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
+    |> Multi.run(:audit, Audit, :implementation_status_updated, [changeset, user_id])
     |> Repo.transaction()
     |> on_upsert()
   end
@@ -58,12 +67,12 @@ defmodule TdDq.Implementations.Workflow do
   end
 
   defp status_changeset(
-         %Implementation{id: id, implementation_key: key} = implementation,
+         %Implementation{id: id, implementation_ref: implementation_ref} = implementation,
          "published"
        ) do
     latest_version =
       Implementation
-      |> where(implementation_key: ^key)
+      |> where(implementation_ref: ^implementation_ref)
       |> where([i], i.id != ^id)
       |> select([i], max(i.version) + 1)
       |> Repo.one()
@@ -74,22 +83,58 @@ defmodule TdDq.Implementations.Workflow do
     end
   end
 
+  defp status_changeset(
+         %Implementation{id: id, implementation_ref: implementation_ref} = implementation,
+         "restored"
+       ) do
+    latest_version =
+      Implementation
+      |> where(implementation_ref: ^implementation_ref)
+      |> where([i], i.id != ^id)
+      |> select([i], max(i.version) + 1)
+      |> Repo.one()
+
+    case latest_version do
+      nil ->
+        Implementation.status_changeset(implementation, %{
+          status: "published",
+          version: 1,
+          deleted_at: nil
+        })
+
+      v ->
+        Implementation.status_changeset(implementation, %{
+          status: "published",
+          version: v,
+          deleted_at: nil
+        })
+    end
+  end
+
   defp status_changeset(implementation, status),
     do: Implementation.status_changeset(implementation, %{status: status})
 
-  def maybe_version_existing(multi, %{implementation_key: key} = _implementation, "published") do
+  def maybe_version_existing(
+        multi,
+        %{
+          data: %{implementation_ref: implementation_ref} = implementation,
+          changes: %{status: :published}
+        },
+        user_id
+      ) do
     queryable =
       Implementation
       |> where(status: :published)
-      |> where(implementation_key: ^key)
+      |> where(implementation_ref: ^implementation_ref)
       |> select([i], i.id)
 
     Multi.update_all(multi, :versioned, queryable,
       set: [updated_at: DateTime.utc_now(), status: :versioned]
     )
+    |> Multi.run(:audit_versioned, Audit, :implementation_versioned, [implementation, user_id])
   end
 
-  def maybe_version_existing(multi, _, _not_published), do: multi
+  def maybe_version_existing(multi, _changeset, _user_id), do: multi
 
   defp on_upsert({:ok, %{versioned: {_count, ids}, implementation: %{id: id}}} = result) do
     @index_worker.reindex_implementations([id | ids])

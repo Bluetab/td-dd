@@ -2,10 +2,8 @@ defmodule TdDdWeb.CsvBulkUpdateEventController do
   use TdDdWeb, :controller
   use PhoenixSwagger
 
-  import Canada, only: [can?: 2]
-
+  alias TdDd.DataStructures.BulkUpdate
   alias TdDd.DataStructures.CsvBulkUpdateEvents
-  alias TdDd.DataStructures.DataStructure
 
   action_fallback(TdDdWeb.FallbackController)
 
@@ -20,7 +18,7 @@ defmodule TdDdWeb.CsvBulkUpdateEventController do
 
   def index(conn, _params) do
     with %{user_id: user_id} = claims <- conn.assigns[:current_resource],
-         {:can, true} <- {:can, can?(claims, list_bulk_update_events(DataStructure))} do
+         :ok <- Bodyguard.permit(BulkUpdate, :bulk_upload, claims) do
       render(conn, "index.json", %{
         csv_bulk_update_events: CsvBulkUpdateEvents.get_by_user_id(user_id)
       })

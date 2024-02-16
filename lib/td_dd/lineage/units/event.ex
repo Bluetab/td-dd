@@ -7,6 +7,7 @@ defmodule TdDd.Lineage.Units.Event do
   import Ecto.Changeset
 
   alias TdDd.Lineage.Units.Unit
+  alias TdDfLib.Validation
 
   schema "unit_events" do
     belongs_to(:unit, Unit)
@@ -27,5 +28,7 @@ defmodule TdDd.Lineage.Units.Event do
     |> put_change(:inserted_at, DateTime.utc_now())
     |> validate_inclusion(:event, ["LoadStarted", "LoadFailed", "LoadSucceeded", "Deleted"])
     |> validate_required([:unit_id, :event, :inserted_at])
+    |> validate_change(:info, &Validation.validate_safe/2)
+    |> foreign_key_constraint(:unit_id)
   end
 end

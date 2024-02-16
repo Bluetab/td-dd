@@ -5,19 +5,16 @@ defmodule TdDq.CSV.Reader do
 
   alias Codepagex
   alias NimbleCSV
-  alias TdDq.Auth.Claims
 
   NimbleCSV.define(ReaderCsvParser, separator: ";", escape: "\"")
 
   @csv_parse_chunk_size 10_000
 
-  @spec read_csv(Claims.t(), Enumerable.t(), [binary], function) :: {:ok, map} | {:error, any}
-  def read_csv(claims, stream, required_headers, bulk_create) do
+  def parse_csv(stream, required_headers) do
     with {:ok, csv} <- parse_stream(stream),
          headers <- Enum.at(csv, 0),
-         {:ok, headers} <- validate_headers(required_headers, headers),
-         {:ok, parsed_file} <- parse_file(csv, headers) do
-      bulk_create.(parsed_file, claims)
+         {:ok, headers} <- validate_headers(required_headers, headers) do
+      parse_file(csv, headers)
     end
   end
 
@@ -25,35 +22,16 @@ defmodule TdDq.CSV.Reader do
     {:ok, ReaderCsvParser.parse_stream(stream, skip_headers: false)}
   end
 
-  # defp validate_headers([required_headers_element | _] = required_headers, headers)
-  #      when is_list(required_headers_element) do
-  #   required_headers
-  #   |> Enum.reduce_while(
-  #     [],
-  #     fn required_header, errors ->
-  #       case validate_headers(required_header, headers) do
-  #         {:ok, headers} ->
-  #           {:halt, {:ok, headers}}
-
-  #         {:error, %{expected: required_headers_error}} ->
-  #           {:cont, [required_headers_error | errors]}
-  #       end
-  #     end
-  #     |> case do
-  #       {:ok, headers} ->
-  #         {:ok, headers}
-
-  #       expected ->
-  #         {:error, %{error: :misssing_required_columns, expected: expected, found: headers}}
-  #     end
-  #   )
-  # end
-
   defp validate_headers(required_headers, headers) do
     if Enum.all?(required_headers, &Enum.member?(headers, &1)) do
       {:ok, headers}
     else
-      {:error, %{error: :misssing_required_columns, expected: required_headers, found: headers}}
+      {:error,
+       %{
+         error: :missing_required_columns,
+         expected: Enum.join(required_headers, ", "),
+         found: Enum.join(headers, ", ")
+       }}
     end
   end
 

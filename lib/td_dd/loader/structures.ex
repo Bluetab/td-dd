@@ -6,9 +6,52 @@ defmodule TdDd.Loader.Structures do
 
   alias TdCx.Sources
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.Hierarchy
   alias TdDd.Repo
 
   @chunk_size 2_000
+
+  def inherit_domain(dsvs, ts) do
+    dsv_ids = Enum.map(dsvs, & &1.id)
+
+    first_existing_parent =
+      Hierarchy
+      |> where([h], h.ancestor_dsv_id not in ^dsv_ids)
+      |> where([h], h.dsv_id in ^dsv_ids)
+      |> group_by([h], h.dsv_id)
+      |> select([h], %{dsv_id: h.dsv_id, ancestor_level: min(h.ancestor_level)})
+
+    inheritable_domains =
+      Hierarchy
+      |> join(:inner, [h], sh in subquery(first_existing_parent),
+        on: h.dsv_id == sh.dsv_id and h.ancestor_level == sh.ancestor_level
+      )
+      |> join(:left, [h, _sh], ds in DataStructure, on: ds.id == h.ancestor_ds_id)
+      |> group_by([_h, _sh, ds], ds.domain_ids)
+      |> select([h, _sh, ds], %{
+        domain_ids: ds.domain_ids,
+        ds_ids: fragment("array_agg(?)", h.ds_id)
+      })
+      |> Repo.all()
+
+    res =
+      Enum.map(inheritable_domains, fn %{domain_ids: domain_ids, ds_ids: ds_ids} ->
+        ds_ids
+        |> Enum.chunk_every(@chunk_size)
+        |> Enum.map(fn ids ->
+          DataStructure
+          |> select([ds], ds.id)
+          |> where([ds], ds.id in ^ids)
+          |> Repo.update_all(set: [domain_ids: domain_ids, updated_at: ts])
+        end)
+      end)
+      |> List.flatten()
+      |> Enum.reduce({0, []}, fn {count1, ids1}, {count2, ids2} ->
+        {count1 + count2, ids1 ++ ids2}
+      end)
+
+    {:ok, res}
+  end
 
   def update_domain_ids(_repo, %{} = _changes, records, ts), do: update_domain_ids(records, ts)
 

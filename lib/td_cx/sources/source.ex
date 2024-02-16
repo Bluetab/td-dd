@@ -9,6 +9,7 @@ defmodule TdCx.Sources.Source do
 
   alias TdCx.Jobs.Job
   alias TdCx.Sources.Source
+  alias TdDfLib.Validation
 
   @type t :: %__MODULE__{}
 
@@ -31,6 +32,7 @@ defmodule TdCx.Sources.Source do
     |> cast(attrs, [:external_id, :config, :secrets_key, :type, :active, :deleted_at])
     |> validate_required([:external_id, :type])
     |> validate_required_inclusion([:secrets_key, :config])
+    |> validate_change(:config, &Validation.validate_safe/2)
     |> unique_constraint(:external_id)
   end
 

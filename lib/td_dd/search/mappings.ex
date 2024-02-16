@@ -6,11 +6,14 @@ defmodule TdDd.Search.Mappings do
   alias TdDd.Search.Cluster
   alias TdDfLib.Format
 
-  @raw %{raw: %{type: "keyword"}}
+  @raw %{raw: %{type: "keyword", null_value: ""}}
   @text %{text: %{type: "text"}}
-  @raw_sort %{raw: %{type: "keyword"}, sort: %{type: "keyword", normalizer: "sortable"}}
+  @raw_sort %{
+    raw: %{type: "keyword", null_value: ""},
+    sort: %{type: "keyword", normalizer: "sortable"}
+  }
   @raw_sort_ngram %{
-    raw: %{type: "keyword"},
+    raw: %{type: "keyword", null_value: ""},
     sort: %{type: "keyword", normalizer: "sortable"},
     ngram: %{type: "text", analyzer: "ngram"}
   }
@@ -22,6 +25,7 @@ defmodule TdDd.Search.Mappings do
       id: %{type: "long", index: false},
       data_structure_id: %{type: "long"},
       name: %{type: "text", fields: @raw_sort_ngram},
+      original_name: %{type: "text", fields: @raw_sort_ngram},
       system: %{
         properties: %{
           id: %{type: "long", index: false},
@@ -45,17 +49,18 @@ defmodule TdDd.Search.Mappings do
       external_id: %{type: "keyword", index: false},
       domain_ids: %{type: "long"},
       deleted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-      metadata: %{enabled: false},
-      mutable_metadata: %{enabled: false},
+      metadata: %{
+        enabled: false
+      },
       linked_concepts: %{type: "boolean"},
       inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       path: %{type: "keyword", fields: @text},
       path_sort: %{type: "keyword", normalizer: "sortable"},
-      latest_note: content_mappings,
-      published_note: content_mappings,
+      parent_id: %{type: "text", analyzer: "keyword"},
+      note: content_mappings,
       class: %{type: "text", fields: %{raw: %{type: "keyword", null_value: ""}}},
-      classes: %{enabled: false},
+      classes: %{enabled: true},
       source_alias: %{type: "keyword", fields: @raw_sort},
       version: %{type: "short"},
       tags: %{type: "text", fields: %{raw: %{type: "keyword", null_value: ""}}},
@@ -69,18 +74,19 @@ defmodule TdDd.Search.Mappings do
     settings = Cluster.setting(:structures)
 
     %{
-      mappings: %{_doc: %{properties: properties, dynamic_templates: dynamic_templates}},
+      mappings: %{properties: properties, dynamic_templates: dynamic_templates},
       settings: settings
     }
   end
 
   def get_grant_mappings do
-    %{mappings: %{_doc: %{properties: dsv_properties}}, settings: _settings} = get_mappings()
+    %{mappings: %{properties: dsv_properties}, settings: _settings} = get_mappings()
 
     properties = %{
       data_structure_id: %{type: "long"},
       detail: %{type: "object"},
       user_id: %{type: "long"},
+      pending_removal: %{type: "boolean", fields: @raw},
       start_date: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       end_date: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
@@ -97,7 +103,46 @@ defmodule TdDd.Search.Mappings do
     }
 
     settings = Cluster.setting(:grants)
-    %{mappings: %{_doc: %{properties: properties}}, settings: settings}
+    %{mappings: %{properties: properties}, settings: settings}
+  end
+
+  def get_grant_request_mapping do
+    %{mappings: %{properties: dsv_properties}, settings: _settings} = get_mappings()
+    content_mappings = %{type: "object", properties: get_dynamic_mappings("gr")}
+
+    properties = %{
+      id: %{type: "long"},
+      current_status: %{type: "keyword"},
+      approved_by: %{type: "keyword"},
+      domain_ids: %{type: "long"},
+      user_id: %{type: "long"},
+      user: %{
+        type: "object",
+        properties: %{
+          id: %{type: "long", index: false},
+          user_name: %{type: "keyword"},
+          full_name: %{type: "text", fields: @raw}
+        }
+      },
+      created_by_id: %{type: "long"},
+      created_by: %{
+        type: "object",
+        properties: %{
+          id: %{type: "long", index: false},
+          user_name: %{type: "text", fields: @raw},
+          full_name: %{type: "text", fields: @raw}
+        }
+      },
+      data_structure_id: %{type: "long"},
+      data_structure_version: %{type: "object", properties: dsv_properties},
+      inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
+      type: %{type: "keyword"},
+      metadata: content_mappings,
+      modification_grant_id: %{type: "long"}
+    }
+
+    settings = Cluster.setting(:grant_requests)
+    %{mappings: %{properties: properties}, settings: settings}
   end
 
   def get_dynamic_mappings(scope) do
@@ -110,7 +155,12 @@ defmodule TdDd.Search.Mappings do
   defp get_mappings(%{content: content}) do
     content
     |> Format.flatten_content_fields()
-    |> Enum.map(&field_mapping/1)
+    |> Enum.map(fn field ->
+      field
+      |> field_mapping
+      |> maybe_boost(field)
+      |> maybe_disable_search(field)
+    end)
   end
 
   defp field_mapping(%{"name" => name, "type" => "table"}) do
@@ -129,7 +179,11 @@ defmodule TdDd.Search.Mappings do
     {name, %{type: "keyword"}}
   end
 
-  defp field_mapping(%{"name" => name, "type" => type}) when type in ["domain", "system"] do
+  defp field_mapping(%{"name" => name, "type" => "domain"}) do
+    {name, %{type: "long", null_value: 0}}
+  end
+
+  defp field_mapping(%{"name" => name, "type" => "system"}) do
     {name,
      %{
        type: "nested",
@@ -153,9 +207,20 @@ defmodule TdDd.Search.Mappings do
     {name, mapping_type("string")}
   end
 
-  defp mapping_type(values) when is_map(values) do
-    %{type: "text", fields: @raw}
+  defp maybe_boost(field_tuple, %{"boost" => boost}) when boost in ["", "1"], do: field_tuple
+
+  defp maybe_boost({name, field_value}, %{"boost" => boost}) do
+    {boost_float, _} = Float.parse(boost)
+    {name, Map.put(field_value, :boost, boost_float)}
   end
 
-  defp mapping_type(_default), do: %{type: "text"}
+  defp maybe_boost(field_tuple, _), do: field_tuple
+
+  defp mapping_type(_default), do: %{type: "text", fields: @raw}
+
+  defp maybe_disable_search({name, field_value}, %{"searchable" => false}) do
+    {name, Map.drop(field_value, [:fields])}
+  end
+
+  defp maybe_disable_search(field_tuple, _), do: field_tuple
 end

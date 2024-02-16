@@ -1,15 +1,15 @@
 defmodule TdDqWeb.ImplementationView do
   use TdDqWeb, :view
 
+  alias TdDq.Implementations
   alias TdDq.Rules
+  alias TdDqWeb.Implementation.ConditionsView
   alias TdDqWeb.Implementation.ConditionView
   alias TdDqWeb.Implementation.DatasetView
-  alias TdDqWeb.Implementation.PopulationsView
   alias TdDqWeb.Implementation.RawContentView
   alias TdDqWeb.Implementation.SegmentsView
   alias TdDqWeb.Implementation.StructureView
   alias TdDqWeb.ImplementationStructureView
-
   alias TdDqWeb.RuleResultView
 
   def render("index.json", %{actions: %{} = actions} = assigns) when map_size(actions) > 0 do
@@ -29,6 +29,16 @@ defmodule TdDqWeb.ImplementationView do
     }
   end
 
+  def render("show.json", %{implementation: implementation, error: :nothing}),
+    do: render("show.json", %{implementation: implementation})
+
+  def render("show.json", %{implementation: implementation, error: error}) do
+    %{
+      data: render_one(implementation, __MODULE__, "implementation.json"),
+      message: Atom.to_string(error)
+    }
+  end
+
   def render("show.json", %{implementation: implementation}) do
     %{data: render_one(implementation, __MODULE__, "implementation.json")}
   end
@@ -42,7 +52,6 @@ defmodule TdDqWeb.ImplementationView do
     |> Map.take([
       :current_business_concept_version,
       :deleted_at,
-      :df_content,
       :df_name,
       :domain,
       :domain_id,
@@ -53,15 +62,22 @@ defmodule TdDqWeb.ImplementationView do
       :goal,
       :id,
       :implementation_key,
+      :implementation_ref,
       :implementation_type,
       :inserted_at,
+      :updated_at,
       :links,
+      :linked_structures_ids,
+      :concepts,
       :minimum,
       :result_type,
       :rule_id,
       :structure_aliases,
       :status,
-      :version
+      :version,
+      :structure_domain_ids,
+      :structure_domains,
+      :structure_links
     ])
     |> Map.put(
       :raw_content,
@@ -72,6 +88,7 @@ defmodule TdDqWeb.ImplementationView do
     |> add_quality_event_info(implementation)
     |> add_rule_results(implementation)
     |> maybe_render_data_structures(data_structures)
+    |> add_dynamic_content(implementation)
   end
 
   def render("implementation.json", %{implementation: implementation}) do
@@ -81,7 +98,6 @@ defmodule TdDqWeb.ImplementationView do
     |> Map.take([
       :current_business_concept_version,
       :deleted_at,
-      :df_content,
       :df_name,
       :domain,
       :domain_id,
@@ -92,37 +108,43 @@ defmodule TdDqWeb.ImplementationView do
       :goal,
       :id,
       :implementation_key,
+      :implementation_ref,
       :implementation_type,
       :inserted_at,
+      :updated_at,
       :links,
+      :linked_structures_ids,
+      :concepts,
       :minimum,
       :result_type,
       :rule_id,
       :structure_aliases,
+      :structure_domain_ids,
+      :structure_domains,
       :status,
+      :structure_links,
       :version
     ])
     |> Map.put(:dataset, render_many(implementation.dataset, DatasetView, "dataset_row.json"))
-    |> Map.put(
-      :validations,
-      render_many(implementation.validations, ConditionView, "condition_row.json")
-    )
     |> add_segments(implementation)
-    |> add_first_population(implementation)
     |> add_populations(implementation)
+    |> add_first_population(implementation)
+    |> add_validation(implementation)
+    |> add_first_validations(implementation)
     |> add_rule(implementation)
     |> add_quality_event_info(implementation)
     |> add_last_rule_results(implementation)
     |> add_rule_results(implementation)
     |> maybe_render_data_structures(data_structures)
+    |> add_dynamic_content(implementation)
   end
 
-  defp add_first_population(mapping, %{populations: [%{population: population} | _]})
-       when is_list(population) do
+  defp add_first_population(mapping, %{populations: [%{conditions: conditions} | _]})
+       when is_list(conditions) do
     mapping
     |> Map.put(
       :population,
-      render_many(population, ConditionView, "condition_row.json")
+      render_many(conditions, ConditionView, "condition_row.json")
     )
   end
 
@@ -132,11 +154,33 @@ defmodule TdDqWeb.ImplementationView do
     mapping
     |> Map.put(
       :populations,
-      render_many(populations, PopulationsView, "populations.json")
+      render_many(populations, ConditionsView, "populations.json")
     )
   end
 
   defp add_populations(mapping, _implementation), do: mapping
+
+  defp add_first_validations(mapping, %{validation: [%{conditions: conditions} | _]})
+       when is_list(conditions) do
+    mapping
+    |> Map.put(
+      :validations,
+      render_many(conditions, ConditionView, "condition_row.json")
+    )
+  end
+
+  defp add_first_validations(mapping, _implementation), do: mapping
+
+  defp add_validation(mapping, %{validation: validation})
+       when is_list(validation) do
+    mapping
+    |> Map.put(
+      :validation,
+      render_many(validation, ConditionsView, "validation.json")
+    )
+  end
+
+  defp add_validation(mapping, _implementation), do: mapping
 
   defp add_segments(mapping, %{segments: segments}) do
     mapping
@@ -170,6 +214,18 @@ defmodule TdDqWeb.ImplementationView do
     Map.put(rule, :df_content, content)
   end
 
+  defp add_dynamic_content(json, implementation) do
+    df_name = Map.get(implementation, :df_name)
+
+    content =
+      implementation
+      |> Map.get(:df_content)
+      |> Implementations.get_cached_content(df_name)
+
+    %{df_content: content}
+    |> Map.merge(json)
+  end
+
   defp add_last_rule_results(implementation_mapping, implementation) do
     rule_results_mappings =
       case Map.get(implementation, :_last_rule_result_, nil) do
@@ -181,7 +237,13 @@ defmodule TdDqWeb.ImplementationView do
             %{
               result: last_rule_result.result,
               date: last_rule_result.date,
-              errors: last_rule_result.errors
+              errors: last_rule_result.errors,
+              implementation_id: implementation.id,
+              result_type: last_rule_result.result_type,
+              records: last_rule_result.records,
+              params: last_rule_result.params,
+              minimum: last_rule_result.minimum,
+              goal: last_rule_result.goal
             }
           ]
       end
@@ -253,17 +315,17 @@ defmodule TdDqWeb.Implementation.StructureView do
 
   defp with_parent_index(structure_json, _), do: structure_json
 
+  defp with_headers(structure_json, %{headers: headers}) do
+    Map.put(structure_json, :headers, headers)
+  end
+
+  defp with_headers(structure_json, _), do: structure_json
+
   def render("structure.json", %{structure: structure}) do
-    %{
-      id: Map.get(structure, :id),
-      name: Map.get(structure, :name),
-      path: Map.get(structure, :path),
-      system: Map.get(structure, :system),
-      external_id: Map.get(structure, :external_id),
-      type: Map.get(structure, :type),
-      metadata: Map.get(structure, :metadata)
-    }
+    structure
+    |> Map.take([:alias, :external_id, :id, :metadata, :name, :path, :system, :type])
     |> with_parent_index(structure)
+    |> with_headers(structure)
   end
 end
 
@@ -299,7 +361,8 @@ defmodule TdDqWeb.Implementation.DatasetView do
           structure: render_one(structure, StructureView, "structure.json"),
           alias:
             render_one(Map.get(dataset_row, :alias), StructureAliasView, "structure_alias.json"),
-          clauses: render_many(dataset_row.clauses, JoinClauseView, "join_clause_row.json")
+          clauses: render_many(dataset_row.clauses, JoinClauseView, "join_clause_row.json"),
+          join_type: dataset_row.join_type
         }
     end
   end
@@ -401,16 +464,12 @@ defmodule TdDqWeb.Implementation.ModifierView do
   end
 end
 
-defmodule TdDqWeb.Implementation.PopulationsView do
+defmodule TdDqWeb.Implementation.ConditionsView do
   use TdDqWeb, :view
 
   alias TdDqWeb.Implementation.ConditionView
 
-  def render("populations.json", %{populations: %{population: population}}) do
-    render_many(population, ConditionView, "condition_row.json")
-  end
-
-  def render("populations.json", %{populations: population}) do
-    %{population: render_many(population, ConditionView, "condition_row.json")}
+  def render(_, %{conditions: %{conditions: conditions}}) do
+    render_many(conditions, ConditionView, "condition_row.json")
   end
 end

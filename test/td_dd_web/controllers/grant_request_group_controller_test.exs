@@ -1,12 +1,16 @@
 defmodule TdDdWeb.GrantRequestGroupControllerTest do
   use TdDdWeb.ConnCase
 
+  alias TdDd.Search.MockIndexWorker
+
   @valid_metadata %{"list" => "one", "string" => "foo"}
   @template_name "grant_request_group_controller_test_template"
 
   setup do
+    start_supervised(MockIndexWorker)
     CacheHelpers.insert_template(name: @template_name)
-    %{id: data_structure_id} = data_structure = insert(:data_structure)
+    %{id: domain_id} = CacheHelpers.insert_domain()
+    %{id: data_structure_id} = data_structure = insert(:data_structure, domain_ids: [domain_id])
 
     create_params = %{
       "requests" => [
@@ -37,7 +41,7 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
       assert [%{"id" => ^id}] = data
     end
 
-    @tag authentication: [user_name: "non_admin"]
+    @tag authentication: []
     test "non admin user can only list own grant_request_groups", %{
       conn: conn,
       claims: %{user_id: user_id}
@@ -55,7 +59,7 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
   end
 
   describe "show" do
-    @tag authentication: [user_namer: "non_admin"]
+    @tag authentication: []
     test "non admin user cannot show grant_request_group from other user", %{conn: conn} do
       %{id: id} = insert(:grant_request_group)
 
@@ -64,7 +68,7 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
              |> response(:forbidden)
     end
 
-    @tag authentication: [user_namer: "non_admin"]
+    @tag authentication: []
     test "non admin user can show own grant_request_group", %{
       conn: conn,
       claims: %{user_id: user_id}
@@ -104,7 +108,121 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
              } = data
     end
 
-    @tag authentication: [user: "non_admin"]
+    @tag authentication: [role: "admin"]
+    test "if user_id is specified, will not take the claims user_id", %{
+      conn: conn,
+      claims: %{user_id: created_by_id},
+      create_params: create_params
+    } do
+      user_id = :rand.uniform(10)
+      params = Map.put(create_params, "user_id", user_id)
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.grant_request_group_path(conn, :create),
+                 grant_request_group: params
+               )
+               |> json_response(:created)
+
+      assert %{"id" => id} = data
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.grant_request_group_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "id" => ^id,
+               "user_id" => ^user_id,
+               "created_by_id" => ^created_by_id
+             } = data
+    end
+
+    @tag authentication: [permissions: [:create_grant_request]]
+    test "user without permission cannot create request_group with different user_id", %{
+      conn: conn,
+      domain: %{id: domain_id}
+    } do
+      %{id: ds_id} = insert(:data_structure, domain_ids: [domain_id])
+      user_id = :rand.uniform(10)
+
+      params = %{
+        "user_id" => user_id,
+        "requests" => [%{"data_structure_id" => ds_id}],
+        "type" => nil
+      }
+
+      assert conn
+             |> post(Routes.grant_request_group_path(conn, :create),
+               grant_request_group: params
+             )
+             |> json_response(:forbidden)
+    end
+
+    @tag authentication: [
+           permissions: [
+             :create_grant_request,
+             :create_foreign_grant_request,
+             :view_data_structure
+           ]
+         ]
+    test "user with permission can create request_group on authorized user_id", %{
+      conn: conn,
+      domain: %{id: domain_id}
+    } do
+      %{id: ds_id} = insert(:data_structure, domain_ids: [domain_id])
+
+      role_name = "test_role"
+      CacheHelpers.put_permission_on_role("allow_foreign_grant_request", role_name)
+      %{id: user_id} = CacheHelpers.insert_user()
+      CacheHelpers.insert_acl(domain_id, role_name, [user_id])
+
+      params = %{
+        "user_id" => user_id,
+        "requests" => [%{"data_structure_id" => ds_id}],
+        "type" => nil
+      }
+
+      assert conn
+             |> post(Routes.grant_request_group_path(conn, :create),
+               grant_request_group: params
+             )
+             |> json_response(:created)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "renders grant_request_group when data is valid with modification_grant", %{
+      conn: conn,
+      claims: %{user_id: user_id},
+      create_params: create_params
+    } do
+      %{id: grant_id} = insert(:grant)
+      params_with_grant = Map.put(create_params, "modification_grant_id", grant_id)
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.grant_request_group_path(conn, :create),
+                 grant_request_group: params_with_grant
+               )
+               |> json_response(:created)
+
+      assert %{"id" => id} = data
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.grant_request_group_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "id" => ^id,
+               "user_id" => ^user_id,
+               "_embedded" => %{
+                 "modification_grant" => %{"id" => ^grant_id}
+               }
+             } = data
+    end
+
+    @tag authentication: []
     test "user without permission on structure cannot create grant_request_group", %{
       conn: conn,
       create_params: create_params
@@ -116,7 +234,10 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
              |> response(:forbidden)
     end
 
-    @tag authentication: [user: "non_admin", permissions: [:create_grant_request]]
+    @tag authentication: [
+           user: "non_admin",
+           permissions: [:create_grant_request, :view_data_structure]
+         ]
     test "user with permission on structure can create grant_request_group", %{
       conn: conn,
       domain: %{id: domain_id},
@@ -304,7 +425,8 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
                |> post(Routes.grant_request_group_path(conn, :create), grant_request_group: params)
                |> json_response(:unprocessable_entity)
 
-      assert %{"requests" => [%{"metadata" => ["invalid content"]}]} = errors
+      assert %{"requests" => [%{"metadata" => ["list: can't be blank - string: can't be blank"]}]} =
+               errors
     end
   end
 
@@ -312,17 +434,23 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
     setup [:create_grant_request_group]
 
     @tag authentication: [role: "admin"]
-    test "deletes chosen grant_request_group", %{conn: conn, group: group} do
+    test "deletes chosen grant_request_group", %{
+      conn: conn,
+      group: group,
+      grant_request_id: grant_request_id
+    } do
       assert conn
              |> delete(Routes.grant_request_group_path(conn, :delete, group))
              |> response(:no_content)
+
+      assert MockIndexWorker.calls() == [{:delete_grant_requests, [grant_request_id]}]
 
       assert_error_sent 404, fn ->
         get(conn, Routes.grant_request_group_path(conn, :show, group))
       end
     end
 
-    @tag authentication: [user_name: "non_admin"]
+    @tag authentication: []
     test "non admin cannot delete grant_request_group", %{conn: conn, group: group} do
       assert conn
              |> delete(Routes.grant_request_group_path(conn, :delete, group))
@@ -331,8 +459,9 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
   end
 
   defp create_grant_request_group(_) do
-    %{group: group} = insert(:grant_request, group: build(:grant_request_group))
+    %{id: grant_request_id, group: group} =
+      insert(:grant_request, group: build(:grant_request_group))
 
-    [group: group]
+    [group: group, grant_request_id: grant_request_id]
   end
 end

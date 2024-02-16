@@ -22,7 +22,7 @@ defmodule TdCxWeb.JobControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/jobs/_search", %{from: 0, query: query, size: 10_000}, [] ->
+        _, :post, "/jobs/_search", %{from: 0, query: query, size: 10_000}, _ ->
           assert query == %{
                    bool: %{
                      filter: %{term: %{"source.external_id" => source_external_id}}
@@ -52,7 +52,7 @@ defmodule TdCxWeb.JobControllerTest do
     } do
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/jobs/_search", _, [] -> SearchHelpers.hits_response([job])
+        _, :post, "/jobs/_search", _, _ -> SearchHelpers.hits_response([job])
       end)
 
       assert %{"data" => data} =
@@ -122,8 +122,9 @@ defmodule TdCxWeb.JobControllerTest do
 
     @tag authentication: [role: "admin"]
     test "renders errors when source does not exist", %{conn: conn} do
-      conn = post(conn, Routes.source_job_path(conn, :create, "invented external_id"))
-      assert json_response(conn, 404)["errors"] != %{}
+      assert_error_sent :not_found, fn ->
+        post(conn, Routes.source_job_path(conn, :create, "invented external_id"))
+      end
     end
   end
 

@@ -1,17 +1,18 @@
 defmodule TdDqWeb.ImplementationController do
   use TdDqWeb, :controller
-  use TdHypermedia, :controller
 
-  import Canada, only: [can?: 2]
-  import Canada.Can, only: [can?: 3]
+  alias TdCluster.Cluster.TdLm, as: Cluster
 
   alias TdDq.Events.QualityEvents
   alias TdDq.Implementations
+  alias TdDq.Implementations.Actions
   alias TdDq.Implementations.Download
   alias TdDq.Implementations.Implementation
   alias TdDq.Implementations.Search
   alias TdDq.Rules
   alias TdDq.Rules.RuleResults
+
+  @default_lang "es"
 
   action_fallback(TdDqWeb.FallbackController)
 
@@ -32,13 +33,15 @@ defmodule TdDqWeb.ImplementationController do
       |> add_rule_filter(params, "rule_business_concept_id", "business_concept_id")
       |> add_rule_filter(params, "is_rule_active", "active")
 
-    with {:can, true} <- {:can, can?(claims, list(Implementation))} do
+    with :ok <- Bodyguard.permit(Implementations, :query, claims) do
       implementations =
         filters
         |> Implementations.list_implementations(preload: [:rule, :results], enrich: :source)
         |> Enum.map(&Implementations.enrich_implementation_structures/1)
 
-      render(conn, "index.json", implementations: implementations)
+      conn
+      |> Actions.put_actions(claims, Implementation)
+      |> render("index.json", implementations: implementations)
     end
   end
 
@@ -85,7 +88,32 @@ defmodule TdDqWeb.ImplementationController do
     response(400, "Client Error")
   end
 
-  def create(conn, %{"rule_implementation" => %{"rule_id" => rule_id} = params}) do
+  def create(conn, %{
+        "rule_implementation" =>
+          %{"operation" => "clone", "implementation_ref" => original_implementation_ref} = params
+      }) do
+    claims = conn.assigns[:current_resource]
+
+    with {:ok, %{implementation: %{id: id}}} <-
+           Implementations.create_ruleless_implementation(params, claims),
+         implementation <-
+           Implementations.get_implementation!(id, enrich: :source, preload: [:results]) do
+      Cluster.clone_relations(
+        original_implementation_ref,
+        id,
+        "business_concept",
+        claims
+      )
+
+      conn
+      |> put_status(:created)
+      |> put_resp_header("location", Routes.implementation_path(conn, :show, implementation))
+      |> render("show.json", implementation: implementation)
+    end
+  end
+
+  def create(conn, %{"rule_implementation" => %{"rule_id" => rule_id} = params})
+      when not is_nil(rule_id) do
     claims = conn.assigns[:current_resource]
 
     rule = Rules.get_rule_or_nil(rule_id)
@@ -132,26 +160,20 @@ defmodule TdDqWeb.ImplementationController do
 
     implementation =
       id
-      ## TODO: take this functionality with results context to add has_segments
       |> Implementations.get_implementation!(
         enrich: [:source, :links, :domain],
-        preload: [
-          :rule,
-          [results: :remediation],
-          [data_structures: [data_structure: [:system, :current_version]]]
-        ]
+        preload: [:rule]
       )
       |> add_last_rule_result()
-      |> with_has_segments()
       |> add_quality_event()
       |> Implementations.enrich_implementation_structures()
       |> filter_links_by_permission(claims)
       |> filter_data_structures_by_permission(claims)
 
-    actions = build_actions(claims, implementation)
-
-    with {:can, true} <- {:can, can?(claims, show(implementation))} do
-      render(conn, "show.json", implementation: implementation, actions: actions)
+    with :ok <- Bodyguard.permit(Implementations, :view, claims, implementation) do
+      conn
+      |> Actions.put_actions(claims, implementation)
+      |> render("show.json", implementation: implementation)
     end
   end
 
@@ -165,29 +187,10 @@ defmodule TdDqWeb.ImplementationController do
   defp filter_links_by_permission(implementation, _claims), do: implementation
 
   defp filter_link_by_permission(claims, %{resource_type: :concept, domain: %{id: domain_id}}) do
-    can?(claims, view_published_concept(domain_id))
+    Bodyguard.permit(Implementations, :view_published_concept, claims, domain_id)
   end
 
   defp filter_link_by_permission(_claims, _), do: false
-
-  defp build_actions(claims, implementation) do
-    [
-      :clone,
-      :deprecate,
-      :edit,
-      :execute,
-      :link_concept,
-      :link_structure,
-      :manage,
-      :manage_segments,
-      :move,
-      :publish,
-      :reject,
-      :submit
-    ]
-    |> Enum.filter(&can?(claims, &1, implementation))
-    |> Enum.reduce(%{}, &Map.put(&2, &1, %{method: "POST"}))
-  end
 
   defp filter_data_structures_by_permission(implementation, %{role: "admin"}), do: implementation
 
@@ -197,7 +200,7 @@ defmodule TdDqWeb.ImplementationController do
        ) do
     data_structures =
       Enum.filter(data_structures, fn %{data_structure: data_structure} ->
-        can?(claims, show(data_structure))
+        Bodyguard.permit?(TdDd.DataStructures, :view_data_structure, claims, data_structure)
       end)
 
     Map.put(implementation, :data_structures, data_structures)
@@ -221,18 +224,19 @@ defmodule TdDqWeb.ImplementationController do
   def update(conn, %{"id" => id, "rule_implementation" => implementation_params}) do
     claims = conn.assigns[:current_resource]
 
-    update_params =
-      implementation_params
-      |> Map.delete("implementation_type")
-
     implementation = Implementations.get_implementation!(id)
 
-    with {:can, true} <- {:can, can?(claims, edit(implementation))},
-         {:ok, %{implementation: %{id: id}}} <-
-           Implementations.update_implementation(implementation, update_params, claims),
+    with :ok <- Bodyguard.permit(Implementations, :edit, claims, implementation),
+         {:ok, %{implementation: %{id: id}} = update_info} <-
+           Implementations.maybe_update_implementation(
+             implementation,
+             implementation_params,
+             claims
+           ),
+         error <- Map.get(update_info, :error, :nothing),
          implementation <-
            Implementations.get_implementation!(id, enrich: :source, preload: [:rule, :results]) do
-      render(conn, "show.json", implementation: implementation)
+      render(conn, "show.json", implementation: implementation, error: error)
     end
   end
 
@@ -252,8 +256,8 @@ defmodule TdDqWeb.ImplementationController do
     claims = conn.assigns[:current_resource]
     implementation = Implementations.get_implementation!(id)
 
-    with {:can, true} <- {:can, can?(claims, delete(implementation))},
-         {:ok, %{implementation: _}} <-
+    with :ok <- Bodyguard.permit(Implementations, :delete, claims, implementation),
+         {:ok, _} <-
            Implementations.delete_implementation(implementation, claims) do
       send_resp(conn, :no_content, "")
     end
@@ -273,9 +277,11 @@ defmodule TdDqWeb.ImplementationController do
     claims = conn.assigns[:current_resource]
     rule_id = String.to_integer(id)
 
-    with {:can, true} <- {:can, can?(claims, list(Implementation))},
+    with :ok <- Bodyguard.permit(Implementations, :query, claims),
          implementations <- Search.search_by_rule_id(params, claims, rule_id, 0, 1000) do
-      render(conn, "index.json", implementations: implementations)
+      conn
+      |> Actions.put_actions(claims)
+      |> render("index.json", implementations: implementations)
     end
   end
 
@@ -297,13 +303,16 @@ defmodule TdDqWeb.ImplementationController do
 
     {header_labels, params} = Map.pop(params, "header_labels", %{})
     {content_labels, params} = Map.pop(params, "content_labels", %{})
+    {lang, params} = Map.pop(params, "lang", @default_lang)
 
-    implementations = Search.search(params, claims)
+    implementations =
+      params
+      |> Search.search(claims)
 
     conn
     |> put_resp_content_type("text/csv", "utf-8")
     |> put_resp_header("content-disposition", "attachment; filename=\"implementations.zip\"")
-    |> send_resp(:ok, Download.to_csv(implementations, header_labels, content_labels))
+    |> send_resp(:ok, Download.to_csv(implementations, header_labels, content_labels, lang))
   end
 
   defp add_last_rule_result(%Implementation{} = implementation) do
@@ -317,23 +326,4 @@ defmodule TdDqWeb.ImplementationController do
   defp add_quality_event(%{id: id} = implementation) do
     Map.put(implementation, :quality_event, QualityEvents.get_event_by_imp(id))
   end
-
-  ## TODO: refactor this function with SQL sentence
-  defp with_has_segments(%Implementation{results: results} = impl)
-       when length(results) >= 1 do
-    parent_ids =
-      results
-      |> Enum.map(fn %{id: id} -> id end)
-      |> RuleResults.has_segments()
-
-    results =
-      results
-      |> Enum.map(fn %{id: parent_id} = result ->
-        Map.put(result, :has_segments, Enum.member?(parent_ids, parent_id))
-      end)
-
-    Map.put(impl, :results, results)
-  end
-
-  defp with_has_segments(implementation), do: implementation
 end

@@ -2,10 +2,7 @@ defmodule TdDdWeb.UnitEventController do
   use TdDdWeb, :controller
   use PhoenixSwagger
 
-  import Canada, only: [can?: 2]
-
   alias TdDd.Lineage.Units
-  alias TdDd.Lineage.Units.Unit
 
   action_fallback(TdDdWeb.FallbackController)
 
@@ -21,7 +18,7 @@ defmodule TdDdWeb.UnitEventController do
   def index(conn, %{"unit_name" => name}) do
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(claims, list(Unit))},
+    with :ok <- Bodyguard.permit(Units, :list, claims),
          {:ok, %Units.Unit{events: events}} <- Units.get_by(name: name, preload: :events) do
       render(conn, "index.json", events: events)
     end

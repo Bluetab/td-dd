@@ -36,9 +36,37 @@ defmodule Truedat.Search.FiltersTest do
              }
     end
 
+    test "creates must_not filter with one term" do
+      assert Filters.build_filters(%{"must_not" => %{"foo" => "bar"}}, %{}, %{}) ==
+               %{
+                 must_not: [
+                   %{term: %{"foo" => "bar"}}
+                 ]
+               }
+    end
+
+    test "creates must_not filter with more of one terms" do
+      assert Filters.build_filters(
+               %{
+                 "must_not" => %{
+                   "foo" => "bar",
+                   "bar" => "baz"
+                 }
+               },
+               %{},
+               %{}
+             ) ==
+               %{
+                 must_not: [
+                   %{term: %{"bar" => "baz"}},
+                   %{term: %{"foo" => "bar"}}
+                 ]
+               }
+    end
+
     test "handles updated_at, start_date and end_date as ranges" do
       for field <- ["updated_at", "start_date", "end_date"] do
-        assert Filters.build_filters(%{field => %{"gte" => "now-1d/d"}}, %{}) ==
+        assert Filters.build_filters(%{field => %{"gte" => "now-1d/d"}}, %{}, %{}) ==
                  %{filter: %{range: %{field => %{"gte" => "now-1d/d"}}}}
       end
     end

@@ -6,11 +6,13 @@ defmodule TdCx.Events do
   import Ecto.Query
 
   alias Ecto.Multi
+  alias TdCx.Cache.SourcesLatestEvent
   alias TdCx.Events.Event
   alias TdCx.Jobs.Audit
   alias TdCx.Jobs.Job
   alias TdCx.Search.IndexWorker
   alias TdDd.Repo
+  alias Truedat.Auth.Claims
 
   @doc """
   Returns the list of events.
@@ -53,9 +55,7 @@ defmodule TdCx.Events do
       {:error, %Ecto.Changeset{}}
 
   """
-  # TODO: unify TdCx.Auth.Claims and TdDd.Auth.Claims
-  def create_event(attrs, %{:__struct__ => type, user_id: user_id})
-      when type in [TdCx.Auth.Claims, TdDd.Auth.Claims] do
+  def create_event(attrs, %Claims{user_id: user_id}) do
     changeset = Event.changeset(%Event{}, attrs)
 
     Multi.new()
@@ -65,6 +65,10 @@ defmodule TdCx.Events do
     |> Multi.run(:external_id, fn _, %{event: event} -> {:ok, get_external_id(event)} end)
     |> Multi.run(:source_external_id, fn _, %{event: event} ->
       {:ok, get_source_external_id(event)}
+    end)
+    |> Multi.run(:refresh_cache, fn _, %{source_id: source_id, event: latest_event} ->
+      :ok = SourcesLatestEvent.refresh(source_id, latest_event)
+      {:ok, nil}
     end)
     |> Multi.run(:audit, Audit, :job_status_updated, [user_id])
     |> Repo.transaction()

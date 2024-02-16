@@ -9,34 +9,25 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureMetadata
-  alias TdDd.DataStructures.StructureNote
+  alias TdDd.DataStructures.Tags.StructureTag
+  alias TdDd.Grants.Grant
   alias TdDd.Profiles.Profile
 
   @paths_by_child_id """
-  SELECT dsv_id as child_id, ds_id, ancestor_ds_id as data_structure_id, ancestor_dsv_id as parent_id, ancestor_level as level, name, version, type
+  SELECT dsv_id as child_id, ds_id, ancestor_ds_id as data_structure_id, ancestor_dsv_id as parent_id, ancestor_level as level, name, version
   FROM data_structures_hierarchy dsh
   JOIN data_structure_versions dsv on dsv.id = dsh.ancestor_dsv_id
   WHERE dsh.dsv_id = ANY (?) and ancestor_level > 0
   """
 
   @paths_by_child_structure_id """
-  SELECT dsv_id as child_id, ds_id, ancestor_ds_id as data_structure_id, ancestor_dsv_id as parent_id, ancestor_level as level, name, version, type
+  SELECT dsv_id as child_id, ds_id, ancestor_ds_id as data_structure_id, ancestor_dsv_id as parent_id, ancestor_level as level, name, version
   FROM data_structures_hierarchy dsh
   JOIN data_structure_versions dsv on dsv.id = dsh.ancestor_dsv_id
   WHERE dsh.ds_id = ANY (?) and ancestor_level > 0
-  """
-
-  @dsv_children_without_fields """
-  select ancestor_ds_id as dsid, count(dsv_id), ARRAY_AGG (dsv_id) from
-  (
-    SELECT dsh.dsv_id, ancestor_ds_id FROM data_structures_hierarchy dsh
-    join (select id as dsv_id, version as child_version, deleted_at as child_deleted_at, class as child_class from data_structure_versions) dsvc on dsh.dsv_id = dsvc.dsv_id
-    join (select id as dsv_id, version as ancestor_version, deleted_at as ancestor_deleted_at from data_structure_versions) dsva on dsh.ancestor_dsv_id = dsva.dsv_id
-    where ancestor_deleted_at is null and child_deleted_at is null and (child_class is null or child_class != 'field')
-  ) as foo
-  group by ancestor_ds_id
   """
 
   @structure_descendents """
@@ -54,19 +45,56 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   def children(opts \\ []) do
     opts_map = Enum.into(opts, %{grant_ids: []})
 
-    TdDd.Grants.Grant
-    |> with_cte("children", as: fragment(@dsv_children_without_fields))
-    |> join(:inner, [g], c in "children", on: c.dsid == g.data_structure_id)
-    |> select([g, c], %{grant: g, dsv_children: c.array_agg})
-    |> where_grant_ids(opts_map)
+    "data_structures_hierarchy"
+    |> join(:inner, [dsh], dsv_child in DataStructureVersion, on: dsh.dsv_id == dsv_child.id)
+    |> join(:inner, [dsh, dsv_child], dsv_ancestor in DataStructureVersion,
+      on: dsh.ancestor_dsv_id == dsv_ancestor.id
+    )
+    |> join(:inner, [dsh, dsv_child, dsv_ancestor], grant in Grant,
+      on: dsh.ancestor_ds_id == grant.data_structure_id
+    )
+    |> group_by([dsh, _dsv_child, _dsv_ancestor, grant], [dsh.ancestor_ds_id, grant.id])
+    |> where(
+      [dsh, dsv_child, dsv_ancestor],
+      is_nil(dsv_child.deleted_at) and is_nil(dsv_ancestor.deleted_at) and
+        (is_nil(dsv_child.class) or dsv_child.class != "field")
+    )
+    |> where_grant_id_in(opts_map)
+    |> select([dsh, dsv_child, dsv_ancestor, grant], %{
+      dsv_children: fragment("array_agg(?)", dsh.dsv_id),
+      grant: grant
+    })
+    |> order_by([_, _, _, grant], grant.data_structure_id)
   end
 
-  defp where_grant_ids(query, %{grant_ids: []}) do
-    query
+  def dsv_grant_children(opts \\ []) do
+    opts_map = Enum.into(opts, %{grant_ids: []})
+
+    "data_structures_hierarchy"
+    |> join(:inner, [dsh], dsv_child in DataStructureVersion, on: dsh.dsv_id == dsv_child.id)
+    |> join(:inner, [dsh, dsv_child], dsv_ancestor in DataStructureVersion,
+      on: dsh.ancestor_dsv_id == dsv_ancestor.id
+    )
+    |> join(:inner, [dsh, dsv_child, dsv_ancestor], grant in Grant,
+      on: dsh.ancestor_ds_id == grant.data_structure_id
+    )
+    |> where(
+      [dsh, dsv_child, dsv_ancestor],
+      is_nil(dsv_child.deleted_at) and is_nil(dsv_ancestor.deleted_at) and
+        dsh.ancestor_level != 0 and (is_nil(dsv_child.class) or dsv_child.class != "field")
+    )
+    |> where_grant_id_in(opts_map)
+    |> group_by([_dsh, _dsv_child, _dsv_ancestor, grant], grant.id)
+    |> select([dsh, dsv_child, dsv_ancestor, grant], %{
+      dsv_children: fragment("jsonb_agg(?)", dsv_child),
+      grant_id: grant.id
+    })
   end
 
-  defp where_grant_ids(query, %{grant_ids: grant_ids}) do
-    where(query, [g], g.id in ^grant_ids)
+  defp where_grant_id_in(query, %{grant_ids: []}), do: query
+
+  defp where_grant_id_in(query, %{grant_ids: grant_ids}) do
+    where(query, [_dsh, _dsv_child, _dsv_ancestor, grant], grant.id in ^grant_ids)
   end
 
   @spec data_structure_version_ids(keyword) :: Ecto.Query.t()
@@ -108,57 +136,52 @@ defmodule TdDd.DataStructures.DataStructureQueries do
     |> select([dsv], %{id: dsv.id, with_profiling: true})
   end
 
+  @spec tags(map) :: Ecto.Query.t()
+  defp tags(%{} = params)
+       when is_map_key(params, :ids) or is_map_key(params, :data_structure_ids) do
+    tags_params = Map.take(params, [:ids, :data_structure_ids])
+
+    DataStructureVersion
+    |> where_ids(tags_params)
+    |> join(:inner, [dsv], h in Hierarchy, on: h.ds_id == dsv.data_structure_id, as: :h)
+    |> join(:inner, [_, h], st in StructureTag,
+      on:
+        st.data_structure_id == h.ds_id or
+          (st.inherit and st.data_structure_id == h.ancestor_ds_id)
+    )
+    |> join(:inner, [_, _, st], t in assoc(st, :tag))
+    |> group_by([dsv], dsv.data_structure_id)
+    |> select([dsv, _, _, t], %{
+      data_structure_id: dsv.data_structure_id,
+      tag_names: fragment("array_agg(distinct(?))", t.name)
+    })
+    |> subquery()
+  end
+
   @spec paths(map) :: Ecto.Query.t()
   def paths(%{} = params)
       when is_map_key(params, :ids) or is_map_key(params, :data_structure_ids) do
     path_cte_params = Map.take(params, [:ids, :data_structure_ids, :relation_type_id])
 
     "paths"
-    |> select([:ds_id, :name, :data_structure_id, :type])
+    |> select([:ds_id, :name, :data_structure_id, :level])
     |> distinct(asc: :ds_id, desc: :level)
-    |> order_by(desc: :parent_id)
+    |> order_by(asc: :ds_id, desc: :level)
     |> subquery()
     |> with_path_cte("paths", path_cte_params)
-    |> join(:left, [t], note in subquery(published_note()),
-      on: t.data_structure_id == note.data_structure_id
-    )
-    |> join(:left, [t, _], data_structure_type in "data_structure_types",
-      on: t.type == data_structure_type.name
-    )
-    |> select([t, note, data_structure_type], %{
+    |> join(:inner, [t], ds in DataStructure, on: ds.id == t.data_structure_id)
+    |> select([t, ds], %{
       id: t.ds_id,
       path:
         fragment(
-          """
-            array_agg(
-              json_build_object(
-                'data_structure_id', ?,
-                'name', ?,
-                'published_note', ?,
-                'data_structure_type', ?
-              )
-              ORDER BY ? ASC
-            )
-          """,
+          "array_agg(json_build_object('data_structure_id', ?, 'name', coalesce(?, ?)) order by ? desc)",
           t.data_structure_id,
+          ds.alias,
           t.name,
-          note.content,
-          data_structure_type,
-          t.data_structure_id
+          t.level
         )
     })
     |> group_by(:ds_id)
-  end
-
-  defp published_note do
-    StructureNote
-    |> select([sn], %{
-      data_structure_id: sn.data_structure_id,
-      content: sn.df_content,
-      status: sn.status
-    })
-    |> where([sn], sn.status == :published)
-    |> where([sn], not is_nil(sn.df_content))
   end
 
   @spec with_path_cte(Ecto.Query.t(), binary, map) :: Ecto.Query.t()
@@ -189,8 +212,8 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   def enriched_structure_versions(%{} = params)
       when is_map_key(params, :ids) or is_map_key(params, :data_structure_ids) do
     %{
-      distinct: :data_structure_id,
-      preload: [data_structure: [:system, :tags, :published_note]]
+      distinct: :data_structure_id
+      # preload: [data_structure: [:system, :published_note]]
     }
     |> Map.merge(params)
     |> Enum.reduce(DataStructureVersion, fn
@@ -201,7 +224,14 @@ defmodule TdDd.DataStructures.DataStructureQueries do
       {:data_structure_ids, ids}, q -> where(q, [dsv], dsv.data_structure_id in ^ids)
       {:relation_type_id, _}, q -> q
     end)
+    |> join(:left, [dsv], ds in assoc(dsv, :data_structure), as: :ds)
+    |> join(:left, [ds: ds], s in assoc(ds, :system), as: :sys)
+    |> join(:left, [ds: ds], pn in assoc(ds, :published_note), as: :pn)
+    |> select_merge([ds: ds, sys: sys, pn: pn], %{
+      data_structure: %{ds | system: sys, published_note: pn}
+    })
     |> join(:left, [dsv], sm in StructureMetadata,
+      as: :metadata,
       on:
         sm.data_structure_id == dsv.data_structure_id and
           fragment(
@@ -212,18 +242,27 @@ defmodule TdDd.DataStructures.DataStructureQueries do
             sm.deleted_at
           )
     )
-    |> order_by([_, sm], desc: sm.version)
-    |> select_merge([_, sm], %{mutable_metadata: sm.fields})
+    |> order_by([metadata: sm], desc: sm.version)
+    |> select_merge([metadata: sm], %{mutable_metadata: sm.fields})
     |> join(:left, [dsv], c in subquery(Classifiers.classes()),
+      as: :classes,
       on: dsv.id == c.data_structure_version_id
     )
-    |> select_merge([_, _, c], %{classes: c.classes})
-    |> join(:left, [dsv], p in subquery(paths(params)), on: p.id == dsv.data_structure_id)
-    |> select_merge([_, _, _, p], %{path: fragment("COALESCE(?, ARRAY[]::json[])", p.path)})
-    |> join(:left, [dsv], pv in subquery(profile(params)), on: dsv.id == pv.id)
-    |> select_merge([_, _, _, _, pv], %{
+    |> select_merge([classes: c], %{classes: c.classes})
+    |> join(:left, [dsv], p in subquery(paths(params)),
+      as: :paths,
+      on: p.id == dsv.data_structure_id
+    )
+    |> select_merge([paths: p], %{path: fragment("COALESCE(?, ARRAY[]::json[])", p.path)})
+    |> join(:left, [dsv], pv in subquery(profile(params)), as: :profiles, on: dsv.id == pv.id)
+    |> select_merge([profiles: pv], %{
       with_profiling: fragment("COALESCE(?, false)", pv.with_profiling)
     })
+    |> join(:left, [dsv], t in subquery(tags(params)),
+      as: :tags,
+      on: dsv.data_structure_id == t.data_structure_id
+    )
+    |> select_merge([tags: t], %{tag_names: t.tag_names})
   end
 
   @spec distinct_by(Ecto.Query.t(), :id | :data_structure_id) :: Ecto.Query.t()

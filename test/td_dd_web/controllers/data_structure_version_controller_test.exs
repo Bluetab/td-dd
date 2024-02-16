@@ -5,10 +5,12 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
   import Mox
 
+  alias TdDd.DataStructures
   alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
 
   @moduletag sandbox: :shared
+  @protected DataStructures.protected()
 
   setup_all do
     start_supervised!(TdDd.Lineage.GraphData)
@@ -77,7 +79,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                |> json_response(:ok)
 
       assert Enum.count(children) == 2
-      assert Enum.all?(children, &(Map.get(&1, "order") == 1))
+      assert Enum.all?(children, &(&1["metadata"]["order"] == 1))
     end
 
     @tag authentication: [role: "admin"]
@@ -121,7 +123,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                )
                |> json_response(:ok)
 
-      assert merged_metadata == Map.merge(metadata, mutable_metadata)
+      assert merged_metadata == merge_metadata(metadata, mutable_metadata)
     end
 
     @tag authentication: [role: "admin"]
@@ -469,10 +471,52 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     end
   end
 
+  describe "GET /api/data_structures/:id/versions/latest with domain hierarchy" do
+    @tag authentication: [role: "admin"]
+    test "includes domains parents on response", %{conn: conn} do
+      %{id: d1_id, name: d1_name, external_id: d1_ext_id} = CacheHelpers.insert_domain()
+
+      %{id: d2_id, name: d2_name, external_id: d2_ext_id} =
+        CacheHelpers.insert_domain(%{parent_id: d1_id})
+
+      %{id: d3_id, name: d3_name, external_id: d3_ext_id} =
+        CacheHelpers.insert_domain(%{parent_id: d2_id})
+
+      %{data_structure_id: id} =
+        insert(:data_structure_version,
+          data_structure:
+            build(:data_structure,
+              domain_ids: [d3_id]
+            )
+        )
+
+      assert %{"data" => data} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
+               )
+               |> json_response(:ok)
+
+      assert %{
+               "data_structure" => %{
+                 "domains" => [
+                   %{
+                     "name" => ^d3_name,
+                     "external_id" => ^d3_ext_id,
+                     "parents" => [
+                       %{"id" => ^d1_id, "name" => ^d1_name, "external_id" => ^d1_ext_id},
+                       %{"id" => ^d2_id, "name" => ^d2_name, "external_id" => ^d2_ext_id}
+                     ]
+                   }
+                 ]
+               }
+             } = data
+    end
+  end
+
   describe "GET /api/data_structures/:id/versions/latest with actions" do
     @tag authentication: [role: "admin"]
     test "includes actions in the response", %{conn: conn} do
-      %{id: tag_id, name: tag_name} = insert(:data_structure_tag)
       %{data_structure_id: id, version: version} = insert(:data_structure_version)
 
       for v <- ["latest", version] do
@@ -481,8 +525,13 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                  |> get(Routes.data_structure_data_structure_version_path(conn, :show, id, v))
                  |> json_response(:ok)
 
-        assert %{"manage_tags" => %{"data" => [tag]}} = actions
-        assert %{"id" => ^tag_id, "name" => ^tag_name} = tag
+        assert actions == %{
+                 "create_link" => %{},
+                 "create_struct_to_struct_link" => %{
+                   "href" => "/api/v2",
+                   "method" => "POST"
+                 }
+               }
       end
     end
   end
@@ -552,6 +601,20 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   describe "GET /api/data_structures/:id/versions/:version data_field structures" do
     setup :create_table_structure
     setup :profile_source
+
+    @tag authentication: [role: "user", permissions: [:view_data_structure]]
+    @tag alias: "field_alias"
+    test "renders alias in data_fields", %{conn: conn, data_structure: %{id: id}} do
+      assert %{"data" => data} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
+               )
+               |> json_response(:ok)
+
+      assert %{"data_fields" => [field]} = data
+      assert %{"alias" => "field_alias"} = field
+    end
 
     @tag authentication: [role: "user", permissions: [:view_data_structure]]
     test "user without permission can not profile structure", %{
@@ -640,6 +703,41 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
     @tag authentication: [
            role: "user",
+           permissions: [:view_data_structure, :request_grant_removal]
+         ]
+    test "user with permission can update grant removal", %{
+      conn: conn,
+      data_structure: %{id: id}
+    } do
+      CacheHelpers.insert_template(%{name: "foo", label: "foo", scope: "gr", content: []})
+
+      assert %{"user_permissions" => permissions} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
+               )
+               |> json_response(:ok)
+
+      assert %{"update_grant_removal" => true} = permissions
+    end
+
+    @tag authentication: [role: "user", permissions: [:view_data_structure]]
+    test "user without permission can not update grant removal", %{
+      conn: conn,
+      data_structure: %{id: id}
+    } do
+      assert %{"user_permissions" => permissions} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
+               )
+               |> json_response(:ok)
+
+      assert %{"update_grant_removal" => false} = permissions
+    end
+
+    @tag authentication: [
+           role: "user",
            permissions: [:view_data_structure, :create_grant_request]
          ]
     test "cannot request grant without template", %{
@@ -692,7 +790,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   end
 
   describe "GET /api/data_structures/:id/versions/:version with notes" do
-    setup :create_structure_with_published_note
+    setup [:create_structure, :create_published_note]
 
     @tag authentication: [role: "admin"]
     test "return only published note content matched with the template", %{
@@ -700,33 +798,29 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       data_structure_version: %{data_structure_id: id},
       published_note: %{df_content: %{"Field1" => field_1, "alias" => content_alias}}
     } do
-      assert %{"data" => %{"published_note" => note}} =
+      assert %{"data" => data} =
                conn
                |> get(
                  Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
                )
                |> json_response(:ok)
 
+      refute Map.has_key?(data, "published_note")
+      refute Map.has_key?(data, "latest_note")
+      assert %{"note" => note} = data
       assert note == %{"Field1" => field_1, "alias" => content_alias}
     end
 
     @tag authentication: [role: "admin"]
-    test "children renders published note", %{
-      conn: conn,
-      data_structure_version: structure_version,
-      published_note: %{df_content: %{"alias" => content_alias}}
-    } do
-      %{data_structure_id: parent_structure_id} = parent_version = insert(:data_structure_version)
+    @tag alias: "child_alias"
+    test "children renders alias", %{conn: conn, data_structure_version: %{id: child_id}} do
+      %{parent: %{data_structure_id: parent_structure_id}} =
+        insert(:data_structure_relation,
+          child_id: child_id,
+          relation_type_id: RelationTypes.default_id!()
+        )
 
-      relation_type_id = RelationTypes.default_id!()
-
-      insert(:data_structure_relation,
-        parent_id: parent_version.id,
-        child_id: structure_version.id,
-        relation_type_id: relation_type_id
-      )
-
-      assert %{"data" => %{"children" => [%{"published_note" => note}]}} =
+      assert %{"data" => %{"children" => [child]}} =
                conn
                |> get(
                  Routes.data_structure_data_structure_version_path(
@@ -738,35 +832,56 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                )
                |> json_response(:ok)
 
-      assert note == %{"alias" => content_alias}
+      refute Map.has_key?(child, "published_note")
+      assert %{"alias" => "child_alias"} = child
     end
 
     @tag authentication: [role: "admin"]
-    test "siblings renders published note", %{
-      conn: conn,
-      data_structure_version: structure_version,
-      published_note: %{df_content: %{"alias" => content_alias}}
-    } do
+    @tag alias: "parent_alias"
+    test "parents renders alias", %{conn: conn, data_structure_version: %{id: parent_id}} do
+      %{child: %{data_structure_id: child_structure_id}} =
+        insert(:data_structure_relation,
+          parent_id: parent_id,
+          relation_type_id: RelationTypes.default_id!()
+        )
+
+      assert %{"data" => %{"parents" => [child]}} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(
+                   conn,
+                   :show,
+                   child_structure_id,
+                   "latest"
+                 )
+               )
+               |> json_response(:ok)
+
+      refute Map.has_key?(child, "published_note")
+      assert %{"alias" => "parent_alias"} = child
+    end
+
+    @tag authentication: [role: "admin"]
+    @tag alias: "sibling_alias"
+    test "siblings renders alias", %{conn: conn, data_structure_version: structure_version} do
       parent_version = insert(:data_structure_version)
 
       %{data_structure_id: sibling_structure_id} =
         sibling_version = insert(:data_structure_version)
 
-      relation_type_id = RelationTypes.default_id!()
-
       insert(:data_structure_relation,
         parent_id: parent_version.id,
         child_id: structure_version.id,
-        relation_type_id: relation_type_id
+        relation_type_id: RelationTypes.default_id!()
       )
 
       insert(:data_structure_relation,
         parent_id: parent_version.id,
         child_id: sibling_version.id,
-        relation_type_id: relation_type_id
+        relation_type_id: RelationTypes.default_id!()
       )
 
-      assert %{"data" => %{"siblings" => [%{"published_note" => note}, _]}} =
+      assert %{"data" => %{"siblings" => [sibling, _]}} =
                conn
                |> get(
                  Routes.data_structure_data_structure_version_path(
@@ -778,20 +893,19 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                )
                |> json_response(:ok)
 
-      assert note == %{"alias" => content_alias}
+      refute Map.has_key?(sibling, "published_note")
+      assert %{"alias" => "sibling_alias"} = sibling
     end
   end
 
   describe "GET /api/data_structures/:id/versions/:version implementations" do
-    setup :create_structure_with_implementation
-
     @tag authentication: [role: "admin"]
-    test "rendes related implementations", %{
-      conn: conn,
-      data_structure: %{id: id},
-      implementation: %{implementation_key: implementation_key},
-      implementation_structure: %{id: implementation_structure_id}
-    } do
+    test "renders implementation count", %{conn: conn} do
+      %{data_structure_id: id} = insert(:data_structure_version)
+      insert(:implementation_structure, data_structure_id: id)
+      insert(:implementation_structure, data_structure_id: id)
+      insert(:implementation_structure, data_structure_id: id, deleted_at: DateTime.utc_now())
+
       assert %{"data" => data} =
                conn
                |> get(
@@ -799,103 +913,143 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                )
                |> json_response(:ok)
 
-      assert %{
-               "implementations" => [
-                 %{
-                   "id" => ^implementation_structure_id,
-                   "implementation" => %{"implementation_key" => ^implementation_key}
-                 }
-               ]
-             } = data
+      assert %{"implementation_count" => 2} = data
     end
   end
 
-  describe "bulk_update" do
-    @tag authentication: [role: "admin"]
-    test "bulk update of data structures", %{conn: conn} do
-      %{id: structure_id} = insert(:data_structure, external_id: "Structure")
+  describe "protected metadata" do
+    setup %{domain: %{id: domain_id}} do
+      metadata = %{
+        "m_foo" => "m_foo",
+        @protected => %{"mp_foo" => "mp_foo"}
+      }
 
-      insert(:structure_note,
-        data_structure_id: structure_id,
-        df_content: %{"Field1" => "foo", "Field2" => "bar"}
+      mutable_metadata = %{
+        "mm_foo" => "mm_foo",
+        @protected => %{"mmp_protected" => "mmp_protected"}
+      }
+
+      structure = insert(:data_structure, domain_ids: [domain_id])
+
+      insert(:structure_metadata, data_structure_id: structure.id, fields: mutable_metadata)
+
+      insert(
+        :data_structure_version,
+        data_structure_id: structure.id,
+        metadata: metadata
       )
 
-      dsv = insert(:data_structure_version, data_structure_id: structure_id)
-
-      ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
-        assert query == %{
-                 bool: %{
-                   filter: %{term: %{"type.raw" => "Table"}},
-                   must_not: %{exists: %{field: "deleted_at"}}
-                 }
-               }
-
-        SearchHelpers.hits_response([dsv])
-      end)
-
-      assert %{"errors" => [], "ids" => [^structure_id | _]} =
-               conn
-               |> post(Routes.data_structure_path(conn, :bulk_update), %{
-                 "bulk_update_request" => %{
-                   "update_attributes" => %{
-                     "df_content" => %{
-                       "Field1" => "hola soy field 1",
-                       "Field2" => "hola soy field 2"
-                     },
-                     "otra_cosa" => 2
-                   },
-                   "search_params" => %{
-                     "filters" => %{
-                       "type.raw" => [
-                         "Table"
-                       ]
-                     }
-                   }
-                 }
-               })
-               |> json_response(:ok)
+      [metadata: metadata, mutable_metadata: mutable_metadata, structure: structure]
     end
 
-    @tag authentication: [role: "admin"]
-    test "bulk update of data structures with no filter type", %{conn: conn} do
-      ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
-        assert query == %{
-                 bool: %{
-                   filter: %{term: %{"type.raw" => "Field"}},
-                   must_not: %{exists: %{field: "deleted_at"}}
-                 }
-               }
-
-        SearchHelpers.hits_response([])
-      end)
-
-      %{id: structure_id} = insert(:data_structure, external_id: "Structure")
-      insert(:data_structure_version, data_structure_id: structure_id)
-
-      assert %{"errors" => [], "ids" => []} =
+    @tag authentication: [
+           role: "user",
+           permissions: [:view_data_structure, :view_protected_metadata]
+         ]
+    test "renders protected metadata fields if the user has view_protected_metadata permission",
+         %{
+           conn: conn,
+           metadata: metadata,
+           mutable_metadata: mutable_metadata,
+           structure: structure
+         } do
+      assert %{"data" => %{"metadata" => merged_metadata}} =
                conn
-               |> post(Routes.data_structure_path(conn, :bulk_update), %{
-                 "bulk_update_request" => %{
-                   "update_attributes" => %{
-                     "df_content" => %{
-                       "Field1" => "hola soy field 1",
-                       "Field2" => "hola soy field 2"
-                     },
-                     "otra_cosa" => 2
-                   },
-                   "search_params" => %{
-                     "filters" => %{
-                       "type.raw" => [
-                         "Field"
-                       ]
-                     }
-                   }
-                 }
-               })
+               |> get(
+                 Routes.data_structure_data_structure_version_path(
+                   conn,
+                   :show,
+                   structure.id,
+                   "latest"
+                 )
+               )
                |> json_response(:ok)
+
+      assert merged_metadata == merge_metadata(metadata, mutable_metadata)
+      assert @protected in Map.keys(merged_metadata)
     end
+
+    @tag authentication: [role: "user", permissions: [:view_data_structure]]
+    test "filters protected metadata fields if the user does not have view_protected_metadata permission",
+         %{
+           conn: conn,
+           metadata: metadata,
+           mutable_metadata: mutable_metadata,
+           structure: structure
+         } do
+      assert %{"data" => %{"metadata" => merged_metadata}} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(
+                   conn,
+                   :show,
+                   structure.id,
+                   "latest"
+                 )
+               )
+               |> json_response(:ok)
+
+      assert merged_metadata ==
+               merge_metadata(metadata, mutable_metadata) |> Map.drop([@protected])
+    end
+
+    @tag authentication: [
+           role: "user",
+           permissions: [:view_data_structure, :view_protected_metadata]
+         ]
+    test "filters protected metadata fields if view_protected metadata permission domain (@tag above) does not match structure domain",
+         %{
+           conn: conn,
+           metadata: metadata,
+           mutable_metadata: mutable_metadata,
+           claims: claims
+         } do
+      %{id: another_domain_id} = CacheHelpers.insert_domain()
+
+      CacheHelpers.put_session_permissions(claims, %{
+        "view_data_structure" => [another_domain_id]
+        # No view protected metadata for another_domain_id.
+      })
+
+      another_structure = insert(:data_structure, domain_ids: [another_domain_id])
+
+      insert(
+        :data_structure_version,
+        data_structure_id: another_structure.id,
+        metadata: metadata
+      )
+
+      insert(:structure_metadata,
+        data_structure_id: another_structure.id,
+        fields: mutable_metadata
+      )
+
+      assert %{"data" => %{"metadata" => merged_metadata}} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(
+                   conn,
+                   :show,
+                   another_structure.id,
+                   "latest"
+                 )
+               )
+               |> json_response(:ok)
+
+      assert merged_metadata ==
+               merge_metadata(metadata, mutable_metadata) |> Map.drop([@protected])
+    end
+  end
+
+  defp merge_metadata(metadata, mutable_metadata) do
+    Map.merge(
+      metadata,
+      mutable_metadata,
+      fn
+        @protected, mp, mmp -> Map.merge(mp, mmp)
+        _key, _mp, mmp -> mmp
+      end
+    )
   end
 
   defp create_structure_hierarchy(_) do
@@ -962,37 +1116,24 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     ]
   end
 
-  defp create_structure_with_implementation(_) do
-    %{data_structure: data_structure} = insert(:data_structure_version)
+  defp create_structure(context) do
+    alias_name = Map.get(context, :alias)
 
-    implementation = insert(:implementation)
+    %{data_structure: data_structure} =
+      data_structure_version =
+      insert(:data_structure_version, data_structure: build(:data_structure, alias: alias_name))
 
-    implementation_structure =
-      insert(:implementation_structure,
-        implementation: implementation,
-        data_structure: data_structure
-      )
-
-    [
-      implementation: implementation,
-      data_structure: data_structure,
-      implementation_structure: implementation_structure
-    ]
+    [data_structure: data_structure, data_structure_version: data_structure_version]
   end
 
-  defp create_structure_with_published_note(_) do
-    %{data_structure: data_structure} = data_structure_version = insert(:data_structure_version)
-
-    note =
-      insert(:structure_note,
-        data_structure: data_structure,
-        df_content: %{"Field1" => "xyzzy", "list" => "two", "alias" => "some alias"},
-        status: :published
-      )
-
+  defp create_published_note(%{data_structure: data_structure}) do
     [
-      published_note: note,
-      data_structure_version: data_structure_version
+      published_note:
+        insert(:structure_note,
+          data_structure: data_structure,
+          df_content: %{"Field1" => "xyzzy", "list" => "two", "alias" => "some alias"},
+          status: :published
+        )
     ]
   end
 
@@ -1049,10 +1190,21 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     {:ok, parent_structure: parent, child_structures: children}
   end
 
-  defp create_field_structure(%{domain: domain}) do
+  defp create_field_structure(%{domain: domain} = context) do
     %{id: source_id} = insert(:source, config: %{"job_types" => ["catalog", "profile"]})
 
-    data_structure = insert(:data_structure, domain_ids: [domain.id], source_id: source_id)
+    data_structure =
+      insert(:data_structure,
+        domain_ids: [domain.id],
+        source_id: source_id,
+        alias: Map.get(context, :alias)
+      )
+
+    insert(:structure_note,
+      status: :published,
+      df_content: %{"alias" => "field_alias"},
+      data_structure: data_structure
+    )
 
     data_structure_version =
       insert(:data_structure_version,
@@ -1068,7 +1220,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     ]
   end
 
-  defp create_table_structure(%{domain: domain}) do
+  defp create_table_structure(%{domain: domain} = context) do
     %{id: source_id} = insert(:source, config: %{"job_types" => ["catalog", "profile"]})
 
     %{data_structure: data_structure} =
@@ -1079,7 +1231,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       )
 
     %{id: field_id} =
-      create_field_structure(%{domain: domain})
+      create_field_structure(context)
       |> Keyword.get(:data_structure_version)
 
     insert(:data_structure_relation,

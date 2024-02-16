@@ -1,8 +1,6 @@
 defmodule TdDdWeb.MetadataController do
   use TdDdWeb, :controller
 
-  import Canada, only: [can?: 2]
-
   require Logger
 
   alias Plug.Upload
@@ -64,6 +62,7 @@ defmodule TdDdWeb.MetadataController do
     else
       {:can, false} -> {:can, false}
       nil -> {:error, :not_found}
+      {:error, :graph, message, _changes_so_far} -> {:error, :unprocessable_entity, message}
     end
   end
 
@@ -132,18 +131,28 @@ defmodule TdDdWeb.MetadataController do
 
   def can_upload?(claims, %{"domain" => external_id}) do
     case DomainCache.external_id_to_id(external_id) do
-      {:ok, domain_id} -> can?(claims, upload(domain_id))
-      _ -> can?(claims, upload(:no_domain))
+      {:ok, domain_id} -> Bodyguard.permit?(DataStructures, :upload, claims, domain_id)
+      _ -> Bodyguard.permit?(DataStructures, :upload, claims, :no_domain)
     end
   end
 
-  def can_upload?(claims, _params), do: can?(claims, upload(DataStructure))
+  def can_upload?(claims, _params), do: Bodyguard.permit?(DataStructures, :upload, claims)
 
   @spec loader_opts(map) :: keyword()
   def loader_opts(%{} = params) do
     params
-    |> Map.take(["domain", "source", "external_id", "parent_external_id", "op", "job_id"])
+    |> Map.take([
+      "domain",
+      "inherit_domains",
+      "source",
+      "external_id",
+      "parent_external_id",
+      "op",
+      "job_id"
+    ])
     |> Keyword.new(fn
+      {"inherit_domains" = k, "true"} -> {String.to_atom(k), true}
+      {"inherit_domains" = k, _} -> {String.to_atom(k), false}
       {"op", v} -> {:operation, v}
       {k, v} -> {String.to_atom(k), v}
     end)

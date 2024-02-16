@@ -83,10 +83,10 @@ defmodule TdDd.Lineage.UnitsTest do
     end
   end
 
-  describe "Units.list_domains/" do
+  describe "Units.list_domain_ids/" do
     test "returns empty units have not domains" do
       insert(:unit)
-      assert [] = Units.list_domains()
+      assert [] = Units.list_domain_ids()
     end
 
     test "return units taxonomy" do
@@ -94,21 +94,12 @@ defmodule TdDd.Lineage.UnitsTest do
       %{id: domain_id} = CacheHelpers.insert_domain(%{parent_id: parent_domain_id})
       %{id: sibling_domain_id} = CacheHelpers.insert_domain(%{parent_id: parent_domain_id})
       insert(:unit)
-      %{id: unit_id} = insert(:unit, domain_id: domain_id)
-      %{id: sibling_unit_id} = insert(:unit, domain_id: sibling_domain_id)
+      insert(:unit, domain_id: domain_id)
+      insert(:unit, domain_id: sibling_domain_id)
 
-      assert [_, _, _] = domains = Units.list_domains()
-
-      assert %{unit: ^unit_id, parent_ids: parent_ids, hint: :domain} =
-               Enum.find(domains, &(&1.id == domain_id))
-
-      assert parent_ids == [parent_domain_id]
-
-      assert %{unit: ^sibling_unit_id, parent_ids: parent_ids, hint: :domain} =
-               Enum.find(domains, &(&1.id == sibling_domain_id))
-
-      assert parent_ids == [parent_domain_id]
-      assert %{parent_id: nil, hint: :domain} = Enum.find(domains, &(&1.id == parent_domain_id))
+      assert [_, _] = domain_ids = Units.list_domain_ids()
+      assert domain_id in domain_ids
+      assert sibling_domain_id in domain_ids
     end
   end
 

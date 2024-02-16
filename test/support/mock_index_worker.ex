@@ -27,6 +27,18 @@ defmodule TdDd.Search.MockIndexWorker do
     Agent.update(__MODULE__, &[{:reindex_grants, params} | &1])
   end
 
+  def reindex_grant_requests do
+    Agent.update(__MODULE__, &[:reindex_grant_requests | &1])
+  end
+
+  def reindex_grant_requests(params) do
+    Agent.update(__MODULE__, &[{:reindex_grant_requests, params} | &1])
+  end
+
+  def call_reindex_grant_requests(params) do
+    Agent.update(__MODULE__, &[{:reindex_grant_requests, params} | &1])
+  end
+
   def reindex_rules(param) do
     Agent.update(__MODULE__, &[{:reindex_rules, param} | &1])
   end
@@ -35,12 +47,20 @@ defmodule TdDd.Search.MockIndexWorker do
     Agent.update(__MODULE__, &[{:reindex_implementations, param} | &1])
   end
 
+  def delete(param) do
+    Agent.update(__MODULE__, &[{:delete, param} | &1])
+  end
+
   def delete_rules(param) do
     Agent.update(__MODULE__, &[{:delete_rules, param} | &1])
   end
 
   def delete_implementations(param) do
     Agent.update(__MODULE__, &[{:delete_implementations, param} | &1])
+  end
+
+  def delete_grant_requests(param) do
+    Agent.update(__MODULE__, &[{:delete_grant_requests, param} | &1])
   end
 
   def ping(param) do

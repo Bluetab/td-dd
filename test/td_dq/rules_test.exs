@@ -3,6 +3,7 @@ defmodule TdDq.RulesTest do
 
   alias TdCache.Redix
   alias TdCache.Redix.Stream
+  alias TdDq.Implementations
   alias TdDq.Rules
   alias TdDq.Rules.Rule
 
@@ -20,7 +21,7 @@ defmodule TdDq.RulesTest do
     start_supervised(TdDq.MockRelationCache)
     start_supervised(TdDd.Search.MockIndexWorker)
     start_supervised(TdDq.Cache.RuleLoader)
-    [claims: build(:dq_claims)]
+    [claims: build(:claims)]
   end
 
   describe "list_rules/0" do
@@ -139,7 +140,8 @@ defmodule TdDq.RulesTest do
     test "delete_rule/1 deletes the rule", %{claims: claims} do
       rule = insert(:rule)
       assert {:ok, %{rule: rule}} = Rules.delete_rule(rule, claims)
-      assert %{__meta__: %{state: :deleted}} = rule
+      assert %{active: false, deleted_at: deleted_at} = rule
+      assert deleted_at !== nil
     end
 
     test "soft_deletion modifies field deleted_at of rule and associated implementations with the current timestamp" do
@@ -158,7 +160,7 @@ defmodule TdDq.RulesTest do
       # 2,4,6,8 are deleted
       active_ids = [1, 3, 5, 7]
 
-      ts = DateTime.utc_now() |> DateTime.truncate(:second)
+      ts = DateTime.truncate(DateTime.utc_now(), :second)
 
       {:ok, %{rules: {count, _}, deprecated: {ri_count, _}}} = Rules.soft_deletion(active_ids, ts)
 
@@ -179,6 +181,19 @@ defmodule TdDq.RulesTest do
       assert Enum.all?(active_rules, &is_nil(&1.deleted_at))
       assert Enum.all?(deleted_rules, &(&1.deleted_at == ts))
       assert Enum.map(deleted_rules, & &1.business_concept_id) == [2, 4, 6, 8]
+    end
+
+    test "soft_deletion modifies field deleted_at and status of associated implementations" do
+      %{id: rule_id} = insert(:rule)
+
+      %{id: implementation_id} =
+        insert(:implementation, rule_id: rule_id, implementation_key: "ri_of_#{rule_id}")
+
+      {:ok, _} = Rules.soft_deletion([rule_id], DateTime.truncate(DateTime.utc_now(), :second))
+
+      %{status: status} = Implementations.get_implementation!(implementation_id)
+
+      assert status == :deprecated
     end
 
     test "list_rules/1 retrieves all rules filtered by ids" do

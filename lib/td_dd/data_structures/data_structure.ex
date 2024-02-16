@@ -8,11 +8,12 @@ defmodule TdDd.DataStructures.DataStructure do
   import Ecto.Changeset
 
   alias TdCx.Sources.Source
-  alias TdDd.DataStructures.DataStructuresTags
-  alias TdDd.DataStructures.DataStructureTag
+  alias TdDd.DataStructures.DataStructureLink
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.DataStructures.StructureNote
+  alias TdDd.DataStructures.Tags.StructureTag
+  alias TdDd.DataStructures.Tags.Tag
   alias TdDd.Grants.Grant
   alias TdDd.Lineage.Units.Node
   alias TdDd.Profiles.Profile
@@ -31,9 +32,10 @@ defmodule TdDd.DataStructures.DataStructure do
     field(:latest_metadata, :map, virtual: true)
     field(:domains, :map, virtual: true)
     field(:linked_concepts, :boolean, virtual: true)
-
     field(:latest_note, :map, virtual: true)
     field(:search_content, :map, virtual: true)
+    field(:alias, :string)
+
     has_one(:published_note, StructureNote, where: [status: :published])
 
     belongs_to(:system, System, on_replace: :update)
@@ -43,16 +45,29 @@ defmodule TdDd.DataStructures.DataStructure do
     has_many(:metadata_versions, StructureMetadata)
     has_many(:note_versions, StructureNote)
     has_one(:profile, Profile)
-    has_many(:data_structures_tags, DataStructuresTags)
+    has_many(:structure_tags, StructureTag)
     has_many(:grants, Grant)
-    many_to_many(:tags, DataStructureTag, join_through: DataStructuresTags)
+    many_to_many(:tags, Tag, join_through: StructureTag)
     has_one(:current_version, DataStructureVersion, where: [deleted_at: nil])
     has_one(:current_metadata, StructureMetadata, where: [deleted_at: nil])
     has_many(:implementations, ImplementationStructure, where: [deleted_at: nil])
     has_many(:nodes, Node, foreign_key: :structure_id)
     has_many(:units, through: [:nodes, :units])
 
+    many_to_many(:linked_data_structures, __MODULE__,
+      join_through: DataStructureLink,
+      join_keys: [source_id: :id, target_id: :id]
+    )
+
+    has_many(:data_structure_links, DataStructureLink, foreign_key: :source_id)
+
     timestamps(type: :utc_datetime_usec)
+  end
+
+  def alias_changeset(%__MODULE__{} = data_structure, value, last_change_by) do
+    data_structure
+    |> cast(%{alias: value}, [:alias])
+    |> put_audit(last_change_by)
   end
 
   def changeset(%__MODULE__{} = data_structure, params, last_change_by)

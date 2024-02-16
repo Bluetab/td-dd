@@ -93,12 +93,13 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/implementations/_search", %{from: 0, size: 10_000, query: query}, [] ->
+        _, :post, "/implementations/_search", %{from: 0, size: 10_000, query: query}, _ ->
           assert %{
                    bool: %{
                      filter: [
                        %{terms: %{"id" => [_, _]}},
                        %{term: %{"domain_ids" => _}},
+                       %{term: %{"executable" => true}},
                        %{term: %{"_confidential" => false}}
                      ],
                      must_not: _deleted_at
@@ -118,6 +119,54 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
                |> json_response(:created)
 
       assert %{"id" => _, "inserted_at" => _, "df_content" => %{"foo" => "bar"}} = data
+    end
+
+    @tag authentication: [
+           user_name: "not_an_admin",
+           permissions: [:execute_quality_rule_implementations, :view_quality_rule]
+         ]
+    test "returns only allowed implementations to execute", %{
+      conn: conn,
+      domain: %{id: allowed_domain_id}
+    } do
+      %{id: id1} = i1 = insert(:implementation, domain_id: allowed_domain_id)
+      %{id: id2} = i2 = insert(:implementation, domain_id: allowed_domain_id)
+      %{id: forbidden_domain_id} = build(:domain)
+      %{id: forbidden_id} = insert(:implementation, domain_id: forbidden_domain_id)
+
+      ElasticsearchMock
+      |> expect(:request, fn
+        _, :post, "/implementations/_search", %{from: 0, size: 10_000, query: query}, _ ->
+          assert %{
+                   bool: %{
+                     filter: [
+                       %{terms: %{"id" => [_, _, _]}},
+                       %{term: %{"domain_ids" => ^allowed_domain_id}},
+                       %{term: %{"executable" => true}},
+                       %{term: %{"_confidential" => false}}
+                     ],
+                     must_not: _deleted_at
+                   }
+                 } = query
+
+          SearchHelpers.hits_response([i1, i2])
+      end)
+
+      filters = %{"id" => [id1, id2, forbidden_id]}
+      params = %{"filters" => filters, "df_content" => %{"foo" => "bar"}}
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.execution_group_path(conn, :create, params))
+               |> json_response(:created)
+
+      assert %{"id" => _, "inserted_at" => _, "df_content" => %{"foo" => "bar"}} = data
+      assert %{"_embedded" => %{"executions" => executions}} = data
+
+      assert [
+               %{"_embedded" => %{"implementation" => %{"id" => ^id1}}},
+               %{"_embedded" => %{"implementation" => %{"id" => ^id2}}}
+             ] = executions
     end
 
     @tag authentication: [user_name: "not_an_admin"]

@@ -1,9 +1,6 @@
 defmodule TdDqWeb.RuleResultController do
   use TdDqWeb, :controller
 
-  import Canada, only: [can?: 2]
-
-  alias TdDq.Rules.RuleResult
   alias TdDq.Rules.RuleResults
   alias TdDq.Rules.RuleResults.BulkLoad
 
@@ -14,7 +11,7 @@ defmodule TdDqWeb.RuleResultController do
   def create(conn, params) do
     with claims <- conn.assigns[:current_resource],
          %{"rule_results" => rule_results_file} <- params,
-         {:can, true} <- {:can, can?(claims, upload(RuleResult))},
+         :ok <- Bodyguard.permit(RuleResults, :upload, claims),
          rule_results_data <- rule_results_from_csv(rule_results_file),
          {:ok, _} <- BulkLoad.bulk_load(rule_results_data) do
       send_resp(conn, :ok, "")
@@ -36,25 +33,29 @@ defmodule TdDqWeb.RuleResultController do
   def delete(conn, %{"id" => id}) do
     with claims <- conn.assigns[:current_resource],
          rule_result <- RuleResults.get_rule_result(id),
-         {:can, true} <- {:can, can?(claims, delete(rule_result))},
+         :ok <- Bodyguard.permit(RuleResults, :delete, claims, rule_result),
          {:ok, _rule_result} <- RuleResults.delete_rule_result(rule_result) do
       send_resp(conn, :no_content, "")
     end
   end
 
-  @spec show(atom | %{:assigns => nil | maybe_improper_list | map, optional(any) => any}, map) ::
-          {:can, any} | Plug.Conn.t()
   def show(conn, %{"id" => id} = _params) do
     with claims <- conn.assigns[:current_resource],
          rule_result <- RuleResults.get_rule_result(id),
-         {:can, true} <- {:can, can?(claims, view(rule_result))} do
+         :ok <- Bodyguard.permit(RuleResults, :view, claims, rule_result) do
       render(conn, "show.json", rule_result: rule_result)
     end
   end
 
   def index(conn, params) do
-    rule_results = RuleResults.list_rule_results(params)
-    render(conn, "index.json", rule_results: rule_results)
+    with claims <- conn.assigns[:current_resource],
+         :ok <- Bodyguard.permit(RuleResults, :list_rule_results, claims),
+         {:ok, %{all: rule_results, total: total}} <-
+           RuleResults.list_rule_results_paginate(params) do
+      conn
+      |> put_resp_header("x-total-count", "#{total}")
+      |> render("index.json", rule_results: rule_results)
+    end
   end
 
   defp rule_results_from_csv(%{path: path}) do

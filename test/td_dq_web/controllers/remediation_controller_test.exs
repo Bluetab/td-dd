@@ -34,7 +34,13 @@ defmodule TdDqWeb.RemediationControllerTest do
     CacheHelpers.insert_template(remediation_template)
     domain = Map.get(tags, :domain, CacheHelpers.insert_domain())
     rule = insert(:rule, domain_id: domain.id)
-    %{id: rule_result_id} = rule_result = insert(:rule_result, rule: rule)
+
+    %{id: rule_result_id} =
+      rule_result =
+      insert(:rule_result,
+        rule: rule,
+        implementation: build(:implementation, domain_id: domain.id)
+      )
 
     remediation = insert(:remediation, rule_result_id: rule_result_id)
 
@@ -92,7 +98,7 @@ defmodule TdDqWeb.RemediationControllerTest do
     end
 
     @tag authentication: [role: "user"]
-    test "user without manage_remediation can view remediation", %{
+    test "user without manage_remediations can view remediation", %{
       conn: conn,
       rule_result: %{id: rule_result_id},
       remediation: %{id: remediation_id}
@@ -106,7 +112,7 @@ defmodule TdDqWeb.RemediationControllerTest do
     end
 
     @tag authentication: [role: "user", permissions: ["manage_remediations"]]
-    test "user with manage_remediation permission can view remediation", %{
+    test "user with manage_remediations permission can view remediation", %{
       conn: conn,
       rule_result: %{id: rule_result_id},
       remediation: %{id: remediation_id}
@@ -120,7 +126,7 @@ defmodule TdDqWeb.RemediationControllerTest do
     end
 
     @tag authentication: [role: "user", permissions: ["manage_remediations"]]
-    test "user with manage_remediation permission can create remediation", %{
+    test "user with manage_remediations permission can create remediation", %{
       conn: conn,
       rule_result: %{id: rule_result_id}
     } do
@@ -147,14 +153,16 @@ defmodule TdDqWeb.RemediationControllerTest do
     end
 
     @tag authentication: [role: "user", permissions: ["manage_remediations"]]
-    test "user with manage_remediation permission can update remediation", %{
+    test "user with manage_remediations permission can update remediation", %{
       conn: conn,
       template: %{name: df_name},
       rule_result: %{id: rule_result_id}
     } do
+      fd_content = %{"texto" => "new text"}
+
       remediation_params = %{
         "df_name" => df_name,
-        "df_content" => %{"text" => "new text"}
+        "df_content" => fd_content
       }
 
       assert %{"data" => data} =
@@ -166,7 +174,7 @@ defmodule TdDqWeb.RemediationControllerTest do
 
       assert %{
                "df_name" => ^df_name,
-               "df_content" => %{"text" => "new text"}
+               "df_content" => ^fd_content
              } = data
     end
 

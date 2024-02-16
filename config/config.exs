@@ -1,16 +1,20 @@
 # This file is responsible for configuring your application
-# and its dependencies with the aid of the Mix.Config module.
+# and its dependencies with the aid of the Config module.
 #
 # This configuration file is loaded before any dependency and
 # is restricted to this project.
 
-use Mix.Config
+import Config
 
 config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
 config :td_dd, :time_zone, System.get_env("TZ", "Etc/UTC")
 
+# Language
+config :td_dd, :lang, "en"
+
 # Environment
 config :td_dd, :env, Mix.env()
+config :td_cluster, :env, Mix.env()
 
 # General application configuration
 config :td_dd,
@@ -40,7 +44,7 @@ config :td_dd, TdDqWeb.Endpoint,
 # EX_LOGGER_FORMAT='$date $time [$level] $message'
 config :logger, :console,
   format:
-    (System.get_env("EX_LOGGER_FORMAT") || "$date\T$time\Z [$level]$levelpad $metadata$message") <>
+    (System.get_env("EX_LOGGER_FORMAT") || "$date\T$time\Z [$level] $metadata$message") <>
       "\n",
   level: :info,
   metadata: [:pid, :module],
@@ -50,24 +54,10 @@ config :logger, :console,
 config :phoenix, :json_library, Jason
 config :phoenix_swagger, json_library: Jason
 
-config :td_dd, TdDd.Auth.Guardian,
-  # optional
+config :td_dd, Truedat.Auth.Guardian,
   allowed_algos: ["HS512"],
   issuer: "tdauth",
-  ttl: {1, :hours},
-  secret_key: "SuperSecretTruedat"
-
-config :td_dd, TdCx.Auth.Guardian,
-  # optional
-  allowed_algos: ["HS512"],
-  issuer: "tdauth",
-  ttl: {1, :hours},
-  secret_key: "SuperSecretTruedat"
-
-config :td_dd, TdDq.Auth.Guardian,
-  # optional
-  allowed_algos: ["HS512"],
-  issuer: "tdauth",
+  aud: "truedat",
   ttl: {1, :hours},
   secret_key: "SuperSecretTruedat"
 
@@ -105,6 +95,8 @@ config :td_dd, TdDd.Repo,
   pool_size: 4,
   timeout: 600_000
 
+config :td_df_lib, lang: "en"
+
 config :td_cache, :audit,
   service: "td_dd",
   stream: "audit:events"
@@ -117,7 +109,7 @@ config :td_cache, :event_stream,
     [group: "dd", key: "template:events", consumer: TdDd.Search.IndexWorker],
     [group: "dq", key: "business_concept:events", consumer: TdDq.Search.IndexWorker],
     [group: "dq", key: "domain:events", consumer: TdDq.Cache.DomainEventConsumer],
-    [group: "dq", key: "implementation:events", consumer: TdDq.Cache.ImplementationLoader],
+    [group: "dq", key: "implementation_ref:events", consumer: TdDq.Cache.ImplementationLoader],
     [group: "dq", key: "template:events", consumer: TdDq.Search.IndexWorker]
   ]
 
@@ -190,6 +182,17 @@ config :td_dd, TdDd.Scheduler,
       task: {TdDd.Cache.StructuresForceUpdate, :migrate, []},
       run_strategy: Quantum.RunStrategy.Local
     ],
+    force_update_implementation_cache: [
+      schedule: "@reboot",
+      task: {TdDq.Cache.ImplementationsForceUpdate, :migrate, []},
+      run_strategy: Quantum.RunStrategy.Local
+    ],
+    do_relation_between_impl_id_and_impl_ref: [
+      schedule: "@reboot",
+      task:
+        {TdDq.Cache.ImplementationLoader, :implementation_ids_to_migrate_implementation_ref, []},
+      run_strategy: Quantum.RunStrategy.Local
+    ],
     expand_profile_values: [
       schedule: "@reboot",
       task: {TdDd.Profiles, :expand_profile_values, []},
@@ -199,8 +202,15 @@ config :td_dd, TdDd.Scheduler,
       schedule: "@reboot",
       task: {TdDd.DataStructures.DataStructureTypes, :refresh_metadata_fields, []},
       run_strategy: Quantum.RunStrategy.Local
+    ],
+    update_domain_fields: [
+      schedule: "@reboot",
+      task: {Truedat.Jobs.UpdateDomainFields, :run, []},
+      run_strategy: Quantum.RunStrategy.Local
     ]
   ]
+
+config :bodyguard, default_error: :forbidden
 
 import_config "metadata.exs"
 import_config "profiling.exs"
@@ -210,4 +220,4 @@ import_config "elastic.exs"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
-import_config "#{Mix.env()}.exs"
+import_config "#{config_env()}.exs"

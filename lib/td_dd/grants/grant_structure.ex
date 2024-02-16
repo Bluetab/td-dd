@@ -25,8 +25,10 @@ defmodule TdDd.Grants.GrantStructure do
     @impl Elasticsearch.Document
     def encode(%GrantStructure{
           grant: %Grant{} = grant,
-          data_structure_version: %DataStructureVersion{} = dsv
+          data_structure_version: dsv
         }) do
+      dsv = if is_nil(dsv), do: nil, else: Elasticsearch.Document.encode(dsv)
+
       %{
         id: grant.id,
         detail: grant.detail,
@@ -34,12 +36,13 @@ defmodule TdDd.Grants.GrantStructure do
         end_date: grant.end_date,
         inserted_at: grant.inserted_at,
         updated_at: grant.updated_at,
+        pending_removal: grant.pending_removal,
         user_id: grant.user_id,
         user: %{
           full_name: user_full_name(grant.user)
         },
         source_user_name: grant.source_user_name,
-        data_structure_version: Elasticsearch.Document.encode(dsv)
+        data_structure_version: dsv
       }
     end
 

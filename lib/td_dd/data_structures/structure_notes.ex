@@ -13,15 +13,8 @@ defmodule TdDd.DataStructures.StructureNotes do
   alias TdDd.Repo
   alias TdDd.Search.IndexWorker
 
-  @doc """
-  Returns the list of structure_notes.
+  defdelegate authorize(action, user, params), to: TdDd.DataStructures.StructureNotes.Policy
 
-  ## Examples
-
-      iex> list_structure_notes()
-      [%StructureNote{}, ...]
-
-  """
   def list_structure_notes do
     Repo.all(StructureNote)
   end
@@ -62,6 +55,9 @@ defmodule TdDd.DataStructures.StructureNotes do
 
   defp add_params({filter, updated_at}, query) when filter in ["since", "updated_at"],
     do: where(query, [sn], sn.updated_at >= ^updated_at)
+
+  defp add_params({filter, updated_at}, query) when filter in ["until"],
+    do: where(query, [sn], sn.updated_at <= ^updated_at)
 
   defp add_params({"system_id", system_id}, query) do
     query
@@ -117,20 +113,6 @@ defmodule TdDd.DataStructures.StructureNotes do
 
   defp get_cursor_params(params), do: params
 
-  @doc """
-  Gets a single structure_note.
-
-  Raises `Ecto.NoResultsError` if the Structure note does not exist.
-
-  ## Examples
-
-      iex> get_structure_note!(123)
-      %StructureNote{}
-
-      iex> get_structure_note!(456)
-      ** (Ecto.NoResultsError)
-
-  """
   def get_structure_note!(id), do: Repo.get!(StructureNote, id)
 
   def latest_structure_note_query(query, data_structure_id) do
@@ -155,27 +137,18 @@ defmodule TdDd.DataStructures.StructureNotes do
     |> Repo.one()
   end
 
-  @doc """
-  Creates a structure_note.
-
-  ## Examples
-
-      iex> create_structure_note(%{field: value}, %{}, user_id)
-      {:ok, %StructureNote{}}
-
-      iex> create_structure_note(%{field: bad_value}, %{}, user_id)
-      {:error, %Ecto.Changeset{}}
-
-  """
   def create_structure_note(%DataStructure{id: id} = data_structure, attrs, user_id) do
     changeset =
       StructureNote.create_changeset(
         %StructureNote{},
-        data_structure |> Map.put(:latest_note, get_latest_structure_note(id)),
+        %{data_structure | latest_note: get_latest_structure_note(id)},
         attrs
       )
 
     Multi.new()
+    |> Multi.run(:latest, fn _, _ ->
+      {:ok, DataStructures.get_latest_version(data_structure, [:path, :parent_relations])}
+    end)
     |> Multi.insert(:structure_note, changeset)
     |> Multi.run(:audit, Audit, :structure_note_updated, [changeset, user_id])
     |> Repo.transaction()
@@ -205,6 +178,9 @@ defmodule TdDd.DataStructures.StructureNotes do
       )
 
     Multi.new()
+    |> Multi.run(:latest, fn _, _ ->
+      {:ok, DataStructures.get_latest_version(data_structure, [:path, :parent_relations])}
+    end)
     |> Multi.insert(:structure_note, changeset)
     |> Multi.run(:audit, Audit, :structure_note_updated, [changeset, user_id])
     |> Repo.transaction()
@@ -216,27 +192,20 @@ defmodule TdDd.DataStructures.StructureNotes do
     |> on_update()
   end
 
-  @doc """
-  Updates a structure_note with bulk_update behaviour.
-
-  ## Examples
-
-      iex> bulk_update_structure_note(structure_note, %{field: new_value}, user_id)
-      {:ok, %StructureNote{}}
-
-      iex> bulk_update_structure_note(structure_note, %{field: bad_value}, user_id)
-      {:error, %Ecto.Changeset{}}
-
-  """
-
+  @doc "Updates a structure_note with bulk_update behaviour"
   def bulk_update_structure_note(%StructureNote{} = structure_note, attrs, user_id) do
-    structure_note = Repo.preload(structure_note, :data_structure)
+    %{data_structure: data_structure} =
+      structure_note = Repo.preload(structure_note, :data_structure)
+
     changeset = StructureNote.bulk_update_changeset(structure_note, attrs)
 
     if changeset.changes == %{} do
       {:ok, structure_note}
     else
       Multi.new()
+      |> Multi.run(:latest, fn _, _ ->
+        {:ok, DataStructures.get_latest_version(data_structure, [:path, :parent_relations])}
+      end)
       |> Multi.update(:structure_note, changeset)
       |> Multi.run(:audit, Audit, :structure_note_updated, [changeset, user_id])
       |> Repo.transaction()
@@ -248,19 +217,6 @@ defmodule TdDd.DataStructures.StructureNotes do
       |> on_update()
     end
   end
-
-  @doc """
-  Updates a structure_note.
-
-  ## Examples
-
-      iex> update_structure_note(structure_note, %{field: new_value}, user_id)
-      {:ok, %StructureNote{}}
-
-      iex> update_structure_note(structure_note, %{field: bad_value}, user_id)
-      {:error, %Ecto.Changeset{}}
-
-  """
 
   def update_structure_note(_structure_note, _attrs, _user_id, opts \\ [])
 
@@ -286,50 +242,51 @@ defmodule TdDd.DataStructures.StructureNotes do
 
     Multi.new()
     |> Multi.run(:latest, fn _, _ ->
-      {:ok, DataStructures.get_latest_version(data_structure, [:path])}
+      {:ok, DataStructures.get_latest_version(data_structure, [:path, :parent_relations])}
     end)
-    |> Multi.run(:structure_note, fn _, _ ->
-      {:ok, structure_note}
-    end)
+    |> Multi.run(:structure_note, fn _, _ -> {:ok, structure_note} end)
     |> Multi.update(:structure_note_update, changeset)
+    |> maybe_update_alias(status, user_id)
     |> Multi.run(:audit, Audit, :structure_note_status_updated, [status, user_id])
     |> Repo.transaction()
-    |> case do
-      {:ok, res} -> {:ok, Map.get(res, :structure_note_update)}
-      {:error, :structure_note_update, err, _} -> {:error, err}
-      err -> err
-    end
     |> on_update(opts)
   end
 
   def update_structure_note(%StructureNote{} = structure_note, attrs, user_id, opts) do
-    structure_note = Repo.preload(structure_note, :data_structure)
+    %{data_structure: data_structure} =
+      structure_note = Repo.preload(structure_note, :data_structure)
+
     changeset = StructureNote.changeset(structure_note, attrs)
 
     Multi.new()
+    |> Multi.run(:latest, fn _, _ ->
+      {:ok, DataStructures.get_latest_version(data_structure, [:path, :parent_relations])}
+    end)
     |> Multi.update(:structure_note, changeset)
     |> Multi.run(:audit, Audit, :structure_note_updated, [changeset, user_id])
     |> Repo.transaction()
-    |> case do
-      {:ok, res} -> {:ok, Map.get(res, :structure_note)}
-      {:error, :structure_note, err, _} -> {:error, err}
-      err -> err
-    end
     |> on_update(opts)
   end
 
-  @doc """
-  Deletes a structure_note.
+  def maybe_update_alias(multi, "deprecated", user_id) do
+    Multi.update(multi, :update_alias, fn %{
+                                            structure_note_update: %{
+                                              data_structure: data_structure
+                                            }
+                                          } ->
+      DataStructure.alias_changeset(data_structure, nil, user_id)
+    end)
+  end
 
-  ## Examples
+  def maybe_update_alias(multi, "published", user_id) do
+    Multi.update(multi, :update_alias, fn
+      %{structure_note_update: %{data_structure: data_structure, df_content: %{} = content}} ->
+        DataStructure.alias_changeset(data_structure, Map.get(content, "alias"), user_id)
+    end)
+  end
 
-      iex> delete_structure_note(structure_note, user_id)
-      {:ok, %StructureNote{}}
+  def maybe_update_alias(multi, _status, _user_id), do: multi
 
-      iex> delete_structure_note(structure_note, user_id)
-      {:error, %Ecto.Changeset{}}
-
-  """
   def delete_structure_note(
         %StructureNote{} = structure_note,
         user_id
@@ -353,19 +310,7 @@ defmodule TdDd.DataStructures.StructureNotes do
       {:error, _, changeset, _} ->
         {:error, changeset}
     end
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking structure_note changes.
-
-  ## Examples
-
-      iex> change_structure_note(structure_note)
-      %Ecto.Changeset{data: %StructureNote{}}
-
-  """
-  def change_structure_note(%StructureNote{} = structure_note, attrs \\ %{}) do
-    StructureNote.changeset(structure_note, attrs)
+    |> DataStructures.maybe_reindex_grant_requests()
   end
 
   defp on_update(res, opts \\ []) do
@@ -373,22 +318,42 @@ defmodule TdDd.DataStructures.StructureNotes do
       false -> on_update_structure(res)
       _ -> res
     end
+    |> DataStructures.maybe_reindex_grant_requests()
   end
 
-  defp on_update_structure({:ok, %StructureNote{status: :published, data_structure_id: id}} = res) do
+  defp on_update_structure(
+         {:ok, %{structure_note_update: %{status: status, data_structure_id: id}}} = res
+       )
+       when status in [:published, :deprecated] do
     IndexWorker.reindex(id)
-    res
-  end
 
-  defp on_update_structure({:ok, %StructureNote{}} = res), do: res
-
-  defp on_update_structure({:ok, %{} = res}) do
-    with %{data_structure: %{id: id}} <- res do
-      IndexWorker.reindex(id)
-    end
-
-    {:ok, res}
+    DataStructures.maybe_reindex_grant_requests(res)
   end
 
   defp on_update_structure(res), do: res
+
+  def suggestion_fields_for_template(template_id) do
+    {:ok, %{content: content}} = TdCache.TemplateCache.get(template_id)
+
+    content
+    |> TdDfLib.Format.flatten_content_fields()
+    |> Enum.filter(& &1["ai_suggestion"])
+    |> Enum.map(&map_suggestion_field/1)
+  end
+
+  defp map_suggestion_field(%{"values" => %{"fixed" => possible_values}} = field) do
+    field
+    |> Map.take(["name", "description"])
+    |> Map.put("possible_values", possible_values)
+  end
+
+  defp map_suggestion_field(%{"values" => %{"fixed_tuple" => tuples}} = field) do
+    possible_values = Enum.map(tuples, & &1["value"])
+
+    field
+    |> Map.take(["name", "description"])
+    |> Map.put("possible_values", possible_values)
+  end
+
+  defp map_suggestion_field(field), do: Map.take(field, ["name", "description"])
 end

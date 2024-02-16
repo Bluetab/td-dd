@@ -8,6 +8,8 @@ defmodule CacheHelpers do
 
   alias TdCache.AclCache
   alias TdCache.ConceptCache
+  alias TdCache.HierarchyCache
+  alias TdCache.I18nCache
   alias TdCache.ImplementationCache
   alias TdCache.LinkCache
   alias TdCache.Permissions
@@ -35,21 +37,23 @@ defmodule CacheHelpers do
     id = System.unique_integer([:positive])
     target_id = if is_nil(target_id), do: System.unique_integer([:positive]), else: target_id
 
+    link = %{
+      id: id,
+      source_type: source_type,
+      source_id: source_id,
+      target_type: target_type,
+      target_id: target_id,
+      updated_at: DateTime.utc_now()
+    }
+
     LinkCache.put(
-      %{
-        id: id,
-        source_type: source_type,
-        source_id: source_id,
-        target_type: target_type,
-        target_id: target_id,
-        updated_at: DateTime.utc_now()
-      },
+      link,
       publish: false
     )
 
     on_exit(fn -> LinkCache.delete(id, publish: false) end)
     _maybe_error = StructureEnricher.refresh()
-    :ok
+    link
   end
 
   def insert_template(params \\ %{}) do
@@ -83,6 +87,14 @@ defmodule CacheHelpers do
     AclCache.set_acl_roles("domain", domain_id, [role])
     AclCache.set_acl_role_users("domain", domain_id, role, user_ids)
     :ok
+  end
+
+  def insert_hierarchy(params) do
+    %{id: hierarchy_id} = hierarchy = build(:hierarchy, params)
+
+    {:ok, _} = HierarchyCache.put(hierarchy, publish: false)
+    on_exit(fn -> HierarchyCache.delete(hierarchy_id) end)
+    hierarchy
   end
 
   def put_grant_request_approvers(entries) when is_list(entries) do
@@ -119,6 +131,14 @@ defmodule CacheHelpers do
 
   defp expand_domain_ids(entry), do: [entry]
 
+  def put_permission_on_role(permission, role_name) do
+    put_permissions_on_roles(%{permission => [role_name]})
+  end
+
+  def put_permissions_on_roles(permissions) do
+    TdCache.Permissions.put_permission_roles(permissions)
+  end
+
   def put_session_permissions(%{} = claims, domain_id, permissions) do
     domain_ids_by_permission = Map.new(permissions, &{to_string(&1), [domain_id]})
     put_session_permissions(claims, domain_ids_by_permission)
@@ -138,11 +158,23 @@ defmodule CacheHelpers do
     TdCache.Permissions.put_default_permissions(permissions)
   end
 
-  def put_implementation(implementation) do
+  def put_implementation(%{implementation_ref: implementation_ref} = implementation) do
+    on_exit(fn -> ImplementationCache.delete(implementation_ref) end)
     ImplementationCache.put(implementation, publish: false)
   end
 
   def get_implementation(implementation_id) do
     ImplementationCache.get(implementation_id)
   end
+
+  def get_link(link_id) do
+    LinkCache.get(link_id)
+  end
+
+  def put_i18n_messages(lang, messages) when is_list(messages) do
+    Enum.each(messages, &I18nCache.put(lang, &1))
+    on_exit(fn -> I18nCache.delete(lang) end)
+  end
+
+  def put_i18n_message(lang, message), do: put_i18n_messages(lang, [message])
 end

@@ -16,15 +16,19 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
         _ -> CacheHelpers.insert_domain()
       end
 
-    %{id: id} = implementation = insert(:implementation, domain_id: domain_id)
+    %{id: id} = implementation = insert(:implementation, domain_id: domain_id, status: :published)
     execution = insert(:execution, group: build(:execution_group), implementation_id: id)
 
-    [execution: execution, implementation: implementation]
+    [
+      execution: execution,
+      implementation: implementation,
+      domain_id: domain_id
+    ]
   end
 
   describe "POST /api/rule_implementations/:id/results" do
-    @tag authentication: [role: "non_admin", permissions: [:manage_rule_results]]
-    test "returns 201 Created with the result", %{
+    @tag authentication: [role: "user", permissions: [:manage_rule_results]]
+    test "returns 201 Created with the result for a published implementation", %{
       conn: conn,
       swagger_schema: schema,
       implementation: %{implementation_key: key}
@@ -54,7 +58,37 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
     end
 
     @tag authentication: [role: "non_admin", permissions: [:manage_rule_results]]
-    test "returns 201 Created with the result with segments", %{
+    test "returns 404 not found when try to create results when implementation is not published ",
+         %{
+           conn: conn,
+           domain_id: domain_id,
+           swagger_schema: schema
+         } do
+      %{id: id, implementation_key: key} =
+        _implementation = insert(:implementation, domain_id: domain_id, status: :draft)
+
+      insert(:execution, group: build(:execution_group), implementation_id: id)
+
+      params =
+        string_params_for(:implementation_result_record,
+          implementation_key: key,
+          records: 100,
+          errors: 2,
+          params: %{"foo" => "bar"}
+        )
+
+      conn
+      |> post(
+        Routes.implementation_implementation_result_path(conn, :create, key),
+        rule_result: params
+      )
+      |> validate_resp_schema(schema, "RuleResultResponse")
+      ### conflict
+      |> json_response(:not_found)
+    end
+
+    @tag authentication: [role: "user", permissions: [:manage_rule_results]]
+    test "returns 201 Created with the result with segments on a published implementation", %{
       conn: conn,
       swagger_schema: schema,
       implementation: %{implementation_key: key}
@@ -105,16 +139,28 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
     end
 
     @tag authentication: [role: "service"]
-    test "raises if implementation doesn't exist", %{conn: conn} do
-      params = string_params_for(:implementation_result_record, records: 100, errors: 2)
+    test "returns 404 not found when try to create results on non-existent implementation",
+         %{
+           conn: conn,
+           swagger_schema: schema
+         } do
+      key = "non-existent implementation key"
 
-      assert_raise Ecto.NoResultsError, fn ->
-        post(
-          conn,
-          Routes.implementation_implementation_result_path(conn, :create, "dontexist"),
-          rule_result: params
+      params =
+        string_params_for(:implementation_result_record,
+          implementation_key: key,
+          records: 100,
+          errors: 2,
+          params: %{"foo" => "bar"}
         )
-      end
+
+      conn
+      |> post(
+        Routes.implementation_implementation_result_path(conn, :create, key),
+        rule_result: params
+      )
+      |> validate_resp_schema(schema, "RuleResultResponse")
+      |> json_response(:not_found)
     end
 
     @tag authentication: [role: "service"]
@@ -126,7 +172,7 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
       %{
         id: implementation_id,
         implementation_key: implementation_key
-      } = insert(:implementation, rule: rule)
+      } = insert(:implementation, rule: rule, status: :published)
 
       params = string_params_for(:rule_result_record, implementation_id: implementation_id)
 
@@ -142,24 +188,27 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
              ]
     end
 
-    @tag authentication: [role: "service"]
+    @tag authentication: [role: "admin"]
     test "updates implementation cache after creation if it has link", %{conn: conn} do
       %{
         id: implementation_id,
-        implementation_key: implementation_key
-      } = implementation = insert(:implementation)
+        implementation_key: implementation_key,
+        implementation_ref: implementation_ref
+      } = implementation = insert(:implementation, status: :published)
 
       %{
         "date" => expected_date
-      } = params = string_params_for(:rule_result_record, implementation_id: implementation_id)
+      } =
+        params =
+        string_params_for(:rule_result_record, records: 0, implementation_id: implementation_id)
 
       CacheHelpers.put_implementation(implementation)
 
       %{id: concept_id} = CacheHelpers.insert_concept()
 
       CacheHelpers.insert_link(
-        implementation_id,
-        "implementation",
+        implementation_ref,
+        "implementation_ref",
         "business_concept",
         concept_id
       )
@@ -176,12 +225,14 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
       {:ok,
        %{
          execution_result_info: %{
-           date: result_date
+           date: result_date,
+           records: records
          }
        }} = CacheHelpers.get_implementation(implementation_id)
 
       {:ok, expected_date_time} = NaiveDateTime.from_iso8601(expected_date)
       {:ok, result_date_time} = NaiveDateTime.from_iso8601(result_date)
+      assert records == 0
       assert NaiveDateTime.compare(expected_date_time, result_date_time) == :eq
     end
   end

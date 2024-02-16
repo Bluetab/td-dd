@@ -1,4 +1,5 @@
-name;domain_external_id;template;string;list;description
+name;domain_external_id;template;string;list;description;hierarchy_name_1;hierarchy_name_2
 rule_foo_1;zoo_domain;bar_template;boo_1;one;some description
-rule_foo_2;zoo_domain;bar_template;boo_2;two;
-rule_foo_3;zoo_domain;bar_template;boo_3;three;
+rule_foo_2;zoo_domain;bar_template;boo_2;two
+rule_foo_3;zoo_domain;bar_template;boo_3;three
+rule_foo_4;zoo_domain;hierarchies;;;;children_1;children_1|father/children_2

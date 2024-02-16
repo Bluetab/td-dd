@@ -5,17 +5,19 @@ defmodule TdDq.Implementations.Implementation do
   use Ecto.Schema
 
   import Ecto.Changeset
+  import Ecto.Query
 
+  alias Assertions.Changeset
   alias Ecto.Changeset
+  alias TdDd.Repo
   alias TdDfLib.Format
   alias TdDfLib.Validation
   alias TdDq.Events.QualityEvents
   alias TdDq.Implementations
-  alias TdDq.Implementations.ConditionRow
+  alias TdDq.Implementations.Conditions
   alias TdDq.Implementations.DatasetRow
   alias TdDq.Implementations.Implementation
   alias TdDq.Implementations.ImplementationStructure
-  alias TdDq.Implementations.Populations
   alias TdDq.Implementations.RawContent
   alias TdDq.Implementations.SegmentsRow
   alias TdDq.Rules.Rule
@@ -25,6 +27,7 @@ defmodule TdDq.Implementations.Implementation do
 
   @valid_result_types ~w(percentage errors_number deviation)
   @cast_fields [
+    :domain_id,
     :deleted_at,
     :df_content,
     :df_name,
@@ -46,11 +49,12 @@ defmodule TdDq.Implementations.Implementation do
     field(:implementation_key, :string)
     field(:implementation_type, :string, default: "default")
     field(:executable, :boolean, default: true)
-    field(:deleted_at, :utc_datetime)
+    field(:deleted_at, :utc_datetime_usec)
     field(:domain_id, :integer)
     field(:domain, :map, virtual: true)
     field(:df_name, :string)
     field(:df_content, :map)
+    field(:template, :map, virtual: true)
     field(:goal, :float)
     field(:minimum, :float)
     field(:result_type, :string, default: "percentage")
@@ -61,25 +65,38 @@ defmodule TdDq.Implementations.Implementation do
 
     field(:version, :integer)
 
+    belongs_to(:implementation_ref_struct, Implementation, foreign_key: :implementation_ref)
+
+    has_many(:versions, Implementation,
+      foreign_key: :implementation_ref,
+      references: :implementation_ref
+    )
+
     embeds_one(:raw_content, RawContent, on_replace: :delete)
     embeds_many(:dataset, DatasetRow, on_replace: :delete)
-    embeds_many(:populations, Populations, on_replace: :delete)
-    embeds_many(:validations, ConditionRow, on_replace: :delete)
+    embeds_many(:populations, Conditions, on_replace: :delete)
+    embeds_many(:validation, Conditions, on_replace: :delete)
     embeds_many(:segments, SegmentsRow, on_replace: :delete)
 
     belongs_to(:rule, Rule)
 
     has_many(:results, RuleResult)
 
-    has_many(:data_structures, ImplementationStructure, where: [deleted_at: nil])
+    has_many(:data_structures, ImplementationStructure,
+      foreign_key: :implementation_id,
+      references: :implementation_ref,
+      where: [deleted_at: nil]
+    )
 
     has_many(:dataset_structures, ImplementationStructure,
+      foreign_key: :implementation_id,
+      references: :implementation_ref,
       where: [deleted_at: nil, type: :dataset]
     )
 
     has_many(:dataset_sources, through: [:dataset_structures, :source])
 
-    timestamps(type: :utc_datetime)
+    timestamps(type: :utc_datetime_usec)
   end
 
   def valid_result_types, do: @valid_result_types
@@ -89,27 +106,43 @@ defmodule TdDq.Implementations.Implementation do
     populations =
       params
       |> Map.get("populations")
-      |> Enum.map(&%{"population" => &1})
+      |> Enum.map(&%{"conditions" => &1})
 
     changeset(implementation, %{params | "populations" => populations})
   end
 
-  def changeset(%__MODULE__{domain_id: nil} = implementation, params) do
-    implementation
-    |> cast(params, @cast_fields ++ [:domain_id])
-    |> changeset_validations(implementation, params)
+  def changeset(
+        %__MODULE__{} = implementation,
+        %{"validation" => [validations | _]} = params
+      )
+      when is_list(validations) do
+    validation =
+      params
+      |> Map.get("validation")
+      |> Enum.map(&%{"conditions" => &1})
+
+    changeset(implementation, %{params | "validation" => validation})
   end
 
   def changeset(%__MODULE__{} = implementation, params) do
     implementation
     |> cast(params, @cast_fields)
+    |> put_change(:updated_at, DateTime.utc_now())
     |> changeset_validations(implementation, params)
   end
 
   def status_changeset(%__MODULE__{} = implementation, params) do
     implementation
     |> cast(params, [:status, :version, :deleted_at])
+    |> put_change(:updated_at, DateTime.utc_now())
     |> validate_required([:status, :version])
+    |> validate_or_put_implementation_key
+  end
+
+  def implementation_ref_changeset(%__MODULE__{} = implementation, params) do
+    implementation
+    |> cast(params, [:implementation_ref])
+    |> validate_required(:implementation_ref)
   end
 
   def changeset_validations(%Ecto.Changeset{} = changeset, %__MODULE__{} = implementation, params) do
@@ -124,7 +157,7 @@ defmodule TdDq.Implementations.Implementation do
       :status,
       :version
     ])
-    |> validate_inclusion(:implementation_type, ["default", "raw", "draft"])
+    |> validate_inclusion(:implementation_type, ["default", "raw", "basic"])
     |> validate_inclusion(:result_type, @valid_result_types)
     |> validate_or_put_implementation_key()
     |> maybe_put_identifier(implementation, params)
@@ -182,7 +215,7 @@ defmodule TdDq.Implementations.Implementation do
 
       _ ->
         changeset
-        |> validate_required([:implementation_key])
+        |> validate_required(:implementation_key)
         |> validate_length(:implementation_key, max: 255)
         |> unique_constraint(:implementation_key,
           name: :published_implementation_key_index,
@@ -192,10 +225,29 @@ defmodule TdDq.Implementations.Implementation do
           name: :draft_implementation_key_index,
           message: "duplicated"
         )
+        |> validate_implementation_key_is_not_used()
     end
   end
 
   defp validate_or_put_implementation_key(%Changeset{} = changeset), do: changeset
+
+  defp validate_implementation_key_is_not_used(
+         %{changes: %{implementation_key: implementation_key}} = changeset
+       ) do
+    possible_statuses = [:pending_approval, :published, :draft]
+
+    Implementation
+    |> where([i], i.implementation_key == ^implementation_key)
+    |> where([i], i.status in ^possible_statuses)
+    |> limit(1)
+    |> Repo.one()
+    |> case do
+      nil -> changeset
+      _ -> Changeset.add_error(changeset, :implementation_key, "duplicated")
+    end
+  end
+
+  defp validate_implementation_key_is_not_used(changeset), do: changeset
 
   defp validate_content(%{} = changeset) do
     if template_name = get_field(changeset, :df_name) do
@@ -250,6 +302,13 @@ defmodule TdDq.Implementations.Implementation do
   end
 
   defp custom_changeset(
+         %Changeset{changes: %{implementation_type: "default"}} = changeset,
+         _implementation
+       ) do
+    default_changeset(changeset)
+  end
+
+  defp custom_changeset(
          %Changeset{changes: %{implementation_type: "raw"}} = changeset,
          _implementation
        ) do
@@ -257,14 +316,18 @@ defmodule TdDq.Implementations.Implementation do
   end
 
   defp custom_changeset(
-         %Changeset{changes: %{implementation_type: "draft"}} = changeset,
+         %Changeset{changes: %{implementation_type: "basic"}} = changeset,
          _implementation
        ) do
-    draft_changeset(changeset)
+    basic_changeset(changeset)
   end
 
   defp custom_changeset(%Changeset{} = changeset, %__MODULE__{implementation_type: "raw"}) do
     raw_changeset(changeset)
+  end
+
+  defp custom_changeset(%Changeset{} = changeset, %__MODULE__{implementation_type: "basic"}) do
+    basic_changeset(changeset)
   end
 
   defp custom_changeset(
@@ -279,38 +342,55 @@ defmodule TdDq.Implementations.Implementation do
   end
 
   defp raw_changeset(changeset) do
-    changeset
-    |> cast_embed(:raw_content, with: &RawContent.changeset/2, required: true)
+    maybe_cast_embed(changeset, :raw_content, with: &RawContent.changeset/2, required: true)
   end
 
-  defp draft_changeset(changeset), do: changeset
+  defp basic_changeset(changeset), do: changeset
 
   def default_changeset(changeset) do
     changeset
-    |> cast_embed(:dataset, with: &DatasetRow.changeset/2, required: true)
-    |> cast_embed(:populations, with: &Populations.changeset/2)
-    |> cast_embed(:validations, with: &ConditionRow.changeset/2, required: true)
-    |> cast_embed(:segments, with: &SegmentsRow.changeset/2)
+    |> maybe_cast_embed(:dataset, with: &DatasetRow.changeset/2, required: true)
+    |> maybe_cast_embed(:populations, with: &Conditions.changeset/2)
+    |> maybe_cast_embed(:validation, with: &Conditions.changeset/2, required: true)
+    |> maybe_cast_embed(:segments, with: &SegmentsRow.changeset/2)
   end
 
-  def get_execution_result_info(_implementation, %{type: "FAILED", inserted_at: inserted_at}) do
-    %{result_text: "quality_result.failed", date: inserted_at}
-  end
+  defp maybe_cast_embed(%{data: data} = changeset, field, opts) do
+    cs = cast_embed(changeset, field, opts)
 
-  def get_execution_result_info(%Implementation{} = implementation, _quality_event) do
-    case RuleResults.get_latest_rule_result(implementation) do
-      nil -> %{result_text: nil}
-      result -> build_result_info(implementation, result)
+    original_value = Map.get(data, field)
+
+    case Changeset.fetch_field(cs, field) do
+      {:changes, ^original_value} -> changeset
+      _ -> cs
     end
   end
 
-  defp build_result_info(
-         %Implementation{minimum: minimum, goal: goal, result_type: result_type},
-         rule_result
-       ) do
-    Map.new()
-    |> with_result(rule_result)
-    |> with_date(rule_result)
+  def get_execution_result_info(implementation, %{date: result_date} = result, %{
+        type: "FAILED",
+        inserted_at: event_date
+      }) do
+    case Date.compare(result_date, event_date) do
+      :lt -> %{result_text: "quality_result.failed", date: event_date}
+      _ -> get_execution_result_info(implementation, result, nil)
+    end
+  end
+
+  def get_execution_result_info(_, nil, _), do: %{result_text: nil}
+
+  def get_execution_result_info(implementation, result, _),
+    do: build_result_info(implementation, result)
+
+  defp build_result_info(%Implementation{result_type: result_type}, rule_result) do
+    %{minimum: minimum, goal: goal} =
+      result =
+      Map.new()
+      |> with_result(rule_result)
+      |> with_date(rule_result)
+      |> with_details(rule_result)
+      |> with_thresholds(rule_result)
+
+    result
     |> Helpers.with_result_text(minimum, goal, result_type)
   end
 
@@ -324,13 +404,32 @@ defmodule TdDq.Implementations.Implementation do
     Map.put(result_map, :date, Map.get(rule_result, :date))
   end
 
+  defp with_details(result_map, %{details: %{} = details}) do
+    Map.put(result_map, :details, details)
+  end
+
+  defp with_details(result_map, _), do: result_map
+
+  defp with_thresholds(result_map, %{implementation_id: implementation_id}) do
+    %{minimum: minimum, goal: goal} = TdDd.Repo.get(Implementation, implementation_id)
+
+    Map.merge(%{minimum: minimum, goal: goal}, result_map)
+  end
+
   def publishable?(%__MODULE__{status: status}), do: status in [:draft, :pending_approval]
+
+  def restorable?(%__MODULE__{status: status, rule: %{deleted_at: nil}}),
+    do: status == :deprecated
+
+  def restorable?(%__MODULE__{status: status, rule: nil}), do: status == :deprecated
+
+  def restorable?(%__MODULE__{}), do: false
 
   def versionable?(%__MODULE__{status: status} = implementation),
     do: Implementations.last?(implementation) && status == :published
 
   def deletable?(%__MODULE__{status: status}),
-    do: status in [:draft, :pending_approval, :rejected]
+    do: status in [:draft, :pending_approval, :rejected, :deprecated]
 
   def editable?(%__MODULE__{status: status} = implementation),
     do: Implementations.last?(implementation) && status in [:draft, :rejected]
@@ -342,8 +441,15 @@ defmodule TdDq.Implementations.Implementation do
 
   def rejectable?(%__MODULE__{status: status}), do: status == :pending_approval
 
+  def convertible?(%__MODULE__{status: status})
+      when status in [:deprecated, :versioned],
+      do: false
+
+  def convertible?(%__MODULE__{implementation_type: type}), do: type == "basic"
+
   defimpl Elasticsearch.Document do
     alias TdCache.TemplateCache
+    alias TdDd.DataStructures.DataStructureVersion
     alias TdDfLib.Format
     alias TdDq.Search.Helpers
 
@@ -353,12 +459,13 @@ defmodule TdDq.Implementations.Implementation do
       :domain_id,
       :id,
       :implementation_key,
+      :implementation_ref,
       :implementation_type,
       :populations,
       :rule_id,
       :inserted_at,
       :updated_at,
-      :validations,
+      :validation,
       :segments,
       :df_name,
       :executable,
@@ -384,19 +491,78 @@ defmodule TdDq.Implementations.Implementation do
     def routing(_), do: false
 
     @impl Elasticsearch.Document
-    def encode(%Implementation{id: implementation_id, domain_id: domain_id} = implementation) do
+    def encode(%Implementation{domain_id: domain_id} = implementation) do
       rule = Map.get(implementation, :rule)
-      implementation = Implementations.enrich_implementation_structures(implementation)
-      quality_event = QualityEvents.get_event_by_imp(implementation_id)
+      implementation = Implementations.enrich_implementation_structures(implementation, false)
+      quality_event = QualityEvents.get_last_event_by_imp(implementation)
+
+      result = RuleResults.get_latest_rule_result(implementation)
 
       execution_result_info =
-        Implementation.get_execution_result_info(implementation, quality_event)
+        Implementation.get_execution_result_info(implementation, result, quality_event)
 
       domain_ids = List.wrap(domain_id)
+
+      domain = Helpers.get_domain(domain_id)
+
       structures = Implementations.get_structures(implementation)
       structure_ids = get_structure_ids(structures)
       structure_names = get_structure_names(structures)
       structure_aliases = Implementations.get_sources(implementation)
+
+      structure_links =
+        implementation
+        |> Map.get(:data_structures)
+        |> Enum.map(fn
+          %{
+            type: link_type,
+            current_version: dsv,
+            data_structure: %{id: id, domain_ids: domain_ids, external_id: external_id}
+          } ->
+            %{
+              link_type: link_type,
+              structure:
+                add_dsv_fields(
+                  %{
+                    domain_ids: domain_ids,
+                    external_id: external_id,
+                    id: id
+                  },
+                  dsv
+                )
+            }
+
+          %{
+            type: link_type
+          } ->
+            %{link_type: link_type}
+        end)
+
+      # linked_structures_ids is included in structure_links.structure.id
+      # but using it would require nested query in the front-end
+      linked_structures_ids =
+        implementation
+        |> Map.get(:data_structures)
+        |> Enum.map(&Map.get(&1, :data_structure_id))
+
+      # structure_domain_ids is included in
+      # structure_links.structure.domain_ids but using it would require
+      # nested query in the front-end and metrics connector
+      structure_domain_ids =
+        implementation
+        |> Map.get(:data_structures)
+        |> Enum.filter(&(&1.type === :validation))
+        |> Enum.flat_map(fn imp_structures ->
+          imp_structures
+          |> Map.get(:data_structure, %{})
+          |> Map.get(:domain_ids, [])
+        end)
+        |> Enum.uniq()
+
+      structure_domains = Helpers.get_domains(structure_domain_ids)
+
+      %Implementation{inserted_at: ref_inserted_at} =
+        Map.get(implementation, :implementation_ref_struct)
 
       template = TemplateCache.get_by_name!(implementation.df_name) || %{content: []}
 
@@ -409,17 +575,51 @@ defmodule TdDq.Implementations.Implementation do
       |> Map.take(@implementation_keys)
       |> transform_dataset()
       |> transform_populations()
-      |> transform_validations()
+      |> transform_validation()
       |> transform_segments()
-      |> with_rule(rule)
+      |> maybe_rule(rule)
+      |> then(fn mapped_implementation ->
+        rule_concept = Map.get(mapped_implementation, :current_business_concept_version)
+
+        linked_concepts =
+          Implementations.get_implementation_links(implementation, "business_concept")
+
+        concepts =
+          List.flatten([List.wrap(rule_concept) | linked_concepts])
+          |> Enum.map(&Map.get(&1, :name, ""))
+          |> Enum.reject(&(&1 == ""))
+
+        Map.put(mapped_implementation, :concepts, concepts)
+      end)
       |> Map.put(:raw_content, get_raw_content(implementation))
+      |> Map.put(:inserted_at, ref_inserted_at)
       |> Map.put(:structure_aliases, structure_aliases)
       |> Map.put(:execution_result_info, execution_result_info)
       |> Map.put(:domain_ids, domain_ids)
+      |> Map.put(:domain, domain)
+      |> Map.put(:structure_domain_ids, structure_domain_ids)
+      |> Map.put(:structure_domains, structure_domains)
       |> Map.put(:structure_ids, structure_ids)
       |> Map.put(:structure_names, structure_names)
+      |> Map.put(:linked_structures_ids, linked_structures_ids)
+      |> Map.put(:structure_links, structure_links)
       |> Map.put(:df_content, df_content)
     end
+
+    defp add_dsv_fields(structure_fields, %DataStructureVersion{
+           name: name,
+           type: type,
+           path: path
+         }) do
+      Map.merge(
+        structure_fields,
+        %{name: name, type: type, path: path}
+      )
+    end
+
+    # A DataStructure current_version can be nil if all structure versions have
+    # been logically deleted
+    defp add_dsv_fields(structure_fields, nil), do: structure_fields
 
     defp get_raw_content(implementation) do
       raw_content = Map.get(implementation, :raw_content) || %{}
@@ -441,15 +641,15 @@ defmodule TdDq.Implementations.Implementation do
 
     defp transform_populations(%{populations: populations = [_ | _]} = data) do
       encoded_populations =
-        Enum.map(populations, fn %{population: condition_rows} ->
-          %{population: Enum.map(condition_rows, &condition_row/1)}
+        Enum.map(populations, fn %{conditions: condition_rows} ->
+          %{conditions: Enum.map(condition_rows, &condition_row/1)}
         end)
 
       data
       |> Map.put(:populations, encoded_populations)
       |> Map.put(
         :population,
-        Map.get(List.first(encoded_populations, %{population: []}), :population)
+        Map.get(List.first(encoded_populations, %{conditions: []}), :conditions)
       )
     end
 
@@ -457,11 +657,23 @@ defmodule TdDq.Implementations.Implementation do
       Map.put(data, :population, [])
     end
 
-    defp transform_validations(%{validations: validations = [_ | _]} = data) do
-      Map.put(data, :validations, Enum.map(validations, &condition_row/1))
+    defp transform_validation(%{validation: validation = [_ | _]} = data) do
+      encoded_validation =
+        Enum.map(validation, fn %{conditions: condition_rows} ->
+          %{conditions: Enum.map(condition_rows, &condition_row/1)}
+        end)
+
+      data
+      |> Map.put(:validation, encoded_validation)
+      |> Map.put(
+        :validations,
+        Map.get(List.first(encoded_validation, %{conditions: []}), :conditions)
+      )
     end
 
-    defp transform_validations(data), do: data
+    defp transform_validation(data) do
+      Map.put(data, :validations, [])
+    end
 
     defp transform_segments(%{segments: segments = [_ | _]} = data) do
       Map.put(data, :segments, Enum.map(segments, &segmentation_row/1))
@@ -503,6 +715,7 @@ defmodule TdDq.Implementations.Implementation do
 
     defp get_structure_fields(structure) do
       Map.take(structure, [
+        :alias,
         :external_id,
         :id,
         :name,
@@ -527,7 +740,7 @@ defmodule TdDq.Implementations.Implementation do
 
     defp with_populations(data, _condition), do: data
 
-    defp with_rule(data, %Rule{} = rule) do
+    defp maybe_rule(data, %Rule{} = rule) do
       template = TemplateCache.get_by_name!(rule.df_name) || %{content: []}
 
       df_content =
@@ -549,7 +762,10 @@ defmodule TdDq.Implementations.Implementation do
       |> Map.put(:business_concept_id, Map.get(rule, :business_concept_id))
     end
 
-    defp with_rule(data, _), do: data
+    defp maybe_rule(data, _) do
+      data
+      |> Map.put(:_confidential, false)
+    end
 
     defp get_structure_ids(structures) do
       structures

@@ -2,12 +2,10 @@ defmodule TdDdWeb.ProfileExecutionGroupController do
   use PhoenixSwagger
   use TdDdWeb, :controller
 
-  import Canada, only: [can?: 2]
-
-  alias TdDd.Auth.Claims
   alias TdDd.Executions
   alias TdDd.Executions.ProfileGroup
   alias TdDdWeb.SwaggerDefinitions
+  alias Truedat.Auth.Claims
 
   action_fallback(TdDdWeb.FallbackController)
 
@@ -23,7 +21,7 @@ defmodule TdDdWeb.ProfileExecutionGroupController do
   def index(conn, _params) do
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(claims, list(ProfileGroup))},
+    with :ok <- Bodyguard.permit(TdDd.Profiles, :search, claims),
          groups <- Executions.list_profile_groups() do
       render(conn, "index.json", profile_execution_groups: groups)
     end
@@ -38,7 +36,7 @@ defmodule TdDdWeb.ProfileExecutionGroupController do
   def show(conn, %{} = params) do
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(claims, show(ProfileGroup))},
+    with :ok <- Bodyguard.permit(TdDd.Profiles, :search, claims),
          %ProfileGroup{} = group <-
            Executions.get_profile_group(params,
              preload: [executions: [:data_structure, :profile, :profile_events]],
@@ -47,7 +45,7 @@ defmodule TdDdWeb.ProfileExecutionGroupController do
       executions =
         group
         |> Map.get(:executions)
-        |> Enum.filter(&can?(claims, show(&1)))
+        |> Enum.filter(&Bodyguard.permit?(TdDd.Profiles, :view, claims, &1))
 
       group = Map.put(group, :executions, executions)
       render(conn, "show.json", profile_execution_group: group)
@@ -63,7 +61,7 @@ defmodule TdDdWeb.ProfileExecutionGroupController do
   def create(conn, %{} = params) do
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(claims, create(ProfileGroup))},
+    with :ok <- Bodyguard.permit(TdDd.Profiles, :create, claims),
          %{} = creation_params <- creation_params(claims, params),
          {:ok, %{profile_group: %{id: id}}} <- Executions.create_profile_group(creation_params),
          %ProfileGroup{} = group <-

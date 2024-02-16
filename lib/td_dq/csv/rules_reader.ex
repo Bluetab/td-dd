@@ -8,7 +8,10 @@ defmodule TdDq.CSV.RulesReader do
 
   @required_headers BulkLoad.required_headers()
 
-  def reader_csv(claims, stream) do
-    Reader.read_csv(claims, stream, @required_headers, &BulkLoad.bulk_load/2)
+  def reader_csv(claims, stream, lang) do
+    case Reader.parse_csv(stream, @required_headers) do
+      {:ok, parsed_csv} -> BulkLoad.bulk_load(parsed_csv, claims, lang)
+      error -> error
+    end
   end
 end

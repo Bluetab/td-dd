@@ -1,0 +1,13 @@
+:START_ID,:END_ID,:TYPE
+Group1,Group1.1,CONTAINS
+Group2,Group2.1,CONTAINS
+Group3,Group3.1,CONTAINS
+Group4,Group4.1,CONTAINS
+Group1.1,Resource1,CONTAINS
+Group2.1,Resource2,CONTAINS
+Group3.1,Resource3,CONTAINS
+Group4.1,Resource4,CONTAINS
+Resource1,Resource2,DEPENDS
+Resource2,Resource3,DEPENDS
+Resource3,Resource1,DEPENDS
+Resource4,Resource1,DEPENDS

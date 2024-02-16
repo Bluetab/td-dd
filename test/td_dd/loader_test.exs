@@ -2,6 +2,7 @@ defmodule TdDd.LoaderTest do
   use TdDd.DataCase
 
   import Ecto.Query
+  import ExUnit.CaptureLog
   import TdDd.TestOperators
 
   alias TdDd.DataStructures
@@ -23,6 +24,271 @@ defmodule TdDd.LoaderTest do
     test "handles empty list of structures" do
       records = %{structures: []}
       assert {:ok, _context} = Loader.load(records, audit())
+    end
+
+    test "loads changes in data structures, fields and relations respecting inherit domains for new ones when specified" do
+      sys1 = insert(:system, external_id: "SYS1", name: "SYS1")
+      sys2 = insert(:system, external_id: "SYS2", name: "SYS2")
+
+      domain_id_1 = System.unique_integer([:positive])
+      domain_id_2 = System.unique_integer([:positive])
+
+      ds1 = insert(:data_structure, system_id: sys1.id, domain_ids: [domain_id_1])
+      ds2 = insert(:data_structure, system_id: sys1.id, domain_ids: [domain_id_2])
+      ds6 = insert(:data_structure, system_id: sys1.id, domain_ids: [domain_id_1, domain_id_2])
+
+      insert(:data_structure_version,
+        data_structure_id: ds1.id,
+        group: "GROUP1",
+        name: "NAME1",
+        type: "USER_TABLE",
+        version: 0
+      )
+
+      insert(:data_structure_version,
+        data_structure_id: ds2.id,
+        group: "GROUP1",
+        name: "NAME2",
+        type: "USER_TABLE",
+        version: 0
+      )
+
+      insert(:data_structure_version,
+        data_structure_id: ds6.id,
+        group: "GROUP6",
+        name: "NAME6",
+        type: "USER_TABLE",
+        version: 0
+      )
+
+      s1 = %{
+        description: "D1",
+        external_id: ds1.external_id,
+        group: "GROUP1",
+        name: "NAME1",
+        system_id: sys1.id,
+        type: "USER_TABLE",
+        version: 0
+      }
+
+      s2 = %{
+        description: "D2",
+        external_id: ds2.external_id,
+        group: "GROUP2",
+        name: "NAME2",
+        system_id: sys1.id,
+        type: "VIEW",
+        version: 0
+      }
+
+      s3 = %{
+        description: "D3",
+        external_id: random_string(),
+        group: "GROUP3",
+        name: "NAME3",
+        system_id: sys2.id,
+        type: "Report",
+        version: 0
+      }
+
+      s4 = %{
+        description: "D4",
+        external_id: random_string(),
+        group: "GROUP3",
+        name: "NAME4",
+        system_id: sys2.id,
+        type: "Folder",
+        version: 22
+      }
+
+      s5 = %{
+        description: "D4",
+        external_id: random_string(),
+        group: "GROUP3",
+        name: "NAME4",
+        system_id: sys2.id,
+        type: "Dimension",
+        version: 23
+      }
+
+      s6 = %{
+        description: nil,
+        external_id: ds6.external_id,
+        group: "GROUP6",
+        name: "NAME6",
+        system_id: sys1.id,
+        type: "USER_TABLE",
+        version: 1
+      }
+
+      s7 = %{
+        description: nil,
+        external_id: random_string(),
+        group: "GROUP6",
+        name: "NAME7",
+        system_id: sys1.id,
+        type: "Dimension",
+        version: 1
+      }
+
+      s8 = %{
+        description: nil,
+        external_id: random_string(),
+        group: "GROUP6",
+        name: "NAME8",
+        system_id: sys1.id,
+        type: "Dimension",
+        version: 1
+      }
+
+      s9 = %{
+        description: nil,
+        external_id: random_string(),
+        group: "GROUP6",
+        name: "NAME9",
+        system_id: sys1.id,
+        type: "Dimension",
+        version: 1
+      }
+
+      r1 = %{
+        system_id: s1.system_id,
+        parent_group: s1.group,
+        parent_external_id: s1.external_id,
+        parent_name: s1.name,
+        child_group: s2.group,
+        child_name: s2.name,
+        child_external_id: s2.external_id
+      }
+
+      r2_3 = %{
+        system_id: s2.system_id,
+        parent_group: s2.group,
+        parent_external_id: s2.external_id,
+        parent_name: s2.name,
+        child_group: s3.group,
+        child_name: s3.name,
+        child_external_id: s3.external_id
+      }
+
+      r2 = %{
+        system_id: s3.system_id,
+        parent_group: s3.group,
+        parent_external_id: s3.external_id,
+        parent_name: s3.name,
+        child_group: s4.group,
+        child_name: s4.name,
+        child_external_id: s4.external_id
+      }
+
+      r3 = %{
+        system_id: s7.system_id,
+        parent_group: s7.group,
+        parent_external_id: s7.external_id,
+        parent_name: s7.name,
+        child_group: s6.group,
+        child_name: s6.name,
+        child_external_id: s6.external_id
+      }
+
+      r4 = %{
+        system_id: s6.system_id,
+        parent_group: s6.group,
+        parent_external_id: s6.external_id,
+        parent_name: s6.name,
+        child_group: s8.group,
+        child_name: s8.name,
+        child_external_id: s8.external_id
+      }
+
+      r5 = %{
+        system_id: s8.system_id,
+        parent_group: s8.group,
+        parent_external_id: s8.external_id,
+        parent_name: s8.name,
+        child_group: s9.group,
+        child_name: s9.name,
+        child_external_id: s9.external_id
+      }
+
+      records = %{
+        structures: [s1, s2],
+        fields: [],
+        relations: [r1]
+      }
+
+      assert {:ok, _context} = Loader.load(records, audit())
+      default_domain = System.unique_integer([:positive])
+
+      records = %{
+        structures:
+          [s1, s2, s3, s4, s5, s6] |> Enum.map(&Map.put(&1, :domain_ids, [default_domain])),
+        fields: [],
+        relations: [r1, r2_3, r2]
+      }
+
+      assert {:ok, _context} =
+               Loader.load(records, audit(),
+                 source: "source",
+                 inherit_domains: true
+               )
+
+      assert [
+               [domain_id_1],
+               [domain_id_2],
+               [domain_id_2],
+               [domain_id_2],
+               [default_domain],
+               [domain_id_1, domain_id_2]
+             ] ==
+               [s1, s2, s3, s4, s5, s6]
+               |> Enum.map(
+                 &(DataStructures.get_data_structure_by_external_id(&1.external_id)
+                   |> Map.get(:domain_ids))
+               )
+
+      f6 = %{
+        field_name: "FIELD_TO_KEEP",
+        type: "T2",
+        description: "Will be kept",
+        precision: "P2",
+        nullable: false,
+        version: 1
+      }
+
+      f62 = Map.merge(s6, f6)
+
+      random_domain_id = System.unique_integer([:positive])
+
+      records = %{
+        structures: [s6, s7] |> Enum.map(&Map.put(&1, :domain_ids, [random_domain_id])),
+        fields: [f62],
+        relations: [r3]
+      }
+
+      assert {:ok, _context} = Loader.load(records, audit())
+
+      records = %{
+        structures: [s6, s7, s8, s9] |> Enum.map(&Map.put(&1, :domain_ids, [random_domain_id])),
+        fields: [f62],
+        relations: [r3, r4, r5]
+      }
+
+      assert {:ok, _context} = Loader.load(records, audit(), inherit_domains: true)
+
+      DataStructures.get_data_structure_by_external_id(s6.external_id)
+
+      assert [
+               [domain_id_1, domain_id_2],
+               [random_domain_id],
+               [domain_id_1, domain_id_2],
+               [domain_id_1, domain_id_2]
+             ] ==
+               [s6, s7, s8, s9]
+               |> Enum.map(
+                 &(DataStructures.get_data_structure_by_external_id(&1.external_id)
+                   |> Map.get(:domain_ids))
+               )
     end
 
     test "loads changes in data structures, fields and relations" do
@@ -516,9 +782,11 @@ defmodule TdDd.LoaderTest do
 
       relation = %{child_external_id: "xxx", parent_external_id: "xxx"}
 
-      assert_raise(RuntimeError, fn ->
-        Loader.load(%{structures: [structure], relations: [relation]}, audit())
-      end)
+      assert capture_log(fn ->
+               {:error, :graph, "reflexive relations are not permitted (xxx)",
+                %{} = _changes_so_far} =
+                 Loader.load(%{structures: [structure], relations: [relation]}, audit())
+             end) =~ "reflexive relations are not permitted (xxx)"
     end
 
     test "loads changes in relations with relation type" do
@@ -778,7 +1046,7 @@ defmodule TdDd.LoaderTest do
   describe "system_ids/1" do
     test "returns a unique list of system ids" do
       records = 1..15 |> Enum.map(fn id -> %{system_id: Integer.mod(id, 10)} end)
-      assert Loader.system_ids(records) <|> 0..9
+      assert Loader.system_ids(records) ||| 0..9
     end
   end
 

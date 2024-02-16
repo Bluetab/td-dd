@@ -3,10 +3,8 @@ defmodule TdDdWeb.Resolvers.Sources do
   Absinthe resolvers for data sources and related entities
   """
 
-  import Canada, only: [can?: 2]
-
   alias TdCache.TemplateCache
-  alias TdCx.Format
+  alias TdCx.Cache.SourcesLatestEvent
   alias TdCx.Sources
 
   def sources(_parent, args, _resolution) do
@@ -21,13 +19,14 @@ defmodule TdDdWeb.Resolvers.Sources do
     TemplateCache.get_by_name(type)
   end
 
-  def config(%{type: type, config: config}, _args, _resolution) do
-    {:ok, Format.get_cached_content(config, type)}
-  end
-
   def job_types(%{config: config}, _args, _resolution) do
     job_types = Map.get(config, "job_types", [])
     {:ok, job_types}
+  end
+
+  def latest_event(%{id: source_id}, _args, _resolution) do
+    latest_event = SourcesLatestEvent.get(source_id)
+    {:ok, latest_event}
   end
 
   def enable_source(parent, %{id: id} = _args, resolution) do
@@ -38,12 +37,16 @@ defmodule TdDdWeb.Resolvers.Sources do
     update_source(parent, %{source: %{id: id, active: false}}, resolution)
   end
 
-  def create_source(_parent, %{source: params} = _args, _resolution) do
+  def create_source(_parent, %{source: params} = _args, resolution) do
     params = to_string_keys(params)
 
-    case Sources.create_source(params) do
-      {:ok, %{id: id} = _source} -> {:ok, Sources.get_source(id: id)}
-      {:error, changeset} -> {:error, changeset}
+    with {:claims, %{} = claims} <- {:claims, claims(resolution)},
+         :ok <- Bodyguard.permit(Sources, :create, claims),
+         {:ok, %{id: id} = _source} <- Sources.create_source(params) do
+      {:ok, Sources.get_source(id: id)}
+    else
+      {:claims, nil} -> {:error, :unauthorized}
+      {:error, error} -> {:error, error}
       {:vault_error, error} -> {:error, error}
     end
   end
@@ -54,14 +57,13 @@ defmodule TdDdWeb.Resolvers.Sources do
 
     with {:claims, %{} = claims} <- {:claims, claims(resolution)},
          {:source, %{} = source} <- {:source, Sources.get_source(id: id)},
-         {:can, true} <- {:can, can?(claims, update(source))},
+         :ok <- Bodyguard.permit(Sources, :update, claims, source),
          {:ok, _source} <- do_update_source(source, params, merge) do
       {:ok, Sources.get_source(id: id)}
     else
       {:claims, nil} -> {:error, :unauthorized}
       {:source, nil} -> {:error, :not_found}
-      {:can, false} -> {:error, :forbidden}
-      {:error, changeset} -> {:error, changeset}
+      {:error, error} -> {:error, error}
       {:vault_error, error} -> {:error, error}
     end
   end
@@ -74,12 +76,12 @@ defmodule TdDdWeb.Resolvers.Sources do
   def delete_source(_parent, %{id: id} = _args, resolution) do
     with {:claims, %{} = claims} <- {:claims, claims(resolution)},
          {:source, %{} = source} <- {:source, Sources.get_source(id: id)},
-         {:can, true} <- {:can, can?(claims, delete(source))} do
+         :ok <- Bodyguard.permit(Sources, :delete, claims, source) do
       Sources.delete_source(source)
     else
       {:claims, nil} -> {:error, :unauthorized}
       {:source, nil} -> {:error, :not_found}
-      {:can, false} -> {:error, :forbidden}
+      {:error, error} -> {:error, error}
       {:vault_error, error} -> {:error, error}
     end
   end

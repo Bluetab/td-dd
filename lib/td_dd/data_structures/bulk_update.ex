@@ -3,25 +3,25 @@ defmodule TdDd.DataStructures.BulkUpdate do
   Support for bulk update of data structures.
   """
 
-  import Canada, only: [can?: 2]
-
   alias Codepagex
   alias Ecto.Changeset
   alias Ecto.Multi
   alias TdCache.TaxonomyCache
-  alias TdDd.Auth.Claims
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.StructureNotesWorkflow
   alias TdDd.Repo
   alias TdDd.Search.IndexWorker
-  alias TdDfLib.Format
+  alias TdDfLib.Parser
   alias TdDfLib.Templates
+  alias Truedat.Auth.Claims
 
   require Logger
 
   @data_structure_preloads [:system, current_version: :structure_type]
+
+  defdelegate authorize(action, user, params), to: __MODULE__.Policy
 
   def update_all(
         ids,
@@ -38,26 +38,24 @@ defmodule TdDd.DataStructures.BulkUpdate do
     )
   end
 
-  def from_csv(upload), do: from_csv(upload, :default)
   def from_csv(nil, _), do: {:error, %{message: :no_csv_uploaded}}
 
   def from_csv(upload, :simple) do
     case parse_file(upload) do
-      {:ok, rows} ->
-        parse_rows(rows)
-
-      errors ->
-        {:error, errors}
+      {:ok, rows} -> parse_rows(rows)
+      {:error, _} = error -> error
     end
   end
 
-  def from_csv(upload, :default) do
+  def from_csv(upload, lang), do: from_csv(upload, :default, lang)
+
+  def from_csv(upload, :default, lang) do
     with {:ok, rows} <- parse_file(upload) do
       rows
       |> parse_rows(@data_structure_preloads)
       |> Enum.filter(fn {_row, data_structure, _index} -> data_structure end)
       |> Enum.reduce_while([], fn {row, data_structure, index}, acc ->
-        case format_content(row, data_structure, index) do
+        case format_content(row, data_structure, index, lang) do
           {:error, error} -> {:halt, {:error, error}}
           content -> {:cont, acc ++ [content]}
         end
@@ -65,15 +63,14 @@ defmodule TdDd.DataStructures.BulkUpdate do
       |> case do
         [_ | _] = contents -> contents
         [] -> {:error, %{message: :external_id_not_found}}
-        errors -> {:error, errors}
+        {:error, _} = error -> error
       end
     end
   end
 
   defp parse_rows(rows, preloads \\ []) do
     rows
-    |> Enum.with_index()
-    |> Enum.map(fn {row, index} -> {row, index + 2} end)
+    |> Enum.with_index(2)
     |> Enum.map(fn
       {%{"external_id" => external_id} = row, index} ->
         {
@@ -220,10 +217,10 @@ defmodule TdDd.DataStructures.BulkUpdate do
             params = %{domain_ids: Enum.map(domains, & &1.id)}
             changeset = DataStructures.update_changeset(claims, structure, params)
 
-            if can?(claims, update_data_structure(changeset)) do
+            if Bodyguard.permit?(DataStructures, :update_data_structure, claims, changeset) do
               {index, check_data_structure(changeset)}
             else
-              {index, {:error, {:update_domain, :forbbiden}}}
+              {index, {:error, {:update_domain, :forbidden}}}
             end
           end
       end)
@@ -260,7 +257,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
     }
   end
 
-  defp format_content(row, data_structure, row_index) do
+  defp format_content(row, data_structure, row_index, lang) do
     data_structure
     |> DataStructures.template_name()
     |> Templates.content_schema()
@@ -278,43 +275,15 @@ defmodule TdDd.DataStructures.BulkUpdate do
         content_schema = Enum.filter(template_fields, &(Map.get(&1, "name") in fields))
 
         content =
-          format_content(%{
+          Parser.format_content(%{
             content: content,
             content_schema: content_schema,
-            domain_ids: domain_ids
+            domain_ids: domain_ids,
+            lang: lang
           })
 
         {%{"df_content" => content}, %{data_structure: data_structure, row_index: row_index}}
     end
-  end
-
-  defp format_content(%{content: content, content_schema: content_schema, domain_ids: domain_ids})
-       when not is_nil(content) do
-    content = Format.apply_template(content, content_schema, domain_ids: domain_ids)
-
-    content_schema
-    |> Enum.filter(fn %{"type" => schema_type, "cardinality" => cardinality} ->
-      schema_type in ["url", "enriched_text", "integer", "float"] or
-        (schema_type in ["string", "user"] and cardinality in ["*", "+"])
-    end)
-    # credo:disable-for-next-line
-    |> Enum.filter(fn %{"name" => name} ->
-      field_content = Map.get(content, name)
-      not is_nil(field_content) and is_binary(field_content) and field_content != ""
-    end)
-    |> Enum.into(content, &format_field(&1, content))
-  end
-
-  defp format_content(params), do: params
-
-  defp format_field(schema, content) do
-    {Map.get(schema, "name"),
-     Format.format_field(%{
-       "content" => Map.get(content, Map.get(schema, "name")),
-       "type" => Map.get(schema, "type"),
-       "cardinality" => Map.get(schema, "cardinality"),
-       "values" => Map.get(schema, "values")
-     })}
   end
 
   defp do_update(ids, %{} = params, %Claims{user_id: user_id}, auto_publish) do
@@ -390,9 +359,10 @@ defmodule TdDd.DataStructures.BulkUpdate do
     Audit.data_structures_bulk_updated(updates, user_id)
   end
 
-  defp on_complete({:ok, %{updates: updates, update_notes: update_notes} = result}) do
-    [updates, update_notes]
-    |> Enum.flat_map(&Map.keys/1)
+  defp on_complete({:ok, %{} = result}) do
+    result
+    |> Map.take([:updates, :update_notes])
+    |> Enum.flat_map(fn {_, v} -> Map.keys(v) end)
     |> Enum.uniq()
     |> IndexWorker.reindex()
 

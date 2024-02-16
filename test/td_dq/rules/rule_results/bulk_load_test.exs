@@ -25,7 +25,12 @@ defmodule TdDq.RuleResults.BulkLoadTest do
   describe "bulk_load/1" do
     test "loads rule results and calculates status (number of errors)" do
       %{implementation_key: key, result_type: result_type} =
-        insert(:implementation, result_type: "errors_number", goal: 10, minimum: 20)
+        insert(:implementation,
+          result_type: "errors_number",
+          goal: 10,
+          minimum: 20,
+          status: :published
+        )
 
       assert {:ok, res} =
                ["1", "15", "30"]
@@ -47,7 +52,12 @@ defmodule TdDq.RuleResults.BulkLoadTest do
 
     test "loads rule results and calculates status (percentage)" do
       %{implementation_key: key} =
-        insert(:implementation, result_type: "percentage", goal: 100, minimum: 80)
+        insert(:implementation,
+          result_type: "percentage",
+          goal: 100,
+          minimum: 80,
+          status: :published
+        )
 
       assert {:ok, res} =
                ["100", "90", "50"]
@@ -79,7 +89,13 @@ defmodule TdDq.RuleResults.BulkLoadTest do
         )
 
       %{implementation_key: key} =
-        insert(:implementation, result_type: "percentage", goal: 100, minimum: 80, rule: rule)
+        insert(:implementation,
+          result_type: "percentage",
+          goal: 100,
+          minimum: 80,
+          rule: rule,
+          status: :published
+        )
 
       params = %{"foo" => "bar"}
 
@@ -104,7 +120,7 @@ defmodule TdDq.RuleResults.BulkLoadTest do
 
     test "refreshes rule cache" do
       %{id: rule_id, name: name} = rule = insert(:rule)
-      %{implementation_key: key} = insert(:implementation, rule: rule)
+      %{implementation_key: key} = insert(:implementation, rule: rule, status: :published)
 
       assert {:ok, _} =
                ["100", "90", "50"]

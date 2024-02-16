@@ -15,7 +15,7 @@ defmodule TdDdWeb.ConnCase do
 
   use ExUnit.CaseTemplate
 
-  import TdDdWeb.Authentication, only: :functions
+  import AuthenticationSupport, only: :functions
 
   alias Ecto.Adapters.SQL.Sandbox
   alias Phoenix.ConnTest
@@ -36,6 +36,10 @@ defmodule TdDdWeb.ConnCase do
 
       # The default endpoint for testing
       @endpoint Endpoint
+
+      def upload(path) do
+        %Plug.Upload{path: path, filename: Path.basename(path)}
+      end
     end
   end
 

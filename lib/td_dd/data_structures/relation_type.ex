@@ -20,7 +20,7 @@ defmodule TdDd.DataStructures.RelationType do
   def changeset(%RelationType{} = relation_type, params) do
     relation_type
     |> cast(params, [:name, :description])
-    |> validate_required([:name])
+    |> validate_required(:name)
     |> unique_constraint(:name)
   end
 end

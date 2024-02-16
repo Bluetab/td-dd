@@ -44,8 +44,71 @@ defmodule TdDd.DataStructures.ValidationTest do
       validator = Validation.validator(structure_note)
       assert is_function(validator, 2)
 
-      assert [{:content, {"invalid content", _errors}}] =
+      assert [{:content, {"list: is invalid - string: can't be blank", _errors}}] =
                validator.(:content, %{"list" => "four"})
+    end
+  end
+
+  describe "has_ai_suggestion/1" do
+    test "returns true if ai_suggestion fields are available" do
+      template = %{
+        id: System.unique_integer([:positive]),
+        label: "suggestions_test",
+        name: "suggestions_test",
+        scope: "dd",
+        content: [
+          %{
+            "name" => "Identifier Template",
+            "fields" => [
+              %{
+                "cardinality" => "1",
+                "description" => "field description",
+                "label" => "suggestion_field",
+                "name" => "suggestion_field",
+                "type" => "string",
+                "ai_suggestion" => true
+              }
+            ]
+          }
+        ]
+      }
+
+      %{id: template_id, name: template_name} = CacheHelpers.insert_template(template)
+      CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
+      %{data_structure: structure} = insert(:data_structure_version, type: template_name)
+      insert(:structure_note, data_structure: structure)
+
+      assert Validation.has_ai_suggestion(structure)
+    end
+
+    test "returns false if no ai_suggestion fields are available" do
+      template = %{
+        id: System.unique_integer([:positive]),
+        label: "suggestions_test",
+        name: "suggestions_test",
+        scope: "dd",
+        content: [
+          %{
+            "name" => "Identifier Template",
+            "fields" => [
+              %{
+                "cardinality" => "1",
+                "description" => "field description",
+                "label" => "suggestion_field",
+                "name" => "suggestion_field",
+                "type" => "string"
+              }
+            ]
+          }
+        ]
+      }
+
+      %{id: template_id, name: template_name} = CacheHelpers.insert_template(template)
+      CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
+      %{data_structure: structure} = insert(:data_structure_version, type: template_name)
+      insert(:structure_note, data_structure: structure)
+
+      refute Validation.has_ai_suggestion(structure)
     end
   end
 end

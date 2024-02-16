@@ -1,0 +1,2 @@
+group;name;description;type;ou;external_id;class;system;m:_protected.mp1;m:_protected.mp2;mm:_protected.mmp1;mm:_protected.mmp2
+TD-5082;structure_mp;Structure with metadata and mutable_metadata;Table;Truedat;structure_mp;class;test1;mp1_value;mp2_value;mmp1_value;mmp2_value;

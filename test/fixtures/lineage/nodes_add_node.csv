@@ -1,0 +1,13 @@
+external_id:ID,name,:LABEL,type,select_hidden:boolean
+Group1,Group1,Group,Group,false
+Group2,Group2,Group,Group,false
+Group3,Group3,Group,Group,false
+Group4,Group4,Group,Group,false
+Group1.1,Group1.1,Group,Group,false
+Group2.1,Group2.1,Group,Group,false
+Group3.1,Group3.1,Group,Group,false
+Group4.1,Group4.1,Group,Group,false
+Resource1,Resource1,Resource,Resource,false
+Resource2,Resource2,Resource,Resource,false
+Resource3,Resource3,Resource,Resource,false
+Resource4,Resource4,Resource,Resource,false

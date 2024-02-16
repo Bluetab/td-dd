@@ -1,11 +1,7 @@
-use Mix.Config
+import Config
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
-#
-# The watchers configuration can be used to run external
-# watchers to your application. For example, we use it
-# with webpack to recompile .js and .css sources.
 config :td_dd, TdDdWeb.Endpoint,
   debug_errors: true,
   code_reloader: true,
@@ -36,7 +32,8 @@ config :td_dd, TdDd.Repo,
   username: "postgres",
   password: "postgres",
   database: "td_dd_dev",
-  hostname: "postgres"
+  hostname: "postgres",
+  stacktrace: true
 
 config :td_cache, redis_host: "redis"
 

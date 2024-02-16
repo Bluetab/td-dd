@@ -1,8 +1,9 @@
 defmodule TdDd.DataStructures.DataStructureQueriesTest do
   use TdDd.DataStructureCase
 
+  import TdDd.TestOperators
+
   alias TdDd.DataStructures.DataStructureQueries
-  alias TdDd.DataStructures.Hierarchy
   alias TdDd.Repo
 
   describe "DataStructureQueries.data_structures_query/1" do
@@ -80,13 +81,36 @@ defmodule TdDd.DataStructures.DataStructureQueriesTest do
     end
   end
 
+  test "grant DataStructureVersion children" do
+    [
+      %{id: dsv_a_id} = dsv_a,
+      %{id: dsv_b_id},
+      %{id: dsv_c_id}
+    ] =
+      ["A", "B", "C"]
+      |> create_hierarchy()
+
+    %{data_structure: %{id: dsv_a_ds_id}} = dsv_a
+
+    %{id: grant_id} = grant = insert(:grant, data_structure_id: dsv_a_ds_id)
+
+    assert [
+             %{
+               dsv_children: dsv_children,
+               grant: ^grant
+             }
+           ] =
+             DataStructureQueries.children(%{grant_ids: [grant_id]})
+             |> Repo.all()
+
+    assert dsv_children ||| [dsv_a_id, dsv_b_id, dsv_c_id]
+  end
+
   describe "DataStructureQueries.enriched_structure_versions/1" do
     test "compare with path snapshot" do
       dsv_names = ["foo", "bar", "baz", "xyzzy", "spqr"]
       dsvs = create_hierarchy(dsv_names)
       ids = Enum.map(dsvs, & &1.id)
-
-      Hierarchy.update_hierarchy(ids)
 
       paths =
         DataStructureQueries.enriched_structure_versions(%{ids: ids})
@@ -112,8 +136,6 @@ defmodule TdDd.DataStructures.DataStructureQueriesTest do
       ids_2 = Enum.map(dsvs_2, & &1.id)
 
       ids = ids_0 ++ ids_1 ++ ids_2
-
-      Hierarchy.update_hierarchy(ids)
 
       paths =
         DataStructureQueries.enriched_structure_versions(%{ids: ids})

@@ -2,11 +2,8 @@ defmodule TdCxWeb.ConfigurationController do
   use TdCxWeb, :controller
   use PhoenixSwagger
 
-  import Canada, only: [can?: 2]
-
   alias TdCx.Configurations
   alias TdCx.Configurations.Configuration
-  alias TdCxWeb.ErrorView
   alias TdCxWeb.SwaggerDefinitions
 
   action_fallback(TdCxWeb.FallbackController)
@@ -54,7 +51,7 @@ defmodule TdCxWeb.ConfigurationController do
   def create(conn, %{"configuration" => configuration_params}) do
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(claims, create(Configuration))},
+    with :ok <- Bodyguard.permit(Configurations, :create, claims),
          {:ok, %Configuration{} = configuration} <-
            Configurations.create_configuration(configuration_params) do
       conn
@@ -82,12 +79,6 @@ defmodule TdCxWeb.ConfigurationController do
 
     configuration = Configurations.get_configuration_by_external_id!(claims, external_id)
     render(conn, "show.json", configuration: configuration)
-  rescue
-    _e in Ecto.NoResultsError ->
-      conn
-      |> put_status(:not_found)
-      |> put_view(ErrorView)
-      |> render("404.json")
   end
 
   swagger_path :update do
@@ -113,7 +104,7 @@ defmodule TdCxWeb.ConfigurationController do
     claims = conn.assigns[:current_resource]
     configuration = Configurations.get_configuration_by_external_id!(external_id)
 
-    with {:can, true} <- {:can, can?(claims, update(configuration))},
+    with :ok <- Bodyguard.permit(Configurations, :update, claims, configuration),
          {:ok, %Configuration{} = configuration} <-
            Configurations.update_configuration(configuration, configuration_params) do
       render(conn, "show.json", configuration: configuration)
@@ -136,7 +127,7 @@ defmodule TdCxWeb.ConfigurationController do
     claims = conn.assigns[:current_resource]
     configuration = Configurations.get_configuration_by_external_id!(external_id)
 
-    with {:can, true} <- {:can, can?(claims, delete(configuration))},
+    with :ok <- Bodyguard.permit(Configurations, :delete, claims, configuration),
          {:ok, %Configuration{}} <- Configurations.delete_configuration(configuration) do
       send_resp(conn, :no_content, "")
     end

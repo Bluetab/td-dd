@@ -1,6 +1,8 @@
 defmodule TdDdWeb.Schema.SourcesTest do
   use TdDdWeb.ConnCase
 
+  @moduletag sandbox: :shared
+
   @valid_config %{"string" => "foo", "list" => "two"}
 
   @source_with_template """
@@ -144,7 +146,7 @@ defmodule TdDdWeb.Schema.SourcesTest do
   end
 
   defp create_source(%{domain: %{id: domain_id}, template: %{name: source_type}}) do
-    config = %{"foo" => "bar", "domain" => %{"id" => domain_id}}
+    config = %{"foo" => "bar", "domain" => domain_id}
     [source: insert(:source, config: config, type: source_type)]
   end
 
@@ -213,7 +215,11 @@ defmodule TdDdWeb.Schema.SourcesTest do
 
     @tag authentication: [role: "admin"]
     @tag domain: "foo"
-    test "enriches domain configuration from cache", %{conn: conn, source: %{id: source_id}} do
+    test "does not enrich domain configuration from cache", %{
+      conn: conn,
+      source: %{id: source_id},
+      domain: %{id: domain_id}
+    } do
       assert %{"data" => data} =
                response =
                conn
@@ -226,7 +232,7 @@ defmodule TdDdWeb.Schema.SourcesTest do
       assert response["errors"] == nil
       assert %{"source" => source} = data
       assert %{"config" => config} = source
-      assert %{"name" => "foo", "external_id" => _} = config["domain"]
+      assert %{"domain" => ^domain_id} = config
     end
 
     @tag authentication: [role: "admin"]
@@ -333,11 +339,13 @@ defmodule TdDdWeb.Schema.SourcesTest do
   describe "enableSource mutation" do
     @tag authentication: [role: "user"]
     test "returns forbidden when performed by user role", %{conn: conn} do
+      %{id: id} = insert(:source, active: false)
+
       assert %{"data" => nil, "errors" => errors} =
                conn
                |> post("/api/v2", %{
                  "query" => @enable_source,
-                 "variables" => %{"id" => 123}
+                 "variables" => %{"id" => id}
                })
                |> json_response(:ok)
 
@@ -366,11 +374,13 @@ defmodule TdDdWeb.Schema.SourcesTest do
   describe "disableSource mutation" do
     @tag authentication: [role: "user"]
     test "returns forbidden when queried by user role", %{conn: conn} do
+      %{id: id} = insert(:source, active: false)
+
       assert %{"data" => nil, "errors" => errors} =
                conn
                |> post("/api/v2", %{
                  "query" => @disable_source,
-                 "variables" => %{"id" => 123}
+                 "variables" => %{"id" => id}
                })
                |> json_response(:ok)
 
@@ -457,7 +467,8 @@ defmodule TdDdWeb.Schema.SourcesTest do
 
     @tag authentication: [role: "user"]
     test "returns forbidden for a non-admin user", %{conn: conn} do
-      params = %{"id" => "123"}
+      %{id: id} = insert(:source)
+      params = %{"id" => id}
 
       assert %{"data" => nil, "errors" => errors} =
                conn
@@ -503,13 +514,20 @@ defmodule TdDdWeb.Schema.SourcesTest do
   end
 
   describe "deleteSource mutation" do
+    setup do
+      start_supervised!(TdCx.Cache.SourcesLatestEvent)
+      :ok
+    end
+
     @tag authentication: [role: "user"]
     test "returns forbidden for a non-admin user", %{conn: conn} do
+      %{id: id} = insert(:source)
+
       assert %{"data" => nil, "errors" => errors} =
                conn
                |> post("/api/v2", %{
                  "query" => @delete_source,
-                 "variables" => %{"id" => "123"}
+                 "variables" => %{"id" => id}
                })
                |> json_response(:ok)
 

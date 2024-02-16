@@ -30,10 +30,8 @@ defmodule TdDq.Rules.Search.AggregationsTest do
       assert %{
                "active.raw" => _,
                "my_domain" => %{
-                 aggs: %{
-                   distinct_search: %{terms: %{field: "df_content.my_domain.external_id.raw"}}
-                 },
-                 nested: %{path: "df_content.my_domain"}
+                 meta: %{type: "domain"},
+                 terms: %{field: "df_content.my_domain", size: 50}
                },
                "my_list" => %{terms: %{field: "df_content.my_list.raw"}},
                "my_system" => %{

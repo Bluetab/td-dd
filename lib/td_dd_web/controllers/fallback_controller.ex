@@ -31,12 +31,20 @@ defmodule TdDdWeb.FallbackController do
     |> send_resp(:not_found, Jason.encode!(%{message: message}))
   end
 
+  def call(conn, nil) do
+    render_error(conn, :not_found)
+  end
+
   def call(conn, {:error, :not_found}) do
     render_error(conn, :not_found)
   end
 
   def call(conn, {:error, :conflict}) do
     render_error(conn, :conflict)
+  end
+
+  def call(conn, {:error, :forbidden}) do
+    render_error(conn, :forbidden)
   end
 
   def call(conn, {:error, error}) do

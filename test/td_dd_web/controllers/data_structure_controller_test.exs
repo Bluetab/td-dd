@@ -1,31 +1,28 @@
 defmodule TdDdWeb.DataStructureControllerTest do
+  use TdDd.ProcessCase
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   import Mox
   import Routes
+  import TdDd.TestOperators
 
+  alias Path
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.RelationTypes
+  alias TdDd.DataStructures.Search.Aggregations
   alias TdDd.DataStructures.StructureNotes
+  alias TdDd.Search.MockIndexWorker
 
   @moduletag sandbox: :shared
   @template_name "data_structure_controller_test_template"
   @template_with_multifields_name "data_structure_controller_test_template_with_multifields"
   @receive_timeout 500
-
-  # function that returns the function to be injected
-  def notify_callback do
-    pid = self()
-
-    fn reason, msg ->
-      # send msg back to test process
-      Kernel.send(pid, {reason, msg})
-      :ok
-    end
-  end
+  @protected DataStructures.protected()
 
   setup_all do
+    start_supervised(MockIndexWorker)
     start_supervised({Task.Supervisor, name: TdDd.TaskSupervisor})
     start_supervised!(TdDd.Lineage.GraphData)
     start_supervised!(TdDd.Search.Cluster)
@@ -71,7 +68,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
           data_structure_version = insert(:data_structure_version)
 
         ElasticsearchMock
-        |> expect(:request, fn _, :post, "/structures/_search", _, [] ->
+        |> expect(:request, fn _, :post, "/structures/_search", _, _ ->
           SearchHelpers.hits_response([data_structure_version])
         end)
 
@@ -90,7 +87,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
         data_structure_version = insert(:data_structure_version, domain_ids: [domain_id])
 
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", _, [] ->
+      |> expect(:request, fn _, :post, "/structures/_search", _, _ ->
         SearchHelpers.hits_response([data_structure_version])
       end)
 
@@ -100,6 +97,28 @@ defmodule TdDdWeb.DataStructureControllerTest do
                |> json_response(:ok)
 
       assert [%{"id" => ^id, "name" => ^name, "external_id" => ^external_id}] = data
+    end
+
+    @tag authentication: [role: "admin"]
+    test "response includes alias as name and original name", %{conn: conn} do
+      %{name: name} =
+        data_structure_version =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, alias: "my_alias"),
+          type: @template_name
+        )
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", _, _ ->
+        SearchHelpers.hits_response([data_structure_version])
+      end)
+
+      assert %{"data" => data} =
+               conn
+               |> get(data_structure_path(conn, :index))
+               |> json_response(:ok)
+
+      assert [%{"name" => "my_alias", "original_name" => ^name}] = data
     end
   end
 
@@ -111,7 +130,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       %{data_structure_id: id} = dsv = insert(:data_structure_version)
 
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, [] ->
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
         assert query == %{
                  bool: %{
                    filter: %{match_all: %{}},
@@ -129,11 +148,33 @@ defmodule TdDdWeb.DataStructureControllerTest do
     end
 
     @tag authentication: [role: "admin"]
+    test "search without query includes match_all clause with must in params", %{conn: conn} do
+      %{data_structure_id: id} = dsv = insert(:data_structure_version)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
+        assert query == %{
+                 bool: %{
+                   must: %{match_all: %{}},
+                   must_not: %{exists: %{field: "deleted_at"}}
+                 }
+               }
+
+        SearchHelpers.hits_response([dsv])
+      end)
+
+      assert %{"data" => [%{"id" => ^id}]} =
+               conn
+               |> post(data_structure_path(conn, :search), %{"must" => %{}})
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
     test "search with query includes multi_match clause", %{conn: conn} do
       %{data_structure_id: id} = dsv = insert(:data_structure_version)
 
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, [] ->
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
         assert %{bool: %{must: %{multi_match: _}}} = query
         SearchHelpers.hits_response([dsv])
       end)
@@ -141,6 +182,85 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert %{"data" => [%{"id" => ^id}]} =
                conn
                |> post(data_structure_path(conn, :search), %{"query" => "foo"})
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "get_bucket_structures includes filters and without", %{conn: conn} do
+      %{data_structure_id: id} = dsv = insert(:data_structure_version)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
+        assert %{
+                 bool: %{
+                   filter: [
+                     %{term: %{"parent_id" => ""}},
+                     %{term: %{"metadata.region" => "eu-west-1"}}
+                   ],
+                   must_not: %{exists: %{field: "deleted_at"}}
+                 }
+               } = query
+
+        SearchHelpers.hits_response([dsv])
+      end)
+
+      assert %{"data" => [%{"id" => ^id}]} =
+               conn
+               |> post(
+                 data_structure_path(conn, :get_bucket_structures),
+                 %{
+                   "metadata.region" => "eu-west-1",
+                   "parent_id" => ""
+                 }
+               )
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "get_bucket_structures transforms special Aggregations.@missing_term_name filter to without (must not in query)",
+         %{conn: conn} do
+      %{data_structure_id: id} = dsv = insert(:data_structure_version)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
+        assert %{
+                 bool: %{
+                   filter: %{term: %{"parent_id" => ""}},
+                   must_not: [
+                     %{exists: %{field: "deleted_at"}},
+                     %{exists: %{field: "metadata.region"}}
+                   ]
+                 }
+               } = query
+
+        SearchHelpers.hits_response([dsv])
+      end)
+
+      assert %{"data" => [%{"id" => ^id}]} =
+               conn
+               |> post(
+                 data_structure_path(conn, :get_bucket_structures),
+                 %{
+                   "metadata.region" => Aggregations.missing_term_name(),
+                   "parent_id" => ""
+                 }
+               )
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "search with query includes multi_match clause with must params", %{conn: conn} do
+      %{data_structure_id: id} = dsv = insert(:data_structure_version)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
+        assert %{bool: %{must: [%{multi_match: _}, %{match_all: %{}}]}} = query
+        SearchHelpers.hits_response([dsv])
+      end)
+
+      assert %{"data" => [%{"id" => ^id}]} =
+               conn
+               |> post(data_structure_path(conn, :search), %{"must" => %{}, "query" => "foo"})
                |> json_response(:ok)
     end
 
@@ -159,7 +279,30 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert %{
                "bulkUpdate" => %{"href" => href, "method" => "POST"},
                "bulkUpload" => _,
-               "autoPublish" => _
+               "autoPublish" => _,
+               "bulkUploadDomains" => _
+             } = actions
+
+      assert href == "/api/data_structures/bulk_update"
+    end
+
+    @tag authentication: [role: "admin"]
+    test "includes actions for admin role with must params", %{conn: conn} do
+      ElasticsearchMock
+      |> expect(:request, fn _, _, _, _, _ -> SearchHelpers.hits_response([], 1) end)
+
+      params = %{"must" => %{"type.raw" => ["foo"]}}
+
+      assert %{"_actions" => actions} =
+               conn
+               |> post(data_structure_path(conn, :search), params)
+               |> json_response(:ok)
+
+      assert %{
+               "bulkUpdate" => %{"href" => href, "method" => "POST"},
+               "bulkUpload" => _,
+               "autoPublish" => _,
+               "bulkUploadDomains" => _
              } = actions
 
       assert href == "/api/data_structures/bulk_update"
@@ -186,6 +329,27 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert href == "/api/data_structures/bulk_update_template_content"
     end
 
+    @tag authentication: [
+           permissions: ["create_structure_note", "publish_structure_note_from_draft"]
+         ]
+    test "includes actions for a user with permissions with must params", %{conn: conn} do
+      ElasticsearchMock
+      |> expect(:request, fn _, _, _, _, _ -> SearchHelpers.hits_response([]) end)
+
+      assert %{"_actions" => actions} =
+               conn
+               |> post(data_structure_path(conn, :search), %{"must" => %{}})
+               |> json_response(:ok)
+
+      assert %{
+               "bulkUpload" => %{"href" => href, "method" => "POST"},
+               "autoPublish" => %{"href" => href, "method" => "POST"}
+             } = actions
+
+      refute Map.has_key?(actions, "bulkUpdate")
+      assert href == "/api/data_structures/bulk_update_template_content"
+    end
+
     @tag authentication: [role: "user", permissions: ["view_data_structure"]]
     test "does not include actions for a user without permissions", %{conn: conn} do
       ElasticsearchMock
@@ -198,6 +362,185 @@ defmodule TdDdWeb.DataStructureControllerTest do
                |> json_response(:ok)
 
       refute Map.has_key?(response, "_actions")
+    end
+
+    @tag authentication: [role: "user", permissions: ["view_data_structure"]]
+    test "does not include actions for a user without permissions with must params", %{conn: conn} do
+      ElasticsearchMock
+      |> expect(:request, fn _, _, _, _, _ -> SearchHelpers.hits_response([]) end)
+
+      assert %{} =
+               response =
+               conn
+               |> post(data_structure_path(conn, :search), %{"must" => %{}})
+               |> json_response(:ok)
+
+      refute Map.has_key?(response, "_actions")
+    end
+
+    @tag authentication: [role: "admin"]
+    test "search with grant_requests flag will include users grants and grant_requests", %{
+      conn: conn,
+      claims: %{user_id: user_id}
+    } do
+      %{data_structure_id: id} = dsv = insert(:data_structure_version)
+
+      %{id: request_id} =
+        insert(:grant_request,
+          group: build(:grant_request_group, user_id: user_id),
+          data_structure_id: id
+        )
+
+      %{id: grant_id} = insert(:grant, user_id: user_id, end_date: nil, data_structure_id: id)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: _query}, _ ->
+        SearchHelpers.hits_response([dsv])
+      end)
+
+      assert %{
+               "data" => [
+                 %{
+                   "id" => ^id,
+                   "my_grants" => [%{"id" => ^grant_id}],
+                   "my_grant_request" => %{"id" => ^request_id}
+                 }
+               ]
+             } =
+               conn
+               |> post(data_structure_path(conn, :search), %{"my_grant_requests" => true})
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "search with grant_requests flag will include users grants and grant_requests with must params",
+         %{
+           conn: conn,
+           claims: %{user_id: user_id}
+         } do
+      %{data_structure_id: id} = dsv = insert(:data_structure_version)
+
+      %{id: request_id} =
+        insert(:grant_request,
+          group: build(:grant_request_group, user_id: user_id),
+          data_structure_id: id
+        )
+
+      %{id: grant_id} = insert(:grant, user_id: user_id, end_date: nil, data_structure_id: id)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: _query}, _ ->
+        SearchHelpers.hits_response([dsv])
+      end)
+
+      assert %{
+               "data" => [
+                 %{
+                   "id" => ^id,
+                   "my_grants" => [%{"id" => ^grant_id}],
+                   "my_grant_request" => %{"id" => ^request_id}
+                 }
+               ]
+             } =
+               conn
+               |> post(data_structure_path(conn, :search), %{
+                 "must" => %{},
+                 "my_grant_requests" => true
+               })
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "search passing flag with_data_fields will return the structure data_fields", %{
+      conn: conn
+    } do
+      %{data_structure_id: id, id: dsv_id} = dsv = insert(:data_structure_version)
+
+      %{data_structure_id: child_ds_id, id: child_id} =
+        insert(:data_structure_version, class: "field")
+
+      insert(:data_structure_relation,
+        parent_id: dsv_id,
+        child_id: child_id,
+        relation_type_id: RelationTypes.default_id!()
+      )
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: _query}, _ ->
+        SearchHelpers.hits_response([dsv])
+      end)
+
+      assert %{
+               "data" => [
+                 %{
+                   "id" => ^id,
+                   "data_fields" => [%{"id" => ^child_ds_id}]
+                 }
+               ]
+             } =
+               conn
+               |> post(data_structure_path(conn, :search), %{
+                 "must" => %{},
+                 "with_data_fields" => true
+               })
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "search without grant_requests flag will not include users grants and grant_requests", %{
+      conn: conn,
+      claims: %{user_id: user_id}
+    } do
+      %{data_structure_id: id} = dsv = insert(:data_structure_version)
+
+      insert(:grant_request,
+        group: build(:grant_request_group, user_id: user_id),
+        data_structure_id: id
+      )
+
+      insert(:grant, user_id: user_id, end_date: nil, data_structure_id: id)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: _query}, _ ->
+        SearchHelpers.hits_response([dsv])
+      end)
+
+      assert %{"data" => [%{"id" => ^id} = data_structure]} =
+               conn
+               |> post(data_structure_path(conn, :search))
+               |> json_response(:ok)
+
+      refute "my_grants" in Map.keys(data_structure)
+      refute "my_grant_request" in Map.keys(data_structure)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "search without grant_requests flag will not include users grants and grant_requests with must params",
+         %{
+           conn: conn,
+           claims: %{user_id: user_id}
+         } do
+      %{data_structure_id: id} = dsv = insert(:data_structure_version)
+
+      insert(:grant_request,
+        group: build(:grant_request_group, user_id: user_id),
+        data_structure_id: id
+      )
+
+      insert(:grant, user_id: user_id, end_date: nil, data_structure_id: id)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: _query}, _ ->
+        SearchHelpers.hits_response([dsv])
+      end)
+
+      assert %{"data" => [%{"id" => ^id} = data_structure]} =
+               conn
+               |> post(data_structure_path(conn, :search), %{"must" => %{}})
+               |> json_response(:ok)
+
+      refute "my_grants" in Map.keys(data_structure)
+      refute "my_grant_request" in Map.keys(data_structure)
     end
   end
 
@@ -222,6 +565,27 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert length(data) == 5
     end
+
+    @tag authentication: [role: "admin"]
+    test "includes scroll_id in response with must params", %{conn: conn} do
+      dsvs = Enum.map(1..5, fn _ -> insert(:data_structure_version) end)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", _, [params: %{"scroll" => "1m"}] ->
+        SearchHelpers.scroll_response(dsvs, 7)
+      end)
+
+      assert %{"data" => data, "scroll_id" => _scroll_id} =
+               conn
+               |> post(data_structure_path(conn, :search), %{
+                 "must" => %{"all" => true},
+                 "size" => 5,
+                 "scroll" => "1m"
+               })
+               |> json_response(:ok)
+
+      assert length(data) == 5
+    end
   end
 
   describe "update data_structure" do
@@ -234,6 +598,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       data_structure: %{id: id, domain_ids: [old_domain_id]} = data_structure,
       swagger_schema: schema
     } do
+      MockIndexWorker.clear()
       %{id: new_domain_id} = CacheHelpers.insert_domain()
       attrs = %{domain_ids: [new_domain_id]}
 
@@ -241,7 +606,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
         update_data_structure: [old_domain_id],
         manage_confidential_structures: [old_domain_id, new_domain_id],
         manage_structures_domain: [old_domain_id, new_domain_id],
-        view_data_structure: [new_domain_id]
+        view_data_structure: [old_domain_id, new_domain_id]
       })
 
       assert %{"data" => %{"id" => ^id}} =
@@ -251,6 +616,51 @@ defmodule TdDdWeb.DataStructureControllerTest do
                |> json_response(:ok)
 
       assert %{domain_ids: [^new_domain_id]} = DataStructures.get_data_structure!(id)
+
+      [
+        {:reindex, structure_reindex}
+      ] = MockIndexWorker.calls()
+
+      assert structure_reindex ||| [id]
+    end
+
+    @tag authentication: [role: "user"]
+    test "reindex implementation when data_structure domain_id is updated and has implementation_structure relation",
+         %{
+           conn: conn,
+           claims: claims,
+           data_structure: %{id: id, domain_ids: [old_domain_id]} = data_structure,
+           swagger_schema: schema
+         } do
+      MockIndexWorker.clear()
+      %{id: new_domain_id} = CacheHelpers.insert_domain()
+      attrs = %{domain_ids: [new_domain_id]}
+
+      %{id: implementation_id} = insert(:implementation, version: 1, status: :published)
+
+      insert(:implementation_structure,
+        data_structure_id: id,
+        implementation_id: implementation_id
+      )
+
+      CacheHelpers.put_session_permissions(claims, %{
+        update_data_structure: [old_domain_id],
+        manage_confidential_structures: [old_domain_id, new_domain_id],
+        manage_structures_domain: [old_domain_id, new_domain_id],
+        view_data_structure: [old_domain_id, new_domain_id]
+      })
+
+      assert %{"data" => %{"id" => ^id}} =
+               conn
+               |> put(data_structure_path(conn, :update, data_structure), data_structure: attrs)
+               |> validate_resp_schema(schema, "DataStructureResponse")
+               |> json_response(:ok)
+
+      assert %{domain_ids: [^new_domain_id]} = DataStructures.get_data_structure!(id)
+
+      implementation_reindexed = Keyword.get(MockIndexWorker.calls(), :reindex_implementations)
+
+      assert implementation_reindexed ||| [implementation_id]
     end
 
     @tag authentication: [role: "user"]
@@ -271,6 +681,85 @@ defmodule TdDdWeb.DataStructureControllerTest do
              )
              |> validate_resp_schema(schema, "DataStructureResponse")
              |> json_response(:forbidden)
+    end
+
+    @tag authentication: [
+           role: "user",
+           permissions: [
+             :view_data_structure,
+             :update_data_structure,
+             :manage_confidential_structures,
+             :view_protected_metadata
+           ]
+         ]
+    test "shows updated structure protected metadata if user has view_protected_metadata permission",
+         %{
+           conn: conn,
+           data_structure: data_structure,
+           swagger_schema: schema
+         } do
+      mutable_metadata = %{
+        "mm_foo" => "mm_foo",
+        @protected => %{"mm_protected" => "mm_protected"}
+      }
+
+      insert(:structure_metadata, data_structure_id: data_structure.id, fields: mutable_metadata)
+
+      assert %{"data" => data} =
+               conn
+               |> put(data_structure_path(conn, :update, data_structure),
+                 data_structure: %{confidential: true}
+               )
+               |> validate_resp_schema(schema, "DataStructureResponse")
+               |> json_response(:ok)
+
+      assert %{
+               "metadata_versions" => [
+                 %{
+                   "fields" => ^mutable_metadata
+                 }
+               ]
+             } = data
+    end
+
+    @tag authentication: [
+           role: "user",
+           permissions: [
+             :view_data_structure,
+             :update_data_structure,
+             :manage_confidential_structures
+           ]
+         ]
+    test "filters updated structure protected metadata if user does not have view_protected_metadata permission",
+         %{
+           conn: conn,
+           data_structure: data_structure,
+           swagger_schema: schema
+         } do
+      mutable_metadata = %{
+        "mm_foo" => "mm_foo",
+        @protected => %{"mm_protected" => "mm_protected"}
+      }
+
+      insert(:structure_metadata, data_structure_id: data_structure.id, fields: mutable_metadata)
+
+      assert %{"data" => data} =
+               conn
+               |> put(data_structure_path(conn, :update, data_structure),
+                 data_structure: %{confidential: true}
+               )
+               |> validate_resp_schema(schema, "DataStructureResponse")
+               |> json_response(:ok)
+
+      assert %{
+               "metadata_versions" => [
+                 %{
+                   "fields" => fields
+                 }
+               ]
+             } = data
+
+      assert fields == %{"mm_foo" => "mm_foo"}
     end
 
     @tag authentication: [role: "user"]
@@ -471,16 +960,71 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
   describe "bulk_update" do
     @tag authentication: [role: "admin"]
-    test "bulk update of data structures", %{conn: conn, domain_id: domain_id} do
-      %{data_structure_id: id} =
-        dsv = insert(:data_structure_version, domain_ids: [domain_id], type: @template_name)
+    test "bulk update of data structures with no initial matches", %{conn: conn} do
+      ElasticsearchMock
+      |> expect(
+        :request,
+        fn _, :post, "/structures/_search", %{query: query, size: 10_000}, opts ->
+          assert opts == [params: %{"scroll" => "1m"}]
+
+          assert query == %{
+                   bool: %{
+                     filter: %{term: %{"type.raw" => "Field"}},
+                     must_not: %{exists: %{field: "deleted_at"}}
+                   }
+                 }
+
+          SearchHelpers.hits_response([])
+        end
+      )
+
+      assert %{"errors" => [], "ids" => []} =
+               conn
+               |> post(Routes.data_structure_path(conn, :bulk_update), %{
+                 "bulk_update_request" => %{
+                   "update_attributes" => %{
+                     "df_content" => %{
+                       "list" => "one",
+                       "string" => "hola soy un string"
+                     },
+                     "otra_cosa" => 2
+                   },
+                   "search_params" => %{
+                     "filters" => %{"type.raw" => ["Field"]}
+                   }
+                 }
+               })
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "bulk update of data structures uses scroll to search", %{conn: conn} do
+      %{data_structure_id: id1} = dsv1 = insert(:data_structure_version, type: @template_name)
+      %{data_structure_id: id2} = dsv2 = insert(:data_structure_version, type: @template_name)
 
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", _, [] ->
-        SearchHelpers.hits_response([dsv])
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, opts ->
+        assert opts == [params: %{"scroll" => "1m"}]
+
+        assert query == %{
+                 bool: %{
+                   filter: %{terms: %{"id" => [id1, id2]}},
+                   must_not: %{exists: %{field: "deleted_at"}}
+                 }
+               }
+
+        SearchHelpers.scroll_response([dsv1])
+      end)
+      |> expect(:request, fn _, :post, "/_search/scroll", body, [] ->
+        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
+        SearchHelpers.scroll_response([dsv2])
+      end)
+      |> expect(:request, fn _, :post, "/_search/scroll", body, [] ->
+        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
+        SearchHelpers.scroll_response([])
       end)
 
-      assert data =
+      assert %{"errors" => [], "ids" => [^id1, ^id2]} =
                conn
                |> post(Routes.data_structure_path(conn, :bulk_update), %{
                  "bulk_update_request" => %{
@@ -491,15 +1035,11 @@ defmodule TdDdWeb.DataStructureControllerTest do
                      }
                    },
                    "search_params" => %{
-                     "filters" => %{
-                       "id" => [id]
-                     }
+                     "filters" => %{"id" => [id1, id2]}
                    }
                  }
                })
                |> json_response(:ok)
-
-      assert %{"errors" => [], "ids" => [^id]} = data
     end
 
     @tag authentication: [role: "admin"]
@@ -508,7 +1048,9 @@ defmodule TdDdWeb.DataStructureControllerTest do
       dsv = insert(:data_structure_version, data_structure_id: id, type: @template_name)
 
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, [] ->
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, opts ->
+        assert opts == [params: %{"scroll" => "1m"}]
+
         assert query == %{
                  bool: %{
                    filter: %{term: %{"note_id" => 123}},
@@ -516,7 +1058,11 @@ defmodule TdDdWeb.DataStructureControllerTest do
                  }
                }
 
-        SearchHelpers.hits_response([dsv])
+        SearchHelpers.scroll_response([dsv])
+      end)
+      |> expect(:request, fn _, :post, "/_search/scroll", body, [] ->
+        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
+        SearchHelpers.scroll_response([])
       end)
 
       assert %{"errors" => errors, "ids" => []} =
@@ -556,7 +1102,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_upload_domains),
-        structures_domains: %Plug.Upload{path: "test/fixtures/td4535/structures_domains_good.csv"}
+        structures_domains: upload("test/fixtures/td4535/structures_domains_good.csv")
       )
       |> json_response(:forbidden)
     end
@@ -567,7 +1113,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
       %{id: foo_domain_id} = CacheHelpers.insert_domain(%{external_id: "foo"})
 
       CacheHelpers.put_session_permissions(claims, %{
-        manage_structures_domain: [bar_domain_id, foo_domain_id]
+        manage_structures_domain: [bar_domain_id, foo_domain_id],
+        view_data_structure: [bar_domain_id, foo_domain_id]
       })
 
       {[id_one, _id_two, id_three], [_, bar_external_id_2, _]} =
@@ -576,9 +1123,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       data =
         conn
         |> post(data_structure_path(conn, :bulk_upload_domains),
-          structures_domains: %Plug.Upload{
-            path: "test/fixtures/td4535/structures_domains_good.csv"
-          }
+          structures_domains: upload("test/fixtures/td4535/structures_domains_good.csv")
         )
         |> json_response(:ok)
 
@@ -613,7 +1158,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
       %{id: pan_domain_id} = CacheHelpers.insert_domain(%{external_id: "pan"})
 
       CacheHelpers.put_session_permissions(claims, %{
-        manage_structures_domain: [bar_domain_id, foo_domain_id]
+        manage_structures_domain: [bar_domain_id, foo_domain_id],
+        view_data_structure: [bar_domain_id, foo_domain_id]
       })
 
       {[bar_id_one, _bar_id_two, _bar_id_three],
@@ -628,12 +1174,15 @@ defmodule TdDdWeb.DataStructureControllerTest do
        [pan_external_id_1, _pan_external_id_2, _pan_external_id_3]} =
         create_three_data_structures(pan_domain_id, "pan_external_id")
 
+      %{id: grant_request_id} =
+        insert(:grant_request,
+          data_structure_id: bar_id_one
+        )
+
       data =
         conn
         |> post(data_structure_path(conn, :bulk_upload_domains),
-          structures_domains: %Plug.Upload{
-            path: "test/fixtures/td4535/structures_domains_permissions.csv"
-          }
+          structures_domains: upload("test/fixtures/td4535/structures_domains_permissions.csv")
         )
         |> json_response(:ok)
 
@@ -643,7 +1192,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                  %{
                    "external_id" => foo_external_id_3,
                    "message" => %{
-                     "update_domain" => ["forbbiden"]
+                     "update_domain" => ["forbidden"]
                    },
                    "row" => 4
                  },
@@ -657,12 +1206,59 @@ defmodule TdDdWeb.DataStructureControllerTest do
                  %{
                    "external_id" => pan_external_id_1,
                    "message" => %{
-                     "update_domain" => ["forbbiden"]
+                     "update_domain" => ["forbidden"]
                    },
                    "row" => 6
                  }
                ]
              }
+
+      find_call = {:reindex_grant_requests, [grant_request_id]}
+
+      assert find_call ==
+               MockIndexWorker.calls()
+               |> Enum.find(fn call ->
+                 find_call == call
+               end)
+    end
+
+    @tag authentication: [role: "user"]
+    test "reindex implementation when change structure domains and has implementation_structure relation",
+         %{conn: conn, claims: claims} do
+      MockIndexWorker.clear()
+      %{id: bar_domain_id} = CacheHelpers.insert_domain(%{external_id: "bar"})
+      %{id: foo_domain_id} = CacheHelpers.insert_domain(%{external_id: "foo"})
+
+      CacheHelpers.put_session_permissions(claims, %{
+        manage_structures_domain: [bar_domain_id, foo_domain_id],
+        view_data_structure: [bar_domain_id, foo_domain_id]
+      })
+
+      {[id_one, _id_two, id_three], [_, _, _]} =
+        create_three_data_structures(bar_domain_id, "bar_external_id")
+
+      %{id: implementation_id_1} = insert(:implementation, version: 1, status: :published)
+      %{id: implementation_id_2} = insert(:implementation, version: 1, status: :published)
+
+      insert(:implementation_structure,
+        data_structure_id: id_one,
+        implementation_id: implementation_id_1
+      )
+
+      insert(:implementation_structure,
+        data_structure_id: id_three,
+        implementation_id: implementation_id_2
+      )
+
+      conn
+      |> post(data_structure_path(conn, :bulk_upload_domains),
+        structures_domains: upload("test/fixtures/td4535/structures_domains_good.csv")
+      )
+      |> json_response(:ok)
+
+      implementation_reindexed = Keyword.get(MockIndexWorker.calls(), :reindex_implementations)
+
+      assert implementation_reindexed ||| [implementation_id_1, implementation_id_2]
     end
 
     @tag authentication: [role: "user", permissions: [:manage_structures_domain]]
@@ -670,9 +1266,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       data =
         conn
         |> post(data_structure_path(conn, :bulk_upload_domains),
-          structures_domains: %Plug.Upload{
-            path: "test/fixtures/td4535/structures_domains_bad_header.csv"
-          }
+          structures_domains: upload("test/fixtures/td4535/structures_domains_bad_header.csv")
         )
         |> json_response(:unprocessable_entity)
 
@@ -683,7 +1277,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert message =~ ~r/invalid_headers/
     end
 
-    @tag authentication: [role: "user", permissions: [:manage_structures_domain]]
+    @tag authentication: [
+           role: "user",
+           permissions: [:manage_structures_domain, :view_data_structure]
+         ]
     test "throw error on invalid csv (missing external_id fields)", %{
       conn: conn,
       domain_id: domain_id
@@ -696,9 +1293,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
       data =
         conn
         |> post(data_structure_path(conn, :bulk_upload_domains),
-          structures_domains: %Plug.Upload{
-            path: "test/fixtures/td4535/structures_domains_bad_missing_external_id.csv"
-          }
+          structures_domains:
+            upload("test/fixtures/td4535/structures_domains_bad_missing_external_id.csv")
         )
         |> json_response(:ok)
 
@@ -741,7 +1337,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
       %{id: zoo_domain_id} = CacheHelpers.insert_domain(%{external_id: "zoo"})
 
       CacheHelpers.put_session_permissions(claims, %{
-        manage_structures_domain: [foo_domain_id, zoo_domain_id]
+        manage_structures_domain: [foo_domain_id, zoo_domain_id],
+        view_data_structure: [foo_domain_id, zoo_domain_id]
       })
 
       {[_, _, id_three], [external_id_1, external_id_2, _external_id_3]} =
@@ -753,9 +1350,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
       data =
         conn
         |> post(data_structure_path(conn, :bulk_upload_domains),
-          structures_domains: %Plug.Upload{
-            path: "test/fixtures/td4535/structures_domains_warning_inexistent.csv"
-          }
+          structures_domains:
+            upload("test/fixtures/td4535/structures_domains_warning_inexistent.csv")
         )
         |> json_response(:ok)
 
@@ -772,14 +1368,14 @@ defmodule TdDdWeb.DataStructureControllerTest do
                  %{
                    "row" => 4,
                    "message" => %{
-                     "update_domain" => ["forbbiden"]
+                     "update_domain" => ["forbidden"]
                    },
                    "external_id" => external_id_2
                  },
                  %{
                    "row" => 5,
                    "message" => %{
-                     "update_domain" => ["forbbiden"]
+                     "update_domain" => ["forbidden"]
                    },
                    "external_id" => bar_external_id_1
                  }
@@ -789,31 +1385,144 @@ defmodule TdDdWeb.DataStructureControllerTest do
   end
 
   describe "csv" do
+    setup :create_data_structure
+
     setup do
       start_supervised!({TdDd.DataStructures.BulkUpdater, notify: notify_callback()})
       :ok
     end
 
-    setup :create_data_structure
-
     @tag authentication: [role: "admin"]
-    test "gets csv content", %{conn: conn} do
+    test "gets csv content using scroll to search", %{conn: conn} do
       dsv = insert(:data_structure_version)
 
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", %{size: 10_000}, [] ->
-        SearchHelpers.hits_response([dsv])
+      |> expect(:request, fn _, :post, "/structures/_search", _, opts ->
+        assert opts == [params: %{"scroll" => "1m"}]
+        SearchHelpers.scroll_response([dsv])
+      end)
+      |> expect(:request, fn _, :post, "/_search/scroll", body, [] ->
+        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
+        SearchHelpers.scroll_response([])
       end)
 
       assert %{resp_body: resp_body} = post(conn, data_structure_path(conn, :csv, %{}))
       assert [_header, _row, ""] = String.split(resp_body, "\r\n")
     end
 
+    @tag authentication: [
+           role: "user",
+           permissions: [:manage_structures_domain, :view_data_structure]
+         ]
+    test "gets csv content using scroll to search, filter by taxonomy", %{
+      conn: conn,
+      domain: %{id: domain_id}
+    } do
+      %{id: child_domain_id} = CacheHelpers.insert_domain(parent_id: domain_id)
+
+      %{name: name} =
+        dsv =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, domain_ids: [child_domain_id])
+        )
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, opts ->
+        assert opts == [params: %{"scroll" => "1m"}]
+
+        assert %{
+                 bool: %{
+                   filter: [
+                     # The query taxonomy filter gets converted to the field "domain_ids"
+                     %{terms: %{"domain_ids" => [_domain_id, _child_domain_id]}},
+                     %{term: %{"confidential" => false}}
+                   ],
+                   must_not: %{exists: %{field: "deleted_at"}}
+                 }
+               } = query
+
+        SearchHelpers.scroll_response([dsv])
+      end)
+      |> expect(:request, fn _, :post, "/_search/scroll", body, opts ->
+        assert opts == []
+        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
+        SearchHelpers.scroll_response([])
+      end)
+
+      params = %{"filters" => %{"taxonomy" => [domain_id]}}
+
+      assert [row] =
+               post(conn, data_structure_path(conn, :csv), params)
+               |> response(:ok)
+               |> String.split("\r\n")
+               |> Enum.reject(&(&1 == ""))
+               |> CSV.decode!(headers: true, separator: ?;)
+               |> Enum.to_list()
+
+      assert %{"name" => ^name} = row
+    end
+
+    @tag authentication: [
+           role: "user",
+           permissions: [:manage_structures_domain, :view_data_structure]
+         ]
+    test "gets csv content using scroll to search, filter by taxonomy, with tech_name, alias_name and structure_link",
+         %{
+           conn: conn,
+           domain: %{id: domain_id}
+         } do
+      %{id: child_domain_id} = CacheHelpers.insert_domain(parent_id: domain_id)
+
+      %{name: name} =
+        dsv =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, domain_ids: [child_domain_id])
+        )
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, opts ->
+        assert opts == [params: %{"scroll" => "1m"}]
+
+        assert %{
+                 bool: %{
+                   filter: [
+                     # The query taxonomy filter gets converted to the field "domain_ids"
+                     %{terms: %{"domain_ids" => [_domain_id, _child_domain_id]}},
+                     %{term: %{"confidential" => false}}
+                   ],
+                   must_not: %{exists: %{field: "deleted_at"}}
+                 }
+               } = query
+
+        SearchHelpers.scroll_response([dsv])
+      end)
+      |> expect(:request, fn _, :post, "/_search/scroll", body, opts ->
+        assert opts == []
+        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
+        SearchHelpers.scroll_response([])
+      end)
+
+      params = %{
+        "filters" => %{"taxonomy" => [domain_id]},
+        :structure_url_schema => "https://truedat.td.dd/structure/:id"
+      }
+
+      assert [row] =
+               post(conn, data_structure_path(conn, :csv), params)
+               |> response(:ok)
+               |> String.split("\r\n")
+               |> Enum.reject(&(&1 == ""))
+               |> CSV.decode!(headers: true, separator: ?;)
+               |> Enum.to_list()
+
+      assert %{"tech_name" => ^name} = row
+    end
+
     @tag authentication: [role: "admin"]
-    test "gets editable csv content", %{
+    test "gets editable csv content using scroll to search", %{
       conn: conn,
       data_structure: data_structure,
-      data_structure_version: data_structure_version
+      data_structure_version: dsv
     } do
       insert(:structure_note,
         data_structure: data_structure,
@@ -822,18 +1531,75 @@ defmodule TdDdWeb.DataStructureControllerTest do
       )
 
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", _, [] ->
-        SearchHelpers.hits_response([data_structure_version])
+      |> expect(:request, fn _, :post, "/structures/_search", _, opts ->
+        assert opts == [params: %{"scroll" => "1m"}]
+        SearchHelpers.scroll_response([dsv])
+      end)
+      |> expect(:request, fn _, :post, "/_search/scroll", body, [] ->
+        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
+        SearchHelpers.scroll_response([])
       end)
 
       assert %{resp_body: body} = post(conn, data_structure_path(conn, :editable_csv, %{}))
 
       %{external_id: external_id} = data_structure
-      %{name: name, type: type, path: path} = data_structure_version
+      %{name: name, type: type, path: path} = dsv
 
       assert body == """
              external_id;name;type;path;string;list\r
              #{external_id};#{name};#{type};#{Enum.join(path, "")};foo;bar\r
+             """
+    end
+
+    @tag authentication: [role: "admin"]
+    test "gets editable csv content using scroll to search with tech_name, alias_name and structure_link",
+         %{
+           conn: conn,
+           data_structure: data_structure,
+           data_structure_version: dsv
+         } do
+      insert(:structure_note,
+        data_structure: data_structure,
+        df_content: %{"string" => "foo", "list" => "bar"},
+        status: :published
+      )
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", _, opts ->
+        assert opts == [params: %{"scroll" => "1m"}]
+        SearchHelpers.scroll_response([dsv])
+      end)
+      |> expect(:request, fn _, :post, "/_search/scroll", body, [] ->
+        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
+        SearchHelpers.scroll_response([])
+      end)
+
+      assert %{resp_body: body} =
+               post(
+                 conn,
+                 data_structure_path(conn, :editable_csv, %{
+                   :structure_url_schema => "https://truedat.td.dd/structure/:id"
+                 })
+               )
+
+      %{alias: alias_name, external_id: external_id} = data_structure
+
+      %{
+        data_structure_id: data_structure_id,
+        name: dsv_name,
+        type: type,
+        path: path
+      } = dsv
+
+      # original_name as
+      # TdDd.DataStructures.DataStructureVersion ->
+      #  Elasticsearch.Document maybe_put_alias does
+      original_name = dsv_name
+      structure_url = "https://truedat.td.dd/structure/" <> to_string(data_structure_id)
+
+      assert body == """
+             external_id;name;type;path;tech_name;alias_name;link_to_structure;string;list\r
+             #{external_id};#{dsv_name};#{type};#{Enum.join(path, "")};#{original_name};#{alias_name};#{structure_url};foo;bar\r
              """
     end
 
@@ -843,7 +1609,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: %Plug.Upload{path: "test/fixtures/td3787/upload_unprocessable_entity.csv"}
+        structures: upload("test/fixtures/td3787/upload_unprocessable_entity.csv")
       )
       |> json_response(:unprocessable_entity)
     end
@@ -862,7 +1628,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
              } =
                conn
                |> post(data_structure_path(conn, :bulk_update_template_content),
-                 structures: %Plug.Upload{path: "test/fixtures/td4100/upload.csv"}
+                 structures: upload("test/fixtures/td4100/upload.csv")
                )
                |> json_response(:accepted)
 
@@ -897,9 +1663,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
              } =
                conn
                |> post(data_structure_path(conn, :bulk_update_template_content),
-                 structures: %Plug.Upload{
-                   path: "test/fixtures/td4100/upload_with_one_warning.csv"
-                 }
+                 structures: upload("test/fixtures/td4100/upload_with_one_warning.csv")
                )
                |> json_response(:accepted)
 
@@ -944,9 +1708,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
              } =
                conn
                |> post(data_structure_path(conn, :bulk_update_template_content),
-                 structures: %Plug.Upload{
-                   path: "test/fixtures/td4100/upload_with_multiple_warnings.csv"
-                 }
+                 structures: upload("test/fixtures/td4100/upload_with_multiple_warnings.csv")
                )
                |> json_response(:accepted)
 
@@ -996,9 +1758,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
              } =
                conn
                |> post(data_structure_path(conn, :bulk_update_template_content),
-                 structures: %Plug.Upload{
-                   path: "test/fixtures/td4100/upload_with_invalid_external_id.csv"
-                 }
+                 structures: upload("test/fixtures/td4100/upload_with_invalid_external_id.csv")
                )
                |> json_response(:accepted)
 
@@ -1030,7 +1790,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: %Plug.Upload{path: "test/fixtures/td3787/upload.csv"}
+        structures: upload("test/fixtures/td3787/upload.csv")
       )
       |> response(:accepted)
 
@@ -1039,9 +1799,85 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert [
                %{
                  "csv_hash" => _csv_hash,
+                 "filename" => "upload.csv",
                  "status" => "COMPLETED",
                  "task_reference" => _task_reference,
                  "response" => %{"ids" => _, "errors" => []}
+               }
+               | _
+             ] =
+               conn
+               |> get(Routes.csv_bulk_update_event_path(conn, :index))
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "return error if template not exists", %{conn: conn, domain: %{id: domain_id}} do
+      %{id: data_structure_id} =
+        insert(:data_structure,
+          confidential: false,
+          external_id: "some_external_id_1",
+          domain_ids: [domain_id]
+        )
+
+      insert(:data_structure_version,
+        data_structure_id: data_structure_id,
+        type: "unknown_template"
+      )
+
+      conn
+      |> post(data_structure_path(conn, :bulk_update_template_content),
+        structures: upload("test/fixtures/td3787/upload.csv")
+      )
+      |> json_response(:accepted)
+
+      assert_receive {:info, {_ref, {:error, :template_not_found}}}, @receive_timeout
+
+      assert [
+               %{
+                 "csv_hash" => _csv_hash,
+                 "status" => "FAILED",
+                 "task_reference" => _task_reference,
+                 "response" => nil,
+                 "message" => "DOWN, :template_not_found"
+               }
+               | _
+             ] =
+               conn
+               |> get(Routes.csv_bulk_update_event_path(conn, :index))
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "return error if external_id_not_found", %{conn: conn, domain: %{id: domain_id}} do
+      %{id: data_structure_id} =
+        insert(:data_structure,
+          confidential: false,
+          external_id: "some_external_id_1",
+          domain_ids: [domain_id]
+        )
+
+      insert(:data_structure_version,
+        data_structure_id: data_structure_id,
+        type: @template_name
+      )
+
+      conn
+      |> post(data_structure_path(conn, :bulk_update_template_content),
+        structures: upload("test/fixtures/td3071/empty_lines.csv")
+      )
+      |> json_response(:accepted)
+
+      assert_receive {:info, {_ref, {:error, %{message: :external_id_not_found}}}},
+                     @receive_timeout
+
+      assert [
+               %{
+                 "csv_hash" => _csv_hash,
+                 "status" => "FAILED",
+                 "task_reference" => _task_reference,
+                 "response" => nil,
+                 "message" => "DOWN, %{message: :external_id_not_found}"
                }
                | _
              ] =
@@ -1066,7 +1902,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: %Plug.Upload{path: "test/fixtures/td4548/upload_with_multifields.csv"}
+        structures: upload("test/fixtures/td4548/upload_with_multifields.csv")
       )
       |> response(:accepted)
 
@@ -1103,7 +1939,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: %Plug.Upload{path: "test/fixtures/td3787/upload.csv"}
+        structures: upload("test/fixtures/td3787/upload.csv")
       )
       |> response(:forbidden)
     end
@@ -1126,7 +1962,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: %Plug.Upload{path: "test/fixtures/td3787/upload.csv"}
+        structures: upload("test/fixtures/td3787/upload.csv")
       )
       |> response(:accepted)
 
@@ -1151,7 +1987,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
            permissions: [
              :edit_structure_note,
              :view_data_structure,
-             # csv_bulk_update_event_path
              :create_structure_note
            ]
          ]
@@ -1172,7 +2007,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: %Plug.Upload{path: "test/fixtures/td3787/upload.csv"}
+        structures: upload("test/fixtures/td3787/upload.csv")
       )
       |> response(:accepted)
 
@@ -1219,7 +2054,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: %Plug.Upload{path: "test/fixtures/td3787/upload.csv"}
+        structures: upload("test/fixtures/td3787/upload.csv")
       )
       |> response(:accepted)
 
@@ -1258,7 +2093,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: %Plug.Upload{path: "test/fixtures/td3787/upload.csv"},
+        structures: upload("test/fixtures/td3787/upload.csv"),
         auto_publish: "true"
       )
       |> response(:accepted)
@@ -1299,7 +2134,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: %Plug.Upload{path: "test/fixtures/td3787/upload.csv"},
+        structures: upload("test/fixtures/td3787/upload.csv"),
         auto_publish: "true"
       )
       |> response(:forbidden)

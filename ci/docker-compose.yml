@@ -35,7 +35,7 @@ services:
       start_period: 10s
 
   redis:
-    image: library/redis:5.0-alpine
+    image: library/redis:6.2-alpine
     command: redis-server --port 6380 --appendonly yes
     healthcheck:
       test: redis-cli -h localhost -p 6380 ping | grep -q PONG || exit 1
@@ -45,12 +45,12 @@ services:
       start_period: 10s
 
   vault:
-    image: vault
+    image: hashicorp/vault
     environment:
       - VAULT_DEV_ROOT_TOKEN_ID=vault_secret_token1234
 
   build:
-    image: bluetab/elixir:1.12.2-alpine-20210804195416
+    image: bluetab/elixir:1.14.5-alpine-20230524124559
     command: ci/build.sh
     environment:
       APP_VERSION: "${APP_VERSION}"
@@ -63,7 +63,7 @@ services:
       - "${CI_PROJECT_DIR}:/code"
 
   test:
-    image: bluetab/elixir:1.12.2-alpine-20210804195416
+    image: bluetab/elixir:1.14.5-alpine-20230524124559
     command: ci/test.sh
     environment:
       HOME: /tmp # CURRENT_UID doesn't have a home
@@ -98,7 +98,7 @@ services:
       - redis
       - vault
       - elastic
-  
+
   wait_for_elastic:
     image: bluetab/wait-for:20190507133127
     command: elastic:9200 -t 60 -- curl --silent elastic:9200

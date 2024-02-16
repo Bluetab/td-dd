@@ -353,13 +353,13 @@ defmodule TdDdWeb.SystemControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/structures/_search", %{from: 0, size: 1000, query: query}, [] ->
+        _, :post, "/structures/_search", %{from: 0, size: 1000, query: query}, _ ->
           assert query == %{
                    bool: %{
                      filter: [
                        %{term: %{"system_id" => system_id}},
-                       %{term: %{"domain_ids" => domain_id}},
-                       %{term: %{"confidential" => false}}
+                       %{term: %{"confidential" => false}},
+                       %{term: %{"domain_ids" => domain_id}}
                      ],
                      must_not: [%{exists: %{field: "deleted_at"}}, %{exists: %{field: "path"}}]
                    }
@@ -402,7 +402,7 @@ defmodule TdDdWeb.SystemControllerTest do
 
   defp expect_search(results \\ nil) do
     ElasticsearchMock
-    |> expect(:request, fn _, :post, "/structures/_search", _, [] ->
+    |> expect(:request, fn _, :post, "/structures/_search", _, _ ->
       results
       |> List.wrap()
       |> SearchHelpers.hits_response()

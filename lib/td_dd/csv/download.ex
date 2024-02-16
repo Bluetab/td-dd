@@ -3,8 +3,10 @@ defmodule TdDd.CSV.Download do
   Helper module to download structures.
   """
 
+  alias TdCache.DomainCache
   alias TdDd.DataStructures.DataStructureTypes
   alias TdDfLib.Format
+  alias TdDfLib.Parser
 
   @headers [
     "type",
@@ -18,7 +20,31 @@ defmodule TdDd.CSV.Download do
     "inserted_at"
   ]
 
-  @editable_headers [:external_id, :name, :type, :path]
+  @headers_extended [
+    "type",
+    "tech_name",
+    "alias_name",
+    "link_to_structure",
+    "group",
+    "domain",
+    "system",
+    "path",
+    "description",
+    "external_id",
+    "inserted_at"
+  ]
+
+  @editable_headers [
+    :external_id,
+    :name,
+    :type,
+    :path
+  ]
+  @editable_extra_headers [
+    "tech_name",
+    "alias_name",
+    "link_to_structure"
+  ]
 
   @lineage_headers [
     "source_external_id",
@@ -39,39 +65,73 @@ defmodule TdDd.CSV.Download do
     "mutable_metadata"
   ]
 
-  def to_csv(structures, header_labels \\ nil) do
-    structures_by_type = Enum.group_by(structures, &Map.get(&1, :type))
-    types = Map.keys(structures_by_type)
+  def to_csv(structures, header_labels, structure_url_schema, lang) do
+    structures
+    |> Enum.group_by(&Map.get(&1, :type))
+    |> Enum.reduce([], fn {type, structures}, acc ->
+      content =
+        [name: type]
+        |> DataStructureTypes.get_by()
+        |> then(fn
+          %{template: %{content: content = [_ | _]}} ->
+            Format.flatten_content_fields(content, lang)
 
-    structure_types =
-      Enum.reduce(types, %{}, &Map.put(&2, &1, DataStructureTypes.get_by(name: &1)))
+          _ ->
+            []
+        end)
 
-    list =
-      Enum.reduce(types, [], fn type, acc ->
-        structures = Map.get(structures_by_type, type)
-        structure_type = Map.get(structure_types, type)
+      content_labels = Enum.map(content, &Map.get(&1, "definition"))
 
-        csv_list =
-          template_structures_to_csv(structure_type, structures, header_labels, !Enum.empty?(acc))
+      headers =
+        if is_nil(structure_url_schema) do
+          build_headers(header_labels) ++ content_labels
+        else
+          build_headers(header_labels, @headers_extended) ++ content_labels
+        end
 
-        acc ++ csv_list
-      end)
+      content_fields =
+        Enum.map(content, &Map.take(&1, ["name", "values", "type", "cardinality", "label"]))
 
-    to_string(list)
+      structures_list =
+        Enum.map(structures, fn %{note: content} = structure ->
+          structure
+          |> get_standar_fields(structure_url_schema)
+          |> Parser.append_parsed_fields(content_fields, content,
+            lang: lang,
+            domain_type: :with_domain_name
+          )
+        end)
+
+      csv_list = export_to_csv(headers, structures_list, !Enum.empty?(acc))
+
+      acc ++ csv_list
+    end)
+    |> to_string
   end
 
-  def to_editable_csv(structures) do
+  def to_editable_csv(structures, structure_url_schema, lang) do
     type_fields =
       structures
       |> Enum.map(& &1.type)
       |> Enum.uniq()
       |> Enum.map(&DataStructureTypes.get_by(name: &1))
       |> Enum.flat_map(&type_editable_fields/1)
+      |> Enum.uniq_by(&Map.get(&1, "name"))
 
     type_headers = Enum.map(type_fields, &Map.get(&1, "name"))
 
-    headers = @editable_headers ++ type_headers
-    core = Enum.map(structures, &editable_structure_values(&1, type_fields))
+    headers = get_editable_headers(type_headers, structure_url_schema)
+
+    core =
+      Enum.map(structures, fn %{note: content} = structure ->
+        @editable_headers
+        |> Enum.map(&editable_structure_value(structure, &1))
+        |> add_editable_extra_fields(structure, structure_url_schema)
+        |> Parser.append_parsed_fields(type_fields, content,
+          domain_type: :with_domain_external_id,
+          lang: lang
+        )
+      end)
 
     [headers | core]
     |> CSV.encode(separator: ?;)
@@ -79,23 +139,71 @@ defmodule TdDd.CSV.Download do
     |> to_string()
   end
 
-  defp type_editable_fields(%{template: %{content: content}}) when is_list(content) do
-    Enum.flat_map(content, &Map.get(&1, "fields"))
+  defp get_structure_alias(%{note: %{"alias" => alias}}), do: alias
+
+  defp get_structure_alias(_), do: ""
+
+  defp get_standar_fields(structure, nil) do
+    [
+      structure.type,
+      structure.name,
+      structure.group,
+      get_domain(structure),
+      Map.get(structure.system, "name"),
+      Enum.join(structure.path, " > "),
+      structure.description,
+      structure.external_id,
+      structure.inserted_at
+    ]
   end
+
+  defp get_standar_fields(structure, structure_url_schema) do
+    [
+      structure.type,
+      Map.get(structure, :original_name, structure.name),
+      get_structure_alias(structure),
+      get_structure_url_schema(structure_url_schema, structure.data_structure_id),
+      structure.group,
+      get_domain(structure),
+      Map.get(structure.system, "name"),
+      Enum.join(structure.path, " > "),
+      structure.description,
+      structure.external_id,
+      structure.inserted_at
+    ]
+  end
+
+  defp get_structure_url_schema(url_schema, structure_id) do
+    if String.contains?(url_schema, "/:id") do
+      String.replace(url_schema, ":id", to_string(structure_id))
+    else
+      nil
+    end
+  end
+
+  defp get_editable_headers(type_headers, nil) do
+    @editable_headers ++ type_headers
+  end
+
+  defp get_editable_headers(type_headers, _structure_url_schema) do
+    @editable_headers ++ @editable_extra_headers ++ type_headers
+  end
+
+  defp add_editable_extra_fields(editable_fields, _, nil), do: editable_fields
+
+  defp add_editable_extra_fields(editable_fields, structure, structure_url_schema) do
+    editable_fields ++
+      [
+        Map.get(structure, :original_name, structure.name),
+        get_structure_alias(structure),
+        get_structure_url_schema(structure_url_schema, structure.data_structure_id)
+      ]
+  end
+
+  defp type_editable_fields(%{template: %{content: content}}) when is_list(content),
+    do: Enum.flat_map(content, &Map.get(&1, "fields"))
 
   defp type_editable_fields(_type), do: []
-
-  defp editable_structure_values(%{latest_note: nil} = structure, type_headers) do
-    structure_values = Enum.map(@editable_headers, &editable_structure_value(structure, &1))
-    empty_values = List.duplicate(nil, length(type_headers))
-    structure_values ++ empty_values
-  end
-
-  defp editable_structure_values(%{latest_note: content} = structure, type_fields) do
-    structure_values = Enum.map(@editable_headers, &editable_structure_value(structure, &1))
-    content_values = Enum.map(type_fields, &get_content_field(&1, content))
-    structure_values ++ content_values
-  end
 
   defp editable_structure_value(%{path: path}, :path), do: Enum.join(path, " > ")
 
@@ -131,50 +239,6 @@ defmodule TdDd.CSV.Download do
 
     export_to_csv(headers, grant_list, false)
     |> List.to_string()
-  end
-
-  defp template_structures_to_csv(
-         %{template: %{content: content = [_ | _]}},
-         structures,
-         header_labels,
-         add_separation
-       ) do
-    content = Format.flatten_content_fields(content)
-
-    content_fields =
-      Enum.reduce(content, [], &(&2 ++ [Map.take(&1, ["name", "values", "type", "cardinality"])]))
-
-    content_labels = Enum.reduce(content, [], &(&2 ++ [Map.get(&1, "label")]))
-    headers = build_headers(header_labels)
-    headers = headers ++ content_labels
-    structures_list = structures_to_list(structures, content_fields)
-    export_to_csv(headers, structures_list, add_separation)
-  end
-
-  defp template_structures_to_csv(_structure_type, structures, header_labels, add_separation) do
-    headers = build_headers(header_labels)
-    structures_list = structures_to_list(structures)
-    export_to_csv(headers, structures_list, add_separation)
-  end
-
-  defp structures_to_list(structures, content_fields \\ []) do
-    Enum.map(structures, fn structure ->
-      content = structure.latest_note
-
-      values = [
-        structure.type,
-        structure.name,
-        structure.group,
-        get_domain(structure),
-        Map.get(structure.system, "name"),
-        Enum.join(structure.path, " > "),
-        structure.description,
-        structure.external_id,
-        structure.inserted_at
-      ]
-
-      Enum.reduce(content_fields, values, &(&2 ++ [&1 |> get_content_field(content)]))
-    end)
   end
 
   defp grants_to_list(grants) do
@@ -238,77 +302,32 @@ defmodule TdDd.CSV.Download do
     Enum.map(headers, fn h -> Map.get(header_labels, h, h) end)
   end
 
-  defp get_content_field(_template, nil), do: ""
-
-  defp get_content_field(%{"type" => "url", "name" => name}, content) do
-    content
-    |> Map.get(name, [])
-    |> content_to_list()
-    |> Enum.map(&Map.get(&1, "url_value"))
-    |> Enum.filter(&(not is_nil(&1)))
-    |> Enum.join(", ")
-  end
-
-  defp get_content_field(%{"type" => type, "name" => name}, content)
-       when type in ["domain", "system"] do
-    content
-    |> Map.get(name, [])
-    |> content_to_list()
-    |> Enum.map(&Map.get(&1, "name"))
-    |> Enum.reject(&is_nil/1)
-    |> Enum.join(", ")
-  end
-
-  defp get_content_field(
-         %{
-           "type" => "string",
-           "name" => name,
-           "values" => %{"fixed_tuple" => values}
-         },
-         content
-       ) do
-    content
-    |> Map.get(name, [])
-    |> content_to_list()
-    |> Enum.map(fn map_value ->
-      Enum.find(values, fn %{"value" => value} -> value == map_value end)
-    end)
-    |> Enum.map_join(", ", &Map.get(&1, "text", ""))
-  end
-
-  defp get_content_field(%{"type" => "table"}, _content), do: ""
-
-  defp get_content_field(
-         %{
-           "name" => name,
-           "cardinality" => cardinality
-         },
-         content
-       )
-       when cardinality in ["+", "*"] do
-    content
-    |> Map.get(name, [])
-    |> content_to_list()
-    |> Enum.join("|")
-  end
-
-  defp get_content_field(%{"name" => name}, content) do
-    Map.get(content, name, "")
-  end
-
-  defp content_to_list(nil), do: []
-
-  defp content_to_list([""]), do: []
-
-  defp content_to_list(""), do: []
-
-  defp content_to_list(content) when is_list(content), do: content
-
-  defp content_to_list(content), do: [content]
-
   defp build_empty_list(acc, l) when l < 1, do: acc
   defp build_empty_list(acc, l), do: ["" | build_empty_list(acc, l - 1)]
 
+  defp get_domain(%{domain_ids: [_ | _] = domain_ids}) do
+    Enum.map_join(domain_ids, "|", fn id ->
+      id
+      |> DomainCache.get!()
+      |> make_domain_path()
+    end)
+  end
+
   defp get_domain(%{domain: %{"name" => name}}), do: name
   defp get_domain(_), do: nil
+
+  defp make_domain_path(domain, domain_path \\ [])
+
+  defp make_domain_path(nil, _), do: ""
+
+  defp make_domain_path(%{parent_id: nil, name: name}, domain_path),
+    do: Enum.join([name | domain_path], "/")
+
+  defp make_domain_path(%{parent_id: parent_id, name: name}, domain_path) do
+    new_domain_path = [name | domain_path]
+
+    parent_id
+    |> DomainCache.get!()
+    |> make_domain_path(new_domain_path)
+  end
 end

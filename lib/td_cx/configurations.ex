@@ -11,6 +11,8 @@ defmodule TdCx.Configurations do
   alias TdCx.Vault
   alias TdDd.Repo
 
+  defdelegate authorize(action, user, params), to: __MODULE__.Policy
+
   @doc """
   Returns the list of configurations.
 
@@ -177,14 +179,9 @@ defmodule TdCx.Configurations do
   defp enrich_secrets(%Configuration{secrets_key: nil} = configuration, _claims),
     do: configuration
 
-  defp enrich_secrets(
-         %Configuration{} = configuration,
-         claims
-       ) do
-    import Canada, only: [can?: 2]
-
-    case can?(claims, view_secrets(configuration)) do
-      true -> do_enrich_secrets(configuration)
+  defp enrich_secrets(%Configuration{} = configuration, claims) do
+    case Bodyguard.permit(__MODULE__, :view_secrets, claims, configuration) do
+      :ok -> do_enrich_secrets(configuration)
       _ -> configuration
     end
   end

@@ -27,6 +27,13 @@ defmodule TdCxWeb.FallbackController do
     |> render(:"404")
   end
 
+  def call(conn, {:error, :forbidden}) do
+    conn
+    |> put_status(:forbidden)
+    |> put_view(TdCxWeb.ErrorView)
+    |> render("403.json")
+  end
+
   def call(conn, {:can, false}) do
     conn
     |> put_status(:forbidden)

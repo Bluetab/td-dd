@@ -2,25 +2,25 @@ defmodule TdDdWeb.Schema.StructureNotesTest do
   use TdDdWeb.ConnCase
 
   @query """
-  query StructureNotes(
-    $filter: StructureNotesFilter,
-  ) {
-    structure_notes(filter: $filter) {
+  query StructureNotes($filter: StructureNotesFilter) {
+    structureNotes(filter: $filter) {
       id
       status
-      data_structure {
-        domains { name }
+      dataStructure {
+        domains {
+          name
+        }
       }
     }
   }
   """
 
-  describe "structure_notes query" do
+  describe "structureNotes query" do
     @tag authentication: [role: "admin"]
     test "returns all data when queried by admin role", %{conn: conn} do
       %{id: expected_id, status: expected_status} = insert(:structure_note)
 
-      assert %{"data" => %{"structure_notes" => structure_notes}} =
+      assert %{"data" => %{"structureNotes" => structure_notes}} =
                conn
                |> post("/api/v2", %{"query" => @query})
                |> json_response(:ok)
@@ -49,7 +49,7 @@ defmodule TdDdWeb.Schema.StructureNotesTest do
         status: :draft
       )
 
-      assert %{"data" => %{"structure_notes" => structure_notes}} =
+      assert %{"data" => %{"structureNotes" => structure_notes}} =
                conn
                |> post("/api/v2", %{"query" => @query})
                |> json_response(:ok)
@@ -77,7 +77,7 @@ defmodule TdDdWeb.Schema.StructureNotesTest do
         status: :published
       )
 
-      assert %{"data" => %{"structure_notes" => structure_notes}} =
+      assert %{"data" => %{"structureNotes" => structure_notes}} =
                conn
                |> post("/api/v2", %{"query" => @query})
                |> json_response(:ok)
@@ -102,7 +102,7 @@ defmodule TdDdWeb.Schema.StructureNotesTest do
         status: :published
       )
 
-      assert %{"data" => %{"structure_notes" => structure_notes}} =
+      assert %{"data" => %{"structureNotes" => structure_notes}} =
                conn
                |> post("/api/v2", %{"query" => @query})
                |> json_response(:ok)
@@ -130,7 +130,7 @@ defmodule TdDdWeb.Schema.StructureNotesTest do
         status: :published
       )
 
-      assert %{"data" => %{"structure_notes" => structure_notes}} =
+      assert %{"data" => %{"structureNotes" => structure_notes}} =
                conn
                |> post("/api/v2", %{"query" => @query})
                |> json_response(:ok)
@@ -146,7 +146,7 @@ defmodule TdDdWeb.Schema.StructureNotesTest do
       insert(:structure_note, status: :draft)
       insert(:structure_note, status: :published)
 
-      assert %{"data" => %{"structure_notes" => structure_notes}} =
+      assert %{"data" => %{"structureNotes" => structure_notes}} =
                conn
                |> post("/api/v2", %{
                  "query" => @query,
@@ -168,7 +168,7 @@ defmodule TdDdWeb.Schema.StructureNotesTest do
       %{id: id, data_structure: %{system_id: system_id}} = insert(:structure_note)
       insert(:structure_note)
 
-      assert %{"data" => %{"structure_notes" => structure_notes}} =
+      assert %{"data" => %{"structureNotes" => structure_notes}} =
                conn
                |> post("/api/v2", %{
                  "query" => @query,
@@ -196,7 +196,7 @@ defmodule TdDdWeb.Schema.StructureNotesTest do
 
       insert(:structure_note)
 
-      assert %{"data" => %{"structure_notes" => structure_notes}} =
+      assert %{"data" => %{"structureNotes" => structure_notes}} =
                conn
                |> post("/api/v2", %{
                  "query" => @query,
@@ -222,7 +222,7 @@ defmodule TdDdWeb.Schema.StructureNotesTest do
           data_structure: build(:data_structure, domain_ids: [domain_id])
         )
 
-      assert %{"data" => %{"structure_notes" => structure_notes}} =
+      assert %{"data" => %{"structureNotes" => structure_notes}} =
                conn
                |> post("/api/v2", %{
                  "query" => @query,
@@ -246,9 +246,9 @@ defmodule TdDdWeb.Schema.StructureNotesTest do
 
       assert %{
                "data" => %{
-                 "structure_notes" => [
+                 "structureNotes" => [
                    %{
-                     "data_structure" => %{"domains" => domains}
+                     "dataStructure" => %{"domains" => domains}
                    }
                  ]
                }

@@ -2,11 +2,8 @@ defmodule TdDdWeb.UnitController do
   use TdDdWeb, :controller
   use PhoenixSwagger
 
-  import Canada, only: [can?: 2]
-
   alias TdDd.Lineage.Import
   alias TdDd.Lineage.Units
-  alias TdDd.Lineage.Units.Unit
 
   action_fallback(TdDdWeb.FallbackController)
 
@@ -22,7 +19,7 @@ defmodule TdDdWeb.UnitController do
   def index(conn, _params) do
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(claims, list(Unit))},
+    with :ok <- Bodyguard.permit(Units, :list, claims),
          units <- Units.list_units(status: true) do
       render(conn, "index.json", units: units)
     end
@@ -37,7 +34,7 @@ defmodule TdDdWeb.UnitController do
   def show(conn, %{"name" => name}) do
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(claims, show(Unit))},
+    with :ok <- Bodyguard.permit(Units, :view, claims),
          {:ok, %Units.Unit{} = unit} <- Units.get_by(name: name, status: true) do
       render(conn, "show.json", unit: unit)
     end
@@ -52,7 +49,7 @@ defmodule TdDdWeb.UnitController do
   def create(conn, %{} = params) do
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(claims, create(Unit))},
+    with :ok <- Bodyguard.permit(Units, :create, claims),
          {:ok, unit} <- Units.create_unit(params) do
       render(conn, "show.json", unit: unit)
     end
@@ -67,7 +64,7 @@ defmodule TdDdWeb.UnitController do
   def update(conn, %{"nodes" => nodes, "rels" => rels} = params) do
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(claims, update(Unit))},
+    with :ok <- Bodyguard.permit(Units, :update, claims),
          {:ok, nodes_path} <- copy(nodes),
          {:ok, rels_path} <- copy(rels) do
       Import.load(nodes_path, rels_path, params)
@@ -84,7 +81,7 @@ defmodule TdDdWeb.UnitController do
   def delete(conn, %{"name" => name} = params) do
     claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(claims, delete(Unit))},
+    with :ok <- Bodyguard.permit(Units, :delete, claims),
          {:ok, unit} <- Units.get_by(name: name),
          {:ok, _} <- Units.delete_unit(unit, logical: params["logical"] != "false") do
       send_resp(conn, :no_content, "")

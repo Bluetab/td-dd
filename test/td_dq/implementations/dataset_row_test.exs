@@ -20,5 +20,22 @@ defmodule TdDq.Implementations.DatasetRowTest do
       assert [{"can't be blank", [validation: :required]}] = errors[:left]
       assert [{"can't be blank", [validation: :required]}] = errors[:right]
     end
+
+    test "only accepts valid join_types" do
+      clause_params = [
+        %{
+          left: string_params_for(:dataset_structure),
+          right: string_params_for(:dataset_structure)
+        }
+      ]
+
+      valid_params = string_params_for(:dataset_row, clauses: clause_params, join_type: "inner")
+      invalid_params = valid_params |> Map.put("join_type", "unknown")
+      another_valid_params = valid_params |> Map.put("join_type", "right")
+
+      assert %{valid?: true} = DatasetRow.changeset(valid_params)
+      assert %{valid?: false} = DatasetRow.changeset(invalid_params)
+      assert %{valid?: true} = DatasetRow.changeset(another_valid_params)
+    end
   end
 end

@@ -5,6 +5,7 @@ defmodule TdDq.Rules.AuditTest do
   alias TdCache.Redix.Stream
   alias TdDd.Repo
   alias TdDq.Implementations.Implementation
+  alias TdDq.Remediations.Remediation
   alias TdDq.Rules.Audit
   alias TdDq.Rules.Rule
 
@@ -14,7 +15,7 @@ defmodule TdDq.Rules.AuditTest do
     on_exit(fn -> Redix.del!(@stream) end)
     %{id: domain_id} = CacheHelpers.insert_domain()
     %{name: template_name} = CacheHelpers.insert_template(scope: "dq")
-    claims = build(:dq_claims, role: "admin")
+    claims = build(:claims, role: "admin")
 
     rule =
       insert(:rule, df_name: template_name, domain_id: domain_id, df_content: %{"bar" => "foo"})
@@ -222,91 +223,6 @@ defmodule TdDq.Rules.AuditTest do
   end
 
   describe "implementation_updated/4" do
-    test "publishes implementation_deprecated on soft deletion", %{
-      implementation: implementation,
-      claims: %{user_id: user_id}
-    } do
-      %{
-        id: implementation_id,
-        implementation_key: implementation_key,
-        rule_id: rule_id,
-        domain_id: domain_id
-      } = implementation
-
-      params = %{deleted_at: DateTime.utc_now()}
-      changeset = Implementation.changeset(implementation, params)
-
-      assert {:ok, event_id} =
-               Audit.implementation_updated(
-                 Repo,
-                 %{implementation: implementation},
-                 changeset,
-                 user_id
-               )
-
-      assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
-
-      user_id = "#{user_id}"
-      resource_id = "#{implementation_id}"
-
-      assert %{
-               event: "implementation_deprecated",
-               payload: payload,
-               resource_id: ^resource_id,
-               resource_type: "implementation",
-               service: "td_dd",
-               ts: _ts,
-               user_id: ^user_id
-             } = event
-
-      assert %{
-               "implementation_key" => ^implementation_key,
-               "rule_id" => ^rule_id,
-               "domain_id" => ^domain_id
-             } = Jason.decode!(payload)
-    end
-
-    test "publishes implementation_restored on soft deletion undo", %{
-      rule: rule,
-      claims: %{user_id: user_id}
-    } do
-      implementation = insert(:implementation, rule: rule, deleted_at: DateTime.utc_now())
-
-      %{id: implementation_id, implementation_key: implementation_key, rule_id: rule_id} =
-        implementation
-
-      params = %{deleted_at: nil}
-      changeset = Implementation.changeset(implementation, params)
-
-      assert {:ok, event_id} =
-               Audit.implementation_updated(
-                 Repo,
-                 %{implementation: implementation},
-                 changeset,
-                 user_id
-               )
-
-      assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
-
-      user_id = "#{user_id}"
-      resource_id = "#{implementation_id}"
-
-      assert %{
-               event: "implementation_restored",
-               payload: payload,
-               resource_id: ^resource_id,
-               resource_type: "implementation",
-               service: "td_dd",
-               ts: _ts,
-               user_id: ^user_id
-             } = event
-
-      assert %{
-               "implementation_key" => ^implementation_key,
-               "rule_id" => ^rule_id
-             } = Jason.decode!(payload)
-    end
-
     test "publishes implementation_updated with df_content", %{
       implementation: implementation,
       claims: %{user_id: user_id}
@@ -349,51 +265,75 @@ defmodule TdDq.Rules.AuditTest do
     end
 
     test "publishes implementation_moved", %{
+      rule: rule,
       implementation: implementation,
       claims: %{user_id: user_id}
     } do
       %{
         id: implementation_id,
-        implementation_key: implementation_key,
         rule_id: rule_id,
         domain_id: domain_id
       } = implementation
 
+      child_implementation =
+        insert(
+          :implementation,
+          rule: rule,
+          implementation_ref: implementation_id,
+          domain_id: domain_id
+        )
+
+      implementations_moved = [implementation, child_implementation]
+
       changeset = %{changes: %{rule_id: rule_id}}
 
-      assert {:ok, event_id} =
+      assert {:ok, event_ids} =
                Audit.implementation_updated(
                  Repo,
-                 %{implementation: implementation},
+                 %{implementations_moved: {2, implementations_moved}},
                  changeset,
                  user_id
                )
 
-      assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
-      user_id = "#{user_id}"
-      resource_id = "#{implementation_id}"
+      event_ids
+      |> Enum.with_index()
+      |> Enum.each(fn {event_id, i} ->
+        assert {:ok, [event]} =
+                 Stream.range(:redix, @stream, event_id, event_id, transform: :range)
 
-      assert %{
-               event: "implementation_moved",
-               payload: payload,
-               resource_id: ^resource_id,
-               resource_type: "implementation",
-               service: "td_dd",
-               ts: _ts,
-               user_id: ^user_id
-             } = event
+        user_id = "#{user_id}"
 
-      assert %{
-               "implementation_key" => ^implementation_key,
-               "rule_id" => ^rule_id,
-               "domain_id" => ^domain_id,
-               "rule_name" => _
-             } = Jason.decode!(payload)
+        %{id: resource_id, implementation_key: implementation_key} =
+          implementations_moved
+          |> Enum.at(i)
+          |> Map.take([:id, :implementation_key])
+
+        resource_id = "#{resource_id}"
+
+        assert %{
+                 event: "implementation_moved",
+                 payload: payload,
+                 resource_id: ^resource_id,
+                 resource_type: "implementation",
+                 service: "td_dd",
+                 ts: _ts,
+                 user_id: ^user_id
+               } = event
+
+        assert %{
+                 "implementation_key" => ^implementation_key,
+                 "rule_id" => ^rule_id,
+                 "domain_id" => ^domain_id,
+                 "rule_name" => _
+               } = Jason.decode!(payload)
+      end)
     end
   end
 
   describe "implementations_deprecated/2" do
-    test "publishes implementation_deprecated event", %{implementation: implementation} do
+    test "publishes implementation_status_updated with deprecated status", %{
+      implementation: implementation
+    } do
       %{
         id: implementation_id,
         implementation_key: implementation_key,
@@ -409,7 +349,7 @@ defmodule TdDq.Rules.AuditTest do
       resource_id = "#{implementation_id}"
 
       assert %{
-               event: "implementation_deprecated",
+               event: "implementation_status_updated",
                payload: payload,
                resource_id: ^resource_id,
                resource_type: "implementation",
@@ -420,8 +360,69 @@ defmodule TdDq.Rules.AuditTest do
 
       assert %{
                "implementation_key" => ^implementation_key,
+               "status" => "deprecated",
                "rule_id" => ^rule_id,
                "domain_id" => ^domain_id
+             } = Jason.decode!(payload)
+    end
+  end
+
+  describe "remediation_created/4" do
+    test "publishes remediation_created", %{
+      implementation: implementation,
+      claims: %{user_id: user_id}
+    } do
+      %{
+        id: rule_result_id,
+        date: date,
+        implementation: %{
+          id: implementation_id,
+          implementation_key: implementation_key,
+          domain_id: domain_id
+        }
+      } = rule_result = insert(:rule_result, implementation: implementation)
+
+      %{
+        id: id
+      } =
+        remediation =
+        insert(:remediation, rule_result: rule_result, df_content: %{"foo" => "bar"})
+
+      changeset = Remediation.changeset(remediation, %{})
+
+      assert {:ok, event_id} =
+               Audit.remediation_created(
+                 Repo,
+                 %{remediation: remediation},
+                 changeset,
+                 user_id
+               )
+
+      assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+
+      user_id = "#{user_id}"
+      resource_id = "#{id}"
+
+      assert %{
+               event: "remediation_created",
+               payload: payload,
+               resource_id: ^resource_id,
+               resource_type: "remediation",
+               service: "td_dd",
+               ts: _ts,
+               user_id: ^user_id
+             } = event
+
+      domain_ids = [domain_id]
+
+      date_string = DateTime.to_iso8601(date)
+
+      assert %{
+               "implementation_key" => ^implementation_key,
+               "domain_ids" => ^domain_ids,
+               "date" => ^date_string,
+               "rule_result_id" => ^rule_result_id,
+               "implementation_id" => ^implementation_id
              } = Jason.decode!(payload)
     end
   end

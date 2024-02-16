@@ -1,8 +1,6 @@
 defmodule TdDdWeb.ProfileController do
   use TdDdWeb, :controller
 
-  import Canada, only: [can?: 2]
-
   require Logger
 
   alias Plug.Upload
@@ -11,7 +9,6 @@ defmodule TdDdWeb.ProfileController do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Loader.Worker
   alias TdDd.Profiles
-  alias TdDd.Profiles.Profile
 
   action_fallback TdDdWeb.FallbackController
 
@@ -22,7 +19,7 @@ defmodule TdDdWeb.ProfileController do
 
   def search(conn, params) do
     with claims <- conn.assigns[:current_resource],
-         {:can, true} <- {:can, can?(claims, index(Profile))} do
+         :ok <- Bodyguard.permit(Profiles, :search, claims) do
       profiles = Profiles.list_profiles(params)
       render(conn, "index.json", profiles: profiles)
     end
@@ -30,26 +27,19 @@ defmodule TdDdWeb.ProfileController do
 
   def create(conn, %{"data_structure_id" => data_structure_id, "profile" => profile}) do
     with claims <- conn.assigns[:current_resource],
-         {:can, true} <- {:can, can?(claims, upload(Profile))},
-         %DataStructure{id: id} <-
-           DataStructures.get_data_structure!(data_structure_id),
+         :ok <- Bodyguard.permit(Profiles, :create, claims),
+         %DataStructure{id: id} <- DataStructures.get_data_structure!(data_structure_id),
          {:ok, profile} <-
            Profiles.create_or_update_profile(%{data_structure_id: id, value: profile}) do
       conn
       |> put_status(:created)
       |> render("show.json", profile: profile)
     end
-  rescue
-    _e in Ecto.NoResultsError ->
-      conn
-      |> put_status(:not_found)
-      |> put_view(ErrorView)
-      |> render("404.json")
   end
 
   def upload(conn, %{"profiling" => profiling}) do
     with claims <- conn.assigns[:current_resource],
-         {:can, true} <- {:can, can?(claims, upload(Profile))} do
+         :ok <- Bodyguard.permit(Profiles, :create, claims) do
       do_upload(profiling)
       send_resp(conn, :accepted, "")
     end

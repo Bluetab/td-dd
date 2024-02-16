@@ -2,6 +2,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
+  alias TdCluster.TestHelpers.TdAiMock
   alias TdDd.DataStructures.StructureNote
 
   import TdDd.TestOperators
@@ -82,7 +83,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
         |> get(Routes.data_structure_note_path(conn, :index, data_structure_id))
         |> json_response(:ok)
 
-      assert ["draft"] == Map.keys(actions)
+      assert ["draft"] ||| Map.keys(actions)
       assert ["deprecated"] == Map.keys(sn_actions)
     end
 
@@ -105,7 +106,9 @@ defmodule TdDdWeb.StructureNoteControllerTest do
 
       assert [] == Map.keys(actions)
       assert [] == Map.keys(v1_actions)
-      assert ["deleted", "edited", "pending_approval", "published"] <|> Map.keys(v2_actions)
+
+      assert ["deleted", "edited", "pending_approval", "published", "ai_suggestions"] |||
+               Map.keys(v2_actions)
     end
 
     @tag authentication: [role: "admin"]
@@ -137,7 +140,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
       assert [] == Map.keys(actions)
       assert [] == Map.keys(v1_actions)
       assert [] == Map.keys(v2_actions)
-      assert ["rejected", "published"] <|> Map.keys(v3_actions)
+      assert ["rejected", "published"] ||| Map.keys(v3_actions)
     end
 
     @tag authentication: [role: "admin"]
@@ -152,7 +155,223 @@ defmodule TdDdWeb.StructureNoteControllerTest do
         |> get(Routes.data_structure_note_path(conn, :index, data_structure_id))
         |> json_response(:ok)
 
-      assert ["draft"] == Map.keys(actions)
+      assert ["draft"] ||| Map.keys(actions)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "ai_suggestions action available if there are ai_suggestion fields in template and TdAi.ResourceMapping available",
+         %{
+           conn: conn
+         } do
+      template = %{
+        id: System.unique_integer([:positive]),
+        label: "suggestions_test",
+        name: "suggestions_test",
+        scope: "dd",
+        content: [
+          %{
+            "name" => "Identifier Template",
+            "fields" => [
+              %{
+                "cardinality" => "1",
+                "description" => "field description",
+                "label" => "suggestion_field",
+                "name" => "suggestion_field",
+                "type" => "string",
+                "ai_suggestion" => true
+              },
+              %{
+                "cardinality" => "1",
+                "label" => "not_suggestion_field",
+                "name" => "not_suggestion_field",
+                "type" => "string"
+              }
+            ]
+          }
+        ]
+      }
+
+      TdAiMock.available_resource_mapping(&Mox.expect/4, [], {:ok, true})
+
+      %{id: template_id} = CacheHelpers.insert_template(template)
+      CacheHelpers.insert_structure_type(name: template.name, template_id: template_id)
+
+      %{id: data_structure_id} = data_structure = insert(:data_structure)
+
+      insert(:data_structure_version,
+        data_structure: data_structure,
+        type: template.name
+      )
+
+      %{
+        "data" => [],
+        "_actions" => actions
+      } =
+        conn
+        |> get(Routes.data_structure_note_path(conn, :index, data_structure_id))
+        |> json_response(:ok)
+
+      assert actions |> Map.keys() |> Enum.member?("ai_suggestions")
+    end
+
+    @tag authentication: [role: "admin"]
+    test "ai_suggestions action not available if no ai_suggestion fields in template", %{
+      conn: conn
+    } do
+      %{id: template_id} = template = CacheHelpers.insert_template()
+      CacheHelpers.insert_structure_type(name: template.name, template_id: template_id)
+
+      %{id: data_structure_id} = data_structure = insert(:data_structure)
+
+      insert(:data_structure_version,
+        data_structure: data_structure,
+        type: template.name
+      )
+
+      %{
+        "data" => [],
+        "_actions" => actions
+      } =
+        conn
+        |> get(Routes.data_structure_note_path(conn, :index, data_structure_id))
+        |> json_response(:ok)
+
+      refute actions |> Map.keys() |> Enum.member?("ai_suggestions")
+    end
+
+    @tag authentication: [role: "admin"]
+    test "ai_suggestions action not available if TdAi.ResourceMapping not available", %{
+      conn: conn
+    } do
+      template = %{
+        id: System.unique_integer([:positive]),
+        label: "suggestions_test",
+        name: "suggestions_test",
+        scope: "dd",
+        content: [
+          %{
+            "name" => "Identifier Template",
+            "fields" => [
+              %{
+                "cardinality" => "1",
+                "description" => "field description",
+                "label" => "suggestion_field",
+                "name" => "suggestion_field",
+                "type" => "string",
+                "ai_suggestion" => true
+              },
+              %{
+                "cardinality" => "1",
+                "label" => "not_suggestion_field",
+                "name" => "not_suggestion_field",
+                "type" => "string"
+              }
+            ]
+          }
+        ]
+      }
+
+      %{id: template_id} = CacheHelpers.insert_template(template)
+      CacheHelpers.insert_structure_type(name: template.name, template_id: template_id)
+
+      %{id: data_structure_id} = data_structure = insert(:data_structure)
+
+      insert(:data_structure_version,
+        data_structure: data_structure,
+        type: template.name
+      )
+
+      TdAiMock.available_resource_mapping(&Mox.expect/4, [], {:ok, false})
+
+      %{
+        "data" => [],
+        "_actions" => actions
+      } =
+        conn
+        |> get(Routes.data_structure_note_path(conn, :index, data_structure_id))
+        |> json_response(:ok)
+
+      refute actions |> Map.keys() |> Enum.member?("ai_suggestions")
+    end
+
+    @tag authentication: [role: "admin"]
+    test "diff from a structure with a published and draft note", %{conn: conn} do
+      %{id: data_structure_id} = data_structure = insert(:data_structure)
+
+      insert(
+        :structure_note,
+        data_structure: data_structure,
+        status: :published,
+        version: 1,
+        df_content: %{
+          "foo" => "bar",
+          "baz" => "xyz",
+          "old" => "value_to_remove"
+        }
+      )
+
+      insert(
+        :structure_note,
+        data_structure: data_structure,
+        status: :draft,
+        version: 2,
+        df_content: %{
+          "foo" => "bar",
+          "baz" => "qux",
+          "new" => "value"
+        }
+      )
+
+      %{
+        "data" => [
+          %{"status" => "published", "version" => 1},
+          %{"_diff" => diff, "status" => "draft", "version" => 2}
+        ]
+      } =
+        conn
+        |> get(Routes.data_structure_note_path(conn, :index, data_structure_id))
+        |> json_response(:ok)
+
+      assert ["old", "baz", "new"] ||| diff
+    end
+
+    @tag authentication: [role: "admin"]
+    test "diff from a structure with a published and pending_approval note", %{conn: conn} do
+      %{id: data_structure_id} = data_structure = insert(:data_structure)
+
+      insert(
+        :structure_note,
+        data_structure: data_structure,
+        status: :published,
+        version: 1,
+        df_content: %{
+          "foo" => "bar",
+          "baz" => "xyz"
+        }
+      )
+
+      insert(
+        :structure_note,
+        data_structure: data_structure,
+        status: :pending_approval,
+        version: 2,
+        df_content: %{
+          "foo" => "bar",
+          "baz" => "qux"
+        }
+      )
+
+      %{
+        "data" => [
+          %{"status" => "published", "version" => 1},
+          %{"_diff" => diff, "status" => "pending_approval", "version" => 2}
+        ]
+      } =
+        conn
+        |> get(Routes.data_structure_note_path(conn, :index, data_structure_id))
+        |> json_response(:ok)
+
+      assert ["baz"] == diff
     end
 
     @tag authentication: [
@@ -220,20 +439,20 @@ defmodule TdDdWeb.StructureNoteControllerTest do
         ]
         |> Enum.map(fn sn -> sn.id end)
 
-      assert first_structure_notes
-             <|> (conn
-                  |> get(Routes.data_structure_note_path(conn, :index, first_data_structure_id))
-                  |> validate_resp_schema(schema, "StructureNotesResponse")
-                  |> json_response(:ok)
-                  |> Map.get("data")
-                  |> Enum.map(fn sn -> Map.get(sn, "id") end))
+      assert first_structure_notes |||
+               conn
+               |> get(Routes.data_structure_note_path(conn, :index, first_data_structure_id))
+               |> validate_resp_schema(schema, "StructureNotesResponse")
+               |> json_response(:ok)
+               |> Map.get("data")
+               |> Enum.map(fn sn -> Map.get(sn, "id") end)
 
-      assert second_structure_notes
-             <|> (conn
-                  |> get(Routes.data_structure_note_path(conn, :index, second_data_structure_id))
-                  |> json_response(:ok)
-                  |> Map.get("data")
-                  |> Enum.map(fn sn -> Map.get(sn, "id") end))
+      assert second_structure_notes |||
+               conn
+               |> get(Routes.data_structure_note_path(conn, :index, second_data_structure_id))
+               |> json_response(:ok)
+               |> Map.get("data")
+               |> Enum.map(fn sn -> Map.get(sn, "id") end)
     end
 
     @tag authentication: [
@@ -251,7 +470,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
       {[_, published_note, draft_note], index_result} =
         permissions_test_builder(conn, domain, statuses)
 
-      assert [published_note, draft_note] <|> index_result
+      assert [published_note, draft_note] ||| index_result
     end
 
     @tag authentication: [
@@ -270,7 +489,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
       {[_, published_note, _, draft_note], index_result} =
         permissions_test_builder(conn, domain, statuses)
 
-      assert [published_note, draft_note] <|> index_result
+      assert [published_note, draft_note] ||| index_result
     end
 
     @tag authentication: [
@@ -291,7 +510,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
       {[_, published_note, versioned_note, _, _, deprecated_note], index_result} =
         permissions_test_builder(conn, domain, statuses)
 
-      assert [published_note, versioned_note, deprecated_note] <|> index_result
+      assert [published_note, versioned_note, deprecated_note] ||| index_result
     end
 
     defp permissions_test_builder(conn, domain, statuses) do
@@ -319,10 +538,13 @@ defmodule TdDdWeb.StructureNoteControllerTest do
   describe "search" do
     @tag authentication: [role: "admin"]
     test "search structure_notes by status and updated_at", %{conn: conn} do
-      n1 = insert(:structure_note, status: :published, updated_at: "2021-01-10T11:00:00")
-      n2 = insert(:structure_note, status: :published, updated_at: "2021-01-10T11:00:00")
-      insert(:structure_note, status: :published, updated_at: "2021-01-01T11:00:00")
-      insert(:structure_note, status: :draft, updated_at: "2021-01-10T11:00:00")
+      ts = ~U[2021-01-10T11:00:00Z]
+      ts2 = ~U[2021-01-01T11:00:00Z]
+
+      n1 = insert(:structure_note, status: :published, updated_at: ts)
+      n2 = insert(:structure_note, status: :published, updated_at: ts)
+      insert(:structure_note, status: :published, updated_at: ts2)
+      insert(:structure_note, status: :draft, updated_at: ts)
 
       response =
         [n1, n2]
@@ -333,19 +555,49 @@ defmodule TdDdWeb.StructureNoteControllerTest do
             "df_content" => sn.df_content,
             "data_structure_id" => sn.data_structure_id,
             "data_structure_external_id" => sn.data_structure.external_id,
-            "updated_at" => NaiveDateTime.to_iso8601(sn.updated_at),
+            "updated_at" => DateTime.to_iso8601(sn.updated_at),
             "version" => 1
           }
         end)
 
-      assert response
-             <|> (conn
-                  |> post(Routes.structure_note_path(conn, :search),
-                    status: "published",
-                    updated_at: "2021-01-02 10:00:00"
-                  )
-                  |> json_response(:ok)
-                  |> Map.get("data"))
+      assert response |||
+               conn
+               |> post(Routes.structure_note_path(conn, :search),
+                 status: "published",
+                 updated_at: "2021-01-02 10:00:00"
+               )
+               |> json_response(:ok)
+               |> Map.get("data")
+    end
+
+    @tag authentication: [role: "admin"]
+    test "search structure_notes by filter with until param", %{conn: conn} do
+      n1 = insert(:structure_note, status: :published, updated_at: ~U[2021-01-01T11:00:00Z])
+      n2 = insert(:structure_note, status: :published, updated_at: ~U[2021-01-02T11:00:00Z])
+      insert(:structure_note, status: :published, updated_at: ~U[2021-01-03T11:00:00Z])
+      insert(:structure_note, status: :draft, updated_at: ~U[2021-01-04T11:00:00Z])
+
+      response =
+        [n1, n2]
+        |> Enum.map(fn sn ->
+          %{
+            "id" => sn.id,
+            "status" => sn.status |> Atom.to_string(),
+            "df_content" => sn.df_content,
+            "data_structure_id" => sn.data_structure_id,
+            "data_structure_external_id" => sn.data_structure.external_id,
+            "updated_at" => DateTime.to_iso8601(sn.updated_at),
+            "version" => 1
+          }
+        end)
+
+      assert response |||
+               conn
+               |> post(Routes.structure_note_path(conn, :search),
+                 until: "2021-01-02 11:00:00"
+               )
+               |> json_response(:ok)
+               |> Map.get("data")
     end
 
     @tag authentication: [role: "admin"]
@@ -616,6 +868,64 @@ defmodule TdDdWeb.StructureNoteControllerTest do
     end
   end
 
+  describe "note_suggestions" do
+    @tag authentication: [role: "admin"]
+    test "retrieves suggestions for the requested fields", %{conn: conn} do
+      template = %{
+        id: System.unique_integer([:positive]),
+        label: "suggestions_test",
+        name: "suggestions_test",
+        scope: "dd",
+        content: [
+          %{
+            "name" => "Identifier Template",
+            "fields" => [
+              %{
+                "cardinality" => "1",
+                "label" => "suggestion_field",
+                "name" => "suggestion_field",
+                "type" => "string",
+                "ai_suggestion" => true
+              },
+              %{
+                "cardinality" => "1",
+                "label" => "not_suggestion_field",
+                "name" => "not_suggestion_field",
+                "type" => "string"
+              }
+            ]
+          }
+        ]
+      }
+
+      %{id: template_id, name: template_name} = CacheHelpers.insert_template(template)
+      CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
+
+      %{id: data_structure_id} = data_structure = insert(:data_structure)
+
+      insert(:data_structure_version,
+        data_structure: data_structure,
+        type: template_name
+      )
+
+      args = {"data_structure", data_structure_id, %{name: "field"}}
+
+      TdAiMock.resource_field_completion(&Mox.expect/4, args, {:ok, %{}})
+
+      assert %{} ==
+               conn
+               |> get(
+                 Routes.data_structure_structure_note_path(
+                   conn,
+                   :note_suggestions,
+                   data_structure_id
+                 )
+               )
+               |> json_response(:ok)
+               |> Map.get("data")
+    end
+  end
+
   describe "permissions over structure_notes" do
     @tag authentication: [user_name: "non_admin_user"]
     test "can't create notes", %{conn: conn} do
@@ -756,7 +1066,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
              :view_data_structure
            ]
          ]
-    test "can create notes when the latest note is deprecated, and show the action in hypermedia",
+    test "can create notes when the latest note is deprecated, and show the action",
          %{conn: conn, domain: domain} do
       %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
       create_attrs = string_params_for(:structure_note)
