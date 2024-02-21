@@ -3,27 +3,21 @@ defmodule TdCx.Sources.JobsTest do
 
   import Mox
 
-  alias TdCore.Search.MockIndexWorker
+  alias TdCore.Search.IndexWorkerMock
   alias TdCx.Jobs
-
-  setup_all do
-    start_supervised!(TdCore.Search.IndexWorker)
-    start_supervised!(TdCore.Search.Cluster)
-    :ok
-  end
 
   setup :set_mox_from_context
   setup :verify_on_exit!
 
   test "create_job/1 with valid data creates a job" do
-    # SearchHelpers.expect_bulk_index("/jobs/_doc/_bulk")
+    IndexWorkerMock.clear()
     source = insert(:source)
     attrs = %{source_id: source.id, parameters: %{foo: "bar"}}
     assert {:ok, %{} = job} = Jobs.create_job(attrs)
     assert job.source_id == source.id
     assert %{foo: "bar"} = job.parameters
     refute is_nil(job.external_id)
-    assert [{:reindex, :jobs, [_]}] = MockIndexWorker.calls()
+    assert [{:reindex, :jobs, [_]}] = IndexWorkerMock.calls()
   end
 
   test "get_job!/2 will get a job with its events" do

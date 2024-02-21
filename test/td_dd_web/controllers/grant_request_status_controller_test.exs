@@ -1,13 +1,6 @@
 defmodule TdDdWeb.GrantRequestStatusControllerTest do
   use TdDdWeb.ConnCase
 
-  setup do
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
-
-    :ok
-  end
-
   describe "create" do
     @tag authentication: [role: "user"]
     test "renders grant request when data is valid", %{conn: conn, claims: claims} do

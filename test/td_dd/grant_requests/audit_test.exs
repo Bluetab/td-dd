@@ -12,9 +12,6 @@ defmodule TdDd.GrantRequests.AuditTest do
   @valid_metadata %{"list" => "one", "string" => "bar"}
 
   setup do
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
-
     claims = build(:claims, role: "admin")
     on_exit(fn -> Redix.del!(@stream) end)
     [claims: claims]

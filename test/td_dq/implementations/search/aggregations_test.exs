@@ -5,8 +5,6 @@ defmodule TdDq.Implementations.Search.AggregationsTest do
   alias TdDq.Implementations.Implementation
 
   setup do
-    start_supervised!(TdCore.Search.Cluster)
-
     fields = [
       build(:template_field, name: "my_string", type: "string"),
       build(:template_field, name: "my_system", type: "system"),

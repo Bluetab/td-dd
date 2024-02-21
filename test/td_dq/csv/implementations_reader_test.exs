@@ -3,13 +3,6 @@ defmodule TdDq.CSV.ImplementationsReaderTest do
 
   alias TdDq.CSV.ImplementationsReader
 
-  setup_all do
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
-
-    :ok
-  end
-
   setup context do
     claims = build(:claims)
 
