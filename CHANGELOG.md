@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-6243] Support for deleting Elasticsearch indexes
+
 ### Fixed
 
 - [TD-6425] Ensure SSL if configured for release migration

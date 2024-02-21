@@ -6,8 +6,6 @@ defmodule TdDqWeb.RuleSearchControllerTest do
   setup :verify_on_exit!
 
   setup do
-    start_supervised!(TdCore.Search.Cluster)
-
     %{id: domain_id} = domain = CacheHelpers.insert_domain()
     %{id: concept_id} = CacheHelpers.insert_concept(name: "Concept", domain_id: domain_id)
     rule = insert(:rule, business_concept_id: concept_id, domain_id: domain_id)

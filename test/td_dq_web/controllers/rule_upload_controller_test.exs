@@ -27,7 +27,6 @@ defmodule TdDqWeb.RuleUploadControllerTest do
 
   setup do
     start_supervised!(TdDq.Cache.RuleLoader)
-    start_supervised!(TdCore.Search.IndexWorker)
 
     CacheHelpers.insert_template(scope: "dq", name: "bar_template")
 

@@ -5,9 +5,6 @@ defmodule TdDqWeb.QualityEventControllerTest do
   @moduletag sandbox: :shared
 
   setup do
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
-
     execution =
       insert(:execution,
         group: build(:execution_group),

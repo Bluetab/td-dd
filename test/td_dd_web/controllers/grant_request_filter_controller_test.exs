@@ -8,14 +8,6 @@ defmodule TdDdWeb.GrantRequestFilterControllerTest do
       "buckets" => [%{"key" => "bar"}, %{"key" => "baz"}]
     }
   }
-
-  setup_all do
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
-
-    :ok
-  end
-
   setup :verify_on_exit!
 
   describe "POST /api/grant_requests_filters/search" do

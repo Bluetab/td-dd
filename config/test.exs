@@ -20,13 +20,6 @@ config :td_dd, TdDd.Repo,
 
 config :td_core, TdCore.Search.Cluster, api: ElasticsearchMock
 
-config :td_core, TdCore.Search.Cluster,
-  aggregations: %{
-    "domain" => 50,
-    "user" => 50,
-    "system" => 50
-  }
-
 config :td_dd, :vault,
   token: "vault_secret_token1234",
   secrets_path: "secret/data/cx/"

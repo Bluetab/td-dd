@@ -5,12 +5,6 @@ defmodule TdDD.Systems.SystemSearchTest do
 
   alias TdDd.Systems.SystemSearch
 
-  setup do
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
-    :ok
-  end
-
   setup :verify_on_exit!
 
   describe "get_systems_with_count/3" do

@@ -7,8 +7,6 @@ defmodule TdDqWeb.RuleResultControllerTest do
 
   setup_all do
     start_supervised!(TdDq.Cache.RuleLoader)
-    start_supervised!(TdCore.Search.IndexWorker)
-    start_supervised!(TdCore.Search.Cluster)
 
     :ok
   end

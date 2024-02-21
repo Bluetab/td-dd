@@ -1,13 +1,6 @@
 defmodule TdDqWeb.RemediationControllerTest do
   use TdDqWeb.ConnCase
 
-  setup_all do
-    start_supervised(TdDq.Cache.RuleLoader)
-    start_supervised!(TdCore.Search.IndexWorker)
-
-    :ok
-  end
-
   setup tags do
     remediation_template = %{
       name: "remediation_template",

@@ -38,9 +38,6 @@ defmodule TdDdWeb.StructureNoteControllerTest do
     CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
 
     start_supervised!(TdDd.Search.StructureEnricher)
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
-
     :ok
   end
 
