@@ -9,6 +9,7 @@
 ### Fixed
 
 - [TD-6425] Ensure SSL if configured for release migration
+- [TD-6398] Approval grant request from 'approval grant requests'
 
 ## [6.1.0] 2023-02-08
 
