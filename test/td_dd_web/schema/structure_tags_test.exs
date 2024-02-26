@@ -23,12 +23,6 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
   }
   """
 
-  setup_all do
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
-    :ok
-  end
-
   describe "tagStructure mutation" do
     @tag authentication: [role: "user"]
     test "returns forbidden for a user without permissions", %{conn: conn} do

@@ -5,7 +5,7 @@ defmodule TdDd.DataStructures.StructureNotesTest do
 
   alias Ecto.Changeset
   alias TdCache.Redix.Stream
-  alias TdCore.Search.MockIndexWorker
+  alias TdCore.Search.IndexWorkerMock
   alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.StructureNotes
 
@@ -15,8 +15,6 @@ defmodule TdDd.DataStructures.StructureNotesTest do
 
   setup do
     start_supervised!(TdDd.Search.StructureEnricher)
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
 
     alias_field = %{
       "cardinality" => "?",
@@ -159,7 +157,7 @@ defmodule TdDd.DataStructures.StructureNotesTest do
       find_call = {:reindex, :grant_requests, [grant_request_id]}
 
       assert find_call ==
-               MockIndexWorker.calls()
+               IndexWorkerMock.calls()
                |> Enum.find(fn call ->
                  find_call == call
                end)

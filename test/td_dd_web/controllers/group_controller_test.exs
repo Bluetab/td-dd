@@ -2,13 +2,6 @@ defmodule TdDdWeb.GroupControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  setup_all do
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
-
-    :ok
-  end
-
   setup do
     [system: insert(:system)]
   end

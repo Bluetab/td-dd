@@ -8,13 +8,6 @@ defmodule TdDqWeb.ImplementationFilterControllerTest do
 
   setup :verify_on_exit!
 
-  setup do
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
-
-    :ok
-  end
-
   describe "index" do
     @tag authentication: [role: "admin"]
     test "maps filters from request parameters", %{conn: conn} do

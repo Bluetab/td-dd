@@ -6,13 +6,6 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
 
   @moduletag sandbox: :shared
 
-  setup_all do
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
-
-    :ok
-  end
-
   setup context do
     template = CacheHelpers.insert_template(scope: "dq", name: "bar_template")
     rule = insert_rule(context)

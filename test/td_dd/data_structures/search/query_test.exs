@@ -8,12 +8,6 @@ defmodule TdDd.DataStructures.Search.QueryTest do
   @match_none %{match_none: %{}}
   @not_confidential %{term: %{"confidential" => false}}
 
-  setup_all do
-    start_supervised!(TdCore.Search.Cluster)
-
-    :ok
-  end
-
   describe "build_filters/1" do
     test "returns match_all query if view scope and confidential scope are all" do
       assert build_view_filters(:all, :all) == @match_all

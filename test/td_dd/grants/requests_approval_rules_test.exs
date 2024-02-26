@@ -13,8 +13,6 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
 
   setup _tags do
     start_supervised!(TdDd.Search.StructureEnricher)
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
 
     template = CacheHelpers.insert_template(name: @template_name)
 

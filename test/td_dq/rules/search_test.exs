@@ -7,13 +7,6 @@ defmodule TdDq.Rules.SearchTest do
 
   @aggs %{"active.raw" => %{"buckets" => [%{"key" => "true"}, %{"key" => "false"}]}}
 
-  setup do
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
-
-    :ok
-  end
-
   setup :verify_on_exit!
 
   describe "get_filter_values/3" do

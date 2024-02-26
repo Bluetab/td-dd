@@ -1,5 +1,16 @@
 # Changelog
 
+## [6.2.0] 2024-02-26
+
+### Added
+
+- [TD-6243] Support for deleting Elasticsearch indexes
+
+### Fixed
+
+- [TD-6425] Ensure SSL if configured for release migration
+- [TD-6398] Approval grant request from 'approval grant requests'
+
 ## [6.1.0] 2023-02-08
 
 ### Changed

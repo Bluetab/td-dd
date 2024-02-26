@@ -11,13 +11,6 @@ defmodule TdDd.GrantRequests.SearchTest do
     }
   }
 
-  setup do
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
-
-    :ok
-  end
-
   setup :verify_on_exit!
 
   describe "get_filter_values/2" do

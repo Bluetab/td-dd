@@ -16,9 +16,11 @@ if config_env() == :prod do
     ssl: System.get_env("DB_SSL", "") |> String.downcase() == "true",
     ssl_opts: [
       cacertfile: System.get_env("DB_SSL_CACERTFILE", ""),
-      verify: :verify_peer,
-      fail_if_no_peer_cert: System.get_env("DB_SSL", "") |> String.downcase() == "true",
+      verify:
+        System.get_env("DB_SSL_VERIFY", "verify_none") |> String.downcase() |> String.to_atom(),
       server_name_indication: System.get_env("DB_HOST") |> to_charlist(),
+      certfile: System.get_env("DB_SSL_CLIENT_CERT", ""),
+      keyfile: System.get_env("DB_SSL_CLIENT_KEY", ""),
       versions: [
         System.get_env("DB_SSL_VERSION", "tlsv1.2") |> String.downcase() |> String.to_atom()
       ]

@@ -14,9 +14,6 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
   setup_all do
     start_supervised!(TdDd.Lineage.GraphData)
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
-
     :ok
   end
 
