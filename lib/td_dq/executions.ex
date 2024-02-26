@@ -215,9 +215,13 @@ defmodule TdDq.Executions do
   end
 
   ## Dataloader
+  def timeout do
+    System.get_env("DB_TIMEOUT_MILLIS", Integer.to_string(Dataloader.default_timeout()))
+    |> String.to_integer()
+  end
 
   def datasource do
-    Dataloader.Ecto.new(TdDd.Repo, query: &query/2, timeout: Dataloader.default_timeout())
+    Dataloader.Ecto.new(TdDd.Repo, query: &query/2, timeout: timeout())
   end
 
   defp query(QualityEvent, %{latest: true}), do: latest_event_query()

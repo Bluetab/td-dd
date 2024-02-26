@@ -69,6 +69,11 @@ defmodule TdDdWeb.Schema do
     import_fields(:tag_mutations)
   end
 
+  def timeout do
+    System.get_env("DB_TIMEOUT_MILLIS", Integer.to_string(Dataloader.default_timeout()))
+    |> String.to_integer()
+  end
+
   def context(ctx) do
     loader =
       Dataloader.new()
@@ -76,7 +81,7 @@ defmodule TdDdWeb.Schema do
       |> Dataloader.add_source(TdDq.Executions, TdDq.Executions.datasource())
       |> Dataloader.add_source(
         TdDq.Executions.KV,
-        Dataloader.KV.new(&TdDq.Executions.kv_datasource/2)
+        Dataloader.KV.new(&TdDq.Executions.kv_datasource/2, timeout: timeout())
       )
       |> Dataloader.add_source(TdCx.Sources, TdCx.Sources.datasource())
       |> Dataloader.add_source(:domain_actions, Dataloader.KV.new(fetch_permission_domains(ctx)))

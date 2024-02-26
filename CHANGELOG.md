@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-6436] Change timeout to use the environment variable
+
 ## [6.2.0] 2024-02-26
 
 ### Added
