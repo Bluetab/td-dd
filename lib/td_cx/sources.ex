@@ -479,13 +479,9 @@ defmodule TdCx.Sources do
   end
 
   ## Dataloader
-  def timeout do
-    System.get_env("DB_TIMEOUT_MILLIS", Integer.to_string(Dataloader.default_timeout()))
-    |> String.to_integer()
-  end
-
   def datasource do
-    Dataloader.Ecto.new(TdDd.Repo, query: &query/2, timeout: timeout())
+    timeout = Application.get_env(:td_dd, TdDd.Repo)[:timeout]
+    Dataloader.Ecto.new(TdDd.Repo, query: &query/2, timeout: timeout)
   end
 
   defp query(Event, params) do
