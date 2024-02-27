@@ -1,5 +1,11 @@
 # Changelog
 
+## [6.2.1] 2024-02-27
+
+### Added
+
+- [TD-6436] All Dataloaders use `DB_TIMEOUT_MILLIS` environment variable for timeout
+
 ## [6.2.0] 2024-02-26
 
 ### Added
