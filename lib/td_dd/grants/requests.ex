@@ -490,31 +490,25 @@ defmodule TdDd.Grants.Requests do
 
   defp bulk_maybe_update_pending_removal(
          multi,
-         [%{request_type: "grant_removal"} | _] = grant_requests
+         grant_requests
        ) do
-    grant_requests
-    |> Enum.map(fn gr ->
-      case gr do
-        %{request_type: "grant_removal"} -> Map.put(gr, :request_type, :grant_removal)
-        gr -> gr
-      end
-    end)
-    |> then(fn grant_requests ->
-      bulk_maybe_update_pending_removal(multi, grant_requests)
-    end)
+    grant_revoke_requests =
+      grant_requests
+      |> Enum.filter(fn %{request_type: request_type} ->
+        to_string(request_type) == "grant_removal"
+      end)
+
+    do_update_pending_removals(multi, grant_revoke_requests)
   end
 
-  defp bulk_maybe_update_pending_removal(
-         multi,
-         [%{request_type: :grant_removal} | _] = grant_requests
-       ) do
+  defp do_update_pending_removals(multi, [_ | _] = grant_revoke_requests) do
     Multi.run(multi, :update_pending_removal_grants, fn _, %{statuses: {_, statuses}} ->
       grant_ids =
         statuses
         |> Enum.filter(fn %{status: status} -> status == "approved" end)
         |> Enum.reduce([], fn
           %{grant_request_id: grant_request_id}, acc ->
-            get_grant_from_grant_request(grant_requests, grant_request_id, acc)
+            get_grant_from_grant_request(grant_revoke_requests, grant_request_id, acc)
         end)
 
       {count, _} =
@@ -526,7 +520,7 @@ defmodule TdDd.Grants.Requests do
     end)
   end
 
-  defp bulk_maybe_update_pending_removal(multi, _), do: multi
+  defp do_update_pending_removals(multi, _), do: multi
 
   defp get_grant_from_grant_request(grant_requests, grant_request_id, acc) do
     grant_requests

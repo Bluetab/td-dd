@@ -518,18 +518,21 @@ defmodule TdDd.Grants.RequestsTest do
     end
   end
 
-  describe "Requests.bulk_create_approvals/3 Bulk grant request type removal" do
+  describe "Bulk grant revoke request" do
     @tag role: "admin"
-    test "bulk_create_approvals create grant request and marks grant as pending removal", %{
+    test "bulk_create_approvals/3 create grant request and marks grant as pending removal", %{
       claims: %{user_id: user_id} = claims
     } do
       IndexWorkerMock.clear()
 
       bulk_params = %{"comment" => "", "role" => "admin"}
 
-      grant_requests = setup_multiple_request_revoke(%{claims: %{user_id: user_id}})
+      grant_requests = setup_multiple_request(%{claims: %{user_id: user_id}})
 
-      grant_ids = Enum.map(grant_requests, fn %{grant: %{id: grant_id}} -> grant_id end)
+      grant_revoke_ids =
+        grant_requests
+        |> Enum.filter(fn %{request_type: request_type} -> request_type == :grant_removal end)
+        |> Enum.map(fn %{grant: %{id: grant_id}} -> grant_id end)
 
       update_pending_removal_grants =
         claims
@@ -538,22 +541,25 @@ defmodule TdDd.Grants.RequestsTest do
         |> Map.get(:update_pending_removal_grants)
         |> elem(1)
 
-      assert grant_ids == update_pending_removal_grants
+      assert grant_revoke_ids == update_pending_removal_grants
 
-      assert update_pending_removal_grants ==
-               grant_ids
-               |> Enum.map(fn id ->
-                 id
-                 |> Grants.get_grant()
-                 |> Map.get(:id)
-               end)
+      assert grant_revoke_ids
+             |> Enum.map(fn id ->
+               id
+               |> Grants.get_grant()
+               |> Map.get(:pending_removal)
+             end)
+             |> Enum.all?()
     end
   end
 
-  defp setup_multiple_request_revoke(claims) do
-    1..5
+  defp setup_multiple_request(claims) do
+    1..6
     |> Enum.map(fn _ ->
-      setup_request_revoke(claims)
+      case Enum.random(0..1) do
+        0 -> setup_request_revoke(claims)
+        1 -> setup_request_access(claims)
+      end
     end)
     |> Enum.map(fn %{request: request} ->
       request
