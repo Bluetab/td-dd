@@ -1,5 +1,9 @@
 # Changelog
 
+## [6.2.2] 2024-03-08
+
+- [TD-6456] In bulk grant approves, when a grant revoke is approved, grant is reindexed
+
 ## [6.2.1] 2024-02-27
 
 ### Added
