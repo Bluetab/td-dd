@@ -483,13 +483,12 @@ defmodule TdDd.Grants.RequestsTest do
   end
 
   describe "Requests.create_approval/2 Grant request type removal" do
-    setup :setup_request_grant_removal
+    setup :setup_request_revoke
 
     test "approves grant request", %{
       claims: %{user_id: user_id} = claims,
       domain_id: domain_id,
-      grant: %{id: grant_id} = grant,
-      request: request
+      request: %{grant: %{id: grant_id} = grant} = request
     } do
       IndexWorkerMock.clear()
 
@@ -519,51 +518,70 @@ defmodule TdDd.Grants.RequestsTest do
     end
   end
 
-  defp setup_request_grant_removal(%{claims: %{user_id: user_id}}) do
-    IndexWorkerMock.clear()
-    %{id: domain_id} = CacheHelpers.insert_domain()
-    CacheHelpers.insert_user(user_id: user_id)
+  describe "Bulk grant revoke request" do
+    @tag role: "admin"
+    test "bulk_create_approvals/3 create grant request and marks grant as pending removal", %{
+      claims: %{user_id: user_id} = claims
+    } do
+      IndexWorkerMock.clear()
 
-    %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain_id])
+      bulk_params = %{"comment" => "", "role" => "admin"}
 
-    insert(:data_structure_version, data_structure_id: data_structure_id)
+      grant_requests = setup_multiple_request(%{claims: %{user_id: user_id}})
 
-    grant = insert(:grant, data_structure_id: data_structure_id)
+      grant_revoke_ids =
+        grant_requests
+        |> Enum.filter(fn %{request_type: request_type} -> request_type == :grant_removal end)
+        |> Enum.map(fn %{grant: %{id: grant_id}} -> grant_id end)
 
-    [
-      domain_id: domain_id,
-      grant: grant,
-      request:
-        insert(:grant_request,
-          grant: grant,
-          request_type: :grant_removal,
-          current_status: "pending",
-          domain_ids: [domain_id]
-        )
-    ]
+      update_pending_removal_grants =
+        claims
+        |> Requests.bulk_create_approvals(grant_requests, bulk_params)
+        |> elem(1)
+        |> Map.get(:update_pending_removal_grants)
+        |> elem(1)
+
+      assert grant_revoke_ids == update_pending_removal_grants
+
+      assert grant_revoke_ids
+             |> Enum.map(fn id ->
+               id
+               |> Grants.get_grant()
+               |> Map.get(:pending_removal)
+             end)
+             |> Enum.all?()
+    end
   end
 
-  defp setup_request_access(%{claims: %{user_id: user_id}}) do
+  defp setup_multiple_request(claims) do
+    1..6
+    |> Enum.map(fn _ ->
+      case Enum.random(0..1) do
+        0 -> setup_request_revoke(claims)
+        1 -> setup_request_access(claims)
+      end
+    end)
+    |> Enum.map(fn %{request: request} ->
+      request
+    end)
+  end
+
+  defp setup_request_revoke(claims), do: setup_request(claims, :grant_removal)
+  defp setup_request_access(claims), do: setup_request(claims, :grant_access)
+
+  defp setup_request(%{claims: %{user_id: user_id}}, request_type) do
     IndexWorkerMock.clear()
     %{id: domain_id} = CacheHelpers.insert_domain()
     CacheHelpers.insert_user(user_id: user_id)
 
-    %{id: data_structure_id} =
-      data_structure =
-      insert(:data_structure,
-        domain_ids: [domain_id]
-      )
-
-    insert(:data_structure_version, data_structure_id: data_structure_id)
-
-    [
+    %{
       domain_id: domain_id,
       request:
         insert(:grant_request,
-          data_structure: data_structure,
+          request_type: request_type,
           current_status: "pending",
           domain_ids: [domain_id]
         )
-    ]
+    }
   end
 end
