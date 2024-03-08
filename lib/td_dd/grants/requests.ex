@@ -24,7 +24,8 @@ defmodule TdDd.Grants.Requests do
   alias TdDd.Repo
   alias Truedat.Auth.Claims
 
-  @index :grant_requests
+  @grant_request_index_alias :grant_requests
+  @grants_index_alias :grants
 
   defdelegate authorize(action, user, params), to: TdDd.Grants.Policy
 
@@ -445,6 +446,7 @@ defmodule TdDd.Grants.Requests do
     |> Multi.run(:audit, Audit, :grant_request_bulk_approval_created, [])
     |> Repo.transaction()
     |> on_upsert()
+    |> on_upsert_grants()
   end
 
   def reindex_on_data_structure_update(data_structure_ids) when is_list(data_structure_ids) do
@@ -455,7 +457,7 @@ defmodule TdDd.Grants.Requests do
       |> Enum.map(fn %{id: id} -> id end)
 
     if length(grand_request_ids) > 0 do
-      IndexWorker.reindex(@index, grand_request_ids)
+      IndexWorker.reindex(@grant_request_index_alias, grand_request_ids)
     end
   end
 
@@ -490,13 +492,23 @@ defmodule TdDd.Grants.Requests do
          multi,
          grant_requests
        ) do
+    grant_revoke_requests =
+      grant_requests
+      |> Enum.filter(fn %{request_type: request_type} ->
+        to_string(request_type) == "grant_removal"
+      end)
+
+    do_update_pending_removals(multi, grant_revoke_requests)
+  end
+
+  defp do_update_pending_removals(multi, [_ | _] = grant_revoke_requests) do
     Multi.run(multi, :update_pending_removal_grants, fn _, %{statuses: {_, statuses}} ->
       grant_ids =
         statuses
         |> Enum.filter(fn %{status: status} -> status == "approved" end)
         |> Enum.reduce([], fn
           %{grant_request_id: grant_request_id}, acc ->
-            get_grant_from_grant_request(grant_requests, grant_request_id, acc)
+            get_grant_from_grant_request(grant_revoke_requests, grant_request_id, acc)
         end)
 
       {count, _} =
@@ -507,6 +519,8 @@ defmodule TdDd.Grants.Requests do
       {:ok, {count, grant_ids}}
     end)
   end
+
+  defp do_update_pending_removals(multi, _), do: multi
 
   defp get_grant_from_grant_request(grant_requests, grant_request_id, acc) do
     grant_requests
@@ -604,14 +618,22 @@ defmodule TdDd.Grants.Requests do
     end
   end
 
+  defp on_upsert_grants({:ok, %{update_pending_removal_grants: {_count, grant_ids}}} = result) do
+    IndexWorker.reindex(@grants_index_alias, grant_ids)
+
+    result
+  end
+
+  defp on_upsert_grants(result), do: result
+
   defp on_upsert({:ok, %{approval: %{grant_request_id: grant_request_id}}} = result) do
-    IndexWorker.reindex(@index, [grant_request_id])
+    IndexWorker.reindex(@grant_request_index_alias, [grant_request_id])
 
     result
   end
 
   defp on_upsert({:ok, %{requests: {_, ids}}} = result) do
-    IndexWorker.reindex(@index, ids)
+    IndexWorker.reindex(@grant_request_index_alias, ids)
     result
   end
 
@@ -622,7 +644,7 @@ defmodule TdDd.Grants.Requests do
         grant_request_id
       end)
 
-    IndexWorker.reindex(@index, ids)
+    IndexWorker.reindex(@grant_request_index_alias, ids)
 
     result
   end
@@ -630,7 +652,7 @@ defmodule TdDd.Grants.Requests do
   defp on_upsert(result), do: result
 
   defp on_delete({:ok, %GrantRequest{id: id}} = result) do
-    IndexWorker.delete(@index, [id])
+    IndexWorker.delete(@grant_request_index_alias, [id])
 
     result
   end
@@ -641,7 +663,7 @@ defmodule TdDd.Grants.Requests do
       |> Enum.map(& &1.id)
       |> Enum.uniq()
 
-    IndexWorker.delete(@index, ids)
+    IndexWorker.delete(@grant_request_index_alias, ids)
 
     result
   end
