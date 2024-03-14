@@ -1,4 +1,5 @@
 defmodule TdDdWeb.Schema.DataStructureQueryTest do
+  alias TdCache.AclCache
   use TdDdWeb.ConnCase
 
   alias TdDd.DataStructures.Hierarchy
@@ -59,6 +60,15 @@ defmodule TdDdWeb.Schema.DataStructureQueryTest do
         id
         name
       }
+    }
+  }
+  """
+
+  @structure_roles_query """
+  query DataStructure($id: ID!) {
+    dataStructure(id: $id) {
+      id
+      roles
     }
   }
   """
@@ -152,6 +162,25 @@ defmodule TdDdWeb.Schema.DataStructureQueryTest do
 
       assert data == %{"dataStructure" => nil}
       assert [%{"message" => "forbidden"}] = errors
+    end
+
+    @tag authentication: [role: "user", permissions: [:view_data_structure]]
+    test "structures acl entries query returns number of acl_entries assigned to the structure",
+         %{conn: conn, domain: %{id: domain_id}} do
+      %{id: structure_id} = insert(:data_structure, domain_ids: [domain_id])
+
+      roles = ["approver"]
+      AclCache.set_acl_roles("structure", structure_id, roles)
+
+      assert %{"data" => data} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @structure_roles_query,
+                 "variables" => %{"id" => structure_id}
+               })
+               |> json_response(:ok)
+
+      assert data == %{"dataStructure" => %{"id" => to_string(structure_id), "roles" => roles}}
     end
 
     @tag authentication: [

@@ -367,12 +367,16 @@ defmodule TdDd.Grants.Requests do
         params,
         approval_rule_id \\ nil
       ) do
+    data_structure_id =
+      Map.get(grant_request, :data_structure_id) || Map.get(grant, :data_structure_id)
+
     changeset =
       GrantRequestApproval.changeset(
         %GrantRequestApproval{
           grant_request_id: id,
           user_id: user_id,
           domain_ids: domain_ids,
+          data_structure_id: data_structure_id,
           current_status: status,
           approval_rule_id: approval_rule_id
         },
@@ -402,13 +406,18 @@ defmodule TdDd.Grants.Requests do
       |> Enum.map(fn %{
                        id: id,
                        domain_ids: domain_ids,
-                       current_status: current_status
-                     } ->
+                       current_status: current_status,
+                       grant: grant
+                     } = grant_request ->
+        data_structure_id =
+          Map.get(grant_request, :data_structure_id) || Map.get(grant, :data_structure_id)
+
         GrantRequestApproval.changeset(
           %GrantRequestApproval{
             grant_request_id: id,
             user_id: user_id,
             domain_ids: domain_ids,
+            data_structure_id: data_structure_id,
             current_status: current_status
           },
           bulk_params,
@@ -723,8 +732,31 @@ defmodule TdDd.Grants.Requests do
   defp get_user_roles(%{role: "service"}), do: :all
 
   defp get_user_roles(%{user_id: user_id}) do
-    {:ok, roles} = TdCache.UserCache.get_roles(user_id)
-    get_roles_by_domain_map(roles)
+    {:ok, domain_roles} = TdCache.UserCache.get_roles(user_id)
+    {:ok, structure_roles} = TdCache.UserCache.get_roles(user_id, "structure")
+
+    %{
+      "domain" => get_roles_by_domain_map(domain_roles),
+      "structure" => get_roles_by_structure_map(structure_roles)
+    }
+  end
+
+  # FIXME: refactor me please!!
+  defp get_roles_by_structure_map(nil), do: %{}
+
+  defp get_roles_by_structure_map(roles) do
+    roles
+    |> Enum.flat_map(fn {role, resource_ids} ->
+      Enum.flat_map(resource_ids, fn resource_id ->
+        [{role, resource_id}]
+      end)
+    end)
+    |> Enum.group_by(
+      fn {_, resource_id} -> resource_id end,
+      fn {role, _} -> role end
+    )
+    |> Enum.map(fn {resource_id, roles} -> {resource_id, MapSet.new(roles)} end)
+    |> Map.new()
   end
 
   defp get_roles_by_domain_map(nil), do: %{}
@@ -830,23 +862,38 @@ defmodule TdDd.Grants.Requests do
   end
 
   defp with_missing_roles(
-         %{approvals: approvals, domain_ids: domain_ids} = grant_request,
+         %{
+           approvals: approvals,
+           domain_ids: domain_ids,
+           data_structure_id: data_structure_id,
+           grant: grant
+         } = grant_request,
          required_roles,
          user_roles
        )
        when is_list(approvals) do
     user_roles_in_domains =
       user_roles
+      |> Map.get("domain", %{})
       |> Map.take(domain_ids)
       |> Map.values()
       |> Enum.reduce(MapSet.new(), &MapSet.union/2)
+
+    user_roles_in_structure =
+      user_roles
+      |> Map.get("structure", %{})
+      |> Map.take([data_structure_id || grant.data_structure_id])
+      |> Map.values()
+      |> Enum.reduce(MapSet.new(), &MapSet.union/2)
+
+    user_roles_in_grant_request = MapSet.union(user_roles_in_domains, user_roles_in_structure)
 
     approved_roles = MapSet.new(approvals, & &1.role)
 
     pending_roles =
       required_roles
       |> MapSet.difference(approved_roles)
-      |> MapSet.intersection(user_roles_in_domains)
+      |> MapSet.intersection(user_roles_in_grant_request)
       |> MapSet.to_list()
 
     %{grant_request | pending_roles: pending_roles}

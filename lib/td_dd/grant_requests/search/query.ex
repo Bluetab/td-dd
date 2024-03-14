@@ -11,15 +11,32 @@ defmodule TdDd.GrantRequests.Search.Query do
     |> Query.build_query(params, aggs)
   end
 
-  def build_filters(%{"approve_grant_request" => :none}), do: %{match_none: %{}}
+  defp build_filters(%{
+         "approve_grant_request" => %{"domain" => :none, "structure" => structure_ids}
+       }) do
+    case structure_ids do
+      :none -> %{match_none: %{}}
+      structure_ids -> %{bool: %{should: [structure_filter(structure_ids)]}}
+    end
+  end
 
-  def build_filters(%{"approve_grant_request" => :all}), do: %{match_all: %{}}
+  defp build_filters(%{"approve_grant_request" => %{"domain" => :all}}), do: %{match_all: %{}}
 
-  def build_filters(%{"approve_grant_request" => domain_ids}) do
+  defp build_filters(%{"approve_grant_request" => %{"domain" => domain_ids, "structure" => :none}}) do
     %{bool: %{should: [domain_filter(domain_ids)]}}
+  end
+
+  defp build_filters(%{
+         "approve_grant_request" => %{"domain" => domain_ids, "structure" => structure_ids}
+       }) do
+    %{bool: %{should: [domain_filter(domain_ids), structure_filter(structure_ids)]}}
   end
 
   defp domain_filter(domain_ids) do
     Query.term_or_terms("domain_ids", domain_ids)
+  end
+
+  defp structure_filter(structure_ids) do
+    Query.term_or_terms("data_structure_id", structure_ids)
   end
 end

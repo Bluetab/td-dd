@@ -220,6 +220,10 @@ defmodule TdDdWeb.Resolvers.Structures do
     {:ok, Tags.tags(data_structure)}
   end
 
+  def roles(%{id: structure_id}, _args, _resolution) do
+    {:ok, "structure" |> TdCache.AclCache.get_acl_roles(structure_id)}
+  end
+
   def metadata(
         %TdDd.DataStructures.DataStructureVersion{data_structure: %{id: _} = ds} = dsv,
         _args,

@@ -20,7 +20,7 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
     %{id: approver_user_id} = CacheHelpers.insert_user()
 
     CacheHelpers.put_grant_request_approvers([
-      %{user_id: approver_user_id, domain_id: domain_id, role: @approver_role}
+      %{user_id: approver_user_id, resource_id: domain_id, role: @approver_role}
     ])
 
     domain_ids = [domain_id]

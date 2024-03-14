@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-4110] Allow structure scoped permissions management
+
 ## [6.2.2] 2024-03-08
 
 - [TD-6456] In bulk grant approves, when a grant revoke is approved, grant is reindexed

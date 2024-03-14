@@ -6,6 +6,7 @@ defmodule TdDd.Grants.GrantRequestApproval do
 
   import Ecto.Changeset
 
+  alias TdCache.AclCache
   alias TdCache.TaxonomyCache
   alias TdDd.Grants.ApprovalRule
   alias TdDd.Grants.GrantRequest
@@ -18,6 +19,7 @@ defmodule TdDd.Grants.GrantRequestApproval do
     field :user, :map, virtual: true
     field :current_status, :string, virtual: true
     field :domain_ids, {:array, :integer}, virtual: true
+    field :data_structure_id, :integer, virtual: true
 
     belongs_to :approval_rule, ApprovalRule
     belongs_to :grant_request, GrantRequest
@@ -35,6 +37,7 @@ defmodule TdDd.Grants.GrantRequestApproval do
     |> validate_required([
       :current_status,
       :domain_ids,
+      :data_structure_id,
       :grant_request_id,
       :is_rejection,
       :role,
@@ -63,11 +66,14 @@ defmodule TdDd.Grants.GrantRequestApproval do
 
   defp maybe_validate_approver(changeset, %{role: "service"}), do: changeset
 
-  defp maybe_validate_approver(changeset, _) do
+  defp maybe_validate_approver(changeset, _claims) do
     with domain_ids <- fetch_field!(changeset, :domain_ids),
+         data_structure_id <- fetch_field!(changeset, :data_structure_id),
          user_id <- fetch_field!(changeset, :user_id),
          role <- fetch_field!(changeset, :role),
-         true <- TaxonomyCache.has_role?(domain_ids, role, user_id) do
+         true <-
+           TaxonomyCache.has_role?(domain_ids, role, user_id) or
+             AclCache.has_role?("structure", data_structure_id, role, user_id) do
       changeset
     else
       _ -> add_error(changeset, :user_id, "invalid role")
