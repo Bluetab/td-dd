@@ -2,6 +2,7 @@ defmodule TdDdWeb.GrantRequestBulkApprovalControllerTest do
   use TdDdWeb.ConnCase
 
   import Mox
+  import TdDd.TestOperators
 
   alias TdCore.Search.IndexWorkerMock
   alias TdDd.DataStructures.Hierarchy
@@ -36,13 +37,9 @@ defmodule TdDdWeb.GrantRequestBulkApprovalControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/grant_requests/_search", %{query: query, size: _}, _ ->
-        assert %{bool: %{must: %{terms: %{"id" => grant_requests_ids}}}} == query
-
-        SearchHelpers.hits_response([
-          grant_request1,
-          grant_request2,
-          grant_request3
-        ])
+        assert %{bool: %{must: %{terms: %{"id" => query_grant_requests_ids}}}} = query
+        assert grant_requests_ids ||| query_grant_requests_ids
+        SearchHelpers.hits_response([grant_request1, grant_request2, grant_request3])
       end)
 
       params = %{

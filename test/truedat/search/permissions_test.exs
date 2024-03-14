@@ -93,9 +93,16 @@ defmodule Truedat.Search.PermissionsTest do
         "baz" => [id3]
       })
 
-      CacheHelpers.insert_acl(id1, "foo", [user_id])
-      CacheHelpers.insert_acl(id1, "bar", [user_id])
-      CacheHelpers.insert_acl(id2, "bar", [user_id])
+      CacheHelpers.put_grant_request_approvers([
+        %{user_id: user_id, resource_id: id1, role: "foo"},
+        %{user_id: user_id, resource_id: id2, role: "bar"},
+        %{
+          user_id: user_id,
+          resource_id: id3,
+          role: "baz",
+          permission: "not_approve_grant_request"
+        }
+      ])
 
       assert Permissions.get_roles_by_user(:approve_grant_request, claims) == ["bar", "foo"]
     end

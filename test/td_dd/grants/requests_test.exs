@@ -35,7 +35,7 @@ defmodule TdDd.Grants.RequestsTest do
 
     test "list_grant_request_groups/0 returns all grant_request_groups" do
       grant_request_group = insert(:grant_request_group)
-      assert Requests.list_grant_request_groups() ||| [grant_request_group]
+      assert Requests.list_grant_request_groups() <~> [grant_request_group]
     end
 
     test "get_grant_request_group!/1 returns the grant_request_group with given id" do
@@ -234,7 +234,7 @@ defmodule TdDd.Grants.RequestsTest do
       CacheHelpers.put_session_permissions(claims, domain_id, ["approve_grant_request"])
 
       CacheHelpers.put_grant_request_approvers([
-        %{user_id: user_id, domain_id: domain_id, role: "approver"}
+        %{user_id: user_id, resource_id: domain_id, role: "approver"}
       ])
 
       assert {:ok, [%{id: ^id}]} = Requests.list_grant_requests(claims, %{action: "approve"})
@@ -275,9 +275,9 @@ defmodule TdDd.Grants.RequestsTest do
       CacheHelpers.put_session_permissions(claims, %{approve_grant_request: [d1, d2, d3]})
 
       CacheHelpers.put_grant_request_approvers([
-        %{user_id: default_approver, domain_id: d1, role: "approver1"},
-        %{user_id: default_approver, domain_id: d2, role: "approver2"},
-        %{user_id: user_id, domain_ids: [d1, d2, d3], role: "approver2"}
+        %{user_id: default_approver, resource_id: d1, role: "approver1"},
+        %{user_id: default_approver, resource_id: d2, role: "approver2"},
+        %{user_id: user_id, resource_ids: [d1, d2, d3], role: "approver2"}
       ])
 
       %{grant_request: d1_gr} =
@@ -331,8 +331,8 @@ defmodule TdDd.Grants.RequestsTest do
       claims = build(:claims, role: "admin")
 
       CacheHelpers.put_grant_request_approvers([
-        %{user_id: user_id, role: "approver1", domain_id: domain_id1},
-        %{user_id: user_id, role: "approver2", domain_id: domain_id2}
+        %{user_id: user_id, role: "approver1", resource_id: domain_id1},
+        %{user_id: user_id, role: "approver2", resource_id: domain_id2}
       ])
 
       %{grant_request_id: gr_id_1} =
@@ -386,8 +386,8 @@ defmodule TdDd.Grants.RequestsTest do
       claims = build(:claims, role: "admin")
 
       CacheHelpers.put_grant_request_approvers([
-        %{user_id: default_approver, domain_id: domain_id, role: "approver1"},
-        %{user_id: default_approver, domain_id: domain_id, role: "approver2"}
+        %{user_id: default_approver, resource_id: domain_id, role: "approver1"},
+        %{user_id: default_approver, resource_id: domain_id, role: "approver2"}
       ])
 
       %{grant_request: %{id: grant_request_id} = grant_request} =
@@ -417,7 +417,7 @@ defmodule TdDd.Grants.RequestsTest do
       IndexWorkerMock.clear()
 
       CacheHelpers.put_grant_request_approvers([
-        %{user_id: user_id, domain_id: domain_id, role: "approver"}
+        %{user_id: user_id, resource_id: domain_id, role: "approver"}
       ])
 
       params = %{domain_id: domain_id, role: "approver"}
@@ -454,7 +454,7 @@ defmodule TdDd.Grants.RequestsTest do
       request: request
     } do
       CacheHelpers.put_grant_request_approvers([
-        %{user_id: user_id, domain_id: domain_id, role: "rejector"}
+        %{user_id: user_id, resource_id: domain_id, role: "rejector"}
       ])
 
       params = %{role: "rejector", is_rejection: true, comment: "foo"}
@@ -469,8 +469,8 @@ defmodule TdDd.Grants.RequestsTest do
       request: request
     } do
       CacheHelpers.put_grant_request_approvers([
-        %{user_id: user_id, domain_id: domain_id, role: "approver1"},
-        %{user_id: user_id, domain_id: domain_id, role: "approver2"}
+        %{user_id: user_id, resource_id: domain_id, role: "approver1"},
+        %{user_id: user_id, resource_id: domain_id, role: "approver2"}
       ])
 
       params = %{domain_id: domain_id, role: "approver1"}
@@ -493,7 +493,7 @@ defmodule TdDd.Grants.RequestsTest do
       IndexWorkerMock.clear()
 
       CacheHelpers.put_grant_request_approvers([
-        %{user_id: user_id, domain_id: domain_id, role: "approver"}
+        %{user_id: user_id, resource_id: domain_id, role: "approver"}
       ])
 
       assert %{pending_removal: false} = grant
