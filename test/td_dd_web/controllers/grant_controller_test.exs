@@ -316,6 +316,44 @@ defmodule TdDdWeb.GrantControllerTest do
 
       assert actions == %{}
     end
+
+    @tag authentication: [role: "admin"]
+    test "show grantable grant actions if _grantable classification", %{conn: conn} do
+      %{id: id, data_structure_id: ds_id} = insert(:grant)
+
+      %{id: dsv_id} = insert(:data_structure_version, data_structure_id: ds_id)
+
+      insert(:structure_classification,
+        name: "_grantable",
+        class: "grantable_database",
+        data_structure_version_id: dsv_id
+      )
+
+      %{"_actions" => actions} =
+        conn
+        |> get(Routes.grant_path(conn, :show, id))
+        |> json_response(:ok)
+
+      assert %{
+               "manage_grant_removal" => %{},
+               "manage_grant_removal_request" => %{},
+               "update" => %{}
+             } = actions
+    end
+
+    @tag authentication: [role: "admin"]
+    test "don't show grantable grant actions if not _grantable classification", %{conn: conn} do
+      %{id: id, data_structure_id: ds_id} = insert(:grant)
+
+      insert(:data_structure_version, data_structure_id: ds_id)
+
+      %{"_actions" => actions} =
+        conn
+        |> get(Routes.grant_path(conn, :show, id))
+        |> json_response(:ok)
+
+      assert %{} == actions
+    end
   end
 
   describe "update grant" do
