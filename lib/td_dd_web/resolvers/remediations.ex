@@ -3,6 +3,7 @@ defmodule TdDdWeb.Resolvers.Remediations do
   Absinthe resolvers for remediations and related entities
   """
 
+  alias TdCache.UserCache
   alias TdDdWeb.Resolvers.Utils.CursorPagination
   alias TdDq.Remediations
   alias TdDq.Remediations.Remediation
@@ -42,6 +43,9 @@ defmodule TdDdWeb.Resolvers.Remediations do
       {:error, :forbidden} -> {:error, :forbidden}
     end
   end
+
+  def remediation_user(%{user_id: user_id}, _args, _resolution),
+    do: UserCache.get(user_id)
 
   defp connection_param({:first, first}), do: {:limit, first}
   defp connection_param({:last, last}), do: {:limit, last}

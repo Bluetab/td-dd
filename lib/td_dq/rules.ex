@@ -325,4 +325,16 @@ defmodule TdDq.Rules do
   end
 
   defp enrich(target, _), do: target
+
+  ## Dataloader
+  def datasource do
+    timeout = Application.get_env(:td_dd, TdDd.Repo)[:timeout]
+    Dataloader.Ecto.new(TdDd.Repo, query: &query/2, timeout: timeout)
+  end
+
+  defp query(queryable, params) do
+    Enum.reduce(params, queryable, fn
+      {:preload, preload}, q -> preload(q, ^preload)
+    end)
+  end
 end

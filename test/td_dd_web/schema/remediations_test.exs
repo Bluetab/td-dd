@@ -32,7 +32,25 @@ defmodule TdDdWeb.Schema.RemediationsTest do
     ) {
       totalCount
       page {
-        id
+        id,
+        df_name,
+        df_content,
+        user{
+          id,
+          user_name
+        },
+        rule_result{
+          implementation{
+            id,
+            implementation_key,
+            implementation_ref,
+            version
+          },
+          rule{
+            id,
+            name
+          }
+        }
       }
       pageInfo {
         startCursor
@@ -69,7 +87,7 @@ defmodule TdDdWeb.Schema.RemediationsTest do
     }
 
     CacheHelpers.insert_template(remediation_template)
-    %{template: remediation_template}
+    %{template: remediation_template, user: CacheHelpers.insert_user()}
   end
 
   describe "paginates and returns pagination info, without filters" do
@@ -152,6 +170,76 @@ defmodule TdDdWeb.Schema.RemediationsTest do
 
       assert data == %{"remediationsConnection" => nil}
       assert [%{"message" => "forbidden"}] = errors
+    end
+
+    @tag authentication: [role: "service"]
+    test "API returns requested data", %{
+      conn: conn,
+      user: %{id: user_id, user_name: user_name}
+    } do
+      %{
+        id: implementation_id,
+        implementation_key: implementation_key,
+        implementation_ref: implementation_ref,
+        version: implementation_version,
+        rule_id: rule_id,
+        rule: %{name: rule_name}
+      } = insert(:implementation)
+
+      %{id: rule_result_id} =
+        rule_result =
+        insert(:rule_result,
+          implementation_id: implementation_id,
+          rule_id: rule_id
+        )
+
+      %{id: remediation_id, df_name: df_name, df_content: df_content} =
+        insert(:remediation,
+          rule_result_id: rule_result_id,
+          rule_result: rule_result,
+          user_id: user_id
+        )
+
+      variables = %{
+        "last" => 1
+      }
+
+      %{
+        "data" => %{
+          "remediationsConnection" => %{
+            "page" => [
+              remediation
+            ]
+          }
+        }
+      } =
+        conn
+        |> post("/api/v2", %{
+          "query" => @remediations_query,
+          "variables" => variables
+        })
+        |> json_response(:ok)
+
+      assert %{
+               "id" => res_remediation_id,
+               "df_content" => ^df_content,
+               "df_name" => ^df_name,
+               "rule_result" => %{
+                 "implementation" => %{
+                   "id" => res_implementation_id,
+                   "implementation_key" => ^implementation_key,
+                   "implementation_ref" => ^implementation_ref,
+                   "version" => ^implementation_version
+                 },
+                 "rule" => %{"id" => res_rule_id, "name" => ^rule_name}
+               },
+               "user" => %{"id" => res_user_id, "user_name" => ^user_name}
+             } = remediation
+
+      assert res_remediation_id == "#{remediation_id}"
+      assert res_implementation_id == "#{implementation_id}"
+      assert res_rule_id == "#{rule_id}"
+      assert res_user_id == "#{user_id}"
     end
 
     # before and after by ascending ID

@@ -6,6 +6,7 @@
 
 - [TD-6434] Remove Grant actions if structure not grantable
 - [TD-4110] Allow structure scoped permissions management
+- [TD-6438] Add Remediation Plan fields for API V2.
 
 ## [6.2.2] 2024-03-08
 
