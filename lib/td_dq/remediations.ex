@@ -66,6 +66,7 @@ defmodule TdDq.Remediations do
     changeset =
       params
       |> Map.put("rule_result_id", rule_result_id)
+      |> Map.put("user_id", user_id)
       |> Remediation.changeset()
 
     Multi.new()
@@ -74,9 +75,11 @@ defmodule TdDq.Remediations do
     |> Repo.transaction()
   end
 
-  def update_remediation(remediation, params) do
+  def update_remediation(remediation, params, %Claims{user_id: user_id}) do
+    params_with_user = Map.put(params, "user_id", user_id)
+
     remediation
-    |> Remediation.changeset(params)
+    |> Remediation.changeset(params_with_user)
     |> Repo.update()
   end
 

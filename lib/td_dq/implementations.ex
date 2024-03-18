@@ -1246,4 +1246,16 @@ defmodule TdDq.Implementations do
   end
 
   def get_cached_content(content, _type), do: content
+
+  ## Dataloader
+  def datasource do
+    timeout = Application.get_env(:td_dd, TdDd.Repo)[:timeout]
+    Dataloader.Ecto.new(TdDd.Repo, query: &query/2, timeout: timeout)
+  end
+
+  defp query(queryable, params) do
+    Enum.reduce(params, queryable, fn
+      {:preload, preload}, q -> preload(q, ^preload)
+    end)
+  end
 end
