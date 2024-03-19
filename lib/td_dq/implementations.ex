@@ -698,7 +698,7 @@ defmodule TdDq.Implementations do
 
     [
       {:not_deleted, nil},
-      {:name_in, names},
+      {:name_in, delete_extra_quotes(names)},
       {:source_id, source_id},
       {:metadata_field, {"database", database}},
       {:class, "table"}
@@ -749,10 +749,10 @@ defmodule TdDq.Implementations do
 
     [
       {:not_deleted, nil},
-      {:name_in, names},
+      {:name_in, delete_extra_quotes(names)},
       {:source_id, source_id},
       {:metadata_field, {"database", lower_case(database)}},
-      {:metadata_field_in, {"table", dataset_names}}
+      {:metadata_field_in, {"table", delete_extra_quotes(dataset_names)}}
     ]
     |> DataStructures.list_data_structure_versions_by_criteria()
     |> Enum.map(fn dsv ->
@@ -771,6 +771,10 @@ defmodule TdDq.Implementations do
 
   defp lower_case(database) do
     String.downcase(database)
+  end
+
+  defp delete_extra_quotes(data) do
+    Enum.map(data, fn text -> String.replace(text, "\"", "") end)
   end
 
   defp create_implementation_structures(_repo, %{implementation: implementation}) do
