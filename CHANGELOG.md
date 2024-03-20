@@ -1,5 +1,17 @@
 # Changelog
 
+## [6.3.0] 2024-03-20
+
+### Added
+
+- [TD-6434] Remove Grant actions if structure not grantable
+- [TD-4110] Allow structure scoped permissions management
+- [TD-6438] Add Remediation Plan fields for API V2.
+
+### Fixed
+
+- [TD-6434] Remove extra quotes in implementation source, population and validation
+
 ## [6.2.2] 2024-03-08
 
 - [TD-6456] In bulk grant approves, when a grant revoke is approved, grant is reindexed

@@ -78,14 +78,14 @@ defmodule CacheHelpers do
     user
   end
 
-  def insert_acl(domain_id, role, user_ids) do
+  def insert_acl(resource_id, role, user_ids, resource_type \\ "domain") do
     on_exit(fn ->
-      AclCache.delete_acl_roles("domain", domain_id)
-      AclCache.delete_acl_role_users("domain", domain_id, role)
+      AclCache.delete_acl_roles(resource_type, resource_id)
+      AclCache.delete_acl_role_users(resource_type, resource_id, role)
     end)
 
-    AclCache.set_acl_roles("domain", domain_id, [role])
-    AclCache.set_acl_role_users("domain", domain_id, role, user_ids)
+    AclCache.set_acl_roles(resource_type, resource_id, [role])
+    AclCache.set_acl_role_users(resource_type, resource_id, role, user_ids)
     :ok
   end
 
@@ -97,39 +97,80 @@ defmodule CacheHelpers do
     hierarchy
   end
 
-  def put_grant_request_approvers(entries) when is_list(entries) do
-    entries = Enum.flat_map(entries, &expand_domain_ids/1)
+  def put_permission_by_role(entries) when is_list(entries) do
+    entries =
+      entries
+      |> Enum.map(&Map.merge(%{resource_type: "domain"}, &1))
+      |> Enum.flat_map(&expand_resource_ids/1)
 
-    role_fn = fn map -> Map.get(map, :role, "approver") end
-    role_names = entries |> MapSet.new(&role_fn.(&1)) |> MapSet.to_list()
+    put_permission_roles_fn = fn roles_by_permission ->
+      commands =
+        Enum.map(roles_by_permission, fn {permission, role_names} ->
+          ["SREM", "permission:" <> permission <> ":roles" | role_names]
+        end)
 
-    on_exit(fn ->
-      Redix.command!(["SREM", "permission:approve_grant_request:roles" | role_names])
-    end)
+      on_exit(fn ->
+        Redix.transaction_pipeline!(commands)
+      end)
 
-    Permissions.put_permission_roles(%{"approve_grant_request" => role_names})
-
-    for {user_id, user_entries} <- Enum.group_by(entries, & &1.user_id) do
-      domain_ids_by_role =
-        user_entries
-        |> Enum.group_by(&role_fn.(&1), & &1.domain_id)
-        |> Map.new(fn {k, v} -> {k, List.flatten(v)} end)
-
-      UserCache.put_roles(user_id, domain_ids_by_role)
+      Permissions.put_permission_roles(roles_by_permission)
     end
 
-    for {domain_id, domain_entries} <- Enum.group_by(entries, & &1.domain_id) do
-      for {role, user_ids} <- Enum.group_by(domain_entries, &role_fn.(&1), & &1.user_id) do
-        insert_acl(domain_id, role, user_ids)
+    entries
+    |> Enum.group_by(&Map.get(&1, :permission))
+    |> Enum.map(fn {permission, permission_entries} ->
+      {permission,
+       Enum.reduce(permission_entries, [], fn entry, role_names ->
+         [Map.get(entry, :role) | role_names]
+       end)
+       |> Enum.uniq()}
+    end)
+    |> Map.new()
+    |> put_permission_roles_fn.()
+
+    for {user_id, user_entries} <- Enum.group_by(entries, & &1.user_id) do
+      user_entries
+      |> Enum.group_by(& &1.resource_type)
+      |> Enum.each(fn {resource_type, resource_ids} ->
+        resource_ids_by_role =
+          resource_ids
+          |> Enum.group_by(&Map.get(&1, :role), & &1.resource_id)
+          |> Map.new(fn {role, grouped_resource_ids} ->
+            {role, List.flatten(grouped_resource_ids)}
+          end)
+
+        on_exit(fn ->
+          Redix.command!(["DEL", "user:#{user_id}:roles:#{resource_type}"])
+        end)
+
+        UserCache.put_roles(user_id, resource_ids_by_role, resource_type)
+      end)
+    end
+
+    for {resource_type, resource_entries_by_type} <- Enum.group_by(entries, & &1.resource_type) do
+      for {resource_id, resource_entries} <-
+            Enum.group_by(resource_entries_by_type, & &1.resource_id) do
+        for {role, user_ids} <- Enum.group_by(resource_entries, &Map.get(&1, :role), & &1.user_id) do
+          insert_acl(resource_id, role, user_ids, resource_type)
+        end
       end
     end
   end
 
-  defp expand_domain_ids(%{domain_ids: domain_ids} = entry) do
-    Enum.map(domain_ids, &Map.put(entry, :domain_id, &1))
+  def put_grant_request_approvers(entries) when is_list(entries) do
+    Enum.map(entries, fn entry ->
+      entry
+      |> Map.put(:permission, Map.get(entry, :permission, "approve_grant_request"))
+      |> Map.put(:role, Map.get(entry, :role, "approver"))
+    end)
+    |> put_permission_by_role()
   end
 
-  defp expand_domain_ids(entry), do: [entry]
+  defp expand_resource_ids(%{resource_ids: resource_ids} = entry) do
+    Enum.map(resource_ids, &Map.put(entry, :resource_id, &1))
+  end
+
+  defp expand_resource_ids(entry), do: [entry]
 
   def put_permission_on_role(permission, role_name) do
     put_permissions_on_roles(%{permission => [role_name]})
@@ -139,18 +180,28 @@ defmodule CacheHelpers do
     TdCache.Permissions.put_permission_roles(permissions)
   end
 
-  def put_session_permissions(%{} = claims, domain_id, permissions) do
-    domain_ids_by_permission = Map.new(permissions, &{to_string(&1), [domain_id]})
-    put_session_permissions(claims, domain_ids_by_permission)
+  def put_session_permissions(%{} = claims, resource_id, permissions, resource_type \\ "domain") do
+    resource_ids_by_type_and_permission = %{
+      resource_type => Map.new(permissions, &{to_string(&1), [resource_id]})
+    }
+
+    put_session_permissions(claims, resource_ids_by_type_and_permission)
   end
 
-  def put_session_permissions(%{jti: session_id, exp: exp}, %{} = domain_ids_by_permission) do
-    put_sessions_permissions(session_id, exp, domain_ids_by_permission)
+  def put_session_permissions(%{jti: session_id, exp: exp}, %{} = resource_ids) do
+    resource_ids
+    |> with_default_resource_type()
+    |> Enum.map(fn {resource_type, resource_ids_by_permission} ->
+      put_sessions_permissions(session_id, exp, resource_ids_by_permission, resource_type)
+    end)
   end
 
-  def put_sessions_permissions(session_id, exp, domain_ids_by_permission) do
-    on_exit(fn -> Redix.del!("session:#{session_id}:permissions") end)
-    Permissions.cache_session_permissions!(session_id, exp, domain_ids_by_permission)
+  defp put_sessions_permissions(session_id, exp, resource_ids_by_permission, resource_type) do
+    on_exit(fn -> Redix.del!("session:#{session_id}:#{resource_type}:permissions") end)
+
+    Permissions.cache_session_permissions!(session_id, exp, %{
+      resource_type => resource_ids_by_permission
+    })
   end
 
   def put_default_permissions(permissions) do
@@ -177,4 +228,18 @@ defmodule CacheHelpers do
   end
 
   def put_i18n_message(lang, message), do: put_i18n_messages(lang, [message])
+
+  defp with_default_resource_type(resource_ids) do
+    has_resource_type =
+      Enum.all?(resource_ids, fn
+        {_k, %{}} -> true
+        {_k, _} -> false
+      end)
+
+    if has_resource_type do
+      resource_ids
+    else
+      %{"domain" => resource_ids}
+    end
+  end
 end

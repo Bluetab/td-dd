@@ -8,7 +8,8 @@ defmodule TdDq.RemediationTest do
 
   setup do
     rule_result = insert(:rule_result)
-    %{rule_result: rule_result}
+    user = build(:user)
+    %{rule_result: rule_result, user: user}
   end
 
   describe "Remediation.changeset/2" do
@@ -17,13 +18,15 @@ defmodule TdDq.RemediationTest do
       assert {_, [validation: :required]} = errors[:rule_result_id]
       assert {_, [validation: :required]} = errors[:df_name]
       assert {_, [validation: :required]} = errors[:df_content]
+      assert {_, [validation: :required]} = errors[:user_id]
     end
 
-    test "captures foreign key constraint on rule result" do
+    test "captures foreign key constraint on rule result", %{user: %{id: user_id}} do
       params = %{
         "df_name" => "template_name",
         "df_content" => %{},
-        "rule_result_id" => 12_345
+        "rule_result_id" => 12_345,
+        "user_id" => user_id
       }
 
       assert {:error, %{errors: errors}} =
@@ -37,11 +40,28 @@ defmodule TdDq.RemediationTest do
               ]} = errors[:rule_result_id]
     end
 
-    test "can be inserted if valid", %{rule_result: %{id: rule_result_id}} do
+    test "validate field value types" do
+      params = %{
+        "df_name" => true,
+        "df_content" => [],
+        "rule_result_id" => "rule_result",
+        "user_id" => "user"
+      }
+
+      assert %{errors: errors} = Remediation.changeset(params)
+
+      assert {"is invalid", [type: :id, validation: :cast]} = errors[:rule_result_id]
+      assert {"is invalid", [type: :string, validation: :cast]} = errors[:df_name]
+      assert {"is invalid", [type: :map, validation: :cast]} = errors[:df_content]
+      assert {"is invalid", [type: :integer, validation: :cast]} = errors[:user_id]
+    end
+
+    test "can be inserted if valid", %{rule_result: %{id: rule_result_id}, user: %{id: user_id}} do
       params = %{
         "df_name" => "template_name",
         "df_content" => %{},
-        "rule_result_id" => rule_result_id
+        "rule_result_id" => rule_result_id,
+        "user_id" => user_id
       }
 
       assert {:ok, %Remediation{} = remediation} =
@@ -51,11 +71,15 @@ defmodule TdDq.RemediationTest do
       assert %{
                df_name: "template_name",
                df_content: %{},
-               rule_result_id: ^rule_result_id
+               rule_result_id: ^rule_result_id,
+               user_id: ^user_id
              } = remediation
     end
 
-    test "validates df_content is valid", %{rule_result: %{id: rule_result_id}} do
+    test "validates df_content is valid", %{
+      rule_result: %{id: rule_result_id},
+      user: %{id: user_id}
+    } do
       %{name: template_name} = CacheHelpers.insert_template(scope: "remediation")
 
       invalid_content = %{"list" => "foo", "string" => "whatever"}
@@ -63,14 +87,18 @@ defmodule TdDq.RemediationTest do
       params = %{
         "df_name" => template_name,
         "df_content" => invalid_content,
-        "rule_result_id" => rule_result_id
+        "rule_result_id" => rule_result_id,
+        "user_id" => user_id
       }
 
       assert %{valid?: false, errors: errors} = Remediation.changeset(params)
       assert {"list: is invalid", _detail} = errors[:df_content]
     end
 
-    test "validates df_content is safe", %{rule_result: %{id: rule_result_id}} do
+    test "validates df_content is safe", %{
+      rule_result: %{id: rule_result_id},
+      user: %{id: user_id}
+    } do
       %{name: template_name} = CacheHelpers.insert_template(scope: "remediation")
 
       unsafe_content = %{"list" => "foo", "string" => @unsafe}
@@ -78,7 +106,8 @@ defmodule TdDq.RemediationTest do
       params = %{
         "df_name" => template_name,
         "df_content" => unsafe_content,
-        "rule_result_id" => rule_result_id
+        "rule_result_id" => rule_result_id,
+        "user_id" => user_id
       }
 
       assert %{valid?: false, errors: errors} = Remediation.changeset(params)

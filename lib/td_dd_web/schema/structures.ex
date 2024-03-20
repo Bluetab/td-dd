@@ -82,6 +82,8 @@ defmodule TdDdWeb.Schema.Structures do
     )
 
     field(:available_tags, list_of(:tag), resolve: &Resolvers.Structures.available_tags/3)
+
+    field(:roles, list_of(:string), resolve: &Resolvers.Structures.roles/3)
   end
 
   object :data_structure_version do

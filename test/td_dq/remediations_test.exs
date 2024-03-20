@@ -81,7 +81,7 @@ defmodule TdDq.Remediations.RemediationsTest do
 
     test "create_remediation/2 creates a remediation" do
       %{id: id} = insert(:rule_result, implementation: build(:implementation))
-      claims = build(:claims)
+      %{user_id: claims_user_id} = claims = build(:claims)
 
       assert {
                :ok,
@@ -89,7 +89,8 @@ defmodule TdDq.Remediations.RemediationsTest do
                  remediation: %Remediation{
                    rule_result_id: rule_result_id,
                    df_name: df_name,
-                   df_content: df_content
+                   df_content: df_content,
+                   user_id: user_id
                  }
                }
              } = Remediations.create_remediation(id, @valid_attrs, claims)
@@ -97,6 +98,7 @@ defmodule TdDq.Remediations.RemediationsTest do
       assert rule_result_id == id
       assert df_name == @valid_attrs["df_name"]
       assert df_content == @valid_attrs["df_content"]
+      assert user_id == claims_user_id
     end
 
     test "creation publishes audit event" do
@@ -110,14 +112,25 @@ defmodule TdDq.Remediations.RemediationsTest do
 
     test "update_remediation/2 updates a remediation", %{template: %{name: df_name}} do
       %{id: id} = insert(:rule_result)
+
       remediation = insert(:remediation, df_name: df_name, rule_result_id: id)
+
+      %{user_id: new_user_id} = claims = build(:claims)
 
       assert {
                :ok,
                %Remediation{
-                 df_content: %{text: "some_text"}
+                 df_content: %{"text" => "some_text"},
+                 user_id: ^new_user_id
                }
-             } = Remediations.update_remediation(remediation, %{df_content: %{text: "some_text"}})
+             } =
+               Remediations.update_remediation(
+                 remediation,
+                 %{
+                   "df_content" => %{"text" => "some_text"}
+                 },
+                 claims
+               )
     end
   end
 end

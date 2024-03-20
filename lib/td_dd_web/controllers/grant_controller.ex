@@ -92,6 +92,7 @@ defmodule TdDdWeb.GrantController do
          :ok <- Bodyguard.permit(Grants, :view, claims, grant) do
       actions =
         @grant_actions
+        |> Grants.maybe_disable_actions(grant)
         |> Enum.filter(&Bodyguard.permit?(Grants, &1, claims, grant))
         |> Map.new(fn value -> {value, %{}} end)
 

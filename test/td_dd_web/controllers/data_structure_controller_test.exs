@@ -768,12 +768,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
       %{id: new_domain_id} = CacheHelpers.insert_domain()
 
       CacheHelpers.put_session_permissions(claims, %{
-        domain_id => [:update_data_structure],
-        new_domain_id => [
-          :view_data_structure,
-          :manage_structures_domain,
-          :manage_confidential_structures
-        ]
+        update_data_structure: [domain_id],
+        view_data_structure: [new_domain_id],
+        manage_structures_domain: [new_domain_id],
+        manage_confidential_structures: [new_domain_id]
       })
 
       assert conn
@@ -794,8 +792,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
       %{id: new_domain_id} = CacheHelpers.insert_domain()
 
       CacheHelpers.put_session_permissions(claims, %{
-        domain_id => [:update_data_structure, :manage_structures_domain],
-        new_domain_id => [:view_data_structure, :manage_confidential_structures]
+        update_data_structure: [domain_id],
+        manage_structures_domain: [domain_id],
+        view_data_structure: [new_domain_id],
+        manage_confidential_structures: [new_domain_id]
       })
 
       assert conn

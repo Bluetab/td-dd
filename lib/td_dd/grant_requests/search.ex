@@ -60,6 +60,16 @@ defmodule TdDd.GrantRequests.Search do
   end
 
   defp search_permissions(%Claims{} = claims) do
-    Permissions.get_search_permissions(["approve_grant_request"], claims)
+    permissions = ["approve_grant_request"]
+
+    ["domain", "structure"]
+    |> Enum.map(fn resource_type ->
+      Permissions.get_search_permissions(permissions, claims, resource_type)
+      |> Enum.map(fn {permission, ids} -> {permission, %{resource_type => ids}} end)
+      |> Map.new()
+    end)
+    |> Enum.reduce(%{}, fn ids_by_resource, acc ->
+      Map.merge(acc, ids_by_resource, fn _k, v1, v2 -> Map.merge(v1, v2) end)
+    end)
   end
 end

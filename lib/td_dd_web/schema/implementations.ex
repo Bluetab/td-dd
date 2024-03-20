@@ -55,6 +55,7 @@ defmodule TdDdWeb.Schema.Implementations do
     field :goal, :float
     field :implementation_key, :string
     field :implementation_type, :string
+    field :implementation_ref, :integer
     field :minimum, :float
     field :populations, list_of(:populations)
     field :result_type, :string
