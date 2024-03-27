@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+## Added
+
+- [TD-6283] Add alias in linked data structure test
+
 ## [6.3.0] 2024-03-20
 
 ### Added
