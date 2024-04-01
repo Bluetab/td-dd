@@ -6,6 +6,10 @@
 
 - [TD-6283] Add alias in linked data structure test
 
+### Fixed
+
+- [TD-6503] Fix Grant Request bulk creation domain ids
+
 ## [6.3.0] 2024-03-20
 
 ### Added
