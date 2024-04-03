@@ -10,9 +10,6 @@ defmodule TdDdWeb.GrantRequestFilterControllerTest do
   }
 
   setup_all do
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
-
     :ok
   end
 

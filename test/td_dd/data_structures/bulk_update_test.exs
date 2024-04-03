@@ -4,7 +4,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   import Mox
   import TdDd.TestOperators
 
-  alias TdCore.Search.MockIndexWorker
+  alias TdCore.Search.IndexWorkerMock
   alias TdDd.DataStructures
   alias TdDd.DataStructures.BulkUpdate
   alias TdDd.DataStructures.StructureNotes
@@ -152,17 +152,15 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   setup :verify_on_exit!
 
   setup do
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
     start_supervised!(TdDd.Search.StructureEnricher)
-    :ok
-  end
 
-  setup do
     %{id: template_id, name: template_name} = template = CacheHelpers.insert_template()
     CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
     hierarchy = create_hierarchy()
     CacheHelpers.insert_hierarchy(hierarchy)
+
+    IndexWorkerMock.clear()
+
     [template: template, type: template_name, hierarchy: hierarchy]
   end
 
@@ -205,7 +203,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
              |> Enum.map(& &1.df_content)
              |> Enum.all?(&(&1 == @valid_content))
 
-      assert [{:reindex, :structures, ids_reindex}] = MockIndexWorker.calls()
+      assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
       assert length(ids_reindex) == length(ids)
     end
 
@@ -232,7 +230,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
              |> Enum.map(& &1.status)
              |> Enum.all?(&(&1 == :published))
 
-      assert [{:reindex, :structures, ^ids}] = MockIndexWorker.calls()
+      assert [{:reindex, :structures, ^ids}] = IndexWorkerMock.calls()
     end
 
     test "update and republish only data structures with different valid data", %{type: type} do
@@ -271,7 +269,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                end)
 
       assert [{:reindex, :structures, ids_reindex_1}, {:reindex, :structures, ids_reindex_2}] =
-               MockIndexWorker.calls()
+               IndexWorkerMock.calls()
 
       assert length(ids_reindex_1) == 10
       assert length(ids_reindex_2) == 10
@@ -316,7 +314,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert Enum.count(changed_notes_ds_ids) == 5
       assert changed_notes_ds_ids ||| changed_ids
-      assert [{:reindex, :structures, ids_reindex}] = MockIndexWorker.calls()
+      assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
       assert length(ids_reindex) == length(ids)
     end
 
@@ -341,7 +339,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert {:error, {%{errors: errors}, data_structure}} = first_errored_note
       assert %{external_id: "the bad one"} = data_structure
       assert {"missing_type", _} = errors[:df_content]
-      assert [{:reindex, :structures, ids_reindex}] = MockIndexWorker.calls()
+      assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
       assert length(ids_reindex) == 10
     end
 
@@ -379,7 +377,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         assert df_content == %{"string" => "updated", "list" => initial_content["list"]}
       end)
 
-      assert [{:reindex, :structures, ids_reindex}] = MockIndexWorker.calls()
+      assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
       assert length(ids_reindex) == structure_count
     end
 
@@ -415,7 +413,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         assert df_content == %{"string" => "updated"}
       end)
 
-      assert [{:reindex, :structures, ids_reindex}] = MockIndexWorker.calls()
+      assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
       assert length(ids_reindex) == structure_count
     end
 
@@ -461,7 +459,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         assert df_content == %{"string" => "updated", "list" => initial_content["list"]}
       end)
 
-      assert [{:reindex, :structures, ids_reindex}] = MockIndexWorker.calls()
+      assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
       assert length(ids_reindex) == structure_count
     end
 
@@ -512,7 +510,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         assert df_content == %{"string" => initial_content["string"], "list" => "two"}
       end)
 
-      assert [{:reindex, :structures, ids_reindex}] = MockIndexWorker.calls()
+      assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
       assert length(ids_reindex) == structure_count
     end
   end
@@ -593,7 +591,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                "urls_one_or_none" => _
              } = get_df_content_from_ext_id("ex_id10")
 
-      assert [{:reindex, :structures, ^ids}] = MockIndexWorker.calls()
+      assert [{:reindex, :structures, ^ids}] = IndexWorkerMock.calls()
     end
 
     test "update all data structures content in native language", %{sts: sts} do
@@ -639,7 +637,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                "i18n_test_no_translate" => "SIN TRADUCCION"
              } = get_df_content_from_ext_id("ex_id12")
 
-      assert [{:reindex, :structures, [_, _]}] = MockIndexWorker.calls()
+      assert [{:reindex, :structures, [_, _]}] = IndexWorkerMock.calls()
     end
 
     test "update data structures notes with values without i18n key and invalid value return error" do
@@ -677,7 +675,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                  ]
                }, _}} = note_error
 
-      assert [{:reindex, :structures, [_]}] = MockIndexWorker.calls()
+      assert [{:reindex, :structures, [_]}] = IndexWorkerMock.calls()
     end
 
     test "returns error on content" do
@@ -700,7 +698,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert Keyword.get(validation, :enum) == ["Yes", "No"]
 
       assert %{"text" => "foo"} = get_df_content_from_ext_id("ex_id1")
-      assert [{:reindex, :structures, [_, _]}] = MockIndexWorker.calls()
+      assert [{:reindex, :structures, [_, _]}] = IndexWorkerMock.calls()
     end
 
     test "returns error on hierarchy invalid content" do
@@ -728,7 +726,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                  ]
                }, _}} = first_errored_note
 
-      assert [{:reindex, :structures, [_]}] = MockIndexWorker.calls()
+      assert [{:reindex, :structures, [_]}] = IndexWorkerMock.calls()
     end
 
     test "accept file utf8 with bom" do
@@ -740,7 +738,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                |> BulkUpdate.from_csv(@default_lang)
                |> BulkUpdate.do_csv_bulk_update(user_id)
 
-      assert [{:reindex, :structures, ids_reindex}] = MockIndexWorker.calls()
+      assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
       assert length(ids_reindex) == 9
     end
 
@@ -773,7 +771,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert Enum.count(df_contents) == structure_count
       Enum.each(df_contents, fn df_content -> assert df_content == note end)
-      assert [{:reindex, :structures, ids_reindex}] = MockIndexWorker.calls()
+      assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
       assert length(ids_reindex) == 5
     end
 
@@ -798,7 +796,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert Enum.count(df_contents) == structure_count
       Enum.each(df_contents, fn df_content -> assert df_content == note end)
-      assert [{:reindex, :structures, ids_reindex}] = MockIndexWorker.calls()
+      assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
       assert length(ids_reindex) == structure_count
     end
 
@@ -825,7 +823,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert Enum.count(df_contents) == structure_count
       Enum.each(df_contents, fn df_content -> assert df_content == note end)
-      assert [{:reindex, :structures, ids_reindex}] = MockIndexWorker.calls()
+      assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
       assert length(ids_reindex) == structure_count
     end
   end

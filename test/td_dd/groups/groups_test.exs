@@ -5,8 +5,6 @@ defmodule TdDd.GroupsTest do
   alias TdDd.Groups
 
   setup_all do
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
     :ok
   end
 

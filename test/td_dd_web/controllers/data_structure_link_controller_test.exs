@@ -3,8 +3,6 @@ defmodule TdDdWeb.DataStructureLinkControllerTest do
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   setup do
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
     :ok
   end
 

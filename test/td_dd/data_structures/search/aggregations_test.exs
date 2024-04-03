@@ -5,7 +5,6 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
   alias TdDd.DataStructures.DataStructureVersion
 
   setup do
-    start_supervised!(TdCore.Search.Cluster)
     :ok
   end
 

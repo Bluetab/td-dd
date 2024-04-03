@@ -6,9 +6,6 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
   @business_concept_id "42"
 
   setup do
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
-
     :ok
   end
 

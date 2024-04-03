@@ -9,8 +9,6 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
   setup :verify_on_exit!
 
   setup do
-    start_supervised!(TdCore.Search.Cluster)
-
     groups =
       1..5
       |> Enum.map(fn _ -> insert(:execution) end)

@@ -9,9 +9,6 @@ defmodule TdDqWeb.ImplementationFilterControllerTest do
   setup :verify_on_exit!
 
   setup do
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
-
     :ok
   end
 

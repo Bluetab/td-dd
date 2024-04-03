@@ -2,9 +2,6 @@ defmodule TdDdWeb.GrantRequestStatusControllerTest do
   use TdDdWeb.ConnCase
 
   setup do
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
-
     :ok
   end
 

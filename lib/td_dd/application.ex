@@ -2,8 +2,6 @@ defmodule TdDd.Application do
   @moduledoc false
   use Application
 
-  alias TdCore.Search.IndexWorker
-
   @impl true
   def start(_type, _args) do
     env = Application.get_env(:td_dd, :env)
@@ -37,8 +35,6 @@ defmodule TdDd.Application do
     [
       # Task supervisor
       {Task.Supervisor, name: TdDd.TaskSupervisor},
-      # Workers for search and indexing
-      TdCore.Search.Cluster,
       TdDd.Search.StructureEnricher,
       # Worker for background bulk loading
       TdDd.Loader.Worker,
@@ -61,6 +57,6 @@ defmodule TdDd.Application do
       TdDd.Scheduler,
       TdDq.Cache.RuleMigrator,
       TdDd.Search.Tasks
-    ] ++ IndexWorker.get_index_workers()
+    ]
   end
 end

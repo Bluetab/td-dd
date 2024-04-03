@@ -6,9 +6,6 @@ defmodule TdDdWeb.ProfileControllerTest do
   alias TdDd.Profiles
 
   setup_all do
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
-
     start_supervised(Worker)
     start_supervised({Task.Supervisor, name: TdDd.TaskSupervisor})
     :ok

@@ -8,8 +8,6 @@ defmodule TdDd.DataStructures.ProfilesTest do
   alias TdDd.Profiles.Profile
 
   setup do
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
     :ok
   end
 

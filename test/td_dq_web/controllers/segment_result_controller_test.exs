@@ -4,8 +4,6 @@ defmodule TdDqWeb.SegmentResultControllerTest do
 
   setup_all do
     start_supervised(TdDq.Cache.RuleLoader)
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
 
     :ok
   end

@@ -76,8 +76,6 @@ defmodule TdDdWeb.SystemControllerTest do
 
   setup_all do
     start_supervised!(TdDd.Cache.SystemLoader)
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
 
     :ok
   end

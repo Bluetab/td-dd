@@ -2,12 +2,9 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
   use TdDqWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger_dq.json"
 
-  alias TdCore.Search.MockIndexWorker
+  alias TdCore.Search.IndexWorkerMock
 
   setup_all do
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
-
     :ok
   end
 
@@ -20,6 +17,8 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
 
     %{id: id} = implementation = insert(:implementation, domain_id: domain_id, status: :published)
     execution = insert(:execution, group: build(:execution_group), implementation_id: id)
+
+    IndexWorkerMock.clear()
 
     [
       execution: execution,
@@ -167,8 +166,6 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
 
     @tag authentication: [role: "service"]
     test "reindexes rule and implementation after creation", %{conn: conn} do
-      MockIndexWorker.clear()
-
       %{id: rule_id} = rule = insert(:rule)
 
       %{
@@ -187,7 +184,7 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
       assert [
                {:reindex, :rules, [^rule_id]},
                {:reindex, :implementations, [^implementation_id]}
-             ] = MockIndexWorker.calls()
+             ] = IndexWorkerMock.calls()
     end
 
     @tag authentication: [role: "admin"]

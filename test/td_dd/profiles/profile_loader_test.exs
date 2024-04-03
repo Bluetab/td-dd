@@ -5,8 +5,6 @@ defmodule TdDd.Profiles.ProfileLoaderTest do
   alias TdDd.Profiles.ProfileLoader
 
   setup do
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
     :ok
   end
 

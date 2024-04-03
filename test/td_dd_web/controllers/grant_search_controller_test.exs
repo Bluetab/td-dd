@@ -8,9 +8,6 @@ defmodule TdDdWeb.GrantSearchControllerTest do
   @moduletag sandbox: :shared
 
   setup do
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
-
     :ok
   end
 
