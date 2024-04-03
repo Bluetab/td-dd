@@ -1,5 +1,11 @@
 # Changelog
 
+## [6.1.1] 2024-04-03
+
+### Fixed
+
+- [TD-6507] Update td-core lib
+
 ## [6.1.0] 2023-02-08
 
 ### Changed
