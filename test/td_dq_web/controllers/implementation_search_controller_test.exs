@@ -5,10 +5,6 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
 
   @business_concept_id "42"
 
-  setup do
-    :ok
-  end
-
   setup :verify_on_exit!
 
   setup context do

@@ -7,10 +7,6 @@ defmodule TdDd.DataStructures.ProfilesTest do
   alias TdDd.Profiles
   alias TdDd.Profiles.Profile
 
-  setup do
-    :ok
-  end
-
   describe "TdDd.Profiles" do
     @valid_attrs %{value: %{}, data_structure_id: 0}
     @update_attrs %{value: %{"foo" => "bar"}}

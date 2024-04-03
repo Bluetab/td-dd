@@ -7,10 +7,6 @@ defmodule TdDq.Rules.SearchTest do
 
   @aggs %{"active.raw" => %{"buckets" => [%{"key" => "true"}, %{"key" => "false"}]}}
 
-  setup do
-    :ok
-  end
-
   setup :verify_on_exit!
 
   describe "get_filter_values/3" do

@@ -13,10 +13,6 @@ defmodule TdDd.DataStructures.SearchTest do
 
   setup :verify_on_exit!
 
-  setup do
-    :ok
-  end
-
   describe "get_filter_values/3" do
     for role <- ["admin", "service"] do
       @tag authentication: [role: role]

@@ -14,10 +14,10 @@ defmodule TdDd.GrantRequests.AuditTest do
 
   setup do
     claims = build(:claims, role: "admin")
+    IndexWorkerMock.clear()
 
     on_exit(fn ->
       Redix.del!(@stream)
-      IndexWorkerMock.clear()
     end)
 
     [claims: claims]

@@ -1,10 +1,6 @@
 defmodule TdDdWeb.GrantRequestStatusControllerTest do
   use TdDdWeb.ConnCase
 
-  setup do
-    :ok
-  end
-
   describe "create" do
     @tag authentication: [role: "user"]
     test "renders grant request when data is valid", %{conn: conn, claims: claims} do

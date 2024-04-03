@@ -8,10 +8,6 @@ defmodule TdDqWeb.ImplementationFilterControllerTest do
 
   setup :verify_on_exit!
 
-  setup do
-    :ok
-  end
-
   describe "index" do
     @tag authentication: [role: "admin"]
     test "maps filters from request parameters", %{conn: conn} do

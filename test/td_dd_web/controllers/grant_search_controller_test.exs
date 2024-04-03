@@ -7,10 +7,6 @@ defmodule TdDdWeb.GrantSearchControllerTest do
 
   @moduletag sandbox: :shared
 
-  setup do
-    :ok
-  end
-
   setup :verify_on_exit!
   setup :create_grant
 
