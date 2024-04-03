@@ -4,10 +4,6 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
 
   alias TdCore.Search.IndexWorkerMock
 
-  setup_all do
-    :ok
-  end
-
   setup context do
     %{id: domain_id} =
       case context do

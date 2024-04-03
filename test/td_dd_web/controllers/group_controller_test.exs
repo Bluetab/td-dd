@@ -2,10 +2,6 @@ defmodule TdDdWeb.GroupControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  setup_all do
-    :ok
-  end
-
   setup do
     [system: insert(:system)]
   end

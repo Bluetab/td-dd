@@ -4,10 +4,6 @@ defmodule TdDd.GroupsTest do
   alias TdDd.DataStructures
   alias TdDd.Groups
 
-  setup_all do
-    :ok
-  end
-
   setup do
     [system: insert(:system)]
   end

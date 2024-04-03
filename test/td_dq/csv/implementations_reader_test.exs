@@ -3,10 +3,6 @@ defmodule TdDq.CSV.ImplementationsReaderTest do
 
   alias TdDq.CSV.ImplementationsReader
 
-  setup_all do
-    :ok
-  end
-
   setup context do
     claims = build(:claims)
 
