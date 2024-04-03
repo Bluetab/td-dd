@@ -4,10 +4,6 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
   alias TdCore.Search.ElasticDocumentProtocol
   alias TdDd.DataStructures.DataStructureVersion
 
-  setup do
-    :ok
-  end
-
   @static_fields [
     "class.raw",
     "confidential.raw",
