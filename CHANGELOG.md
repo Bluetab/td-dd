@@ -1,5 +1,11 @@
 # Changelog
 
+## [6.2.3] 2024-04-03
+
+### Fixed 
+
+- [TD-6507] Add Elastic bulk page size for enviroment vars
+
 ## [6.2.2] 2024-03-08
 
 - [TD-6456] In bulk grant approves, when a grant revoke is approved, grant is reindexed
@@ -25,7 +31,7 @@
 
 ### Fixed 
 
-- [TD-6507] Add Elastic bulk page size for enviroment vars 6.2.3
+- [TD-6507] Add Elastic bulk page size for enviroment vars
 
 ## [6.1.0] 2023-02-08
 
