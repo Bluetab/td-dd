@@ -8,6 +8,8 @@ defmodule TdDd.Grants.StatusesTest do
   alias TdCore.Search.IndexWorkerMock
 
   setup do
+    IndexWorkerMock.clear()
+
     [grant_request: insert(:grant_request, current_status: "approved")]
   end
 

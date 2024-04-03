@@ -8,6 +8,7 @@ defmodule TdDdWeb.GrantRequestFilterControllerTest do
       "buckets" => [%{"key" => "bar"}, %{"key" => "baz"}]
     }
   }
+
   setup :verify_on_exit!
 
   describe "POST /api/grant_requests_filters/search" do

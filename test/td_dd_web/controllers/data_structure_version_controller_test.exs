@@ -14,6 +14,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
   setup_all do
     start_supervised!(TdDd.Lineage.GraphData)
+
     :ok
   end
 

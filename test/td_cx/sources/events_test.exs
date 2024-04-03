@@ -11,6 +11,9 @@ defmodule TdCx.Sources.EventsTest do
 
   setup do
     start_supervised!(TdCx.Cache.SourcesLatestEvent)
+
+    IndexWorkerMock.clear()
+
     :ok
   end
 

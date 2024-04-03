@@ -76,6 +76,7 @@ defmodule TdDdWeb.SystemControllerTest do
 
   setup_all do
     start_supervised!(TdDd.Cache.SystemLoader)
+
     :ok
   end
 

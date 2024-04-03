@@ -14,6 +14,8 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
     %{id: id} = implementation = insert(:implementation, domain_id: domain_id, status: :published)
     execution = insert(:execution, group: build(:execution_group), implementation_id: id)
 
+    IndexWorkerMock.clear()
+
     [
       execution: execution,
       implementation: implementation,
@@ -160,8 +162,6 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
 
     @tag authentication: [role: "service"]
     test "reindexes rule and implementation after creation", %{conn: conn} do
-      IndexWorkerMock.clear()
-
       %{id: rule_id} = rule = insert(:rule)
 
       %{

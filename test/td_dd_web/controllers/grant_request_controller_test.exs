@@ -9,6 +9,9 @@ defmodule TdDdWeb.GrantRequestControllerTest do
   setup do
     start_supervised!(TdDd.Search.StructureEnricher)
     CacheHelpers.insert_template(name: @template_name)
+
+    IndexWorkerMock.clear()
+
     :ok
   end
 

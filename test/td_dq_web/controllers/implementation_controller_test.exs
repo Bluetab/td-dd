@@ -103,6 +103,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
   setup do
     start_supervised!(TdDd.Search.StructureEnricher)
+
     start_supervised!(TdDq.Cache.RuleLoader)
     [implementation: insert(:implementation)]
   end

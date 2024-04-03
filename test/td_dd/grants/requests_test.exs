@@ -16,6 +16,8 @@ defmodule TdDd.Grants.RequestsTest do
   @valid_metadata %{"list" => "one", "string" => "bar"}
 
   setup tags do
+    IndexWorkerMock.clear()
+
     case Map.get(tags, :role, "user") do
       "admin" ->
         claims = build(:claims, role: "admin")

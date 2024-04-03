@@ -16,6 +16,7 @@ defmodule TdDd.LoaderTest do
 
   setup do
     start_supervised!(TdDd.Search.StructureEnricher)
+
     :ok
   end
 

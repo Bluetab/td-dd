@@ -21,6 +21,8 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
       "type" => @template_name
     }
 
+    IndexWorkerMock.clear()
+
     [
       data_structure: data_structure,
       create_params: create_params

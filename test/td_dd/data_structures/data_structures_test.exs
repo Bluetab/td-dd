@@ -41,6 +41,8 @@ defmodule TdDd.DataStructuresTest do
 
     start_supervised!(TdDd.Search.StructureEnricher)
 
+    IndexWorkerMock.clear()
+
     [
       domain: domain,
       data_structure: data_structure,
@@ -70,7 +72,6 @@ defmodule TdDd.DataStructuresTest do
            data_structure: %{id: id} = data_structure,
            claims: claims
          } do
-      IndexWorkerMock.clear()
       %{id: implementation_id} = insert(:implementation, version: 1, status: :published)
 
       insert(:implementation_structure,
@@ -1779,7 +1780,6 @@ defmodule TdDd.DataStructuresTest do
          %{
            data_structure: data_structure
          } do
-      IndexWorkerMock.clear()
       mm = insert(:structure_metadata, data_structure: data_structure)
 
       %{id: grant_request_id1} =
@@ -1801,7 +1801,6 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "grant request reindex when applies changes to descendents", %{claims: claims} do
-      IndexWorkerMock.clear()
       %{data_structure: parent_data_structure, id: parent_id} = insert(:data_structure_version)
       %{data_structure: child_data_structure, id: child_id} = insert(:data_structure_version)
 
@@ -1835,7 +1834,6 @@ defmodule TdDd.DataStructuresTest do
            data_structure: %{id: id} = data_structure,
            claims: claims
          } do
-      IndexWorkerMock.clear()
       %{id: implementation_id} = insert(:implementation, version: 1, status: :published)
 
       insert(:implementation_structure,
@@ -1863,7 +1861,6 @@ defmodule TdDd.DataStructuresTest do
       data_structure: data_structure,
       claims: claims
     } do
-      IndexWorkerMock.clear()
       params = %{confidential: true, domain_ids: [1, 2, 3]}
 
       %{id: grant_request_id} =

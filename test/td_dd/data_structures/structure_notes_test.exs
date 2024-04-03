@@ -27,6 +27,8 @@ defmodule TdDd.DataStructures.StructureNotesTest do
     %{id: template_id} = CacheHelpers.insert_template(scope: "dd", content: content)
     data_structure_type = insert(:data_structure_type, template_id: template_id)
 
+    IndexWorkerMock.clear()
+
     [data_structure_type: data_structure_type]
   end
 

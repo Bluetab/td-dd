@@ -19,9 +19,13 @@ defmodule TdDq.ImplementationsTest do
   setup do
     on_exit(fn -> Redix.del!(@stream) end)
     start_supervised!(TdDq.MockRelationCache)
+
     start_supervised!(TdDq.Cache.RuleLoader)
     start_supervised!(TdDd.Search.StructureEnricher)
     %{id: domain_id} = CacheHelpers.insert_domain()
+
+    IndexWorkerMock.clear()
+
     [rule: insert(:rule, domain_id: domain_id)]
   end
 
@@ -1524,8 +1528,6 @@ defmodule TdDq.ImplementationsTest do
           implementation_key: "key_changed_1"
         )
 
-      IndexWorkerMock.clear()
-
       assert {:error, :implementation, %{errors: errors}, %{}} =
                Implementations.update_implementation(
                  implementation_2_v1,
@@ -2295,8 +2297,6 @@ defmodule TdDq.ImplementationsTest do
     end
 
     test "reindex implementation after create implementation_structure" do
-      IndexWorkerMock.clear()
-
       %{id: implementation_ref_id} = insert(:implementation, version: 1)
 
       %{id: implementation_id} =
@@ -2370,8 +2370,6 @@ defmodule TdDq.ImplementationsTest do
     end
 
     test "reindex implementation by structures ids related to implementation_structure" do
-      IndexWorkerMock.clear()
-
       %{id: implementation_id} = insert(:implementation, version: 1, status: :published)
 
       %{id: data_structure_id} = insert(:data_structure)
@@ -2431,7 +2429,6 @@ defmodule TdDq.ImplementationsTest do
     end
 
     test "reindex implementation when delete_implementation_structure/1" do
-      IndexWorkerMock.clear()
       domain = build(:domain)
 
       %{id: implementation_ref_id} = implementation_ref = insert(:implementation, version: 1)

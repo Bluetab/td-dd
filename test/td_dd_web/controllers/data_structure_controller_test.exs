@@ -55,6 +55,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
     start_supervised!(TdDd.Search.StructureEnricher)
 
+    IndexWorkerMock.clear()
+
     [system: system, domain: domain, domain_id: domain.id]
   end
 
@@ -597,7 +599,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
       data_structure: %{id: id, domain_ids: [old_domain_id]} = data_structure,
       swagger_schema: schema
     } do
-      IndexWorkerMock.clear()
       %{id: new_domain_id} = CacheHelpers.insert_domain()
       attrs = %{domain_ids: [new_domain_id]}
 
@@ -627,7 +628,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
            data_structure: %{id: id, domain_ids: [old_domain_id]} = data_structure,
            swagger_schema: schema
          } do
-      IndexWorkerMock.clear()
       %{id: new_domain_id} = CacheHelpers.insert_domain()
       attrs = %{domain_ids: [new_domain_id]}
 
@@ -1221,7 +1221,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
     @tag authentication: [role: "user"]
     test "reindex implementation when change structure domains and has implementation_structure relation",
          %{conn: conn, claims: claims} do
-      IndexWorkerMock.clear()
       %{id: bar_domain_id} = CacheHelpers.insert_domain(%{external_id: "bar"})
       %{id: foo_domain_id} = CacheHelpers.insert_domain(%{external_id: "foo"})
 
