@@ -40,6 +40,14 @@ Run all aplication tests with `mix test`
 - DB_SSL_VERSION: available versions are tlsv1.2, tlsv1.3 by default is tlsv1.2.
 
 
+### Elastic bulk page size configuration
+- BULK_PAGE_SIZE_GRANTS: default 500
+- BULK_PAGE_SIZE_IMPLEMENTATIONS:  default 100
+- BULK_PAGE_SIZE_JOBS: default 100
+- BULK_PAGE_SIZE_RULES: default 100
+- BULK_PAGE_SIZE_STRUCTURES: default 1000
+- BULK_PAGE_SIZE_GRANT_REQUESTS: default 500
+
 ## Deployment
 
 Ready to run in production? Please [check our deployment
