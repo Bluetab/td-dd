@@ -164,6 +164,7 @@ defmodule TdDd.DataStructures.TagsTest do
     end
 
     test "links tag to a given structure", %{claims: claims} do
+      IndexWorkerMock.clear()
       %{comment: comment} = build(:structure_tag)
       structure = %{id: data_structure_id, external_id: external_id} = insert(:data_structure)
       %{name: version_name} = insert(:data_structure_version, data_structure: structure)
@@ -263,6 +264,7 @@ defmodule TdDd.DataStructures.TagsTest do
     end
 
     test "deletes structure tag", %{claims: claims} do
+      IndexWorkerMock.clear()
       structure = %{id: data_structure_id, external_id: external_id} = insert(:data_structure)
 
       tag = %{id: tag_id, name: tag_name} = insert(:tag)

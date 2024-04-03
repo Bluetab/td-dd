@@ -15,6 +15,8 @@ defmodule TdDd.Grants.StatusesTest do
 
   describe "Requests.create_grant_request_status/2" do
     test "fails with non valid current grant request status", %{grant_request: request} do
+      IndexWorkerMock.clear()
+
       assert {:error, :grant_request_status,
               %Changeset{errors: [status: {"invalid status change", _}]},
               _} = Statuses.create_grant_request_status(request, "not_valid_status", 0)
@@ -25,6 +27,8 @@ defmodule TdDd.Grants.StatusesTest do
     test "creates grant request status with valid status change", %{
       grant_request: %{id: id} = request
     } do
+      IndexWorkerMock.clear()
+
       assert {:ok,
               %{
                 grant_request_status: %GrantRequestStatus{
@@ -37,6 +41,7 @@ defmodule TdDd.Grants.StatusesTest do
     end
 
     test "allows to create failed status with a reason if current is processing" do
+      IndexWorkerMock.clear()
       %{id: id} = request = insert(:grant_request, current_status: "processing")
       reason = "failed reason"
 

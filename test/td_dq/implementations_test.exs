@@ -18,7 +18,6 @@ defmodule TdDq.ImplementationsTest do
 
   setup do
     on_exit(fn -> Redix.del!(@stream) end)
-
     start_supervised!(TdDq.MockRelationCache)
 
     start_supervised!(TdDq.Cache.RuleLoader)
@@ -1826,6 +1825,7 @@ defmodule TdDq.ImplementationsTest do
            implementation_v2: implementation_v2,
            claims: claims
          } do
+      IndexWorkerMock.clear()
       %{id: implementation_ref_id} = implementation_v1
       %{id: implementation_v2_id} = implementation_v2
 

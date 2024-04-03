@@ -186,6 +186,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
   describe "update_all/4" do
     test "update all data structures with valid data", %{type: type} do
+      IndexWorkerMock.clear()
       claims = build(:claims)
 
       ids =
@@ -208,6 +209,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     end
 
     test "update and publish all data structures with valid data", %{type: type} do
+      IndexWorkerMock.clear()
       claims = build(:claims)
 
       ids =
@@ -234,6 +236,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     end
 
     test "update and republish only data structures with different valid data", %{type: type} do
+      IndexWorkerMock.clear()
       claims = build(:claims)
 
       ids =
@@ -276,6 +279,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     end
 
     test "ignores unchanged data structures", %{type: type} do
+      IndexWorkerMock.clear()
       claims = build(:claims)
       fixed_datetime = ~N[2020-01-01 00:00:00]
       timestamps = [inserted_at: fixed_datetime, updated_at: fixed_datetime]
@@ -319,6 +323,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     end
 
     test "returns an error if a structure has no template", %{type: type} do
+      IndexWorkerMock.clear()
       claims = build(:claims)
       content = %{"string" => "foo", "list" => "bar"}
 
@@ -344,6 +349,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     end
 
     test "only updates specified fields", %{type: type} do
+      IndexWorkerMock.clear()
       claims = build(:claims)
 
       initial_content = Map.replace!(@valid_content, "string", "initial")
@@ -382,6 +388,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     end
 
     test "only updates specified fields for published notes", %{type: type} do
+      IndexWorkerMock.clear()
       claims = build(:claims)
       structure_count = 10
 
@@ -420,6 +427,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     test "when bulk updating will allow to create templates with missing required fields", %{
       type: type
     } do
+      IndexWorkerMock.clear()
       claims = build(:claims)
 
       initial_content = Map.replace!(@valid_content, "string", "initial")
@@ -477,6 +485,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     end
 
     test "ignores empty fields", %{type: type} do
+      IndexWorkerMock.clear()
       claims = build(:claims)
 
       initial_content = Map.replace!(@valid_content, "string", "initial")
@@ -527,6 +536,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     end
 
     test "update all data structures content", %{sts: sts, hierarchy: %{nodes: nodes}} do
+      IndexWorkerMock.clear()
       [%{key: key_node_1}, %{key: key_node_2} | _] = nodes
 
       %{user_id: user_id} = build(:claims)
@@ -595,6 +605,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     end
 
     test "update all data structures content in native language", %{sts: sts} do
+      IndexWorkerMock.clear()
       lang = "es"
 
       %{user_id: user_id} = build(:claims)
@@ -641,6 +652,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     end
 
     test "update data structures notes with values without i18n key and invalid value return error" do
+      IndexWorkerMock.clear()
       lang = "es"
 
       %{user_id: user_id} = build(:claims)
@@ -679,6 +691,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     end
 
     test "returns error on content" do
+      IndexWorkerMock.clear()
       %{user_id: user_id} = build(:claims)
       upload = %{path: "test/fixtures/td2942/upload_invalid.csv"}
 
@@ -702,6 +715,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     end
 
     test "returns error on hierarchy invalid content" do
+      IndexWorkerMock.clear()
       %{user_id: user_id} = build(:claims)
       upload = %{path: "test/fixtures/hierarchy/upload_invalid_hierarchy.csv"}
 
@@ -730,6 +744,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     end
 
     test "accept file utf8 with bom" do
+      IndexWorkerMock.clear()
       %{user_id: user_id} = build(:claims)
       upload = %{path: "test/fixtures/td3606/upload_with_bom.csv"}
 
@@ -752,6 +767,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
   describe "structure notes" do
     test "bulk upload notes of data structures with no previous notes", %{type: type} do
+      IndexWorkerMock.clear()
       note = %{"string" => "bar", "list" => "two"}
 
       structure_count = 5
@@ -776,6 +792,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     end
 
     test "bulk upload notes of data structures with draft notes", %{type: type} do
+      IndexWorkerMock.clear()
       note = %{"string" => "bar", "list" => "two"}
 
       structure_count = 5
@@ -801,6 +818,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     end
 
     test "bulk upload notes of data structures with published notes", %{type: type} do
+      IndexWorkerMock.clear()
       note = %{"string" => "bar", "list" => "two"}
 
       structure_count = 5

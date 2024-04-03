@@ -134,6 +134,8 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
     for role <- ["admin", "service"] do
       @tag authentication: [role: role]
       test "reindex all grant requests on ElasticSearch for #{role} role", %{conn: conn} do
+        IndexWorkerMock.clear()
+
         Enum.map(1..5, fn _ ->
           insert(:grant_request, group: insert(:grant_request_group))
         end)
@@ -148,6 +150,7 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
 
     @tag authentication: [role: "non_admin"]
     test "user without admin privileges cannot reindex all grant requests", %{conn: conn} do
+      IndexWorkerMock.clear()
       insert(:grant_request, group: insert(:grant_request_group))
 
       assert conn
