@@ -5,6 +5,7 @@
 ## Added
 
 - [TD-6283] Add alias in linked data structure test
+- [TD-6507] Add Elastic bulk page size for enviroment vars and update core lib
 
 ### Fixed
 
@@ -22,6 +23,12 @@
 ### Fixed
 
 - [TD-6434] Remove extra quotes in implementation source, population and validation
+
+## [6.2.3] 2024-04-03
+
+### Fixed 
+
+- [TD-6507] Add Elastic bulk page size for enviroment vars
 
 ## [6.2.2] 2024-03-08
 
@@ -43,6 +50,12 @@
 
 - [TD-6425] Ensure SSL if configured for release migration
 - [TD-6398] Approval grant request from 'approval grant requests'
+
+## [6.1.1] 2024-04-03
+
+### Fixed 
+
+- [TD-6507] Add Elastic bulk page size for enviroment vars
 
 ## [6.1.0] 2023-02-08
 

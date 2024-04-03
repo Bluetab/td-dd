@@ -8,6 +8,9 @@ defmodule TdDd.ClassifiersTest do
 
   setup do
     %{id: system_id} = system = insert(:system)
+
+    IndexWorkerMock.clear()
+
     [system: system, system_id: system_id]
   end
 

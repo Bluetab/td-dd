@@ -153,14 +153,14 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
   setup do
     start_supervised!(TdDd.Search.StructureEnricher)
-    :ok
-  end
 
-  setup do
     %{id: template_id, name: template_name} = template = CacheHelpers.insert_template()
     CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
     hierarchy = create_hierarchy()
     CacheHelpers.insert_hierarchy(hierarchy)
+
+    IndexWorkerMock.clear()
+
     [template: template, type: template_name, hierarchy: hierarchy]
   end
 

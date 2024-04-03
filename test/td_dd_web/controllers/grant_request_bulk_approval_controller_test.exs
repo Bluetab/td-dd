@@ -11,6 +11,9 @@ defmodule TdDdWeb.GrantRequestBulkApprovalControllerTest do
 
   setup do
     start_supervised!(TdDd.Search.StructureEnricher)
+
+    IndexWorkerMock.clear()
+
     :ok
   end
 

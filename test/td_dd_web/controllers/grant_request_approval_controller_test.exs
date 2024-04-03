@@ -3,6 +3,12 @@ defmodule TdDdWeb.GrantRequestApprovalControllerTest do
 
   alias TdCore.Search.IndexWorkerMock
 
+  setup do
+    IndexWorkerMock.clear()
+
+    :ok
+  end
+
   describe "create" do
     @tag authentication: [role: "user"]
     test "renders approval when data is valid", %{

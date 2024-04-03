@@ -2,17 +2,16 @@ defmodule TdCxWeb.JobControllerTest do
   use TdCxWeb.ConnCase
 
   import Mox
-
   alias TdCore.Search.IndexWorkerMock
 
-  setup :set_mox_from_context
-  setup :verify_on_exit!
-
   setup do
-    on_exit(fn -> IndexWorkerMock.clear() end)
+    IndexWorkerMock.clear()
 
     :ok
   end
+
+  setup :set_mox_from_context
+  setup :verify_on_exit!
 
   describe "GET /api/sources/:id/jobs" do
     setup :create_job
@@ -97,7 +96,6 @@ defmodule TdCxWeb.JobControllerTest do
 
     @tag authentication: [role: "admin"]
     test "admin can create a job for a source", %{conn: conn} do
-      IndexWorkerMock.clear()
       %{external_id: source_external_id} = insert(:source)
 
       # SearchHelpers.expect_bulk_index("/jobs/_doc/_bulk")
