@@ -62,7 +62,7 @@ defmodule TdDd.GrantRequests.ElasticDocument do
           user_name: Map.get(created_by, :user_name, ""),
           full_name: user_full_name(created_by)
         },
-        data_structure_id: grant_request.data_structure_id,
+        data_structure_id: grant_request.data_structure_id || grant.data_structure_id,
         data_structure_version: encode_data_structure_version(dsv),
         grant_id: grant_id,
         grant: encode_grant(grant),

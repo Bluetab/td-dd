@@ -36,6 +36,7 @@ defmodule TdDdWeb.Schema do
   import_types(TdDdWeb.Schema.Types.Custom.DataURL)
   import_types(TdDdWeb.Schema.Types.Custom.JSON)
   import_types(TdDdWeb.Schema.Types.Custom.DateFilter)
+  import_types(TdDdWeb.Schema.User)
 
   query do
     import_fields(:domain_queries)
@@ -75,6 +76,9 @@ defmodule TdDdWeb.Schema do
     loader =
       Dataloader.new()
       |> Dataloader.add_source(TdDd.DataStructures, TdDd.DataStructures.datasource())
+      |> Dataloader.add_source(TdDq.Rules.RuleResults, TdDq.Rules.RuleResults.datasource())
+      |> Dataloader.add_source(TdDq.Implementations, TdDq.Implementations.datasource())
+      |> Dataloader.add_source(TdDq.Rules, TdDq.Rules.datasource())
       |> Dataloader.add_source(TdDq.Executions, TdDq.Executions.datasource())
       |> Dataloader.add_source(
         TdDq.Executions.KV,

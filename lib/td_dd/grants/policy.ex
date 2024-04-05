@@ -99,12 +99,20 @@ defmodule TdDd.Grants.Policy do
   def authorize(:view, %{user_id: user_id}, %GrantRequest{group: %{created_by_id: user_id}}),
     do: true
 
-  def authorize(:view, %{} = claims, %GrantRequest{domain_ids: domain_ids}) do
-    Permissions.authorized?(claims, :approve_grant_request, domain_ids)
+  def authorize(action, %{} = claims, %GrantRequest{
+        domain_ids: domain_ids,
+        grant: %{data_structure_id: data_structure_id}
+      })
+      when action in [:view, :approve] do
+    can_approve_grant_request(claims, {domain_ids, data_structure_id})
   end
 
-  def authorize(:approve, %{} = claims, %{domain_ids: domain_ids}) do
-    Permissions.authorized?(claims, :approve_grant_request, domain_ids)
+  def authorize(action, %{} = claims, %GrantRequest{
+        domain_ids: domain_ids,
+        data_structure_id: data_structure_id
+      })
+      when action in [:view, :approve] do
+    can_approve_grant_request(claims, {domain_ids, data_structure_id})
   end
 
   def authorize(:cancel, %{user_id: user_id}, %GrantRequest{group: %{user_id: user_id}}), do: true
@@ -143,4 +151,12 @@ defmodule TdDd.Grants.Policy do
   end
 
   def authorize(_action, _claims, _params), do: false
+
+  defp can_approve_grant_request(
+         claims,
+         {domain_ids, data_structure_id}
+       ) do
+    Permissions.authorized?(claims, :approve_grant_request, domain_ids) or
+      Permissions.authorized?(claims, :approve_grant_request, data_structure_id, "structure")
+  end
 end

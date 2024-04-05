@@ -11,6 +11,7 @@ defmodule TdDd.Grants do
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructureQueries
+  alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Grants.Grant
   alias TdDd.Repo
   alias Truedat.Auth.Claims
@@ -113,6 +114,18 @@ defmodule TdDd.Grants do
     |> Repo.all()
     |> enrich(opts)
   end
+
+  def maybe_disable_actions(actions, %{data_structure_version: %DataStructureVersion{} = dsv}) do
+    dsv
+    |> DataStructures.get_ds_classifications!()
+    |> Map.has_key?("_grantable")
+    |> case do
+      false -> []
+      _ -> actions
+    end
+  end
+
+  def maybe_disable_actions(actions, _dsv), do: actions
 
   defp grants_query(params) do
     Enum.reduce(params, Grant, fn

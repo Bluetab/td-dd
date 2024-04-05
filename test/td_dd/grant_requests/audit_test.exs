@@ -40,7 +40,7 @@ defmodule TdDd.GrantRequests.AuditTest do
         )
 
       CacheHelpers.put_grant_request_approvers([
-        %{user_id: user_id, domain_id: domain_id, role: "rejector"}
+        %{user_id: user_id, resource_id: domain_id, role: "rejector"}
       ])
 
       params = %{role: "rejector", is_rejection: true, comment: "foo"}
@@ -71,7 +71,7 @@ defmodule TdDd.GrantRequests.AuditTest do
         end)
 
       CacheHelpers.put_grant_request_approvers([
-        %{user_id: user_id, domain_id: domain_id, role: "rejector"}
+        %{user_id: user_id, resource_id: domain_id, role: "rejector"}
       ])
 
       params = %{role: "rejector", is_rejection: true, comment: "foo"}

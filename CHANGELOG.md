@@ -1,5 +1,17 @@
 # Changelog
 
+## [6.3.0] 2024-03-20
+
+### Added
+
+- [TD-6434] Remove Grant actions if structure not grantable
+- [TD-4110] Allow structure scoped permissions management
+- [TD-6438] Add Remediation Plan fields for API V2.
+
+### Fixed
+
+- [TD-6434] Remove extra quotes in implementation source, population and validation
+
 ## [6.2.3] 2024-04-03
 
 ### Fixed 
