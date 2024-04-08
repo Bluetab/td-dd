@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.3.2] 2024-05-03
+
+### Added 
+
+- [TD-6507] Add Elastic bulk page size for enviroment vars
+
+
 ## [6.3.0] 2024-03-20
 
 ### Added
@@ -14,7 +21,7 @@
 
 ## [6.2.3] 2024-04-03
 
-### Fixed 
+### Added 
 
 - [TD-6507] Add Elastic bulk page size for enviroment vars
 
