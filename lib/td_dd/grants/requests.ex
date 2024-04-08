@@ -117,19 +117,20 @@ defmodule TdDd.Grants.Requests do
   defp update_domain_ids(%{group: %{id: id}}) do
     query =
       GrantRequest
+      |> where([gr], gr.group_id == ^id)
       |> join(:left, [gr], ds in assoc(gr, :data_structure))
       |> join(:left, [gr], g in assoc(gr, :grant))
       |> join(:left, [_gr, _ds, g], gds in assoc(g, :data_structure))
       |> select([gr, ds, _g, gds], %{
-        group_id: gr.group_id,
+        id: gr.id,
         domain_ids: fragment("COALESCE(?, ?)", ds.domain_ids, gds.domain_ids)
       })
-      |> where([gr, _, _, _], gr.group_id == ^id)
 
     GrantRequest
-    |> join(:inner, [gr, sub], sub in subquery(query), on: true)
-    |> where([gr, sub], gr.group_id == sub.group_id)
-    |> update([gr, sub], set: [domain_ids: sub.domain_ids])
+    |> join(:inner, [gr], sub in subquery(query), on: gr.id == sub.id)
+    |> update([_gr, sub],
+      set: [domain_ids: sub.domain_ids]
+    )
     |> select([gr], gr.id)
   end
 
