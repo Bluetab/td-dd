@@ -694,11 +694,11 @@ defmodule TdDq.Implementations do
           source_id: source_id
         }
       }) do
-    names = string_split_space_lower(dataset)
+    names = get_string_elements(dataset)
 
     [
       {:not_deleted, nil},
-      {:name_in, delete_extra_quotes(names)},
+      {:name_in, names},
       {:source_id, source_id},
       {:metadata_field, {"database", database}},
       {:class, "table"}
@@ -744,15 +744,15 @@ defmodule TdDq.Implementations do
           source_id: source_id
         }
       }) do
-    names = string_split_space_lower(validations)
-    dataset_names = string_split_space_lower(dataset)
+    names = get_string_elements(validations)
+    dataset_names = get_string_elements(dataset)
 
     [
       {:not_deleted, nil},
-      {:name_in, delete_extra_quotes(names)},
+      {:name_in, names},
       {:source_id, source_id},
-      {:metadata_field, {"database", lower_case(database)}},
-      {:metadata_field_in, {"table", delete_extra_quotes(dataset_names)}}
+      {:metadata_field, {"database", database}},
+      {:metadata_field_in, {"table", dataset_names}}
     ]
     |> DataStructures.list_data_structure_versions_by_criteria()
     |> Enum.map(fn dsv ->
@@ -764,17 +764,10 @@ defmodule TdDq.Implementations do
 
   def valid_validation_implementation_structures(_), do: []
 
-  defp string_split_space_lower(str),
-    do: str |> String.split(~r/[\s\.\*\&\|\^\%\/()><!=,+-]+/) |> Enum.map(&String.downcase/1)
-
-  defp lower_case(nil), do: nil
-
-  defp lower_case(database) do
-    String.downcase(database)
-  end
-
-  defp delete_extra_quotes(data) do
-    Enum.map(data, fn text -> String.replace(text, "\"", "") end)
+  defp get_string_elements(str) do
+    ~r/(?:\"(.*?)\"|[^"\s.*&|^%\/()><!=,+\-]+)+/
+    |> Regex.scan(str)
+    |> Enum.map(&List.last(&1))
   end
 
   defp create_implementation_structures(_repo, %{implementation: implementation}) do
