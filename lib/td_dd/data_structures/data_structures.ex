@@ -120,19 +120,21 @@ defmodule TdDd.DataStructures do
         where(q, [dsv], is_nil(dsv.deleted_at))
 
       {:name, name}, q ->
-        where(q, [dsv], fragment("lower(?)", dsv.name) == ^name)
+        where(q, [dsv], fragment("lower(?) = lower(?)", dsv.name, ^name))
 
       {:name_in, names}, q ->
-        where(q, [dsv], fragment("lower(?)", dsv.name) in ^names)
+        lower_names = Enum.map(names, &String.downcase/1)
+        where(q, [dsv], fragment("lower(?)", dsv.name) in ^lower_names)
 
       {:class, class}, q ->
         where(q, [dsv], dsv.class == ^class)
 
       {:metadata_field, {key, value}}, q ->
-        where(q, [dsv], fragment("lower(?->>?) = ?", dsv.metadata, ^key, ^value))
+        where(q, [dsv], fragment("lower(?->>?) = lower(?)", dsv.metadata, ^key, ^value))
 
-      {:metadata_field_in, {key, value}}, q ->
-        where(q, [dsv], fragment("lower(?->>?) = ANY(?)", dsv.metadata, ^key, ^value))
+      {:metadata_field_in, {key, values}}, q ->
+        lower_values = Enum.map(values, &String.downcase/1)
+        where(q, [dsv], fragment("lower(?->>?) = ANY(?)", dsv.metadata, ^key, ^lower_values))
 
       {:source_id, source_id}, q ->
         q

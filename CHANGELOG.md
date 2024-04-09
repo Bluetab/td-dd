@@ -10,6 +10,8 @@
 ### Fixed
 
 - [TD-6503] Fix Grant Request bulk creation domain ids
+- [TD-6401] Fixed Content aggregations have a maximum of 10 values
+- [TD-6521] Fix Raw implemnetations structure links
 
 ## [6.3.2] 2024-05-03
 
