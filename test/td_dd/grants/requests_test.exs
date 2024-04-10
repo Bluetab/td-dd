@@ -523,6 +523,7 @@ defmodule TdDd.Grants.RequestsTest do
   describe "Bulk grant revoke request" do
     @tag role: "admin"
     setup :setup_multiple_grant_requests
+
     test "bulk_create_approvals/3 create grant request and marks grant as pending removal", %{
       claims: claims,
       multiple_grant_requests: grant_requests
@@ -550,7 +551,6 @@ defmodule TdDd.Grants.RequestsTest do
              |> Enum.all?()
     end
   end
-
 
   defp setup_multiple_grant_requests(context) do
     multiple_grant_requests = [

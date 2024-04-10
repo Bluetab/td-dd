@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-6424] Fixed switch on fields aren't translated when uploading and
+  downloading
+
 ## [6.4.0] 2024-04-09
 
 ## Added
@@ -32,6 +39,14 @@
 - [TD-6434] Remove extra quotes in implementation source, population and validation
 
 ## [6.2.3] 2024-04-03
+
+<<<<<<< HEAD
+
+### Fixed
+
+=======
+
+> > > > > > > c42cdee4b85f1f1625d9c6f4c133f454c97cdaeb
 
 - [TD-6507] Add Elastic bulk page size for enviroment vars
 
