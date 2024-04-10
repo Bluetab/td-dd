@@ -31,6 +31,8 @@ defmodule TdDdWeb.MetadataControllerTest do
     start_supervised!(TdDd.Search.StructureEnricher)
     insert(:system, name: "Power BI", external_id: "pbi")
 
+    IndexWorkerMock.clear()
+
     case tags[:fixture] do
       nil ->
         :ok
@@ -113,8 +115,6 @@ defmodule TdDdWeb.MetadataControllerTest do
       structures: structures,
       fields: fields
     } do
-      IndexWorkerMock.clear()
-
       assert conn
              |> post(Routes.metadata_path(conn, :upload),
                data_structures: structures,
@@ -143,8 +143,6 @@ defmodule TdDdWeb.MetadataControllerTest do
                {:reindex, :structures, _},
                {:delete, :structures, [_, _, _]}
              ] = IndexWorkerMock.calls()
-
-      IndexWorkerMock.clear()
     end
 
     @tag authentication: [role: "service"]

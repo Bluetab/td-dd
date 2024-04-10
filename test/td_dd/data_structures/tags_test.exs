@@ -11,6 +11,12 @@ defmodule TdDd.DataStructures.TagsTest do
   @moduletag sandbox: :shared
   @stream TdCache.Audit.stream()
 
+  setup do
+    IndexWorkerMock.clear()
+
+    :ok
+  end
+
   describe "Tags.list_tags/0" do
     test "returns all data structure tags" do
       tag = insert(:tag)
@@ -153,6 +159,7 @@ defmodule TdDd.DataStructures.TagsTest do
   describe "Tags.tag_structure/3" do
     setup do
       start_supervised!(TdDd.Search.StructureEnricher)
+
       [claims: build(:claims)]
     end
 
@@ -195,7 +202,6 @@ defmodule TdDd.DataStructures.TagsTest do
              } = Jason.decode!(payload)
 
       assert [{:reindex, :structures, _}] = IndexWorkerMock.calls()
-      IndexWorkerMock.clear()
     end
 
     test "updates structure tag when it already exists", %{claims: claims} do
@@ -253,6 +259,7 @@ defmodule TdDd.DataStructures.TagsTest do
   describe "Tags.untag_structure/2" do
     setup do
       start_supervised!(TdDd.Search.StructureEnricher)
+
       [claims: build(:claims)]
     end
 
@@ -294,7 +301,6 @@ defmodule TdDd.DataStructures.TagsTest do
              )
 
       assert [{:reindex, :structures, _}] = IndexWorkerMock.calls()
-      IndexWorkerMock.clear()
     end
 
     test "not_found if structure tag does not exist", %{claims: claims} do

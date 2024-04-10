@@ -16,6 +16,8 @@ defmodule TdDd.Grants.RequestsTest do
   @valid_metadata %{"list" => "one", "string" => "bar"}
 
   setup tags do
+    IndexWorkerMock.clear()
+
     case Map.get(tags, :role, "user") do
       "admin" ->
         claims = build(:claims, role: "admin")
@@ -520,26 +522,22 @@ defmodule TdDd.Grants.RequestsTest do
 
   describe "Bulk grant revoke request" do
     @tag role: "admin"
+    setup :setup_multiple_grant_requests
     test "bulk_create_approvals/3 create grant request and marks grant as pending removal", %{
-      claims: %{user_id: user_id} = claims
+      claims: claims,
+      multiple_grant_requests: grant_requests
     } do
       IndexWorkerMock.clear()
 
       bulk_params = %{"comment" => "", "role" => "admin"}
-
-      grant_requests = setup_multiple_request(%{claims: %{user_id: user_id}})
 
       grant_revoke_ids =
         grant_requests
         |> Enum.filter(fn %{request_type: request_type} -> request_type == :grant_removal end)
         |> Enum.map(fn %{grant: %{id: grant_id}} -> grant_id end)
 
-      update_pending_removal_grants =
-        claims
-        |> Requests.bulk_create_approvals(grant_requests, bulk_params)
-        |> elem(1)
-        |> Map.get(:update_pending_removal_grants)
-        |> elem(1)
+      assert {:ok, %{update_pending_removal_grants: {_, update_pending_removal_grants}}} =
+               Requests.bulk_create_approvals(claims, grant_requests, bulk_params)
 
       assert grant_revoke_ids == update_pending_removal_grants
 
@@ -553,21 +551,22 @@ defmodule TdDd.Grants.RequestsTest do
     end
   end
 
-  defp setup_multiple_request(claims) do
-    1..6
-    |> Enum.map(fn _ ->
-      case Enum.random(0..1) do
-        0 -> setup_request_revoke(claims)
-        1 -> setup_request_access(claims)
-      end
-    end)
-    |> Enum.map(fn %{request: request} ->
-      request
-    end)
+
+  defp setup_multiple_grant_requests(context) do
+    multiple_grant_requests = [
+      setup_request_revoke(context).request,
+      setup_request_access(context).request,
+      setup_request_revoke(context).request,
+      setup_request_access(context).request,
+      setup_request_revoke(context).request,
+      setup_request_access(context).request
+    ]
+
+    %{multiple_grant_requests: multiple_grant_requests}
   end
 
-  defp setup_request_revoke(claims), do: setup_request(claims, :grant_removal)
-  defp setup_request_access(claims), do: setup_request(claims, :grant_access)
+  defp setup_request_revoke(context), do: setup_request(context, :grant_removal)
+  defp setup_request_access(context), do: setup_request(context, :grant_access)
 
   defp setup_request(%{claims: %{user_id: user_id}}, request_type) do
     IndexWorkerMock.clear()

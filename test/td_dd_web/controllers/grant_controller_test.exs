@@ -24,7 +24,9 @@ defmodule TdDdWeb.GrantControllerTest do
 
   setup do
     start_supervised!(TdDd.Search.StructureEnricher)
+
     CacheHelpers.insert_user(id: @user_id)
+
     :ok
   end
 

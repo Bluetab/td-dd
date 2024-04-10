@@ -6,11 +6,16 @@ defmodule TdCx.Sources.JobsTest do
   alias TdCore.Search.IndexWorkerMock
   alias TdCx.Jobs
 
+  setup do
+    IndexWorkerMock.clear()
+
+    :ok
+  end
+
   setup :set_mox_from_context
   setup :verify_on_exit!
 
   test "create_job/1 with valid data creates a job" do
-    IndexWorkerMock.clear()
     source = insert(:source)
     attrs = %{source_id: source.id, parameters: %{foo: "bar"}}
     assert {:ok, %{} = job} = Jobs.create_job(attrs)

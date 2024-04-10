@@ -19,7 +19,8 @@ config :td_core, TdCore.Search.Cluster,
   aggregations: %{
     "domain" => 50,
     "user" => 50,
-    "system" => 50
+    "system" => 50,
+    "default" => 50
   },
 
   # The library used for JSON encoding/decoding.
@@ -53,7 +54,7 @@ config :td_core, TdCore.Search.Cluster,
     grants: %{
       store: TdDd.Search.Store,
       sources: [TdDd.Grants.GrantStructure],
-      bulk_page_size: 500,
+      bulk_page_size: System.get_env("BULK_PAGE_SIZE_GRANTS", "500") |> String.to_integer(),
       bulk_wait_interval: 0,
       bulk_action: "index",
       settings: %{
@@ -82,7 +83,8 @@ config :td_core, TdCore.Search.Cluster,
       template_scope: :ri,
       store: TdDq.Search.Store,
       sources: [TdDq.Implementations.Implementation],
-      bulk_page_size: 100,
+      bulk_page_size:
+        System.get_env("BULK_PAGE_SIZE_IMPLEMENTATIONS", "100") |> String.to_integer(),
       bulk_wait_interval: 0,
       bulk_action: "index",
       settings: %{
@@ -104,7 +106,7 @@ config :td_core, TdCore.Search.Cluster,
       template_scope: :cx,
       store: TdCx.Search.Store,
       sources: [TdCx.Jobs.Job],
-      bulk_page_size: 100,
+      bulk_page_size: System.get_env("BULK_PAGE_SIZE_JOBS", "100") |> String.to_integer(),
       bulk_wait_interval: 0,
       bulk_action: "index",
       settings: %{
@@ -119,7 +121,7 @@ config :td_core, TdCore.Search.Cluster,
       template_scope: :dq,
       store: TdDq.Search.Store,
       sources: [TdDq.Rules.Rule],
-      bulk_page_size: 100,
+      bulk_page_size: System.get_env("BULK_PAGE_SIZE_RULES", "100") |> String.to_integer(),
       bulk_wait_interval: 0,
       bulk_action: "index",
       settings: %{
@@ -141,7 +143,7 @@ config :td_core, TdCore.Search.Cluster,
       template_scope: :dd,
       store: TdDd.Search.Store,
       sources: [TdDd.DataStructures.DataStructureVersion],
-      bulk_page_size: 1000,
+      bulk_page_size: System.get_env("BULK_PAGE_SIZE_STRUCTURES", "1000") |> String.to_integer(),
       bulk_wait_interval: 0,
       bulk_action: "index",
       settings: %{
@@ -170,7 +172,8 @@ config :td_core, TdCore.Search.Cluster,
       template_scope: :gr,
       store: TdDd.Search.Store,
       sources: [TdDd.Grants.GrantRequest],
-      bulk_page_size: 500,
+      bulk_page_size:
+        System.get_env("BULK_PAGE_SIZE_GRANT_REQUESTS", "500") |> String.to_integer(),
       bulk_wait_interval: 0,
       bulk_action: "index",
       settings: %{
