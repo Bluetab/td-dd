@@ -51,6 +51,8 @@ config :td_core, TdCore.Search.Cluster,
   },
   indexes: %{
     grants: %{
+      dsv_no_sercheabled_fields: ["note"],
+      grant_no_sercheabled_fields: ["detail"],
       store: TdDd.Search.Store,
       sources: [TdDd.Grants.GrantStructure],
       bulk_page_size: System.get_env("BULK_PAGE_SIZE_GRANTS", "500") |> String.to_integer(),
