@@ -2,10 +2,25 @@
 
 ## [Unreleased]
 
+## Added
+
+- [TD-6535] Add Store chunk size configuration
+
 ### Fixed
 
 - [TD-6424] Fixed switch on fields aren't translated when uploading and
   downloading
+- [TD-5981] Grants download
+
+## [6.4.1] 2024-04-15
+
+## Added
+
+- [TD-6535] Add Store chunk size configuration
+
+## Fixed
+
+- [TD-5981] Grants download
 
 ## [6.4.0] 2024-04-09
 
@@ -20,7 +35,18 @@
 - [TD-6401] Fixed Content aggregations have a maximum of 10 values
 - [TD-6521] Fix Raw implemnetations structure links
 
+## [6.3.3] 2024-04-15
+
+## Added
+
+- [TD-6535] Add Store chunk size configuration
+
+## Fixed
+
+- [TD-5981] Grants download
+
 ## [6.3.2] 2024-05-03
+## [6.3.1] 2024-05-03
 
 ### Added
 
@@ -38,15 +64,19 @@
 
 - [TD-6434] Remove extra quotes in implementation source, population and validation
 
+## [6.2.4] 2024-04-15
+
+## Added
+
+- [TD-6535] Add Store chunk size configuration
+
+## Fixed
+
+- [TD-5981] Grants download
+
 ## [6.2.3] 2024-04-03
 
-<<<<<<< HEAD
-
 ### Fixed
-
-=======
-
-> > > > > > > c42cdee4b85f1f1625d9c6f4c133f454c97cdaeb
 
 - [TD-6507] Add Elastic bulk page size for enviroment vars
 

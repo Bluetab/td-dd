@@ -173,11 +173,6 @@ if config_env() == :prod do
         System.get_env("ES_MAPPING_TOTAL_FIELDS_LIMIT", "3000")
     }
 
-  config :td_core, TdCore.Search.Cluster,
-    es_scroll_size: System.get_env("ES_SCROLL_SIZE", "10000") |> String.to_integer(),
-    es_scroll_ttl: System.get_env("ES_SCROLL_TTL", "1m"),
-    max_bulk_results: System.get_env("MAX_BULK_RESULTS", "100000") |> String.to_integer()
-
   config :td_dd, TdDd.DataStructures.BulkUpdater,
     timeout_seconds:
       System.get_env("CSV_BULK_UPDATER_TIMEOUT_SECONDS", "600") |> String.to_integer()

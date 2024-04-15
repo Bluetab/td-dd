@@ -1168,7 +1168,13 @@ defmodule TdDd.DataStructures do
   end
 
   def streamed_enriched_structure_versions(opts \\ []) do
-    {enrich_opts, opts} = Keyword.split(opts, [:content, :filters])
+    chunk_size = Keyword.get(opts, :chunk_size, 1000)
+
+    {enrich_opts, opts} =
+      opts
+      |> Keyword.drop([:chunk_size])
+      |> Keyword.split([:content, :filters])
+
     enrich = StructureVersionEnricher.enricher(enrich_opts)
 
     opts
@@ -1176,10 +1182,14 @@ defmodule TdDd.DataStructures do
     |> Map.drop([:with_protected_metadata])
     |> DataStructureQueries.enriched_structure_versions()
     |> Repo.stream()
-    |> Stream.map(
+    |> Stream.chunk_every(chunk_size)
+    |> Stream.flat_map(
       &(&1
-        |> enrich.()
-        |> protect_metadata(Keyword.get(opts, :with_protected_metadata)))
+        |> Enum.map(fn dsv ->
+          dsv
+          |> enrich.()
+          |> protect_metadata(Keyword.get(opts, :with_protected_metadata))
+        end))
     )
   end
 

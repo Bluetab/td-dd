@@ -924,8 +924,7 @@ defmodule TdDd.CSV.DownloadTest do
         "data_structure_name" => "Structure",
         "start_date" => "Start date",
         "end_date" => "End date",
-        "metadata" => "Metadata",
-        "mutable_metadata" => "Mutable metadata"
+        "metadata" => "Metadata"
       }
 
       metadata_string =
@@ -937,8 +936,8 @@ defmodule TdDd.CSV.DownloadTest do
 
       assert Download.to_csv_grants(grants, header_labels) ==
                """
-               User;Structure;Start date;End date;Metadata;Mutable metadata\r
-               #{grant_1.user.full_name};#{grant_1.data_structure_version.name};#{grant_1.start_date};#{grant_1.end_date};#{metadata_string};null\r
+               User;Structure;Start date;End date;Metadata\r
+               #{grant_1.user.full_name};#{grant_1.data_structure_version.name};#{grant_1.start_date};#{grant_1.end_date};#{metadata_string}\r
                """
     end
   end

@@ -1,9 +1,9 @@
 import Config
 
 config :td_dd, TdDd.DataStructures.Search,
-  es_scroll_size: 10_000,
-  es_scroll_ttl: "1m",
-  max_bulk_results: 100_000
+  es_scroll_size: System.get_env("ES_SCROLL_SIZE", "10000") |> String.to_integer(),
+  es_scroll_ttl: System.get_env("ES_SCROLL_TTL", "1m"),
+  max_bulk_results: System.get_env("MAX_BULK_RESULTS", "100000") |> String.to_integer()
 
 config :td_core, TdCore.Search.Cluster,
   # The default URL where Elasticsearch is hosted on your system.
@@ -21,6 +21,19 @@ config :td_core, TdCore.Search.Cluster,
     "user" => 50,
     "system" => 50,
     "default" => 50
+  },
+
+  # If the variable delete_existing_index is set to false,
+  # it will not be deleted in the case that there is no index in the hot swap process."
+  delete_existing_index: System.get_env("DELETE_EXISTING_INDEX", "true") |> String.to_atom(),
+
+  #  Store chunk size
+  chunk_size_map: %{
+    grants: System.get_env("GRANT_STORE_CHUNK_SIZE", "1000") |> String.to_integer(),
+    grant_request:
+      System.get_env("GRANT_REQUEST_STORE_CHUNK_SIZE", "1000") |> String.to_integer(),
+    data_structure: System.get_env("STRUCTURE_STORE_CHUNK_SIZE", "1000") |> String.to_integer(),
+    data_structure_version: System.get_env("DSV_STORE_CHUNK_SIZE", "1000") |> String.to_integer()
   },
 
   # The library used for JSON encoding/decoding.
@@ -52,10 +65,12 @@ config :td_core, TdCore.Search.Cluster,
   },
   indexes: %{
     grants: %{
+      dsv_no_sercheabled_fields: ["note"],
+      grant_no_sercheabled_fields: ["detail"],
       store: TdDd.Search.Store,
       sources: [TdDd.Grants.GrantStructure],
       bulk_page_size: System.get_env("BULK_PAGE_SIZE_GRANTS", "500") |> String.to_integer(),
-      bulk_wait_interval: 0,
+      bulk_wait_interval: System.get_env("BULK_WAIT_INTERVAL_GRANTS", "0") |> String.to_integer(),
       bulk_action: "index",
       settings: %{
         analysis: %{
