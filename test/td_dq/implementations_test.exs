@@ -1098,6 +1098,43 @@ defmodule TdDq.ImplementationsTest do
       assert [%{id: ^data_structure_id}] =
                Implementations.valid_validation_implementation_structures(implementation)
     end
+
+    test "returns validation only for structures with table in quotes" do
+      %{id: source_id} = insert(:source, config: %{"job_types" => ["catalog", "profile"]})
+
+      %{data_structure: %{id: data_structure_id}, name: data_structure_name} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, source_id: source_id),
+          metadata: %{
+            "database" => "db_name",
+            "table" => "table_name"
+          },
+          class: "field"
+        )
+
+      %{name: no_table_data_structure_name} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, source_id: source_id),
+          metadata: %{
+            "database" => "db_name",
+            "table" => "other_table"
+          },
+          class: "field"
+        )
+
+      implementation =
+        insert(:raw_implementation,
+          raw_content: %{
+            dataset: "\"tAbLe_NaMe\"",
+            validations: "\"#{data_structure_name}\" #{no_table_data_structure_name}",
+            source_id: source_id,
+            database: "DB_NAME"
+          }
+        )
+
+      assert [%{id: ^data_structure_id}] =
+               Implementations.valid_validation_implementation_structures(implementation)
+    end
   end
 
   describe "create_ruleless_implementation/3" do

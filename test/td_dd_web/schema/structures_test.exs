@@ -885,7 +885,8 @@ defmodule TdDdWeb.Schema.StructuresTest do
                    "create_struct_to_struct_link" => %{
                      "href" => "/api/v2",
                      "method" => "POST"
-                   }
+                   },
+                   "manage_structure_acl_entry" => %{}
                  },
                  "class" => "table",
                  "dataStructure" => %{

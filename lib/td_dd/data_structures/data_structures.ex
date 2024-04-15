@@ -252,6 +252,19 @@ defmodule TdDd.DataStructures do
 
   def get_cached_content(content, _structure), do: content
 
+  def get_ds_classifications!(%DataStructureVersion{} = dsv) do
+    Repo.preload(dsv, :classifications)
+    |> case do
+      %{classifications: classifications} ->
+        Enum.reduce(classifications, %{}, fn %{name: name, class: class}, acc ->
+          Map.put(acc, name, class)
+        end)
+
+      _ ->
+        %{}
+    end
+  end
+
   defp enrich(
          %DataStructureVersion{id: id} = _data_structure_version,
          with_protected_metadata,

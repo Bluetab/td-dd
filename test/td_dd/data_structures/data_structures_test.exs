@@ -1582,6 +1582,29 @@ defmodule TdDd.DataStructuresTest do
                ])
     end
 
+    test "get_ds_classifications!/1 returns classifications map" do
+      %{
+        data_structure_version: dsv,
+        data_structure_version_id: dsv_id
+      } =
+        insert(
+          :structure_classification,
+          name: "name1",
+          class: "class1"
+        )
+
+      insert(
+        :structure_classification,
+        name: "name2",
+        class: "class2",
+        data_structure_version: dsv,
+        data_structure_version_id: dsv_id
+      )
+
+      assert %{"name1" => "class1", "name2" => "class2"} =
+               DataStructures.get_ds_classifications!(dsv)
+    end
+
     test "get_ancestors/2 obtains all ancestors of a data structure version" do
       [child | ancestors] =
         ["foo", "bar", "baz", "xyzzy"]
