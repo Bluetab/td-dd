@@ -2,10 +2,15 @@
 
 ## [Unreleased]
 
+## Added
+
+- [TD-6535] Add Store chunk size configuration
+
 ### Fixed
 
 - [TD-6424] Fixed switch on fields aren't translated when uploading and
   downloading
+- [TD-5981] Grants download
 
 ## [6.4.1] 2024-04-15
 
