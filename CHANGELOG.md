@@ -1,5 +1,15 @@
 # Changelog
 
+## [6.3.3] 2024-04-15
+
+## Added
+
+- [TD-6535] Add Store chunk size configuration
+
+## Fixed
+
+- [TD-5981] Grants download
+
 ## [6.3.2] 2024-05-03
 
 ### Added 
