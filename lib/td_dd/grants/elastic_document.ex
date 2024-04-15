@@ -69,7 +69,8 @@ defmodule TdDd.Grants.ElasticDocument do
 
       grants_config = Application.get_env(:td_core, TdCore.Search.Cluster)[:indexes][:grants]
 
-      dsv_properties = maybe_not_searcheable_field(dsv_properties, grants_config, :dsv_no_mapping)
+      dsv_properties =
+        maybe_not_searcheable_field(dsv_properties, grants_config, :dsv_no_sercheabled_fields)
 
       properties =
         %{
@@ -91,7 +92,7 @@ defmodule TdDd.Grants.ElasticDocument do
             }
           }
         }
-        |> maybe_not_searcheable_field(grants_config, :grant_no_mapping)
+        |> maybe_not_searcheable_field(grants_config, :grant_no_sercheabled_fields)
 
       settings = Cluster.setting(:grants)
       %{mappings: %{properties: properties}, settings: settings}

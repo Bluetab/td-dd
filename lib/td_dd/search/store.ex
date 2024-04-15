@@ -42,7 +42,8 @@ defmodule TdDd.Search.Store do
     grants_count = Repo.aggregate(Grant, :count, :id)
     Tasks.log_start_stream(grants_count)
 
-    DataStructureQueries.children()
+    []
+    |> DataStructureQueries.children()
     |> do_stream_grants()
   end
 
@@ -75,6 +76,8 @@ defmodule TdDd.Search.Store do
     status_subquery = status_subquery()
     approved_by_subquery = approved_by_subquery()
 
+    chunk_size = chunk_size(:grant_request)
+
     schema
     |> join(:left, [gr], s in ^status_subquery, on: s.grant_request_id == gr.id)
     |> join(:left, [gr], gra in ^approved_by_subquery, on: gra.grant_request_id == gr.id)
@@ -102,7 +105,7 @@ defmodule TdDd.Search.Store do
         Kernel.put_in(grant_request.grant.data_structure_version, grant_dsv)
     end)
     |> Repo.stream_preload(1000, :group)
-    |> Stream.chunk_every(chunk_size())
+    |> Stream.chunk_every(chunk_size)
     |> Stream.flat_map(&enrich_chunk_grant_request_structures(&1, users))
   end
 
@@ -132,10 +135,11 @@ defmodule TdDd.Search.Store do
   defp do_stream(query) do
     relation_type_id = RelationTypes.default_id!()
     filters = DataStructureTypes.metadata_filters()
+    chunk_size = chunk_size(:data_structure)
 
     query
     |> Repo.stream()
-    |> Stream.chunk_every(chunk_size())
+    |> Stream.chunk_every(chunk_size)
     |> Stream.flat_map(&enrich_chunk_data_structures(&1, relation_type_id, filters))
   end
 
@@ -144,9 +148,11 @@ defmodule TdDd.Search.Store do
     users = TdCache.UserCache.map()
     filters = DataStructureTypes.metadata_filters()
 
+    chunk_size = chunk_size(:grants)
+
     query
     |> Repo.stream()
-    |> Stream.chunk_every(chunk_size())
+    |> Stream.chunk_every(chunk_size)
     |> Stream.flat_map(&enrich_chunk_grant_structures(&1, relation_type_id, filters, users))
   end
 
@@ -177,7 +183,8 @@ defmodule TdDd.Search.Store do
       content: :searchable,
       filters: filters,
       # Protected metadata is not indexed
-      with_protected_metadata: false
+      with_protected_metadata: false,
+      chunk_size: chunk_size(:data_structure_version)
     )
   end
 
@@ -272,7 +279,8 @@ defmodule TdDd.Search.Store do
 
   defp maybe_update_grant_dsv(grant_request, _), do: grant_request
 
-  defp chunk_size, do: Application.get_env(__MODULE__, :chunk_size, 1000)
+  defp chunk_size(key),
+    do: Map.get(Application.get_env(:td_core, TdCore.Search.Cluster)[:chunk_size_map], key)
 
   def vacuum do
     Repo.vacuum([
