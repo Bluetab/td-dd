@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-6424] Fixed switch on fields aren't translated when uploading and
+  downloading
+
 ## [6.4.1] 2024-04-15
 
 ## Added
@@ -9,7 +16,6 @@
 ## Fixed
 
 - [TD-5981] Grants download
-
 
 ## [6.4.0] 2024-04-09
 
@@ -63,8 +69,9 @@
 
 - [TD-5981] Grants download
 
-
 ## [6.2.3] 2024-04-03
+
+### Fixed
 
 - [TD-6507] Add Elastic bulk page size for enviroment vars
 
