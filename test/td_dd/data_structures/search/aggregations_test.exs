@@ -55,7 +55,7 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
                  meta: %{type: "domain"},
                  terms: %{field: "note.my_domain", size: 50}
                },
-               "my_list" => %{terms: %{field: "note.my_list.raw"}},
+               "my_list" => %{terms: %{field: "note.my_list.raw", size: 50}},
                "my_system" => %{
                  aggs: %{
                    distinct_search: %{terms: %{field: "note.my_system.external_id.raw", size: 50}}

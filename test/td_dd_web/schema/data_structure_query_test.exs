@@ -47,6 +47,7 @@ defmodule TdDdWeb.Schema.DataStructureQueryTest do
         }
         target {
           id
+          alias
           currentVersion {
             name
           }
@@ -201,8 +202,8 @@ defmodule TdDdWeb.Schema.DataStructureQueryTest do
 
       domain2 = CacheHelpers.insert_domain()
 
-      ds1 = insert(:data_structure, domain_ids: [domain.id], system_id: sys1.id)
-      ds2 = insert(:data_structure, domain_ids: [domain.id], system_id: sys2.id)
+      ds1 = insert(:data_structure, domain_ids: [domain.id], system_id: sys1.id, alias: "ds1")
+      ds2 = insert(:data_structure, domain_ids: [domain.id], system_id: sys2.id, alias: "ds2")
       ds3 = insert(:data_structure, domain_ids: [domain2.id], system_id: sys3.id)
 
       %{data_structure_id: ds1_id, id: dsv1_id} =
@@ -246,6 +247,7 @@ defmodule TdDdWeb.Schema.DataStructureQueryTest do
                      "target" => %{
                        "currentVersion" => %{"name" => "dsv2"},
                        "id" => "#{ds2.id}",
+                       "alias" => "ds2",
                        "system" => %{"id" => "#{sys2.id}", "name" => "sys2"}
                      },
                      "_actions" => %{"delete_struct_to_struct_link" => true}
@@ -260,6 +262,7 @@ defmodule TdDdWeb.Schema.DataStructureQueryTest do
                      "target" => %{
                        "currentVersion" => %{"name" => "dsv1"},
                        "id" => "#{ds1.id}",
+                       "alias" => "ds1",
                        "system" => %{"id" => "#{sys1.id}", "name" => "sys1"}
                      },
                      "_actions" => %{"delete_struct_to_struct_link" => false}

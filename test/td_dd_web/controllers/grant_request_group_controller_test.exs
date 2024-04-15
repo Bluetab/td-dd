@@ -87,12 +87,30 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
     test "renders grant_request_group when data is valid", %{
       conn: conn,
       claims: %{user_id: user_id},
+      data_structure: %{id: data_structure_id, domain_ids: domain_ids},
       create_params: create_params
     } do
+      %{id: alter_domain_id} = build(:domain)
+      %{id: alter_data_structure_id} = insert(:data_structure, domain_ids: [alter_domain_id])
+
+      alter_create_params = %{
+        "data_structure_id" => alter_data_structure_id,
+        "metadata" => @valid_metadata
+      }
+
+      new_requests =
+        create_params
+        |> Map.get("requests")
+        |> Enum.concat([alter_create_params])
+
+      new_create_params =
+        create_params
+        |> Map.put("requests", new_requests)
+
       assert %{"data" => data} =
                conn
                |> post(Routes.grant_request_group_path(conn, :create),
-                 grant_request_group: create_params
+                 grant_request_group: new_create_params
                )
                |> json_response(:created)
 
@@ -105,8 +123,27 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
 
       assert %{
                "id" => ^id,
-               "user_id" => ^user_id
+               "user_id" => ^user_id,
+               "_embedded" => %{"requests" => [request1 | [request2]]}
              } = data
+
+      assert %{
+               "_embedded" => %{
+                 "data_structure" => %{
+                   "id" => ^data_structure_id
+                 }
+               },
+               "domain_ids" => ^domain_ids
+             } = request1
+
+      assert %{
+               "_embedded" => %{
+                 "data_structure" => %{
+                   "id" => ^alter_data_structure_id
+                 }
+               },
+               "domain_ids" => [^alter_domain_id]
+             } = request2
     end
 
     @tag authentication: [role: "admin"]

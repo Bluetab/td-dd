@@ -1,5 +1,18 @@
 # Changelog
 
+## [6.4.0] 2024-04-09
+
+## Added
+
+- [TD-6283] Add alias in linked data structure test
+- [TD-6507] Add Elastic bulk page size for enviroment vars
+
+### Fixed
+
+- [TD-6503] Fix Grant Request bulk creation domain ids
+- [TD-6401] Fixed Content aggregations have a maximum of 10 values
+- [TD-6521] Fix Raw implemnetations structure links
+
 ## [6.3.3] 2024-04-15
 
 ## Added
@@ -11,11 +24,11 @@
 - [TD-5981] Grants download
 
 ## [6.3.2] 2024-05-03
+## [6.3.1] 2024-05-03
 
-### Added 
+### Added
 
 - [TD-6507] Add Elastic bulk page size for enviroment vars
-
 
 ## [6.3.0] 2024-03-20
 
@@ -42,8 +55,6 @@
 
 ## [6.2.3] 2024-04-03
 
-### Added 
-
 - [TD-6507] Add Elastic bulk page size for enviroment vars
 
 ## [6.2.2] 2024-03-08
@@ -69,7 +80,7 @@
 
 ## [6.1.1] 2024-04-03
 
-### Fixed 
+### Fixed
 
 - [TD-6507] Add Elastic bulk page size for enviroment vars
 

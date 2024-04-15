@@ -901,6 +901,40 @@ defmodule TdDq.ImplementationsTest do
                Implementations.valid_dataset_implementation_structures(implementation)
     end
 
+    test "match case insensitive structures" do
+      %{id: source_id} = insert(:source, config: %{"job_types" => ["catalog", "profile"]})
+
+      %{data_structure: %{id: data_structure_id}, name: data_structure_name} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, source_id: source_id),
+          metadata: %{"database" => "db_NAME"},
+          class: "table"
+        )
+
+      %{data_structure: %{id: field_data_structure_id}, name: field_data_structure_name} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, source_id: source_id),
+          metadata: %{"database" => "db_NAME", "table" => data_structure_name},
+          class: "field"
+        )
+
+      implementation =
+        insert(:raw_implementation,
+          raw_content: %{
+            dataset: "word before #{data_structure_name} #{field_data_structure_name}",
+            validations: "#{data_structure_name}.#{field_data_structure_name} is not null",
+            source_id: source_id,
+            database: "db_naMe"
+          }
+        )
+
+      assert [%{id: ^data_structure_id}] =
+               Implementations.valid_dataset_implementation_structures(implementation)
+
+      assert [%{id: ^field_data_structure_id}] =
+               Implementations.valid_validation_implementation_structures(implementation)
+    end
+
     test "filters raw structures by source_id" do
       %{id: source_id1} = insert(:source, config: %{"job_types" => ["catalog", "profile"]})
       %{id: source_id2} = insert(:source, config: %{"job_types" => ["catalog", "profile"]})
@@ -1104,6 +1138,7 @@ defmodule TdDq.ImplementationsTest do
 
       %{data_structure: %{id: data_structure_id}, name: data_structure_name} =
         insert(:data_structure_version,
+          name: "some name with spaces",
           data_structure: build(:data_structure, source_id: source_id),
           metadata: %{
             "database" => "db_name",
