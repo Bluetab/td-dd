@@ -11,6 +11,7 @@
 - [TD-6424] Fixed switch on fields aren't translated when uploading and
   downloading
 - [TD-5981] Grants download
+- [TD-6538] Refactor the list data structure version query
 
 ## [6.4.1] 2024-04-15
 
@@ -46,6 +47,7 @@
 - [TD-5981] Grants download
 
 ## [6.3.2] 2024-05-03
+
 ## [6.3.1] 2024-05-03
 
 ### Added
