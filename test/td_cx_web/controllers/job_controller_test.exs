@@ -78,6 +78,7 @@ defmodule TdCxWeb.JobControllerTest do
   describe "POST /api/sources/:id/jobs" do
     @tag authentication: [role: "user", permissions: [:profile_structures]]
     test "user can create a job for a source", %{conn: conn} do
+      IndexWorkerMock.clear()
       %{external_id: source_external_id} = insert(:source)
 
       # SearchHelpers.expect_bulk_index("/jobs/_doc/_bulk")
@@ -90,6 +91,7 @@ defmodule TdCxWeb.JobControllerTest do
       assert [{:reindex, :jobs, [_]}] = IndexWorkerMock.calls()
       assert %{"external_id" => external_id} = data
       refute is_nil(external_id)
+      IndexWorkerMock.clear()
     end
 
     @tag authentication: [role: "admin"]
@@ -106,10 +108,12 @@ defmodule TdCxWeb.JobControllerTest do
       assert [{:reindex, :jobs, [_]}] = IndexWorkerMock.calls()
       assert %{"external_id" => external_id} = data
       refute is_nil(external_id)
+      IndexWorkerMock.clear()
     end
 
     @tag authentication: [role: "service"]
     test "service account can create a job for a source", %{conn: conn} do
+      IndexWorkerMock.clear()
       %{external_id: source_external_id} = insert(:source)
 
       # SearchHelpers.expect_bulk_index("/jobs/_doc/_bulk")
@@ -122,6 +126,7 @@ defmodule TdCxWeb.JobControllerTest do
       assert [{:reindex, :jobs, [_]}] = IndexWorkerMock.calls()
       assert %{"external_id" => external_id} = data
       refute is_nil(external_id)
+      IndexWorkerMock.clear()
     end
 
     @tag authentication: [role: "admin"]

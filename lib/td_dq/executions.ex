@@ -215,9 +215,9 @@ defmodule TdDq.Executions do
   end
 
   ## Dataloader
-
   def datasource do
-    Dataloader.Ecto.new(TdDd.Repo, query: &query/2, timeout: Dataloader.default_timeout())
+    timeout = Application.get_env(:td_dd, TdDd.Repo)[:timeout]
+    Dataloader.Ecto.new(TdDd.Repo, query: &query/2, timeout: timeout)
   end
 
   defp query(QualityEvent, %{latest: true}), do: latest_event_query()

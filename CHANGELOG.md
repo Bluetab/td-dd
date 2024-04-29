@@ -1,5 +1,42 @@
 # Changelog
 
+## [6.2.4] 2024-04-15
+
+## Added
+
+- [TD-6535] Add Store chunk size configuration
+
+## Fixed
+
+- [TD-5981] Grants download
+
+## [6.2.3] 2024-04-03
+
+### Fixed 
+
+- [TD-6507] Add Elastic bulk page size for enviroment vars
+
+## [6.2.2] 2024-03-08
+
+- [TD-6456] In bulk grant approves, when a grant revoke is approved, grant is reindexed
+
+## [6.2.1] 2024-02-27
+
+### Added
+
+- [TD-6436] All Dataloaders use `DB_TIMEOUT_MILLIS` environment variable for timeout
+
+## [6.2.0] 2024-02-26
+
+### Added
+
+- [TD-6243] Support for deleting Elasticsearch indexes
+
+### Fixed
+
+- [TD-6425] Ensure SSL if configured for release migration
+- [TD-6398] Approval grant request from 'approval grant requests'
+
 ## [6.1.2] 2024-04-29
 
 ### Fixed
@@ -8,9 +45,9 @@
 
 ## [6.1.1] 2024-04-03
 
-### Fixed
+### Fixed 
 
-- [TD-6507] Update td-core lib
+- [TD-6507] Add Elastic bulk page size for enviroment vars
 
 ## [6.1.0] 2023-02-08
 

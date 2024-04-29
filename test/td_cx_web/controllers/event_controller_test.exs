@@ -41,6 +41,7 @@ defmodule TdCxWeb.EventControllerTest do
 
     @tag authentication: [role: "admin"]
     test "admin can create event for a job", %{conn: conn, job: %{external_id: external_id}} do
+      IndexWorkerMock.clear()
       %{"type" => type, "message" => message} = params = string_params_for(:event)
 
       assert %{"data" => event} =
@@ -58,6 +59,7 @@ defmodule TdCxWeb.EventControllerTest do
       conn: conn,
       job: %{external_id: external_id}
     } do
+      IndexWorkerMock.clear()
       %{"type" => type, "message" => message} = params = string_params_for(:event)
 
       assert %{"data" => event} =
