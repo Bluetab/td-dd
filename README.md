@@ -55,7 +55,7 @@ Run all aplication tests with `mix test`
 
 
 # If the variable is set to false, it will not be deleted in the case that there is no index in the hot swap process.
--  ON_ERROR_DELETE_INDEX: detault true
+-  DELETE_EXISTING_INDEX: detault true
 
 ### Elastic Configuracion
 # The bulk_wait_interval variable defines the time interval between batches of bulk operations in Elasticsearch.

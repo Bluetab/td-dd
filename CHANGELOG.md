@@ -1,5 +1,19 @@
 # Changelog
 
+## [Unreleased]
+
+## Added
+
+- [TD-6535] Add Store chunk size configuration
+
+### Fixed
+
+- [TD-6424] Fixed switch on fields aren't translated when uploading and
+  downloading
+- [TD-5981] Grants download
+- [TD-6538] Refactor the list data structure version query
+- [TD-6552] Update TD-Cache to return all domains if permissions are in default role
+
 ## [6.4.2] 2024-04-29
 
 ### Fixed
@@ -15,7 +29,6 @@
 ## Fixed
 
 - [TD-5981] Grants download
-
 
 ## [6.4.0] 2024-04-09
 
@@ -47,6 +60,7 @@
 - [TD-5981] Grants download
 
 ## [6.3.2] 2024-05-03
+
 ## [6.3.1] 2024-05-03
 
 ### Added
