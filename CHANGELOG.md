@@ -14,6 +14,12 @@
 - [TD-6538] Refactor the list data structure version query
 - [TD-6552] Update TD-Cache to return all domains if permissions are in default role
 
+## [6.4.2] 2024-04-29
+
+### Fixed
+
+- [TD-6552] Update td-cache lib for returns all domains only for default role
+
 ## [6.4.1] 2024-04-15
 
 ## Added
@@ -36,6 +42,12 @@
 - [TD-6503] Fix Grant Request bulk creation domain ids
 - [TD-6401] Fixed Content aggregations have a maximum of 10 values
 - [TD-6521] Fix Raw implemnetations structure links
+
+## [6.3.4] 2024-04-29
+
+### Fixed
+
+- [TD-6552] Update td-cache lib for returns all domains only for default role
 
 ## [6.3.3] 2024-04-15
 
@@ -67,6 +79,12 @@
 
 - [TD-6434] Remove extra quotes in implementation source, population and validation
 
+## [6.2.5] 2024-04-29
+
+### Fixed
+
+- [TD-6552] Update td-cache lib for returns all domains only for default role
+
 ## [6.2.4] 2024-04-15
 
 ## Added
@@ -78,12 +96,14 @@
 - [TD-5981] Grants download
 
 ## [6.2.3] 2024-04-03
-
-### Fixed
+ 
+### Added
 
 - [TD-6507] Add Elastic bulk page size for enviroment vars
 
 ## [6.2.2] 2024-03-08
+
+### Added
 
 - [TD-6456] In bulk grant approves, when a grant revoke is approved, grant is reindexed
 
@@ -103,6 +123,12 @@
 
 - [TD-6425] Ensure SSL if configured for release migration
 - [TD-6398] Approval grant request from 'approval grant requests'
+
+## [6.1.2] 2024-04-29
+
+### Fixed
+
+- [TD-6552] Update td-cache lib for returns all domains only for default role
 
 ## [6.1.1] 2024-04-03
 
