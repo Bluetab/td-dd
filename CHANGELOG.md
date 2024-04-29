@@ -1,5 +1,34 @@
 # Changelog
 
+## [6.3.3] 2024-04-15
+
+## Added
+
+- [TD-6535] Add Store chunk size configuration
+
+## Fixed
+
+- [TD-5981] Grants download
+
+## [6.3.2] 2024-05-03
+
+### Added 
+
+- [TD-6507] Add Elastic bulk page size for enviroment vars
+
+
+## [6.3.0] 2024-03-20
+
+### Added
+
+- [TD-6434] Remove Grant actions if structure not grantable
+- [TD-4110] Allow structure scoped permissions management
+- [TD-6438] Add Remediation Plan fields for API V2.
+
+### Fixed
+
+- [TD-6434] Remove extra quotes in implementation source, population and validation
+
 ## [6.2.5] 2024-04-29
 
 ### Fixed
@@ -18,7 +47,7 @@
 
 ## [6.2.3] 2024-04-03
 
-### Fixed 
+### Added 
 
 - [TD-6507] Add Elastic bulk page size for enviroment vars
 

@@ -125,7 +125,7 @@ defmodule TdDdWeb.GrantRequestControllerTest do
       CacheHelpers.put_session_permissions(claims, domain_id, [:approve_grant_request])
 
       CacheHelpers.put_grant_request_approvers([
-        %{user_id: user_id, domain_id: domain_id, role: "approver"}
+        %{user_id: user_id, resource_id: domain_id, role: "approver"}
       ])
 
       %{id: id} =
@@ -266,13 +266,13 @@ defmodule TdDdWeb.GrantRequestControllerTest do
       CacheHelpers.put_session_permissions(claims, domain_id, [:approve_grant_request])
 
       CacheHelpers.put_grant_request_approvers([
-        %{user_id: user_id, domain_id: domain_id, role: "approver"}
+        %{user_id: user_id, resource_id: domain_id, role: "approver"}
       ])
 
       %{id: id} =
         insert(:grant_request, data_structure: build(:data_structure), domain_ids: [domain_id])
 
-      assert %{"data" => %{"id" => ^id}} =
+      assert %{"data" => %{"id" => ^id, "pending_roles" => ["approver"]}} =
                conn
                |> get(Routes.grant_request_path(conn, :show, id))
                |> json_response(:ok)
@@ -285,6 +285,79 @@ defmodule TdDdWeb.GrantRequestControllerTest do
       assert conn
              |> get(Routes.grant_request_path(conn, :show, id))
              |> json_response(:forbidden)
+    end
+
+    @tag authentication: [role: "user"]
+    test "user with permission on a grant requested structure can show grant_request", %{
+      conn: conn,
+      claims: %{user_id: user_id} = claims
+    } do
+      %{id: domain_id} = CacheHelpers.insert_domain()
+      %{id: structure_id} = data_structure = insert(:data_structure, domain_ids: [domain_id])
+      %{id: id} = insert(:grant_request, data_structure: data_structure)
+
+      CacheHelpers.put_grant_request_approvers([
+        %{
+          user_id: user_id,
+          resource_id: structure_id,
+          resource_type: "structure",
+          role: "approver"
+        }
+      ])
+
+      assert conn
+             |> get(Routes.grant_request_path(conn, :show, id))
+             |> json_response(:forbidden)
+
+      CacheHelpers.put_session_permissions(
+        claims,
+        structure_id,
+        [:approve_grant_request],
+        "structure"
+      )
+
+      assert %{"data" => %{"id" => ^id, "pending_roles" => ["approver"]}} =
+               conn
+               |> get(Routes.grant_request_path(conn, :show, id))
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "user"]
+    test "user with permission on a grant requested structure can approve or reject a grant_request of type removal",
+         %{
+           conn: conn,
+           claims: %{user_id: user_id} = claims
+         } do
+      %{id: domain_id} = CacheHelpers.insert_domain()
+      %{id: structure_id} = insert(:data_structure, domain_ids: [domain_id])
+      grant = insert(:grant, data_structure_id: structure_id)
+
+      %{id: id} =
+        insert(:grant_request,
+          request_type: :grant_removal,
+          grant: grant
+        )
+
+      CacheHelpers.put_grant_request_approvers([
+        %{
+          user_id: user_id,
+          resource_id: structure_id,
+          resource_type: "structure",
+          role: "approver"
+        }
+      ])
+
+      CacheHelpers.put_session_permissions(
+        claims,
+        structure_id,
+        [:approve_grant_request],
+        "structure"
+      )
+
+      assert %{"data" => %{"id" => ^id, "pending_roles" => ["approver"]}} =
+               conn
+               |> get(Routes.grant_request_path(conn, :show, id))
+               |> json_response(:ok)
     end
   end
 

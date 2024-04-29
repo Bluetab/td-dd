@@ -192,8 +192,8 @@ defmodule TdDd.DataStructures.DataStructureVersions do
   end
 
   defp actions(claims, %{data_structure: data_structure} = _dsv) do
-    [:link_data_structure, :link_structure_to_structure]
-    |> Enum.filter(&Bodyguard.permit?(DataStructures, &1, claims, data_structure))
+    [:link_data_structure, :link_structure_to_structure, :manage_structure_acl_entry]
+    |> Enum.filter(&permit?(DataStructures, &1, claims, data_structure))
     |> Map.new(fn
       :link_data_structure ->
         {:create_link, true}
@@ -206,6 +206,9 @@ defmodule TdDd.DataStructures.DataStructureVersions do
             method: "POST"
           }
         }
+
+      :manage_structure_acl_entry ->
+        {:manage_structure_acl_entry, %{}}
     end)
   end
 

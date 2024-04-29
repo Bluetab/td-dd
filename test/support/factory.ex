@@ -422,7 +422,8 @@ defmodule TdDd.Factory do
 
     %Remediation{
       df_name: "template_name",
-      df_content: %{}
+      df_content: %{},
+      user_id: sequence(:user_id, &"#{&1}")
     }
     |> merge_attributes(attrs)
   end

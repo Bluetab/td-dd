@@ -91,12 +91,13 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
                  bool: %{
                    must: %{
                      bool: %{
-                       should: [%{term: %{"domain_ids" => ^domain_id}}]
+                       should: shoulds
                      }
                    }
                  }
                } = query
 
+        assert %{term: %{"domain_ids" => domain_id}} in shoulds
         SearchHelpers.hits_response([grant_request])
       end)
 
@@ -107,7 +108,7 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
     end
 
     @tag authentication: [user_name: "non_admin_user"]
-    test "user with out permissions filters by none",
+    test "user without permissions filters by none",
          %{
            conn: conn,
            grant_request: grant_request
@@ -124,6 +125,71 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
       end)
 
       assert %{"data" => [_]} =
+               conn
+               |> post(Routes.grant_request_search_path(conn, :search))
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [user_name: "non_admin_user"]
+    test "user with permissions also filters by data_structure_id",
+         %{
+           conn: conn,
+           claims: %{user_id: user_id} = claims,
+           grant_request: grant_request
+         } do
+      %{data_structure_id: data_structure_id} = grant_request
+      %{id: random_domain_id} = CacheHelpers.insert_domain()
+      _another_domain = CacheHelpers.insert_domain()
+
+      ElasticsearchMock
+      |> expect(:request, fn _,
+                             :post,
+                             "/grant_requests/_search",
+                             %{query: query, size: @query_size},
+                             _ ->
+        assert %{
+                 bool: %{
+                   must: %{
+                     bool: %{
+                       should: shoulds
+                     }
+                   }
+                 }
+               } = query
+
+        assert %{term: %{"domain_ids" => random_domain_id}} in shoulds
+        assert %{term: %{"data_structure_id" => data_structure_id}} in shoulds
+
+        SearchHelpers.hits_response([grant_request])
+      end)
+
+      role_name = "approver_role"
+      CacheHelpers.put_permissions_on_roles(%{"approve_grant_request" => [role_name]})
+
+      CacheHelpers.put_session_permissions(
+        claims,
+        %{
+          "domain" => %{"approve_grant_request" => [random_domain_id]},
+          "structure" => %{"approve_grant_request" => [data_structure_id]}
+        }
+      )
+
+      CacheHelpers.put_grant_request_approvers([
+        %{
+          user_id: user_id,
+          resource_ids: [data_structure_id],
+          role: role_name,
+          resource_type: "structure"
+        },
+        %{
+          user_id: user_id,
+          resource_ids: [random_domain_id],
+          role: role_name,
+          resource_type: "domain"
+        }
+      ])
+
+      assert %{"data" => [_], "_permissions" => [^role_name]} =
                conn
                |> post(Routes.grant_request_search_path(conn, :search))
                |> json_response(:ok)
