@@ -79,7 +79,7 @@ defmodule TdDd.MixProject do
       {:codepagex, "~> 0.1.4"},
       {:bimap, "~> 1.1"},
       {:elasticsearch, "~> 1.1"},
-      {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "5.20.0"},
+      {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "6.0.0", override: true},
       {:td_cluster, git: "https://github.com/Bluetab/td-cluster.git", tag: "5.19.0"},
       {:td_core, git: "https://github.com/Bluetab/td-core.git", tag: "6.1.2"},
       {:graph, git: "https://github.com/Bluetab/graph.git", tag: "1.3.0"},
