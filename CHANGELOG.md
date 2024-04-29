@@ -1,5 +1,11 @@
 # Changelog
 
+## [6.2.5] 2024-04-29
+
+### Fixed
+
+- [TD-6552] Update td-cache lib for returns all domains only for default role
+
 ## [6.2.4] 2024-04-15
 
 ## Added
