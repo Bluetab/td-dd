@@ -4,10 +4,10 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   import Mox
   import TdDd.TestOperators
 
+  alias TdCore.Search.IndexWorkerMock
   alias TdDd.DataStructures
   alias TdDd.DataStructures.BulkUpdate
   alias TdDd.DataStructures.StructureNotes
-  alias TdDd.Search.IndexWorker
 
   require Logger
 
@@ -113,7 +113,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       "fields" => [
         %{
           "cardinality" => "?",
-          "label" => "i18n_test.dropdown.fixed",
+          "label" => "label_i18n_test.Dropdown Fixed",
           "name" => "i18n_test.dropdown.fixed",
           "type" => "string",
           "values" => %{"fixed" => ["pear", "banana", "apple", "peach"]},
@@ -121,7 +121,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         },
         %{
           "cardinality" => "?",
-          "label" => "i18n_test_no_translate",
+          "label" => "label_i18n_test_no_translate",
           "name" => "i18n_test_no_translate",
           "type" => "string",
           "values" => nil,
@@ -129,7 +129,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         },
         %{
           "cardinality" => "?",
-          "label" => "i18n_test.radio.fixed",
+          "label" => "label_i18n_test.Radio Fixed",
           "name" => "i18n_test.radio.fixed",
           "type" => "string",
           "values" => %{"fixed" => ["pear", "banana", "apple", "peach"]},
@@ -137,7 +137,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         },
         %{
           "cardinality" => "*",
-          "label" => "i18n_test.checkbox.fixed",
+          "label" => "label_i18n_test.Checkbox Fixed",
           "name" => "i18n_test.checkbox.fixed",
           "type" => "string",
           "values" => %{"fixed" => ["pear", "banana", "apple", "peach"]},
@@ -152,17 +152,15 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   setup :verify_on_exit!
 
   setup do
-    start_supervised!(TdDd.Search.Cluster)
-    start_supervised!(TdDd.Search.IndexWorker)
     start_supervised!(TdDd.Search.StructureEnricher)
-    :ok
-  end
 
-  setup do
     %{id: template_id, name: template_name} = template = CacheHelpers.insert_template()
     CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
     hierarchy = create_hierarchy()
     CacheHelpers.insert_hierarchy(hierarchy)
+
+    IndexWorkerMock.clear()
+
     [template: template, type: template_name, hierarchy: hierarchy]
   end
 
@@ -188,8 +186,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
   describe "update_all/4" do
     test "update all data structures with valid data", %{type: type} do
-      expect_bulk_index()
-
+      IndexWorkerMock.clear()
       claims = build(:claims)
 
       ids =
@@ -200,19 +197,19 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert {:ok, %{update_notes: update_notes}} =
                BulkUpdate.update_all(ids, @valid_params, claims, false)
 
-      assert :ok = IndexWorker.quiesce()
-
       assert Map.keys(update_notes) ||| ids
 
       assert ids
              |> Enum.map(&StructureNotes.get_latest_structure_note/1)
              |> Enum.map(& &1.df_content)
              |> Enum.all?(&(&1 == @valid_content))
+
+      assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
+      assert length(ids_reindex) == length(ids)
     end
 
     test "update and publish all data structures with valid data", %{type: type} do
-      expect_bulk_index()
-
+      IndexWorkerMock.clear()
       claims = build(:claims)
 
       ids =
@@ -222,8 +219,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert {:ok, %{update_notes: update_notes}} =
                BulkUpdate.update_all(ids, @valid_params, claims, true)
-
-      assert :ok = IndexWorker.quiesce()
 
       assert Map.keys(update_notes) ||| ids
 
@@ -236,11 +231,12 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert latest_structure_notes
              |> Enum.map(& &1.status)
              |> Enum.all?(&(&1 == :published))
+
+      assert [{:reindex, :structures, ^ids}] = IndexWorkerMock.calls()
     end
 
     test "update and republish only data structures with different valid data", %{type: type} do
-      expect_bulk_index(2)
-
+      IndexWorkerMock.clear()
       claims = build(:claims)
 
       ids =
@@ -262,7 +258,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                end)
 
       BulkUpdate.update_all(ids, @valid_params, claims, true)
-      assert :ok = IndexWorker.quiesce()
 
       assert [1, 1, 1, 2, 2, 2, 2, 1, 1, 1] ==
                Enum.map(ids, fn id ->
@@ -270,17 +265,21 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                end)
 
       BulkUpdate.update_all(ids, @valid_params, claims, true)
-      assert :ok = IndexWorker.quiesce()
 
       assert [1, 1, 1, 2, 2, 2, 2, 1, 1, 1] ==
                Enum.map(ids, fn id ->
                  Map.get(StructureNotes.get_latest_structure_note(id), :version)
                end)
+
+      assert [{:reindex, :structures, ids_reindex_1}, {:reindex, :structures, ids_reindex_2}] =
+               IndexWorkerMock.calls()
+
+      assert length(ids_reindex_1) == 10
+      assert length(ids_reindex_2) == 10
     end
 
     test "ignores unchanged data structures", %{type: type} do
-      expect_bulk_index()
-
+      IndexWorkerMock.clear()
       claims = build(:claims)
       fixed_datetime = ~N[2020-01-01 00:00:00]
       timestamps = [inserted_at: fixed_datetime, updated_at: fixed_datetime]
@@ -304,7 +303,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       ids = unchanged_ids ++ changed_ids
       assert {:ok, _} = BulkUpdate.update_all(ids, @valid_params, claims, false)
-      assert :ok = IndexWorker.quiesce()
 
       notes =
         ids |> Enum.map(&StructureNotes.list_structure_notes/1) |> Enum.map(&Enum.at(&1, -1))
@@ -320,11 +318,12 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert Enum.count(changed_notes_ds_ids) == 5
       assert changed_notes_ds_ids ||| changed_ids
+      assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
+      assert length(ids_reindex) == length(ids)
     end
 
     test "returns an error if a structure has no template", %{type: type} do
-      expect_bulk_index()
-
+      IndexWorkerMock.clear()
       claims = build(:claims)
       content = %{"string" => "foo", "list" => "bar"}
 
@@ -339,19 +338,18 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       {:ok, %{update_notes: update_notes}} =
         BulkUpdate.update_all(ids, @valid_params, claims, false)
 
-      assert :ok = IndexWorker.quiesce()
-
       [_, errored_notes] = BulkUpdate.split_succeeded_errors(update_notes)
 
       [first_errored_note] = Enum.map(errored_notes, fn {_k, v} -> v end)
       assert {:error, {%{errors: errors}, data_structure}} = first_errored_note
       assert %{external_id: "the bad one"} = data_structure
       assert {"missing_type", _} = errors[:df_content]
+      assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
+      assert length(ids_reindex) == 10
     end
 
     test "only updates specified fields", %{type: type} do
-      expect_bulk_index()
-
+      IndexWorkerMock.clear()
       claims = build(:claims)
 
       initial_content = Map.replace!(@valid_content, "string", "initial")
@@ -371,8 +369,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                  false
                )
 
-      assert :ok = IndexWorker.quiesce()
-
       assert Map.keys(update_notes) ||| ids
 
       df_contents =
@@ -386,11 +382,13 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       Enum.each(df_contents, fn df_content ->
         assert df_content == %{"string" => "updated", "list" => initial_content["list"]}
       end)
+
+      assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
+      assert length(ids_reindex) == structure_count
     end
 
     test "only updates specified fields for published notes", %{type: type} do
-      expect_bulk_index()
-
+      IndexWorkerMock.clear()
       claims = build(:claims)
       structure_count = 10
 
@@ -407,8 +405,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                  false
                )
 
-      assert :ok = IndexWorker.quiesce()
-
       assert Map.keys(update_notes) ||| ids
 
       df_contents =
@@ -423,13 +419,15 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       Enum.each(df_contents, fn df_content ->
         assert df_content == %{"string" => "updated"}
       end)
+
+      assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
+      assert length(ids_reindex) == structure_count
     end
 
     test "when bulk updating will allow to create templates with missing required fields", %{
       type: type
     } do
-      expect_bulk_index()
-
+      IndexWorkerMock.clear()
       claims = build(:claims)
 
       initial_content = Map.replace!(@valid_content, "string", "initial")
@@ -454,8 +452,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                  false
                )
 
-      assert :ok = IndexWorker.quiesce()
-
       assert Map.keys(update_notes) ||| ids
 
       df_contents =
@@ -470,11 +466,12 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       Enum.each(df_contents, fn df_content ->
         assert df_content == %{"string" => "updated", "list" => initial_content["list"]}
       end)
+
+      assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
+      assert length(ids_reindex) == structure_count
     end
 
     test "only validates specified fields", %{type: type} do
-      expect_bulk_index()
-
       claims = build(:claims)
 
       id = valid_structure_note(type, df_content: %{"list" => "two"}).data_structure_id
@@ -482,16 +479,13 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert {:ok, %{update_notes: _update_notes}} =
                BulkUpdate.update_all([id], %{"df_content" => %{"list" => "one"}}, claims, false)
 
-      assert :ok = IndexWorker.quiesce()
-
       %{df_content: df_content} = StructureNotes.get_latest_structure_note(id)
 
       assert df_content == %{"list" => "one"}
     end
 
     test "ignores empty fields", %{type: type} do
-      expect_bulk_index()
-
+      IndexWorkerMock.clear()
       claims = build(:claims)
 
       initial_content = Map.replace!(@valid_content, "string", "initial")
@@ -511,8 +505,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                  false
                )
 
-      assert :ok = IndexWorker.quiesce()
-
       assert Map.keys(update_notes) ||| ids
 
       df_contents =
@@ -526,6 +518,9 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       Enum.each(df_contents, fn df_content ->
         assert df_content == %{"string" => initial_content["string"], "list" => "two"}
       end)
+
+      assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
+      assert length(ids_reindex) == structure_count
     end
   end
 
@@ -541,9 +536,8 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     end
 
     test "update all data structures content", %{sts: sts, hierarchy: %{nodes: nodes}} do
+      IndexWorkerMock.clear()
       [%{key: key_node_1}, %{key: key_node_2} | _] = nodes
-
-      expect_bulk_index()
 
       %{user_id: user_id} = build(:claims)
       structure_ids = Enum.map(sts, & &1.data_structure_id)
@@ -563,8 +557,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                upload
                |> BulkUpdate.from_csv(@default_lang)
                |> BulkUpdate.do_csv_bulk_update(user_id)
-
-      assert :ok = IndexWorker.quiesce()
 
       ids = Map.keys(update_notes)
       assert length(ids) == 10
@@ -608,11 +600,12 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                "hierarchy_name_2" => [^key_node_2, ^key_node_1],
                "urls_one_or_none" => _
              } = get_df_content_from_ext_id("ex_id10")
+
+      assert [{:reindex, :structures, ^ids}] = IndexWorkerMock.calls()
     end
 
     test "update all data structures content in native language", %{sts: sts} do
-      expect_bulk_index()
-
+      IndexWorkerMock.clear()
       lang = "es"
 
       %{user_id: user_id} = build(:claims)
@@ -637,8 +630,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                |> BulkUpdate.from_csv(lang)
                |> BulkUpdate.do_csv_bulk_update(user_id)
 
-      assert :ok = IndexWorker.quiesce()
-
       ids = Map.keys(update_notes)
       assert length(ids) == 2
       assert Enum.all?(ids, fn id -> id in structure_ids end)
@@ -656,11 +647,12 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                "i18n_test.radio.fixed" => "banana",
                "i18n_test_no_translate" => "SIN TRADUCCION"
              } = get_df_content_from_ext_id("ex_id12")
+
+      assert [{:reindex, :structures, [_, _]}] = IndexWorkerMock.calls()
     end
 
     test "update data structures notes with values without i18n key and invalid value return error" do
-      expect_bulk_index()
-
+      IndexWorkerMock.clear()
       lang = "es"
 
       %{user_id: user_id} = build(:claims)
@@ -680,7 +672,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                |> BulkUpdate.from_csv(lang)
                |> BulkUpdate.do_csv_bulk_update(user_id)
 
-      assert :ok = IndexWorker.quiesce()
       [_, notes_errors] = BulkUpdate.split_succeeded_errors(update_notes)
       [note_error] = Enum.map(notes_errors, fn {_k, v} -> v end)
 
@@ -695,11 +686,12 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                       ]}
                  ]
                }, _}} = note_error
+
+      assert [{:reindex, :structures, [_]}] = IndexWorkerMock.calls()
     end
 
     test "returns error on content" do
-      expect_bulk_index()
-
+      IndexWorkerMock.clear()
       %{user_id: user_id} = build(:claims)
       upload = %{path: "test/fixtures/td2942/upload_invalid.csv"}
 
@@ -707,8 +699,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         upload
         |> BulkUpdate.from_csv(@default_lang)
         |> BulkUpdate.do_csv_bulk_update(user_id)
-
-      assert :ok = IndexWorker.quiesce()
 
       [_, errored_notes] = BulkUpdate.split_succeeded_errors(update_notes)
 
@@ -721,11 +711,11 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert Keyword.get(validation, :enum) == ["Yes", "No"]
 
       assert %{"text" => "foo"} = get_df_content_from_ext_id("ex_id1")
+      assert [{:reindex, :structures, [_, _]}] = IndexWorkerMock.calls()
     end
 
     test "returns error on hierarchy invalid content" do
-      expect_bulk_index()
-
+      IndexWorkerMock.clear()
       %{user_id: user_id} = build(:claims)
       upload = %{path: "test/fixtures/hierarchy/upload_invalid_hierarchy.csv"}
 
@@ -733,8 +723,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         upload
         |> BulkUpdate.from_csv(@default_lang)
         |> BulkUpdate.do_csv_bulk_update(user_id)
-
-      assert :ok = IndexWorker.quiesce()
 
       [_, errored_notes] = BulkUpdate.split_succeeded_errors(update_notes)
 
@@ -751,11 +739,12 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                       ]}
                  ]
                }, _}} = first_errored_note
+
+      assert [{:reindex, :structures, [_]}] = IndexWorkerMock.calls()
     end
 
     test "accept file utf8 with bom" do
-      expect_bulk_index()
-
+      IndexWorkerMock.clear()
       %{user_id: user_id} = build(:claims)
       upload = %{path: "test/fixtures/td3606/upload_with_bom.csv"}
 
@@ -764,7 +753,8 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                |> BulkUpdate.from_csv(@default_lang)
                |> BulkUpdate.do_csv_bulk_update(user_id)
 
-      assert :ok = IndexWorker.quiesce()
+      assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
+      assert length(ids_reindex) == 9
     end
 
     test "return error when external_id does not exists" do
@@ -777,8 +767,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
   describe "structure notes" do
     test "bulk upload notes of data structures with no previous notes", %{type: type} do
-      expect_bulk_index()
-
+      IndexWorkerMock.clear()
       note = %{"string" => "bar", "list" => "two"}
 
       structure_count = 5
@@ -789,7 +778,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         |> Enum.map(& &1.data_structure_id)
 
       BulkUpdate.update_all(data_structure_ids, %{"df_content" => note}, build(:claims), false)
-      assert :ok = IndexWorker.quiesce()
 
       df_contents =
         data_structure_ids
@@ -799,11 +787,12 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert Enum.count(df_contents) == structure_count
       Enum.each(df_contents, fn df_content -> assert df_content == note end)
+      assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
+      assert length(ids_reindex) == 5
     end
 
     test "bulk upload notes of data structures with draft notes", %{type: type} do
-      expect_bulk_index()
-
+      IndexWorkerMock.clear()
       note = %{"string" => "bar", "list" => "two"}
 
       structure_count = 5
@@ -815,7 +804,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         |> Enum.map(& &1.data_structure_id)
 
       BulkUpdate.update_all(data_structure_ids, %{"df_content" => note}, build(:claims), false)
-      assert :ok = IndexWorker.quiesce()
 
       df_contents =
         data_structure_ids
@@ -825,11 +813,12 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert Enum.count(df_contents) == structure_count
       Enum.each(df_contents, fn df_content -> assert df_content == note end)
+      assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
+      assert length(ids_reindex) == structure_count
     end
 
     test "bulk upload notes of data structures with published notes", %{type: type} do
-      expect_bulk_index()
-
+      IndexWorkerMock.clear()
       note = %{"string" => "bar", "list" => "two"}
 
       structure_count = 5
@@ -843,7 +832,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         |> Enum.map(& &1.data_structure_id)
 
       BulkUpdate.update_all(data_structure_ids, %{"df_content" => note}, build(:claims), false)
-      assert :ok = IndexWorker.quiesce()
 
       df_contents =
         data_structure_ids
@@ -853,6 +841,8 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert Enum.count(df_contents) == structure_count
       Enum.each(df_contents, fn df_content -> assert df_content == note end)
+      assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
+      assert length(ids_reindex) == structure_count
     end
   end
 
@@ -917,18 +907,18 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
   defp insert_i18n_messages(_) do
     CacheHelpers.put_i18n_messages("es", [
-      %{message_id: "fields.i18n_test.dropdown.fixed", definition: "Dropdown Fijo"},
-      %{message_id: "fields.i18n_test.dropdown.fixed.pear", definition: "pera"},
-      %{message_id: "fields.i18n_test.dropdown.fixed.banana", definition: "plátano"},
-      %{message_id: "fields.i18n_test.dropdown.fixed.apple", definition: "manzana"},
-      %{message_id: "fields.i18n_test.radio.fixed", definition: "Radio Fijo"},
-      %{message_id: "fields.i18n_test.radio.fixed.pear", definition: "pera"},
-      %{message_id: "fields.i18n_test.radio.fixed.banana", definition: "plátano"},
-      %{message_id: "fields.i18n_test.radio.fixed.apple", definition: "manzana"},
-      %{message_id: "fields.i18n_test.checkbox.fixed", definition: "Checkbox Fijo"},
-      %{message_id: "fields.i18n_test.checkbox.fixed.pear", definition: "pera"},
-      %{message_id: "fields.i18n_test.checkbox.fixed.banana", definition: "plátano"},
-      %{message_id: "fields.i18n_test.checkbox.fixed.apple", definition: "manzana"}
+      %{message_id: "fields.label_i18n_test.Dropdown Fixed", definition: "Dropdown Fijo"},
+      %{message_id: "fields.label_i18n_test.Dropdown Fixed.pear", definition: "pera"},
+      %{message_id: "fields.label_i18n_test.Dropdown Fixed.banana", definition: "plátano"},
+      %{message_id: "fields.label_i18n_test.Dropdown Fixed.apple", definition: "manzana"},
+      %{message_id: "fields.label_i18n_test.Radio Fixed", definition: "Radio Fijo"},
+      %{message_id: "fields.label_i18n_test.Radio Fixed.pear", definition: "pera"},
+      %{message_id: "fields.label_i18n_test.Radio Fixed.banana", definition: "plátano"},
+      %{message_id: "fields.label_i18n_test.Radio Fixed.apple", definition: "manzana"},
+      %{message_id: "fields.label_i18n_test.Checkbox Fixed", definition: "Checkbox Fijo"},
+      %{message_id: "fields.label_i18n_test.Checkbox Fixed.pear", definition: "pera"},
+      %{message_id: "fields.label_i18n_test.Checkbox Fixed.banana", definition: "plátano"},
+      %{message_id: "fields.label_i18n_test.Checkbox Fixed.apple", definition: "manzana"}
     ])
   end
 
@@ -950,13 +940,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         ]
       }
     }
-  end
-
-  defp expect_bulk_index(n \\ 1) do
-    ElasticsearchMock
-    |> expect(:request, n, fn _, :post, "/structures/_doc/_bulk", _, [] ->
-      SearchHelpers.bulk_index_response()
-    end)
   end
 
   defp create_hierarchy do

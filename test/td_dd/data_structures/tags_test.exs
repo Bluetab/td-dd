@@ -2,6 +2,7 @@ defmodule TdDd.DataStructures.TagsTest do
   use TdDd.DataStructureCase
 
   alias TdCache.Redix.Stream
+  alias TdCore.Search.IndexWorkerMock
   alias TdDd.DataStructures.Tags
   alias TdDd.DataStructures.Tags.StructureTag
   alias TdDd.DataStructures.Tags.Tag
@@ -9,6 +10,12 @@ defmodule TdDd.DataStructures.TagsTest do
 
   @moduletag sandbox: :shared
   @stream TdCache.Audit.stream()
+
+  setup do
+    IndexWorkerMock.clear()
+
+    :ok
+  end
 
   describe "Tags.list_tags/0" do
     test "returns all data structure tags" do
@@ -152,10 +159,12 @@ defmodule TdDd.DataStructures.TagsTest do
   describe "Tags.tag_structure/3" do
     setup do
       start_supervised!(TdDd.Search.StructureEnricher)
+
       [claims: build(:claims)]
     end
 
     test "links tag to a given structure", %{claims: claims} do
+      IndexWorkerMock.clear()
       %{comment: comment} = build(:structure_tag)
       structure = %{id: data_structure_id, external_id: external_id} = insert(:data_structure)
       %{name: version_name} = insert(:data_structure_version, data_structure: structure)
@@ -191,6 +200,8 @@ defmodule TdDd.DataStructures.TagsTest do
                  "path" => []
                }
              } = Jason.decode!(payload)
+
+      assert [{:reindex, :structures, _}] = IndexWorkerMock.calls()
     end
 
     test "updates structure tag when it already exists", %{claims: claims} do
@@ -248,10 +259,12 @@ defmodule TdDd.DataStructures.TagsTest do
   describe "Tags.untag_structure/2" do
     setup do
       start_supervised!(TdDd.Search.StructureEnricher)
+
       [claims: build(:claims)]
     end
 
     test "deletes structure tag", %{claims: claims} do
+      IndexWorkerMock.clear()
       structure = %{id: data_structure_id, external_id: external_id} = insert(:data_structure)
 
       tag = %{id: tag_id, name: tag_name} = insert(:tag)
@@ -286,6 +299,8 @@ defmodule TdDd.DataStructures.TagsTest do
                tag_id: tag_id,
                data_structure_id: data_structure_id
              )
+
+      assert [{:reindex, :structures, _}] = IndexWorkerMock.calls()
     end
 
     test "not_found if structure tag does not exist", %{claims: claims} do

@@ -7,12 +7,6 @@ defmodule TdDdWeb.GrantSearchControllerTest do
 
   @moduletag sandbox: :shared
 
-  setup do
-    start_supervised!(TdDd.Search.StructureEnricher)
-    start_supervised!(TdDd.Search.Cluster)
-    :ok
-  end
-
   setup :verify_on_exit!
   setup :create_grant
 
@@ -23,7 +17,7 @@ defmodule TdDdWeb.GrantSearchControllerTest do
       |> expect(:request, fn _, :post, "/grants/_search", %{query: query, size: 20}, _ ->
         assert query == %{
                  bool: %{
-                   filter: %{match_all: %{}},
+                   must: %{match_all: %{}},
                    must_not: %{exists: %{field: "deleted_at"}}
                  }
                }
@@ -46,7 +40,7 @@ defmodule TdDdWeb.GrantSearchControllerTest do
       |> expect(:request, fn _, :post, "/grants/_search", %{query: query, size: 20}, _ ->
         assert %{
                  bool: %{
-                   filter: %{
+                   must: %{
                      bool: %{
                        should: [
                          %{term: %{"data_structure_version.domain_ids" => _}},
@@ -73,7 +67,7 @@ defmodule TdDdWeb.GrantSearchControllerTest do
       |> expect(:request, fn _, :post, "/grants/_search", %{query: query, size: 20}, _ ->
         assert %{
                  bool: %{
-                   filter: %{term: %{"user_id" => _}},
+                   must: %{term: %{"user_id" => _}},
                    must_not: _deleted_at
                  }
                } = query
@@ -99,7 +93,7 @@ defmodule TdDdWeb.GrantSearchControllerTest do
       |> expect(:request, fn _, :post, "/grants/_search", %{query: query, size: 20}, _ ->
         assert query == %{
                  bool: %{
-                   filter: %{term: %{"user_id" => user_id}},
+                   must: %{term: %{"user_id" => user_id}},
                    must_not: %{exists: %{field: "deleted_at"}}
                  }
                }
@@ -122,7 +116,7 @@ defmodule TdDdWeb.GrantSearchControllerTest do
       ElasticsearchMock
       |> expect(:request, fn
         _, :post, "/grants/_search", %{query: query, size: 5}, [params: %{"scroll" => "1m"}] ->
-          assert query == %{bool: %{filter: %{match_all: %{}}}}
+          assert query == %{bool: %{must: %{match_all: %{}}}}
           SearchHelpers.scroll_response(Enum.take(grants, 5))
       end)
       |> expect(:request, fn

@@ -12,6 +12,7 @@ defmodule TdDq.Remediations.Remediation do
     belongs_to(:rule_result, RuleResult)
     field(:df_name, :string)
     field(:df_content, :map)
+    field(:user_id, :integer)
     timestamps(type: :utc_datetime_usec)
   end
 
@@ -21,8 +22,8 @@ defmodule TdDq.Remediations.Remediation do
 
   def changeset(remediation, attrs) do
     remediation
-    |> cast(attrs, [:rule_result_id, :df_name, :df_content])
-    |> validate_required([:rule_result_id, :df_name, :df_content])
+    |> cast(attrs, [:rule_result_id, :df_name, :df_content, :user_id])
+    |> validate_required([:rule_result_id, :df_name, :df_content, :user_id])
     |> validate_content(remediation)
     |> foreign_key_constraint(:rule_result_id)
   end

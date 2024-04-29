@@ -1,18 +1,18 @@
 defmodule TdDdWeb.DataStructureControllerTest do
+  use TdDd.ProcessCase
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   import Mox
   import Routes
-  import TdDd.TestOperators
 
   alias Path
+  alias TdCore.Search.ElasticDocument
+  alias TdCore.Search.IndexWorkerMock
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.RelationTypes
-  alias TdDd.DataStructures.Search.Aggregations
   alias TdDd.DataStructures.StructureNotes
-  alias TdDd.Search.MockIndexWorker
 
   @moduletag sandbox: :shared
   @template_name "data_structure_controller_test_template"
@@ -20,29 +20,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
   @receive_timeout 500
   @protected DataStructures.protected()
 
-  defp plug_upload(path) do
-    %Plug.Upload{
-      path: path,
-      filename: Path.basename(path)
-    }
-  end
-
-  # function that returns the function to be injected
-  def notify_callback do
-    pid = self()
-
-    fn reason, msg ->
-      # send msg back to test process
-      Kernel.send(pid, {reason, msg})
-      :ok
-    end
-  end
-
   setup_all do
-    start_supervised(MockIndexWorker)
     start_supervised({Task.Supervisor, name: TdDd.TaskSupervisor})
     start_supervised!(TdDd.Lineage.GraphData)
-    start_supervised!(TdDd.Search.Cluster)
+
     :ok
   end
 
@@ -73,6 +54,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
     )
 
     start_supervised!(TdDd.Search.StructureEnricher)
+
+    IndexWorkerMock.clear()
 
     [system: system, domain: domain, domain_id: domain.id]
   end
@@ -150,7 +133,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
         assert query == %{
                  bool: %{
-                   filter: %{match_all: %{}},
+                   must: %{match_all: %{}},
                    must_not: %{exists: %{field: "deleted_at"}}
                  }
                }
@@ -192,7 +175,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
-        assert %{bool: %{must: %{multi_match: _}}} = query
+        assert %{bool: %{must: [%{multi_match: _}, %{match_all: %{}}]}} = query
         SearchHelpers.hits_response([dsv])
       end)
 
@@ -210,7 +193,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
         assert %{
                  bool: %{
-                   filter: [
+                   must: [
                      %{term: %{"parent_id" => ""}},
                      %{term: %{"metadata.region" => "eu-west-1"}}
                    ],
@@ -226,8 +209,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                |> post(
                  data_structure_path(conn, :get_bucket_structures),
                  %{
-                   "metadata.region" => "eu-west-1",
-                   "parent_id" => ""
+                   "filters" => %{"metadata.region" => "eu-west-1", "parent_id" => ""}
                  }
                )
                |> json_response(:ok)
@@ -242,7 +224,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
         assert %{
                  bool: %{
-                   filter: %{term: %{"parent_id" => ""}},
+                   must: %{term: %{"parent_id" => ""}},
                    must_not: [
                      %{exists: %{field: "deleted_at"}},
                      %{exists: %{field: "metadata.region"}}
@@ -258,8 +240,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
                |> post(
                  data_structure_path(conn, :get_bucket_structures),
                  %{
-                   "metadata.region" => Aggregations.missing_term_name(),
-                   "parent_id" => ""
+                   "filters" => %{
+                     "metadata.region" => ElasticDocument.missing_term_name(),
+                     "parent_id" => ""
+                   }
                  }
                )
                |> json_response(:ok)
@@ -615,7 +599,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
       data_structure: %{id: id, domain_ids: [old_domain_id]} = data_structure,
       swagger_schema: schema
     } do
-      MockIndexWorker.clear()
       %{id: new_domain_id} = CacheHelpers.insert_domain()
       attrs = %{domain_ids: [new_domain_id]}
 
@@ -634,11 +617,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert %{domain_ids: [^new_domain_id]} = DataStructures.get_data_structure!(id)
 
-      [
-        {:reindex, structure_reindex}
-      ] = MockIndexWorker.calls()
-
-      assert structure_reindex ||| [id]
+      assert [{:reindex, :structures, [^id]}] = IndexWorkerMock.calls()
     end
 
     @tag authentication: [role: "user"]
@@ -649,7 +628,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
            data_structure: %{id: id, domain_ids: [old_domain_id]} = data_structure,
            swagger_schema: schema
          } do
-      MockIndexWorker.clear()
       %{id: new_domain_id} = CacheHelpers.insert_domain()
       attrs = %{domain_ids: [new_domain_id]}
 
@@ -675,9 +653,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert %{domain_ids: [^new_domain_id]} = DataStructures.get_data_structure!(id)
 
-      implementation_reindexed = Keyword.get(MockIndexWorker.calls(), :reindex_implementations)
-
-      assert implementation_reindexed ||| [implementation_id]
+      assert {:reindex, :implementations, [^implementation_id]} =
+               Enum.find(IndexWorkerMock.calls(), fn {action, index, _} ->
+                 action == :reindex and index == :implementations
+               end)
     end
 
     @tag authentication: [role: "user"]
@@ -789,12 +768,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
       %{id: new_domain_id} = CacheHelpers.insert_domain()
 
       CacheHelpers.put_session_permissions(claims, %{
-        domain_id => [:update_data_structure],
-        new_domain_id => [
-          :view_data_structure,
-          :manage_structures_domain,
-          :manage_confidential_structures
-        ]
+        update_data_structure: [domain_id],
+        view_data_structure: [new_domain_id],
+        manage_structures_domain: [new_domain_id],
+        manage_confidential_structures: [new_domain_id]
       })
 
       assert conn
@@ -815,8 +792,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
       %{id: new_domain_id} = CacheHelpers.insert_domain()
 
       CacheHelpers.put_session_permissions(claims, %{
-        domain_id => [:update_data_structure, :manage_structures_domain],
-        new_domain_id => [:view_data_structure, :manage_confidential_structures]
+        update_data_structure: [domain_id],
+        manage_structures_domain: [domain_id],
+        view_data_structure: [new_domain_id],
+        manage_confidential_structures: [new_domain_id]
       })
 
       assert conn
@@ -986,7 +965,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
           assert query == %{
                    bool: %{
-                     filter: %{term: %{"type.raw" => "Field"}},
+                     must: %{term: %{"type.raw" => "Field"}},
                      must_not: %{exists: %{field: "deleted_at"}}
                    }
                  }
@@ -1025,7 +1004,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
         assert query == %{
                  bool: %{
-                   filter: %{terms: %{"id" => [id1, id2]}},
+                   must: %{terms: %{"id" => [id1, id2]}},
                    must_not: %{exists: %{field: "deleted_at"}}
                  }
                }
@@ -1070,7 +1049,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
         assert query == %{
                  bool: %{
-                   filter: %{term: %{"note_id" => 123}},
+                   must: %{term: %{"note_id" => 123}},
                    must_not: %{exists: %{field: "deleted_at"}}
                  }
                }
@@ -1119,7 +1098,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_upload_domains),
-        structures_domains: plug_upload("test/fixtures/td4535/structures_domains_good.csv")
+        structures_domains: upload("test/fixtures/td4535/structures_domains_good.csv")
       )
       |> json_response(:forbidden)
     end
@@ -1140,7 +1119,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       data =
         conn
         |> post(data_structure_path(conn, :bulk_upload_domains),
-          structures_domains: plug_upload("test/fixtures/td4535/structures_domains_good.csv")
+          structures_domains: upload("test/fixtures/td4535/structures_domains_good.csv")
         )
         |> json_response(:ok)
 
@@ -1191,11 +1170,15 @@ defmodule TdDdWeb.DataStructureControllerTest do
        [pan_external_id_1, _pan_external_id_2, _pan_external_id_3]} =
         create_three_data_structures(pan_domain_id, "pan_external_id")
 
+      %{id: grant_request_id} =
+        insert(:grant_request,
+          data_structure_id: bar_id_one
+        )
+
       data =
         conn
         |> post(data_structure_path(conn, :bulk_upload_domains),
-          structures_domains:
-            plug_upload("test/fixtures/td4535/structures_domains_permissions.csv")
+          structures_domains: upload("test/fixtures/td4535/structures_domains_permissions.csv")
         )
         |> json_response(:ok)
 
@@ -1225,12 +1208,19 @@ defmodule TdDdWeb.DataStructureControllerTest do
                  }
                ]
              }
+
+      find_call = {:reindex, :grant_requests, [grant_request_id]}
+
+      assert find_call ==
+               IndexWorkerMock.calls()
+               |> Enum.find(fn call ->
+                 find_call == call
+               end)
     end
 
     @tag authentication: [role: "user"]
     test "reindex implementation when change structure domains and has implementation_structure relation",
          %{conn: conn, claims: claims} do
-      MockIndexWorker.clear()
       %{id: bar_domain_id} = CacheHelpers.insert_domain(%{external_id: "bar"})
       %{id: foo_domain_id} = CacheHelpers.insert_domain(%{external_id: "foo"})
 
@@ -1257,13 +1247,14 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_upload_domains),
-        structures_domains: plug_upload("test/fixtures/td4535/structures_domains_good.csv")
+        structures_domains: upload("test/fixtures/td4535/structures_domains_good.csv")
       )
       |> json_response(:ok)
 
-      implementation_reindexed = Keyword.get(MockIndexWorker.calls(), :reindex_implementations)
-
-      assert implementation_reindexed ||| [implementation_id_1, implementation_id_2]
+      assert {:reindex, :implementations, [^implementation_id_1, ^implementation_id_2]} =
+               Enum.find(IndexWorkerMock.calls(), fn {action, index, _} ->
+                 action == :reindex and index == :implementations
+               end)
     end
 
     @tag authentication: [role: "user", permissions: [:manage_structures_domain]]
@@ -1271,8 +1262,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       data =
         conn
         |> post(data_structure_path(conn, :bulk_upload_domains),
-          structures_domains:
-            plug_upload("test/fixtures/td4535/structures_domains_bad_header.csv")
+          structures_domains: upload("test/fixtures/td4535/structures_domains_bad_header.csv")
         )
         |> json_response(:unprocessable_entity)
 
@@ -1300,7 +1290,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
         conn
         |> post(data_structure_path(conn, :bulk_upload_domains),
           structures_domains:
-            plug_upload("test/fixtures/td4535/structures_domains_bad_missing_external_id.csv")
+            upload("test/fixtures/td4535/structures_domains_bad_missing_external_id.csv")
         )
         |> json_response(:ok)
 
@@ -1357,7 +1347,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
         conn
         |> post(data_structure_path(conn, :bulk_upload_domains),
           structures_domains:
-            plug_upload("test/fixtures/td4535/structures_domains_warning_inexistent.csv")
+            upload("test/fixtures/td4535/structures_domains_warning_inexistent.csv")
         )
         |> json_response(:ok)
 
@@ -1438,7 +1428,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
         assert %{
                  bool: %{
-                   filter: [
+                   must: [
                      # The query taxonomy filter gets converted to the field "domain_ids"
                      %{terms: %{"domain_ids" => [_domain_id, _child_domain_id]}},
                      %{term: %{"confidential" => false}}
@@ -1491,7 +1481,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
         assert %{
                  bool: %{
-                   filter: [
+                   must: [
                      # The query taxonomy filter gets converted to the field "domain_ids"
                      %{terms: %{"domain_ids" => [_domain_id, _child_domain_id]}},
                      %{term: %{"confidential" => false}}
@@ -1615,7 +1605,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: plug_upload("test/fixtures/td3787/upload_unprocessable_entity.csv")
+        structures: upload("test/fixtures/td3787/upload_unprocessable_entity.csv")
       )
       |> json_response(:unprocessable_entity)
     end
@@ -1634,7 +1624,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
              } =
                conn
                |> post(data_structure_path(conn, :bulk_update_template_content),
-                 structures: plug_upload("test/fixtures/td4100/upload.csv")
+                 structures: upload("test/fixtures/td4100/upload.csv")
                )
                |> json_response(:accepted)
 
@@ -1669,7 +1659,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
              } =
                conn
                |> post(data_structure_path(conn, :bulk_update_template_content),
-                 structures: plug_upload("test/fixtures/td4100/upload_with_one_warning.csv")
+                 structures: upload("test/fixtures/td4100/upload_with_one_warning.csv")
                )
                |> json_response(:accepted)
 
@@ -1714,7 +1704,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
              } =
                conn
                |> post(data_structure_path(conn, :bulk_update_template_content),
-                 structures: plug_upload("test/fixtures/td4100/upload_with_multiple_warnings.csv")
+                 structures: upload("test/fixtures/td4100/upload_with_multiple_warnings.csv")
                )
                |> json_response(:accepted)
 
@@ -1764,8 +1754,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
              } =
                conn
                |> post(data_structure_path(conn, :bulk_update_template_content),
-                 structures:
-                   plug_upload("test/fixtures/td4100/upload_with_invalid_external_id.csv")
+                 structures: upload("test/fixtures/td4100/upload_with_invalid_external_id.csv")
                )
                |> json_response(:accepted)
 
@@ -1797,7 +1786,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: plug_upload("test/fixtures/td3787/upload.csv")
+        structures: upload("test/fixtures/td3787/upload.csv")
       )
       |> response(:accepted)
 
@@ -1834,7 +1823,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: plug_upload("test/fixtures/td3787/upload.csv")
+        structures: upload("test/fixtures/td3787/upload.csv")
       )
       |> json_response(:accepted)
 
@@ -1871,7 +1860,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: plug_upload("test/fixtures/td3071/empty_lines.csv")
+        structures: upload("test/fixtures/td3071/empty_lines.csv")
       )
       |> json_response(:accepted)
 
@@ -1909,7 +1898,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: plug_upload("test/fixtures/td4548/upload_with_multifields.csv")
+        structures: upload("test/fixtures/td4548/upload_with_multifields.csv")
       )
       |> response(:accepted)
 
@@ -1946,7 +1935,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: plug_upload("test/fixtures/td3787/upload.csv")
+        structures: upload("test/fixtures/td3787/upload.csv")
       )
       |> response(:forbidden)
     end
@@ -1969,7 +1958,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: plug_upload("test/fixtures/td3787/upload.csv")
+        structures: upload("test/fixtures/td3787/upload.csv")
       )
       |> response(:accepted)
 
@@ -2014,7 +2003,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: plug_upload("test/fixtures/td3787/upload.csv")
+        structures: upload("test/fixtures/td3787/upload.csv")
       )
       |> response(:accepted)
 
@@ -2061,7 +2050,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: plug_upload("test/fixtures/td3787/upload.csv")
+        structures: upload("test/fixtures/td3787/upload.csv")
       )
       |> response(:accepted)
 
@@ -2100,7 +2089,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: plug_upload("test/fixtures/td3787/upload.csv"),
+        structures: upload("test/fixtures/td3787/upload.csv"),
         auto_publish: "true"
       )
       |> response(:accepted)
@@ -2141,7 +2130,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: plug_upload("test/fixtures/td3787/upload.csv"),
+        structures: upload("test/fixtures/td3787/upload.csv"),
         auto_publish: "true"
       )
       |> response(:forbidden)

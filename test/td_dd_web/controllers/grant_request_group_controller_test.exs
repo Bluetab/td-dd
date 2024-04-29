@@ -1,6 +1,8 @@
 defmodule TdDdWeb.GrantRequestGroupControllerTest do
   use TdDdWeb.ConnCase
 
+  alias TdCore.Search.IndexWorkerMock
+
   @valid_metadata %{"list" => "one", "string" => "foo"}
   @template_name "grant_request_group_controller_test_template"
 
@@ -18,6 +20,8 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
       ],
       "type" => @template_name
     }
+
+    IndexWorkerMock.clear()
 
     [
       data_structure: data_structure,
@@ -83,12 +87,30 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
     test "renders grant_request_group when data is valid", %{
       conn: conn,
       claims: %{user_id: user_id},
+      data_structure: %{id: data_structure_id, domain_ids: domain_ids},
       create_params: create_params
     } do
+      %{id: alter_domain_id} = build(:domain)
+      %{id: alter_data_structure_id} = insert(:data_structure, domain_ids: [alter_domain_id])
+
+      alter_create_params = %{
+        "data_structure_id" => alter_data_structure_id,
+        "metadata" => @valid_metadata
+      }
+
+      new_requests =
+        create_params
+        |> Map.get("requests")
+        |> Enum.concat([alter_create_params])
+
+      new_create_params =
+        create_params
+        |> Map.put("requests", new_requests)
+
       assert %{"data" => data} =
                conn
                |> post(Routes.grant_request_group_path(conn, :create),
-                 grant_request_group: create_params
+                 grant_request_group: new_create_params
                )
                |> json_response(:created)
 
@@ -101,8 +123,27 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
 
       assert %{
                "id" => ^id,
-               "user_id" => ^user_id
+               "user_id" => ^user_id,
+               "_embedded" => %{"requests" => [request1 | [request2]]}
              } = data
+
+      assert %{
+               "_embedded" => %{
+                 "data_structure" => %{
+                   "id" => ^data_structure_id
+                 }
+               },
+               "domain_ids" => ^domain_ids
+             } = request1
+
+      assert %{
+               "_embedded" => %{
+                 "data_structure" => %{
+                   "id" => ^alter_data_structure_id
+                 }
+               },
+               "domain_ids" => [^alter_domain_id]
+             } = request2
     end
 
     @tag authentication: [role: "admin"]
@@ -185,6 +226,63 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
                grant_request_group: params
              )
              |> json_response(:created)
+    end
+
+    @tag authentication: [
+           user: "non_admin",
+           permissions: [
+             :create_grant_request_group,
+             :view_data_structure,
+             :manage_grants,
+             :create_grant_request
+           ]
+         ]
+    test "creates grant_request_group for grant removal request", %{
+      conn: conn,
+      claims: %{user_id: user_id},
+      domain: %{id: domain_id}
+    } do
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain_id])
+      %{id: grant_id} = insert(:grant, data_structure_id: data_structure_id)
+
+      params = %{
+        "requests" => [
+          %{
+            "grant_id" => grant_id,
+            "filters" => %{},
+            "request_type" => "grant_removal"
+          }
+        ],
+        "type" => "grant_template"
+      }
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.grant_request_group_path(conn, :create),
+                 grant_request_group: params
+               )
+               |> json_response(:created)
+
+      assert %{"id" => id} = data
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.grant_request_group_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "id" => ^id,
+               "user_id" => ^user_id,
+               "_embedded" => %{
+                 "requests" => [
+                   %{
+                     "domain_ids" => [^domain_id],
+                     "filters" => %{},
+                     "request_type" => "grant_removal"
+                   }
+                 ]
+               }
+             } = data
     end
 
     @tag authentication: [role: "admin"]
@@ -431,10 +529,18 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
     setup [:create_grant_request_group]
 
     @tag authentication: [role: "admin"]
-    test "deletes chosen grant_request_group", %{conn: conn, group: group} do
+    test "deletes chosen grant_request_group", %{
+      conn: conn,
+      group: group,
+      grant_request_id: grant_request_id
+    } do
+      IndexWorkerMock.clear()
+
       assert conn
              |> delete(Routes.grant_request_group_path(conn, :delete, group))
              |> response(:no_content)
+
+      assert [{:delete, :grant_requests, [^grant_request_id]}] = IndexWorkerMock.calls()
 
       assert_error_sent 404, fn ->
         get(conn, Routes.grant_request_group_path(conn, :show, group))
@@ -450,8 +556,9 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
   end
 
   defp create_grant_request_group(_) do
-    %{group: group} = insert(:grant_request, group: build(:grant_request_group))
+    %{id: grant_request_id, group: group} =
+      insert(:grant_request, group: build(:grant_request_group))
 
-    [group: group]
+    [group: group, grant_request_id: grant_request_id]
   end
 end

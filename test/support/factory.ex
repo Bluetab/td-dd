@@ -422,7 +422,8 @@ defmodule TdDd.Factory do
 
     %Remediation{
       df_name: "template_name",
-      df_content: %{}
+      df_content: %{},
+      user_id: sequence(:user_id, &"#{&1}")
     }
     |> merge_attributes(attrs)
   end
@@ -622,7 +623,7 @@ defmodule TdDd.Factory do
   def grant_request_factory(attrs) do
     attrs =
       attrs
-      |> default_assoc(:data_structure_id, :data_structure)
+      |> assoc_grant_or_data_structure()
       |> default_assoc(:group_id, :group, :grant_request_group)
 
     %TdDd.Grants.GrantRequest{
@@ -631,6 +632,22 @@ defmodule TdDd.Factory do
       domain_ids: [123]
     }
     |> merge_attributes(attrs)
+  end
+
+  defp assoc_grant_or_data_structure(%{request_type: request_type} = attrs)
+       when request_type in [:grant_removal, :grant_modification] do
+    default_assoc(attrs, :grant_id, :grant)
+  end
+
+  defp assoc_grant_or_data_structure(%{request_type: :grant_access} = attrs) do
+    default_assoc(attrs, :data_structure_id, :data_structure)
+  end
+
+  # default :request_type is :grant_access, assoc to data_structure
+  defp assoc_grant_or_data_structure(attrs) do
+    attrs
+    |> Map.put(:request_type, :grant_access)
+    |> default_assoc(:data_structure_id, :data_structure)
   end
 
   def grant_request_status_factory(attrs) do
@@ -720,6 +737,21 @@ defmodule TdDd.Factory do
     %TdDd.DataStructures.Classification{
       class: sequence("class_value"),
       name: sequence("class_name")
+    }
+    |> merge_attributes(attrs)
+  end
+
+  def graph_factory(attrs) do
+    %TdDd.Lineage.Graph{
+      hash: "1234",
+      data: %{
+        "ids" => [],
+        "opts" => %{"type" => "lineage"},
+        "paths" => [],
+        "groups" => [],
+        "excludes" => [],
+        "resources" => []
+      }
     }
     |> merge_attributes(attrs)
   end

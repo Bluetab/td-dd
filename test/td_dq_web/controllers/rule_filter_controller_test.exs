@@ -8,18 +8,13 @@ defmodule TdDqWeb.RuleFilterControllerTest do
 
   setup :verify_on_exit!
 
-  setup do
-    start_supervised!(TdDd.Search.Cluster)
-    :ok
-  end
-
   describe "index" do
     @tag authentication: [role: "admin"]
     test "maps filters from request parameters", %{conn: conn} do
       ElasticsearchMock
       |> expect(:request, fn
         _, :post, "/rules/_search", %{query: query, size: 0}, _ ->
-          assert query == %{bool: %{filter: %{term: %{"domain_id" => "1"}}}}
+          assert query == %{bool: %{must: %{term: %{"domain_id" => "1"}}}}
           SearchHelpers.aggs_response(@aggs)
       end)
 
@@ -40,7 +35,7 @@ defmodule TdDqWeb.RuleFilterControllerTest do
         _, :post, "/rules/_search", %{query: query, size: 0}, _ ->
           assert %{
                    bool: %{
-                     filter: [
+                     must: [
                        %{term: %{"_confidential" => false}},
                        %{term: %{"domain_ids" => _}}
                      ]
@@ -74,7 +69,7 @@ defmodule TdDqWeb.RuleFilterControllerTest do
         _, :post, "/rules/_search", %{query: query, size: 0}, _ ->
           assert %{
                    bool: %{
-                     filter: [
+                     must: [
                        %{
                          bool: %{
                            should: [
@@ -102,7 +97,7 @@ defmodule TdDqWeb.RuleFilterControllerTest do
       ElasticsearchMock
       |> expect(:request, fn
         _, :post, "/rules/_search", %{query: query, size: 0}, _ ->
-          assert query == %{bool: %{filter: %{match_none: %{}}}}
+          assert query == %{bool: %{must: %{match_none: %{}}}}
           SearchHelpers.aggs_response()
       end)
 

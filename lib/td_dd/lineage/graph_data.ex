@@ -63,6 +63,10 @@ defmodule TdDd.Lineage.GraphData do
 
   def lineage(external_id, opts), do: lineage([external_id], opts)
 
+  def refresh do
+    Process.send_after(Process.whereis(__MODULE__), :refresh, 0)
+  end
+
   @doc "Returns the impact graph data for the specified external ids"
   def impact(external_ids, opts) when is_list(external_ids) do
     GenServer.call(__MODULE__, {:impact, external_ids, opts})
@@ -103,7 +107,7 @@ defmodule TdDd.Lineage.GraphData do
 
   @impl true
   def handle_info({:load, ts}, state) do
-    Task.Supervisor.async_nolink(TdDd.TaskSupervisor, fn -> do_load(ts) end)
+    Task.Supervisor.async_nolink(TdDd.TaskSupervisor, fn -> do_load(ts, state) end)
     {:noreply, Map.put(state, :loading, DateTime.utc_now())}
   end
 
@@ -193,7 +197,7 @@ defmodule TdDd.Lineage.GraphData do
       |> do_lineage(external_ids, opts[:excludes], opts[:levels])
       |> subgraph(state, :lineage, opts ++ [reverse: true])
       |> add_source_ids(external_ids)
-      |> hash(state)
+      |> hash(opts)
 
     {:reply, reply, state}
   rescue
@@ -209,7 +213,7 @@ defmodule TdDd.Lineage.GraphData do
       |> do_impact(external_ids, opts[:excludes], opts[:levels])
       |> subgraph(state, :impact, opts)
       |> add_source_ids(external_ids)
-      |> hash(state)
+      |> hash(opts)
 
     {:reply, reply, state}
   rescue
@@ -237,7 +241,7 @@ defmodule TdDd.Lineage.GraphData do
     |> Enum.max_by(fn %{ids: ids} -> Enum.count(ids) end)
     |> subgraph(state, type, opts)
     |> add_source_ids(:sample)
-    |> hash(state)
+    |> hash(%{})
   end
 
   defp siblings(v, %Graph{} = contains) do
@@ -359,9 +363,9 @@ defmodule TdDd.Lineage.GraphData do
     |> Map.merge(Map.take(node, [:structure_id]))
   end
 
-  defp do_load(nil = _last_updated), do: :ok
+  defp do_load(nil = _last_updated, _state), do: :ok
 
-  defp do_load(ts) do
+  defp do_load(ts, %State{notify: notify}) do
     Logger.info("Load started (ts=#{DateTime.to_iso8601(ts)})")
 
     groups = Units.list_nodes(type: "Group")
@@ -410,7 +414,16 @@ defmodule TdDd.Lineage.GraphData do
 
     roots = Graph.source_vertices(contains)
 
-    %State{contains: contains, depends: depends, roots: roots, ts: ts}
+    new_state = %State{contains: contains, depends: depends, roots: roots, ts: ts, notify: notify}
+    maybe_notify(notify, {:load_finished, new_state})
+
+    new_state
+  end
+
+  def maybe_notify(nil, _msg), do: nil
+
+  def maybe_notify(callback, msg) do
+    callback.(:info, msg)
   end
 
   defp add_edge(%{id: id, start: v1, end: v2, metadata: metadata}, %Graph{} = g) do
@@ -452,18 +465,28 @@ defmodule TdDd.Lineage.GraphData do
     %{graph_data | source_ids: source_ids}
   end
 
-  defp hash(%__MODULE__{source_ids: source_ids, ids: ids, type: type} = graph_data, %{ts: ts}) do
+  defp hash(%__MODULE__{source_ids: source_ids, ids: _ids, type: type} = graph_data, opts) do
+    '''
+    Constant hash across lineage loads. Node ids might change for new lineage
+    load, so avoid using them.
+    '''
+
     hash =
-      %{ids: Enum.sort(ids), source_ids: Enum.sort(source_ids), type: type, ts: ts}
-      |> Jason.encode!()
-      |> do_hash()
-      |> Base.url_encode64()
+      opts
+      |> deterministic_map
+      |> Map.merge(%{source_ids: Enum.sort(source_ids), type: type})
+      |> :erlang.phash2()
+      |> Integer.to_string()
 
     %{graph_data | hash: hash}
   end
 
-  defp do_hash(json) do
-    :crypto.hash(:sha256, json)
+  defp deterministic_map(opts) do
+    defaults = %{excludes: [], levels: :all}
+
+    opts
+    |> Map.new()
+    |> Kernel.then(&Map.merge(defaults, &1))
   end
 
   def sortable(%{"name" => name}), do: String.downcase(name)

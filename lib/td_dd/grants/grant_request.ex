@@ -7,6 +7,7 @@ defmodule TdDd.Grants.GrantRequest do
   import Ecto.Changeset
 
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.Grants.Grant
   alias TdDd.Grants.GrantRequestApproval
   alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Grants.GrantRequestStatus
@@ -18,13 +19,26 @@ defmodule TdDd.Grants.GrantRequest do
     field(:filters, :map)
     field(:metadata, :map)
     field(:current_status, :string, virtual: true)
+    field(:approved_by, {:array, :string}, virtual: true)
     field(:status_reason, :string, virtual: true)
     field(:domain_ids, {:array, :integer}, default: [])
+
+    field(
+      :request_type,
+      Ecto.Enum,
+      values: [
+        :grant_access,
+        :grant_removal,
+        :grant_modification
+      ]
+    )
+
     # updated_at is derived from most recent status
     field(:updated_at, :utc_datetime_usec, virtual: true)
 
     belongs_to(:group, GrantRequestGroup)
     belongs_to(:data_structure, DataStructure)
+    belongs_to(:grant, Grant)
 
     has_many(:status, GrantRequestStatus)
     has_many(:approvals, GrantRequestApproval)
@@ -34,14 +48,32 @@ defmodule TdDd.Grants.GrantRequest do
     timestamps(type: :utc_datetime_usec, updated_at: false)
   end
 
+  def changeset(
+        %__MODULE__{} = struct,
+        %{"request_type" => "grant_removal"} = params,
+        template_name
+      ) do
+    struct
+    |> cast(
+      params,
+      [:filters, :data_structure_id, :grant_id, :request_type]
+    )
+    |> maybe_put_identifier(struct, template_name)
+    |> validate_change(:filters, &Validation.validate_safe/2)
+    |> check_constraint(:resource, name: :only_one_resource)
+  end
+
   def changeset(%__MODULE__{} = struct, params, template_name) do
     struct
-    |> cast(params, [:filters, :metadata, :data_structure_id])
+    |> cast(
+      params,
+      [:filters, :metadata, :data_structure_id, :grant_id, :request_type]
+    )
     |> maybe_put_identifier(struct, template_name)
     |> validate_content(template_name)
     |> validate_change(:filters, &Validation.validate_safe/2)
     |> validate_change(:metadata, &Validation.validate_safe/2)
-    |> foreign_key_constraint(:data_structure_id)
+    |> check_constraint(:resource, name: :only_one_resource)
   end
 
   defp maybe_put_identifier(

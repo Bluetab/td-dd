@@ -580,7 +580,7 @@ defmodule TdDd.CSV.DownloadTest do
               %{
                 "cardinality" => "?",
                 "default" => "",
-                "label" => "i18n_test.dropdown.fixed",
+                "label" => "label_i18n_test.dropdown.fixed",
                 "name" => "i18n_test.dropdown.fixed",
                 "subscribable" => false,
                 "type" => "string",
@@ -595,7 +595,7 @@ defmodule TdDd.CSV.DownloadTest do
               %{
                 "cardinality" => "?",
                 "default" => "",
-                "label" => "i18n_test_no_translate",
+                "label" => "label_i18n_test_no_translate",
                 "name" => "i18n_test_no_translate",
                 "type" => "string",
                 "values" => nil,
@@ -604,7 +604,7 @@ defmodule TdDd.CSV.DownloadTest do
               %{
                 "cardinality" => "?",
                 "default" => "",
-                "label" => "i18n_test.radio.fixed",
+                "label" => "label_i18n_test.radio.fixed",
                 "name" => "i18n_test.radio.fixed",
                 "subscribable" => false,
                 "type" => "string",
@@ -619,7 +619,7 @@ defmodule TdDd.CSV.DownloadTest do
               %{
                 "cardinality" => "*",
                 "default" => "",
-                "label" => "i18n_test.checkbox.fixed_tuple",
+                "label" => "label_i18n_test.checkbox.fixed_tuple",
                 "name" => "i18n_test.checkbox.fixed_tuple",
                 "subscribable" => false,
                 "type" => "string",
@@ -643,15 +643,18 @@ defmodule TdDd.CSV.DownloadTest do
       })
 
       CacheHelpers.put_i18n_messages("es", [
-        %{message_id: "fields.i18n_test.dropdown.fixed", definition: "Dropdown Fijo"},
-        %{message_id: "fields.i18n_test.dropdown.fixed.pear", definition: "Pera"},
-        %{message_id: "fields.i18n_test.dropdown.fixed.banana", definition: "Platano"},
-        %{message_id: "fields.i18n_test.radio.fixed", definition: "Radio Fijo"},
-        %{message_id: "fields.i18n_test.radio.fixed.pear", definition: "Pera"},
-        %{message_id: "fields.i18n_test.radio.fixed.banana", definition: "Platano"},
-        %{message_id: "fields.i18n_test.checkbox.fixed_tuple", definition: "Checkbox Tupla Fija"},
-        %{message_id: "fields.i18n_test.checkbox.fixed_tuple.pear", definition: "Pera"},
-        %{message_id: "fields.i18n_test.checkbox.fixed_tuple.banana", definition: "Platano"}
+        %{message_id: "fields.label_i18n_test.dropdown.fixed", definition: "Dropdown Fijo"},
+        %{message_id: "fields.label_i18n_test.dropdown.fixed.pear", definition: "Pera"},
+        %{message_id: "fields.label_i18n_test.dropdown.fixed.banana", definition: "Platano"},
+        %{message_id: "fields.label_i18n_test.radio.fixed", definition: "Radio Fijo"},
+        %{message_id: "fields.label_i18n_test.radio.fixed.pear", definition: "Pera"},
+        %{message_id: "fields.label_i18n_test.radio.fixed.banana", definition: "Platano"},
+        %{
+          message_id: "fields.label_i18n_test.checkbox.fixed_tuple",
+          definition: "Checkbox Tupla Fija"
+        },
+        %{message_id: "fields.label_i18n_test.checkbox.fixed_tuple.pear", definition: "Pera"},
+        %{message_id: "fields.label_i18n_test.checkbox.fixed_tuple.banana", definition: "Platano"}
       ])
 
       insert(:data_structure_type, name: "type", template_id: template_id)
@@ -921,8 +924,7 @@ defmodule TdDd.CSV.DownloadTest do
         "data_structure_name" => "Structure",
         "start_date" => "Start date",
         "end_date" => "End date",
-        "metadata" => "Metadata",
-        "mutable_metadata" => "Mutable metadata"
+        "metadata" => "Metadata"
       }
 
       metadata_string =
@@ -934,8 +936,8 @@ defmodule TdDd.CSV.DownloadTest do
 
       assert Download.to_csv_grants(grants, header_labels) ==
                """
-               User;Structure;Start date;End date;Metadata;Mutable metadata\r
-               #{grant_1.user.full_name};#{grant_1.data_structure_version.name};#{grant_1.start_date};#{grant_1.end_date};#{metadata_string};null\r
+               User;Structure;Start date;End date;Metadata\r
+               #{grant_1.user.full_name};#{grant_1.data_structure_version.name};#{grant_1.start_date};#{grant_1.end_date};#{metadata_string}\r
                """
     end
   end

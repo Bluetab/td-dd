@@ -1,5 +1,5 @@
 variables:
-  VERSION: "5.14.1" # used for alpha builds
+  VERSION: "6.4.2" # used for alpha builds
   APP_NAME: "td_dd"
   COMPOSE_FILE: "ci/docker-compose.yml"
   COMPOSE_PROJECT_NAME: "${APP_NAME}_${CI_JOB_ID}"
@@ -106,4 +106,5 @@ deploy:
     - tags
   dependencies: []
   script:
+    - aws eks update-kubeconfig --region eu-west-1 --name test-truedat-eks
     - kubectl set image deployment.v1.apps/${K8S_DEPLOYMENT} ${K8S_CONTAINER}=${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION} --record

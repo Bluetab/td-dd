@@ -2,13 +2,6 @@ defmodule TdDdWeb.GroupControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  alias TdDd.Search.MockIndexWorker
-
-  setup_all do
-    start_supervised(MockIndexWorker)
-    :ok
-  end
-
   setup do
     [system: insert(:system)]
   end

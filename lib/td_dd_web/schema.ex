@@ -36,6 +36,7 @@ defmodule TdDdWeb.Schema do
   import_types(TdDdWeb.Schema.Types.Custom.DataURL)
   import_types(TdDdWeb.Schema.Types.Custom.JSON)
   import_types(TdDdWeb.Schema.Types.Custom.DateFilter)
+  import_types(TdDdWeb.Schema.User)
 
   query do
     import_fields(:domain_queries)
@@ -70,13 +71,18 @@ defmodule TdDdWeb.Schema do
   end
 
   def context(ctx) do
+    timeout = Application.get_env(:td_dd, TdDd.Repo)[:timeout]
+
     loader =
       Dataloader.new()
       |> Dataloader.add_source(TdDd.DataStructures, TdDd.DataStructures.datasource())
+      |> Dataloader.add_source(TdDq.Rules.RuleResults, TdDq.Rules.RuleResults.datasource())
+      |> Dataloader.add_source(TdDq.Implementations, TdDq.Implementations.datasource())
+      |> Dataloader.add_source(TdDq.Rules, TdDq.Rules.datasource())
       |> Dataloader.add_source(TdDq.Executions, TdDq.Executions.datasource())
       |> Dataloader.add_source(
         TdDq.Executions.KV,
-        Dataloader.KV.new(&TdDq.Executions.kv_datasource/2)
+        Dataloader.KV.new(&TdDq.Executions.kv_datasource/2, timeout: timeout)
       )
       |> Dataloader.add_source(TdCx.Sources, TdCx.Sources.datasource())
       |> Dataloader.add_source(:domain_actions, Dataloader.KV.new(fetch_permission_domains(ctx)))

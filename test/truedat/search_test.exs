@@ -2,7 +2,7 @@ defmodule Truedat.SearchTest do
   use ExUnit.Case
   use TdDd.DataCase
 
-  alias Truedat.Search
+  alias TdCore.Search
 
   import Mox
 
@@ -16,7 +16,6 @@ defmodule Truedat.SearchTest do
   setup :verify_on_exit!
 
   setup do
-    start_supervised!(TdDd.Search.Cluster)
     start_supervised!(TdDd.Search.StructureEnricher)
     :ok
   end
@@ -105,6 +104,22 @@ defmodule Truedat.SearchTest do
 
       assert %{type: :domain, values: [%{id: _, external_id: _, parent_id: _, name: _}, %{id: _}]} =
                values
+    end
+
+    test "enriches search aggregation" do
+      %{id: parent_id} = CacheHelpers.insert_domain()
+      CacheHelpers.insert_domain(parent_id: parent_id)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/foo/_search", _, _ ->
+        SearchHelpers.aggs_response(%{
+          "search" => %{"meta" => %{"type" => "search", "index" => "foo_index"}}
+        })
+      end)
+
+      assert {:ok, %{aggregations: %{"search" => values}}} = Search.search(%{}, "foo")
+
+      assert %{type: :search, index: "foo_index"} = values
     end
 
     test "enriches template fields of type domain for Quality filters" do

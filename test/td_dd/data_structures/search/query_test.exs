@@ -78,8 +78,7 @@ defmodule TdDd.DataStructures.Search.QueryTest do
     test "includes a must multi_match clause for a single word" do
       assert %{
                bool: %{
-                 filter: @match_all,
-                 must: %{multi_match: %{query: "foo"}}
+                 must: [%{multi_match: %{query: "foo"}}, @match_all]
                }
              } = Query.build_query(@all_permissions, %{"query" => " foo     "}, %{})
     end
@@ -103,23 +102,22 @@ defmodule TdDd.DataStructures.Search.QueryTest do
     test "includes a multi_match clause for each word in the query term" do
       assert %{
                bool: %{
-                 filter: @match_all,
-                 must: %{
-                   bool: %{
-                     minimum_should_match: "2<-75%",
-                     should: [
-                       %{multi_match: %{query: "foo"}},
-                       %{multi_match: %{query: "bar"}}
-                     ]
-                   }
-                 }
+                 must: [
+                   %{
+                     bool: %{
+                       minimum_should_match: "2<-75%",
+                       should: [%{multi_match: %{query: "foo"}}, %{multi_match: %{query: "bar"}}]
+                     }
+                   },
+                   %{match_all: %{}}
+                 ]
                }
              } = Query.build_query(@all_permissions, %{"query" => " foo   bar  "}, %{})
     end
 
     test "does not include a must clause for an empty search term" do
       assert Query.build_query(@all_permissions, %{"query" => "  "}, %{}) ==
-               %{bool: %{filter: @match_all}}
+               %{bool: %{must: @match_all}}
     end
   end
 

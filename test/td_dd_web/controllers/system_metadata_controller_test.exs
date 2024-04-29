@@ -122,8 +122,4 @@ defmodule TdDdWeb.SystemMetadataControllerTest do
              |> response(:accepted)
     end
   end
-
-  defp upload(path) do
-    %Plug.Upload{path: path, filename: Path.basename(path), content_type: "text/csv"}
-  end
 end

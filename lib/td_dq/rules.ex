@@ -9,6 +9,7 @@ defmodule TdDq.Rules do
   alias TdCache.ConceptCache
   alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
+  alias TdCore.Search.IndexWorker
   alias TdDd.Repo
   alias TdDfLib.Format
   alias TdDq.Cache.RuleLoader
@@ -16,8 +17,6 @@ defmodule TdDq.Rules do
   alias TdDq.Rules.Audit
   alias TdDq.Rules.Rule
   alias Truedat.Auth.Claims
-
-  @index_worker Application.compile_env(:td_dd, :dq_index_worker)
 
   defdelegate authorize(action, user, params), to: __MODULE__.Policy
 
@@ -206,7 +205,7 @@ defmodule TdDq.Rules do
   defp on_update(res) do
     with {:ok, %{implementations: {_, implementation_ids}, rule: %{id: rule_id}}} <- res do
       RuleLoader.refresh(rule_id)
-      @index_worker.reindex_implementations(implementation_ids)
+      IndexWorker.reindex(:implementations, implementation_ids)
       res
     end
   end
@@ -273,7 +272,7 @@ defmodule TdDq.Rules do
       |> select([ri, _], ri)
 
     Multi.new()
-    |> Multi.update_all(:deprecated, impls_to_delete, set: [deleted_at: ts])
+    |> Multi.update_all(:deprecated, impls_to_delete, set: [deleted_at: ts, status: "deprecated"])
     |> Multi.update_all(:rules, rules_to_delete, set: [deleted_at: ts])
     |> Multi.run(:audit, Audit, :implementations_deprecated, [])
     # TODO: audit rule deletion?
@@ -326,4 +325,16 @@ defmodule TdDq.Rules do
   end
 
   defp enrich(target, _), do: target
+
+  ## Dataloader
+  def datasource do
+    timeout = Application.get_env(:td_dd, TdDd.Repo)[:timeout]
+    Dataloader.Ecto.new(TdDd.Repo, query: &query/2, timeout: timeout)
+  end
+
+  defp query(queryable, params) do
+    Enum.reduce(params, queryable, fn
+      {:preload, preload}, q -> preload(q, ^preload)
+    end)
+  end
 end

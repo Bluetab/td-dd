@@ -267,9 +267,6 @@ defmodule TdDd.Lineage do
     with :ok <- no_pending_graph(hash),
          %TdDd.Lineage.Graph{} = g <- find_graph_by_hash(hash) do
       {:ok, g}
-    else
-      situation ->
-        situation
     end
   end
 

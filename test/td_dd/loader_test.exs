@@ -16,7 +16,7 @@ defmodule TdDd.LoaderTest do
 
   setup do
     start_supervised!(TdDd.Search.StructureEnricher)
-    start_supervised!(TdDd.Search.MockIndexWorker)
+
     :ok
   end
 

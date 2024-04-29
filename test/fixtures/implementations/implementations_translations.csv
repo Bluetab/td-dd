@@ -1,0 +1,4 @@
+rule_name;implementation_key;template;string;list;result_type;goal;minimum;i18n
+rule_foo;boo_key_1;i18n_template;boo_1;one;porcentaje;90;10;uno
+rule_foo;boo_key_2;i18n_template;boo_2;two;número;10;90;dos
+rule_foo;boo_key_3;i18n_template;boo_3;three;desviación;10;30;three

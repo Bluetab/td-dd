@@ -24,6 +24,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
     CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
 
     start_supervised!(TdDd.Search.StructureEnricher)
+
     :ok
   end
 

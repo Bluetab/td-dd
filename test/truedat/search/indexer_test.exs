@@ -4,7 +4,7 @@ defmodule Truedat.Search.IndexerTest do
   import ExUnit.CaptureLog
   require Logger
 
-  alias Truedat.Search.Indexer
+  alias TdCore.Search.Indexer
 
   describe "log_bulk_post" do
     setup do
@@ -207,11 +207,12 @@ defmodule Truedat.Search.IndexerTest do
         capture_log(fn ->
           Indexer.log_hot_swap_errors(
             "structures-1691599336795214",
+            :foo,
             {:error, [elasticsearch_exception_1]}
           )
         end)
 
-      assert log =~ "build finished with an error"
+      assert log =~ "build finished in foo with an error"
       assert log =~ "structures-1691599336795214"
       assert log =~ "Document ID 1769350"
       assert log =~ "mapper_parsing_exception"
@@ -226,11 +227,12 @@ defmodule Truedat.Search.IndexerTest do
         capture_log(fn ->
           Indexer.log_hot_swap_errors(
             "structures-1691599336795214",
+            :foo,
             {:error, [elasticsearch_exception_1, elasticsearch_exception_2]}
           )
         end)
 
-      assert log =~ "build finished with 2 errors"
+      assert log =~ "build finished in foo with 2 errors"
       assert log =~ "structures-1691599336795214"
       assert log =~ "Document ID 1769350"
       assert log =~ "Document ID 1769343"
@@ -246,12 +248,13 @@ defmodule Truedat.Search.IndexerTest do
         capture_log(fn ->
           Indexer.log_hot_swap_errors(
             "structures-1691599336795214",
+            :foo,
             {:error, elasticsearch_exception_3}
           )
         end)
 
       assert log =~ "structures-1691599336795214"
-      assert log =~ "build finished with an error"
+      assert log =~ "build finished in foo 001 with an error"
       assert log =~ "an index or data stream exists with the same name as the alias"
     end
 
@@ -262,12 +265,13 @@ defmodule Truedat.Search.IndexerTest do
         capture_log(fn ->
           Indexer.log_hot_swap_errors(
             "structures-1691599336795214",
+            :foo,
             {:error, exception_connection_refused}
           )
         end)
 
       assert log =~ "structures-1691599336795214"
-      assert log =~ "build finished with an error"
+      assert log =~ "build finished in foo 001 with an error"
       assert log =~ ":econnrefused"
     end
 
@@ -279,6 +283,7 @@ defmodule Truedat.Search.IndexerTest do
         capture_log(fn ->
           Indexer.log_hot_swap_errors(
             "structures-1691599336795214",
+            :foo,
             {
               :error,
               [
@@ -291,7 +296,7 @@ defmodule Truedat.Search.IndexerTest do
         end)
 
       assert log =~ "structures-1691599336795214"
-      assert log =~ "build finished with 3 errors"
+      assert log =~ "build finished in foo with 3 errors"
       assert log =~ ":econnrefused"
     end
   end

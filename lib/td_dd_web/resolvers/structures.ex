@@ -5,12 +5,12 @@ defmodule TdDdWeb.Resolvers.Structures do
 
   import Absinthe.Resolution.Helpers, only: [on_load: 2]
 
+  alias TdCore.Utils.CollectionUtils
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructureLinks
   alias TdDd.DataStructures.DataStructureVersions
   alias TdDd.DataStructures.Relations
   alias TdDd.DataStructures.Tags
-  alias TdDd.Utils.CollectionUtils
 
   @permissions_attrs [:with_protected_metadata, :with_confidential, :profile]
 
@@ -218,6 +218,10 @@ defmodule TdDdWeb.Resolvers.Structures do
 
   def structure_tags(%{} = data_structure, _args, _resolution) do
     {:ok, Tags.tags(data_structure)}
+  end
+
+  def roles(%{id: structure_id}, _args, _resolution) do
+    {:ok, "structure" |> TdCache.AclCache.get_acl_roles(structure_id)}
   end
 
   def metadata(

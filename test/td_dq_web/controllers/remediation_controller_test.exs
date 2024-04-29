@@ -3,7 +3,7 @@ defmodule TdDqWeb.RemediationControllerTest do
 
   setup_all do
     start_supervised(TdDq.Cache.RuleLoader)
-    start_supervised(TdDd.Search.MockIndexWorker)
+
     :ok
   end
 

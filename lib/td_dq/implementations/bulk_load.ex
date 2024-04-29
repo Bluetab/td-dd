@@ -5,7 +5,9 @@ defmodule TdDq.Implementations.BulkLoad do
 
   alias Ecto.Changeset
   alias TdCache.DomainCache
+  alias TdCache.I18nCache
   alias TdCache.TemplateCache
+  alias TdCore.Search.IndexWorker
   alias TdDdWeb.ErrorHelpers
   alias TdDfLib.Format
   alias TdDfLib.Parser
@@ -13,8 +15,6 @@ defmodule TdDq.Implementations.BulkLoad do
   alias TdDq.Rules
 
   require Logger
-
-  @index_worker Application.compile_env(:td_dd, :dq_index_worker)
 
   @required_headers [
     "implementation_key",
@@ -54,7 +54,7 @@ defmodule TdDq.Implementations.BulkLoad do
     %{ids_to_reindex: ids} =
       result = upsert_implementations(implementations, claims, auto_publish, lang)
 
-    @index_worker.reindex_implementations(ids)
+    IndexWorker.reindex(:implementations, ids)
     {:ok, result}
   end
 
@@ -115,7 +115,8 @@ defmodule TdDq.Implementations.BulkLoad do
 
   defp process_params(%{"implementation_key" => imp_key} = params, lang) do
     with {:ok, imp} <- enrich_implementation(params),
-         {:ok, imp} <- maybe_put_domain_id(imp) do
+         {:ok, imp} <- maybe_put_domain_id(imp),
+         {:ok, imp} <- maybe_translate_result_type(imp, lang) do
       case format_df_content(imp, lang) do
         {:error, error} -> {:error, %{implementation_key: imp_key, message: error}}
         imp -> imp
@@ -181,6 +182,36 @@ defmodule TdDq.Implementations.BulkLoad do
   end
 
   defp maybe_put_domain_id(params), do: {:ok, params}
+
+  defp maybe_translate_result_type(%{"result_type" => result_type} = params, lang)
+       when lang !== @default_lang do
+    i18n_key_prefix = "ruleImplementations.props.result_type."
+
+    translated_result_type =
+      result_type
+      |> String.capitalize()
+      |> I18nCache.get_definitions_by_value(lang, prefix: i18n_key_prefix)
+      |> case do
+        [%{definition: _, message_id: key}] ->
+          key
+          |> String.replace_prefix(i18n_key_prefix, "")
+          |> String.split(".")
+          |> List.last()
+
+        [%{definition: _, message_id: key} | _] ->
+          key
+          |> String.replace_prefix(i18n_key_prefix, "")
+          |> String.split(".")
+          |> List.last()
+
+        [] ->
+          result_type
+      end
+
+    {:ok, Map.put(params, "result_type", translated_result_type)}
+  end
+
+  defp maybe_translate_result_type(params, _lang), do: {:ok, params}
 
   defp get_domain_id_by_external_id(external_id) do
     case DomainCache.external_id_to_id(external_id) do

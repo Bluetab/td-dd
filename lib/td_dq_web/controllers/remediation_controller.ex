@@ -91,7 +91,8 @@ defmodule TdDqWeb.RemediationController do
          %RuleResult{remediation: remediation} = rule_result <-
            RuleResults.get_rule_result(rule_result_id, preload: [:remediation, :implementation]),
          :ok <- Bodyguard.permit(RuleResults, :manage_remediations, claims, rule_result),
-         {:ok, remediation} <- Remediations.update_remediation(remediation, remediation_params) do
+         {:ok, remediation} <-
+           Remediations.update_remediation(remediation, remediation_params, claims) do
       conn
       |> put_actions(rule_result)
       |> render("show.json", remediation: remediation)

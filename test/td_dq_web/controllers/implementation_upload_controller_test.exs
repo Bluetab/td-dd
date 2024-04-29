@@ -6,11 +6,6 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
 
   @moduletag sandbox: :shared
 
-  setup_all do
-    start_supervised!(TdDd.Search.MockIndexWorker)
-    :ok
-  end
-
   setup context do
     template = CacheHelpers.insert_template(scope: "dq", name: "bar_template")
     rule = insert_rule(context)
@@ -45,6 +40,47 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
 
       assert %{"ids" => ids, "errors" => []} = data
       assert length(ids) == 3
+    end
+
+    for status <- ["deprecated", "pending_approval", "versioned"] do
+      @tag authentication: [role: "admin"]
+      @tag status: status
+      test "uploads #{status} implementation returns error", %{
+        conn: conn,
+        status: status
+      } do
+        insert(
+          :implementation,
+          implementation_key: "boo_key_1",
+          status: status
+        )
+
+        attrs = %{
+          implementations: %Plug.Upload{
+            filename: "implementations.csv",
+            path: "test/fixtures/implementations/implementations.csv"
+          }
+        }
+
+        assert %{"data" => data} =
+                 conn
+                 |> post(Routes.implementation_upload_path(conn, :create), attrs)
+                 |> json_response(:ok)
+
+        assert %{
+                 "ids" => ids,
+                 "errors" => errors
+               } = data
+
+        assert length(ids) == 2
+
+        assert [
+                 %{
+                   "implementation_key" => "boo_key_1",
+                   "message" => %{"implementation" => [^status]}
+                 }
+               ] = errors
+      end
     end
 
     @tag authentication: [role: "user"]
@@ -580,6 +616,76 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
                |> json_response(:ok)
 
       assert %{"enriched_field" => %{}} = df_content2
+    end
+
+    @tag authentication: [role: "admin"]
+    test "upload implementations in native language", %{conn: conn} do
+      attrs = %{
+        implementations: %Plug.Upload{
+          filename: "implementations_translations.csv",
+          path: "test/fixtures/implementations/implementations_translations.csv"
+        },
+        lang: "es"
+      }
+
+      template_content = [
+        %{
+          "fields" => [
+            %{
+              "cardinality" => "1",
+              "label" => "label_i18n",
+              "name" => "i18n",
+              "type" => "string",
+              "values" => %{"fixed" => ["one", "two", "three"]}
+            }
+          ],
+          "name" => "group_name0"
+        }
+      ]
+
+      CacheHelpers.insert_template(
+        name: "i18n_template",
+        scope: "ri",
+        content: template_content
+      )
+
+      CacheHelpers.put_i18n_message("es", %{
+        message_id: "fields.label_i18n.one",
+        definition: "uno"
+      })
+
+      CacheHelpers.put_i18n_message("es", %{
+        message_id: "fields.label_i18n.two",
+        definition: "dos"
+      })
+
+      CacheHelpers.put_i18n_message("es", %{
+        message_id: "fields.label_i18n.three",
+        definition: "tres"
+      })
+
+      CacheHelpers.put_i18n_message("es", %{
+        message_id: "ruleImplementations.props.result_type.deviation",
+        definition: "Desviación"
+      })
+
+      CacheHelpers.put_i18n_message("es", %{
+        message_id: "ruleImplementations.props.result_type.errors_number",
+        definition: "Número"
+      })
+
+      CacheHelpers.put_i18n_message("es", %{
+        message_id: "ruleImplementations.props.result_type.percentage",
+        definition: "Porcentaje"
+      })
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.implementation_upload_path(conn, :create), attrs)
+               |> json_response(:ok)
+
+      assert %{"ids" => ids, "errors" => []} = data
+      assert length(ids) == 3
     end
 
     @tag authentication: [role: "admin"]

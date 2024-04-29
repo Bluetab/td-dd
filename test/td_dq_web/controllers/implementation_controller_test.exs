@@ -101,20 +101,14 @@ defmodule TdDqWeb.ImplementationControllerTest do
     goal: 100
   }
 
-  setup_all do
-    start_supervised!(TdDd.Search.MockIndexWorker)
-    start_supervised!(TdDd.Search.Cluster)
-    start_supervised!(TdDq.Cache.RuleLoader)
-    :ok
-  end
-
-  setup :verify_on_exit!
-
   setup do
     start_supervised!(TdDd.Search.StructureEnricher)
 
+    start_supervised!(TdDq.Cache.RuleLoader)
     [implementation: insert(:implementation)]
   end
+
+  setup :verify_on_exit!
 
   describe "GET /api/implementations/:id" do
     @tag authentication: [role: "admin"]
@@ -3529,7 +3523,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
           _, :post, "/implementations/_search", %{from: 0, size: 1000, query: query}, _ ->
             assert query == %{
                      bool: %{
-                       filter: [%{term: %{"status" => "published"}}, %{term: %{"rule_id" => 123}}],
+                       must: [%{term: %{"status" => "published"}}, %{term: %{"rule_id" => 123}}],
                        must_not: %{exists: %{field: "deleted_at"}}
                      }
                    }
@@ -3580,7 +3574,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
         _, :post, "/implementations/_search", %{from: 0, size: 1000, query: query}, _ ->
           assert query == %{
                    bool: %{
-                     filter: [
+                     must: [
                        %{exists: %{field: "deleted_at"}},
                        %{term: %{"rule_id" => 123}}
                      ]
@@ -3685,7 +3679,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
         _ ->
           assert query == %{
                    bool: %{
-                     filter: %{match_all: %{}},
+                     must: %{match_all: %{}},
                      must_not: %{exists: %{field: "deleted_at"}}
                    }
                  }

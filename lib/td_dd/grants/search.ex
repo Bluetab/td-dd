@@ -3,27 +3,17 @@ defmodule TdDd.Grants.Search do
   The Grants Search context
   """
 
+  alias TdCore.Search
+  alias TdCore.Search.ElasticDocumentProtocol
+  alias TdCore.Search.Permissions
+  alias TdDd.Grants.GrantStructure
   alias TdDd.Grants.Search.Query
   alias Truedat.Auth.Claims
-  alias Truedat.Search
-  alias Truedat.Search.Permissions
 
   require Logger
 
-  @behaviour Bodyguard.Policy
-
   @index :grants
   @default_sort ["_id"]
-  @aggs %{
-    "taxonomy" => %{terms: %{field: "data_structure_version.domain_ids", size: 500}},
-    "type.raw" => %{terms: %{field: "data_structure_version.type.raw", size: 50}},
-    "pending_removal.raw" => %{terms: %{field: "pending_removal.raw"}},
-    "system_external_id" => %{
-      terms: %{field: "data_structure_version.system.external_id.raw", size: 50}
-    }
-  }
-
-  def authorize(:manage, %{role: role}, _any), do: role == "admin"
 
   def get_filter_values(claims, params, user_id) do
     params = put_filter(params, "user_id", user_id)
@@ -31,12 +21,14 @@ defmodule TdDd.Grants.Search do
   end
 
   def get_filter_values(%Claims{user_id: user_id} = claims, %{} = params) do
+    aggs = ElasticDocumentProtocol.aggregations(%GrantStructure{})
+
     query =
       claims
       |> search_permissions()
-      |> Query.build_query(user_id, params, @aggs)
+      |> Query.build_query(user_id, params, aggs)
 
-    search = %{query: query, aggs: @aggs, size: 0}
+    search = %{query: query, aggs: aggs, size: 0}
 
     Search.get_filters(search, @index)
   end
@@ -52,11 +44,12 @@ defmodule TdDd.Grants.Search do
 
   def search(params, %Claims{user_id: user_id} = claims, page, size) do
     sort = Map.get(params, "sort", @default_sort)
+    aggs = ElasticDocumentProtocol.aggregations(%GrantStructure{})
 
     query =
       claims
       |> search_permissions()
-      |> Query.build_query(user_id, params, @aggs)
+      |> Query.build_query(user_id, params, aggs)
 
     %{
       from: page * size,

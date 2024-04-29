@@ -1,7 +1,8 @@
 defmodule TdDq.Implementations.Search.AggregationsTest do
   use TdDd.DataCase
 
-  alias TdDq.Implementations.Search.Aggregations
+  alias TdCore.Search.ElasticDocumentProtocol
+  alias TdDq.Implementations.Implementation
 
   setup do
     fields = [
@@ -28,8 +29,9 @@ defmodule TdDq.Implementations.Search.AggregationsTest do
                "execution_result_info.result_text" => _,
                "result_type.raw" => _,
                "rule" => _,
-               "source_external_id" => _
-             } = Aggregations.aggregations()
+               "source_external_id" => _,
+               "linked_structures_ids" => _
+             } = ElasticDocumentProtocol.aggregations(%Implementation{})
     end
 
     test "includes dynamic content" do
@@ -46,7 +48,7 @@ defmodule TdDq.Implementations.Search.AggregationsTest do
                  nested: %{path: "df_content.my_system"}
                },
                "taxonomy" => _
-             } = aggs = Aggregations.aggregations()
+             } = aggs = ElasticDocumentProtocol.aggregations(%Implementation{})
 
       refute Map.has_key?(aggs, "my_string")
     end
@@ -78,7 +80,7 @@ defmodule TdDq.Implementations.Search.AggregationsTest do
                  meta: %{type: "domain"},
                  terms: %{field: "rule.df_content.my_rule_domain", size: 50}
                }
-             } = Aggregations.aggregations()
+             } = ElasticDocumentProtocol.aggregations(%Implementation{})
     end
   end
 end

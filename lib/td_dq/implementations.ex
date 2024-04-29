@@ -10,6 +10,7 @@ defmodule TdDq.Implementations do
   alias TdCache.LinkCache
   alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
+  alias TdCore.Search.IndexWorker
   alias TdCx.Sources
   alias TdDd.Cache.StructureEntry
   alias TdDd.DataStructures
@@ -30,8 +31,6 @@ defmodule TdDq.Implementations do
   alias TdDq.Rules.RuleResults
   alias TdDq.Search.Helpers
   alias Truedat.Auth.Claims
-
-  @index_worker Application.compile_env(:td_dd, :dq_index_worker)
 
   @typep multi_result ::
            {:ok, map} | {:error, Multi.name(), any(), %{required(Multi.name()) => any()}}
@@ -241,6 +240,16 @@ defmodule TdDq.Implementations do
   end
 
   def update_implementation(
+        %Implementation{status: status, implementation_key: implementation_key},
+        _,
+        _,
+        _
+      )
+      when status in [:deprecated, :pending_approval, :versioned] do
+    {:error, {implementation_key, status}}
+  end
+
+  def update_implementation(
         %Implementation{status: status} = implementation,
         params,
         %Claims{user_id: user_id} = claims,
@@ -415,9 +424,8 @@ defmodule TdDq.Implementations do
   defp on_deprecate(result) do
     case result do
       {:ok, %{deprecated: {_, [_ | _] = impls}}} ->
-        impls
-        |> Enum.map(& &1.id)
-        |> @index_worker.reindex_implementations()
+        ids = Enum.map(impls, & &1.id)
+        IndexWorker.reindex(:implementations, ids)
 
         result
 
@@ -495,7 +503,7 @@ defmodule TdDq.Implementations do
       end)
 
     RuleLoader.refresh(rule_ids)
-    @index_worker.delete_implementations(implementation_ids)
+    IndexWorker.delete(:implementations, implementation_ids)
 
     result
   end
@@ -506,19 +514,19 @@ defmodule TdDq.Implementations do
   defp on_upsert(result, is_bulk \\ false)
 
   defp on_upsert({:ok, %{versioned: {_count, ids}, implementation: %{id: id}}} = result, false) do
-    @index_worker.reindex_implementations([id | ids])
+    IndexWorker.reindex(:implementations, [id | ids])
     result
   end
 
   defp on_upsert({:ok, %{implementation: %{id: id}}} = result, false) do
-    @index_worker.reindex_implementations(id)
+    IndexWorker.reindex(:implementations, [id])
     result
   end
 
   defp on_upsert({:ok, %{implementations_moved: {_, implementations}}} = result, false) do
-    implementations
-    |> Enum.map(fn %{id: id} -> id end)
-    |> @index_worker.reindex_implementations()
+    ids = Enum.map(implementations, fn %{id: id} -> id end)
+
+    IndexWorker.reindex(:implementations, ids)
 
     result
   end
@@ -686,7 +694,7 @@ defmodule TdDq.Implementations do
           source_id: source_id
         }
       }) do
-    names = string_split_space_lower(dataset)
+    names = get_string_elements(dataset)
 
     [
       {:not_deleted, nil},
@@ -736,8 +744,8 @@ defmodule TdDq.Implementations do
           source_id: source_id
         }
       }) do
-    names = string_split_space_lower(validations)
-    dataset_names = string_split_space_lower(dataset)
+    names = get_string_elements(validations)
+    dataset_names = get_string_elements(dataset)
 
     [
       {:not_deleted, nil},
@@ -756,8 +764,11 @@ defmodule TdDq.Implementations do
 
   def valid_validation_implementation_structures(_), do: []
 
-  defp string_split_space_lower(str),
-    do: str |> String.split(~r/[\s\.\*\&\|\^\%\/()><!=,+-]+/) |> Enum.map(&String.downcase/1)
+  defp get_string_elements(str) do
+    ~r/(?:\"(.*?)\"|[^"\s.*&|^%\/()><!=,+\-]+)+/
+    |> Regex.scan(str)
+    |> Enum.map(&List.last(&1))
+  end
 
   defp create_implementation_structures(_repo, %{implementation: implementation}) do
     results_dataset =
@@ -786,29 +797,17 @@ defmodule TdDq.Implementations do
   end
 
   defp insert_implementation(changeset) do
-    with {:ok, _} <- can_create_implementation_key(changeset),
-         {:ok, %{id: id} = implementation} <- Repo.insert(changeset) do
+    with {:ok, %{id: id} = implementation} <- Repo.insert(changeset) do
       implementation
       |> Implementation.implementation_ref_changeset(%{implementation_ref: id})
       |> Repo.update()
     end
   end
 
-  defp can_create_implementation_key(
-         %{changes: %{implementation_key: implementation_key}} = changeset
-       ) do
-    Implementation
-    |> where([i], i.implementation_key == ^implementation_key)
-    |> where([i], i.status == :published)
-    |> limit(1)
-    |> Repo.one()
-    |> case do
-      nil -> {:ok, changeset}
-      _ -> {:error, Changeset.add_error(changeset, :implementation_key, "duplicated")}
-    end
-  end
-
-  def enrich_implementation_structures(%Implementation{} = implementation) do
+  def enrich_implementation_structures(
+        %Implementation{} = implementation,
+        preload_structure \\ true
+      ) do
     enriched_dataset =
       implementation
       |> Map.get(:dataset)
@@ -817,17 +816,7 @@ defmodule TdDq.Implementations do
     enriched_populations = Enum.map(implementation.populations, &enrich_conditions/1)
     enriched_validation = Enum.map(implementation.validation, &enrich_conditions/1)
     enriched_segments = Enum.map(implementation.segments, &enrich_condition/1)
-
-    enriched_data_structures =
-      implementation
-      |> Repo.preload(
-        implementation_ref_struct: [
-          data_structures: [data_structure: [:system, :current_version]]
-        ],
-        data_structures: []
-      )
-      |> enrich_data_structures_path()
-      |> Enum.map(&enrich_domains(&1))
+    enriched_data_structures = maybe_preload_structure(implementation, preload_structure)
 
     implementation
     |> Map.put(:dataset, enriched_dataset)
@@ -855,6 +844,31 @@ defmodule TdDq.Implementations do
   end
 
   defp enrich_implementation_structure(structure), do: structure
+
+  defp maybe_preload_structure(implementation, true) do
+    implementation
+    |> Repo.preload(
+      implementation_ref_struct: [
+        data_structures: [data_structure: [:system, :current_version]]
+      ],
+      data_structures: []
+    )
+    |> enrich_data_structures_path()
+    |> Enum.map(&enrich_domains(&1))
+  end
+
+  defp maybe_preload_structure(
+         %{implementation_ref_struct: %{data_structures: data_structures}},
+         _
+       )
+       when is_list(data_structures),
+       do: data_structures
+
+  defp maybe_preload_structure(
+         %{implementation_ref_struct: %{data_structures: _data_structures}},
+         _
+       ),
+       do: []
 
   defp enrich_domains(
          %{data_structure: %DataStructure{domain_ids: [_ | _] = domain_ids} = structure} =
@@ -1179,7 +1193,7 @@ defmodule TdDq.Implementations do
 
       implementation_structure ->
         implementations_ids = get_implementation_versions_ids_by_ref(implementation_ref.id)
-        @index_worker.reindex_implementations(implementations_ids)
+        IndexWorker.reindex(:implementations, implementations_ids)
         implementation_structure
     end
   end
@@ -1196,7 +1210,7 @@ defmodule TdDq.Implementations do
         implementations_ids =
           get_implementation_versions_ids_by_ref(implementation_structure.implementation_id)
 
-        @index_worker.reindex_implementations(implementations_ids)
+        IndexWorker.reindex(:implementations, implementations_ids)
         deleted_implementation_structure
     end
   end
@@ -1208,7 +1222,7 @@ defmodule TdDq.Implementations do
       |> Enum.map(&Map.get(&1, :implementation_id))
 
     if implementations_ids !== [] do
-      @index_worker.reindex_implementations(implementations_ids)
+      IndexWorker.reindex(:implementations, implementations_ids)
     else
       :ok
     end
@@ -1229,4 +1243,16 @@ defmodule TdDq.Implementations do
   end
 
   def get_cached_content(content, _type), do: content
+
+  ## Dataloader
+  def datasource do
+    timeout = Application.get_env(:td_dd, TdDd.Repo)[:timeout]
+    Dataloader.Ecto.new(TdDd.Repo, query: &query/2, timeout: timeout)
+  end
+
+  defp query(queryable, params) do
+    Enum.reduce(params, queryable, fn
+      {:preload, preload}, q -> preload(q, ^preload)
+    end)
+  end
 end

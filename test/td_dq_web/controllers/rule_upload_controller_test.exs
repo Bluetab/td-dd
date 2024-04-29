@@ -25,13 +25,9 @@ defmodule TdDqWeb.RuleUploadControllerTest do
     }
   ]
 
-  setup_all do
-    start_supervised!(TdDq.Cache.RuleLoader)
-    start_supervised!(TdDd.Search.MockIndexWorker)
-    :ok
-  end
-
   setup do
+    start_supervised!(TdDq.Cache.RuleLoader)
+
     CacheHelpers.insert_template(scope: "dq", name: "bar_template")
 
     CacheHelpers.insert_template(scope: "dq", name: "hierarchies", content: @hierarchy_template)

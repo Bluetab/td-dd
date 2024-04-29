@@ -6,12 +6,12 @@ defmodule TdDd.DataStructures.StructureNotes do
   import Ecto.Query
 
   alias Ecto.Multi
+  alias TdCore.Search.IndexWorker
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.StructureNote
   alias TdDd.Repo
-  alias TdDd.Search.IndexWorker
 
   defdelegate authorize(action, user, params), to: TdDd.DataStructures.StructureNotes.Policy
 
@@ -55,6 +55,9 @@ defmodule TdDd.DataStructures.StructureNotes do
 
   defp add_params({filter, updated_at}, query) when filter in ["since", "updated_at"],
     do: where(query, [sn], sn.updated_at >= ^updated_at)
+
+  defp add_params({filter, updated_at}, query) when filter in ["until"],
+    do: where(query, [sn], sn.updated_at <= ^updated_at)
 
   defp add_params({"system_id", system_id}, query) do
     query
@@ -307,6 +310,7 @@ defmodule TdDd.DataStructures.StructureNotes do
       {:error, _, changeset, _} ->
         {:error, changeset}
     end
+    |> DataStructures.maybe_reindex_grant_requests()
   end
 
   defp on_update(res, opts \\ []) do
@@ -314,15 +318,42 @@ defmodule TdDd.DataStructures.StructureNotes do
       false -> on_update_structure(res)
       _ -> res
     end
+    |> DataStructures.maybe_reindex_grant_requests()
   end
 
   defp on_update_structure(
          {:ok, %{structure_note_update: %{status: status, data_structure_id: id}}} = res
        )
        when status in [:published, :deprecated] do
-    IndexWorker.reindex(id)
-    res
+    IndexWorker.reindex(:structures, id)
+
+    DataStructures.maybe_reindex_grant_requests(res)
   end
 
   defp on_update_structure(res), do: res
+
+  def suggestion_fields_for_template(template_id) do
+    {:ok, %{content: content}} = TdCache.TemplateCache.get(template_id)
+
+    content
+    |> TdDfLib.Format.flatten_content_fields()
+    |> Enum.filter(& &1["ai_suggestion"])
+    |> Enum.map(&map_suggestion_field/1)
+  end
+
+  defp map_suggestion_field(%{"values" => %{"fixed" => possible_values}} = field) do
+    field
+    |> Map.take(["name", "description"])
+    |> Map.put("possible_values", possible_values)
+  end
+
+  defp map_suggestion_field(%{"values" => %{"fixed_tuple" => tuples}} = field) do
+    possible_values = Enum.map(tuples, & &1["value"])
+
+    field
+    |> Map.take(["name", "description"])
+    |> Map.put("possible_values", possible_values)
+  end
+
+  defp map_suggestion_field(field), do: Map.take(field, ["name", "description"])
 end

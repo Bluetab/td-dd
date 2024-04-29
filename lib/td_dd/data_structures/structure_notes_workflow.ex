@@ -2,10 +2,12 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
   @moduledoc """
   Workflow module for structure note
   """
+  alias TdCluster.Cluster.TdAi
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.StructureNotes
+  alias TdDd.DataStructures.Validation
 
   def create_or_update(
         %DataStructure{id: data_structure_id} = data_structure,
@@ -236,13 +238,22 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
     end
   end
 
-  def available_actions(%DataStructure{id: id}) do
+  def available_actions(%DataStructure{id: id} = data_structure) do
     latest = get_latest_structure_note(id)
 
-    case can_create_new_draft(latest) do
-      :ok -> [:draft]
-      _ -> []
-    end
+    draft_status =
+      case can_create_new_draft(latest) do
+        :ok -> [:draft]
+        _ -> []
+      end
+
+    ai_suggestion_status =
+      case has_ai_suggestion(latest, data_structure) do
+        :ok -> [:ai_suggestions]
+        _ -> []
+      end
+
+    draft_status ++ ai_suggestion_status
   end
 
   def available_actions(%StructureNote{
@@ -255,7 +266,7 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
   end
 
   def available_actions(:draft, _latest_id, _id),
-    do: [:pending_approval, :published, :deleted, :edited]
+    do: [:pending_approval, :published, :deleted, :edited, :ai_suggestions]
 
   def available_actions(:pending_approval, _latest_id, _id), do: [:published, :rejected]
   def available_actions(:rejected, _latest_id, _id), do: [:draft, :deleted]
@@ -293,6 +304,42 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
   defp can_create_new_draft(%{status: :published}), do: :ok
   defp can_create_new_draft(%{status: :deprecated}), do: :ok
   defp can_create_new_draft(_), do: :conflict
+
+  defp has_ai_suggestion(nil, data_structure), do: valid_ai_suggestion_template(data_structure)
+
+  defp has_ai_suggestion(%{status: :published}, data_structure),
+    do: valid_ai_suggestion_template(data_structure)
+
+  defp has_ai_suggestion(%{status: :deprecated}, data_structure),
+    do: valid_ai_suggestion_template(data_structure)
+
+  defp has_ai_suggestion(%{status: :draft}, data_structure),
+    do: valid_ai_suggestion_template(data_structure)
+
+  defp has_ai_suggestion(_, _), do: :conflict
+
+  defp valid_ai_suggestion_template(
+         %{
+           current_version: %{type: structure_type},
+           system: %{external_id: system_external_id}
+         } = data_structure
+       ) do
+    with true <- Validation.has_ai_suggestion(data_structure),
+         {:ok, true} <-
+           TdAi.available_resource_mapping(
+             "data_structure",
+             %{
+               "type" => structure_type,
+               "system_external_id" => system_external_id
+             }
+           ) do
+      :ok
+    else
+      _ -> :conflict
+    end
+  end
+
+  defp valid_ai_suggestion_template(_), do: :conflict
 
   defp next_version(nil), do: 1
   defp next_version(%{version: version}), do: version + 1

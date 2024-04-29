@@ -16,9 +16,11 @@ if config_env() == :prod do
     ssl: System.get_env("DB_SSL", "") |> String.downcase() == "true",
     ssl_opts: [
       cacertfile: System.get_env("DB_SSL_CACERTFILE", ""),
-      verify: :verify_peer,
-      fail_if_no_peer_cert: System.get_env("DB_SSL", "") |> String.downcase() == "true",
+      verify:
+        System.get_env("DB_SSL_VERIFY", "verify_none") |> String.downcase() |> String.to_atom(),
       server_name_indication: System.get_env("DB_HOST") |> to_charlist(),
+      certfile: System.get_env("DB_SSL_CLIENT_CERT", ""),
+      keyfile: System.get_env("DB_SSL_CLIENT_KEY", ""),
       versions: [
         System.get_env("DB_SSL_VERSION", "tlsv1.2") |> String.downcase() |> String.to_atom()
       ]
@@ -38,7 +40,7 @@ if config_env() == :prod do
   config :td_cache, :event_stream, consumer_id: System.fetch_env!("HOSTNAME")
 
   config :td_dd, import_dir: System.get_env("IMPORT_DIR")
-  config :td_dd, TdDd.Search.Cluster, url: System.fetch_env!("ES_URL")
+  config :td_core, TdCore.Search.Cluster, url: System.fetch_env!("ES_URL")
 
   config :td_dd, TdDd.DataStructures.HistoryManager,
     history_depth_days:
@@ -87,11 +89,6 @@ if config_env() == :prod do
       implementation_cache_refresher: [
         schedule: System.get_env("CACHE_REFRESH_SCHEDULE", "@hourly"),
         task: {TdDq.Cache.ImplementationLoader, :refresh, []},
-        run_strategy: Quantum.RunStrategy.Local
-      ],
-      rule_cache_refresher: [
-        schedule: System.get_env("CACHE_REFRESH_SCHEDULE", "@hourly"),
-        task: {TdDq.Implementations.Tasks, :deprecate_implementations, []},
         run_strategy: Quantum.RunStrategy.Local
       ],
       rule_indexer: [
@@ -143,13 +140,14 @@ if config_env() == :prod do
       password: password
   end
 
-  config :td_dd, TdDd.Search.Cluster,
+  config :td_core, TdCore.Search.Cluster,
     aliases: %{
       grants: System.get_env("ES_ALIAS_GRANTS", "grants"),
       jobs: System.get_env("ES_ALIAS_JOBS", "jobs"),
       structures: System.get_env("ES_ALIAS_STRUCTURES", "structures"),
       implementations: System.get_env("ES_ALIAS_IMPLEMENTATIONS", "implementations"),
-      rules: System.get_env("ES_ALIAS_RULES", "rules")
+      rules: System.get_env("ES_ALIAS_RULES", "rules"),
+      grant_requests: System.get_env("ES_ALIAS_GRANT_REQUESTS", "grant_requests")
     },
     default_options: [
       timeout: System.get_env("ES_TIMEOUT", "5000") |> String.to_integer(),
@@ -174,11 +172,6 @@ if config_env() == :prod do
       "index.mapping.total_fields.limit" =>
         System.get_env("ES_MAPPING_TOTAL_FIELDS_LIMIT", "3000")
     }
-
-  config :td_dd, TdDd.DataStructures.Search,
-    es_scroll_size: System.get_env("ES_SCROLL_SIZE", "10000") |> String.to_integer(),
-    es_scroll_ttl: System.get_env("ES_SCROLL_TTL", "1m"),
-    max_bulk_results: System.get_env("MAX_BULK_RESULTS", "100000") |> String.to_integer()
 
   config :td_dd, TdDd.DataStructures.BulkUpdater,
     timeout_seconds:

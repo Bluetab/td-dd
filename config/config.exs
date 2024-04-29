@@ -15,6 +15,7 @@ config :td_dd, :lang, "en"
 # Environment
 config :td_dd, :env, Mix.env()
 config :td_cluster, :env, Mix.env()
+config :td_core, :env, Mix.env()
 
 # General application configuration
 config :td_dd,
@@ -76,9 +77,9 @@ config :codepagex, :encodings, [
 
 config :td_dd, TdDdWeb.CustomParsersPlug, max_payload_length: 100_000_000
 
-config :td_dd, index_worker: TdDd.Search.IndexWorker
-config :td_dd, cx_index_worker: TdCx.Search.IndexWorker
-config :td_dd, dq_index_worker: TdDq.Search.IndexWorker
+# config :td_dd, index_worker:  TdCore.Search.IndexWorker
+# config :td_dd, cx_index_worker: TdCx.Search.IndexWorker
+# config :td_dd, dq_index_worker:  TdCore.Search.IndexWorker
 config :td_dd, loader_worker: TdDd.Loader.Worker
 
 config :td_dd, TdDd.Lineage, timeout: 90_000
@@ -106,11 +107,11 @@ config :td_cache, :event_stream,
   consumer_group: "dd",
   streams: [
     [group: "dd", key: "data_structure:events", consumer: TdDd.Cache.StructureLoader],
-    [group: "dd", key: "template:events", consumer: TdDd.Search.IndexWorker],
-    [group: "dq", key: "business_concept:events", consumer: TdDq.Search.IndexWorker],
+    [group: "dd", key: "template:events", consumer: TdCore.Search.IndexWorker],
+    [group: "dq", key: "business_concept:events", consumer: TdCore.Search.IndexWorker],
     [group: "dq", key: "domain:events", consumer: TdDq.Cache.DomainEventConsumer],
     [group: "dq", key: "implementation_ref:events", consumer: TdDq.Cache.ImplementationLoader],
-    [group: "dq", key: "template:events", consumer: TdDq.Search.IndexWorker]
+    [group: "dq", key: "template:events", consumer: TdCore.Search.IndexWorker]
   ]
 
 config :td_dd, TdDd.Scheduler,
@@ -152,19 +153,14 @@ config :td_dd, TdDd.Scheduler,
       task: {TdDq.Cache.ImplementationLoader, :refresh, []},
       run_strategy: Quantum.RunStrategy.Local
     ],
-    rule_cache_refresher: [
-      schedule: "@hourly",
-      task: {TdDq.Implementations.Tasks, :deprecate_implementations, []},
-      run_strategy: Quantum.RunStrategy.Local
-    ],
     rule_indexer: [
       schedule: "@daily",
-      task: {TdDq.Search.IndexWorker, :reindex, []},
+      task: {TdCore.Search.IndexWorker, :reindex, []},
       run_strategy: Quantum.RunStrategy.Local
     ],
     grant_indexer: [
       schedule: "@daily",
-      task: {TdDd.Search.IndexWorker, :reindex_grants, [:all]},
+      task: {TdCore.Search.IndexWorker, :reindex_grants, [:all]},
       run_strategy: Quantum.RunStrategy.Local
     ],
     rule_remover: [

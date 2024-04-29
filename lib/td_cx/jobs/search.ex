@@ -3,22 +3,21 @@ defmodule TdCx.Jobs.Search do
   Helper module to construct job search queries.
   """
 
+  alias TdCore.Search
+  alias TdCore.Search.ElasticDocumentProtocol
+  alias TdCore.Search.Query
+  alias TdCx.Jobs.Job
   alias Truedat.Auth.Claims
-  alias Truedat.Search
-  alias Truedat.Search.Query
 
   @index :jobs
 
-  @aggs %{
-    "source_external_id" => %{terms: %{field: "source.external_id.raw", size: 50}},
-    "source_type" => %{terms: %{field: "source.type.raw", size: 50}},
-    "status" => %{terms: %{field: "status.raw", size: 50}},
-    "type" => %{terms: %{field: "type.raw", size: 50}}
-  }
-
   def get_filter_values(%Claims{role: role}, params) when role in ["admin", "service"] do
     query = Query.build_query(%{match_all: %{}}, params)
-    search = %{query: query, aggs: @aggs, size: 0}
+
+    aggs = ElasticDocumentProtocol.aggregations(%Job{})
+
+    search = %{query: query, aggs: aggs, size: 0}
+
     Search.get_filters(search, @index)
   end
 
@@ -28,7 +27,10 @@ defmodule TdCx.Jobs.Search do
 
   # Admin or service account search
   def search_jobs(params, %Claims{role: role}, page, size) when role in ["admin", "service"] do
-    query = Query.build_query(%{match_all: %{}}, params, @aggs)
+    aggs = ElasticDocumentProtocol.aggregations(%Job{})
+
+    query = Query.build_query(%{match_all: %{}}, params, aggs)
+
     sort = Map.get(params, "sort", ["_score", "external_id.raw"])
 
     %{
@@ -45,9 +47,9 @@ defmodule TdCx.Jobs.Search do
     do: %{results: [], aggregations: %{}, total: 0}
 
   defp do_search(search) do
-    search
-    |> Search.search(@index)
-    |> transform_response()
+    {:ok, response} = Search.search(search, @index)
+
+    transform_response(response)
   end
 
   defp transform_response({:ok, response}), do: transform_response(response)

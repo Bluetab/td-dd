@@ -7,13 +7,16 @@ defmodule TdDd.Grants do
 
   alias Ecto.Multi
   alias TdCache.UserCache
+  alias TdCore.Search.IndexWorker
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructureQueries
+  alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Grants.Grant
   alias TdDd.Repo
-  alias TdDd.Search.IndexWorker
   alias Truedat.Auth.Claims
+
+  @index :grants
 
   @pagination_params [:order_by, :limit, :before, :after]
 
@@ -24,6 +27,16 @@ defmodule TdDd.Grants do
     |> Repo.get!(id)
     |> Repo.preload(opts[:preload] || [])
     |> maybe_put_user()
+  end
+
+  def get_grant(id) do
+    query =
+      from g in Grant,
+        join: ds in assoc(g, :data_structure),
+        where: g.id == ^id,
+        preload: [data_structure: ds]
+
+    Repo.one(query)
   end
 
   def create_grant(
@@ -102,6 +115,18 @@ defmodule TdDd.Grants do
     |> enrich(opts)
   end
 
+  def maybe_disable_actions(actions, %{data_structure_version: %DataStructureVersion{} = dsv}) do
+    dsv
+    |> DataStructures.get_ds_classifications!()
+    |> Map.has_key?("_grantable")
+    |> case do
+      false -> []
+      _ -> actions
+    end
+  end
+
+  def maybe_disable_actions(actions, _dsv), do: actions
+
   defp grants_query(params) do
     Enum.reduce(params, Grant, fn
       {:filters, filters}, q ->
@@ -164,7 +189,7 @@ defmodule TdDd.Grants do
   defp reindex_grants(result, is_bulk \\ false)
 
   defp reindex_grants({:ok, %{grant: %Grant{id: id}} = multi}, false) do
-    IndexWorker.reindex_grants(id)
+    IndexWorker.reindex(@index, [id])
     {:ok, multi}
   end
 
@@ -173,7 +198,7 @@ defmodule TdDd.Grants do
   defp reindex_grants(error, _), do: error
 
   defp on_delete({:ok, %{grant: %Grant{id: id}} = multi}) do
-    IndexWorker.delete_grants(id)
+    IndexWorker.delete(@index, [id])
     {:ok, multi}
   end
 

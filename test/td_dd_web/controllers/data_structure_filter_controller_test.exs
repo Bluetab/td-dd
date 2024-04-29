@@ -10,11 +10,6 @@ defmodule TdDdWeb.DataStructureFilterControllerTest do
     }
   }
 
-  setup_all do
-    start_supervised!(TdDd.Search.Cluster)
-    :ok
-  end
-
   setup :verify_on_exit!
 
   describe "index" do
@@ -22,7 +17,7 @@ defmodule TdDdWeb.DataStructureFilterControllerTest do
     test "lists all filters (admin user)", %{conn: conn} do
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
-        assert query == %{bool: %{filter: %{match_all: %{}}}}
+        assert query == %{bool: %{must: %{match_all: %{}}}}
         SearchHelpers.aggs_response(@aggregations)
       end)
 
@@ -38,7 +33,7 @@ defmodule TdDdWeb.DataStructureFilterControllerTest do
     test "lists all filters (non-admin user)", %{conn: conn} do
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
-        assert query == %{bool: %{filter: %{match_none: %{}}}}
+        assert query == %{bool: %{must: %{match_none: %{}}}}
         SearchHelpers.aggs_response(%{})
       end)
 

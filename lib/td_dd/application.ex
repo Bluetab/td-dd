@@ -35,16 +35,13 @@ defmodule TdDd.Application do
     [
       # Task supervisor
       {Task.Supervisor, name: TdDd.TaskSupervisor},
-
-      # Workers for search and indexing
-      TdDd.Search.Cluster,
-      TdDd.Search.IndexWorker,
       TdDd.Search.StructureEnricher,
       # Worker for background bulk loading
       TdDd.Loader.Worker,
       # Task to recalculate data structure hashes on startup
       TdDd.DataStructures.Hasher,
       # Workers for cache loading
+      TdCx.Cache.SourcesLatestEvent,
       TdDd.Cache.SystemLoader,
       TdDd.Cache.StructureLoader,
       # Lineage workers
@@ -53,12 +50,9 @@ defmodule TdDd.Application do
       TdDd.Lineage,
       # Bulk Updater worker
       TdDd.DataStructures.BulkUpdater,
-      # CX Workers
-      TdCx.Search.IndexWorker,
       # DQ Workers
       TdDq.Cache.ImplementationLoader,
       TdDq.Cache.RuleLoader,
-      TdDq.Search.IndexWorker,
       # Scheduler for periodic tasks
       TdDd.Scheduler,
       TdDq.Cache.RuleMigrator,

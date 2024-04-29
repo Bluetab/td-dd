@@ -8,11 +8,6 @@ defmodule TdDqWeb.ImplementationFilterControllerTest do
 
   setup :verify_on_exit!
 
-  setup do
-    start_supervised!(TdDd.Search.Cluster)
-    :ok
-  end
-
   describe "index" do
     @tag authentication: [role: "admin"]
     test "maps filters from request parameters", %{conn: conn} do
@@ -21,7 +16,7 @@ defmodule TdDqWeb.ImplementationFilterControllerTest do
         _, :post, "/implementations/_search", %{query: query, size: 0}, _ ->
           assert query == %{
                    bool: %{
-                     filter: %{term: %{"rule.name.raw" => "foo"}},
+                     must: %{term: %{"rule.name.raw" => "foo"}},
                      must_not: %{exists: %{field: "deleted_at"}}
                    }
                  }
@@ -47,7 +42,7 @@ defmodule TdDqWeb.ImplementationFilterControllerTest do
         _, :post, "/implementations/_search", %{query: query, size: 0}, _ ->
           assert %{
                    bool: %{
-                     filter: [
+                     must: [
                        %{term: %{"_confidential" => false}},
                        %{term: %{"domain_ids" => _}}
                      ]
@@ -81,7 +76,7 @@ defmodule TdDqWeb.ImplementationFilterControllerTest do
         _, :post, "/implementations/_search", %{query: query, size: 0}, _ ->
           assert %{
                    bool: %{
-                     filter: [
+                     must: [
                        %{
                          bool: %{
                            should: [
@@ -111,7 +106,7 @@ defmodule TdDqWeb.ImplementationFilterControllerTest do
         _, :post, "/implementations/_search", %{query: query, size: 0}, _ ->
           assert query == %{
                    bool: %{
-                     filter: %{match_none: %{}},
+                     must: %{match_none: %{}},
                      must_not: %{exists: %{field: "deleted_at"}}
                    }
                  }

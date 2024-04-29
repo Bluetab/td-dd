@@ -6,10 +6,11 @@ defmodule TdCx.Events do
   import Ecto.Query
 
   alias Ecto.Multi
+  alias TdCore.Search.IndexWorker
+  alias TdCx.Cache.SourcesLatestEvent
   alias TdCx.Events.Event
   alias TdCx.Jobs.Audit
   alias TdCx.Jobs.Job
-  alias TdCx.Search.IndexWorker
   alias TdDd.Repo
   alias Truedat.Auth.Claims
 
@@ -65,13 +66,17 @@ defmodule TdCx.Events do
     |> Multi.run(:source_external_id, fn _, %{event: event} ->
       {:ok, get_source_external_id(event)}
     end)
+    |> Multi.run(:refresh_cache, fn _, %{source_id: source_id, event: latest_event} ->
+      :ok = SourcesLatestEvent.refresh(source_id, latest_event)
+      {:ok, nil}
+    end)
     |> Multi.run(:audit, Audit, :job_status_updated, [user_id])
     |> Repo.transaction()
     |> on_create()
   end
 
   defp on_create({:ok, %{event: event} = res}) do
-    IndexWorker.reindex(event.job_id)
+    IndexWorker.reindex(:jobs, [event.job_id])
     {:ok, res}
   end
 

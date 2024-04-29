@@ -10,11 +10,6 @@ defmodule TdDdWeb.GrantFilterControllerTest do
     }
   }
 
-  setup_all do
-    start_supervised!(TdDd.Search.Cluster)
-    :ok
-  end
-
   setup :verify_on_exit!
 
   describe "POST /api/grant_filters/search" do
@@ -25,7 +20,7 @@ defmodule TdDdWeb.GrantFilterControllerTest do
         _, :post, "/grants/_search", %{query: query, size: 0}, _ ->
           assert query == %{
                    bool: %{
-                     filter: %{match_all: %{}},
+                     must: %{match_all: %{}},
                      must_not: %{exists: %{field: "deleted_at"}}
                    }
                  }
@@ -51,7 +46,7 @@ defmodule TdDdWeb.GrantFilterControllerTest do
         _, :post, "/grants/_search", %{query: query, size: 0}, _ ->
           assert %{
                    bool: %{
-                     filter: %{
+                     must: %{
                        bool: %{
                          should: [
                            %{term: %{"data_structure_version.domain_ids" => _}},
@@ -79,7 +74,7 @@ defmodule TdDdWeb.GrantFilterControllerTest do
         _, :post, "/grants/_search", %{query: query, size: 0}, _ ->
           assert %{
                    bool: %{
-                     filter: [%{term: %{"foo" => "bar"}}, _permission_filter]
+                     must: [%{term: %{"foo" => "bar"}}, _permission_filter]
                    }
                  } = query
 
@@ -101,7 +96,7 @@ defmodule TdDdWeb.GrantFilterControllerTest do
         _, :post, "/grants/_search", %{query: query, size: 0}, _ ->
           assert %{
                    bool: %{
-                     filter: [
+                     must: [
                        %{
                          terms: %{
                            "data_structure_version.system.external_id.raw" => ["bar", "foo"]
@@ -136,7 +131,7 @@ defmodule TdDdWeb.GrantFilterControllerTest do
           _, :post, "/grants/_search", %{query: query, size: 0}, _ ->
             assert %{
                      bool: %{
-                       filter: %{term: %{"user_id" => ^user_id}},
+                       must: %{term: %{"user_id" => ^user_id}},
                        must_not: _deleted_at
                      }
                    } = query

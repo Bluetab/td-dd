@@ -11,6 +11,8 @@ defmodule TdDd.DataStructures do
   alias TdCache.LinkCache
   alias TdCache.TemplateCache
   alias TdCache.UserCache
+  alias TdCore.Search.IndexWorker
+  alias TdCore.Search.Permissions
   alias TdCx.Sources
   alias TdCx.Sources.Source
   alias TdDd.DataStructures.Audit
@@ -23,15 +25,15 @@ defmodule TdDd.DataStructures do
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.DataStructures.StructureNote
   alias TdDd.Grants
+  alias TdDd.Grants.Requests
   alias TdDd.Lineage.GraphData
   alias TdDd.Repo
   alias TdDd.Search.StructureVersionEnricher
   alias TdDfLib.Format
   alias TdDq.Implementations
   alias Truedat.Auth.Claims
-  alias Truedat.Search.Permissions
 
-  @index_worker Application.compile_env(:td_dd, :index_worker)
+  @index :structures
 
   @protected "_protected"
 
@@ -61,21 +63,12 @@ defmodule TdDd.DataStructures do
     |> Enum.map(&{&1, Map.get(clauses, &1)})
     |> Enum.reduce(DataStructureVersion, fn
       {:since, since}, q ->
-        join_ds_updated_at =
-          q
-          |> join(:inner, [dsv], ds in assoc(dsv, :data_structure))
-          |> where(
-            [_dsv, ds],
-            ds.updated_at >= ^since
-          )
-
         q
         |> join(:inner, [dsv], ds in assoc(dsv, :data_structure))
         |> where(
-          [dsv, _ds],
-          dsv.updated_at >= ^since or dsv.deleted_at >= ^since
+          [dsv, ds],
+          dsv.updated_at >= ^since or dsv.deleted_at >= ^since or ds.updated_at >= ^since
         )
-        |> union(^join_ds_updated_at)
 
       {:min_id, id}, q ->
         where(q, [dsv], dsv.id >= ^id)
@@ -108,19 +101,21 @@ defmodule TdDd.DataStructures do
         where(q, [dsv], is_nil(dsv.deleted_at))
 
       {:name, name}, q ->
-        where(q, [dsv], fragment("lower(?)", dsv.name) == ^name)
+        where(q, [dsv], fragment("lower(?) = lower(?)", dsv.name, ^name))
 
       {:name_in, names}, q ->
-        where(q, [dsv], fragment("lower(?)", dsv.name) in ^names)
+        lower_names = Enum.map(names, &String.downcase/1)
+        where(q, [dsv], fragment("lower(?)", dsv.name) in ^lower_names)
 
       {:class, class}, q ->
         where(q, [dsv], dsv.class == ^class)
 
       {:metadata_field, {key, value}}, q ->
-        where(q, [dsv], fragment("lower(?->>?) = ?", dsv.metadata, ^key, ^value))
+        where(q, [dsv], fragment("lower(?->>?) = lower(?)", dsv.metadata, ^key, ^value))
 
-      {:metadata_field_in, {key, value}}, q ->
-        where(q, [dsv], fragment("lower(?->>?) = ANY(?)", dsv.metadata, ^key, ^value))
+      {:metadata_field_in, {key, values}}, q ->
+        lower_values = Enum.map(values, &String.downcase/1)
+        where(q, [dsv], fragment("lower(?->>?) = ANY(?)", dsv.metadata, ^key, ^lower_values))
 
       {:source_id, source_id}, q ->
         q
@@ -239,6 +234,19 @@ defmodule TdDd.DataStructures do
   end
 
   def get_cached_content(content, _structure), do: content
+
+  def get_ds_classifications!(%DataStructureVersion{} = dsv) do
+    Repo.preload(dsv, :classifications)
+    |> case do
+      %{classifications: classifications} ->
+        Enum.reduce(classifications, %{}, fn %{name: name, class: class}, acc ->
+          Map.put(acc, name, class)
+        end)
+
+      _ ->
+        %{}
+    end
+  end
 
   defp enrich(
          %DataStructureVersion{id: id} = _data_structure_version,
@@ -696,6 +704,7 @@ defmodule TdDd.DataStructures do
     id
     |> do_update_data_structure(changeset, inherit, user_id)
     |> maybe_reindex_implementations()
+    |> maybe_reindex_grant_requests()
     |> tap(&on_update/1)
   end
 
@@ -716,6 +725,7 @@ defmodule TdDd.DataStructures do
       end)
       |> List.flatten()
       |> maybe_reindex_implementations()
+      |> maybe_reindex_grant_requests()
       |> on_update
     end)
   end
@@ -746,8 +756,8 @@ defmodule TdDd.DataStructures do
     {:ok, ids}
   end
 
-  defp on_update({:ok, %{updated_ids: ids}}), do: @index_worker.reindex(ids)
-  defp on_update(ids) when is_list(ids), do: @index_worker.reindex(ids)
+  defp on_update({:ok, %{updated_ids: ids}}), do: IndexWorker.reindex(@index, ids)
+  defp on_update(ids) when is_list(ids), do: IndexWorker.reindex(@index, ids)
 
   defp on_update(_), do: :ok
 
@@ -783,11 +793,11 @@ defmodule TdDd.DataStructures do
 
   defp on_delete({:ok, %{} = res}) do
     with %{delete_versions: {_count, data_structure_ids}} <- res do
-      @index_worker.delete(data_structure_ids)
+      IndexWorker.delete(@index, data_structure_ids)
     end
 
     with %{descendents: %{data_structures_ids: structures_ids}} <- res do
-      @index_worker.delete(structures_ids)
+      IndexWorker.delete(@index, structures_ids)
     end
 
     {:ok, res}
@@ -1007,6 +1017,7 @@ defmodule TdDd.DataStructures do
     structure_metadata
     |> StructureMetadata.changeset(params)
     |> Repo.update()
+    |> maybe_reindex_grant_requests()
   end
 
   def get_metadata_version(%DataStructureVersion{
@@ -1138,7 +1149,13 @@ defmodule TdDd.DataStructures do
   end
 
   def streamed_enriched_structure_versions(opts \\ []) do
-    {enrich_opts, opts} = Keyword.split(opts, [:content, :filters])
+    chunk_size = Keyword.get(opts, :chunk_size, 1000)
+
+    {enrich_opts, opts} =
+      opts
+      |> Keyword.drop([:chunk_size])
+      |> Keyword.split([:content, :filters])
+
     enrich = StructureVersionEnricher.enricher(enrich_opts)
 
     opts
@@ -1146,17 +1163,63 @@ defmodule TdDd.DataStructures do
     |> Map.drop([:with_protected_metadata])
     |> DataStructureQueries.enriched_structure_versions()
     |> Repo.stream()
-    |> Stream.map(
+    |> Stream.chunk_every(chunk_size)
+    |> Stream.flat_map(
       &(&1
-        |> enrich.()
-        |> protect_metadata(Keyword.get(opts, :with_protected_metadata)))
+        |> Enum.map(fn dsv ->
+          dsv
+          |> enrich.()
+          |> protect_metadata(Keyword.get(opts, :with_protected_metadata))
+        end))
     )
   end
 
-  ## Dataloader
+  def maybe_reindex_grant_requests(
+        {:ok,
+         %{
+           data_structure_id: data_structure_id
+         }} = data
+      ) do
+    Requests.reindex_on_data_structure_update(data_structure_id)
 
+    data
+  end
+
+  def maybe_reindex_grant_requests(
+        {:ok,
+         %{
+           updated_ids: data_structure_ids
+         }} = data
+      ) do
+    Requests.reindex_on_data_structure_update(data_structure_ids)
+
+    data
+  end
+
+  def maybe_reindex_grant_requests(
+        {:ok,
+         %{
+           structure_note: %{
+             data_structure_id: data_structure_id
+           }
+         }} = data
+      ) do
+    Requests.reindex_on_data_structure_update(data_structure_id)
+
+    data
+  end
+
+  def maybe_reindex_grant_requests(data_structure_ids) when is_list(data_structure_ids) do
+    Requests.reindex_on_data_structure_update(data_structure_ids)
+    data_structure_ids
+  end
+
+  def maybe_reindex_grant_requests(data), do: data
+
+  ## Dataloader
   def datasource do
-    Dataloader.Ecto.new(TdDd.Repo, query: &query/2, timeout: Dataloader.default_timeout())
+    timeout = Application.get_env(:td_dd, TdDd.Repo)[:timeout]
+    Dataloader.Ecto.new(TdDd.Repo, query: &query/2, timeout: timeout)
   end
 
   defp query(queryable, params) do

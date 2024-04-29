@@ -5,11 +5,6 @@ defmodule TdDD.Systems.SystemSearchTest do
 
   alias TdDd.Systems.SystemSearch
 
-  setup do
-    start_supervised!(TdDd.Search.Cluster)
-    :ok
-  end
-
   setup :verify_on_exit!
 
   describe "get_systems_with_count/3" do
@@ -31,7 +26,7 @@ defmodule TdDD.Systems.SystemSearchTest do
 
           assert %{
                    bool: %{
-                     filter: [
+                     must: [
                        %{term: %{"confidential" => false}},
                        %{term: %{"domain_ids" => _}}
                      ]

@@ -65,22 +65,8 @@ defmodule TdDdWeb.Schema.CatalogViewConfigsTest do
   describe "catalog view config query" do
     setup :create_catalog_view_config
 
-    @tag authentication: [role: "user", permissions: [:foo]]
-    test "returns forbidden when queried by user role", %{conn: conn} do
-      assert %{"data" => data, "errors" => errors} =
-               conn
-               |> post("/api/v2", %{
-                 "query" => @catalog_view_config_query,
-                 "variables" => %{"id" => 123}
-               })
-               |> json_response(:ok)
-
-      assert data == %{"catalogViewConfig" => nil}
-      assert [%{"message" => "forbidden"}] = errors
-    end
-
-    @tag authentication: [role: "admin"]
-    test "returns data when queried by admin role", %{
+    @tag authentication: [role: "user"]
+    test "returns data when queried by user role", %{
       conn: conn,
       catalog_view_config: %{
         id: config_id,
@@ -114,17 +100,6 @@ defmodule TdDdWeb.Schema.CatalogViewConfigsTest do
     setup :create_catalog_view_config
 
     @tag authentication: [role: "user"]
-    test "returns forbidden when queried by user role", %{conn: conn} do
-      assert %{"data" => data, "errors" => errors} =
-               conn
-               |> post("/api/v2", %{"query" => @catalog_view_configs_query})
-               |> json_response(:ok)
-
-      assert data == %{"catalogViewConfigs" => nil}
-      assert [%{"message" => "forbidden"}] = errors
-    end
-
-    @tag authentication: [role: "admin"]
     test "returns events in descending order", %{
       conn: conn,
       catalog_view_config: %{

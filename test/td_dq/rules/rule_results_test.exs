@@ -13,7 +13,6 @@ defmodule TdDq.RuleResultsTest do
 
   setup_all do
     start_supervised(TdDq.MockRelationCache)
-    start_supervised(TdDd.Search.MockIndexWorker)
     start_supervised(TdDq.Cache.RuleLoader)
 
     on_exit(fn -> Redix.del!(@stream) end)

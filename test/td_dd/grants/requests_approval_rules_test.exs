@@ -13,13 +13,14 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
 
   setup _tags do
     start_supervised!(TdDd.Search.StructureEnricher)
+
     template = CacheHelpers.insert_template(name: @template_name)
 
     %{id: domain_id} = CacheHelpers.insert_domain()
     %{id: approver_user_id} = CacheHelpers.insert_user()
 
     CacheHelpers.put_grant_request_approvers([
-      %{user_id: approver_user_id, domain_id: domain_id, role: @approver_role}
+      %{user_id: approver_user_id, resource_id: domain_id, role: @approver_role}
     ])
 
     domain_ids = [domain_id]

@@ -9,16 +9,23 @@ defmodule TdDd.Grants.Requests do
   alias Ecto.Multi
   alias TdCache.Permissions
   alias TdCache.UserCache
+  alias TdCore.Search.IndexWorker
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.Grants
   alias TdDd.Grants.ApprovalRules
   alias TdDd.Grants.Audit
+  alias TdDd.Grants.Grant
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestApproval
   alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Grants.GrantRequestStatus
   alias TdDd.Repo
   alias Truedat.Auth.Claims
+
+  @grant_request_index_alias :grant_requests
+  @grants_index_alias :grants
 
   defdelegate authorize(action, user, params), to: TdDd.Grants.Policy
 
@@ -44,15 +51,11 @@ defmodule TdDd.Grants.Requests do
     |> Repo.get!(id)
   end
 
-  def create_grant_request_group(
-        %{} = params,
-        modification_grant \\ nil
-      ) do
+  def create_grant_request_group(%{} = params) do
     changeset =
       GrantRequestGroup.changeset(
         %GrantRequestGroup{},
-        params,
-        modification_grant
+        params
       )
 
     Multi.new()
@@ -67,6 +70,7 @@ defmodule TdDd.Grants.Requests do
     |> Multi.run(:approval_rules, &maybe_apply_approval_rules(&1, &2))
     |> Multi.run(:audit, Audit, :grant_request_group_created, [])
     |> Repo.transaction()
+    |> on_upsert()
   end
 
   defp maybe_apply_approval_rules(_, %{requests: {_, requests}}) do
@@ -111,22 +115,36 @@ defmodule TdDd.Grants.Requests do
   end
 
   defp update_domain_ids(%{group: %{id: id}}) do
+    query =
+      GrantRequest
+      |> where([gr], gr.group_id == ^id)
+      |> join(:left, [gr], ds in assoc(gr, :data_structure))
+      |> join(:left, [gr], g in assoc(gr, :grant))
+      |> join(:left, [_gr, _ds, g], gds in assoc(g, :data_structure))
+      |> select([gr, ds, _g, gds], %{
+        id: gr.id,
+        domain_ids: fragment("COALESCE(?, ?)", ds.domain_ids, gds.domain_ids)
+      })
+
     GrantRequest
+    |> join(:inner, [gr], sub in subquery(query), on: gr.id == sub.id)
+    |> update([_gr, sub],
+      set: [domain_ids: sub.domain_ids]
+    )
     |> select([gr], gr.id)
-    |> where([gr], gr.group_id == ^id)
-    |> join(:inner, [gr], ds in assoc(gr, :data_structure))
-    |> update([gr, ds], set: [domain_ids: ds.domain_ids])
   end
 
   def delete_grant_request_group(%GrantRequestGroup{} = group) do
-    Repo.delete(group)
+    group
+    |> Repo.delete()
+    |> on_delete()
   end
 
   @spec list_grant_requests(Claims.t(), map) ::
           {:error, Changeset.t()} | {:ok, [GrantRequest.t()]}
   def list_grant_requests(%Claims{} = claims, %{} = params \\ %{}) do
-    {_data = %{action: nil, user: nil, limit: 1000},
-     _types = %{
+    {%{action: nil, user: nil, limit: 1000},
+     %{
        action: :string,
        domain_ids: {:array, :integer},
        group_id: :integer,
@@ -235,7 +253,11 @@ defmodule TdDd.Grants.Requests do
       })
 
     clauses
-    |> Map.put_new(:preload, group: [:modification_grant], data_structure: :current_version)
+    |> Map.put_new(:preload,
+      grant: :data_structure_version,
+      group: [:modification_grant],
+      data_structure: :current_version
+    )
     |> Enum.reduce(query, fn
       {:preload, preloads}, q ->
         preload(q, ^preloads)
@@ -266,15 +288,25 @@ defmodule TdDd.Grants.Requests do
     end)
   end
 
-  def latest_grant_request_by_data_structure(data_structure_id, user_id) do
-    GrantRequest
+  def latest_grant_request(%{data_structure_id: data_structure_id}, user_id) do
+    latest_grant_request_query(user_id)
     |> where([r], data_structure_id: ^data_structure_id)
+    |> Repo.one()
+  end
+
+  def latest_grant_request(%{grant_id: grant_id, request_type: request_type}, user_id) do
+    latest_grant_request_query(user_id)
+    |> where([r], grant_id: ^grant_id, request_type: ^request_type)
+    |> Repo.one()
+  end
+
+  defp latest_grant_request_query(user_id) do
+    GrantRequest
     |> join(:inner, [r], g in assoc(r, :group))
     |> where([_, g], g.user_id == ^user_id)
     |> preload(:group)
     |> order_by(desc: :inserted_at)
     |> limit(1)
-    |> Repo.one()
   end
 
   def latest_grant_request_by_data_structures(data_structure_ids, user_id) do
@@ -319,21 +351,33 @@ defmodule TdDd.Grants.Requests do
   end
 
   def delete_grant_request(%GrantRequest{} = grant_request) do
-    Repo.delete(grant_request)
+    grant_request
+    |> Repo.delete()
+    |> on_delete()
   end
 
   def create_approval(
         %{user_id: user_id} = claims,
-        %GrantRequest{id: id, domain_ids: domain_ids, current_status: status} = grant_request,
+        %GrantRequest{
+          id: id,
+          domain_ids: domain_ids,
+          current_status: status,
+          request_type: request_type,
+          grant: grant
+        } = grant_request,
         params,
         approval_rule_id \\ nil
       ) do
+    data_structure_id =
+      Map.get(grant_request, :data_structure_id) || Map.get(grant, :data_structure_id)
+
     changeset =
       GrantRequestApproval.changeset(
         %GrantRequestApproval{
           grant_request_id: id,
           user_id: user_id,
           domain_ids: domain_ids,
+          data_structure_id: data_structure_id,
           current_status: status,
           approval_rule_id: approval_rule_id
         },
@@ -344,10 +388,297 @@ defmodule TdDd.Grants.Requests do
     Multi.new()
     |> Multi.insert(:approval, changeset)
     |> maybe_insert_status(grant_request, Changeset.fetch_field!(changeset, :is_rejection))
+    |> Multi.run(:grant, fn _repo, %{status: status} ->
+      maybe_update_pending_removal(request_type, grant, status, claims)
+    end)
     |> Multi.run(:audit, Audit, :grant_request_approval_created, [])
     |> Repo.transaction()
+    |> on_upsert()
     |> enrich()
   end
+
+  def bulk_create_approvals(
+        %{user_id: user_id} = claims,
+        grant_requests,
+        bulk_params
+      ) do
+    grant_request_changesets =
+      grant_requests
+      |> Enum.map(fn %{
+                       id: id,
+                       domain_ids: domain_ids,
+                       current_status: current_status,
+                       grant: grant
+                     } = grant_request ->
+        data_structure_id =
+          Map.get(grant_request, :data_structure_id) || Map.get(grant, :data_structure_id)
+
+        GrantRequestApproval.changeset(
+          %GrantRequestApproval{
+            grant_request_id: id,
+            user_id: user_id,
+            domain_ids: domain_ids,
+            data_structure_id: data_structure_id,
+            current_status: current_status
+          },
+          bulk_params,
+          claims
+        )
+      end)
+
+    grant_request_entries =
+      grant_request_changesets
+      |> Enum.filter(fn %{valid?: valid} -> valid end)
+      |> Enum.map(fn changeset ->
+        %{
+          grant_request_id: Changeset.get_field(changeset, :grant_request_id),
+          user_id: Changeset.get_field(changeset, :user_id),
+          role: Changeset.get_field(changeset, :role),
+          is_rejection: Changeset.get_field(changeset, :is_rejection),
+          comment: Changeset.get_field(changeset, :comment),
+          inserted_at: DateTime.utc_now()
+        }
+      end)
+
+    Multi.new()
+    |> Multi.insert_all(:approvals, GrantRequestApproval, grant_request_entries,
+      returning: [
+        :id,
+        :grant_request_id,
+        :comment,
+        :user_id,
+        :role,
+        :is_rejection
+      ]
+    )
+    |> bulk_maybe_insert_status
+    |> bulk_maybe_update_pending_removal(grant_requests)
+    |> Multi.run(:audit, Audit, :grant_request_bulk_approval_created, [])
+    |> Repo.transaction()
+    |> on_upsert()
+    |> on_upsert_grants()
+  end
+
+  def reindex_on_data_structure_update(data_structure_ids) when is_list(data_structure_ids) do
+    grand_request_ids =
+      GrantRequest
+      |> where([r], r.data_structure_id in ^data_structure_ids)
+      |> Repo.all()
+      |> Enum.map(fn %{id: id} -> id end)
+
+    if length(grand_request_ids) > 0 do
+      IndexWorker.reindex(@grant_request_index_alias, grand_request_ids)
+    end
+  end
+
+  def reindex_on_data_structure_update(data_structure_ids),
+    do: reindex_on_data_structure_update([data_structure_ids])
+
+  defp bulk_maybe_insert_status(multi) do
+    Multi.run(multi, :statuses, fn _, changes ->
+      approval_entries =
+        changes
+        |> Map.get(:approvals)
+        |> elem(1)
+        |> Enum.reduce([], fn grant_request, acc ->
+          [validate_grant_request_status(grant_request) | acc]
+        end)
+        |> Enum.reject(&is_nil/1)
+
+      if Enum.any?(approval_entries, &(&1 == :error)) do
+        {:error, :insert_status}
+      else
+        result =
+          Repo.insert_all(GrantRequestStatus, approval_entries,
+            returning: [:id, :status, :grant_request_id]
+          )
+
+        {:ok, result}
+      end
+    end)
+  end
+
+  defp bulk_maybe_update_pending_removal(
+         multi,
+         grant_requests
+       ) do
+    grant_revoke_requests =
+      grant_requests
+      |> Enum.filter(fn %{request_type: request_type} ->
+        to_string(request_type) == "grant_removal"
+      end)
+
+    do_update_pending_removals(multi, grant_revoke_requests)
+  end
+
+  defp do_update_pending_removals(multi, [_ | _] = grant_revoke_requests) do
+    Multi.run(multi, :update_pending_removal_grants, fn _, %{statuses: {_, statuses}} ->
+      grant_ids =
+        statuses
+        |> Enum.filter(fn %{status: status} -> status == "approved" end)
+        |> Enum.reduce([], fn
+          %{grant_request_id: grant_request_id}, acc ->
+            get_grant_from_grant_request(grant_revoke_requests, grant_request_id, acc)
+        end)
+
+      {count, _} =
+        Grant
+        |> where([g], g.id in ^grant_ids)
+        |> Repo.update_all(set: [pending_removal: true])
+
+      {:ok, {count, grant_ids}}
+    end)
+  end
+
+  defp do_update_pending_removals(multi, _), do: multi
+
+  defp get_grant_from_grant_request(grant_requests, grant_request_id, acc) do
+    grant_requests
+    |> Enum.find(fn gr ->
+      gr.id == grant_request_id and to_string(gr.request_type) == "grant_removal"
+    end)
+    |> case do
+      nil ->
+        acc
+
+      %{grant_id: grant_id} ->
+        [grant_id | acc]
+    end
+  end
+
+  defp maybe_update_pending_removal(
+         "grant_removal",
+         %Grant{} = grant,
+         status,
+         claims
+       ) do
+    maybe_update_pending_removal(:grant_removal, grant, status, claims)
+  end
+
+  defp maybe_update_pending_removal(
+         :grant_removal,
+         %Grant{} = grant,
+         %{status: status},
+         claims
+       )
+       when status in ["approved"] do
+    {:ok, %{grant: grant}} = Grants.update_grant(grant, %{pending_removal: true}, claims)
+
+    {:ok, grant}
+  end
+
+  defp maybe_update_pending_removal(_request_type, _grant, _status, _claims) do
+    {:ok, nil}
+  end
+
+  defp validate_grant_request_status(%{is_rejection: true} = grant_request) do
+    changeset =
+      GrantRequestStatus.changeset(
+        %GrantRequestStatus{
+          status: "rejected",
+          grant_request_id: grant_request.grant_request_id,
+          user_id: grant_request.user_id
+        },
+        %{}
+      )
+
+    if changeset.valid? do
+      %{
+        status: "rejected",
+        grant_request_id: grant_request.grant_request_id,
+        user_id: grant_request.user_id,
+        reason: grant_request.comment,
+        inserted_at: DateTime.utc_now()
+      }
+    else
+      :error
+    end
+  end
+
+  defp validate_grant_request_status(%{is_rejection: false} = grant_request) do
+    required = required_approvals()
+
+    approvals =
+      grant_request
+      |> Map.put(:id, grant_request.grant_request_id)
+      |> list_approvals()
+
+    changeset =
+      GrantRequestStatus.changeset(
+        %GrantRequestStatus{
+          status: "approved",
+          user_id: grant_request.user_id,
+          grant_request_id: grant_request.grant_request_id
+        },
+        %{}
+      )
+
+    with true <- MapSet.subset?(required, approvals),
+         %{valid?: true} <- changeset do
+      %{
+        status: "approved",
+        grant_request_id: grant_request.grant_request_id,
+        user_id: grant_request.user_id,
+        reason: grant_request.comment,
+        inserted_at: DateTime.utc_now()
+      }
+    else
+      %{valid?: false} -> :error
+      false -> nil
+    end
+  end
+
+  defp on_upsert_grants({:ok, %{update_pending_removal_grants: {_count, grant_ids}}} = result) do
+    IndexWorker.reindex(@grants_index_alias, grant_ids)
+
+    result
+  end
+
+  defp on_upsert_grants(result), do: result
+
+  defp on_upsert({:ok, %{approval: %{grant_request_id: grant_request_id}}} = result) do
+    IndexWorker.reindex(@grant_request_index_alias, [grant_request_id])
+
+    result
+  end
+
+  defp on_upsert({:ok, %{requests: {_, ids}}} = result) do
+    IndexWorker.reindex(@grant_request_index_alias, ids)
+    result
+  end
+
+  defp on_upsert({:ok, %{approvals: {_, approvals}}} = result) do
+    ids =
+      approvals
+      |> Enum.map(fn %{grant_request_id: grant_request_id} ->
+        grant_request_id
+      end)
+
+    IndexWorker.reindex(@grant_request_index_alias, ids)
+
+    result
+  end
+
+  defp on_upsert(result), do: result
+
+  defp on_delete({:ok, %GrantRequest{id: id}} = result) do
+    IndexWorker.delete(@grant_request_index_alias, [id])
+
+    result
+  end
+
+  defp on_delete({:ok, %{requests: [_ | _] = requests}} = result) do
+    ids =
+      requests
+      |> Enum.map(& &1.id)
+      |> Enum.uniq()
+
+    IndexWorker.delete(@grant_request_index_alias, ids)
+
+    result
+  end
+
+  defp on_delete(result), do: result
 
   defp where_status(query, status) when is_binary(status) do
     case String.split(status, ",") do
@@ -402,8 +733,31 @@ defmodule TdDd.Grants.Requests do
   defp get_user_roles(%{role: "service"}), do: :all
 
   defp get_user_roles(%{user_id: user_id}) do
-    {:ok, roles} = TdCache.UserCache.get_roles(user_id)
-    get_roles_by_domain_map(roles)
+    {:ok, domain_roles} = TdCache.UserCache.get_roles(user_id)
+    {:ok, structure_roles} = TdCache.UserCache.get_roles(user_id, "structure")
+
+    %{
+      "domain" => get_roles_by_domain_map(domain_roles),
+      "structure" => get_roles_by_structure_map(structure_roles)
+    }
+  end
+
+  # FIXME: refactor me please!!
+  defp get_roles_by_structure_map(nil), do: %{}
+
+  defp get_roles_by_structure_map(roles) do
+    roles
+    |> Enum.flat_map(fn {role, resource_ids} ->
+      Enum.flat_map(resource_ids, fn resource_id ->
+        [{role, resource_id}]
+      end)
+    end)
+    |> Enum.group_by(
+      fn {_, resource_id} -> resource_id end,
+      fn {role, _} -> role end
+    )
+    |> Enum.map(fn {resource_id, roles} -> {resource_id, MapSet.new(roles)} end)
+    |> Map.new()
   end
 
   defp get_roles_by_domain_map(nil), do: %{}
@@ -450,12 +804,17 @@ defmodule TdDd.Grants.Requests do
   end
 
   defp enrich(
-         %GrantRequest{group: group, data_structure: data_structure, approvals: approvals} =
-           request
+         %GrantRequest{
+           group: group,
+           data_structure: data_structure,
+           approvals: approvals,
+           grant: grant
+         } = request
        ) do
     %{
       request
       | group: enrich(group),
+        grant: enrich(grant),
         data_structure: enrich(data_structure),
         approvals: enrich(approvals)
     }
@@ -470,6 +829,14 @@ defmodule TdDd.Grants.Requests do
     else
       _ -> group
     end
+  end
+
+  defp enrich(%{data_structure_version: data_structure_version} = grant) do
+    %{grant | data_structure_version: enrich(data_structure_version)}
+  end
+
+  defp enrich(%DataStructureVersion{id: id}) do
+    DataStructures.enriched_structure_versions(ids: [id]) |> hd()
   end
 
   defp enrich(%DataStructure{current_version: %{id: id}} = ds) do
@@ -496,23 +863,38 @@ defmodule TdDd.Grants.Requests do
   end
 
   defp with_missing_roles(
-         %{approvals: approvals, domain_ids: domain_ids} = grant_request,
+         %{
+           approvals: approvals,
+           domain_ids: domain_ids,
+           data_structure_id: data_structure_id,
+           grant: grant
+         } = grant_request,
          required_roles,
          user_roles
        )
        when is_list(approvals) do
     user_roles_in_domains =
       user_roles
+      |> Map.get("domain", %{})
       |> Map.take(domain_ids)
       |> Map.values()
       |> Enum.reduce(MapSet.new(), &MapSet.union/2)
+
+    user_roles_in_structure =
+      user_roles
+      |> Map.get("structure", %{})
+      |> Map.take([data_structure_id || grant.data_structure_id])
+      |> Map.values()
+      |> Enum.reduce(MapSet.new(), &MapSet.union/2)
+
+    user_roles_in_grant_request = MapSet.union(user_roles_in_domains, user_roles_in_structure)
 
     approved_roles = MapSet.new(approvals, & &1.role)
 
     pending_roles =
       required_roles
       |> MapSet.difference(approved_roles)
-      |> MapSet.intersection(user_roles_in_domains)
+      |> MapSet.intersection(user_roles_in_grant_request)
       |> MapSet.to_list()
 
     %{grant_request | pending_roles: pending_roles}

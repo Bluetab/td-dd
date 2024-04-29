@@ -2,10 +2,228 @@
 
 ## [Unreleased]
 
+## Added
+
+- [TD-6535] Add Store chunk size configuration
+
+### Fixed
+
+- [TD-6424] Fixed switch on fields aren't translated when uploading and
+  downloading
+- [TD-5981] Grants download
+- [TD-6538] Refactor the list data structure version query
+- [TD-6552] Update TD-Cache to return all domains if permissions are in default role
+- [TD-5495] Foreing keys columns should match original ID columns in all tables
+
+## [6.4.1] 2024-04-15
+
+## Added
+
+- [TD-6535] Add Store chunk size configuration
+
+## Fixed
+
+- [TD-5981] Grants download
+
+## [6.4.0] 2024-04-09
+
+## Added
+
+- [TD-6283] Add alias in linked data structure test
+- [TD-6507] Add Elastic bulk page size for enviroment vars
+
+### Fixed
+
+- [TD-6503] Fix Grant Request bulk creation domain ids
+- [TD-6401] Fixed Content aggregations have a maximum of 10 values
+- [TD-6521] Fix Raw implemnetations structure links
+
+## [6.3.3] 2024-04-15
+
+## Added
+
+- [TD-6535] Add Store chunk size configuration
+
+## Fixed
+
+- [TD-5981] Grants download
+
+## [6.3.2] 2024-05-03
+
+## [6.3.1] 2024-05-03
+
+### Added
+
+- [TD-6507] Add Elastic bulk page size for enviroment vars
+
+## [6.3.0] 2024-03-20
+
+### Added
+
+- [TD-6434] Remove Grant actions if structure not grantable
+- [TD-4110] Allow structure scoped permissions management
+- [TD-6438] Add Remediation Plan fields for API V2.
+
+### Fixed
+
+- [TD-6434] Remove extra quotes in implementation source, population and validation
+
+## [6.2.4] 2024-04-15
+
+## Added
+
+- [TD-6535] Add Store chunk size configuration
+
+## Fixed
+
+- [TD-5981] Grants download
+
+## [6.2.3] 2024-04-03
+
+### Fixed
+
+- [TD-6507] Add Elastic bulk page size for enviroment vars
+
+## [6.2.2] 2024-03-08
+
+- [TD-6456] In bulk grant approves, when a grant revoke is approved, grant is reindexed
+
+## [6.2.1] 2024-02-27
+
+### Added
+
+- [TD-6436] All Dataloaders use `DB_TIMEOUT_MILLIS` environment variable for timeout
+
+## [6.2.0] 2024-02-26
+
+### Added
+
+- [TD-6243] Support for deleting Elasticsearch indexes
+
+### Fixed
+
+- [TD-6425] Ensure SSL if configured for release migration
+- [TD-6398] Approval grant request from 'approval grant requests'
+
+## [6.1.1] 2024-04-03
+
+### Fixed
+
+- [TD-6507] Add Elastic bulk page size for enviroment vars
+
+## [6.1.0] 2023-02-08
+
+### Changed
+
+- [TD-6342] Use td-core Elasticsearch.Document Integer implementation
+- [TD-6306] Allow Catalog View config listing for non-admin users
+
+## [6.0.0] 2024-01-19
+
+### Added
+
+- [TD-6181] Refactor for elastic search
+- [TD-6165] Catalog view filtered/virtual path navigation
+- [TD-6272] Change timeout to use the environement variable
+
+### Fixed
+
+- [TD-6270] Reindex the deleted structures in bulk updates
+- [TD-6130] Database lowercase when implementation raw is created
+
+## [5.20.0] 2023-12-19
+
+### Added
+
+- [TD-5505] Grant removal request workflow
+
+### Removed
+
+- [TD-6217] Remove process that automatically deprecates implementations
+
+### Fixed
+
+- [TD-5505] Remove :manage_grant permission for grant removal request group
+
+## [5.19.0] 2023-11-28
+
+### Added
+
+- [TD-6140] Support for AI suggestions on StructureNotes
+
+### Fixed
+
+- [TD-6176] Bulk upload deprecated implementations
+- [TD-6145] Deprecate implementation on rule soft deletion
+- [TD-6235] Fix regex new raw implementation sql
+
+## [5.18.0] 2023-11-13
+
+### Added
+
+- [TD-5390] Validate inplementation key unique when update implementation
+- [TD-4304] Added structures links aggregation in implementation search
+
+### Changed
+
+- [TD-6177] Update td-df-lib to fix format field
+- [TD-5319] Increment system aggregation size in data structures search
+
+## [5.17.2] 2023-11-07
+
+### Fixed
+
+- [TD-6173] Domain_ids grant_request filters and elastic config
+
+## [5.17.1] 2023-11-03
+
+### Fixed
+
+- [TD-6159] Elasticsearch upgrade configuration
+
+## [5.17.0] 2023-11-02
+
+### Added
+
+- [TD-6103] Allow empty option for domain type filter
+- [TD-6059] Support for reporting reindex tasks on the cluster
+
+### Changed
+
+- [TD-6059] Updated elasticsearch library version
+
+### Fixed
+
+- [TD-6088] Improve implementations reindex
+
+## [5.16.2] 2023-10-19
+
+## [5.16.1] 2023-10-18
+
+### Fixed
+
+- [TD-5540] GrantRequest approval bulk audit events and permissions issue
+
+## [5.16.0] 2023-10-18
+
+### Added
+
+- [TD-5582] Implementation clone copies original business concepts links
+- [TD-6082] Support to upload implementations with result type in browser
+  language
+- [TD-5540] GrantRequest approval bulk with elasticsearch
+
+### Changed
+
+- [TD-5958] Keep graph URL across lineage changes
+
+## [5.15.0] 2023-10-02
+
 ### Added
 
 - [TD-5947] Support for DataViews
-- [TD-5495] Foreing keys columns should match original ID columns in all tables
+- [TD-5532] Sources latest event cache
+- [TD-6042] Until filter for api/data_structure_notes/search
 
 ## [5.14.0] 2023-09-19
 

@@ -7,7 +7,7 @@ defmodule TdDq.ImplementationsTest do
   alias TdCache.ImplementationCache
   alias TdCache.Redix
   alias TdCache.Redix.Stream
-  alias TdDd.Search.MockIndexWorker
+  alias TdCore.Search.IndexWorkerMock
   alias TdDq.Implementations
   alias TdDq.Implementations.Implementation
   alias TdDq.Implementations.ImplementationStructure
@@ -18,12 +18,14 @@ defmodule TdDq.ImplementationsTest do
 
   setup do
     on_exit(fn -> Redix.del!(@stream) end)
-
     start_supervised!(TdDq.MockRelationCache)
-    start_supervised!(MockIndexWorker)
+
     start_supervised!(TdDq.Cache.RuleLoader)
     start_supervised!(TdDd.Search.StructureEnricher)
     %{id: domain_id} = CacheHelpers.insert_domain()
+
+    IndexWorkerMock.clear()
+
     [rule: insert(:rule, domain_id: domain_id)]
   end
 
@@ -314,10 +316,8 @@ defmodule TdDq.ImplementationsTest do
       claims = build(:claims)
 
       assert {:error, :implementation,
-              %{valid?: false, errors: [implementation_key: {"duplicated", constraint}]},
+              %{valid?: false, errors: [implementation_key: {"duplicated", []}]},
               _} = Implementations.create_implementation(rule, params, claims)
-
-      assert "draft_implementation_key_index" = constraint[:constraint_name]
     end
 
     test "with duplicated pending_approval implementation key returns an error", %{rule: rule} do
@@ -901,6 +901,40 @@ defmodule TdDq.ImplementationsTest do
                Implementations.valid_dataset_implementation_structures(implementation)
     end
 
+    test "match case insensitive structures" do
+      %{id: source_id} = insert(:source, config: %{"job_types" => ["catalog", "profile"]})
+
+      %{data_structure: %{id: data_structure_id}, name: data_structure_name} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, source_id: source_id),
+          metadata: %{"database" => "db_NAME"},
+          class: "table"
+        )
+
+      %{data_structure: %{id: field_data_structure_id}, name: field_data_structure_name} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, source_id: source_id),
+          metadata: %{"database" => "db_NAME", "table" => data_structure_name},
+          class: "field"
+        )
+
+      implementation =
+        insert(:raw_implementation,
+          raw_content: %{
+            dataset: "word before #{data_structure_name} #{field_data_structure_name}",
+            validations: "#{data_structure_name}.#{field_data_structure_name} is not null",
+            source_id: source_id,
+            database: "db_naMe"
+          }
+        )
+
+      assert [%{id: ^data_structure_id}] =
+               Implementations.valid_dataset_implementation_structures(implementation)
+
+      assert [%{id: ^field_data_structure_id}] =
+               Implementations.valid_validation_implementation_structures(implementation)
+    end
+
     test "filters raw structures by source_id" do
       %{id: source_id1} = insert(:source, config: %{"job_types" => ["catalog", "profile"]})
       %{id: source_id2} = insert(:source, config: %{"job_types" => ["catalog", "profile"]})
@@ -1091,7 +1125,45 @@ defmodule TdDq.ImplementationsTest do
             dataset: "tAbLe_NaMe",
             validations: "#{data_structure_name} #{no_table_data_structure_name}",
             source_id: source_id,
-            database: "db_name"
+            database: "DB_NAME"
+          }
+        )
+
+      assert [%{id: ^data_structure_id}] =
+               Implementations.valid_validation_implementation_structures(implementation)
+    end
+
+    test "returns validation only for structures with table in quotes" do
+      %{id: source_id} = insert(:source, config: %{"job_types" => ["catalog", "profile"]})
+
+      %{data_structure: %{id: data_structure_id}, name: data_structure_name} =
+        insert(:data_structure_version,
+          name: "some name with spaces",
+          data_structure: build(:data_structure, source_id: source_id),
+          metadata: %{
+            "database" => "db_name",
+            "table" => "table_name"
+          },
+          class: "field"
+        )
+
+      %{name: no_table_data_structure_name} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, source_id: source_id),
+          metadata: %{
+            "database" => "db_name",
+            "table" => "other_table"
+          },
+          class: "field"
+        )
+
+      implementation =
+        insert(:raw_implementation,
+          raw_content: %{
+            dataset: "\"tAbLe_NaMe\"",
+            validations: "\"#{data_structure_name}\" #{no_table_data_structure_name}",
+            source_id: source_id,
+            database: "DB_NAME"
           }
         )
 
@@ -1458,6 +1530,49 @@ defmodule TdDq.ImplementationsTest do
                }
              ]
     end
+
+    test "validate that can not update implementation_key to an existing implementation_key" do
+      claims = build(:claims)
+
+      implementation_1_params =
+        string_params_for(:implementation,
+          status: :published,
+          implementation_key: "key_changed_1"
+        )
+
+      Implementations.create_ruleless_implementation(
+        implementation_1_params,
+        claims
+      )
+
+      implementation_2_create_params =
+        string_params_for(:implementation,
+          status: :published,
+          implementation_key: "key_changed_2"
+        )
+
+      {:ok, %{implementation: implementation_2_v1}} =
+        Implementations.create_ruleless_implementation(
+          implementation_2_create_params,
+          claims
+        )
+
+      implementation_v2_update_params =
+        string_params_for(:implementation,
+          status: :published,
+          implementation_key: "key_changed_1"
+        )
+
+      assert {:error, :implementation, %{errors: errors}, %{}} =
+               Implementations.update_implementation(
+                 implementation_2_v1,
+                 implementation_v2_update_params,
+                 claims
+               )
+
+      assert length(errors) == 1
+      assert errors == [implementation_key: {"duplicated", []}]
+    end
   end
 
   describe "delete_implementation/2" do
@@ -1782,13 +1897,17 @@ defmodule TdDq.ImplementationsTest do
            implementation_v2: implementation_v2,
            claims: claims
          } do
+      IndexWorkerMock.clear()
       %{id: implementation_ref_id} = implementation_v1
       %{id: implementation_v2_id} = implementation_v2
 
       Implementations.delete_implementation(implementation_v2, claims)
 
-      assert [implementation_ref_id, implementation_v2_id] |||
-               MockIndexWorker.calls()[:delete_implementations]
+      {:delete, _, data} =
+        IndexWorkerMock.calls()
+        |> Enum.find(fn {action, index, _} -> action == :delete and index == :implementations end)
+
+      assert [implementation_ref_id, implementation_v2_id] ||| data
     end
   end
 
@@ -2213,8 +2332,6 @@ defmodule TdDq.ImplementationsTest do
     end
 
     test "reindex implementation after create implementation_structure" do
-      MockIndexWorker.clear()
-
       %{id: implementation_ref_id} = insert(:implementation, version: 1)
 
       %{id: implementation_id} =
@@ -2229,9 +2346,7 @@ defmodule TdDq.ImplementationsTest do
         %{type: :dataset}
       )
 
-      [
-        {:reindex_implementations, implementation_reindexed}
-      ] = MockIndexWorker.calls()
+      [{:reindex, :implementations, implementation_reindexed}] = IndexWorkerMock.calls()
 
       assert implementation_reindexed ||| [implementation_id, implementation_ref_id]
     end
@@ -2275,7 +2390,7 @@ defmodule TdDq.ImplementationsTest do
           status: :published
         )
 
-      MockIndexWorker.clear()
+      IndexWorkerMock.clear()
 
       {:ok, %{implementation: %{id: implementation_v2_id}}} =
         Implementations.maybe_update_implementation(
@@ -2284,16 +2399,12 @@ defmodule TdDq.ImplementationsTest do
           claims
         )
 
-      [
-        {:reindex_implementations, implementation_reindexed}
-      ] = MockIndexWorker.calls()
+      [{:reindex, :implementations, implementation_reindexed}] = IndexWorkerMock.calls()
 
       assert implementation_reindexed ||| [implementation_v1_id, implementation_v2_id]
     end
 
     test "reindex implementation by structures ids related to implementation_structure" do
-      MockIndexWorker.clear()
-
       %{id: implementation_id} = insert(:implementation, version: 1, status: :published)
 
       %{id: data_structure_id} = insert(:data_structure)
@@ -2305,9 +2416,7 @@ defmodule TdDq.ImplementationsTest do
 
       Implementations.reindex_implementations_structures([data_structure_id])
 
-      [
-        {:reindex_implementations, implementation_reindexed}
-      ] = MockIndexWorker.calls()
+      [{:reindex, :implementations, implementation_reindexed}] = IndexWorkerMock.calls()
 
       assert implementation_reindexed ||| [implementation_id]
     end
@@ -2355,7 +2464,6 @@ defmodule TdDq.ImplementationsTest do
     end
 
     test "reindex implementation when delete_implementation_structure/1" do
-      MockIndexWorker.clear()
       domain = build(:domain)
 
       %{id: implementation_ref_id} = implementation_ref = insert(:implementation, version: 1)
@@ -2372,9 +2480,7 @@ defmodule TdDq.ImplementationsTest do
       assert {:ok, %ImplementationStructure{}} =
                Implementations.delete_implementation_structure(implementation_structure)
 
-      [
-        {:reindex_implementations, implementation_reindexed}
-      ] = MockIndexWorker.calls()
+      [{:reindex, :implementations, implementation_reindexed}] = IndexWorkerMock.calls()
 
       assert implementation_reindexed ||| [implementation_id, implementation_ref_id]
     end

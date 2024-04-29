@@ -7,13 +7,23 @@ defmodule TdCx.Search.Store do
 
   import Ecto.Query
 
+  alias TdCluster.Cluster.TdDd.Tasks
+  alias TdCx.Jobs.Job
   alias TdDd.Repo
 
   @impl true
-  def stream(schema) do
-    schema
-    |> Repo.stream()
-    |> Repo.stream_preload(1000, [:source, :events])
+  def stream(Job = schema) do
+    count = Repo.aggregate(Job, :count, :id)
+    Tasks.log_start_stream(count)
+
+    result =
+      schema
+      |> Repo.stream()
+      |> Repo.stream_preload(1000, [:source, :events])
+
+    Tasks.log_progress(count)
+
+    result
   end
 
   @impl true
@@ -22,10 +32,11 @@ defmodule TdCx.Search.Store do
     result
   end
 
-  def stream(schema, ids) do
-    jobs = from(job in schema)
+  def stream(Job = schema, ids) do
+    count = Repo.aggregate(Job, :count, :id)
+    Tasks.log_start_stream(count)
 
-    jobs
+    from(job in schema)
     |> where([job], job.id in ^ids)
     |> select([job], job)
     |> Repo.stream()

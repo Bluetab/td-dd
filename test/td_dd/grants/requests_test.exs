@@ -1,8 +1,11 @@
 defmodule TdDd.Grants.RequestsTest do
+  alias TdDd.Grants
   use TdDd.DataCase
 
   import TdDd.TestOperators
 
+  alias TdCore.Search.IndexWorkerMock
+  alias TdDd.Grants
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestApproval
   alias TdDd.Grants.GrantRequestGroup
@@ -13,6 +16,8 @@ defmodule TdDd.Grants.RequestsTest do
   @valid_metadata %{"list" => "one", "string" => "bar"}
 
   setup tags do
+    IndexWorkerMock.clear()
+
     case Map.get(tags, :role, "user") do
       "admin" ->
         claims = build(:claims, role: "admin")
@@ -32,7 +37,7 @@ defmodule TdDd.Grants.RequestsTest do
 
     test "list_grant_request_groups/0 returns all grant_request_groups" do
       grant_request_group = insert(:grant_request_group)
-      assert Requests.list_grant_request_groups() ||| [grant_request_group]
+      assert Requests.list_grant_request_groups() <~> [grant_request_group]
     end
 
     test "get_grant_request_group!/1 returns the grant_request_group with given id" do
@@ -41,6 +46,7 @@ defmodule TdDd.Grants.RequestsTest do
     end
 
     test "create_grant_request_group/2 with valid data creates a grant_request_group" do
+      IndexWorkerMock.clear()
       %{id: domain_id} = CacheHelpers.insert_domain()
       %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain_id])
       %{user_id: user_id} = build(:claims)
@@ -63,23 +69,25 @@ defmodule TdDd.Grants.RequestsTest do
       assert {1, nil} = statuses
 
       assert %{status: "pending"} = Repo.get_by!(GrantRequestStatus, grant_request_id: request_id)
+
+      assert [{:reindex, :grant_requests, [^request_id]}] = IndexWorkerMock.calls()
     end
 
     test "create_grant_request_group/2 with modification_grant" do
       %{id: domain_id} = CacheHelpers.insert_domain()
       %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain_id])
       %{user_id: user_id} = build(:claims)
-      %{id: grant_id} = modification_grant = insert(:grant, data_structure_id: data_structure_id)
+      %{id: grant_id} = insert(:grant, data_structure_id: data_structure_id)
 
       params = %{
         type: @template_name,
         requests: [%{data_structure_id: data_structure_id, metadata: @valid_metadata}],
         user_id: user_id,
-        created_by_id: user_id
+        created_by_id: user_id,
+        modification_grant_id: grant_id
       }
 
-      assert {:ok, %{group: group}} =
-               Requests.create_grant_request_group(params, modification_grant)
+      assert {:ok, %{group: group}} = Requests.create_grant_request_group(params)
 
       assert %{
                type: @template_name,
@@ -228,7 +236,7 @@ defmodule TdDd.Grants.RequestsTest do
       CacheHelpers.put_session_permissions(claims, domain_id, ["approve_grant_request"])
 
       CacheHelpers.put_grant_request_approvers([
-        %{user_id: user_id, domain_id: domain_id, role: "approver"}
+        %{user_id: user_id, resource_id: domain_id, role: "approver"}
       ])
 
       assert {:ok, [%{id: ^id}]} = Requests.list_grant_requests(claims, %{action: "approve"})
@@ -269,9 +277,9 @@ defmodule TdDd.Grants.RequestsTest do
       CacheHelpers.put_session_permissions(claims, %{approve_grant_request: [d1, d2, d3]})
 
       CacheHelpers.put_grant_request_approvers([
-        %{user_id: default_approver, domain_id: d1, role: "approver1"},
-        %{user_id: default_approver, domain_id: d2, role: "approver2"},
-        %{user_id: user_id, domain_ids: [d1, d2, d3], role: "approver2"}
+        %{user_id: default_approver, resource_id: d1, role: "approver1"},
+        %{user_id: default_approver, resource_id: d2, role: "approver2"},
+        %{user_id: user_id, resource_ids: [d1, d2, d3], role: "approver2"}
       ])
 
       %{grant_request: d1_gr} =
@@ -325,8 +333,8 @@ defmodule TdDd.Grants.RequestsTest do
       claims = build(:claims, role: "admin")
 
       CacheHelpers.put_grant_request_approvers([
-        %{user_id: user_id, role: "approver1", domain_id: domain_id1},
-        %{user_id: user_id, role: "approver2", domain_id: domain_id2}
+        %{user_id: user_id, role: "approver1", resource_id: domain_id1},
+        %{user_id: user_id, role: "approver2", resource_id: domain_id2}
       ])
 
       %{grant_request_id: gr_id_1} =
@@ -363,11 +371,14 @@ defmodule TdDd.Grants.RequestsTest do
     end
 
     test "delete_grant_request/1 deletes the grant_request", %{claims: claims} do
-      grant_request = insert(:grant_request)
+      IndexWorkerMock.clear()
+      %{id: grant_request_id} = grant_request = insert(:grant_request)
       assert {:ok, %GrantRequest{}} = Requests.delete_grant_request(grant_request)
 
       assert_raise Ecto.NoResultsError, fn ->
         Requests.get_grant_request!(grant_request.id, claims)
+
+        assert IndexWorkerMock.calls() == [{:delete_grant_request, [grant_request_id]}]
       end
     end
 
@@ -377,8 +388,8 @@ defmodule TdDd.Grants.RequestsTest do
       claims = build(:claims, role: "admin")
 
       CacheHelpers.put_grant_request_approvers([
-        %{user_id: default_approver, domain_id: domain_id, role: "approver1"},
-        %{user_id: default_approver, domain_id: domain_id, role: "approver2"}
+        %{user_id: default_approver, resource_id: domain_id, role: "approver1"},
+        %{user_id: default_approver, resource_id: domain_id, role: "approver2"}
       ])
 
       %{grant_request: %{id: grant_request_id} = grant_request} =
@@ -398,15 +409,17 @@ defmodule TdDd.Grants.RequestsTest do
   end
 
   describe "Requests.create_approval/2" do
-    setup :setup_grant_request
+    setup :setup_request_access
 
     test "approves grant request", %{
       claims: %{user_id: user_id} = claims,
       domain_id: domain_id,
       request: request
     } do
+      IndexWorkerMock.clear()
+
       CacheHelpers.put_grant_request_approvers([
-        %{user_id: user_id, domain_id: domain_id, role: "approver"}
+        %{user_id: user_id, resource_id: domain_id, role: "approver"}
       ])
 
       params = %{domain_id: domain_id, role: "approver"}
@@ -414,6 +427,8 @@ defmodule TdDd.Grants.RequestsTest do
       assert {:ok, %{approval: approval}} = Requests.create_approval(claims, request, params)
       assert %{is_rejection: false, user: user} = approval
       assert %{id: ^user_id, user_name: _} = user
+
+      assert [{:reindex, :grant_requests, [_]}] = IndexWorkerMock.calls()
     end
 
     test "admin can approve a grant request without having the role", %{
@@ -441,7 +456,7 @@ defmodule TdDd.Grants.RequestsTest do
       request: request
     } do
       CacheHelpers.put_grant_request_approvers([
-        %{user_id: user_id, domain_id: domain_id, role: "rejector"}
+        %{user_id: user_id, resource_id: domain_id, role: "rejector"}
       ])
 
       params = %{role: "rejector", is_rejection: true, comment: "foo"}
@@ -456,8 +471,8 @@ defmodule TdDd.Grants.RequestsTest do
       request: request
     } do
       CacheHelpers.put_grant_request_approvers([
-        %{user_id: user_id, domain_id: domain_id, role: "approver1"},
-        %{user_id: user_id, domain_id: domain_id, role: "approver2"}
+        %{user_id: user_id, resource_id: domain_id, role: "approver1"},
+        %{user_id: user_id, resource_id: domain_id, role: "approver2"}
       ])
 
       params = %{domain_id: domain_id, role: "approver1"}
@@ -469,26 +484,103 @@ defmodule TdDd.Grants.RequestsTest do
     end
   end
 
-  defp setup_grant_request(%{claims: %{user_id: user_id}}) do
+  describe "Requests.create_approval/2 Grant request type removal" do
+    setup :setup_request_revoke
+
+    test "approves grant request", %{
+      claims: %{user_id: user_id} = claims,
+      domain_id: domain_id,
+      request: %{grant: %{id: grant_id} = grant} = request
+    } do
+      IndexWorkerMock.clear()
+
+      CacheHelpers.put_grant_request_approvers([
+        %{user_id: user_id, resource_id: domain_id, role: "approver"}
+      ])
+
+      assert %{pending_removal: false} = grant
+
+      grant_request_params = %{
+        domain_id: domain_id,
+        role: "approver",
+        request_type: :grant_removal,
+        grant: grant
+      }
+
+      assert {:ok, %{approval: approval}} =
+               Requests.create_approval(claims, request, grant_request_params)
+
+      assert %{is_rejection: false, user: user} = approval
+      assert %{id: ^user_id, user_name: _} = user
+
+      assert %{pending_removal: true} = Grants.get_grant(grant_id)
+
+      assert [{:reindex, :grants, [_]}, {:reindex, :grant_requests, [_]}] =
+               IndexWorkerMock.calls()
+    end
+  end
+
+  describe "Bulk grant revoke request" do
+    @tag role: "admin"
+    setup :setup_multiple_grant_requests
+
+    test "bulk_create_approvals/3 create grant request and marks grant as pending removal", %{
+      claims: claims,
+      multiple_grant_requests: grant_requests
+    } do
+      IndexWorkerMock.clear()
+
+      bulk_params = %{"comment" => "", "role" => "admin"}
+
+      grant_revoke_ids =
+        grant_requests
+        |> Enum.filter(fn %{request_type: request_type} -> request_type == :grant_removal end)
+        |> Enum.map(fn %{grant: %{id: grant_id}} -> grant_id end)
+
+      assert {:ok, %{update_pending_removal_grants: {_, update_pending_removal_grants}}} =
+               Requests.bulk_create_approvals(claims, grant_requests, bulk_params)
+
+      assert grant_revoke_ids == update_pending_removal_grants
+
+      assert grant_revoke_ids
+             |> Enum.map(fn id ->
+               id
+               |> Grants.get_grant()
+               |> Map.get(:pending_removal)
+             end)
+             |> Enum.all?()
+    end
+  end
+
+  defp setup_multiple_grant_requests(context) do
+    multiple_grant_requests = [
+      setup_request_revoke(context).request,
+      setup_request_access(context).request,
+      setup_request_revoke(context).request,
+      setup_request_access(context).request,
+      setup_request_revoke(context).request,
+      setup_request_access(context).request
+    ]
+
+    %{multiple_grant_requests: multiple_grant_requests}
+  end
+
+  defp setup_request_revoke(context), do: setup_request(context, :grant_removal)
+  defp setup_request_access(context), do: setup_request(context, :grant_access)
+
+  defp setup_request(%{claims: %{user_id: user_id}}, request_type) do
+    IndexWorkerMock.clear()
     %{id: domain_id} = CacheHelpers.insert_domain()
     CacheHelpers.insert_user(user_id: user_id)
 
-    %{id: data_structure_id} =
-      data_structure =
-      insert(:data_structure,
-        domain_ids: [domain_id]
-      )
-
-    insert(:data_structure_version, data_structure_id: data_structure_id)
-
-    [
+    %{
       domain_id: domain_id,
       request:
         insert(:grant_request,
-          data_structure: data_structure,
+          request_type: request_type,
           current_status: "pending",
           domain_ids: [domain_id]
         )
-    ]
+    }
   end
 end

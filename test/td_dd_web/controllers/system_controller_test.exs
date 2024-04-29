@@ -76,7 +76,7 @@ defmodule TdDdWeb.SystemControllerTest do
 
   setup_all do
     start_supervised!(TdDd.Cache.SystemLoader)
-    start_supervised!(TdDd.Search.Cluster)
+
     :ok
   end
 
@@ -356,7 +356,7 @@ defmodule TdDdWeb.SystemControllerTest do
         _, :post, "/structures/_search", %{from: 0, size: 1000, query: query}, _ ->
           assert query == %{
                    bool: %{
-                     filter: [
+                     must: [
                        %{term: %{"system_id" => system_id}},
                        %{term: %{"confidential" => false}},
                        %{term: %{"domain_ids" => domain_id}}

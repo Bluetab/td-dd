@@ -17,7 +17,7 @@ defmodule TdDdWeb.Schema.MeTest do
       role_name = "approval_role"
 
       CacheHelpers.put_grant_request_approvers([
-        %{user_id: user_id, domain_ids: [d1], role: "approval_role"}
+        %{user_id: user_id, resource_ids: [d1], role: "approval_role"}
       ])
 
       assert %{"data" => data} =
@@ -44,10 +44,18 @@ defmodule TdDdWeb.Schema.MeTest do
       role_name = "approval_role"
 
       CacheHelpers.put_grant_request_approvers([
-        %{user_id: user_id, domain_ids: [d1], role: role_name}
+        %{user_id: user_id, resource_ids: [d1], role: role_name}
       ])
 
-      TdCache.UserCache.put_roles(user_id, %{role_name => [d1], "other_role" => [d2]})
+      CacheHelpers.put_permission_by_role([
+        %{
+          user_id: user_id,
+          resource_id: d1,
+          role: role_name,
+          permission: "approve_grant_request"
+        },
+        %{user_id: user_id, resource_id: d2, role: "other_role", permission: "view_grants"}
+      ])
 
       assert %{"data" => data} =
                conn
@@ -73,11 +81,9 @@ defmodule TdDdWeb.Schema.MeTest do
       role_name = "approval_role"
 
       CacheHelpers.put_grant_request_approvers([
-        %{user_id: user_id, domain_ids: [d1], role: role_name},
-        %{user_id: user_id, domain_ids: [d2], role: "other_role"}
+        %{user_id: user_id, resource_ids: [d1], role: role_name},
+        %{user_id: user_id, resource_ids: [d2], role: "other_role"}
       ])
-
-      TdCache.UserCache.put_roles(user_id, %{role_name => [d1], "other_role" => [d2]})
 
       assert %{"data" => data} =
                conn

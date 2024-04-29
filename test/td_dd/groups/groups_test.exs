@@ -3,12 +3,6 @@ defmodule TdDd.GroupsTest do
 
   alias TdDd.DataStructures
   alias TdDd.Groups
-  alias TdDd.Search.MockIndexWorker
-
-  setup_all do
-    start_supervised(MockIndexWorker)
-    :ok
-  end
 
   setup do
     [system: insert(:system)]

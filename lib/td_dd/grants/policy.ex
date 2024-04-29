@@ -12,11 +12,9 @@ defmodule TdDd.Grants.Policy do
 
   @behaviour Bodyguard.Policy
 
-  def authorize(:cancel_removal, _claims, %{pending_removal: false}), do: false
-
-  def authorize(:request_removal, _claims, %{pending_removal: true}), do: false
-
   def authorize(_action, %{role: "admin"}, _params), do: true
+
+  def authorize(:reindex, %{role: "service"}, _params), do: true
 
   def authorize(:mutation, %{} = claims, _params),
     do: Permissions.authorized?(claims, :approve_grant_request)
@@ -29,18 +27,34 @@ defmodule TdDd.Grants.Policy do
       Permissions.authorized?(claims, :create_grant_request)
   end
 
-  def authorize(:request_removal, %{user_id: user_id} = _claims, %Grant{user_id: user_id}),
-    do: true
-
-  def authorize(:request_removal, %{} = claims, %Grant{data_structure: data_structure}) do
-    Bodyguard.permit?(DataStructures, :request_grant_removal, claims, data_structure)
+  def authorize(
+        :manage_grant_removal_request,
+        %{user_id: user_id} = claims,
+        %Grant{user_id: user_id, data_structure: data_structure}
+      ) do
+    not Bodyguard.permit?(DataStructures, :manage_grant_removal, claims, data_structure)
   end
 
-  def authorize(:cancel_removal, %{user_id: user_id} = _claims, %Grant{user_id: user_id}),
-    do: true
+  def authorize(
+        :manage_grant_removal,
+        %{user_id: user_id} = claims,
+        %Grant{user_id: user_id, data_structure: data_structure}
+      ) do
+    Bodyguard.permit?(DataStructures, :manage_grant_removal, claims, data_structure)
+  end
 
-  def authorize(:cancel_removal, %{} = claims, %Grant{data_structure: data_structure}) do
-    Bodyguard.permit?(DataStructures, :request_grant_removal, claims, data_structure)
+  def authorize(:manage_grant_removal_request, %{} = claims, %Grant{
+        data_structure: data_structure
+      }) do
+    not Bodyguard.permit?(DataStructures, :manage_grant_removal, claims, data_structure) and
+      Bodyguard.permit?(DataStructures, :manage_foreign_grant_removal, claims, data_structure)
+  end
+
+  def authorize(:manage_grant_removal, %{} = claims, %Grant{
+        data_structure: data_structure
+      }) do
+    Bodyguard.permit?(DataStructures, :manage_grant_removal, claims, data_structure) and
+      Bodyguard.permit?(DataStructures, :manage_foreign_grant_removal, claims, data_structure)
   end
 
   def authorize(:update, claims, %Grant{
@@ -85,12 +99,20 @@ defmodule TdDd.Grants.Policy do
   def authorize(:view, %{user_id: user_id}, %GrantRequest{group: %{created_by_id: user_id}}),
     do: true
 
-  def authorize(:view, %{} = claims, %GrantRequest{domain_ids: domain_ids}) do
-    Permissions.authorized?(claims, :approve_grant_request, domain_ids)
+  def authorize(action, %{} = claims, %GrantRequest{
+        domain_ids: domain_ids,
+        grant: %{data_structure_id: data_structure_id}
+      })
+      when action in [:view, :approve] do
+    can_approve_grant_request(claims, {domain_ids, data_structure_id})
   end
 
-  def authorize(:approve, %{} = claims, %GrantRequest{domain_ids: domain_ids}) do
-    Permissions.authorized?(claims, :approve_grant_request, domain_ids)
+  def authorize(action, %{} = claims, %GrantRequest{
+        domain_ids: domain_ids,
+        data_structure_id: data_structure_id
+      })
+      when action in [:view, :approve] do
+    can_approve_grant_request(claims, {domain_ids, data_structure_id})
   end
 
   def authorize(:cancel, %{user_id: user_id}, %GrantRequest{group: %{user_id: user_id}}), do: true
@@ -129,4 +151,12 @@ defmodule TdDd.Grants.Policy do
   end
 
   def authorize(_action, _claims, _params), do: false
+
+  defp can_approve_grant_request(
+         claims,
+         {domain_ids, data_structure_id}
+       ) do
+    Permissions.authorized?(claims, :approve_grant_request, domain_ids) or
+      Permissions.authorized?(claims, :approve_grant_request, data_structure_id, "structure")
+  end
 end

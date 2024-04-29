@@ -14,7 +14,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
   setup_all do
     start_supervised!(TdDd.Lineage.GraphData)
-    start_supervised!(TdDd.Search.Cluster)
+
     :ok
   end
 
@@ -530,7 +530,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                  "create_struct_to_struct_link" => %{
                    "href" => "/api/v2",
                    "method" => "POST"
-                 }
+                 },
+                 "manage_structure_acl_entry" => %{}
                }
       end
     end
@@ -703,7 +704,11 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
     @tag authentication: [
            role: "user",
-           permissions: [:view_data_structure, :request_grant_removal]
+           permissions: [
+             :view_data_structure,
+             :manage_grant_removal,
+             :manage_foreign_grant_removal
+           ]
          ]
     test "user with permission can update grant removal", %{
       conn: conn,

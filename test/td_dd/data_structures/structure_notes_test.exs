@@ -5,6 +5,7 @@ defmodule TdDd.DataStructures.StructureNotesTest do
 
   alias Ecto.Changeset
   alias TdCache.Redix.Stream
+  alias TdCore.Search.IndexWorkerMock
   alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.StructureNotes
 
@@ -25,6 +26,8 @@ defmodule TdDd.DataStructures.StructureNotesTest do
     content = [%{"name" => "g1", "fields" => [alias_field]}]
     %{id: template_id} = CacheHelpers.insert_template(scope: "dd", content: content)
     data_structure_type = insert(:data_structure_type, template_id: template_id)
+
+    IndexWorkerMock.clear()
 
     [data_structure_type: data_structure_type]
   end
@@ -55,6 +58,19 @@ defmodule TdDd.DataStructures.StructureNotesTest do
       assert StructureNotes.list_structure_notes(filters) ||| [n1, n2]
       assert StructureNotes.list_structure_notes(%{}) ||| [n1, n2, n3, n4]
       assert StructureNotes.list_structure_notes(%{"status" => :draft}) ||| [n4]
+    end
+
+    test "list_structure_notes/1 returns all structure_notes filtered by until and to_date" do
+      n1 = insert(:structure_note, status: :versioned, updated_at: ~N[2021-01-01 10:00:00])
+      n2 = insert(:structure_note, status: :versioned, updated_at: ~N[2021-01-02 10:00:00])
+      insert(:structure_note, status: :versioned, updated_at: ~N[2021-01-03 10:00:00])
+      insert(:structure_note, status: :draft, updated_at: ~N[2021-01-04 10:00:00])
+
+      until_filters = %{
+        "until" => "2021-01-02 10:00:00"
+      }
+
+      assert StructureNotes.list_structure_notes(until_filters) ||| [n1, n2]
     end
 
     test "list_structure_notes/1 return results paginated by offset ordered by updated_at and note id" do
@@ -126,6 +142,11 @@ defmodule TdDd.DataStructures.StructureNotesTest do
     test "create_structure_note/3 with valid data creates a structure_note" do
       data_structure = insert(:data_structure)
 
+      %{id: grant_request_id} =
+        insert(:grant_request,
+          data_structure: data_structure
+        )
+
       params = %{"df_content" => %{}, "status" => "draft", "version" => 42}
 
       assert {:ok, %StructureNote{} = structure_note} =
@@ -134,6 +155,14 @@ defmodule TdDd.DataStructures.StructureNotesTest do
       assert structure_note.df_content == %{}
       assert structure_note.status == :draft
       assert structure_note.version == 42
+
+      find_call = {:reindex, :grant_requests, [grant_request_id]}
+
+      assert find_call ==
+               IndexWorkerMock.calls()
+               |> Enum.find(fn call ->
+                 find_call == call
+               end)
     end
 
     test "create_structure_note/3 with invalid data returns error changeset" do
@@ -275,6 +304,104 @@ defmodule TdDd.DataStructures.StructureNotesTest do
       assert_raise Ecto.NoResultsError, fn ->
         StructureNotes.get_structure_note!(structure_note.id)
       end
+    end
+  end
+
+  describe "suggestion_fields_for_template" do
+    test "suggestion_fields_for_template returns a list of fields enabled for suggestions" do
+      template = %{
+        id: System.unique_integer([:positive]),
+        label: "suggestions_test",
+        name: "suggestions_test",
+        scope: "dd",
+        content: [
+          %{
+            "name" => "Identifier Template",
+            "fields" => [
+              %{
+                "cardinality" => "1",
+                "description" => "field description",
+                "label" => "suggestion_field",
+                "name" => "suggestion_field",
+                "type" => "string",
+                "ai_suggestion" => true
+              },
+              %{
+                "cardinality" => "1",
+                "label" => "not_suggestion_field",
+                "name" => "not_suggestion_field",
+                "type" => "string"
+              }
+            ]
+          }
+        ]
+      }
+
+      %{id: template_id} = CacheHelpers.insert_template(template)
+
+      assert [%{"description" => "field description", "name" => "suggestion_field"}] ==
+               StructureNotes.suggestion_fields_for_template(template_id)
+    end
+
+    test "fixed values field will return possible_values" do
+      build_field = fn name, map ->
+        Map.merge(
+          %{
+            "cardinality" => "1",
+            "label" => name,
+            "name" => name,
+            "type" => "string",
+            "ai_suggestion" => true
+          },
+          map
+        )
+      end
+
+      template = %{
+        id: System.unique_integer([:positive]),
+        label: "suggestions_test",
+        name: "suggestions_test",
+        scope: "dd",
+        content: [
+          %{
+            "name" => "test",
+            "fields" => [
+              build_field.("fixed_list", %{
+                "values" => %{
+                  "fixed" => ["foo", "bar"]
+                }
+              }),
+              build_field.("key_value_list", %{
+                "values" => %{
+                  "fixed_tuple" => [
+                    %{
+                      "text" => "t1",
+                      "value" => "v1"
+                    },
+                    %{
+                      "text" => "t2",
+                      "value" => "v2"
+                    }
+                  ]
+                }
+              })
+            ]
+          }
+        ]
+      }
+
+      %{id: template_id} = CacheHelpers.insert_template(template)
+
+      assert [
+               %{
+                 "name" => "fixed_list",
+                 "possible_values" => ["foo", "bar"]
+               },
+               %{
+                 "name" => "key_value_list",
+                 "possible_values" => ["v1", "v2"]
+               }
+             ] = StructureNotes.suggestion_fields_for_template(template_id)
     end
   end
 
