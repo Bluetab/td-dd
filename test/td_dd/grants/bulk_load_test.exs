@@ -9,8 +9,6 @@ defmodule TdDd.Grants.BulkLoadTest do
 
   setup do
     start_supervised!(TdDd.Search.StructureEnricher)
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
 
     %{id: user_id_1} = CacheHelpers.insert_user()
     %{id: user_id_2} = CacheHelpers.insert_user()

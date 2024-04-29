@@ -3,11 +3,10 @@ defmodule TdDqWeb.ImplementationStructureControllerTest do
 
   import TdDd.TestOperators
 
-  alias TdCore.Search.MockIndexWorker
+  alias TdCore.Search.IndexWorkerMock
 
   setup %{conn: conn} do
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
+    IndexWorkerMock.clear()
 
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
@@ -134,7 +133,6 @@ defmodule TdDqWeb.ImplementationStructureControllerTest do
     test "reindex implementation after create ImplementationStructure link", %{
       conn: conn
     } do
-      MockIndexWorker.clear()
       domain = build(:domain)
       %{id: implementation_ref_id} = insert(:implementation, version: 1)
 
@@ -156,7 +154,7 @@ defmodule TdDqWeb.ImplementationStructureControllerTest do
 
       [
         {:reindex, :implementations, implementation_reindexed}
-      ] = MockIndexWorker.calls()
+      ] = IndexWorkerMock.calls()
 
       assert implementation_reindexed ||| [implementation_id, implementation_ref_id]
     end
@@ -408,7 +406,6 @@ defmodule TdDqWeb.ImplementationStructureControllerTest do
     test "reindex implementation after delete ImplementationStructure link", %{
       conn: conn
     } do
-      MockIndexWorker.clear()
       domain = build(:domain)
 
       %{id: implementation_ref_id} = implementation_ref = insert(:implementation, version: 1)
@@ -436,7 +433,7 @@ defmodule TdDqWeb.ImplementationStructureControllerTest do
 
       [
         {:reindex, :implementations, implementation_reindexed}
-      ] = MockIndexWorker.calls()
+      ] = IndexWorkerMock.calls()
 
       assert implementation_reindexed ||| [implementation_id, implementation_ref_id]
     end

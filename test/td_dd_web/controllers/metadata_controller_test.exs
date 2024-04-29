@@ -6,7 +6,7 @@ defmodule TdDdWeb.MetadataControllerTest do
   import ExUnit.CaptureLog
   import Mox
 
-  alias TdCore.Search.MockIndexWorker
+  alias TdCore.Search.IndexWorkerMock
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
@@ -18,9 +18,6 @@ defmodule TdDdWeb.MetadataControllerTest do
   @protected DataStructures.protected()
 
   setup_all do
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
-
     start_supervised!(Worker)
     start_supervised!(TdDd.Lineage.GraphData)
     start_supervised!({Task.Supervisor, name: TdDd.TaskSupervisor})
@@ -33,6 +30,8 @@ defmodule TdDdWeb.MetadataControllerTest do
   setup tags do
     start_supervised!(TdDd.Search.StructureEnricher)
     insert(:system, name: "Power BI", external_id: "pbi")
+
+    IndexWorkerMock.clear()
 
     case tags[:fixture] do
       nil ->
@@ -116,8 +115,6 @@ defmodule TdDdWeb.MetadataControllerTest do
       structures: structures,
       fields: fields
     } do
-      MockIndexWorker.clear()
-
       assert conn
              |> post(Routes.metadata_path(conn, :upload),
                data_structures: structures,
@@ -145,7 +142,7 @@ defmodule TdDdWeb.MetadataControllerTest do
                {:reindex, :structures, _},
                {:reindex, :structures, _},
                {:delete, :structures, [_, _, _]}
-             ] = MockIndexWorker.calls()
+             ] = IndexWorkerMock.calls()
     end
 
     @tag authentication: [role: "service"]

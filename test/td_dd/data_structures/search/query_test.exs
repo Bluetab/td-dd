@@ -9,8 +9,6 @@ defmodule TdDd.DataStructures.Search.QueryTest do
   @not_confidential %{term: %{"confidential" => false}}
 
   setup_all do
-    start_supervised!(TdCore.Search.Cluster)
-
     :ok
   end
 

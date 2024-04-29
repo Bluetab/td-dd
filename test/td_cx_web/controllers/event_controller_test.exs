@@ -3,12 +3,13 @@ defmodule TdCxWeb.EventControllerTest do
 
   import Mox
 
-  alias TdCore.Search.MockIndexWorker
+  alias TdCore.Search.IndexWorkerMock
 
   setup do
-    start_supervised!(TdCore.Search.Cluster)
     start_supervised!(TdCx.Cache.SourcesLatestEvent)
-    start_supervised!(TdCore.Search.IndexWorker)
+
+    IndexWorkerMock.clear()
+
     :ok
   end
 
@@ -47,7 +48,7 @@ defmodule TdCxWeb.EventControllerTest do
                |> post(Routes.job_event_path(conn, :index, external_id), event: params)
                |> json_response(:created)
 
-      assert [{:reindex, :jobs, [_]}] = MockIndexWorker.calls()
+      assert [{:reindex, :jobs, [_]}] = IndexWorkerMock.calls()
 
       assert %{"id" => _id, "type" => ^type, "message" => ^message} = event
     end
@@ -64,7 +65,7 @@ defmodule TdCxWeb.EventControllerTest do
                |> post(Routes.job_event_path(conn, :index, external_id), event: params)
                |> json_response(:created)
 
-      assert [{:reindex, :jobs, [_]}] = MockIndexWorker.calls()
+      assert [{:reindex, :jobs, [_]}] = IndexWorkerMock.calls()
       assert %{"id" => _id, "type" => ^type, "message" => ^message} = event
     end
 

@@ -118,11 +118,6 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
   }
   """
 
-  setup_all do
-    start_supervised!(TdCore.Search.MockIndexWorker)
-    :ok
-  end
-
   describe "Implementations query" do
     @tag authentication: [role: "admin"]
     test "return last result event when is requested", %{conn: conn} do

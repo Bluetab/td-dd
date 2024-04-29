@@ -41,9 +41,6 @@ defmodule TdDq.Rules.BulkLoadTest do
   @default_lang "en"
 
   setup do
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
-
     start_supervised(TdDq.Cache.RuleLoader)
     %{name: template_name} = CacheHelpers.insert_template(scope: "dq")
 

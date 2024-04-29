@@ -4,7 +4,7 @@ defmodule TdDd.Grants.RequestsTest do
 
   import TdDd.TestOperators
 
-  alias TdCore.Search.MockIndexWorker
+  alias TdCore.Search.IndexWorkerMock
   alias TdDd.Grants
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestApproval
@@ -16,8 +16,7 @@ defmodule TdDd.Grants.RequestsTest do
   @valid_metadata %{"list" => "one", "string" => "bar"}
 
   setup tags do
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
+    IndexWorkerMock.clear()
 
     case Map.get(tags, :role, "user") do
       "admin" ->
@@ -70,7 +69,7 @@ defmodule TdDd.Grants.RequestsTest do
 
       assert %{status: "pending"} = Repo.get_by!(GrantRequestStatus, grant_request_id: request_id)
 
-      assert [{:reindex, :grant_requests, [^request_id]}] = MockIndexWorker.calls()
+      assert [{:reindex, :grant_requests, [^request_id]}] = IndexWorkerMock.calls()
     end
 
     test "create_grant_request_group/2 with modification_grant" do
@@ -377,7 +376,7 @@ defmodule TdDd.Grants.RequestsTest do
       assert_raise Ecto.NoResultsError, fn ->
         Requests.get_grant_request!(grant_request.id, claims)
 
-        assert MockIndexWorker.calls() == [{:delete_grant_request, [grant_request_id]}]
+        assert IndexWorkerMock.calls() == [{:delete_grant_request, [grant_request_id]}]
       end
     end
 
@@ -425,7 +424,7 @@ defmodule TdDd.Grants.RequestsTest do
       assert %{is_rejection: false, user: user} = approval
       assert %{id: ^user_id, user_name: _} = user
 
-      assert [{:reindex, :grant_requests, [_]}] = MockIndexWorker.calls()
+      assert [{:reindex, :grant_requests, [_]}] = IndexWorkerMock.calls()
     end
 
     test "admin can approve a grant request without having the role", %{
@@ -512,7 +511,7 @@ defmodule TdDd.Grants.RequestsTest do
       assert %{pending_removal: true} = Grants.get_grant(grant_id)
 
       assert [{:reindex, :grants, [_]}, {:reindex, :grant_requests, [_]}] =
-               MockIndexWorker.calls()
+               IndexWorkerMock.calls()
     end
   end
 

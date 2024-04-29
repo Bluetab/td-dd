@@ -2,25 +2,16 @@ defmodule TdCxWeb.JobControllerTest do
   use TdCxWeb.ConnCase
 
   import Mox
+  alias TdCore.Search.IndexWorkerMock
 
-  alias TdCore.Search.MockIndexWorker
+  setup do
+    IndexWorkerMock.clear()
 
-  setup_all do
-    start_supervised!(TdCore.Search.Cluster)
-    start_supervised!(TdCore.Search.IndexWorker)
     :ok
   end
 
   setup :set_mox_from_context
   setup :verify_on_exit!
-
-  setup _context do
-    on_exit(fn ->
-      MockIndexWorker.clear()
-    end)
-
-    :ok
-  end
 
   describe "GET /api/sources/:id/jobs" do
     setup :create_job
@@ -96,14 +87,13 @@ defmodule TdCxWeb.JobControllerTest do
                |> post(Routes.source_job_path(conn, :create, source_external_id))
                |> json_response(:created)
 
-      assert [{:reindex, :jobs, [_]}] = MockIndexWorker.calls()
+      assert [{:reindex, :jobs, [_]}] = IndexWorkerMock.calls()
       assert %{"external_id" => external_id} = data
       refute is_nil(external_id)
     end
 
     @tag authentication: [role: "admin"]
     test "admin can create a job for a source", %{conn: conn} do
-      # MockIndexWorker.clear()
       %{external_id: source_external_id} = insert(:source)
 
       # SearchHelpers.expect_bulk_index("/jobs/_doc/_bulk")
@@ -113,7 +103,7 @@ defmodule TdCxWeb.JobControllerTest do
                |> post(Routes.source_job_path(conn, :create, source_external_id))
                |> json_response(:created)
 
-      assert [{:reindex, :jobs, [_]}] = MockIndexWorker.calls()
+      assert [{:reindex, :jobs, [_]}] = IndexWorkerMock.calls()
       assert %{"external_id" => external_id} = data
       refute is_nil(external_id)
     end
@@ -129,7 +119,7 @@ defmodule TdCxWeb.JobControllerTest do
                |> post(Routes.source_job_path(conn, :create, source_external_id))
                |> json_response(:created)
 
-      assert [{:reindex, :jobs, [_]}] = MockIndexWorker.calls()
+      assert [{:reindex, :jobs, [_]}] = IndexWorkerMock.calls()
       assert %{"external_id" => external_id} = data
       refute is_nil(external_id)
     end
