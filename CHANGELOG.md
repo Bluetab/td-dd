@@ -13,6 +13,7 @@
 - [TD-5981] Grants download
 - [TD-6538] Refactor the list data structure version query
 - [TD-6552] Update TD-Cache to return all domains if permissions are in default role
+- [TD-5495] Foreing keys columns should match original ID columns in all tables
 
 ## [6.4.2] 2024-04-29
 
