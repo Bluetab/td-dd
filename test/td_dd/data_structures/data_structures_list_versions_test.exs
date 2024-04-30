@@ -203,7 +203,8 @@ defmodule TdDd.DataStructuresTestListVersions do
       assert dsv_ids -- [dsv_id_1_1, dsv_id_1_2, dsv_id_5_1, dsv_id_5_2] == dsv_ids_intermediate
       assert [] = dsv_ids_forward
 
-      odd_ids = [dsv_id_1_1 | [_ | [_ | [_ | [dsv_id_5_1 | _]]]]] = dsv_ids |> Enum.take_every(2)
+      odd_ids =
+        [^dsv_id_1_1 | [_ | [_ | [_ | [^dsv_id_5_1 | _]]]]] = dsv_ids |> Enum.take_every(2)
 
       [paginated_previous_ids, paginated_intermediate_ids, paginated_forward_ids] =
         Enum.map(since_dates, fn since ->

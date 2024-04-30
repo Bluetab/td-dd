@@ -5,6 +5,7 @@
 ## Added
 
 - [TD-6535] Add Store chunk size configuration
+- [TD-6492] Update td-df-lib to enrich hierarchy path
 
 ### Fixed
 
@@ -97,7 +98,7 @@
 - [TD-5981] Grants download
 
 ## [6.2.3] 2024-04-03
- 
+
 ### Added
 
 - [TD-6507] Add Elastic bulk page size for enviroment vars
