@@ -134,5 +134,104 @@ defmodule TdDd.DataStructuresTestListVersions do
                  order_by: "id"
                })
     end
+
+    defp create_testeable_dsv(
+           version_updated_date,
+           deleted_version,
+           structure_updated_date
+         ) do
+      %{id: ds_id} =
+        insert(:data_structure,
+          inserted_at: structure_updated_date,
+          updated_at: structure_updated_date
+        )
+
+      %{id: dsv_id} =
+        insert(:data_structure_version,
+          data_structure_id: ds_id,
+          version: 1,
+          inserted_at: version_updated_date,
+          updated_at: version_updated_date,
+          deleted_at: deleted_version
+        )
+
+      dsv_id
+    end
+
+    test "complete dates" do
+      previous_date = ~U[2019-04-16 00:00:00Z]
+      next_date = ~U[2023-05-22 00:00:00Z]
+      since_dates = [~U[2019-04-14 00:00:00Z], ~U[2023-05-19 00:00:00Z], ~U[2023-05-26 00:00:00Z]]
+
+      dsv_ids = [
+        dsv_id_1_1 = create_testeable_dsv(previous_date, previous_date, previous_date),
+        dsv_id_1_2 = create_testeable_dsv(previous_date, previous_date, previous_date),
+        create_testeable_dsv(previous_date, previous_date, next_date),
+        create_testeable_dsv(previous_date, previous_date, next_date),
+        create_testeable_dsv(previous_date, next_date, previous_date),
+        create_testeable_dsv(previous_date, next_date, previous_date),
+        create_testeable_dsv(previous_date, next_date, next_date),
+        create_testeable_dsv(previous_date, next_date, next_date),
+        dsv_id_5_1 = create_testeable_dsv(previous_date, nil, previous_date),
+        dsv_id_5_2 = create_testeable_dsv(previous_date, nil, previous_date),
+        create_testeable_dsv(previous_date, nil, next_date),
+        create_testeable_dsv(previous_date, nil, next_date),
+        create_testeable_dsv(next_date, previous_date, previous_date),
+        create_testeable_dsv(next_date, previous_date, previous_date),
+        create_testeable_dsv(next_date, previous_date, next_date),
+        create_testeable_dsv(next_date, previous_date, next_date),
+        create_testeable_dsv(next_date, next_date, previous_date),
+        create_testeable_dsv(next_date, next_date, previous_date),
+        create_testeable_dsv(next_date, next_date, next_date),
+        create_testeable_dsv(next_date, next_date, next_date),
+        create_testeable_dsv(next_date, nil, previous_date),
+        create_testeable_dsv(next_date, nil, previous_date),
+        create_testeable_dsv(next_date, nil, next_date),
+        create_testeable_dsv(next_date, nil, next_date)
+      ]
+
+      [dsv_ids_previous, dsv_ids_intermediate, dsv_ids_forward] =
+        Enum.map(since_dates, fn since ->
+          DataStructures.list_data_structure_versions(%{
+            since: since,
+            order_by: "id"
+          })
+          |> Enum.map(& &1.id)
+        end)
+
+      assert dsv_ids == dsv_ids_previous
+      assert dsv_ids -- [dsv_id_1_1, dsv_id_1_2, dsv_id_5_1, dsv_id_5_2] == dsv_ids_intermediate
+      assert [] = dsv_ids_forward
+
+      odd_ids =
+        [^dsv_id_1_1 | [_ | [_ | [_ | [^dsv_id_5_1 | _]]]]] = dsv_ids |> Enum.take_every(2)
+
+      [paginated_previous_ids, paginated_intermediate_ids, paginated_forward_ids] =
+        Enum.map(since_dates, fn since ->
+          Enum.map(odd_ids, fn id ->
+            DataStructures.list_data_structure_versions(%{
+              since: since,
+              order_by: "id",
+              min_id: id
+            })
+            |> Enum.map(& &1.id)
+          end)
+        end)
+        |> Enum.map(&Enum.zip(odd_ids, &1))
+
+      for {odd_id, paginated_previous_ids_per_odd_id} <- paginated_previous_ids do
+        assert Enum.filter(dsv_ids_previous, &(&1 >= odd_id)) ==
+                 paginated_previous_ids_per_odd_id
+      end
+
+      for {odd_id, paginated_intermediate_ids_per_odd_id} <- paginated_intermediate_ids do
+        assert Enum.filter(dsv_ids_intermediate, &(&1 >= odd_id)) ==
+                 paginated_intermediate_ids_per_odd_id
+      end
+
+      for {_odd_id, paginated_forward_ids_per_odd_id} <- paginated_forward_ids do
+        assert [] == paginated_forward_ids_per_odd_id
+      end
+    end
   end
 end

@@ -63,31 +63,12 @@ defmodule TdDd.DataStructures do
     |> Enum.map(&{&1, Map.get(clauses, &1)})
     |> Enum.reduce(DataStructureVersion, fn
       {:since, since}, q ->
-        # TD-4757
-        # The metrics connector needs the structure domain(s), which is in the
-        # data_structures table, not in the data_structure_versions one.
-        # Therefore, if a structure domain is updated, ds.updated_at will be
-        # written, but not dsv.updated_at. Metrics uses the since parameter
-        # (since >= updated_at) to only get the information that has been
-        # changed/added since its last request. The
-        # "union(^join_ds_updated_at)" is used at the end in order to include
-        # the updated structure domain (or any other needed data_structures
-        # fields).
-        join_ds_updated_at =
-          q
-          |> join(:inner, [dsv], ds in assoc(dsv, :data_structure))
-          |> where(
-            [_dsv, ds],
-            ds.updated_at >= ^since
-          )
-
         q
         |> join(:inner, [dsv], ds in assoc(dsv, :data_structure))
         |> where(
-          [dsv, _ds],
-          dsv.updated_at >= ^since or dsv.deleted_at >= ^since
+          [dsv, ds],
+          dsv.updated_at >= ^since or dsv.deleted_at >= ^since or ds.updated_at >= ^since
         )
-        |> union(^join_ds_updated_at)
 
       {:min_id, id}, q ->
         where(q, [dsv], dsv.id >= ^id)
@@ -1168,7 +1149,13 @@ defmodule TdDd.DataStructures do
   end
 
   def streamed_enriched_structure_versions(opts \\ []) do
-    {enrich_opts, opts} = Keyword.split(opts, [:content, :filters])
+    chunk_size = Keyword.get(opts, :chunk_size, 1000)
+
+    {enrich_opts, opts} =
+      opts
+      |> Keyword.drop([:chunk_size])
+      |> Keyword.split([:content, :filters])
+
     enrich = StructureVersionEnricher.enricher(enrich_opts)
 
     opts
@@ -1176,10 +1163,14 @@ defmodule TdDd.DataStructures do
     |> Map.drop([:with_protected_metadata])
     |> DataStructureQueries.enriched_structure_versions()
     |> Repo.stream()
-    |> Stream.map(
+    |> Stream.chunk_every(chunk_size)
+    |> Stream.flat_map(
       &(&1
-        |> enrich.()
-        |> protect_metadata(Keyword.get(opts, :with_protected_metadata)))
+        |> Enum.map(fn dsv ->
+          dsv
+          |> enrich.()
+          |> protect_metadata(Keyword.get(opts, :with_protected_metadata))
+        end))
     )
   end
 

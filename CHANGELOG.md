@@ -1,5 +1,37 @@
 # Changelog
 
+## [6.5.0] 2024-04-30
+
+## Added
+
+- [TD-6535] Add Store chunk size configuration
+- [TD-6492] Update td-df-lib to enrich hierarchy path
+
+### Fixed
+
+- [TD-6424] Fixed switch on fields aren't translated when uploading and
+  downloading
+- [TD-5981] Grants download
+- [TD-6538] Refactor the list data structure version query
+- [TD-6552] Update TD-Cache to return all domains if permissions are in default role
+- [TD-5495] Foreing keys columns should match original ID columns in all tables
+
+## [6.4.2] 2024-04-29
+
+### Fixed
+
+- [TD-6552] Update td-cache lib for returns all domains only for default role
+
+## [6.4.1] 2024-04-15
+
+## Added
+
+- [TD-6535] Add Store chunk size configuration
+
+## Fixed
+
+- [TD-5981] Grants download
+
 ## [6.4.0] 2024-04-09
 
 ## Added
@@ -13,7 +45,25 @@
 - [TD-6401] Fixed Content aggregations have a maximum of 10 values
 - [TD-6521] Fix Raw implemnetations structure links
 
+## [6.3.4] 2024-04-29
+
+### Fixed
+
+- [TD-6552] Update td-cache lib for returns all domains only for default role
+
+## [6.3.3] 2024-04-15
+
+## Added
+
+- [TD-6535] Add Store chunk size configuration
+
+## Fixed
+
+- [TD-5981] Grants download
+
 ## [6.3.2] 2024-05-03
+
+## [6.3.1] 2024-05-03
 
 ### Added
 
@@ -31,11 +81,31 @@
 
 - [TD-6434] Remove extra quotes in implementation source, population and validation
 
+## [6.2.5] 2024-04-29
+
+### Fixed
+
+- [TD-6552] Update td-cache lib for returns all domains only for default role
+
+## [6.2.4] 2024-04-15
+
+## Added
+
+- [TD-6535] Add Store chunk size configuration
+
+## Fixed
+
+- [TD-5981] Grants download
+
 ## [6.2.3] 2024-04-03
+
+### Added
 
 - [TD-6507] Add Elastic bulk page size for enviroment vars
 
 ## [6.2.2] 2024-03-08
+
+### Added
 
 - [TD-6456] In bulk grant approves, when a grant revoke is approved, grant is reindexed
 
@@ -55,6 +125,12 @@
 
 - [TD-6425] Ensure SSL if configured for release migration
 - [TD-6398] Approval grant request from 'approval grant requests'
+
+## [6.1.2] 2024-04-29
+
+### Fixed
+
+- [TD-6552] Update td-cache lib for returns all domains only for default role
 
 ## [6.1.1] 2024-04-03
 
