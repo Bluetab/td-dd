@@ -32,7 +32,7 @@ defmodule TdDd.Repo.Migrations.AddNhsMvTableProfile do
       p.value::json->>'interquartile_range' as interquartile_range,
       p.value::json->>'missing_values_count' as missing_values_count,
       p.value::json->>'distinct_values_count' as distinct_values_count,
-      p.value::json->>'z_score_outliers_count' as z_score_outliers_count,
+      p.value::json->>'z_score_outliers_count' as z_score_outliners_count,
       p.value::json->>'median_absolute_deviation' as median_absolute_deviation,
       json_array_elements(
       CASE
