@@ -48,6 +48,7 @@ defmodule TdDd.GrantRequests.ElasticDocument do
         current_status: grant_request.current_status,
         approved_by: grant_request.approved_by,
         domain_ids: grant_request.domain_ids,
+        group_id: group.id,
         user_id: group.user_id,
         user: %{
           id: Map.get(user, :id),
@@ -115,6 +116,7 @@ defmodule TdDd.GrantRequests.ElasticDocument do
         current_status: %{type: "keyword"},
         approved_by: %{type: "keyword"},
         domain_ids: %{type: "long"},
+        group_id: %{type: "long"},
         user_id: %{type: "long"},
         user: %{
           type: "object",
