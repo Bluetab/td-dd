@@ -16,6 +16,11 @@
 - [TD-6552] Update TD-Cache to return all domains if permissions are in default role
 - [TD-5495] Foreing keys columns should match original ID columns in all tables
 
+### Changed
+
+- [TD-6584] Reduce the number of database queries when requesting metadata
+            for multiple data structure versions through GraphQL
+
 ## [6.4.2] 2024-04-29
 
 ### Fixed

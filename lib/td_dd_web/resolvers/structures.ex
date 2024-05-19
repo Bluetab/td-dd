@@ -225,30 +225,37 @@ defmodule TdDdWeb.Resolvers.Structures do
   end
 
   def metadata(
-        %TdDd.DataStructures.DataStructureVersion{data_structure: %{id: _} = ds} = dsv,
-        _args,
-        %{context: %{claims: claims}} = _resolution
+        %TdDd.DataStructures.DataStructureVersion{data_structure: ds} = dsv,
+        args,
+        %{context: %{loader: loader, claims: claims}} = _resolution
       ) do
     opts = get_permissions_opts(ds, claims)
 
-    %{metadata: metadata} =
-      dsv
-      |> DataStructures.get_mutable_metadata([metadata_versions: true] ++ opts)
-      |> DataStructureVersions.merge_metadata()
+    with_protected_metadata =
+      Keyword.get([metadata_versions: true] ++ opts, :with_protected_metadata)
 
-    {:ok, metadata}
-  end
+    batch_key = Map.to_list(args) ++ [{:preload, [:metadata_versions]}]
 
-  def metadata(
-        %TdDd.DataStructures.DataStructureVersion{data_structure_id: ds_id} = dsv,
-        args,
-        resolution
-      ) do
-    data_structure = DataStructures.get_data_structure!(ds_id)
+    loader
+    |> Dataloader.load(TdDd.DataStructures, {:data_structure, batch_key}, dsv)
+    |> on_load(fn loader ->
+      dsv_with_metadata =
+        loader
+        |> Dataloader.get(TdDd.DataStructures, {:data_structure, batch_key}, dsv)
 
-    dsv
-    |> Map.put(:data_structure, data_structure)
-    |> metadata(args, resolution)
+      metadata_versions =
+        TdDd.DataStructures.protect_metadata(
+          dsv_with_metadata.metadata_versions,
+          with_protected_metadata
+        )
+
+      %{metadata: metadata} =
+        dsv
+        |> Map.put(:metadata_versions, metadata_versions)
+        |> DataStructureVersions.merge_metadata()
+
+      {:ok, metadata}
+    end)
   end
 
   def children(parent, args, %{context: %{loader: loader, claims: claims}}) do
