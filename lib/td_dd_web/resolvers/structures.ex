@@ -239,18 +239,12 @@ defmodule TdDdWeb.Resolvers.Structures do
     loader
     |> Dataloader.load(TdDd.DataStructures, {:data_structure, batch_key}, dsv)
     |> on_load(fn loader ->
-      dsv_with_metadata =
-        Dataloader.get(loader, TdDd.DataStructures, {:data_structure, batch_key}, dsv)
-
-      metadata_versions =
-        TdDd.DataStructures.protect_metadata(
-          dsv_with_metadata.metadata_versions,
-          with_protected_metadata
-        )
-
       %{metadata: metadata} =
-        dsv
-        |> Map.put(:metadata_versions, metadata_versions)
+        loader
+        |> Dataloader.get(TdDd.DataStructures, {:data_structure, batch_key}, dsv)
+        |> Map.get(:metadata_versions)
+        |> TdDd.DataStructures.protect_metadata(with_protected_metadata)
+        |> then(&Map.put(dsv, :metadata_versions, &1))
         |> DataStructureVersions.merge_metadata()
 
       {:ok, metadata}
