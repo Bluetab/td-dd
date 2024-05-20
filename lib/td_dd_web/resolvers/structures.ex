@@ -240,8 +240,7 @@ defmodule TdDdWeb.Resolvers.Structures do
     |> Dataloader.load(TdDd.DataStructures, {:data_structure, batch_key}, dsv)
     |> on_load(fn loader ->
       dsv_with_metadata =
-        loader
-        |> Dataloader.get(TdDd.DataStructures, {:data_structure, batch_key}, dsv)
+        Dataloader.get(loader, TdDd.DataStructures, {:data_structure, batch_key}, dsv)
 
       metadata_versions =
         TdDd.DataStructures.protect_metadata(
