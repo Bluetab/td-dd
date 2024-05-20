@@ -1454,6 +1454,151 @@ defmodule TdDdWeb.Schema.StructuresTest do
              ] = parents
     end
 
+    defp insert_family_of_structures(number_of_children) do
+      %{id: domain_id} = CacheHelpers.insert_domain()
+
+      %{id: ds_main_id} = structure_main = insert(:data_structure, domain_ids: [domain_id])
+
+      %{id: dsv_main_id} =
+        insert(:data_structure_version,
+          data_structure: structure_main,
+          version: 1,
+          metadata: %{"foo_main" => "this is no mutable (main)"}
+        )
+
+      mutable_metadata_main = %{
+        "mm_foo_main" => "this is mutable (main)",
+        @protected => %{"mm_protected_main" => "this is protected mutable (main)"}
+      }
+
+      insert(:structure_metadata,
+        data_structure_id: ds_main_id,
+        fields: mutable_metadata_main
+      )
+
+      for n_child <- 1..number_of_children do
+        structure_child = insert(:data_structure, domain_ids: [domain_id])
+
+        %{id: dsv_child} =
+          insert(:data_structure_version,
+            data_structure: structure_child,
+            version: 1,
+            class: "field",
+            metadata: %{"foo_child" => "this is no mutable (child #{n_child})"}
+          )
+
+        insert(:structure_metadata,
+          data_structure_id: structure_child.id,
+          fields: %{
+            "mm_foo" => "this is mutable (child #{n_child})",
+            @protected => %{"mm_protected" => "this is protected mutable (child #{n_child})"}
+          }
+        )
+
+        create_relation(dsv_main_id, dsv_child)
+      end
+
+      # parent
+      structure_parent_1 = insert(:data_structure, domain_ids: [domain_id])
+
+      %{id: dsv_parent_1} =
+        insert(:data_structure_version,
+          data_structure: structure_parent_1,
+          version: 1,
+          class: "field",
+          metadata: %{"foo_parent" => "this is no mutable (parent)"}
+        )
+
+      mutable_metadata_1 = %{
+        "mm_foo" => "this is mutable (parent)",
+        @protected => %{"mm_protected" => "this is protected mutable (parent)"}
+      }
+
+      insert(:structure_metadata,
+        data_structure_id: structure_parent_1.id,
+        fields: mutable_metadata_1
+      )
+
+      create_relation(dsv_parent_1, dsv_main_id)
+      ds_main_id
+    end
+
+    @tag authentication: [role: "admin"]
+    test "count accesses to database when retrieve metadata for children", %{conn: conn} do
+      defmodule QueryCounter do
+        def start, do: {:ok, _pid} = Agent.start_link(fn -> 0 end, name: :query_counter)
+        def stop, do: Agent.stop(:query_counter)
+        def total, do: Agent.get(:query_counter, & &1)
+        def count(_, _, %{repo: TdDd.Repo}, _), do: Agent.update(:query_counter, &(&1 + 1))
+      end
+
+      number_of_children = 500
+      ds_main_id = insert_family_of_structures(number_of_children)
+      query_variables = %{"dataStructureId" => ds_main_id, "version" => "latest"}
+
+      QueryCounter.start()
+
+      :telemetry.attach(
+        "ecto-query-count",
+        [:td_dd, :repo, :query],
+        &QueryCounter.count/4,
+        %{}
+      )
+
+      query_children = """
+      query DataStructureVersion($dataStructureId: ID!, $version: String!) {
+        dataStructureVersion(dataStructureId: $dataStructureId, version: $version) {
+          id,
+          children {
+            id,
+            data_structure {
+              id
+            }
+          }
+        }
+      }
+      """
+
+      query_children_metadata = """
+      query DataStructureVersion($dataStructureId: ID!, $version: String!) {
+        dataStructureVersion(dataStructureId: $dataStructureId, version: $version) {
+          id,
+          children {
+            id,
+            metadata
+          }
+        }
+      }
+      """
+
+      assert conn
+             |> post("/api/v2", %{
+               "query" => query_children,
+               "variables" => query_variables
+             })
+             |> json_response(:ok)
+
+      query_count = QueryCounter.total()
+
+      QueryCounter.stop()
+      QueryCounter.start()
+
+      assert conn
+             |> post("/api/v2", %{
+               "query" => query_children_metadata,
+               "variables" => query_variables
+             })
+             |> json_response(:ok)
+
+      :telemetry.detach("ecto-query-count")
+
+      metadata_query_count = QueryCounter.total()
+      QueryCounter.stop()
+
+      delta_count = metadata_query_count - query_count
+      assert 1 == delta_count
+    end
+
     @tag authentication: [
            role: "user",
            permissions: [:view_data_structure]
