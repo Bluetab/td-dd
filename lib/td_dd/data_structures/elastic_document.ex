@@ -185,7 +185,7 @@ defmodule TdDd.DataStructures.ElasticDocument do
         class: %{type: "text", fields: %{raw: %{type: "keyword", null_value: ""}}},
         classes: %{enabled: true},
         source_alias: %{type: "keyword", fields: @raw_sort},
-        version: %{type: "short"},
+        version: %{type: "long"},
         tags: %{type: "text", fields: %{raw: %{type: "keyword", null_value: ""}}},
         with_profiling: %{type: "boolean", fields: @raw}
       }
