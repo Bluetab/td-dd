@@ -1,15 +1,21 @@
 # Changelog
 
+## [6.6.0] 2024-05-21
+
+### Changed
+
+- [TD-6083] Add group id to grant request index
+
 ## [6.5.1] 2024-05-20
 
 ### Changed
 
 - [TD-6584] Reduce the number of database queries when requesting metadata
-            for multiple data structure versions through GraphQL
+  for multiple data structure versions through GraphQL
 
 ## [6.5.0] 2024-04-30
 
-## Added
+### Added
 
 - [TD-6535] Add Store chunk size configuration
 - [TD-6492] Update td-df-lib to enrich hierarchy path
@@ -31,17 +37,17 @@
 
 ## [6.4.1] 2024-04-15
 
-## Added
+### Added
 
 - [TD-6535] Add Store chunk size configuration
 
-## Fixed
+### Fixed
 
 - [TD-5981] Grants download
 
 ## [6.4.0] 2024-04-09
 
-## Added
+### Added
 
 - [TD-6283] Add alias in linked data structure test
 - [TD-6507] Add Elastic bulk page size for enviroment vars
@@ -60,11 +66,11 @@
 
 ## [6.3.3] 2024-04-15
 
-## Added
+### Added
 
 - [TD-6535] Add Store chunk size configuration
 
-## Fixed
+### Fixed
 
 - [TD-5981] Grants download
 
@@ -96,11 +102,11 @@
 
 ## [6.2.4] 2024-04-15
 
-## Added
+### Added
 
 - [TD-6535] Add Store chunk size configuration
 
-## Fixed
+### Fixed
 
 - [TD-5981] Grants download
 
@@ -326,7 +332,7 @@
   - Complete reindex: delete temporal index if there are any errors.
 - [TD-5891] Download csv i18n support
 
-## Changed
+### Changed
 
 - [TD-5913] Update td-df-lib to fix depends validation
 
@@ -397,7 +403,7 @@
 - [TD-5593] Add related concept in quality implementations list and implementation download
 - [TD-5808] Configured TdCluster
 
-## Changed
+### Changed
 
 - [TD-5912] `.gitlab-ci.yml` adaptations for develop and main branches
 
