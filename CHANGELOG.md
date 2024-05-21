@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [6.6.0] 2024-05-21
 
 ### Changed
 
@@ -11,7 +11,7 @@
 ### Changed
 
 - [TD-6584] Reduce the number of database queries when requesting metadata
-            for multiple data structure versions through GraphQL
+  for multiple data structure versions through GraphQL
 
 ## [6.5.0] 2024-04-30
 
