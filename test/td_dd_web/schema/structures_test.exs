@@ -7,6 +7,8 @@ defmodule TdDdWeb.Schema.StructuresTest do
   alias TdDd.Lineage.GraphData
   alias TdDd.Lineage.GraphData.State
 
+  require Logger
+
   @moduletag sandbox: :shared
 
   @protected "_protected"
@@ -1455,7 +1457,11 @@ defmodule TdDdWeb.Schema.StructuresTest do
              ] = parents
     end
 
-    defp insert_family_of_structures(number_of_children) do
+    defp insert_family_of_structures(
+           number_of_children,
+           number_of_versions,
+           metadata_duplications
+         ) do
       %{id: domain_id} = CacheHelpers.insert_domain()
 
       %{id: ds_main_id} = structure_main = insert(:data_structure, domain_ids: [domain_id])
@@ -1488,13 +1494,23 @@ defmodule TdDdWeb.Schema.StructuresTest do
             metadata: %{"foo_child" => "this is no mutable (child #{n_child})"}
           )
 
-        insert(:structure_metadata,
-          data_structure_id: structure_child.id,
-          fields: %{
-            "mm_foo" => "this is mutable (child #{n_child})",
-            @protected => %{"mm_protected" => "this is protected mutable (child #{n_child})"}
-          }
-        )
+        for version <- 1..number_of_versions do
+          insert(:structure_metadata,
+            data_structure_id: structure_child.id,
+            version: version,
+            fields: %{
+              "mm_foo" =>
+                String.duplicate(
+                  "this is mutable (child #{n_child}) with version #{version}",
+                  metadata_duplications
+                ),
+              @protected => %{
+                "mm_protected" =>
+                  "this is protected mutable (child #{n_child}) with version #{version}"
+              }
+            }
+          )
+        end
 
         create_relation(dsv_main_id, dsv_child)
       end
@@ -1533,8 +1549,8 @@ defmodule TdDdWeb.Schema.StructuresTest do
         def count(_, _, %{repo: TdDd.Repo}, _), do: Agent.update(:query_counter, &(&1 + 1))
       end
 
-      number_of_children = 500
-      ds_main_id = insert_family_of_structures(number_of_children)
+      number_of_children = 20
+      ds_main_id = insert_family_of_structures(number_of_children, 20, 2000)
       query_variables = %{"dataStructureId" => ds_main_id, "version" => "latest"}
 
       QueryCounter.start()
@@ -1584,6 +1600,8 @@ defmodule TdDdWeb.Schema.StructuresTest do
       QueryCounter.stop()
       QueryCounter.start()
 
+      initial_memory = :erlang.memory(:total)
+
       assert conn
              |> post("/api/v2", %{
                "query" => query_children_metadata,
@@ -1592,6 +1610,18 @@ defmodule TdDdWeb.Schema.StructuresTest do
              |> json_response(:ok)
 
       :telemetry.detach("ecto-query-count")
+      final_memory = :erlang.memory(:total)
+      # megabytes
+      memory_consumed = (final_memory - initial_memory) / 1_000_000
+      expected_memory_consumption = 1
+      expected_memory_tolerance = 10
+      memory_consumption_limit = expected_memory_consumption * expected_memory_tolerance
+
+      if memory_consumed > memory_consumption_limit do
+        Logger.warn(
+          "\n High memory consumed: #{memory_consumed} Mbytes \n Consider to review in memory operations"
+        )
+      end
 
       metadata_query_count = QueryCounter.total()
       QueryCounter.stop()

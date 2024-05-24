@@ -234,7 +234,10 @@ defmodule TdDdWeb.Resolvers.Structures do
     with_protected_metadata =
       Keyword.get([metadata_versions: true] ++ opts, :with_protected_metadata)
 
-    batch_key = Map.to_list(args) ++ [{:preload, [:metadata_versions]}]
+    # Preload only the latest metadata_version to avoid memory overload
+    # TODO: Preload current_metadata instead of latest metadata version if has the same behaviour.
+    preload_opts = [metadata_versions: TdDd.DataStructures.latests_metadata_version_query()]
+    batch_key = Map.to_list(args) ++ [{:preload, preload_opts}]
 
     loader
     |> Dataloader.load(TdDd.DataStructures, {:data_structure, batch_key}, dsv)
