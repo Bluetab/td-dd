@@ -53,6 +53,7 @@ defmodule TdDdWeb.GrantRequestView do
     |> Map.take([
       :id,
       :user_id,
+      :group_id,
       :created_by_id,
       :data_structure_id,
       :grant,
