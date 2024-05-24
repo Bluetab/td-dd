@@ -230,7 +230,7 @@ defmodule TdDdWeb.Resolvers.Structures do
     with_protected_metadata =
       Keyword.get([metadata_versions: true] ++ opts, :with_protected_metadata)
 
-    batch_key = Map.to_list(args) ++ [{:preload, [:metadata_versions]}]
+    batch_key = Map.to_list(args) ++ [{:preload, [:current_metadata]}]
 
     loader
     |> Dataloader.load(TdDd.DataStructures, {:data_structure, batch_key}, dsv)
@@ -238,7 +238,8 @@ defmodule TdDdWeb.Resolvers.Structures do
       %{metadata: metadata} =
         loader
         |> Dataloader.get(TdDd.DataStructures, {:data_structure, batch_key}, dsv)
-        |> Map.get(:metadata_versions)
+        |> Map.get(:current_metadata, [])
+        |> List.wrap()
         |> TdDd.DataStructures.protect_metadata(with_protected_metadata)
         |> then(&Map.put(dsv, :metadata_versions, &1))
         |> DataStructureVersions.merge_metadata()

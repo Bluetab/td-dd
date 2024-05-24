@@ -250,13 +250,12 @@ defmodule TdDd.DataStructures.DataStructureVersions do
 
   def merge_metadata(%{metadata_versions: [_ | _] = metadata_versions} = dsv) do
     %{fields: mutable_metadata} =
-      Enum.max_by(metadata_versions, & &1.version)
-      |> case do
+      case Enum.max_by(metadata_versions, & &1.version) do
         %{deleted_at: deleted_at} = _version when deleted_at != nil ->
           %{fields: %{}}
 
-        version ->
-          version
+        latest_metadata ->
+          latest_metadata
       end
 
     Map.update(dsv, :metadata, mutable_metadata, fn
