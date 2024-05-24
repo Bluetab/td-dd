@@ -1232,12 +1232,6 @@ defmodule TdDd.DataStructures do
     end)
   end
 
-  def latests_metadata_version_query do
-    from sm in StructureMetadata,
-      order_by: [desc: sm.version],
-      distinct: sm.data_structure_id
-  end
-
   defp add_children(q, %{id: parent_id}) do
     default_type = RelationTypes.default_id!()
 
