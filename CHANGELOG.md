@@ -12,7 +12,6 @@
 
 - [TD-6083] Add group id to grant request index
 
-
 ## [6.5.1] 2024-05-20
 
 ### Changed
