@@ -1,5 +1,11 @@
 # Changelog
 
+## [6.6.1] 2024-05-24
+
+### Fixed
+
+- [TD-6623] Reduce in memory calculations when requesting metadata
+
 ## [6.6.0] 2024-05-21
 
 ### Changed
