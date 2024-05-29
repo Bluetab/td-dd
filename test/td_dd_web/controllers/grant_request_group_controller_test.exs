@@ -497,6 +497,8 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
       group: group,
       grant_request_id: grant_request_id
     } do
+      IndexWorkerMock.clear()
+
       assert conn
              |> delete(Routes.grant_request_group_path(conn, :delete, group))
              |> response(:no_content)

@@ -67,25 +67,32 @@ defmodule TdDd.Grants.ElasticDocument do
       %{mappings: %{properties: dsv_properties}, settings: _settings} =
         ElasticDocumentProtocol.mappings(%DataStructureVersion{})
 
-      properties = %{
-        data_structure_id: %{type: "long"},
-        detail: %{type: "object"},
-        user_id: %{type: "long"},
-        pending_removal: %{type: "boolean", fields: @raw},
-        start_date: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-        end_date: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-        updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-        inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-        data_structure_version: %{type: "object", properties: dsv_properties},
-        user: %{
-          type: "object",
-          properties: %{
-            id: %{type: "long", index: false},
-            user_name: %{type: "text", fields: @raw},
-            full_name: %{type: "text", fields: @raw}
+      grants_config = Application.get_env(:td_core, TdCore.Search.Cluster)[:indexes][:grants]
+
+      dsv_properties =
+        maybe_not_searcheable_field(dsv_properties, grants_config, :dsv_no_sercheabled_fields)
+
+      properties =
+        %{
+          data_structure_id: %{type: "long"},
+          detail: %{type: "object"},
+          user_id: %{type: "long"},
+          pending_removal: %{type: "boolean", fields: @raw},
+          start_date: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
+          end_date: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
+          updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
+          inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
+          data_structure_version: %{type: "object", properties: dsv_properties},
+          user: %{
+            type: "object",
+            properties: %{
+              id: %{type: "long", index: false},
+              user_name: %{type: "text", fields: @raw},
+              full_name: %{type: "text", fields: @raw}
+            }
           }
         }
-      }
+        |> maybe_not_searcheable_field(grants_config, :grant_no_sercheabled_fields)
 
       settings = Cluster.setting(:grants)
       %{mappings: %{properties: properties}, settings: settings}
@@ -100,6 +107,23 @@ defmodule TdDd.Grants.ElasticDocument do
           terms: %{field: "data_structure_version.system.external_id.raw", size: 50}
         }
       }
+    end
+
+    defp maybe_not_searcheable_field(properties, config, config_key) do
+      mapping_list =
+        config
+        |> Map.get(config_key, [])
+        |> Enum.map(fn key -> String.to_atom(key) end)
+
+      maybe_not_searcheable_field(properties, mapping_list)
+    end
+
+    defp maybe_not_searcheable_field(properties, []), do: properties
+
+    defp maybe_not_searcheable_field(properties, mapping_list) do
+      Enum.reduce(mapping_list, properties, fn key, acc ->
+        Map.put(acc, key, %{enabled: false})
+      end)
     end
   end
 end

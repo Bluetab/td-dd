@@ -6,10 +6,6 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
 
   @moduletag sandbox: :shared
 
-  setup_all do
-    :ok
-  end
-
   setup context do
     template = CacheHelpers.insert_template(scope: "dq", name: "bar_template")
     rule = insert_rule(context)

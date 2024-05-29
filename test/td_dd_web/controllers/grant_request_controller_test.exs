@@ -296,6 +296,8 @@ defmodule TdDdWeb.GrantRequestControllerTest do
       conn: conn,
       grant_request: %{id: grant_request_id} = grant_request
     } do
+      IndexWorkerMock.clear()
+
       assert conn
              |> delete(Routes.grant_request_path(conn, :delete, grant_request))
              |> response(:no_content)
@@ -312,6 +314,8 @@ defmodule TdDdWeb.GrantRequestControllerTest do
       conn: conn,
       grant_request: grant_request
     } do
+      IndexWorkerMock.clear()
+
       assert conn
              |> delete(Routes.grant_request_path(conn, :delete, grant_request))
              |> response(:forbidden)

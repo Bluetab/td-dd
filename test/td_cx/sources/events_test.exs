@@ -21,6 +21,7 @@ defmodule TdCx.Sources.EventsTest do
   setup :verify_on_exit!
 
   test "create_event/0 creates an event" do
+    IndexWorkerMock.clear()
     %{id: source_id} = insert(:source)
     %{id: job_id} = insert(:job, source_id: source_id)
     params = %{type: "init", message: "Message", job_id: job_id}

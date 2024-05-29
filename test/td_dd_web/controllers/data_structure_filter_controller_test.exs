@@ -10,10 +10,6 @@ defmodule TdDdWeb.DataStructureFilterControllerTest do
     }
   }
 
-  setup_all do
-    :ok
-  end
-
   setup :verify_on_exit!
 
   describe "index" do

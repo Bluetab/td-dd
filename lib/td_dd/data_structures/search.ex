@@ -124,7 +124,7 @@ defmodule TdDd.DataStructures.Search do
   end
 
   defp scroll_opts! do
-    opts = Application.fetch_env!(:td_dd, __MODULE__)
+    opts = Application.fetch_env!(:td_dd, TdDd.DataStructures.Search)
 
     %{
       limit: Keyword.fetch!(opts, :max_bulk_results),

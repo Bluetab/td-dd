@@ -15,6 +15,7 @@ defmodule TdDdWeb.GrantRequestApprovalControllerTest do
       conn: conn,
       claims: %{user_id: user_id} = claims
     } do
+      IndexWorkerMock.clear()
       %{id: domain_id} = CacheHelpers.insert_domain()
 
       CacheHelpers.put_grant_request_approvers([

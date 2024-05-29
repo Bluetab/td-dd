@@ -87,6 +87,8 @@ defmodule TdDd.ClassifiersTest do
     end
 
     test "classifies and reindexes existing data structures" do
+      IndexWorkerMock.clear()
+
       %{id: data_structure_version_id, data_structure: %{id: data_structure_id, system: system}} =
         insert(:data_structure_version, type: "foo")
 
@@ -118,6 +120,8 @@ defmodule TdDd.ClassifiersTest do
     end
 
     test "returns and reindexes structure ids" do
+      IndexWorkerMock.clear()
+
       %{data_structure_version: %{data_structure_id: id}, classifier: classifier} =
         insert(:structure_classification)
 

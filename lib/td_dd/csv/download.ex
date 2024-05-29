@@ -61,8 +61,7 @@ defmodule TdDd.CSV.Download do
     "data_structure_name",
     "start_date",
     "end_date",
-    "metadata",
-    "mutable_metadata"
+    "metadata"
   ]
 
   def to_csv(structures, header_labels, structure_url_schema, lang) do
@@ -250,8 +249,7 @@ defmodule TdDd.CSV.Download do
           grant.data_structure_version.name,
           grant.start_date,
           grant.end_date,
-          Jason.encode!(grant.data_structure_version.metadata),
-          Jason.encode!(grant.data_structure_version.mutable_metadata)
+          Jason.encode!(grant.data_structure_version.metadata)
         ]
       end
     )
