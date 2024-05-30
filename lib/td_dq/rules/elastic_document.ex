@@ -5,6 +5,7 @@ defmodule TdDq.Rules.ElasticDocument do
   """
 
   alias Elasticsearch.Document
+  alias TdCore.Search.Cluster
   alias TdCore.Search.ElasticDocument
   alias TdCore.Search.ElasticDocumentProtocol
   alias TdDq.Rules.Rule
@@ -116,9 +117,13 @@ defmodule TdDq.Rules.ElasticDocument do
 
     def aggregations(_) do
       %{
-        "active.raw" => %{terms: %{field: "active.raw"}},
-        "df_label.raw" => %{terms: %{field: "df_label.raw", size: 50}},
-        "taxonomy" => %{terms: %{field: "domain_ids", size: 500}}
+        "active.raw" => %{
+          terms: %{field: "active.raw", size: Cluster.get_size_field("active.raw")}
+        },
+        "df_label.raw" => %{
+          terms: %{field: "df_label.raw", size: Cluster.get_size_field("df_label.raw")}
+        },
+        "taxonomy" => %{terms: %{field: "domain_ids", size: Cluster.get_size_field("taxonomy")}}
       }
       |> merge_dynamic_fields("dq", "df_content")
     end

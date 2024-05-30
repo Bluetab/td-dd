@@ -9,6 +9,7 @@ defmodule TdDd.Grants.ElasticDocument do
   """
 
   alias Elasticsearch.Document
+  alias TdCore.Search.Cluster
   alias TdCore.Search.ElasticDocument
   alias TdCore.Search.ElasticDocumentProtocol
   alias TdDd.DataStructures.DataStructureVersion
@@ -100,11 +101,29 @@ defmodule TdDd.Grants.ElasticDocument do
 
     def aggregations(_) do
       %{
-        "taxonomy" => %{terms: %{field: "data_structure_version.domain_ids", size: 500}},
-        "type.raw" => %{terms: %{field: "data_structure_version.type.raw", size: 50}},
-        "pending_removal.raw" => %{terms: %{field: "pending_removal.raw"}},
+        "taxonomy" => %{
+          terms: %{
+            field: "data_structure_version.domain_ids",
+            size: Cluster.get_size_field("taxonomy")
+          }
+        },
+        "type.raw" => %{
+          terms: %{
+            field: "data_structure_version.type.raw",
+            size: Cluster.get_size_field("type.raw")
+          }
+        },
+        "pending_removal.raw" => %{
+          terms: %{
+            field: "pending_removal.raw",
+            size: Cluster.get_size_field("pending_removal.raw")
+          }
+        },
         "system_external_id" => %{
-          terms: %{field: "data_structure_version.system.external_id.raw", size: 50}
+          terms: %{
+            field: "data_structure_version.system.external_id.raw",
+            size: Cluster.get_size_field("system_external_id")
+          }
         }
       }
     end

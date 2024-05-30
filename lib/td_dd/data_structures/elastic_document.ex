@@ -5,6 +5,7 @@ defmodule TdDd.DataStructures.ElasticDocument do
   """
 
   alias Elasticsearch.Document
+  alias TdCore.Search.Cluster
   alias TdCore.Search.ElasticDocument
   alias TdCore.Search.ElasticDocumentProtocol
   alias TdDd.DataStructures.CatalogViewConfigs
@@ -185,7 +186,7 @@ defmodule TdDd.DataStructures.ElasticDocument do
         class: %{type: "text", fields: %{raw: %{type: "keyword", null_value: ""}}},
         classes: %{enabled: true},
         source_alias: %{type: "keyword", fields: @raw_sort},
-        version: %{type: "short"},
+        version: %{type: "long"},
         tags: %{type: "text", fields: %{raw: %{type: "keyword", null_value: ""}}},
         with_profiling: %{type: "boolean", fields: @raw}
       }
@@ -206,17 +207,42 @@ defmodule TdDd.DataStructures.ElasticDocument do
       filters = filter_aggs()
 
       %{
-        "system.name.raw" => %{terms: %{field: "system.name.raw", size: 500}},
-        "group.raw" => %{terms: %{field: "group.raw", size: 50}},
-        "type.raw" => %{terms: %{field: "type.raw", size: 50}},
-        "confidential.raw" => %{terms: %{field: "confidential.raw"}},
-        "class.raw" => %{terms: %{field: "class.raw"}},
-        "field_type.raw" => %{terms: %{field: "field_type.raw", size: 50}},
-        "with_content.raw" => %{terms: %{field: "with_content.raw"}},
-        "tags.raw" => %{terms: %{field: "tags.raw", size: 50}},
-        "linked_concepts" => %{terms: %{field: "linked_concepts"}},
-        "taxonomy" => %{terms: %{field: "domain_ids", size: 500}},
-        "with_profiling.raw" => %{terms: %{field: "with_profiling.raw"}}
+        "system.name.raw" => %{
+          terms: %{field: "system.name.raw", size: Cluster.get_size_field("system.name.raw")}
+        },
+        "group.raw" => %{
+          terms: %{field: "group.raw", size: Cluster.get_size_field("group.raw")}
+        },
+        "type.raw" => %{
+          terms: %{field: "type.raw", size: Cluster.get_size_field("type.raw")}
+        },
+        "confidential.raw" => %{
+          terms: %{field: "confidential.raw", size: Cluster.get_size_field("confidential.raw")}
+        },
+        "class.raw" => %{
+          terms: %{field: "class.raw", size: Cluster.get_size_field("class.raw")}
+        },
+        "field_type.raw" => %{
+          terms: %{field: "field_type.raw", size: Cluster.get_size_field("field_type.raw")}
+        },
+        "with_content.raw" => %{
+          terms: %{field: "with_content.raw", size: Cluster.get_size_field("with_content.raw")}
+        },
+        "tags.raw" => %{
+          terms: %{field: "tags.raw", size: Cluster.get_size_field("tags.raw")}
+        },
+        "linked_concepts" => %{
+          terms: %{field: "linked_concepts", size: Cluster.get_size_field("linked_concepts")}
+        },
+        "taxonomy" => %{
+          terms: %{field: "domain_ids", size: Cluster.get_size_field("taxonomy")}
+        },
+        "with_profiling.raw" => %{
+          terms: %{
+            field: "with_profiling.raw",
+            size: Cluster.get_size_field("with_profiling.raw")
+          }
+        }
       }
       |> merge_dynamic_fields("dd", "note")
       |> Map.merge(filters)
@@ -231,7 +257,8 @@ defmodule TdDd.DataStructures.ElasticDocument do
             {"note.#{field_name}",
              %{
                terms: %{
-                 field: "note.#{field_name}.raw"
+                 field: "note.#{field_name}.raw",
+                 size: Cluster.get_size_field("default_note")
                }
              }}
         end)
@@ -243,7 +270,13 @@ defmodule TdDd.DataStructures.ElasticDocument do
         |> List.flatten()
         |> Enum.uniq()
         |> Map.new(fn filter ->
-          {"metadata.#{filter}", %{terms: %{field: "_filters.#{filter}"}}}
+          {"metadata.#{filter}",
+           %{
+             terms: %{
+               field: "_filters.#{filter}",
+               size: Cluster.get_size_field("default_metadata")
+             }
+           }}
         end)
 
       Map.merge(catalog_view_configs_filters, data_structure_types_filters)
