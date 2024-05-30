@@ -17,10 +17,48 @@ config :td_core, TdCore.Search.Cluster,
 
   # Aggregations default
   aggregations: %{
-    "domain" => 50,
-    "user" => 50,
-    "system" => 50,
-    "default" => 50
+    "domain" => System.get_env("AGG_DOMAIN_SIZE", "500") |> String.to_integer(),
+    "user" => System.get_env("AGG_USER_SIZE", "500") |> String.to_integer(),
+    "system" => System.get_env("AGG_SYSTEM_SIZE", "500") |> String.to_integer(),
+    "default" => System.get_env("AGG_DEFAULT_SIZE", "500") |> String.to_integer(),
+    "source_external_id" =>
+      System.get_env("AGG_SOURCE_EXTERNAL_ID_SIZE", "500") |> String.to_integer(),
+    "source_type" => System.get_env("AGG_SOURCE_TYPE_SIZE", "500") |> String.to_integer(),
+    "status" => System.get_env("AGG_STATUS_SIZE", "500") |> String.to_integer(),
+    "type" => System.get_env("AGG_TYPE_SIZE", "500") |> String.to_integer(),
+    "default_note" => System.get_env("AGG_DEFAULT_NOTE_SIZE", "500") |> String.to_integer(),
+    "default_metadata" =>
+      System.get_env("AGG_DEFAULT_METADATA_SIZE", "500") |> String.to_integer(),
+    "system.name.raw" => System.get_env("AGG_SYSTEM_NAME_RAW_SIZE", "500") |> String.to_integer(),
+    "group.raw" => System.get_env("AGG_GROUP_RAW_SIZE", "500") |> String.to_integer(),
+    "type.raw" => System.get_env("AGG_TYPE_RAW_SIZE", "500") |> String.to_integer(),
+    "confidential.raw" =>
+      System.get_env("AGG_CONFIDENTIAL_RAW_SIZE", "500") |> String.to_integer(),
+    "class.raw" => System.get_env("AGG_CLASS_RAW_SIZE", "500") |> String.to_integer(),
+    "field_type.raw" => System.get_env("AGG_FIELD_TYPE_RAW_SIZE", "500") |> String.to_integer(),
+    "with_content.raw" =>
+      System.get_env("AGG_WITH_CONTENT_RAW_SIZE", "500") |> String.to_integer(),
+    "tags.raw" => System.get_env("AGG_TAGS_RAW_SIZE", "500") |> String.to_integer(),
+    "linked_concepts" => System.get_env("AGG_LINKED_CONCEPTS_SIZE", "500") |> String.to_integer(),
+    "taxonomy" => System.get_env("AGG_TAXONOMY_SIZE", "500") |> String.to_integer(),
+    "hierarchy" => System.get_env("AGG_HIERARCHY_SIZE", "500") |> String.to_integer(),
+    "with_profiling.raw" =>
+      System.get_env("AGG_WITH_PROFILING_RAW_SIZE", "500") |> String.to_integer(),
+    "execution_result_info.result_text" =>
+      System.get_env("AGG_EXECUTION_RESULT_INFO_RESULT_TEXT_SIZE", "500") |> String.to_integer(),
+    "rule" => System.get_env("AGG_RULE_SIZE", "500") |> String.to_integer(),
+    "result_type.raw" => System.get_env("AGG_RESULT_TYPE_SIZE", "500") |> String.to_integer(),
+    "structure_taxonomy" =>
+      System.get_env("AGG_STRUCTURE_TAXONOMY_SIZE", "500") |> String.to_integer(),
+    "linked_structures_ids" =>
+      System.get_env("AGG_LINKED_STRUCTURES_IDS_SIZE", "500") |> String.to_integer(),
+    "current_status" => System.get_env("AGG_CURRENT_STATUS_SIZE", "500") |> String.to_integer(),
+    "pending_removal.raw" =>
+      System.get_env("AGG_PENDING_REMOVAL_RAW_SIZE", "500") |> String.to_integer(),
+    "system_external_id" =>
+      System.get_env("AGG_SYSTEM_EXTERNAL_ID_SIZE", "500") |> String.to_integer(),
+    "active.raw" => System.get_env("AGG_ACTIVE_RAW_SIZE", "500") |> String.to_integer(),
+    "df_label.raw" => System.get_env("AGG_DF_LABEL_RAW_SIZE", "500") |> String.to_integer()
   },
 
   # If the variable delete_existing_index is set to false,

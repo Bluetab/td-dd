@@ -4,6 +4,8 @@ defmodule TdDq.Rules.Search.AggregationsTest do
   alias TdCore.Search.ElasticDocumentProtocol
   alias TdDq.Rules.Rule
 
+  @default_size 500
+
   setup do
     fields = [
       build(:template_field, name: "my_string", type: "string"),
@@ -32,12 +34,14 @@ defmodule TdDq.Rules.Search.AggregationsTest do
                "active.raw" => _,
                "my_domain" => %{
                  meta: %{type: "domain"},
-                 terms: %{field: "df_content.my_domain", size: 50}
+                 terms: %{field: "df_content.my_domain", size: @default_size}
                },
-               "my_list" => %{terms: %{field: "df_content.my_list.raw"}},
+               "my_list" => %{terms: %{field: "df_content.my_list.raw", size: @default_size}},
                "my_system" => %{
                  aggs: %{
-                   distinct_search: %{terms: %{field: "df_content.my_system.external_id.raw"}}
+                   distinct_search: %{
+                     terms: %{field: "df_content.my_system.external_id.raw", size: @default_size}
+                   }
                  },
                  nested: %{path: "df_content.my_system"}
                },

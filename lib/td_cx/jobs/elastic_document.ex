@@ -5,6 +5,7 @@ defmodule TdCx.Jobs.ElasticDocument do
   """
 
   alias Elasticsearch.Document
+  alias TdCore.Search.Cluster
   alias TdCore.Search.ElasticDocument
   alias TdCore.Search.ElasticDocumentProtocol
   alias TdCx.Jobs
@@ -69,10 +70,17 @@ defmodule TdCx.Jobs.ElasticDocument do
 
     def aggregations(_) do
       %{
-        "source_external_id" => %{terms: %{field: "source.external_id.raw", size: 50}},
-        "source_type" => %{terms: %{field: "source.type.raw", size: 50}},
-        "status" => %{terms: %{field: "status.raw", size: 50}},
-        "type" => %{terms: %{field: "type.raw", size: 50}}
+        "source_external_id" => %{
+          terms: %{
+            field: "source.external_id.raw",
+            size: Cluster.get_size_field("source_external_id")
+          }
+        },
+        "source_type" => %{
+          terms: %{field: "source.type.raw", size: Cluster.get_size_field("source_type")}
+        },
+        "status" => %{terms: %{field: "status.raw", size: Cluster.get_size_field("status")}},
+        "type" => %{terms: %{field: "type.raw", size: Cluster.get_size_field("type")}}
       }
       |> merge_dynamic_fields("cx", "content")
     end
