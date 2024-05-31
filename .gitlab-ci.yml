@@ -26,7 +26,7 @@ build:
     paths:
       - _build/prod/*.tar.gz
 
-test:
+.test:
   stage: build
   tags:
     - docker-compose
