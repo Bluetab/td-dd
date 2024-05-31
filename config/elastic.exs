@@ -142,7 +142,7 @@ config :td_core, TdCore.Search.Cluster,
       template_scope: :dd,
       store: TdDd.Search.Store,
       sources: [TdDd.DataStructures.DataStructureVersion],
-      bulk_page_size: System.get_env("BULK_PAGE_SIZE_STRUCTURES", "100") |> String.to_integer(),
+      bulk_page_size: System.get_env("BULK_PAGE_SIZE_STRUCTURES", "50") |> String.to_integer(),
       bulk_wait_interval: 0,
       bulk_action: "index",
       settings: %{
