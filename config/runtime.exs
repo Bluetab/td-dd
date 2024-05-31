@@ -147,6 +147,24 @@ if config_env() == :prod do
       rules: System.get_env("ES_ALIAS_RULES", "rules"),
       grant_requests: System.get_env("ES_ALIAS_GRANT_REQUESTS", "grant_requests")
     },
+    indexes: %{
+      grants: %{
+        bulk_page_size: System.get_env("BULK_PAGE_SIZE_GRANTS", "500") |> String.to_integer()
+      },
+      implementations: %{
+        bulk_page_size:
+          System.get_env("BULK_PAGE_SIZE_IMPLEMENTATIONS", "100") |> String.to_integer()
+      },
+      jobs: %{
+        bulk_page_size: System.get_env("BULK_PAGE_SIZE_JOBS", "100") |> String.to_integer()
+      },
+      rules: %{
+        bulk_page_size: System.get_env("BULK_PAGE_SIZE_RULES", "100") |> String.to_integer()
+      },
+      structures: %{
+        bulk_page_size: System.get_env("BULK_PAGE_SIZE_STRUCTURES", "50") |> String.to_integer()
+      }
+    },
     default_options: [
       timeout: System.get_env("ES_TIMEOUT", "5000") |> String.to_integer(),
       recv_timeout: System.get_env("ES_RECV_TIMEOUT", "40000") |> String.to_integer()
