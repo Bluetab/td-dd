@@ -53,7 +53,7 @@ config :td_core, TdCore.Search.Cluster,
     grants: %{
       store: TdDd.Search.Store,
       sources: [TdDd.Grants.GrantStructure],
-      bulk_page_size: System.get_env("BULK_PAGE_SIZE_GRANTS", "500") |> String.to_integer(),
+      bulk_page_size: System.get_env("BULK_PAGE_SIZE_GRANTS", "100") |> String.to_integer(),
       bulk_wait_interval: 0,
       bulk_action: "index",
       settings: %{
@@ -142,7 +142,7 @@ config :td_core, TdCore.Search.Cluster,
       template_scope: :dd,
       store: TdDd.Search.Store,
       sources: [TdDd.DataStructures.DataStructureVersion],
-      bulk_page_size: System.get_env("BULK_PAGE_SIZE_STRUCTURES", "50") |> String.to_integer(),
+      bulk_page_size: System.get_env("BULK_PAGE_SIZE_STRUCTURES", "100") |> String.to_integer(),
       bulk_wait_interval: 0,
       bulk_action: "index",
       settings: %{
@@ -172,7 +172,7 @@ config :td_core, TdCore.Search.Cluster,
       store: TdDd.Search.Store,
       sources: [TdDd.Grants.GrantRequest],
       bulk_page_size:
-        System.get_env("BULK_PAGE_SIZE_GRANT_REQUESTS", "500") |> String.to_integer(),
+        System.get_env("BULK_PAGE_SIZE_GRANT_REQUESTS", "100") |> String.to_integer(),
       bulk_wait_interval: 0,
       bulk_action: "index",
       settings: %{

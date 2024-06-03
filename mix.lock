@@ -69,7 +69,7 @@
   "ssl_verify_fun": {:hex, :ssl_verify_fun, "1.1.6", "cf344f5692c82d2cd7554f5ec8fd961548d4fd09e7d22f5b62482e5aeaebd4b0", [:make, :mix, :rebar3], [], "hexpm", "bdb0d2471f453c88ff3908e7686f86f9be327d065cc1ec16fa4540197ea04680"},
   "td_cache": {:git, "https://github.com/Bluetab/td-cache.git", "e1194dfddba5813e5173ddfd49c3d21967933b79", [tag: "6.0.0"]},
   "td_cluster": {:git, "https://github.com/Bluetab/td-cluster.git", "979c4d0b2f9adc769dda0b5d3622d790da28c7ad", [tag: "5.19.0"]},
-  "td_core": {:git, "https://github.com/Bluetab/td-core.git", "b6da618b461a4e24c2e94d66d3db8f7174b2d3a2", [branch: "nhs/6.1.2"]},
+  "td_core": {:git, "https://github.com/Bluetab/td-core.git", "6a8ab0de81a142d98265753b5c287006bb7c1e18", [tag: "6.1.4"]},
   "td_df_lib": {:git, "https://github.com/Bluetab/td-df-lib.git", "119d95c294576a9a6b06cedf73f98637f68ab1bf", [tag: "6.1.0"]},
   "telemetry": {:hex, :telemetry, "0.4.3", "a06428a514bdbc63293cd9a6263aad00ddeb66f608163bdec7c8995784080818", [:rebar3], [], "hexpm", "eb72b8365ffda5bed68a620d1da88525e326cb82a75ee61354fc24b844768041"},
   "telemetry_registry": {:hex, :telemetry_registry, "0.2.1", "fe648a691f2128e4279d993cd010994c67f282354dc061e697bf070d4b87b480", [:mix, :rebar3], [{:telemetry, "~> 0.4", [hex: :telemetry, repo: "hexpm", optional: false]}], "hexpm", "4221cefbcadd0b3e7076960339223742d973f1371bc20f3826af640257bc3690"},
