@@ -169,6 +169,155 @@ if config_env() == :prod do
       "index.indexing.slowlog.source" => System.get_env("ES_INDEXING_SLOWLOG_SOURCE", "1000"),
       "index.mapping.total_fields.limit" =>
         System.get_env("ES_MAPPING_TOTAL_FIELDS_LIMIT", "3000")
+    },
+    indexes: %{
+      grants: %{
+        store: TdDd.Search.Store,
+        sources: [TdDd.Grants.GrantStructure],
+        bulk_page_size: System.get_env("BULK_PAGE_SIZE_GRANTS", "100") |> String.to_integer(),
+        bulk_wait_interval: 0,
+        bulk_action: "index",
+        settings: %{
+          analysis: %{
+            analyzer: %{
+              ngram: %{
+                filter: ["lowercase", "asciifolding"],
+                tokenizer: "ngram"
+              }
+            },
+            normalizer: %{
+              sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
+            },
+            tokenizer: %{
+              ngram: %{
+                type: "ngram",
+                min_gram: 3,
+                max_gram: 3,
+                token_chars: ["letter", "digit"]
+              }
+            }
+          }
+        }
+      },
+      implementations: %{
+        template_scope: :ri,
+        store: TdDq.Search.Store,
+        sources: [TdDq.Implementations.Implementation],
+        bulk_page_size:
+          System.get_env("BULK_PAGE_SIZE_IMPLEMENTATIONS", "100") |> String.to_integer(),
+        bulk_wait_interval: 0,
+        bulk_action: "index",
+        settings: %{
+          analysis: %{
+            analyzer: %{
+              default: %{
+                type: "pattern",
+                pattern: "\\W|_",
+                lowercase: true
+              }
+            },
+            normalizer: %{
+              sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
+            }
+          }
+        }
+      },
+      jobs: %{
+        template_scope: :cx,
+        store: TdCx.Search.Store,
+        sources: [TdCx.Jobs.Job],
+        bulk_page_size: System.get_env("BULK_PAGE_SIZE_JOBS", "100") |> String.to_integer(),
+        bulk_wait_interval: 0,
+        bulk_action: "index",
+        settings: %{
+          analysis: %{
+            normalizer: %{
+              sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
+            }
+          }
+        }
+      },
+      rules: %{
+        template_scope: :dq,
+        store: TdDq.Search.Store,
+        sources: [TdDq.Rules.Rule],
+        bulk_page_size: System.get_env("BULK_PAGE_SIZE_RULES", "100") |> String.to_integer(),
+        bulk_wait_interval: 0,
+        bulk_action: "index",
+        settings: %{
+          analysis: %{
+            analyzer: %{
+              default: %{
+                type: "pattern",
+                pattern: "\\W|_",
+                lowercase: true
+              }
+            },
+            normalizer: %{
+              sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
+            }
+          }
+        }
+      },
+      structures: %{
+        template_scope: :dd,
+        store: TdDd.Search.Store,
+        sources: [TdDd.DataStructures.DataStructureVersion],
+        bulk_page_size: System.get_env("BULK_PAGE_SIZE_STRUCTURES", "100") |> String.to_integer(),
+        bulk_wait_interval: 0,
+        bulk_action: "index",
+        settings: %{
+          analysis: %{
+            analyzer: %{
+              ngram: %{
+                filter: ["lowercase", "asciifolding"],
+                tokenizer: "ngram"
+              }
+            },
+            normalizer: %{
+              sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
+            },
+            tokenizer: %{
+              ngram: %{
+                type: "ngram",
+                min_gram: 3,
+                max_gram: 3,
+                token_chars: ["letter", "digit"]
+              }
+            }
+          }
+        }
+      },
+      grant_requests: %{
+        template_scope: :gr,
+        store: TdDd.Search.Store,
+        sources: [TdDd.Grants.GrantRequest],
+        bulk_page_size:
+          System.get_env("BULK_PAGE_SIZE_GRANT_REQUESTS", "100") |> String.to_integer(),
+        bulk_wait_interval: 0,
+        bulk_action: "index",
+        settings: %{
+          analysis: %{
+            analyzer: %{
+              ngram: %{
+                filter: ["lowercase", "asciifolding"],
+                tokenizer: "ngram"
+              }
+            },
+            normalizer: %{
+              sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
+            },
+            tokenizer: %{
+              ngram: %{
+                type: "ngram",
+                min_gram: 3,
+                max_gram: 3,
+                token_chars: ["letter", "digit"]
+              }
+            }
+          }
+        }
+      }
     }
 
   config :td_core, TdCore.Search.Cluster,

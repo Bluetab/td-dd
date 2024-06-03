@@ -1,5 +1,9 @@
 # Changelog
 
+## [6.1.3] 2024-05-03
+
+- [TD-6640] Update td-core-lib to show all error in elastic search
+
 ## [6.1.2] 2024-04-29
 
 ### Fixed
