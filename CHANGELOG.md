@@ -2,9 +2,13 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-5788] Eslastic pagination for grant_requests
+
 ### Changed
 
-- [TD-6561] Standardise aggregations limits 
+- [TD-6561] Standardise aggregations limits
 
 ## [6.6.1] 2024-05-24
 
