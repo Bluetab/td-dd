@@ -29,14 +29,11 @@ defmodule TdDd.DataStructures.BulkUpdater do
   end
 
   def timeout do
-    Application.get_env(:td_dd, __MODULE__)
-    |> Map.Helpers.to_map()
-    |> timeout_seconds
+    :td_dd
+    |> Application.get_env(__MODULE__)
+    |> Keyword.get(:timeout_seconds)
     |> Kernel.*(1000)
   end
-
-  def timeout_seconds(%{timeout_seconds: timeout_seconds}), do: timeout_seconds
-  def timeout_seconds(nil), do: 700
 
   ## GenServer callbacks
   @impl true

@@ -20,13 +20,6 @@ defmodule TdDd.DataStructures.HistoryManager do
     |> purge_history()
   end
 
-  @spec purge_history(nil | pos_integer) ::
-          :ok
-          | {:ok,
-             %{
-               data_structure_versions: {non_neg_integer(), nil},
-               structure_metadata: {non_neg_integer(), nil}
-             }}
   def purge_history(nil), do: :ok
 
   def purge_history(days) when is_integer(days) and days > 0 do
