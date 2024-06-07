@@ -8,7 +8,7 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
 
   @moduletag sandbox: :shared
 
-  @query_size 1000
+  @query_size 20
 
   setup do
     start_supervised!(TdDd.Search.StructureEnricher)

@@ -4,17 +4,21 @@ defmodule TdDdWeb.GrantRequestSearchController do
   alias TdCore.Search.IndexWorker
   alias TdDd.GrantRequests.Search
   alias Truedat.Search.Permissions
+  @default_page 0
+  @default_size 20
 
   action_fallback(TdDdWeb.FallbackController)
 
   def search(conn, params) do
     claims = conn.assigns[:current_resource]
+    page = Map.get(params, "page", @default_page)
+    size = Map.get(params, "size", @default_size)
 
     %{total: total} =
       response =
       params
       |> maybe_fix_approved_params()
-      |> Search.search(claims)
+      |> Search.search(claims, page, size)
       |> put_permissions(claims)
 
     conn

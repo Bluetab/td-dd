@@ -158,6 +158,9 @@ defmodule TdDd.GrantRequests.ElasticDocument do
 
     def aggregations(_) do
       %{
+        "approved_by" => %{
+          terms: %{field: "approved_by", size: Cluster.get_size_field("approved_by")}
+        },
         "user" => %{terms: %{field: "user.user_name", size: Cluster.get_size_field("user")}},
         "current_status" => %{
           terms: %{field: "current_status", size: Cluster.get_size_field("current_status")}

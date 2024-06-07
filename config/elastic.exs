@@ -21,6 +21,7 @@ config :td_core, TdCore.Search.Cluster,
     "user" => System.get_env("AGG_USER_SIZE", "500") |> String.to_integer(),
     "system" => System.get_env("AGG_SYSTEM_SIZE", "500") |> String.to_integer(),
     "default" => System.get_env("AGG_DEFAULT_SIZE", "500") |> String.to_integer(),
+    "approved_by" => System.get_env("AGG_APPROVED_BY_SIZE", "500") |> String.to_integer(),
     "source_external_id" =>
       System.get_env("AGG_SOURCE_EXTERNAL_ID_SIZE", "500") |> String.to_integer(),
     "source_type" => System.get_env("AGG_SOURCE_TYPE_SIZE", "500") |> String.to_integer(),
