@@ -68,7 +68,12 @@ defmodule TdDd.Grants.ElasticDocument do
       %{mappings: %{properties: dsv_properties}, settings: _settings} =
         ElasticDocumentProtocol.mappings(%DataStructureVersion{})
 
-      grants_config = Application.get_env(:td_core, TdCore.Search.Cluster)[:indexes][:grants]
+      grants_config =
+        :td_core
+        |> Application.get_env(TdCore.Search.Cluster)
+        |> Keyword.get(:indexes, [])
+        |> Keyword.get(:grants, [])
+        |> Map.new()
 
       dsv_properties =
         maybe_not_searcheable_field(dsv_properties, grants_config, :dsv_no_sercheabled_fields)

@@ -140,39 +140,6 @@ if config_env() == :prod do
       password: password
   end
 
-  config :td_core, TdCore.Search.Cluster,
-    aliases: %{
-      grants: System.get_env("ES_ALIAS_GRANTS", "grants"),
-      jobs: System.get_env("ES_ALIAS_JOBS", "jobs"),
-      structures: System.get_env("ES_ALIAS_STRUCTURES", "structures"),
-      implementations: System.get_env("ES_ALIAS_IMPLEMENTATIONS", "implementations"),
-      rules: System.get_env("ES_ALIAS_RULES", "rules"),
-      grant_requests: System.get_env("ES_ALIAS_GRANT_REQUESTS", "grant_requests")
-    },
-    default_options: [
-      timeout: System.get_env("ES_TIMEOUT", "5000") |> String.to_integer(),
-      recv_timeout: System.get_env("ES_RECV_TIMEOUT", "40000") |> String.to_integer()
-    ],
-    default_settings: %{
-      "number_of_shards" => System.get_env("ES_SHARDS", "1") |> String.to_integer(),
-      "number_of_replicas" => System.get_env("ES_REPLICAS", "1") |> String.to_integer(),
-      "refresh_interval" => System.get_env("ES_REFRESH_INTERVAL", "5s"),
-      "max_result_window" =>
-        System.get_env("ES_MAX_RESULT_WINDOW", "10000") |> String.to_integer(),
-      "index.indexing.slowlog.threshold.index.warn" =>
-        System.get_env("ES_INDEXING_SLOWLOG_THRESHOLD_WARN", "10s"),
-      "index.indexing.slowlog.threshold.index.info" =>
-        System.get_env("ES_INDEXING_SLOWLOG_THRESHOLD_INFO", "5s"),
-      "index.indexing.slowlog.threshold.index.debug" =>
-        System.get_env("ES_INDEXING_SLOWLOG_THRESHOLD_DEBUG", "2s"),
-      "index.indexing.slowlog.threshold.index.trace" =>
-        System.get_env("ES_INDEXING_SLOWLOG_THRESHOLD_TRACE", "500ms"),
-      "index.indexing.slowlog.level" => System.get_env("ES_INDEXING_SLOWLOG_LEVEL", "info"),
-      "index.indexing.slowlog.source" => System.get_env("ES_INDEXING_SLOWLOG_SOURCE", "1000"),
-      "index.mapping.total_fields.limit" =>
-        System.get_env("ES_MAPPING_TOTAL_FIELDS_LIMIT", "3000")
-    }
-
   config :td_dd, TdDd.DataStructures.BulkUpdater,
     timeout_seconds:
       System.get_env("CSV_BULK_UPDATER_TIMEOUT_SECONDS", "600") |> String.to_integer()
@@ -197,3 +164,134 @@ if config_env() == :prod do
   config :td_dd, TdDd.Loader.Worker,
     timeout: System.get_env("SYNC_LOADER_TIMEOUT", "30000") |> String.to_integer()
 end
+
+config :td_dd, TdDd.DataStructures.Search,
+  es_scroll_size: System.get_env("ES_SCROLL_SIZE", "10000") |> String.to_integer(),
+  es_scroll_ttl: System.get_env("ES_SCROLL_TTL", "1m"),
+  max_bulk_results: System.get_env("MAX_BULK_RESULTS", "100000") |> String.to_integer()
+
+config :td_dd, TdDd.Search.Store,
+  #  Store chunk size
+  grants: System.get_env("GRANT_STORE_CHUNK_SIZE", "1000") |> String.to_integer(),
+  grant_request: System.get_env("GRANT_REQUEST_STORE_CHUNK_SIZE", "1000") |> String.to_integer(),
+  data_structure: System.get_env("STRUCTURE_STORE_CHUNK_SIZE", "1000") |> String.to_integer(),
+  data_structure_version: System.get_env("DSV_STORE_CHUNK_SIZE", "1000") |> String.to_integer()
+
+config :td_dd, TdDq.Search.Store,
+  #  Store chunk size
+  implementations:
+    System.get_env("IMPLEMENTATION_STORE_CHUNK_SIZE", "1000") |> String.to_integer()
+
+config :td_core, TdCore.Search.Cluster,
+  # If the variable delete_existing_index is set to false,
+  # it will not be deleted in the case that there is no index in the hot swap process."
+  delete_existing_index: System.get_env("DELETE_EXISTING_INDEX", "true") |> String.to_atom(),
+  aliases: %{
+    grants: System.get_env("ES_ALIAS_GRANTS", "grants"),
+    jobs: System.get_env("ES_ALIAS_JOBS", "jobs"),
+    structures: System.get_env("ES_ALIAS_STRUCTURES", "structures"),
+    implementations: System.get_env("ES_ALIAS_IMPLEMENTATIONS", "implementations"),
+    rules: System.get_env("ES_ALIAS_RULES", "rules"),
+    grant_requests: System.get_env("ES_ALIAS_GRANT_REQUESTS", "grant_requests")
+  },
+  default_options: [
+    timeout: System.get_env("ES_TIMEOUT", "5000") |> String.to_integer(),
+    recv_timeout: System.get_env("ES_RECV_TIMEOUT", "40000") |> String.to_integer()
+  ],
+  default_settings: %{
+    "number_of_shards" => System.get_env("ES_SHARDS", "1") |> String.to_integer(),
+    "number_of_replicas" => System.get_env("ES_REPLICAS", "1") |> String.to_integer(),
+    "refresh_interval" => System.get_env("ES_REFRESH_INTERVAL", "5s"),
+    "max_result_window" => System.get_env("ES_MAX_RESULT_WINDOW", "10000") |> String.to_integer(),
+    "index.indexing.slowlog.threshold.index.warn" =>
+      System.get_env("ES_INDEXING_SLOWLOG_THRESHOLD_WARN", "10s"),
+    "index.indexing.slowlog.threshold.index.info" =>
+      System.get_env("ES_INDEXING_SLOWLOG_THRESHOLD_INFO", "5s"),
+    "index.indexing.slowlog.threshold.index.debug" =>
+      System.get_env("ES_INDEXING_SLOWLOG_THRESHOLD_DEBUG", "2s"),
+    "index.indexing.slowlog.threshold.index.trace" =>
+      System.get_env("ES_INDEXING_SLOWLOG_THRESHOLD_TRACE", "500ms"),
+    "index.indexing.slowlog.level" => System.get_env("ES_INDEXING_SLOWLOG_LEVEL", "info"),
+    "index.indexing.slowlog.source" => System.get_env("ES_INDEXING_SLOWLOG_SOURCE", "1000"),
+    "index.mapping.total_fields.limit" => System.get_env("ES_MAPPING_TOTAL_FIELDS_LIMIT", "3000")
+  }
+
+config :td_core, TdCore.Search.Cluster,
+  indexes: [
+    grants: [
+      bulk_page_size: System.get_env("BULK_PAGE_SIZE_GRANTS", "500") |> String.to_integer(),
+      bulk_wait_interval: System.get_env("BULK_WAIT_INTERVAL_GRANTS", "0") |> String.to_integer()
+    ],
+    implementations: [
+      bulk_page_size:
+        System.get_env("BULK_PAGE_SIZE_IMPLEMENTATIONS", "100") |> String.to_integer(),
+      bulk_wait_interval:
+        System.get_env("BULK_WAIT_INTERVAL_IMPLEMENTATIONS", "0") |> String.to_integer()
+    ],
+    jobs: [
+      bulk_page_size: System.get_env("BULK_PAGE_SIZE_JOBS", "100") |> String.to_integer(),
+      bulk_wait_interval: System.get_env("BULK_WAIT_INTERVAL_JOBS", "0") |> String.to_integer()
+    ],
+    rules: [
+      bulk_page_size: System.get_env("BULK_PAGE_SIZE_RULES", "100") |> String.to_integer(),
+      bulk_wait_interval: System.get_env("BULK_WAIT_INTERVAL_RULES", "0") |> String.to_integer()
+    ],
+    structures: [
+      bulk_page_size: System.get_env("BULK_PAGE_SIZE_STRUCTURES", "500") |> String.to_integer(),
+      bulk_wait_interval:
+        System.get_env("BULK_WAIT_INTERVAL_STRUCTURES", "0") |> String.to_integer()
+    ],
+    grant_requests: [
+      bulk_page_size:
+        System.get_env("BULK_PAGE_SIZE_GRANT_REQUESTS", "500") |> String.to_integer(),
+      bulk_wait_interval:
+        System.get_env("BULK_WAIT_INTERVAL_GRANT_REQUESTS", "0") |> String.to_integer()
+    ]
+  ]
+
+config :td_core, TdCore.Search.Cluster,
+  # Aggregations default
+  aggregations: %{
+    "domain" => System.get_env("AGG_DOMAIN_SIZE", "500") |> String.to_integer(),
+    "user" => System.get_env("AGG_USER_SIZE", "500") |> String.to_integer(),
+    "system" => System.get_env("AGG_SYSTEM_SIZE", "500") |> String.to_integer(),
+    "default" => System.get_env("AGG_DEFAULT_SIZE", "500") |> String.to_integer(),
+    "source_external_id" =>
+      System.get_env("AGG_SOURCE_EXTERNAL_ID_SIZE", "500") |> String.to_integer(),
+    "source_type" => System.get_env("AGG_SOURCE_TYPE_SIZE", "500") |> String.to_integer(),
+    "status" => System.get_env("AGG_STATUS_SIZE", "500") |> String.to_integer(),
+    "type" => System.get_env("AGG_TYPE_SIZE", "500") |> String.to_integer(),
+    "default_note" => System.get_env("AGG_DEFAULT_NOTE_SIZE", "500") |> String.to_integer(),
+    "default_metadata" =>
+      System.get_env("AGG_DEFAULT_METADATA_SIZE", "500") |> String.to_integer(),
+    "system.name.raw" => System.get_env("AGG_SYSTEM_NAME_RAW_SIZE", "500") |> String.to_integer(),
+    "group.raw" => System.get_env("AGG_GROUP_RAW_SIZE", "500") |> String.to_integer(),
+    "type.raw" => System.get_env("AGG_TYPE_RAW_SIZE", "500") |> String.to_integer(),
+    "confidential.raw" =>
+      System.get_env("AGG_CONFIDENTIAL_RAW_SIZE", "500") |> String.to_integer(),
+    "class.raw" => System.get_env("AGG_CLASS_RAW_SIZE", "500") |> String.to_integer(),
+    "field_type.raw" => System.get_env("AGG_FIELD_TYPE_RAW_SIZE", "500") |> String.to_integer(),
+    "with_content.raw" =>
+      System.get_env("AGG_WITH_CONTENT_RAW_SIZE", "500") |> String.to_integer(),
+    "tags.raw" => System.get_env("AGG_TAGS_RAW_SIZE", "500") |> String.to_integer(),
+    "linked_concepts" => System.get_env("AGG_LINKED_CONCEPTS_SIZE", "500") |> String.to_integer(),
+    "taxonomy" => System.get_env("AGG_TAXONOMY_SIZE", "500") |> String.to_integer(),
+    "hierarchy" => System.get_env("AGG_HIERARCHY_SIZE", "500") |> String.to_integer(),
+    "with_profiling.raw" =>
+      System.get_env("AGG_WITH_PROFILING_RAW_SIZE", "500") |> String.to_integer(),
+    "execution_result_info.result_text" =>
+      System.get_env("AGG_EXECUTION_RESULT_INFO_RESULT_TEXT_SIZE", "500") |> String.to_integer(),
+    "rule" => System.get_env("AGG_RULE_SIZE", "500") |> String.to_integer(),
+    "result_type.raw" => System.get_env("AGG_RESULT_TYPE_SIZE", "500") |> String.to_integer(),
+    "structure_taxonomy" =>
+      System.get_env("AGG_STRUCTURE_TAXONOMY_SIZE", "500") |> String.to_integer(),
+    "linked_structures_ids" =>
+      System.get_env("AGG_LINKED_STRUCTURES_IDS_SIZE", "500") |> String.to_integer(),
+    "current_status" => System.get_env("AGG_CURRENT_STATUS_SIZE", "500") |> String.to_integer(),
+    "pending_removal.raw" =>
+      System.get_env("AGG_PENDING_REMOVAL_RAW_SIZE", "500") |> String.to_integer(),
+    "system_external_id" =>
+      System.get_env("AGG_SYSTEM_EXTERNAL_ID_SIZE", "500") |> String.to_integer(),
+    "active.raw" => System.get_env("AGG_ACTIVE_RAW_SIZE", "500") |> String.to_integer(),
+    "df_label.raw" => System.get_env("AGG_DF_LABEL_RAW_SIZE", "500") |> String.to_integer()
+  }

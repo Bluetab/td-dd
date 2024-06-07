@@ -40,7 +40,7 @@ defmodule TdDq.Search.Store do
         implementation_ref_struct: [:data_structures],
         data_structures: []
       )
-      |> Stream.chunk_every(chunk_size())
+      |> Stream.chunk_every(chunk_size(:implementations))
       |> Stream.flat_map(&enrich_chunk_data_structures(&1))
 
     Tasks.log_progress(count)
@@ -63,7 +63,7 @@ defmodule TdDq.Search.Store do
       implementation_ref_struct: [:data_structures],
       data_structures: []
     )
-    |> Stream.chunk_every(chunk_size())
+    |> Stream.chunk_every(chunk_size(:implementations))
     |> Stream.flat_map(&enrich_chunk_data_structures(&1))
   end
 
@@ -73,7 +73,8 @@ defmodule TdDq.Search.Store do
     result
   end
 
-  defp chunk_size, do: Application.get_env(__MODULE__, :chunk_size, 1000)
+  defp chunk_size(key),
+    do: Application.get_env(:td_dd, __MODULE__)[key]
 
   defp enrich_chunk_data_structures(implementations_chunk) do
     structure_ids =

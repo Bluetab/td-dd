@@ -59,21 +59,4 @@ defmodule Map.Helpers do
   end
 
   defp to_string_key(key), do: Atom.to_string(key)
-
-  @doc """
-  Recursively convert keyword list to map
-  """
-  def to_map(keyword_list) when is_list(keyword_list) do
-    Enum.reduce(
-      keyword_list,
-      %{},
-      fn {key, value}, acc ->
-        Map.merge(%{key => to_map(value)}, acc)
-      end
-    )
-  end
-
-  def to_map(value) do
-    value
-  end
 end
