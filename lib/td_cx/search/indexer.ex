@@ -1,4 +1,4 @@
-defmodule TdCx.Jobs.Search.Indexer do
+defmodule TdCx.Search.Indexer do
   @moduledoc """
   Indexer for Jobs.
   """

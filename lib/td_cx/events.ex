@@ -10,7 +10,7 @@ defmodule TdCx.Events do
   alias TdCx.Events.Event
   alias TdCx.Jobs.Audit
   alias TdCx.Jobs.Job
-  alias TdCx.Jobs.Search.Indexer
+  alias TdCx.Search.Indexer
   alias TdDd.Repo
   alias Truedat.Auth.Claims
 

@@ -3,7 +3,7 @@ defmodule TdCx.Jobs do
   The Jobs context.
   """
   alias TdCx.Jobs.Job
-  alias TdCx.Jobs.Search.Indexer
+  alias TdCx.Search.Indexer
   alias TdDd.Repo
 
   defdelegate authorize(action, user, params), to: __MODULE__.Policy
