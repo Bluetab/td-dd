@@ -6,9 +6,10 @@ defmodule TdDq.Cache.RuleLoader do
   use GenServer
 
   alias TdCache.RuleCache
-  alias TdCore.Search.IndexWorker
   alias TdDq.Implementations
+  alias TdDq.Implementations.Search.Indexer, as: ImplementationsIndexer
   alias TdDq.Rules
+  alias TdDq.Rules.Search.Indexer, as: RulesIndexer
 
   require Logger
 
@@ -107,12 +108,12 @@ defmodule TdDq.Cache.RuleLoader do
   @impl true
   def handle_call({:refresh, ids}, _from, state) do
     reply = cache_rules(ids)
-    IndexWorker.reindex(:rules, ids)
+    RulesIndexer.reindex(ids)
 
     ids
     |> Implementations.get_rule_implementations()
     |> Enum.map(&Map.get(&1, :id))
-    |> then(&IndexWorker.reindex(:implementations, &1))
+    |> then(&ImplementationsIndexer.reindex(&1))
 
     {:reply, reply, state}
   end
@@ -125,12 +126,12 @@ defmodule TdDq.Cache.RuleLoader do
       |> Enum.reject(&(&1 == {:ok, [0, 0]}))
       |> Enum.count()
 
-    IndexWorker.delete(:rules, ids)
+    RulesIndexer.delete(ids)
 
     ids
     |> Implementations.get_rule_implementations()
     |> Enum.map(&Map.get(&1, :id))
-    |> then(&IndexWorker.delete(:implementations, &1))
+    |> then(&ImplementationsIndexer.delete(&1))
 
     {:reply, delete_count, state}
   end

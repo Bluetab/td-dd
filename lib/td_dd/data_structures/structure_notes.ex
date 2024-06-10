@@ -6,10 +6,10 @@ defmodule TdDd.DataStructures.StructureNotes do
   import Ecto.Query
 
   alias Ecto.Multi
-  alias TdCore.Search.IndexWorker
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.Search.Indexer
   alias TdDd.DataStructures.StructureNote
   alias TdDd.Repo
 
@@ -325,7 +325,7 @@ defmodule TdDd.DataStructures.StructureNotes do
          {:ok, %{structure_note_update: %{status: status, data_structure_id: id}}} = res
        )
        when status in [:published, :deprecated] do
-    IndexWorker.reindex(:structures, id)
+    Indexer.reindex(id)
 
     DataStructures.maybe_reindex_grant_requests(res)
   end

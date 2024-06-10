@@ -2,7 +2,7 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
   use TdDqWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger_dq.json"
 
-  alias TdCore.Search.IndexWorkerMock
+  alias TdCore.Search.IndexWorker
 
   setup context do
     %{id: domain_id} =
@@ -14,7 +14,7 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
     %{id: id} = implementation = insert(:implementation, domain_id: domain_id, status: :published)
     execution = insert(:execution, group: build(:execution_group), implementation_id: id)
 
-    IndexWorkerMock.clear()
+    IndexWorker.clear()
 
     [
       execution: execution,
@@ -180,7 +180,7 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
       assert [
                {:reindex, :rules, [^rule_id]},
                {:reindex, :implementations, [^implementation_id]}
-             ] = IndexWorkerMock.calls()
+             ] = IndexWorker.calls()
     end
 
     @tag authentication: [role: "admin"]

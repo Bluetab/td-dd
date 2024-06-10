@@ -6,8 +6,8 @@ defmodule TdDd.Profiles do
   import Ecto.Query
 
   alias Ecto.Multi
-  alias TdCore.Search.IndexWorker
   alias TdDd.DataStructures
+  alias TdDd.DataStructures.Search.Indexer
   alias TdDd.Executions
   alias TdDd.Executions.ProfileEvents
   alias TdDd.Profiles.Profile
@@ -147,10 +147,10 @@ defmodule TdDd.Profiles do
     case version do
       %{parents: [_ | _] = parents} ->
         data_structure_ids = Enum.map(parents, & &1.data_structure_id) ++ [data_structure_id]
-        IndexWorker.reindex(:structures, data_structure_ids)
+        Indexer.reindex(data_structure_ids)
 
       _ ->
-        IndexWorker.reindex(:structures, data_structure_id)
+        Indexer.reindex(data_structure_id)
     end
 
     reply

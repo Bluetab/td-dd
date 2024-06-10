@@ -1,7 +1,7 @@
 defmodule TdDdWeb.GrantRequestGroupControllerTest do
   use TdDdWeb.ConnCase
 
-  alias TdCore.Search.IndexWorkerMock
+  alias TdCore.Search.IndexWorker
 
   @valid_metadata %{"list" => "one", "string" => "foo"}
   @template_name "grant_request_group_controller_test_template"
@@ -21,7 +21,7 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
       "type" => @template_name
     }
 
-    IndexWorkerMock.clear()
+    IndexWorker.clear()
 
     [
       data_structure: data_structure,
@@ -534,13 +534,13 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
       group: group,
       grant_request_id: grant_request_id
     } do
-      IndexWorkerMock.clear()
+      IndexWorker.clear()
 
       assert conn
              |> delete(Routes.grant_request_group_path(conn, :delete, group))
              |> response(:no_content)
 
-      assert [{:delete, :grant_requests, [^grant_request_id]}] = IndexWorkerMock.calls()
+      assert [{:delete, :grant_requests, [^grant_request_id]}] = IndexWorker.calls()
 
       assert_error_sent 404, fn ->
         get(conn, Routes.grant_request_group_path(conn, :show, group))

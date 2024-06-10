@@ -1,8 +1,8 @@
 defmodule TdDdWeb.GrantRequestSearchController do
   use TdDdWeb, :controller
 
-  alias TdCore.Search.IndexWorker
   alias TdDd.GrantRequests.Search
+  alias TdDd.GrantRequests.Search.Indexer
   alias Truedat.Search.Permissions
   @default_page 0
   @default_size 20
@@ -30,7 +30,7 @@ defmodule TdDdWeb.GrantRequestSearchController do
     claims = conn.assigns[:current_resource]
 
     with :ok <- Bodyguard.permit(TdDd.Grants, :reindex, claims) do
-      IndexWorker.reindex(:grant_requests, :all)
+      Indexer.reindex(:all)
       send_resp(conn, :accepted, "")
     end
   end

@@ -5,11 +5,11 @@ defmodule TdDq.Events.QualityEvents do
 
   import Ecto.Query
 
-  alias TdCore.Search.IndexWorker
   alias TdDd.Repo
   alias TdDq.Events.QualityEvent
   alias TdDq.Executions.Execution
   alias TdDq.Implementations.Implementation
+  alias TdDq.Implementations.Search.Indexer
   alias TdDq.Rules.Audit
 
   def create_event(attrs \\ %{}) do
@@ -22,7 +22,7 @@ defmodule TdDq.Events.QualityEvents do
 
         if event.type === "FAILED" do
           publish_errored_event(event, exec)
-          IndexWorker.reindex(:implementations, [exec.implementation_id])
+          Indexer.reindex([exec.implementation_id])
         end
 
         {:ok, event}

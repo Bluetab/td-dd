@@ -6,7 +6,7 @@ defmodule TdDdWeb.MetadataControllerTest do
   import ExUnit.CaptureLog
   import Mox
 
-  alias TdCore.Search.IndexWorkerMock
+  alias TdCore.Search.IndexWorker
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
@@ -31,7 +31,7 @@ defmodule TdDdWeb.MetadataControllerTest do
     start_supervised!(TdDd.Search.StructureEnricher)
     insert(:system, name: "Power BI", external_id: "pbi")
 
-    IndexWorkerMock.clear()
+    IndexWorker.clear()
 
     case tags[:fixture] do
       nil ->
@@ -142,7 +142,7 @@ defmodule TdDdWeb.MetadataControllerTest do
                {:reindex, :structures, _},
                {:reindex, :structures, _},
                {:delete, :structures, [_, _, _]}
-             ] = IndexWorkerMock.calls()
+             ] = IndexWorker.calls()
     end
 
     @tag authentication: [role: "service"]

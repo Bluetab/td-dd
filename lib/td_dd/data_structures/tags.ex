@@ -8,12 +8,12 @@ defmodule TdDd.DataStructures.Tags do
 
   alias Ecto.Multi
   alias TdCache.TaxonomyCache
-  alias TdCore.Search.IndexWorker
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Hierarchy
+  alias TdDd.DataStructures.Search.Indexer
   alias TdDd.DataStructures.Tags.StructureTag
   alias TdDd.DataStructures.Tags.Tag
   alias TdDd.Repo
@@ -237,7 +237,7 @@ defmodule TdDd.DataStructures.Tags do
       |> Enum.flat_map(fn {inherit, ids} -> tagged_structure_ids(ids, inherit) end)
       |> Enum.uniq()
 
-    IndexWorker.reindex(:structures, ids)
+    Indexer.reindex(ids)
 
     {:ok, tag}
   end
@@ -245,7 +245,7 @@ defmodule TdDd.DataStructures.Tags do
   defp maybe_reindex({:ok, %{structure_tag: structure_tag} = multi}, true) do
     ids = tagged_structure_ids(structure_tag)
 
-    IndexWorker.reindex(:structures, ids)
+    Indexer.reindex(ids)
 
     {:ok, multi}
   end
