@@ -7,10 +7,10 @@ defmodule TdDd.DataStructures.BulkUpdate do
   alias Ecto.Changeset
   alias Ecto.Multi
   alias TdCache.TaxonomyCache
-  alias TdCore.Search.IndexWorker
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.Search.Indexer
   alias TdDd.DataStructures.StructureNotesWorkflow
   alias TdDd.Repo
   alias TdDfLib.Parser
@@ -366,7 +366,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
       |> Enum.flat_map(fn {_, v} -> Map.keys(v) end)
       |> Enum.uniq()
 
-    IndexWorker.reindex(:structures, ids)
+    Indexer.reindex(ids)
 
     {:ok, result}
   end

@@ -3,8 +3,7 @@ defmodule TdCxWeb.SearchController do
   use PhoenixSwagger
 
   alias TdCx.Jobs
-
-  alias TdCore.Search
+  alias TdCx.Jobs.Search.Indexer
 
   action_fallback(TdCxWeb.FallbackController)
 
@@ -20,7 +19,7 @@ defmodule TdCxWeb.SearchController do
     claims = conn.assigns[:current_resource]
 
     with :ok <- Bodyguard.permit(Jobs, :reindex, claims) do
-      Search.IndexWorker.reindex(:jobs, :all)
+      Indexer.reindex(:all)
       send_resp(conn, :accepted, "")
     end
   end

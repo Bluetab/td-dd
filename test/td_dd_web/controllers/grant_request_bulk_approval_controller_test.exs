@@ -4,7 +4,7 @@ defmodule TdDdWeb.GrantRequestBulkApprovalControllerTest do
   import Mox
   import TdDd.TestOperators
 
-  alias TdCore.Search.IndexWorkerMock
+  alias TdCore.Search.IndexWorker
   alias TdDd.DataStructures.Hierarchy
 
   @moduletag sandbox: :shared
@@ -12,7 +12,7 @@ defmodule TdDdWeb.GrantRequestBulkApprovalControllerTest do
   setup do
     start_supervised!(TdDd.Search.StructureEnricher)
 
-    IndexWorkerMock.clear()
+    IndexWorker.clear()
 
     :ok
   end
@@ -27,7 +27,7 @@ defmodule TdDdWeb.GrantRequestBulkApprovalControllerTest do
       conn: conn,
       grant_request: %{user: user}
     } do
-      IndexWorkerMock.clear()
+      IndexWorker.clear()
       %{id: grant_request1_id} = grant_request1 = create_grant_request(user, [])
       %{id: grant_request2_id} = grant_request2 = create_grant_request(user, [])
       %{id: grant_request3_id} = grant_request3 = create_grant_request(user, [])
@@ -66,7 +66,7 @@ defmodule TdDdWeb.GrantRequestBulkApprovalControllerTest do
       assert [
                {:reindex, :grant_requests,
                 [^grant_request1_id, ^grant_request2_id, ^grant_request3_id]}
-             ] = IndexWorkerMock.calls()
+             ] = IndexWorker.calls()
     end
 
     @tag authentication: [role: "admin"]
@@ -74,7 +74,7 @@ defmodule TdDdWeb.GrantRequestBulkApprovalControllerTest do
       conn: conn,
       grant_request: %{user: user}
     } do
-      IndexWorkerMock.clear()
+      IndexWorker.clear()
 
       CacheHelpers.put_permissions_on_roles(%{
         "approve_grant_request" => ["Approval Role 1", "Approval Role 2"]
@@ -121,7 +121,7 @@ defmodule TdDdWeb.GrantRequestBulkApprovalControllerTest do
 
       assert [
                {:reindex, _grant_requests, [^grant_request1_id, ^grant_request2_id]}
-             ] = IndexWorkerMock.calls()
+             ] = IndexWorker.calls()
     end
 
     @tag authentication: [role: "admin"]

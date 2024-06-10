@@ -2,12 +2,12 @@ defmodule TdDdWeb.ClassifierControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  alias TdCore.Search.IndexWorkerMock
+  alias TdCore.Search.IndexWorker
 
   setup do
     system = insert(:system)
 
-    IndexWorkerMock.clear()
+    IndexWorker.clear()
 
     [system: system]
   end

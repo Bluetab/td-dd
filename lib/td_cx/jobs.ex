@@ -2,8 +2,8 @@ defmodule TdCx.Jobs do
   @moduledoc """
   The Jobs context.
   """
-  alias TdCore.Search.IndexWorker
   alias TdCx.Jobs.Job
+  alias TdCx.Jobs.Search.Indexer
   alias TdDd.Repo
 
   defdelegate authorize(action, user, params), to: __MODULE__.Policy
@@ -63,7 +63,7 @@ defmodule TdCx.Jobs do
   end
 
   defp reindex({:ok, %Job{id: id} = job}) do
-    IndexWorker.reindex(:jobs, [id])
+    Indexer.reindex([id])
     {:ok, Repo.preload(job, [:source])}
   end
 

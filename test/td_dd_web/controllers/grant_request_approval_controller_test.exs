@@ -1,10 +1,10 @@
 defmodule TdDdWeb.GrantRequestApprovalControllerTest do
   use TdDdWeb.ConnCase
 
-  alias TdCore.Search.IndexWorkerMock
+  alias TdCore.Search.IndexWorker
 
   setup do
-    IndexWorkerMock.clear()
+    IndexWorker.clear()
 
     :ok
   end
@@ -15,7 +15,7 @@ defmodule TdDdWeb.GrantRequestApprovalControllerTest do
       conn: conn,
       claims: %{user_id: user_id} = claims
     } do
-      IndexWorkerMock.clear()
+      IndexWorker.clear()
       %{id: domain_id} = CacheHelpers.insert_domain()
 
       %{grant_request: %{id: grant_request_id} = grant_request} =
@@ -46,7 +46,7 @@ defmodule TdDdWeb.GrantRequestApprovalControllerTest do
       assert %{"is_rejection" => false, "comment" => "foo", "_embedded" => embedded} = data
       assert %{"user" => %{"id" => ^user_id}} = embedded
 
-      assert [{:reindex, :grant_requests, [^grant_request_id]}] = IndexWorkerMock.calls()
+      assert [{:reindex, :grant_requests, [^grant_request_id]}] = IndexWorker.calls()
     end
 
     @tag authentication: [role: "user"]
@@ -55,7 +55,7 @@ defmodule TdDdWeb.GrantRequestApprovalControllerTest do
            conn: conn,
            claims: %{user_id: user_id} = claims
          } do
-      IndexWorkerMock.clear()
+      IndexWorker.clear()
       %{id: domain_id} = CacheHelpers.insert_domain()
 
       %{
@@ -99,7 +99,7 @@ defmodule TdDdWeb.GrantRequestApprovalControllerTest do
       assert %{"is_rejection" => false, "comment" => "foo", "_embedded" => embedded} = data
       assert %{"user" => %{"id" => ^user_id}} = embedded
 
-      assert [{:reindex, :grant_requests, [^grant_request_id]}] = IndexWorkerMock.calls()
+      assert [{:reindex, :grant_requests, [^grant_request_id]}] = IndexWorker.calls()
     end
   end
 end

@@ -9,11 +9,11 @@ defmodule TdDq.Rules do
   alias TdCache.ConceptCache
   alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
-  alias TdCore.Search.IndexWorker
   alias TdDd.Repo
   alias TdDfLib.Format
   alias TdDq.Cache.RuleLoader
   alias TdDq.Implementations.Implementation
+  alias TdDq.Implementations.Search.Indexer
   alias TdDq.Rules.Audit
   alias TdDq.Rules.Rule
   alias Truedat.Auth.Claims
@@ -205,7 +205,7 @@ defmodule TdDq.Rules do
   defp on_update(res) do
     with {:ok, %{implementations: {_, implementation_ids}, rule: %{id: rule_id}}} <- res do
       RuleLoader.refresh(rule_id)
-      IndexWorker.reindex(:implementations, implementation_ids)
+      Indexer.reindex(implementation_ids)
       res
     end
   end

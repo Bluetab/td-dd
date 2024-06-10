@@ -5,8 +5,8 @@ defmodule TdDd.Groups do
 
   import Ecto.Query
 
-  alias TdCore.Search.IndexWorker
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.Search.Indexer
   alias TdDd.Repo
 
   def list_by_system(system_external_id) do
@@ -39,6 +39,6 @@ defmodule TdDd.Groups do
 
     data_structure_ids
     |> Enum.uniq()
-    |> then(&IndexWorker.reindex(:data_structure, &1))
+    |> then(&Indexer.reindex(&1))
   end
 end

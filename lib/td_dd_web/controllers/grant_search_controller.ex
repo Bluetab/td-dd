@@ -3,10 +3,9 @@ defmodule TdDdWeb.GrantSearchController do
   use TdDdWeb, :controller
 
   alias TdDd.Grants.Search
+  alias TdDd.Grants.Search.Indexer
 
   action_fallback(TdDdWeb.FallbackController)
-
-  alias TdCore.Search.IndexWorker
 
   swagger_path :reindex_all_grants do
     description("Reindex all grants ES indexes with DB content")
@@ -19,7 +18,7 @@ defmodule TdDdWeb.GrantSearchController do
     claims = conn.assigns[:current_resource]
 
     with :ok <- Bodyguard.permit(TdDd.Grants, :reindex, claims) do
-      IndexWorker.reindex(:grants, :all)
+      Indexer.reindex(:all)
       send_resp(conn, :accepted, "")
     end
   end
