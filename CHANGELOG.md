@@ -4,6 +4,7 @@
 
 ### Added
 
+- [TD-6399] Add scroll to csv download implementations
 - [TD-5788] Eslastic pagination for grant_requests
 
 ### Changed

@@ -3672,11 +3672,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn
-        _,
-        :post,
-        "/implementations/_search",
-        %{from: 0, size: 10_000, sort: sort, query: query},
-        _ ->
+        _, :post, "/implementations/_search", %{size: 10_000, sort: sort, query: query}, _ ->
           assert query == %{
                    bool: %{
                      must: %{match_all: %{}},
@@ -3686,10 +3682,14 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
           assert sort == ["_score", "implementation_key.raw"]
 
-          SearchHelpers.hits_response([
+          SearchHelpers.scroll_response([
             previous_implementation
             | new_implementations
           ])
+      end)
+      |> expect(:request, fn _, :post, "/_search/scroll", body, [] ->
+        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
+        SearchHelpers.scroll_response([])
       end)
 
       [
@@ -3745,8 +3745,13 @@ defmodule TdDqWeb.ImplementationControllerTest do
       conn: conn,
       implementations: implementations
     } do
-      expect(ElasticsearchMock, :request, fn _, :post, "/implementations/_search", _, _ ->
-        SearchHelpers.hits_response(implementations)
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/implementations/_search", _, _ ->
+        SearchHelpers.scroll_response(implementations)
+      end)
+      |> expect(:request, fn _, :post, "/_search/scroll", body, [] ->
+        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
+        SearchHelpers.scroll_response([])
       end)
 
       [
@@ -3792,8 +3797,14 @@ defmodule TdDqWeb.ImplementationControllerTest do
       conn: conn,
       implementations: implementations
     } do
-      expect(ElasticsearchMock, :request, fn _, :post, "/implementations/_search", _, _ ->
-        SearchHelpers.hits_response(implementations)
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/implementations/_search", _, opts ->
+        assert opts == [params: %{"scroll" => "1m"}]
+        SearchHelpers.scroll_response(implementations)
+      end)
+      |> expect(:request, fn _, :post, "/_search/scroll", body, [] ->
+        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
+        SearchHelpers.scroll_response([])
       end)
 
       [
