@@ -38,15 +38,15 @@ defmodule TdDq.Rules.Search do
     |> do_search(:implementations, params)
   end
 
-  defp build_query(%Claims{} = claims, %{"must" => _} = params, index) do
+  def build_query(%Claims{} = claims, %{"must" => _} = params, index) do
     build_query(%Claims{} = claims, params, index, filter_type: :must)
   end
 
-  defp build_query(%Claims{} = claims, params, index) do
+  def build_query(%Claims{} = claims, params, index) do
     build_query(%Claims{} = claims, params, index, filter_type: :filters)
   end
 
-  defp build_query(%Claims{} = claims, params, :rules = index, _opts) do
+  def build_query(%Claims{} = claims, params, :rules = index, _opts) do
     aggs = aggregations(index)
 
     claims
@@ -54,7 +54,7 @@ defmodule TdDq.Rules.Search do
     |> Query.build_query(params, aggs)
   end
 
-  defp build_query(%Claims{} = claims, params, :implementations = index, opts) do
+  def build_query(%Claims{} = claims, params, :implementations = index, opts) do
     aggs = aggregations(index)
     filter_or_must = Atom.to_string(opts[:filter_type])
 
