@@ -3,7 +3,7 @@ defmodule TdCxWeb.SearchController do
   use PhoenixSwagger
 
   alias TdCx.Jobs
-  alias TdCx.Jobs.Search.Indexer
+  alias TdCx.Search.Indexer
 
   action_fallback(TdCxWeb.FallbackController)
 
