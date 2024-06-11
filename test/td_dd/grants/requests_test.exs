@@ -515,8 +515,7 @@ defmodule TdDd.Grants.RequestsTest do
 
       assert %{pending_removal: true} = Grants.get_grant(grant_id)
 
-      assert [{:reindex, :grants, [_]}, {:reindex, :grant_requests, [_]}] =
-               IndexWorker.calls()
+      assert [{:reindex, :grants, [_]}, {:reindex, :grant_requests, [_]}] = IndexWorker.calls()
     end
   end
 
