@@ -7,12 +7,13 @@
 - [TD-6399] Add scroll to csv download implementations
 - [TD-5788] Eslastic pagination for grant_requests
 
-### Changed
+### Fixed
 
 - [TD-6561]
   - Standardise aggregations limits
   - Use keyword list for elastic search configuration
 - [TD-6402] IndexWorker improvement
+- [TD-6440] Update td-df-lib
 
 ## [6.6.1] 2024-05-24
 
