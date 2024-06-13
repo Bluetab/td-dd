@@ -37,6 +37,15 @@ defmodule TdDq.Rules.ElasticDocument do
         rule
         |> Map.get(:df_content)
         |> Format.search_values(template, domain_id: domain_id)
+        |> case do
+          rule_content when is_map(rule_content) ->
+            rule_content
+            |> Enum.map(fn {key, %{"value" => value}} -> {key, value} end)
+            |> Map.new()
+
+          rule_content ->
+            rule_content
+        end
 
       %{
         id: rule.id,

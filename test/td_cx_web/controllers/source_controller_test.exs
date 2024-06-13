@@ -68,19 +68,19 @@ defmodule TdCxWeb.SourceControllerTest do
   }
 
   @create_attrs %{
-    "config" => %{"a" => "1"},
+    "config" => %{"a" => %{"value" => "1", "origin" => "user"}},
     "external_id" => "some external_id",
     "type" => "foo_type",
     "active" => true
   }
   @update_attrs %{
-    "config" => %{"a" => "3"},
+    "config" => %{"a" => %{"value" => "3", "origin" => "user"}},
     "external_id" => "some external_id",
     "type" => "some updated type",
     "active" => false
   }
   @invalid_update_attrs %{
-    "config" => %{"b" => "1"},
+    "config" => %{"b" => %{"value" => "1", "origin" => "user"}},
     "external_id" => "some external_id",
     "type" => "some updated type"
   }
@@ -147,7 +147,7 @@ defmodule TdCxWeb.SourceControllerTest do
                "external_id" => "some external_id",
                "active" => true,
                "type" => "foo_type",
-               "config" => %{"a" => "1"}
+               "config" => %{"a" => %{"value" => "1", "origin" => "user"}}
              } = data
     end
 
@@ -163,7 +163,7 @@ defmodule TdCxWeb.SourceControllerTest do
                "external_id" => "some external_id",
                "active" => true,
                "type" => "foo_type",
-               "config" => %{"a" => "1"}
+               "config" => %{"a" => %{"value" => "1", "origin" => "user"}}
              } = data
     end
 
@@ -194,7 +194,7 @@ defmodule TdCxWeb.SourceControllerTest do
 
       assert %{
                "id" => id,
-               "config" => %{"a" => "1"},
+               "config" => %{"a" => %{"value" => "1", "origin" => "user"}},
                "external_id" => ^external_id,
                "type" => "foo_type",
                "active" => true
@@ -223,7 +223,7 @@ defmodule TdCxWeb.SourceControllerTest do
 
       assert %{
                "id" => ^id,
-               "config" => %{"a" => "3"},
+               "config" => %{"a" => %{"value" => "3", "origin" => "user"}},
                "external_id" => ^external_id,
                "type" => "foo_type",
                "active" => false
@@ -246,9 +246,9 @@ defmodule TdCxWeb.SourceControllerTest do
     test "renders source when data is valid", %{conn: conn} do
       create_attrs = %{
         "config" => %{
-          "a" => "1",
-          "b" => "2",
-          "c" => "3"
+          "a" => %{"value" => "1", "origin" => "user"},
+          "b" => %{"value" => "2", "origin" => "user"},
+          "c" => %{"value" => "3", "origin" => "user"}
         },
         "external_id" => "some external_id",
         "type" => "multiple_fields",
@@ -256,7 +256,7 @@ defmodule TdCxWeb.SourceControllerTest do
       }
 
       {:ok, %Source{external_id: external_id}} = Sources.create_source(create_attrs)
-      source_config = %{"b" => "foo"}
+      source_config = %{"b" => %{"value" => "foo", "origin" => "user"}}
 
       assert %{"data" => data} =
                conn
@@ -266,8 +266,8 @@ defmodule TdCxWeb.SourceControllerTest do
       assert %{
                "id" => _id,
                "config" => %{
-                 "a" => "1",
-                 "b" => "foo"
+                 "a" => %{"value" => "1", "origin" => "user"},
+                 "b" => %{"value" => "foo", "origin" => "user"}
                },
                "external_id" => ^external_id,
                "type" => "multiple_fields",
@@ -306,7 +306,7 @@ defmodule TdCxWeb.SourceControllerTest do
 
       assert %{
                "id" => _id,
-               "config" => %{"a" => "3"},
+               "config" => %{"a" => %{"value" => "3", "origin" => "user"}},
                "external_id" => ^external_id,
                "type" => "foo_type",
                "active" => false

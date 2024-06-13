@@ -202,7 +202,11 @@ defmodule TdDd.DataStructures.StructureNotesTest do
     } do
       %{data_structure_id: data_structure_id} = insert(:data_structure_version, type: type.name)
       structure_note = insert(:structure_note, data_structure_id: data_structure_id)
-      params = %{"df_content" => %{"alias" => "foo"}, "status" => "published"}
+
+      params = %{
+        "df_content" => %{"alias" => %{"value" => "foo", "origin" => "user"}},
+        "status" => "published"
+      }
 
       assert {:ok, %{update_alias: structure}} =
                StructureNotes.update_structure_note(structure_note, params, @user_id)
@@ -225,7 +229,7 @@ defmodule TdDd.DataStructures.StructureNotesTest do
       %{id: note_id} =
         structure_note = insert(:structure_note, data_structure_id: data_structure_id)
 
-      params = %{"df_content" => %{"alias" => "foo_baz"}}
+      params = %{"df_content" => %{"alias" => %{"value" => "foo_baz", "origin" => "user"}}}
 
       assert {:ok, %{audit: event_id}} =
                StructureNotes.update_structure_note(structure_note, params, @user_id)
@@ -267,7 +271,10 @@ defmodule TdDd.DataStructures.StructureNotesTest do
       %{id: note_id} =
         structure_note = insert(:structure_note, data_structure_id: data_structure_id)
 
-      params = %{"df_content" => %{"alias" => "foo"}, "status" => "published"}
+      params = %{
+        "df_content" => %{"alias" => %{"value" => "foo", "origin" => "user"}},
+        "status" => "published"
+      }
 
       assert {:ok, %{audit: event_id}} =
                StructureNotes.update_structure_note(structure_note, params, @user_id)

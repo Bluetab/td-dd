@@ -39,14 +39,22 @@ defmodule TdDd.DataStructures.AuditTest do
         note =
         insert(:structure_note,
           data_structure: data_structure,
-          df_content: %{"string" => "initial", "list" => "one", "foo" => "bar"},
+          df_content: %{
+            "string" => %{"value" => "initial", "origin" => "user"},
+            "list" => %{"value" => "one", "origin" => "user"},
+            "foo" => %{"value" => "bar", "origin" => "user"}
+          },
           status: :draft,
           version: 1
         )
 
       changeset =
         StructureNote.changeset(note, %{
-          df_content: %{"string" => "changed", "list" => "two", "foo" => "baz"}
+          df_content: %{
+            "string" => %{"value" => "changed", "origin" => "user"},
+            "list" => %{"value" => "two", "origin" => "user"},
+            "foo" => %{"value" => "baz", "origin" => "user"}
+          }
         })
 
       assert {:ok, event_id} =
@@ -90,14 +98,22 @@ defmodule TdDd.DataStructures.AuditTest do
         note =
         insert(:structure_note,
           data_structure: data_structure,
-          df_content: %{"string" => "initial", "list" => "one", "foo" => "bar"},
+          df_content: %{
+            "string" => %{"value" => "initial", "origin" => "user"},
+            "list" => %{"value" => "one", "origin" => "user"},
+            "foo" => %{"value" => "bar", "origin" => "user"}
+          },
           status: :draft,
           version: 1
         )
 
       changeset =
         StructureNote.changeset(note, %{
-          df_content: %{"string" => "changed", "list" => "two", "foo" => "baz"}
+          df_content: %{
+            "string" => %{"value" => "changed", "origin" => "user"},
+            "list" => %{"value" => "two", "origin" => "user"},
+            "foo" => %{"value" => "baz", "origin" => "user"}
+          }
         })
 
       assert {:ok, event_id} =
@@ -141,7 +157,11 @@ defmodule TdDd.DataStructures.AuditTest do
         note =
         insert(:structure_note,
           data_structure: data_structure,
-          df_content: %{"string" => "initial", "list" => "one", "foo" => "bar"},
+          df_content: %{
+            "string" => %{"value" => "initial", "origin" => "user"},
+            "list" => %{"value" => "one", "origin" => "user"},
+            "foo" => %{"value" => "bar", "origin" => "user"}
+          },
           status: :draft
         )
 
@@ -185,7 +205,11 @@ defmodule TdDd.DataStructures.AuditTest do
         note =
         insert(:structure_note,
           data_structure: data_structure,
-          df_content: %{"string" => "initial", "list" => "one", "foo" => "bar"},
+          df_content: %{
+            "string" => %{"value" => "initial", "origin" => "user"},
+            "list" => %{"value" => "one", "origin" => "user"},
+            "foo" => %{"value" => "bar", "origin" => "user"}
+          },
           status: :draft
         )
 
@@ -230,7 +254,11 @@ defmodule TdDd.DataStructures.AuditTest do
         note =
         insert(:structure_note,
           data_structure: data_structure,
-          df_content: %{"string" => "initial", "list" => "one", "foo" => "bar"},
+          df_content: %{
+            "string" => %{"value" => "initial", "origin" => "user"},
+            "list" => %{"value" => "one", "origin" => "user"},
+            "foo" => %{"value" => "bar", "origin" => "user"}
+          },
           status: :published
         )
 
@@ -273,7 +301,11 @@ defmodule TdDd.DataStructures.AuditTest do
         note =
         insert(:structure_note,
           data_structure: data_structure,
-          df_content: %{"string" => "initial", "list" => "one", "foo" => "bar"},
+          df_content: %{
+            "string" => %{"value" => "initial", "origin" => "user"},
+            "list" => %{"value" => "one", "origin" => "user"},
+            "foo" => %{"value" => "bar", "origin" => "user"}
+          },
           status: :published
         )
 

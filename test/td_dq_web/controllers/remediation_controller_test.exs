@@ -22,7 +22,7 @@ defmodule TdDqWeb.RemediationControllerTest do
               "label" => "Text",
               "values" => nil,
               "widget" => "string",
-              "default" => "",
+              "default" => %{"value" => "", "origin" => "default"},
               "cardinality" => "?",
               "description" => "texto"
             }
@@ -158,7 +158,7 @@ defmodule TdDqWeb.RemediationControllerTest do
       template: %{name: df_name},
       rule_result: %{id: rule_result_id}
     } do
-      fd_content = %{"texto" => "new text"}
+      fd_content = %{"texto" => %{"value" => "new text", "origin" => "user"}}
 
       remediation_params = %{
         "df_name" => df_name,

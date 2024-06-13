@@ -270,7 +270,13 @@ defmodule TdDd.DataStructures.BulkUpdate do
         field_names = Enum.map(template_fields, &Map.get(&1, "name"))
 
         domain_ids = data_structure.domain_ids
-        content = Map.take(row, field_names)
+
+        content =
+          row
+          |> Map.take(field_names)
+          |> Enum.map(fn {key, value} -> {key, %{"value" => value, "origin" => "file"}} end)
+          |> Map.new()
+
         fields = Map.keys(content)
         content_schema = Enum.filter(template_fields, &(Map.get(&1, "name") in fields))
 

@@ -138,7 +138,7 @@ defmodule TdDd.CSV.Download do
     |> to_string()
   end
 
-  defp get_structure_alias(%{note: %{"alias" => alias}}), do: alias
+  defp get_structure_alias(%{note: %{"alias" => %{"value" => alias}}}), do: alias
 
   defp get_structure_alias(_), do: ""
 

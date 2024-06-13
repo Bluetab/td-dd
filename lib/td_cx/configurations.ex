@@ -203,7 +203,7 @@ defmodule TdCx.Configurations do
     end
   end
 
-  defp do_sign(%{"secret_key" => key}, %{} = jwt) when is_binary(key) do
+  defp do_sign(%{"secret_key" => %{"value" => key}}, %{} = jwt) when is_binary(key) do
     jws = %{"alg" => "HS256", "typ" => "JWT"}
     k = Base.encode64(key)
 

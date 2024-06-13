@@ -77,7 +77,7 @@ defmodule TdDdWeb.Schema.RemediationsTest do
               "label" => "Some text field",
               "values" => nil,
               "widget" => "string",
-              "default" => "",
+              "default" => %{"value" => "", "origin" => "default"},
               "cardinality" => "?",
               "description" => "Remediation plan text field"
             }
@@ -146,7 +146,12 @@ defmodule TdDdWeb.Schema.RemediationsTest do
       assert %{
                "id" => ^reme_id_string,
                "df_name" => ^df_name,
-               "df_content" => %{"some_text_field" => "template_field_remediation"},
+               "df_content" => %{
+                 "some_text_field" => %{
+                   "value" => "template_field_remediation",
+                   "origin" => "user"
+                 }
+               },
                "inserted_at" => _inserted_at,
                "updated_at" => _updated_at
              } = remediation
@@ -493,7 +498,12 @@ defmodule TdDdWeb.Schema.RemediationsTest do
               insert(
                 :remediation,
                 df_name: df_name,
-                df_content: %{"some_text_field" => "template_field_remediation"},
+                df_content: %{
+                  "some_text_field" => %{
+                    "value" => "template_field_remediation",
+                    "origin" => "user"
+                  }
+                },
                 rule_result_id: rule_result_id
               )
 
@@ -525,7 +535,12 @@ defmodule TdDdWeb.Schema.RemediationsTest do
               insert(
                 :remediation,
                 df_name: df_name,
-                df_content: %{"some_text_field" => "template_field_remediation"},
+                df_content: %{
+                  "some_text_field" => %{
+                    "value" => "template_field_remediation",
+                    "origin" => "user"
+                  }
+                },
                 rule_result_id: rule_result_id,
                 inserted_at: inserted_at,
                 updated_at: updated_at

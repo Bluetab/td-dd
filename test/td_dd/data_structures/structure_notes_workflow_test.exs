@@ -88,7 +88,10 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
       data_structure_with_identifier =
         data_structure_with_identifier |> Repo.preload(current_version: :structure_type)
 
-      df_content = %{"foo" => "old", identifier_name => existing_identifier}
+      df_content = %{
+        "foo" => %{"value" => "old", "origin" => "user"},
+        identifier_name => %{"value" => existing_identifier, "origin" => "user"}
+      }
 
       _structure_note_with_identifier =
         insert(
@@ -111,7 +114,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
       %{id: data_structure_id} = data_structure = create_data_structure_with_version()
 
       create_attrs = %{
-        "df_content" => %{"foo" => "bar"},
+        "df_content" => %{"foo" => %{"value" => "bar", "origin" => "user"}},
         "version" => 3
       }
 
@@ -120,7 +123,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
                 version: 1,
                 status: :draft,
                 df_content: %{
-                  "foo" => "bar"
+                  "foo" => %{"value" => "bar", "origin" => "user"}
                 },
                 data_structure_id: ^data_structure_id
               }} = StructureNotesWorkflow.create(data_structure, create_attrs, @user_id)
@@ -130,7 +133,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
       data_structure = create_data_structure_with_version()
 
       create_attrs = %{
-        "df_content" => %{"baz" => "bar"},
+        "df_content" => %{"baz" => %{"value" => "bar", "origin" => "user"}},
         "version" => 3
       }
 
@@ -146,7 +149,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
         data_structure: data_structure
       )
 
-      create_attrs = %{"df_content" => %{"foo" => "bar"}}
+      create_attrs = %{"df_content" => %{"foo" => %{"value" => "bar", "origin" => "user"}}}
 
       assert {:error, :conflict} =
                StructureNotesWorkflow.create(data_structure, create_attrs, @user_id)
@@ -165,7 +168,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
     end
 
     test "when create a new version from a published note without df_content, will use the previous published" do
-      df_content = %{"foo" => "value"}
+      df_content = %{"foo" => %{"value" => "value", "origin" => "user"}}
 
       data_structure = create_data_structure_with_version()
 
@@ -186,7 +189,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
     end
 
     test "when create a new version from a published note with df_content, will use the new one" do
-      df_content = %{"foo" => "value_old"}
+      df_content = %{"foo" => %{"value" => "value_old", "origin" => "user"}}
 
       data_structure = create_data_structure_with_version()
 
@@ -197,7 +200,11 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
           data_structure: data_structure
         )
 
-      new_df_content = %{"foo" => "value_new", "baz" => "new_value"}
+      new_df_content = %{
+        "foo" => %{"value" => "value_new", "origin" => "user"},
+        "baz" => %{"value" => "new_value", "origin" => "user"}
+      }
+
       create_attrs = %{"df_content" => new_df_content}
 
       assert {:ok,
@@ -210,7 +217,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
     end
 
     test "when admin force a creation, delete the latest note if can't create a new one due to it" do
-      df_content = %{"foo" => "value_old"}
+      df_content = %{"foo" => %{"value" => "value_old", "origin" => "user"}}
 
       data_structure = create_data_structure_with_version()
 
@@ -221,7 +228,11 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
           data_structure: data_structure
         )
 
-      new_df_content = %{"foo" => "value_new", "baz" => "new_value"}
+      new_df_content = %{
+        "foo" => %{"value" => "value_new", "origin" => "user"},
+        "baz" => %{"value" => "new_value", "origin" => "user"}
+      }
+
       create_attrs = %{"df_content" => new_df_content}
 
       assert {:ok,
@@ -239,7 +250,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
     @user_id 1
 
     test "save content only for draft notes" do
-      df_content = %{"foo" => "content"}
+      df_content = %{"foo" => %{"value" => "content", "origin" => "user"}}
       attrs = %{"df_content" => df_content}
 
       # updateable content statuses
@@ -428,7 +439,9 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
         |> Enum.each(fn to_status ->
           attrs = %{
             "status" => Atom.to_string(to_status),
-            "df_content" => %{"new" => "content_#{from_status}_#{to_status}"}
+            "df_content" => %{
+              "new" => %{"value" => "content_#{from_status}_#{to_status}", "origin" => "user"}
+            }
           }
 
           update_output =
@@ -476,7 +489,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
     end
 
     test "return error when update structure note content is invalid" do
-      df_content = %{"baz" => "content"}
+      df_content = %{"baz" => %{"value" => "content", "origin" => "user"}}
       attrs = %{"df_content" => df_content}
 
       data_structure = create_data_structure_with_version()
@@ -490,7 +503,12 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
 
   describe "create or update" do
     test "can only be done in any state" do
-      attrs = %{"df_content" => %{"foo" => "value_new", "baz" => "new_value"}}
+      attrs = %{
+        "df_content" => %{
+          "foo" => %{"value" => "value_new", "origin" => "user"},
+          "baz" => %{"value" => "new_value", "origin" => "user"}
+        }
+      }
 
       data_structure_without_notes = create_data_structure_with_version()
 

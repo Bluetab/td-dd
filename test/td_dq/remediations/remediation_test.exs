@@ -82,7 +82,10 @@ defmodule TdDq.RemediationTest do
     } do
       %{name: template_name} = CacheHelpers.insert_template(scope: "remediation")
 
-      invalid_content = %{"list" => "foo", "string" => "whatever"}
+      invalid_content = %{
+        "list" => %{"value" => "foo", "origin" => "user"},
+        "string" => %{"value" => "whatever", "origin" => "user"}
+      }
 
       params = %{
         "df_name" => template_name,
@@ -101,7 +104,10 @@ defmodule TdDq.RemediationTest do
     } do
       %{name: template_name} = CacheHelpers.insert_template(scope: "remediation")
 
-      unsafe_content = %{"list" => "foo", "string" => @unsafe}
+      unsafe_content = %{
+        "list" => %{"value" => "foo", "origin" => "user"},
+        "string" => %{"value" => @unsafe, "origin" => "user"}
+      }
 
       params = %{
         "df_name" => template_name,

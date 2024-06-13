@@ -20,7 +20,10 @@ defmodule TdDd.DataStructures.ValidationTest do
       assert is_function(validator, 2)
       assert validator.(:content, nil) == []
       assert validator.(:content, %{}) == []
-      assert validator.(:content, %{"foo" => "bar"}) == [content: "missing_type"]
+
+      assert validator.(:content, %{"foo" => %{"value" => "bar", "origin" => "user"}}) == [
+               content: "missing_type"
+             ]
     end
 
     test "returns a validator that returns error if template is missing" do
@@ -45,7 +48,7 @@ defmodule TdDd.DataStructures.ValidationTest do
       assert is_function(validator, 2)
 
       assert [{:content, {"list: is invalid - string: can't be blank", _errors}}] =
-               validator.(:content, %{"list" => "four"})
+               validator.(:content, %{"list" => %{"value" => "four", "origin" => "user"}})
     end
   end
 

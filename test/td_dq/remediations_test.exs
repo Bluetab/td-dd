@@ -21,7 +21,7 @@ defmodule TdDq.Remediations.RemediationsTest do
               "label" => "Text",
               "values" => nil,
               "widget" => "string",
-              "default" => "",
+              "default" => %{"value" => "", "origin" => "default"},
               "cardinality" => "?",
               "description" => "texto"
             }
@@ -120,14 +120,14 @@ defmodule TdDq.Remediations.RemediationsTest do
       assert {
                :ok,
                %Remediation{
-                 df_content: %{"text" => "some_text"},
+                 df_content: %{"text" => %{"value" => "some_text", "origin" => "user"}},
                  user_id: ^new_user_id
                }
              } =
                Remediations.update_remediation(
                  remediation,
                  %{
-                   "df_content" => %{"text" => "some_text"}
+                   "df_content" => %{"text" => %{"value" => "some_text", "origin" => "user"}}
                  },
                  claims
                )

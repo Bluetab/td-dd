@@ -3,7 +3,10 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
 
   alias TdCore.Search.IndexWorker
 
-  @valid_metadata %{"list" => "one", "string" => "foo"}
+  @valid_metadata %{
+    "list" => %{"value" => "one", "origin" => "user"},
+    "string" => %{"value" => "foo", "origin" => "user"}
+  }
   @template_name "grant_request_group_controller_test_template"
 
   setup do
@@ -510,7 +513,7 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
         "requests" => [
           %{
             "data_structure_id" => ds_id,
-            "metadata" => %{"invalid" => "metadata"}
+            "metadata" => %{"invalid" => %{"value" => "metadata", "origin" => "user"}}
           }
         ]
       }

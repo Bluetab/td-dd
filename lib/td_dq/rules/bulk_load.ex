@@ -74,7 +74,7 @@ defmodule TdDq.Rules.BulkLoad do
       if Enum.member?(@required_headers ++ @optional_headers, head) do
         Map.put(acc, head, value)
       else
-        df_content = Map.put(acc["df_content"], head, value)
+        df_content = Map.put(acc["df_content"], head, %{"value" => value, "origin" => "file"})
         Map.put(acc, "df_content", df_content)
       end
     end)

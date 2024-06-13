@@ -801,7 +801,12 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     test "return only published note content matched with the template", %{
       conn: conn,
       data_structure_version: %{data_structure_id: id},
-      published_note: %{df_content: %{"Field1" => field_1, "alias" => content_alias}}
+      published_note: %{
+        df_content: %{
+          "Field1" => %{"value" => field_1, "origin" => "user"},
+          "alias" => %{"value" => content_alias, "origin" => "user"}
+        }
+      }
     } do
       assert %{"data" => data} =
                conn
@@ -813,7 +818,11 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       refute Map.has_key?(data, "published_note")
       refute Map.has_key?(data, "latest_note")
       assert %{"note" => note} = data
-      assert note == %{"Field1" => field_1, "alias" => content_alias}
+
+      assert note == %{
+               "Field1" => %{"value" => field_1, "origin" => "user"},
+               "alias" => %{"value" => content_alias, "origin" => "user"}
+             }
     end
 
     @tag authentication: [role: "admin"]
@@ -924,6 +933,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
   describe "protected metadata" do
     setup %{domain: %{id: domain_id}} do
+      # TODO: Maybe metadata new content format
       metadata = %{
         "m_foo" => "m_foo",
         @protected => %{"mp_foo" => "mp_foo"}
@@ -1058,7 +1068,10 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   end
 
   defp create_structure_hierarchy(_) do
-    %{id: source_id} = insert(:source, config: %{"job_types" => ["catalog", "profile"]})
+    %{id: source_id} =
+      insert(:source,
+        config: %{"job_types" => %{"value" => ["catalog", "profile"], "origin" => "user"}}
+      )
 
     %{data_structure: parent_structure} =
       parent_version =
@@ -1136,7 +1149,11 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       published_note:
         insert(:structure_note,
           data_structure: data_structure,
-          df_content: %{"Field1" => "xyzzy", "list" => "two", "alias" => "some alias"},
+          df_content: %{
+            "Field1" => %{"value" => "xyzzy", "origin" => "user"},
+            "list" => %{"value" => "two", "origin" => "user"},
+            "alias" => %{"value" => "some alias", "origin" => "user"}
+          },
           status: :published
         )
     ]
@@ -1196,7 +1213,10 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   end
 
   defp create_field_structure(%{domain: domain} = context) do
-    %{id: source_id} = insert(:source, config: %{"job_types" => ["catalog", "profile"]})
+    %{id: source_id} =
+      insert(:source,
+        config: %{"job_types" => %{"value" => ["catalog", "profile"], "origin" => "user"}}
+      )
 
     data_structure =
       insert(:data_structure,
@@ -1207,7 +1227,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
     insert(:structure_note,
       status: :published,
-      df_content: %{"alias" => "field_alias"},
+      df_content: %{"alias" => %{"value" => "field_alias", "origin" => "user"}},
       data_structure: data_structure
     )
 
@@ -1226,7 +1246,10 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   end
 
   defp create_table_structure(%{domain: domain} = context) do
-    %{id: source_id} = insert(:source, config: %{"job_types" => ["catalog", "profile"]})
+    %{id: source_id} =
+      insert(:source,
+        config: %{"job_types" => %{"value" => ["catalog", "profile"], "origin" => "user"}}
+      )
 
     %{data_structure: data_structure} =
       data_structure_version =
@@ -1250,9 +1273,21 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
   defp profile_source(%{domain: domain}) do
     source =
-      insert(:source, external_id: "foo", config: %{"job_types" => ["catalog"], "alias" => "foo"})
+      insert(:source,
+        external_id: "foo",
+        config: %{
+          "job_types" => %{"value" => ["catalog"], "origin" => "user"},
+          "alias" => %{"value" => "foo", "origin" => "user"}
+        }
+      )
 
-    insert(:source, external_id: "bar", config: %{"job_types" => ["profile"], "alias" => "foo"})
+    insert(:source,
+      external_id: "bar",
+      config: %{
+        "job_types" => %{"value" => ["profile"], "origin" => "user"},
+        "alias" => %{"value" => "foo", "origin" => "user"}
+      }
+    )
 
     %{data_structure: structure} =
       insert(:data_structure_version,

@@ -980,8 +980,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
                  "bulk_update_request" => %{
                    "update_attributes" => %{
                      "df_content" => %{
-                       "list" => "one",
-                       "string" => "hola soy un string"
+                       "list" => %{"value" => "one", "origin" => "user"},
+                       "string" => %{"value" => "hola soy un string", "origin" => "user"}
                      },
                      "otra_cosa" => 2
                    },
@@ -1026,8 +1026,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
                  "bulk_update_request" => %{
                    "update_attributes" => %{
                      "df_content" => %{
-                       "list" => "one",
-                       "string" => "hola soy un string"
+                       "list" => %{"value" => "one", "origin" => "user"},
+                       "string" => %{"value" => "hola soy un string", "origin" => "user"}
                      }
                    },
                    "search_params" => %{
@@ -1067,8 +1067,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
                  "bulk_update_request" => %{
                    "update_attributes" => %{
                      "df_content" => %{
-                       "list" => "ones",
-                       "string" => "hola soy un string"
+                       "list" => %{"value" => "ones", "origin" => "user"},
+                       "string" => %{"value" => "hola soy un string", "origin" => "user"}
                      }
                    },
                    "search_params" => %{
@@ -1522,7 +1522,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
     } do
       insert(:structure_note,
         data_structure: data_structure,
-        df_content: %{"string" => "foo", "list" => "bar"},
+        df_content: %{
+          "string" => %{"value" => "foo", "origin" => "user"},
+          "list" => %{"value" => "bar", "origin" => "user"}
+        },
         status: :published
       )
 
@@ -1556,7 +1559,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
          } do
       insert(:structure_note,
         data_structure: data_structure,
-        df_content: %{"string" => "foo", "list" => "bar"},
+        df_content: %{
+          "string" => %{"value" => "foo", "origin" => "user"},
+          "list" => %{"value" => "bar", "origin" => "user"}
+        },
         status: :published
       )
 
@@ -1917,7 +1923,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                |> get(Routes.csv_bulk_update_event_path(conn, :index))
                |> json_response(:ok)
 
-      %{df_content: %{"string" => multifields}} =
+      %{df_content: %{"string" => %{"value" => multifields, "origin" => "file"}}} =
         StructureNotes.get_latest_structure_note(data_structure.id)
 
       assert ["any", "accepted", "field"] = multifields
@@ -1997,7 +2003,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       insert(:structure_note,
         data_structure: data_structure,
-        df_content: %{"string" => "xyzzy", "list" => "two"},
+        df_content: %{
+          "string" => %{"value" => "xyzzy", "origin" => "user"},
+          "list" => %{"value" => "two", "origin" => "user"}
+        },
         status: :draft
       )
 
@@ -2044,7 +2053,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       insert(:structure_note,
         data_structure: data_structure,
-        df_content: %{"string" => "xyzzy", "list" => "two"},
+        df_content: %{
+          "string" => %{"value" => "xyzzy", "origin" => "user"},
+          "list" => %{"value" => "two", "origin" => "user"}
+        },
         status: :published
       )
 
@@ -2058,7 +2070,11 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       latest_note = StructureNotes.get_latest_structure_note(data_structure.id)
       assert latest_note.status == :draft
-      assert latest_note.df_content == %{"string" => "the new content from csv", "list" => "one"}
+
+      assert latest_note.df_content == %{
+               "string" => %{"value" => "the new content from csv", "origin" => "file"},
+               "list" => %{"value" => "one", "origin" => "file"}
+             }
     end
 
     @tag authentication: [
@@ -2083,7 +2099,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       insert(:structure_note,
         data_structure: data_structure,
-        df_content: %{"string" => "xyzzy", "list" => "two"},
+        df_content: %{
+          "string" => %{"value" => "xyzzy", "origin" => "user"},
+          "list" => %{"value" => "two", "origin" => "user"}
+        },
         status: :published
       )
 
@@ -2098,7 +2117,11 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       latest_note = StructureNotes.get_latest_structure_note(data_structure.id)
       assert latest_note.status == :published
-      assert latest_note.df_content == %{"string" => "the new content from csv", "list" => "one"}
+
+      assert latest_note.df_content == %{
+               "string" => %{"value" => "the new content from csv", "origin" => "file"},
+               "list" => %{"value" => "one", "origin" => "file"}
+             }
 
       assert data_structure.id
              |> StructureNotes.list_structure_notes(:versioned)
@@ -2124,7 +2147,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       insert(:structure_note,
         data_structure: data_structure,
-        df_content: %{"string" => "xyzzy", "list" => "two"},
+        df_content: %{
+          "string" => %{"value" => "xyzzy", "origin" => "user"},
+          "list" => %{"value" => "two", "origin" => "user"}
+        },
         status: :published
       )
 

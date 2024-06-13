@@ -24,7 +24,7 @@ defmodule TdDd.Systems.AuditTest do
 
   describe "system_created/4" do
     test "publishes an event", %{system: %{id: system_id} = system, claims: %{user_id: user_id}} do
-      content = %{foo: "bar"}
+      content = %{foo: %{"value" => "bar", "origin" => "user"}}
 
       %{external_id: external_id, name: name} =
         params =
@@ -67,7 +67,7 @@ defmodule TdDd.Systems.AuditTest do
         params =
         build(:system)
         |> Map.take([:name])
-        |> Map.put(:df_content, %{bar: "foo"})
+        |> Map.put(:df_content, %{bar: %{"value" => "bar", "origin" => "user"}})
 
       changeset = System.changeset(params)
       assert {:ok, event_id} = Audit.system_updated(Repo, %{system: system}, changeset, user_id)

@@ -54,6 +54,18 @@ defmodule TdDd.DataStructures.ElasticDocument do
       id_path = Enum.map(path, &Map.get(&1, "data_structure_id", 0))
       parent_id = List.last(Enum.map(path, &Integer.to_string(&1["data_structure_id"])), "")
 
+      note =
+        content
+        |> case do
+          note_content when is_map(note_content) ->
+            note_content
+            |> Enum.map(fn {key, %{"value" => value}} -> {key, value} end)
+            |> Map.new()
+
+          _ ->
+            content
+        end
+
       data_structure
       |> Map.take([
         :confidential,
@@ -65,7 +77,7 @@ defmodule TdDd.DataStructures.ElasticDocument do
         :source_id,
         :system_id
       ])
-      |> Map.put(:note, content)
+      |> Map.put(:note, note)
       |> Map.put(:domain, first_domain(data_structure))
       |> Map.put(:field_type, field_type(dsv))
       |> Map.put(:path_sort, path_sort(name_path))

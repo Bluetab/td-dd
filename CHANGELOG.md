@@ -1,5 +1,11 @@
 # Changelog
 
+[Unreleased]
+
+### Added
+
+- [TD-6499] Add new content format data origin
+
 ## [6.7.0] 2024-06-13
 
 ### Added

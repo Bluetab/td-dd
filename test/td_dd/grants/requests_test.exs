@@ -13,7 +13,10 @@ defmodule TdDd.Grants.RequestsTest do
   alias TdDd.Grants.Requests
 
   @template_name "grant_request_test_template"
-  @valid_metadata %{"list" => "one", "string" => "bar"}
+  @valid_metadata %{
+    "list" => %{"value" => "one", "origin" => "user"},
+    "string" => %{"value" => "bar", "origin" => "user"}
+  }
 
   setup tags do
     IndexWorker.clear()
