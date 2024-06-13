@@ -16,9 +16,9 @@ defmodule TdDd.Loader.Worker do
 
   use GenServer
 
-  alias TdCore.Search.IndexWorker
   alias TdCx.Events
   alias TdDd.DataStructures.Ancestry
+  alias TdDd.DataStructures.Search.Indexer
   alias TdDd.Loader
   alias TdDd.Loader.Reader
   alias TdDd.Profiles.ProfileLoader
@@ -314,8 +314,8 @@ defmodule TdDd.Loader.Worker do
     # If any ids have been returned by the bulk load process, these
     # data structures should be reindexed.
 
-    if structure_ids != [], do: IndexWorker.reindex(:structures, structure_ids)
-    if deleted_ids != [], do: IndexWorker.delete(:structures, deleted_ids)
+    if structure_ids != [], do: Indexer.reindex(structure_ids)
+    if deleted_ids != [], do: Indexer.delete(deleted_ids)
   end
 
   defp do_post_process(structure_ids, deleted_ids, external_id) do

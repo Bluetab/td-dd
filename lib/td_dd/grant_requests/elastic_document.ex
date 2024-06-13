@@ -5,6 +5,7 @@ defmodule TdDd.GrantRequests.ElasticDocument do
   """
 
   alias Elasticsearch.Document
+  alias TdCore.Search.Cluster
   alias TdCore.Search.ElasticDocument
   alias TdCore.Search.ElasticDocumentProtocol
   alias TdDd.DataStructures.DataStructureVersion
@@ -157,10 +158,15 @@ defmodule TdDd.GrantRequests.ElasticDocument do
 
     def aggregations(_) do
       %{
-        "user" => %{terms: %{field: "user.user_name"}},
-        "current_status" => %{terms: %{field: "current_status"}},
-        "taxonomy" => %{terms: %{field: "domain_ids", size: 500}},
-        "type" => %{terms: %{field: "type"}}
+        "approved_by" => %{
+          terms: %{field: "approved_by", size: Cluster.get_size_field("approved_by")}
+        },
+        "user" => %{terms: %{field: "user.user_name", size: Cluster.get_size_field("user")}},
+        "current_status" => %{
+          terms: %{field: "current_status", size: Cluster.get_size_field("current_status")}
+        },
+        "taxonomy" => %{terms: %{field: "domain_ids", size: Cluster.get_size_field("taxonomy")}},
+        "type" => %{terms: %{field: "type", size: Cluster.get_size_field("type")}}
       }
       |> merge_dynamic_fields("gr", "metadata")
       |> merge_dynamic_fields("dd", "note")

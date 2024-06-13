@@ -280,7 +280,7 @@ defmodule TdDd.Search.Store do
   defp maybe_update_grant_dsv(grant_request, _), do: grant_request
 
   defp chunk_size(key),
-    do: Map.get(Application.get_env(:td_core, TdCore.Search.Cluster)[:chunk_size_map], key)
+    do: Application.get_env(:td_dd, __MODULE__)[key]
 
   def vacuum do
     Repo.vacuum([

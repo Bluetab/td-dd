@@ -9,10 +9,10 @@ defmodule TdDq.Cache.ImplementationLoader do
 
   alias TdCache.ImplementationCache
   alias TdCache.LinkCache
-  alias TdCore.Search.IndexWorker
   alias TdDq.Events.QualityEvents
   alias TdDq.Implementations
   alias TdDq.Implementations.Implementation
+  alias TdDq.Implementations.Search.Indexer
   alias TdDq.Rules.RuleResults
 
   require Logger
@@ -119,7 +119,7 @@ defmodule TdDq.Cache.ImplementationLoader do
       |> Enum.map(&Implementations.get_implementation_versions_ids_by_ref(&1))
       |> List.flatten()
 
-    IndexWorker.reindex(:implementations, ids)
+    Indexer.reindex(ids)
   end
 
   defp reindex_implementations(_), do: nil

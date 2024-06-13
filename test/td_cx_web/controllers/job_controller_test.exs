@@ -2,10 +2,10 @@ defmodule TdCxWeb.JobControllerTest do
   use TdCxWeb.ConnCase
 
   import Mox
-  alias TdCore.Search.IndexWorkerMock
+  alias TdCore.Search.IndexWorker
 
   setup do
-    IndexWorkerMock.clear()
+    IndexWorker.clear()
 
     :ok
   end
@@ -78,7 +78,7 @@ defmodule TdCxWeb.JobControllerTest do
   describe "POST /api/sources/:id/jobs" do
     @tag authentication: [role: "user", permissions: [:profile_structures]]
     test "user can create a job for a source", %{conn: conn} do
-      IndexWorkerMock.clear()
+      IndexWorker.clear()
       %{external_id: source_external_id} = insert(:source)
 
       # SearchHelpers.expect_bulk_index("/jobs/_doc/_bulk")
@@ -88,10 +88,10 @@ defmodule TdCxWeb.JobControllerTest do
                |> post(Routes.source_job_path(conn, :create, source_external_id))
                |> json_response(:created)
 
-      assert [{:reindex, :jobs, [_]}] = IndexWorkerMock.calls()
+      assert [{:reindex, :jobs, [_]}] = IndexWorker.calls()
       assert %{"external_id" => external_id} = data
       refute is_nil(external_id)
-      IndexWorkerMock.clear()
+      IndexWorker.clear()
     end
 
     @tag authentication: [role: "admin"]
@@ -105,15 +105,15 @@ defmodule TdCxWeb.JobControllerTest do
                |> post(Routes.source_job_path(conn, :create, source_external_id))
                |> json_response(:created)
 
-      assert [{:reindex, :jobs, [_]}] = IndexWorkerMock.calls()
+      assert [{:reindex, :jobs, [_]}] = IndexWorker.calls()
       assert %{"external_id" => external_id} = data
       refute is_nil(external_id)
-      IndexWorkerMock.clear()
+      IndexWorker.clear()
     end
 
     @tag authentication: [role: "service"]
     test "service account can create a job for a source", %{conn: conn} do
-      IndexWorkerMock.clear()
+      IndexWorker.clear()
       %{external_id: source_external_id} = insert(:source)
 
       # SearchHelpers.expect_bulk_index("/jobs/_doc/_bulk")
@@ -123,10 +123,10 @@ defmodule TdCxWeb.JobControllerTest do
                |> post(Routes.source_job_path(conn, :create, source_external_id))
                |> json_response(:created)
 
-      assert [{:reindex, :jobs, [_]}] = IndexWorkerMock.calls()
+      assert [{:reindex, :jobs, [_]}] = IndexWorker.calls()
       assert %{"external_id" => external_id} = data
       refute is_nil(external_id)
-      IndexWorkerMock.clear()
+      IndexWorker.clear()
     end
 
     @tag authentication: [role: "admin"]

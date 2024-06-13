@@ -3,7 +3,7 @@ defmodule TdCx.Sources.EventsTest do
 
   import Mox
 
-  alias TdCore.Search.IndexWorkerMock
+  alias TdCore.Search.IndexWorker
   alias TdCx.Cache.SourcesLatestEvent
   alias TdCx.Events
 
@@ -12,7 +12,7 @@ defmodule TdCx.Sources.EventsTest do
   setup do
     start_supervised!(TdCx.Cache.SourcesLatestEvent)
 
-    IndexWorkerMock.clear()
+    IndexWorker.clear()
 
     :ok
   end
@@ -21,14 +21,14 @@ defmodule TdCx.Sources.EventsTest do
   setup :verify_on_exit!
 
   test "create_event/0 creates an event" do
-    IndexWorkerMock.clear()
+    IndexWorker.clear()
     %{id: source_id} = insert(:source)
     %{id: job_id} = insert(:job, source_id: source_id)
     params = %{type: "init", message: "Message", job_id: job_id}
     claims = build(:claims, role: "admin")
     assert {:ok, %{event: event, job_updated_at: {1, nil}}} = Events.create_event(params, claims)
     assert %{job_id: ^job_id, type: "init", message: "Message"} = event
-    assert [{:reindex, :jobs, [_]}] = IndexWorkerMock.calls()
+    assert [{:reindex, :jobs, [_]}] = IndexWorker.calls()
 
     assert %{
              ^source_id => ^event

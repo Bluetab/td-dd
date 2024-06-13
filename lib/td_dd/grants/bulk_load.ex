@@ -4,10 +4,10 @@ defmodule TdDd.Grants.BulkLoad do
   """
 
   alias Ecto.Multi
-  alias TdCore.Search.IndexWorker
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Grants
+  alias TdDd.Grants.Search.Indexer
   alias TdDd.Repo
 
   require Logger
@@ -82,7 +82,7 @@ defmodule TdDd.Grants.BulkLoad do
     do: {:error, {:not_found, "missing operator"}}
 
   defp do_reindex({:ok, %{ids: ids}}) when is_list(ids) do
-    IndexWorker.reindex(:grants, ids)
+    Indexer.reindex(ids)
     {:ok, ids}
   end
 

@@ -1,5 +1,20 @@
 # Changelog
 
+## [6.7.0] 2024-06-13
+
+### Added
+
+- [TD-6399] Add scroll to csv download implementations
+- [TD-5788] Eslastic pagination for grant_requests
+
+### Fixed
+
+- [TD-6561]
+  - Standardise aggregations limits
+  - Use keyword list for elastic search configuration
+- [TD-6402] IndexWorker improvement
+- [TD-6440] Update td-df-lib
+
 ## [6.6.1] 2024-05-24
 
 ### Fixed
@@ -11,7 +26,6 @@
 ### Changed
 
 - [TD-6083] Add group id to grant request index
-
 
 ## [6.5.1] 2024-05-20
 

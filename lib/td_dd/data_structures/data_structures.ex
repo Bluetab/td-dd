@@ -22,6 +22,7 @@ defmodule TdDd.DataStructures do
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.RelationTypes
+  alias TdDd.DataStructures.Search.Indexer
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.DataStructures.StructureNote
   alias TdDd.Grants
@@ -756,8 +757,8 @@ defmodule TdDd.DataStructures do
     {:ok, ids}
   end
 
-  defp on_update({:ok, %{updated_ids: ids}}), do: IndexWorker.reindex(@index, ids)
-  defp on_update(ids) when is_list(ids), do: IndexWorker.reindex(@index, ids)
+  defp on_update({:ok, %{updated_ids: ids}}), do: Indexer.reindex(ids)
+  defp on_update(ids) when is_list(ids), do: Indexer.reindex(ids)
 
   defp on_update(_), do: :ok
 

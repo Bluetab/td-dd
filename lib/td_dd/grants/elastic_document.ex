@@ -9,6 +9,7 @@ defmodule TdDd.Grants.ElasticDocument do
   """
 
   alias Elasticsearch.Document
+  alias TdCore.Search.Cluster
   alias TdCore.Search.ElasticDocument
   alias TdCore.Search.ElasticDocumentProtocol
   alias TdDd.DataStructures.DataStructureVersion
@@ -67,7 +68,12 @@ defmodule TdDd.Grants.ElasticDocument do
       %{mappings: %{properties: dsv_properties}, settings: _settings} =
         ElasticDocumentProtocol.mappings(%DataStructureVersion{})
 
-      grants_config = Application.get_env(:td_core, TdCore.Search.Cluster)[:indexes][:grants]
+      grants_config =
+        :td_core
+        |> Application.get_env(TdCore.Search.Cluster)
+        |> Keyword.get(:indexes, [])
+        |> Keyword.get(:grants, [])
+        |> Map.new()
 
       dsv_properties =
         maybe_not_searcheable_field(dsv_properties, grants_config, :dsv_no_sercheabled_fields)
@@ -100,11 +106,29 @@ defmodule TdDd.Grants.ElasticDocument do
 
     def aggregations(_) do
       %{
-        "taxonomy" => %{terms: %{field: "data_structure_version.domain_ids", size: 500}},
-        "type.raw" => %{terms: %{field: "data_structure_version.type.raw", size: 50}},
-        "pending_removal.raw" => %{terms: %{field: "pending_removal.raw"}},
+        "taxonomy" => %{
+          terms: %{
+            field: "data_structure_version.domain_ids",
+            size: Cluster.get_size_field("taxonomy")
+          }
+        },
+        "type.raw" => %{
+          terms: %{
+            field: "data_structure_version.type.raw",
+            size: Cluster.get_size_field("type.raw")
+          }
+        },
+        "pending_removal.raw" => %{
+          terms: %{
+            field: "pending_removal.raw",
+            size: Cluster.get_size_field("pending_removal.raw")
+          }
+        },
         "system_external_id" => %{
-          terms: %{field: "data_structure_version.system.external_id.raw", size: 50}
+          terms: %{
+            field: "data_structure_version.system.external_id.raw",
+            size: Cluster.get_size_field("system_external_id")
+          }
         }
       }
     end

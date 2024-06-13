@@ -1,20 +1,24 @@
 defmodule TdDdWeb.GrantRequestSearchController do
   use TdDdWeb, :controller
 
-  alias TdCore.Search.IndexWorker
   alias TdDd.GrantRequests.Search
+  alias TdDd.GrantRequests.Search.Indexer
   alias Truedat.Search.Permissions
+  @default_page 0
+  @default_size 20
 
   action_fallback(TdDdWeb.FallbackController)
 
   def search(conn, params) do
     claims = conn.assigns[:current_resource]
+    page = Map.get(params, "page", @default_page)
+    size = Map.get(params, "size", @default_size)
 
     %{total: total} =
       response =
       params
       |> maybe_fix_approved_params()
-      |> Search.search(claims)
+      |> Search.search(claims, page, size)
       |> put_permissions(claims)
 
     conn
@@ -26,7 +30,7 @@ defmodule TdDdWeb.GrantRequestSearchController do
     claims = conn.assigns[:current_resource]
 
     with :ok <- Bodyguard.permit(TdDd.Grants, :reindex, claims) do
-      IndexWorker.reindex(:grant_requests, :all)
+      Indexer.reindex(:all)
       send_resp(conn, :accepted, "")
     end
   end

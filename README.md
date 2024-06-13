@@ -53,7 +53,6 @@ Run all aplication tests with `mix test`
 -  STRUCTURE_STORE_CHUNK_SIZE: default 1000
 -  DSV_STORE_CHUNK_SIZE: default 1000
 
-
 # If the variable is set to false, it will not be deleted in the case that there is no index in the hot swap process.
 -  DELETE_EXISTING_INDEX: detault true
 
@@ -61,6 +60,8 @@ Run all aplication tests with `mix test`
 # The bulk_wait_interval variable defines the time interval between batches of bulk operations in Elasticsearch.
 BULK_WAIT_INTERVAL_GRANTS: default 0 
 
+### Elastic aggregations
+- The aggregation variables are defined as follows:  AGG_<AGGREGATION_NAME>_SIZE
 
 ## Deployment
 

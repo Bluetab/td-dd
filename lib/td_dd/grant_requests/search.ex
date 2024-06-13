@@ -29,7 +29,7 @@ defmodule TdDd.GrantRequests.Search do
 
   def search(params, claims, page \\ 0, size \\ 1000)
 
-  def search(params, claims, _page, size) do
+  def search(params, claims, page, size) do
     aggs = ElasticDocumentProtocol.aggregations(%GrantRequest{})
     sort = Map.get(params, "sort", ["_score", "inserted_at"])
 
@@ -39,6 +39,7 @@ defmodule TdDd.GrantRequests.Search do
       |> Query.build_query(params, aggs)
 
     %{
+      from: page * size,
       size: size,
       query: query,
       sort: sort

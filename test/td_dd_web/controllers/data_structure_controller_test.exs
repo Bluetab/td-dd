@@ -8,7 +8,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
   alias Path
   alias TdCore.Search.ElasticDocument
-  alias TdCore.Search.IndexWorkerMock
+  alias TdCore.Search.IndexWorker
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.RelationTypes
@@ -55,7 +55,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
     start_supervised!(TdDd.Search.StructureEnricher)
 
-    IndexWorkerMock.clear()
+    IndexWorker.clear()
 
     [system: system, domain: domain, domain_id: domain.id]
   end
@@ -617,7 +617,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert %{domain_ids: [^new_domain_id]} = DataStructures.get_data_structure!(id)
 
-      assert [{:reindex, :structures, [^id]}] = IndexWorkerMock.calls()
+      assert [{:reindex, :structures, [^id]}] = IndexWorker.calls()
     end
 
     @tag authentication: [role: "user"]
@@ -654,7 +654,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert %{domain_ids: [^new_domain_id]} = DataStructures.get_data_structure!(id)
 
       assert {:reindex, :implementations, [^implementation_id]} =
-               Enum.find(IndexWorkerMock.calls(), fn {action, index, _} ->
+               Enum.find(IndexWorker.calls(), fn {action, index, _} ->
                  action == :reindex and index == :implementations
                end)
     end
@@ -1212,7 +1212,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       find_call = {:reindex, :grant_requests, [grant_request_id]}
 
       assert find_call ==
-               IndexWorkerMock.calls()
+               IndexWorker.calls()
                |> Enum.find(fn call ->
                  find_call == call
                end)
@@ -1252,7 +1252,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       |> json_response(:ok)
 
       assert {:reindex, :implementations, [^implementation_id_1, ^implementation_id_2]} =
-               Enum.find(IndexWorkerMock.calls(), fn {action, index, _} ->
+               Enum.find(IndexWorker.calls(), fn {action, index, _} ->
                  action == :reindex and index == :implementations
                end)
     end

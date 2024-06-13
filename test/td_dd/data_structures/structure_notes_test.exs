@@ -5,7 +5,7 @@ defmodule TdDd.DataStructures.StructureNotesTest do
 
   alias Ecto.Changeset
   alias TdCache.Redix.Stream
-  alias TdCore.Search.IndexWorkerMock
+  alias TdCore.Search.IndexWorker
   alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.StructureNotes
 
@@ -27,7 +27,7 @@ defmodule TdDd.DataStructures.StructureNotesTest do
     %{id: template_id} = CacheHelpers.insert_template(scope: "dd", content: content)
     data_structure_type = insert(:data_structure_type, template_id: template_id)
 
-    IndexWorkerMock.clear()
+    IndexWorker.clear()
 
     [data_structure_type: data_structure_type]
   end
@@ -159,7 +159,7 @@ defmodule TdDd.DataStructures.StructureNotesTest do
       find_call = {:reindex, :grant_requests, [grant_request_id]}
 
       assert find_call ==
-               IndexWorkerMock.calls()
+               IndexWorker.calls()
                |> Enum.find(fn call ->
                  find_call == call
                end)

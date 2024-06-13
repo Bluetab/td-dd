@@ -4,6 +4,7 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
   alias TdCore.Search.ElasticDocumentProtocol
   alias TdDd.DataStructures.DataStructureVersion
 
+  @default_size 500
   @static_fields [
     "class.raw",
     "confidential.raw",
@@ -53,16 +54,18 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
       assert dynamic_aggs == %{
                "my_domain" => %{
                  meta: %{type: "domain"},
-                 terms: %{field: "note.my_domain", size: 50}
+                 terms: %{field: "note.my_domain", size: @default_size}
                },
-               "my_list" => %{terms: %{field: "note.my_list.raw", size: 50}},
+               "my_list" => %{terms: %{field: "note.my_list.raw", size: @default_size}},
                "my_system" => %{
                  aggs: %{
-                   distinct_search: %{terms: %{field: "note.my_system.external_id.raw", size: 50}}
+                   distinct_search: %{
+                     terms: %{field: "note.my_system.external_id.raw", size: @default_size}
+                   }
                  },
                  nested: %{path: "note.my_system"}
                },
-               "my_user" => %{terms: %{field: "note.my_user.raw", size: 50}}
+               "my_user" => %{terms: %{field: "note.my_user.raw", size: @default_size}}
              }
     end
 
@@ -75,9 +78,9 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
       assert_maps_equal(
         aggs,
         %{
-          "metadata.bar" => %{terms: %{field: "_filters.bar"}},
-          "metadata.baz" => %{terms: %{field: "_filters.baz"}},
-          "metadata.foo" => %{terms: %{field: "_filters.foo"}}
+          "metadata.bar" => %{terms: %{field: "_filters.bar", size: @default_size}},
+          "metadata.baz" => %{terms: %{field: "_filters.baz", size: @default_size}},
+          "metadata.foo" => %{terms: %{field: "_filters.foo", size: @default_size}}
         },
         ["metadata.foo", "metadata.bar", "metadata.baz"]
       )

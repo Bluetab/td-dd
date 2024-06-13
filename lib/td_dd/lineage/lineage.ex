@@ -299,14 +299,7 @@ defmodule TdDd.Lineage do
     end
   end
 
-  def timeout do
-    Application.get_env(:td_dd, __MODULE__)
-    |> Map.Helpers.to_map()
-    |> timeout
-  end
-
-  def timeout(%{timeout: timeout}), do: timeout
-  def timeout(nil), do: 90_000
+  def timeout, do: Application.get_env(:td_dd, __MODULE__)[:timeout]
 
   def launch_task(state, graph_data, user_id, opts) do
     drawing = find_no_pending_drawing(graph_data)

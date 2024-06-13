@@ -9,10 +9,10 @@ defmodule TdDd.Cache.StructureLoader do
 
   alias TdCache.Redix
   alias TdCache.StructureCache
-  alias TdCore.Search.IndexWorker
   alias TdDd.Cache.StructureEntry
   alias TdDd.DataStructures
   alias TdDd.DataStructures.RelationTypes
+  alias TdDd.DataStructures.Search.Indexer
 
   require Logger
 
@@ -51,7 +51,7 @@ defmodule TdDd.Cache.StructureLoader do
   def handle_call({:consume, events}, _from, state) do
     structure_ids = Enum.flat_map(events, &read_structure_ids/1)
     reply = cache_structures(structure_ids)
-    IndexWorker.reindex(:structures, structure_ids)
+    Indexer.reindex(structure_ids)
     {:reply, reply, state}
   end
 

@@ -6,15 +6,16 @@ defmodule TdDq.Rules.RuleResults do
   import Ecto.Query
 
   alias Ecto.Multi
-  alias TdCore.Search.IndexWorker
   alias TdDd.Repo
   alias TdDq.Cache.ImplementationLoader
   alias TdDq.Cache.RuleLoader
   alias TdDq.Events.QualityEvents
   alias TdDq.Executions.Execution
   alias TdDq.Implementations.Implementation
+  alias TdDq.Implementations.Search.Indexer, as: ImplementationsIndexer
   alias TdDq.Rules.Audit
   alias TdDq.Rules.RuleResult
+  alias TdDq.Rules.Search.Indexer, as: RulesIndexer
 
   require Logger
 
@@ -219,11 +220,11 @@ defmodule TdDq.Rules.RuleResults do
         rule: %{id: rule_id},
         implementation: %{id: implementation_id}
       } ->
-        IndexWorker.reindex(:rules, [rule_id])
-        IndexWorker.reindex(:implementations, [implementation_id])
+        RulesIndexer.reindex([rule_id])
+        ImplementationsIndexer.reindex([implementation_id])
 
       %{implementation: %{id: implementation_id}} ->
-        IndexWorker.reindex(:implementations, implementation_id)
+        ImplementationsIndexer.reindex([implementation_id])
     end
 
     result

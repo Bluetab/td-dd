@@ -6,11 +6,11 @@ defmodule TdDq.Rules.RuleResults.BulkLoad do
   import Ecto.Query
 
   alias Ecto.Multi
-  alias TdCore.Search.IndexWorker
   alias TdDd.Repo
   alias TdDq.Cache.ImplementationLoader
   alias TdDq.Cache.RuleLoader
   alias TdDq.Implementations.Implementation
+  alias TdDq.Implementations.Search.Indexer
   alias TdDq.Rules.Audit
   alias TdDq.Rules.RuleResult
   alias TdDq.Rules.RuleResults
@@ -45,7 +45,7 @@ defmodule TdDq.Rules.RuleResults.BulkLoad do
     with {:ok, %{results: results}} <- res,
          {rule_ids, implementation_ids} <- split_results_by_has_rule_id(results) do
       RuleLoader.refresh(rule_ids)
-      IndexWorker.reindex(:implementations, implementation_ids)
+      Indexer.reindex(implementation_ids)
       res
     end
   end

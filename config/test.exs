@@ -19,6 +19,7 @@ config :td_dd, TdDd.Repo,
   pool_size: 1
 
 config :td_core, TdCore.Search.Cluster, api: ElasticsearchMock
+config :td_core, TdCore.Search.IndexWorker, TdCore.Search.IndexWorkerMock
 
 config :td_dd, :vault,
   token: "vault_secret_token1234",

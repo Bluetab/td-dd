@@ -5,6 +5,7 @@ defmodule TdDq.Implementations.ElasticDocument do
   """
 
   alias Elasticsearch.Document
+  alias TdCore.Search.Cluster
   alias TdCore.Search.ElasticDocument
   alias TdCore.Search.ElasticDocumentProtocol
   alias TdDq.Events.QualityEvents
@@ -466,7 +467,7 @@ defmodule TdDq.Implementations.ElasticDocument do
         goal: %{type: "long"},
         minimum: %{type: "long"},
         result_type: %{type: "text", fields: %{raw: %{type: "keyword"}}},
-        version: %{type: "short"},
+        version: %{type: "long"},
         status: %{type: "keyword"}
       }
 
@@ -478,19 +479,35 @@ defmodule TdDq.Implementations.ElasticDocument do
     def aggregations(_) do
       %{
         "execution_result_info.result_text" => %{
-          terms: %{field: "execution_result_info.result_text.raw", size: 50}
+          terms: %{
+            field: "execution_result_info.result_text.raw",
+            size: Cluster.get_size_field("execution_result_info.result_text")
+          }
         },
-        "rule" => %{terms: %{field: "rule.name.raw", size: 50}},
-        "source_external_id" => %{terms: %{field: "structure_aliases.raw", size: 50}},
-        "status" => %{terms: %{field: "status"}},
-        "result_type.raw" => %{terms: %{field: "result_type.raw"}},
-        "taxonomy" => %{terms: %{field: "domain_ids", size: 500}},
+        "rule" => %{terms: %{field: "rule.name.raw", size: Cluster.get_size_field("rule")}},
+        "source_external_id" => %{
+          terms: %{
+            field: "structure_aliases.raw",
+            size: Cluster.get_size_field("source_external_id")
+          }
+        },
+        "status" => %{terms: %{field: "status", size: Cluster.get_size_field("status")}},
+        "result_type.raw" => %{
+          terms: %{field: "result_type.raw", size: Cluster.get_size_field("result_type.raw")}
+        },
+        "taxonomy" => %{terms: %{field: "domain_ids", size: Cluster.get_size_field("taxonomy")}},
         "structure_taxonomy" => %{
-          terms: %{field: "structure_domain_ids", size: 500},
+          terms: %{
+            field: "structure_domain_ids",
+            size: Cluster.get_size_field("structure_taxonomy")
+          },
           meta: %{type: "domain"}
         },
         "linked_structures_ids" => %{
-          terms: %{field: "linked_structures_ids", size: 50},
+          terms: %{
+            field: "linked_structures_ids",
+            size: Cluster.get_size_field("linked_structures_ids")
+          },
           meta: %{type: "search", index: "structures"}
         }
       }

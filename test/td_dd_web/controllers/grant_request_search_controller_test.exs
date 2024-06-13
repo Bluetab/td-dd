@@ -3,17 +3,17 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
 
   import Mox
 
-  alias TdCore.Search.IndexWorkerMock
+  alias TdCore.Search.IndexWorker
   alias TdDd.DataStructures.Hierarchy
 
   @moduletag sandbox: :shared
 
-  @query_size 1000
+  @query_size 20
 
   setup do
     start_supervised!(TdDd.Search.StructureEnricher)
 
-    IndexWorkerMock.clear()
+    IndexWorker.clear()
 
     :ok
   end
@@ -200,7 +200,7 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
     for role <- ["admin", "service"] do
       @tag authentication: [role: role]
       test "reindex all grant requests on ElasticSearch for #{role} role", %{conn: conn} do
-        IndexWorkerMock.clear()
+        IndexWorker.clear()
 
         Enum.map(1..5, fn _ ->
           insert(:grant_request, group: insert(:grant_request_group))
@@ -210,20 +210,20 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
                |> get(Routes.grant_request_search_path(conn, :reindex_all))
                |> response(:accepted)
 
-        assert [{:reindex, :grant_requests, :all}] = IndexWorkerMock.calls()
+        assert [{:reindex, :grant_requests, :all}] = IndexWorker.calls()
       end
     end
 
     @tag authentication: [role: "non_admin"]
     test "user without admin privileges cannot reindex all grant requests", %{conn: conn} do
-      IndexWorkerMock.clear()
+      IndexWorker.clear()
       insert(:grant_request, group: insert(:grant_request_group))
 
       assert conn
              |> get(Routes.grant_request_search_path(conn, :reindex_all))
              |> response(:forbidden)
 
-      assert [] = IndexWorkerMock.calls()
+      assert [] = IndexWorker.calls()
     end
   end
 

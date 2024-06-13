@@ -6,8 +6,8 @@ defmodule Truedat.Search.QueryTest do
   @match_all %{match_all: %{}}
   @match_none %{match_none: %{}}
   @aggs %{
-    "status" => %{terms: %{field: "status.raw", size: 50}},
-    "type" => %{terms: %{field: "type.raw", size: 50}}
+    "status" => %{terms: %{field: "status.raw", size: 500}},
+    "type" => %{terms: %{field: "type.raw", size: 500}}
   }
 
   describe "build_query/1" do

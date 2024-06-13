@@ -305,14 +305,25 @@ defmodule TdDqWeb.ImplementationController do
     {content_labels, params} = Map.pop(params, "content_labels", %{})
     {lang, params} = Map.pop(params, "lang", @default_lang)
 
-    implementations =
-      params
-      |> Search.search(claims)
+    %{results: implementations} = search_all_implementations(params, claims)
 
-    conn
-    |> put_resp_content_type("text/csv", "utf-8")
-    |> put_resp_header("content-disposition", "attachment; filename=\"implementations.zip\"")
-    |> send_resp(:ok, Download.to_csv(implementations, header_labels, content_labels, lang))
+    case implementations do
+      [] ->
+        send_resp(conn, :no_content, "")
+
+      _ ->
+        conn
+        |> put_resp_content_type("text/csv", "utf-8")
+        |> put_resp_header("content-disposition", "attachment; filename=\"implementations.zip\"")
+        |> send_resp(:ok, Download.to_csv(implementations, header_labels, content_labels, lang))
+    end
+  end
+
+  defp search_all_implementations(params, claims) do
+    params
+    |> Map.put("without", "deleted_at")
+    |> Map.drop(["page", "size"])
+    |> Search.scroll_implementations(claims)
   end
 
   defp add_last_rule_result(%Implementation{} = implementation) do
