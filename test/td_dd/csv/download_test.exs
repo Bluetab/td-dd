@@ -47,7 +47,7 @@ defmodule TdDd.CSV.DownloadTest do
         name: "1. 4. 4 Primas Bajas (grafico)",
         description: "Gráfico de evolución mensual de la prima",
         template: %{"name" => template_name},
-        note: %{field_name => ["field_value"]},
+        note: %{field_name => %{"value" => ["field_value"], "origin" => "user"}},
         domain: %{"external_id" => "ex_id_1", "name" => domain_name},
         inserted_at: "2018-05-05",
         external_id: "myext_292929",
@@ -97,7 +97,7 @@ defmodule TdDd.CSV.DownloadTest do
         name: "TechName_1",
         description: "Loren impusm",
         template: %{"name" => template_name},
-        note: %{field_name => ["field_value"]},
+        note: %{field_name => %{"value" => ["field_value"], "origin" => "user"}},
         domain: %{"external_id" => "ex_id_1", "name" => domain_name},
         inserted_at: "2023-05-15",
         external_id: "myext_123456",
@@ -115,7 +115,10 @@ defmodule TdDd.CSV.DownloadTest do
         alias: "Alias Name 2",
         description: "Lorem Ipsum",
         template: %{"name" => template_name},
-        note: %{field_name => ["field_value"], "alias" => "Alias Name 2"},
+        note: %{
+          field_name => %{"value" => ["field_value"], "origin" => "user"},
+          "alias" => %{"value" => "Alias Name 2", "origin" => "user"}
+        },
         domain: %{"external_id" => "ex_id_2", "name" => domain_name},
         inserted_at: "2023-05-15",
         external_id: "myext_234567",
@@ -201,7 +204,7 @@ defmodule TdDd.CSV.DownloadTest do
         name: "1. 4. 4 Primas Bajas (grafico)",
         description: "Gráfico de evolución mensual de la prima",
         template: %{"name" => template_name},
-        note: %{field_name => ["1927_50", "1927_51"]},
+        note: %{field_name => %{"value" => ["1927_50", "1927_51"], "origin" => "user"}},
         domain: %{"external_id" => "ex_id_1", "name" => domain_name},
         inserted_at: "2018-05-05",
         external_id: "myext_292929",
@@ -279,8 +282,11 @@ defmodule TdDd.CSV.DownloadTest do
         description: "Gráfico de evolución mensual de la prima",
         template: %{"name" => template_name},
         note: %{
-          field_name => ["field_value"],
-          "domain_inside_note_field" => [domain_inside_note_1_id, domain_inside_note_2_id]
+          field_name => %{"value" => ["field_value"], "origin" => "user"},
+          "domain_inside_note_field" => %{
+            "value" => [domain_inside_note_1_id, domain_inside_note_2_id],
+            "origin" => "user"
+          }
         },
         domain_ids: [domain_id, subdomain_id],
         domain: %{"external_id" => "ex_id_1", "name" => domain_name},
@@ -348,9 +354,9 @@ defmodule TdDd.CSV.DownloadTest do
         description: "Gráfico de evolución mensual de la prima",
         template: %{"name" => template_name},
         note: %{
-          "field_numbers" => [1, 2],
-          "field_texts" => ["multi", "field"],
-          "field_text" => ["field"]
+          "field_numbers" => %{"value" => [1, 2], "origin" => "user"},
+          "field_texts" => %{"value" => ["multi", "field"], "origin" => "user"},
+          "field_text" => %{"value" => ["field"], "origin" => "user"}
         },
         domain: %{"external_id" => "ex_id_1", "name" => domain_name},
         inserted_at: "2018-05-05",
@@ -422,9 +428,9 @@ defmodule TdDd.CSV.DownloadTest do
         description: "Gráfico de evolución mensual de la prima",
         template: %{"name" => template_name},
         note: %{
-          "field_numbers" => [1, 2],
-          "field_texts" => ["multi", "field"],
-          "field_text" => ["field"]
+          "field_numbers" => %{"value" => [1, 2], "origin" => "user"},
+          "field_texts" => %{"value" => ["multi", "field"], "origin" => "user"},
+          "field_text" => %{"value" => ["field"], "origin" => "user"}
         },
         domain: %{"external_id" => "ex_id_1", "name" => domain_name},
         inserted_at: "2018-05-05",
@@ -469,7 +475,7 @@ defmodule TdDd.CSV.DownloadTest do
           name: "name",
           path: ["foo", "bar"],
           template: %{"name" => "template"},
-          note: %{"field_name" => ["field_value"]},
+          note: %{"field_name" => %{"value" => ["field_value"], "origin" => "user"}},
           external_id: "ext_id",
           type: "type"
         }
@@ -527,8 +533,11 @@ defmodule TdDd.CSV.DownloadTest do
         path: ["foo", "bar"],
         template: %{"name" => "template"},
         note: %{
-          "field_name" => ["field_value"],
-          "domain_inside_note_field" => [domain_inside_note_1_id, domain_inside_note_2_id]
+          "field_name" => %{"value" => ["field_value"], "origin" => "user"},
+          "domain_inside_note_field" => %{
+            "value" => [domain_inside_note_1_id, domain_inside_note_2_id],
+            "origin" => "user"
+          }
         },
         external_id: "ext_id",
         type: "type",
@@ -541,7 +550,10 @@ defmodule TdDd.CSV.DownloadTest do
         alias: "Alias Name 2",
         path: ["foo", "bar"],
         template: %{"name" => "template"},
-        note: %{"field_name" => ["field_value"], "alias" => "Alias Name 2"},
+        note: %{
+          "field_name" => %{"value" => ["field_value"], "origin" => "user"},
+          "alias" => %{"value" => "Alias Name 2", "origin" => "user"}
+        },
         external_id: "ext_id",
         type: "type",
         data_structure_id: 8
@@ -559,8 +571,8 @@ defmodule TdDd.CSV.DownloadTest do
       assert Download.to_editable_csv([structure_1, structure_2], structure_url_schema, @lang) ==
                """
                external_id;name;type;path;tech_name;alias_name;link_to_structure;field_name;domain_inside_note_field\r
-               #{structure_1.external_id};#{structure_1.name};#{structure_1.type};#{Enum.join(structure_1.path, " > ")};#{structure_1.name};;#{structure_1_url_schema_converted};#{Map.get(structure_1.note, "field_name")};domain_inside_note_1_external_id|domain_inside_note_2_external_id\r
-               #{structure_2.external_id};#{structure_2.name};#{structure_2.type};#{Enum.join(structure_2.path, " > ")};#{structure_2.original_name};#{structure_2.alias};#{structure_2_url_schema_converted};#{Map.get(structure_2.note, "field_name")};\r
+               #{structure_1.external_id};#{structure_1.name};#{structure_1.type};#{Enum.join(structure_1.path, " > ")};#{structure_1.name};;#{structure_1_url_schema_converted};#{Map.get(Map.get(structure_1.note, "field_name"), "value")};domain_inside_note_1_external_id|domain_inside_note_2_external_id\r
+               #{structure_2.external_id};#{structure_2.name};#{structure_2.type};#{Enum.join(structure_2.path, " > ")};#{structure_2.original_name};#{structure_2.alias};#{structure_2_url_schema_converted};#{Map.get(Map.get(structure_2.note, "field_name"), "value")};\r
                """
     end
 
@@ -579,7 +591,7 @@ defmodule TdDd.CSV.DownloadTest do
             "fields" => [
               %{
                 "cardinality" => "?",
-                "default" => "",
+                "default" => %{"value" => "", "origin" => "default"},
                 "label" => "label_i18n_test.dropdown.fixed",
                 "name" => "i18n_test.dropdown.fixed",
                 "subscribable" => false,
@@ -594,7 +606,7 @@ defmodule TdDd.CSV.DownloadTest do
               },
               %{
                 "cardinality" => "?",
-                "default" => "",
+                "default" => %{"value" => "", "origin" => "default"},
                 "label" => "label_i18n_test_no_translate",
                 "name" => "i18n_test_no_translate",
                 "type" => "string",
@@ -603,7 +615,7 @@ defmodule TdDd.CSV.DownloadTest do
               },
               %{
                 "cardinality" => "?",
-                "default" => "",
+                "default" => %{"value" => "", "origin" => "default"},
                 "label" => "label_i18n_test.radio.fixed",
                 "name" => "i18n_test.radio.fixed",
                 "subscribable" => false,
@@ -618,7 +630,7 @@ defmodule TdDd.CSV.DownloadTest do
               },
               %{
                 "cardinality" => "*",
-                "default" => "",
+                "default" => %{"value" => "", "origin" => "default"},
                 "label" => "label_i18n_test.checkbox.fixed_tuple",
                 "name" => "i18n_test.checkbox.fixed_tuple",
                 "subscribable" => false,
@@ -665,10 +677,13 @@ defmodule TdDd.CSV.DownloadTest do
           path: ["foo", "bar"],
           template: %{"name" => template_name},
           note: %{
-            "i18n_test.dropdown.fixed" => "pear",
-            "i18n_test_no_translate" => "Test no translate",
-            "i18n_test.radio.fixed" => "banana",
-            "i18n_test.checkbox.fixed_tuple" => ["option_1", "option_2"]
+            "i18n_test.dropdown.fixed" => %{"value" => "pear", "origin" => "user"},
+            "i18n_test_no_translate" => %{"value" => "Test no translate", "origin" => "user"},
+            "i18n_test.radio.fixed" => %{"value" => "banana", "origin" => "user"},
+            "i18n_test.checkbox.fixed_tuple" => %{
+              "value" => ["option_1", "option_2"],
+              "origin" => "user"
+            }
           },
           external_id: "ext_id",
           type: "type"
@@ -733,10 +748,10 @@ defmodule TdDd.CSV.DownloadTest do
           path: ["foo", "bar"],
           template: %{"name" => "template"},
           note: %{
-            "field_numbers" => [1, 2],
-            "field_texts" => ["multi", "field"],
-            "field_text" => ["field"],
-            "field_domains" => [domain_id_1, domain_id_2]
+            "field_numbers" => %{"value" => [1, 2], "origin" => "user"},
+            "field_texts" => %{"value" => ["multi", "field"], "origin" => "user"},
+            "field_text" => %{"value" => ["field"], "origin" => "user"},
+            "field_domains" => %{"value" => [domain_id_1, domain_id_2], "origin" => "user"}
           },
           external_id: "ext_id",
           type: "type"
@@ -811,8 +826,8 @@ defmodule TdDd.CSV.DownloadTest do
           name: "name1",
           path: ["foo", "bar"],
           note: %{
-            "field1" => "1",
-            "field_dup" => "dup"
+            "field1" => %{"value" => "1", "origin" => "user"},
+            "field_dup" => %{"value" => "dup", "origin" => "user"}
           },
           external_id: "ext_id1",
           type: "type1"
@@ -821,8 +836,8 @@ defmodule TdDd.CSV.DownloadTest do
           name: "name2",
           path: ["foo", "bar"],
           note: %{
-            "field2" => "2",
-            "field_dup" => "dup"
+            "field2" => %{"value" => "2", "origin" => "user"},
+            "field_dup" => %{"value" => "dup", "origin" => "user"}
           },
           external_id: "ext_id2",
           type: "type2"

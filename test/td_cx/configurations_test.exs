@@ -5,19 +5,22 @@ defmodule TdCx.ConfigurationsTest do
   alias TdCx.Vault
 
   @valid_attrs %{
-    content: %{"field2" => "mandatory"},
+    content: %{"field2" => %{"value" => "mandatory", "origin" => "user"}},
     external_id: "some external_id",
     type: "config"
   }
   @valid_secret_attrs %{
-    content: %{"secret_field" => "secret_value", "public_field" => "public_value"},
+    content: %{
+      "secret_field" => %{"value" => "secret_value", "origin" => "user"},
+      "public_field" => %{"value" => "public_value", "origin" => "user"}
+    },
     external_id: "some secret external_id",
     type: "secret_config"
   }
   @update_attrs %{
-    content: %{"field2" => "updated mandatory"}
+    content: %{"field2" => %{"value" => "updated mandatory", "origin" => "user"}}
   }
-  @invalid_attrs %{content: %{"field3" => "foo"}}
+  @invalid_attrs %{content: %{"field3" => %{"value" => "foo", "origin" => "user"}}}
   @app_admin_template %{
     name: "config",
     label: "app-admin",
@@ -109,7 +112,12 @@ defmodule TdCx.ConfigurationsTest do
       {:ok, %Configuration{} = configuration} =
         Configurations.create_configuration(@valid_secret_attrs)
 
-      assert %{content: %{"public_field" => "public_value", "secret_field" => "secret_value"}} =
+      assert %{
+               content: %{
+                 "public_field" => %{"value" => "public_value", "origin" => "user"},
+                 "secret_field" => %{"value" => "secret_value", "origin" => "user"}
+               }
+             } =
                Configurations.get_configuration_by_external_id!(claims, configuration.external_id)
 
       claims = build(:claims, user_name: @valid_secret_attrs.type, role: "user")
@@ -131,7 +139,7 @@ defmodule TdCx.ConfigurationsTest do
       assert {:ok, %Configuration{} = configuration} =
                Configurations.create_configuration(@valid_attrs)
 
-      assert configuration.content == %{"field2" => "mandatory"}
+      assert configuration.content == %{"field2" => %{"value" => "mandatory", "origin" => "user"}}
 
       assert configuration.external_id == "some external_id"
       assert configuration.type == "config"
@@ -144,12 +152,20 @@ defmodule TdCx.ConfigurationsTest do
       assert {:ok, %Configuration{} = configuration} =
                Configurations.create_configuration(@valid_secret_attrs)
 
-      assert configuration.content == %{"public_field" => "public_value"}
+      assert configuration.content == %{
+               "public_field" => %{"value" => "public_value", "origin" => "user"}
+             }
+
       assert configuration.external_id == "some secret external_id"
       assert configuration.type == "secret_config"
       refute is_nil(configuration.secrets_key)
 
-      assert %{content: %{"public_field" => "public_value", "secret_field" => "secret_value"}} =
+      assert %{
+               content: %{
+                 "public_field" => %{"value" => "public_value", "origin" => "user"},
+                 "secret_field" => %{"value" => "secret_value", "origin" => "user"}
+               }
+             } =
                Configurations.get_configuration_by_external_id!(claims, configuration.external_id)
     end
 
@@ -172,7 +188,9 @@ defmodule TdCx.ConfigurationsTest do
       assert {:ok, %Configuration{} = configuration} =
                Configurations.update_configuration(configuration, @update_attrs)
 
-      assert configuration.content == %{"field2" => "updated mandatory"}
+      assert configuration.content == %{
+               "field2" => %{"value" => "updated mandatory", "origin" => "user"}
+             }
     end
 
     test "update_configuration/2 with valid data updates the configuration with secrets" do
@@ -182,14 +200,16 @@ defmodule TdCx.ConfigurationsTest do
         Configurations.create_configuration(@valid_secret_attrs)
 
       updated_content = %{
-        "secret_field" => "updated secret_value",
-        "public_field" => "updated public_value"
+        "secret_field" => %{"value" => "updated secret_value", "origin" => "user"},
+        "public_field" => %{"value" => "updated public_value", "origin" => "user"}
       }
 
       assert {:ok, %Configuration{} = configuration} =
                Configurations.update_configuration(configuration, %{content: updated_content})
 
-      assert configuration.content == %{"public_field" => "updated public_value"}
+      assert configuration.content == %{
+               "public_field" => %{"value" => "updated public_value", "origin" => "user"}
+             }
 
       assert %{content: ^updated_content} =
                Configurations.get_configuration_by_external_id!(claims, configuration.external_id)
@@ -203,14 +223,14 @@ defmodule TdCx.ConfigurationsTest do
         Configurations.create_configuration(@valid_attrs)
 
       updated_content = %{
-        "field2" => "updated field2"
+        "field2" => %{"value" => "updated field2", "origin" => "user"}
       }
 
       assert {:ok, %Configuration{content: ^updated_content} = configuration} =
                Configurations.update_configuration(configuration, %{content: updated_content})
 
       updated_content = %{
-        "public_field" => "updated public_value"
+        "public_field" => %{"value" => "updated public_value", "origin" => "user"}
       }
 
       assert {:ok,
@@ -222,8 +242,8 @@ defmodule TdCx.ConfigurationsTest do
                })
 
       updated_content = %{
-        "secret_field" => "updated secret_value",
-        "public_field" => "updated public_value"
+        "secret_field" => %{"value" => "updated secret_value", "origin" => "user"},
+        "public_field" => %{"value" => "updated public_value", "origin" => "user"}
       }
 
       secrets_key = "config/#{type}/#{external_id}"
@@ -260,7 +280,8 @@ defmodule TdCx.ConfigurationsTest do
       {:ok, %Configuration{secrets_key: secrets_key} = configuration} =
         Configurations.create_configuration(@valid_secret_attrs)
 
-      assert %{"secret_field" => "secret_value"} == Vault.read_secrets(secrets_key)
+      assert %{"secret_field" => %{"value" => "secret_value", "origin" => "user"}} ==
+               Vault.read_secrets(secrets_key)
 
       assert {:ok, %Configuration{}} = Configurations.delete_configuration(configuration)
 
@@ -330,7 +351,12 @@ defmodule TdCx.ConfigurationsTest do
       without_key: without_key
     } do
       c1 = build(:configuration, type: without_key.name)
-      c2 = build(:configuration, type: with_key.name, content: %{"secret_key" => nil})
+
+      c2 =
+        build(:configuration,
+          type: with_key.name,
+          content: %{"secret_key" => %{"value" => nil, "origin" => "user"}}
+        )
 
       {:ok, c1} = Configurations.create_configuration(Map.from_struct(c1))
       {:ok, c2} = Configurations.create_configuration(Map.from_struct(c2))
@@ -353,7 +379,12 @@ defmodule TdCx.ConfigurationsTest do
         "resource" => %{"dashboard" => 1}
       }
 
-      c1 = build(:configuration, type: with_key.name, content: %{"secret_key" => "foo"})
+      c1 =
+        build(:configuration,
+          type: with_key.name,
+          content: %{"secret_key" => %{"value" => "foo", "origin" => "user"}}
+        )
+
       assert {:ok, c1} = Configurations.create_configuration(Map.from_struct(c1))
       assert {:ok, token} = Configurations.sign(c1, payload)
 

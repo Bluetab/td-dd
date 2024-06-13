@@ -147,13 +147,17 @@ defmodule TdCx.Sources do
         where(q, [s], is_nil(s.deleted_at))
 
       {:alias, source_alias}, q ->
-        where(q, [s], fragment("(?) @> ?::jsonb", s.config, ^%{alias: source_alias}))
+        where(q, [s], fragment("(?) @> ?::jsonb", s.config, ^%{alias: %{value: source_alias}}))
 
       {:aliases, source_alias}, q ->
-        where(q, [s], fragment("(?) @> ?::jsonb", s.config, ^%{aliases: [source_alias]}))
+        where(
+          q,
+          [s],
+          fragment("(?) @> ?::jsonb", s.config, ^%{aliases: %{value: [source_alias]}})
+        )
 
       {:job_types, type}, q ->
-        where(q, [s], fragment("(?) @> ?::jsonb", s.config, ^%{job_types: [type]}))
+        where(q, [s], fragment("(?) @> ?::jsonb", s.config, ^%{job_types: %{value: [type]}}))
 
       {:with_latest_event, true}, q ->
         from s in q,
@@ -461,7 +465,8 @@ defmodule TdCx.Sources do
     Source.changeset(source, %{})
   end
 
-  def job_types(%Source{config: %{"job_types" => job_types}}) when is_list(job_types) do
+  def job_types(%Source{config: %{"job_types" => %{"value" => job_types}}})
+      when is_list(job_types) do
     Enum.uniq(job_types)
   end
 
@@ -472,8 +477,8 @@ defmodule TdCx.Sources do
     source_id
     |> get_source()
     |> case do
-      %{config: %{"alias" => al}} -> [al]
-      %{config: %{"aliases" => aliases}} -> aliases
+      %{config: %{"alias" => %{"value" => al}}} -> [al]
+      %{config: %{"aliases" => %{"value" => aliases}}} -> aliases
       _ -> []
     end
   end

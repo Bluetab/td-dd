@@ -415,7 +415,11 @@ defmodule TdDd.DataStructuresTest do
 
       insert(:structure_note,
         data_structure: data_structure,
-        df_content: %{"string" => "initial", "list" => "one", "foo" => "bar"},
+        df_content: %{
+          "string" => %{"value" => "initial", "origin" => "user"},
+          "list" => %{"value" => "one", "origin" => "user"},
+          "foo" => %{"value" => "bar", "origin" => "user"}
+        },
         status: :published
       )
 
@@ -461,7 +465,11 @@ defmodule TdDd.DataStructuresTest do
       assert %{data_structure: data_structure} = dsv
       assert %{search_content: search_content} = data_structure
       assert %{alias: "baz"} = data_structure
-      assert search_content == %{"string" => "initial", "list" => "one"}
+
+      assert search_content == %{
+               "string" => %{"value" => "initial", "origin" => "user"},
+               "list" => %{"value" => "one", "origin" => "user"}
+             }
     end
 
     test "returns values suitable for bulk-indexing encoding", %{
@@ -1677,16 +1685,31 @@ defmodule TdDd.DataStructuresTest do
 
   describe "profile_source/1" do
     setup do
-      s1 = insert(:source, config: %{"job_types" => ["catalog", "quality", "profile"]})
+      s1 =
+        insert(:source,
+          config: %{
+            "job_types" => %{"value" => ["catalog", "quality", "profile"], "origin" => "user"}
+          }
+        )
+
       s2 = insert(:source)
 
       s3 =
         insert(:source,
           external_id: "foo",
-          config: %{"job_types" => ["catalog"], "alias" => "foo"}
+          config: %{
+            "job_types" => %{"value" => ["catalog"], "origin" => "user"},
+            "alias" => %{"value" => "foo", "origin" => "user"}
+          }
         )
 
-      s4 = insert(:source, config: %{"job_types" => ["profile"], "alias" => "foo"})
+      s4 =
+        insert(:source,
+          config: %{
+            "job_types" => %{"value" => ["profile"], "origin" => "user"},
+            "alias" => %{"value" => "foo", "origin" => "user"}
+          }
+        )
 
       v1 = insert(:data_structure_version, data_structure: insert(:data_structure, source: s1))
       v2 = insert(:data_structure_version, data_structure: insert(:data_structure, source: s2))

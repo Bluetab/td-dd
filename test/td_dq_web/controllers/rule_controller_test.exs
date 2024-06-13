@@ -449,7 +449,7 @@ defmodule TdDqWeb.RuleControllerTest do
         string_params_for(:rule,
           domain_id: domain.id,
           df_name: template_name,
-          df_content: %{"identifier_field" => ""}
+          df_content: %{"identifier_field" => %{"value" => "", "origin" => "user"}}
         )
         |> Map.delete("business_concept_id")
 

@@ -43,6 +43,15 @@ defmodule TdDd.GrantRequests.ElasticDocument do
         grant_request
         |> Map.get(:metadata)
         |> Format.search_values(template)
+        |> case do
+          metad when is_map(metad) ->
+            metad
+            |> Enum.map(fn {key, %{"value" => value}} -> {key, value} end)
+            |> Map.new()
+
+          metad ->
+            metad
+        end
 
       %{
         id: grant_request.id,

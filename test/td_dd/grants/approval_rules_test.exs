@@ -117,7 +117,7 @@ defmodule TdDd.Grants.ApprovalRulesTest do
       grant_request =
         insert(:grant_request,
           domain_ids: [domain_id],
-          metadata: %{"foo" => "bar"},
+          metadata: %{"foo" => %{"value" => "bar", "origin" => "user"}},
           all_pending_roles: [@approval_role]
         )
 
@@ -135,7 +135,7 @@ defmodule TdDd.Grants.ApprovalRulesTest do
       grant_request =
         insert(:grant_request,
           domain_ids: [domain_id],
-          metadata: %{"foo" => "not bar"},
+          metadata: %{"foo" => %{"value" => "not bar", "origin" => "user"}},
           all_pending_roles: [@approval_role]
         )
 
@@ -152,7 +152,7 @@ defmodule TdDd.Grants.ApprovalRulesTest do
 
       insert(:structure_note,
         data_structure: data_structure,
-        df_content: %{"foo" => "bar"},
+        df_content: %{"foo" => %{"value" => "bar", "origin" => "user"}},
         status: :published
       )
 
@@ -170,7 +170,7 @@ defmodule TdDd.Grants.ApprovalRulesTest do
         insert(:grant_request,
           data_structure: data_structure,
           domain_ids: domain_ids,
-          metadata: %{"foo" => "bar"},
+          metadata: %{"foo" => %{"value" => "bar", "origin" => "user"}},
           all_pending_roles: [@approval_role]
         )
 

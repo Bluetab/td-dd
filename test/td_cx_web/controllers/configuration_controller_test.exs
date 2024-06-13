@@ -67,18 +67,18 @@ defmodule TdCxWeb.ConfigurationControllerTest do
   }
 
   @create_attrs %{
-    content: %{"field1" => "value"},
+    content: %{"field1" => %{"value" => "value", "origin" => "user"}},
     external_id: "some external_id",
     type: "config"
   }
 
   @update_attrs %{
-    content: %{"field1" => "updated value"},
+    content: %{"field1" => %{"value" => "updated value", "origin" => "user"}},
     external_id: "external_id"
   }
 
   @invalid_update_attrs %{
-    content: %{"non_existent" => "field"}
+    content: %{"non_existent" => %{"value" => "field", "origin" => "user"}}
   }
 
   describe "index" do
@@ -90,7 +90,7 @@ defmodule TdCxWeb.ConfigurationControllerTest do
 
       assert [
                %{
-                 "content" => %{"field1" => "value"},
+                 "content" => %{"field1" => %{"value" => "value", "origin" => "user"}},
                  "external_id" => "external_id",
                  "type" => "config"
                },
@@ -100,7 +100,10 @@ defmodule TdCxWeb.ConfigurationControllerTest do
                  "type" => "another_config"
                },
                %{
-                 "content" => %{"field1" => "value", "secret_field" => "secret value"},
+                 "content" => %{
+                   "field1" => %{"value" => "value", "origin" => "user"},
+                   "secret_field" => "secret value"
+                 },
                  "external_id" => "secret_external_id",
                  "type" => "secret_config"
                }
@@ -113,7 +116,7 @@ defmodule TdCxWeb.ConfigurationControllerTest do
 
       assert [
                %{
-                 "content" => %{"field1" => "value"},
+                 "content" => %{"field1" => %{"value" => "value", "origin" => "user"}},
                  "external_id" => "external_id",
                  "type" => "config"
                }
@@ -129,7 +132,7 @@ defmodule TdCxWeb.ConfigurationControllerTest do
       conn = get(conn, Routes.configuration_path(conn, :show, "external_id"))
 
       assert %{
-               "content" => %{"field1" => "value"},
+               "content" => %{"field1" => %{"value" => "value", "origin" => "user"}},
                "external_id" => "external_id",
                "type" => "config"
              } = json_response(conn, 200)["data"]
@@ -140,7 +143,10 @@ defmodule TdCxWeb.ConfigurationControllerTest do
       conn = get(conn, Routes.configuration_path(conn, :show, "secret_external_id"))
 
       assert %{
-               "content" => %{"field1" => "value", "secret_field" => "secret value"},
+               "content" => %{
+                 "field1" => %{"value" => "value", "origin" => "user"},
+                 "secret_field" => "secret value"
+               },
                "external_id" => "secret_external_id",
                "type" => "secret_config"
              } = json_response(conn, 200)["data"]
@@ -159,7 +165,7 @@ defmodule TdCxWeb.ConfigurationControllerTest do
 
       assert %{
                "id" => ^id,
-               "content" => %{"field1" => "value"},
+               "content" => %{"field1" => %{"value" => "value", "origin" => "user"}},
                "external_id" => ^external_id,
                "type" => "config",
                "secrets_key" => nil
@@ -205,7 +211,7 @@ defmodule TdCxWeb.ConfigurationControllerTest do
 
       assert %{
                "id" => ^id,
-               "content" => %{"field1" => "updated value"},
+               "content" => %{"field1" => %{"value" => "updated value", "origin" => "user"}},
                "external_id" => ^external_id,
                "type" => "config",
                "secrets_key" => nil
@@ -300,7 +306,12 @@ defmodule TdCxWeb.ConfigurationControllerTest do
       with_key = CacheHelpers.insert_template(with_key)
       without_key = CacheHelpers.insert_template(without_key)
 
-      c1 = build(:configuration, type: with_key.name, content: %{"secret_key" => secret_key})
+      c1 =
+        build(:configuration,
+          type: with_key.name,
+          content: %{"secret_key" => %{"value" => secret_key, "origin" => "user"}}
+        )
+
       c2 = build(:configuration, type: without_key.name)
 
       {:ok, c1} = Configurations.create_configuration(Map.from_struct(c1))
@@ -360,7 +371,10 @@ defmodule TdCxWeb.ConfigurationControllerTest do
 
     [
       configuration:
-        insert(:configuration, content: %{"field1" => "value"}, external_id: "external_id")
+        insert(:configuration,
+          content: %{"field1" => %{"value" => "value", "origin" => "user"}},
+          external_id: "external_id"
+        )
     ]
   end
 
@@ -368,7 +382,10 @@ defmodule TdCxWeb.ConfigurationControllerTest do
     CacheHelpers.insert_template(@secret_template)
 
     insert(:configuration,
-      content: %{"field1" => "value", "secret_field" => "secret value"},
+      content: %{
+        "field1" => %{"value" => "value", "origin" => "user"},
+        "secret_field" => "secret value"
+      },
       external_id: "secret_external_id",
       type: "secret_config"
     )

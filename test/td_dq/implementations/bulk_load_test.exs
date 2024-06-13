@@ -116,7 +116,10 @@ defmodule TdDq.Implementations.BulkLoadTest do
 
       assert {:ok, %{ids: [id1, id2], errors: []}} = BulkLoad.bulk_load(imp, claims)
 
-      df_content = %{"string" => "initial", "list" => "one"}
+      df_content = %{
+        "string" => %{"value" => "initial", "origin" => "file"},
+        "list" => %{"value" => "one", "origin" => "file"}
+      }
 
       assert %{df_content: ^df_content} = Implementations.get_implementation!(id1)
       assert %{df_content: ^df_content} = Implementations.get_implementation!(id2)
@@ -150,7 +153,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
               "label" => "My domain",
               "values" => nil,
               "widget" => "dropdown",
-              "default" => "",
+              "default" => %{"value" => "", "origin" => "default"},
               "cardinality" => "?",
               "subscribable" => false
             }
@@ -177,7 +180,11 @@ defmodule TdDq.Implementations.BulkLoadTest do
 
       assert {:ok, %{ids: [id1, id2], errors: []}} = BulkLoad.bulk_load(imp, claims)
 
-      df_content = %{"string" => "initial", "list" => "one", "my_domain" => domain_id}
+      df_content = %{
+        "string" => %{"value" => "initial", "origin" => "file"},
+        "list" => %{"value" => "one", "origin" => "file"},
+        "my_domain" => %{"value" => domain_id, "origin" => "file"}
+      }
 
       assert %{df_content: ^df_content} = Implementations.get_implementation!(id1)
       assert %{df_content: ^df_content} = Implementations.get_implementation!(id2)
@@ -196,7 +203,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
               "label" => "enriched",
               "values" => nil,
               "widget" => "enriched_text",
-              "default" => "",
+              "default" => %{"value" => "", "origin" => "user"},
               "cardinality" => "?",
               "subscribable" => false
             }
@@ -242,8 +249,8 @@ defmodule TdDq.Implementations.BulkLoadTest do
       assert {:ok, %{ids: [id1, id2], errors: []}} = BulkLoad.bulk_load(imp, claims)
 
       df_content = %{
-        "hierarchy_name_1" => key_node_2,
-        "hierarchy_name_2" => [key_node_1, key_node_2]
+        "hierarchy_name_1" => %{"value" => key_node_2, "origin" => "file"},
+        "hierarchy_name_2" => %{"value" => [key_node_1, key_node_2], "origin" => "file"}
       }
 
       assert %{df_content: ^df_content} = Implementations.get_implementation!(id1)
@@ -325,7 +332,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
 
       assert {:ok, %{ids: [id1], errors: []}} = BulkLoad.bulk_load([imp], claims, false, "es")
 
-      df_content = %{"i18n" => "one"}
+      df_content = %{"i18n" => %{"value" => "one", "origin" => "file"}}
 
       assert %{df_content: ^df_content} = Implementations.get_implementation!(id1)
     end
@@ -371,7 +378,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
 
       assert {:ok, %{ids: [id1], errors: []}} = BulkLoad.bulk_load([imp], claims, false, "es")
 
-      df_content = %{"i18n" => ["one", "two"]}
+      df_content = %{"i18n" => %{"value" => ["one", "two"], "origin" => "file"}}
 
       assert %{df_content: ^df_content} = Implementations.get_implementation!(id1)
     end
@@ -678,7 +685,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
               "label" => "My domain",
               "values" => nil,
               "widget" => "dropdown",
-              "default" => "",
+              "default" => %{"value" => "", "origin" => "default"},
               "cardinality" => "1",
               "subscribable" => false
             }

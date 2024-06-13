@@ -151,7 +151,11 @@ defmodule TdDq.Implementations.BulkLoad do
       if Enum.member?(@headers, header) do
         Map.put(acc, header, value)
       else
-        Map.update!(acc, "df_content", &Map.put(&1, header, value))
+        Map.update!(
+          acc,
+          "df_content",
+          &Map.put(&1, header, %{"value" => value, "origin" => "file"})
+        )
       end
     end)
     |> ensure_template()

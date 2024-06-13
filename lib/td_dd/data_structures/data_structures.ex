@@ -1085,7 +1085,9 @@ defmodule TdDd.DataStructures do
   end
 
   def profile_source(
-        %{data_structure: %{source: %{config: %{"job_types" => job_types}} = source}} = dsv
+        %{
+          data_structure: %{source: %{config: %{"job_types" => %{"value" => job_types}}} = source}
+        } = dsv
       ) do
     if Enum.member?(job_types, "profile") do
       Map.put(dsv, :profile_source, source)

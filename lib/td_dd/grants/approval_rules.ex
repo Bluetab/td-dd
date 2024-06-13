@@ -165,16 +165,35 @@ defmodule TdDd.Grants.ApprovalRules do
 
   defp match_condition(_, _, _, nil), do: false
 
-  defp match_condition(field, "eq", [value], metadata) when is_map_key(metadata, field),
-    do: value == Map.get(metadata, field)
+  defp match_condition(field, "eq", [value], metadata) when is_map_key(metadata, field) do
+    value ==
+      metadata
+      |> Map.get(field)
+      |> case do
+        %{"value" => value, "origin" => _} -> value
+        value -> value
+      end
+  end
 
-  defp match_condition(field, "neq", [value], metadata) when is_map_key(metadata, field),
-    do: value != Map.get(metadata, field)
+  defp match_condition(field, "neq", [value], metadata) when is_map_key(metadata, field) do
+    value !=
+      metadata
+      |> Map.get(field)
+      |> case do
+        %{"value" => value, "origin" => _} -> value
+        value -> value
+      end
+  end
 
   defp match_condition(field, "subset", values, metadata)
        when is_map_key(metadata, field) and is_list(values) do
     metadata
     |> Map.get(field)
+    |> Map.get(field)
+    |> case do
+      %{"value" => value, "origin" => _} -> value
+      value -> value
+    end
     |> List.wrap()
     |> MapSet.new()
     |> MapSet.subset?(MapSet.new(values))

@@ -93,7 +93,10 @@ defmodule TdDq.Rules.BulkLoadTest do
       assert {:ok, %{ids: [id1, id2], errors: []}} =
                BulkLoad.bulk_load(rules, claims, @default_lang)
 
-      df_content = %{"string" => "initial", "list" => "one"}
+      df_content = %{
+        "string" => %{"value" => "initial", "origin" => "file"},
+        "list" => %{"value" => "one", "origin" => "file"}
+      }
 
       assert %{df_content: ^df_content} = Rules.get_rule(id1)
       assert %{df_content: ^df_content} = Rules.get_rule(id2)
@@ -121,9 +124,9 @@ defmodule TdDq.Rules.BulkLoadTest do
                BulkLoad.bulk_load(rules, claims, @default_lang)
 
       df_content = %{
-        "hierarchy_name_1" => key_node_2,
-        "hierarchy_name_2" => [key_node_1, key_node_2],
-        "integer" => 1
+        "hierarchy_name_1" => %{"value" => key_node_2, "origin" => "file"},
+        "hierarchy_name_2" => %{"value" => [key_node_1, key_node_2], "origin" => "file"},
+        "integer" => %{"value" => 1, "origin" => "file"}
       }
 
       assert %{df_content: ^df_content} = Rules.get_rule(id1)
@@ -164,7 +167,7 @@ defmodule TdDq.Rules.BulkLoadTest do
       assert {:ok, %{ids: [id1, id2], errors: []}} =
                BulkLoad.bulk_load(rules, claims, @default_lang)
 
-      df_content = %{"multi_string" => ["a", "b", "c"]}
+      df_content = %{"multi_string" => %{"value" => ["a", "b", "c"], "origin" => "file"}}
 
       assert %{df_content: ^df_content} = Rules.get_rule(id1)
       assert %{df_content: ^df_content} = Rules.get_rule(id2)
@@ -211,7 +214,7 @@ defmodule TdDq.Rules.BulkLoadTest do
 
       assert {:ok, %{ids: [id1, id2], errors: []}} = BulkLoad.bulk_load(rules, claims, "es")
 
-      df_content = %{"i18n" => "one"}
+      df_content = %{"i18n" => %{"value" => "one", "origin" => "file"}}
 
       assert %{df_content: ^df_content} = Rules.get_rule(id1)
       assert %{df_content: ^df_content} = Rules.get_rule(id2)
@@ -259,7 +262,7 @@ defmodule TdDq.Rules.BulkLoadTest do
 
       assert {:ok, %{ids: [id1, id2], errors: []}} = BulkLoad.bulk_load(rules, claims, "es")
 
-      df_content = %{"i18n" => ["one", "three"]}
+      df_content = %{"i18n" => %{"value" => ["one", "three"], "origin" => "file"}}
 
       assert %{df_content: ^df_content} = Rules.get_rule(id1)
       assert %{df_content: ^df_content} = Rules.get_rule(id2)

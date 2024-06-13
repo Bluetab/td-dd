@@ -12,7 +12,10 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   require Logger
 
   @moduletag sandbox: :shared
-  @valid_content %{"string" => "present", "list" => "one"}
+  @valid_content %{
+    "string" => %{"value" => "present", "origin" => "user"},
+    "list" => %{"value" => "one", "origin" => "user"}
+  }
   @valid_params %{"df_content" => @valid_content}
   @c1 [
     %{
@@ -27,7 +30,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         },
         %{
           "cardinality" => "1",
-          "default" => "",
+          "default" => %{"value" => "", "origin" => "default"},
           "description" => "description",
           "label" => "critical term",
           "name" => "critical",
@@ -191,7 +194,11 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       ids =
         1..10
-        |> Enum.map(fn _ -> valid_structure_note(type, df_content: %{"string" => "foo"}) end)
+        |> Enum.map(fn _ ->
+          valid_structure_note(type,
+            df_content: %{"string" => %{"value" => "foo", "origin" => "user"}}
+          )
+        end)
         |> Enum.map(& &1.data_structure_id)
 
       assert {:ok, %{update_notes: update_notes}} =
@@ -214,7 +221,11 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       ids =
         1..10
-        |> Enum.map(fn _ -> valid_structure_note(type, df_content: %{"string" => "foo"}) end)
+        |> Enum.map(fn _ ->
+          valid_structure_note(type,
+            df_content: %{"string" => %{"value" => "foo", "origin" => "user"}}
+          )
+        end)
         |> Enum.map(& &1.data_structure_id)
 
       assert {:ok, %{update_notes: update_notes}} =
@@ -241,15 +252,26 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       ids =
         (1..3
-         |> Enum.map(fn _ -> valid_structure_note(type, df_content: %{"string" => "foo"}) end)
+         |> Enum.map(fn _ ->
+           valid_structure_note(type,
+             df_content: %{"string" => %{"value" => "foo", "origin" => "user"}}
+           )
+         end)
          |> Enum.map(& &1.data_structure_id)) ++
           (1..4
            |> Enum.map(fn _ ->
-             valid_structure_note(type, df_content: %{"string" => "foo"}, status: :published)
+             valid_structure_note(type,
+               df_content: %{"string" => %{"value" => "foo", "origin" => "user"}},
+               status: :published
+             )
            end)
            |> Enum.map(& &1.data_structure_id)) ++
           (1..3
-           |> Enum.map(fn _ -> valid_structure_note(type, df_content: %{"string" => "foo"}) end)
+           |> Enum.map(fn _ ->
+             valid_structure_note(type,
+               df_content: %{"string" => %{"value" => "foo", "origin" => "user"}}
+             )
+           end)
            |> Enum.map(& &1.data_structure_id))
 
       assert [1, 1, 1, 1, 1, 1, 1, 1, 1, 1] ==
@@ -289,7 +311,12 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         |> Enum.map(fn _ ->
           valid_structure_note(
             type,
-            [df_content: %{"string" => "foo", "list" => "bar"}] ++ timestamps
+            [
+              df_content: %{
+                "string" => %{"value" => "foo", "origin" => "user"},
+                "list" => %{"value" => "bar", "origin" => "user"}
+              }
+            ] ++ timestamps
           )
         end)
         |> Enum.map(& &1.data_structure_id)
@@ -325,7 +352,11 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     test "returns an error if a structure has no template", %{type: type} do
       IndexWorker.clear()
       claims = build(:claims)
-      content = %{"string" => "foo", "list" => "bar"}
+
+      content = %{
+        "string" => %{"value" => "foo", "origin" => "user"},
+        "list" => %{"value" => "bar", "origin" => "user"}
+      }
 
       ids =
         1..10
@@ -352,7 +383,8 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       IndexWorker.clear()
       claims = build(:claims)
 
-      initial_content = Map.replace!(@valid_content, "string", "initial")
+      initial_content =
+        Map.replace!(@valid_content, "string", %{"value" => "initial", "origin" => "user"})
 
       structure_count = 10
 
@@ -364,7 +396,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert {:ok, %{update_notes: update_notes}} =
                BulkUpdate.update_all(
                  ids,
-                 %{"df_content" => %{"string" => "updated"}},
+                 %{"df_content" => %{"string" => %{"value" => "updated", "origin" => "user"}}},
                  claims,
                  false
                )
@@ -380,7 +412,10 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert Enum.count(df_contents) == structure_count
 
       Enum.each(df_contents, fn df_content ->
-        assert df_content == %{"string" => "updated", "list" => initial_content["list"]}
+        assert df_content == %{
+                 "string" => %{"value" => "updated", "origin" => "user"},
+                 "list" => initial_content["list"]
+               }
       end)
 
       assert [{:reindex, :structures, ids_reindex}] = IndexWorker.calls()
@@ -400,7 +435,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert {:ok, %{update_notes: update_notes}} =
                BulkUpdate.update_all(
                  ids,
-                 %{"df_content" => %{"string" => "updated"}},
+                 %{"df_content" => %{"string" => %{"value" => "updated", "origin" => "user"}}},
                  claims,
                  false
                )
@@ -417,7 +452,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert Enum.count(df_contents) == structure_count
 
       Enum.each(df_contents, fn df_content ->
-        assert df_content == %{"string" => "updated"}
+        assert df_content == %{"string" => %{"value" => "updated", "origin" => "user"}}
       end)
 
       assert [{:reindex, :structures, ids_reindex}] = IndexWorker.calls()
@@ -430,7 +465,8 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       IndexWorker.clear()
       claims = build(:claims)
 
-      initial_content = Map.replace!(@valid_content, "string", "initial")
+      initial_content =
+        Map.replace!(@valid_content, "string", %{"value" => "initial", "origin" => "user"})
 
       structure_count = 10
 
@@ -447,7 +483,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert {:ok, %{update_notes: update_notes}} =
                BulkUpdate.update_all(
                  ids,
-                 %{"df_content" => %{"string" => "updated"}},
+                 %{"df_content" => %{"string" => %{"value" => "updated", "origin" => "user"}}},
                  claims,
                  false
                )
@@ -464,7 +500,10 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert Enum.count(df_contents) == structure_count
 
       Enum.each(df_contents, fn df_content ->
-        assert df_content == %{"string" => "updated", "list" => initial_content["list"]}
+        assert df_content == %{
+                 "string" => %{"value" => "updated", "origin" => "user"},
+                 "list" => initial_content["list"]
+               }
       end)
 
       assert [{:reindex, :structures, ids_reindex}] = IndexWorker.calls()
@@ -474,21 +513,30 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     test "only validates specified fields", %{type: type} do
       claims = build(:claims)
 
-      id = valid_structure_note(type, df_content: %{"list" => "two"}).data_structure_id
+      id =
+        valid_structure_note(type,
+          df_content: %{"list" => %{"value" => "two", "origin" => "user"}}
+        ).data_structure_id
 
       assert {:ok, %{update_notes: _update_notes}} =
-               BulkUpdate.update_all([id], %{"df_content" => %{"list" => "one"}}, claims, false)
+               BulkUpdate.update_all(
+                 [id],
+                 %{"df_content" => %{"list" => %{"value" => "one", "origin" => "user"}}},
+                 claims,
+                 false
+               )
 
       %{df_content: df_content} = StructureNotes.get_latest_structure_note(id)
 
-      assert df_content == %{"list" => "one"}
+      assert df_content == %{"list" => %{"value" => "one", "origin" => "user"}}
     end
 
     test "ignores empty fields", %{type: type} do
       IndexWorker.clear()
       claims = build(:claims)
 
-      initial_content = Map.replace!(@valid_content, "string", "initial")
+      initial_content =
+        Map.replace!(@valid_content, "string", %{"value" => "initial", "origin" => "user"})
 
       structure_count = 10
 
@@ -500,7 +548,12 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert {:ok, %{update_notes: update_notes}} =
                BulkUpdate.update_all(
                  ids,
-                 %{"df_content" => %{"string" => "", "list" => "two"}},
+                 %{
+                   "df_content" => %{
+                     "string" => %{"value" => "", "origin" => "user"},
+                     "list" => %{"value" => "two", "origin" => "user"}
+                   }
+                 },
                  claims,
                  false
                )
@@ -516,7 +569,10 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert Enum.count(df_contents) == structure_count
 
       Enum.each(df_contents, fn df_content ->
-        assert df_content == %{"string" => initial_content["string"], "list" => "two"}
+        assert df_content == %{
+                 "string" => initial_content["string"],
+                 "list" => %{"value" => "two", "origin" => "user"}
+               }
       end)
 
       assert [{:reindex, :structures, ids_reindex}] = IndexWorker.calls()
@@ -562,43 +618,70 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert length(ids) == 10
       assert Enum.all?(ids, fn id -> id in structure_ids end)
 
-      assert %{"text" => "text", "critical" => "Yes", "role" => ["Role"], "key_value" => [""]} =
-               get_df_content_from_ext_id("ex_id1")
+      assert %{
+               "text" => %{"value" => "text", "origin" => "file"},
+               "critical" => %{"value" => "Yes", "origin" => "file"},
+               "role" => %{"value" => ["Role"], "origin" => "file"},
+               "key_value" => %{"value" => [""], "origin" => "file"}
+             } = get_df_content_from_ext_id("ex_id1")
 
-      assert %{"text" => "text2", "critical" => "Yes", "role" => ["Role"]} =
-               get_df_content_from_ext_id("ex_id2")
+      assert %{
+               "text" => %{"value" => "text2", "origin" => "file"},
+               "critical" => %{"value" => "Yes", "origin" => "file"},
+               "role" => %{"value" => ["Role"], "origin" => "file"}
+             } = get_df_content_from_ext_id("ex_id2")
 
-      assert %{"text" => "foo", "critical" => "No", "role" => ["Role"]} =
-               get_df_content_from_ext_id("ex_id3")
+      assert %{
+               "text" => %{"value" => "foo", "origin" => "user"},
+               "critical" => %{"value" => "No", "origin" => "file"},
+               "role" => %{"value" => ["Role"], "origin" => "file"}
+             } = get_df_content_from_ext_id("ex_id3")
 
-      assert %{"text" => "foo", "critical" => "No", "role" => ["Role 1"]} =
-               get_df_content_from_ext_id("ex_id4")
+      assert %{
+               "text" => %{"value" => "foo", "origin" => "user"},
+               "critical" => %{"value" => "No", "origin" => "file"},
+               "role" => %{"value" => ["Role 1"], "origin" => "file"}
+             } = get_df_content_from_ext_id("ex_id4")
 
-      assert %{"text" => "foo", "critical" => "No", "role" => ["Role 2"], "key_value" => ["2"]} =
-               get_df_content_from_ext_id("ex_id5")
+      assert %{
+               "text" => %{"value" => "foo", "origin" => "user"},
+               "critical" => %{"value" => "No", "origin" => "file"},
+               "role" => %{"value" => ["Role 2"], "origin" => "file"},
+               "key_value" => %{"value" => ["2"], "origin" => "file"}
+             } = get_df_content_from_ext_id("ex_id5")
 
       text = to_enriched_text("I’m 6")
 
-      assert %{"enriched_text" => ^text} = get_df_content_from_ext_id("ex_id6")
+      assert %{"enriched_text" => %{"value" => ^text, "origin" => "file"}} =
+               get_df_content_from_ext_id("ex_id6")
 
       text = to_enriched_text("Enriched text")
       url = to_content_url("https://www.google.es")
 
-      assert %{"enriched_text" => ^text, "urls_one_or_none" => ^url, "integer" => 3} =
-               get_df_content_from_ext_id("ex_id7")
+      assert %{
+               "enriched_text" => %{"value" => ^text, "origin" => "file"},
+               "urls_one_or_none" => %{"value" => ^url, "origin" => "file"},
+               "integer" => %{"value" => 3, "origin" => "file"}
+             } = get_df_content_from_ext_id("ex_id7")
 
-      assert %{"urls_one_or_none" => ^url, "integer" => 2} = get_df_content_from_ext_id("ex_id8")
+      assert %{
+               "urls_one_or_none" => %{"value" => ^url, "origin" => "file"},
+               "integer" => %{"value" => 2, "origin" => "file"}
+             } = get_df_content_from_ext_id("ex_id8")
 
       text = to_enriched_text("I’m 9")
 
-      assert %{"enriched_text" => ^text, "integer" => 9} = get_df_content_from_ext_id("ex_id9")
+      assert %{
+               "enriched_text" => %{"value" => ^text, "origin" => "file"},
+               "integer" => %{"value" => 9, "origin" => "file"}
+             } = get_df_content_from_ext_id("ex_id9")
 
       assert %{} = get_df_content_from_ext_id("ex_id9")
 
       assert %{
-               "hierarchy_name_1" => ^key_node_2,
-               "hierarchy_name_2" => [^key_node_2, ^key_node_1],
-               "urls_one_or_none" => _
+               "hierarchy_name_1" => %{"value" => ^key_node_2, "origin" => "file"},
+               "hierarchy_name_2" => %{"value" => [^key_node_2, ^key_node_1], "origin" => "file"},
+               "urls_one_or_none" => %{"value" => _, "origin" => "file"}
              } = get_df_content_from_ext_id("ex_id10")
 
       assert [{:reindex, :structures, ^ids}] = IndexWorker.calls()
@@ -635,17 +718,17 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert Enum.all?(ids, fn id -> id in structure_ids end)
 
       assert %{
-               "i18n_test.checkbox.fixed" => ["pear", "apple"],
-               "i18n_test.dropdown.fixed" => "peach",
-               "i18n_test.radio.fixed" => "apple",
-               "i18n_test_no_translate" => "SIN TRADUCCION"
+               "i18n_test.checkbox.fixed" => %{"value" => ["pear", "apple"], "origin" => "file"},
+               "i18n_test.dropdown.fixed" => %{"value" => "peach", "origin" => "file"},
+               "i18n_test.radio.fixed" => %{"value" => "apple", "origin" => "file"},
+               "i18n_test_no_translate" => %{"value" => "SIN TRADUCCION", "origin" => "file"}
              } = get_df_content_from_ext_id("ex_id11")
 
       assert %{
-               "i18n_test.checkbox.fixed" => ["pear", "banana"],
-               "i18n_test.dropdown.fixed" => "apple",
-               "i18n_test.radio.fixed" => "banana",
-               "i18n_test_no_translate" => "SIN TRADUCCION"
+               "i18n_test.checkbox.fixed" => %{"value" => ["pear", "banana"], "origin" => "file"},
+               "i18n_test.dropdown.fixed" => %{"value" => "apple", "origin" => "file"},
+               "i18n_test.radio.fixed" => %{"value" => "banana", "origin" => "file"},
+               "i18n_test_no_translate" => %{"value" => "SIN TRADUCCION", "origin" => "file"}
              } = get_df_content_from_ext_id("ex_id12")
 
       assert [{:reindex, :structures, [_, _]}] = IndexWorker.calls()
@@ -710,7 +793,9 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert Keyword.get(validation, :validation) == :inclusion
       assert Keyword.get(validation, :enum) == ["Yes", "No"]
 
-      assert %{"text" => "foo"} = get_df_content_from_ext_id("ex_id1")
+      assert %{"text" => %{"value" => "foo", "origin" => "user"}} =
+               get_df_content_from_ext_id("ex_id1")
+
       assert [{:reindex, :structures, [_, _]}] = IndexWorker.calls()
     end
 
@@ -768,7 +853,11 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   describe "structure notes" do
     test "bulk upload notes of data structures with no previous notes", %{type: type} do
       IndexWorker.clear()
-      note = %{"string" => "bar", "list" => "two"}
+
+      note = %{
+        "string" => %{"value" => "bar", "origin" => "file"},
+        "list" => %{"value" => "two", "origin" => "file"}
+      }
 
       structure_count = 5
 
@@ -793,7 +882,11 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
     test "bulk upload notes of data structures with draft notes", %{type: type} do
       IndexWorker.clear()
-      note = %{"string" => "bar", "list" => "two"}
+
+      note = %{
+        "string" => %{"value" => "bar", "origin" => "file"},
+        "list" => %{"value" => "two", "origin" => "file"}
+      }
 
       structure_count = 5
 
@@ -819,7 +912,11 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
     test "bulk upload notes of data structures with published notes", %{type: type} do
       IndexWorker.clear()
-      note = %{"string" => "bar", "list" => "two"}
+
+      note = %{
+        "string" => %{"value" => "bar", "origin" => "file"},
+        "list" => %{"value" => "two", "origin" => "file"}
+      }
 
       structure_count = 5
 
@@ -886,7 +983,10 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     sts1 =
       Enum.map(1..5, fn id ->
         data_structure = insert(:data_structure, external_id: "ex_id#{id}")
-        valid_structure_note(type1, data_structure, df_content: %{"text" => "foo"})
+
+        valid_structure_note(type1, data_structure,
+          df_content: %{"text" => %{"value" => "foo", "origin" => "user"}}
+        )
       end)
 
     sts2 =

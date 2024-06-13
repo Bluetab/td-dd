@@ -281,7 +281,12 @@ defmodule TdDd.DataStructures.StructureNotes do
   def maybe_update_alias(multi, "published", user_id) do
     Multi.update(multi, :update_alias, fn
       %{structure_note_update: %{data_structure: data_structure, df_content: %{} = content}} ->
-        DataStructure.alias_changeset(data_structure, Map.get(content, "alias"), user_id)
+        alias_value =
+          content
+          |> Map.get("alias", %{})
+          |> Map.get("value")
+
+        DataStructure.alias_changeset(data_structure, alias_value, user_id)
     end)
   end
 

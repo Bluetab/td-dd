@@ -3,7 +3,10 @@ defmodule TdDdWeb.Schema.SourcesTest do
 
   @moduletag sandbox: :shared
 
-  @valid_config %{"string" => "foo", "list" => "two"}
+  @valid_config %{
+    "string" => %{"value" => "foo", "origin" => "user"},
+    "list" => %{"value" => "two", "origin" => "user"}
+  }
 
   @source_with_template """
   query Source($id: ID!) {
