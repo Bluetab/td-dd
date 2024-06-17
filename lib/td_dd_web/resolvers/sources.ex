@@ -20,7 +20,11 @@ defmodule TdDdWeb.Resolvers.Sources do
   end
 
   def job_types(%{config: config}, _args, _resolution) do
-    job_types = Map.get(config, "job_types", [])
+    job_types =
+      config
+      |> Map.get("job_types", %{})
+      |> Map.get("value", [])
+
     {:ok, job_types}
   end
 
