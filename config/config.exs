@@ -24,7 +24,7 @@ config :td_dd,
 # Configures the dd endpoint
 config :td_dd, TdDdWeb.Endpoint,
   http: [port: 4005],
-  url: [host: "localhost"],
+  url: [host: "localhost", protocol_options: [idle_timeout: 360_000]],
   render_errors: [view: TdDdWeb.ErrorView, accepts: ~w(json)]
 
 # Configures the cx endpoint
