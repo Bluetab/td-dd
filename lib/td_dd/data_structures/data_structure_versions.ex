@@ -53,7 +53,7 @@ defmodule TdDd.DataStructures.DataStructureVersions do
 
     data_structure_id
     |> DataStructures.get_data_structure!()
-    |> enrich_opts(claims, enriches)
+    |> enrich_opts(%Truedat.Auth.Claims{claims | role: "admin"}, enriches)
     |> get_data_structure_version(data_structure_id, version)
     |> add_data_fields()
     |> merge_metadata()
