@@ -23,7 +23,7 @@ config :td_dd,
 
 # Configures the dd endpoint
 config :td_dd, TdDdWeb.Endpoint,
-  http: [port: 4005, protocol_options: [idle_timeout: 1_000]],
+  http: [port: 4005, protocol_options: [idle_timeout: 360_000]],
   url: [host: "localhost"],
   render_errors: [view: TdDdWeb.ErrorView, accepts: ~w(json)]
 
