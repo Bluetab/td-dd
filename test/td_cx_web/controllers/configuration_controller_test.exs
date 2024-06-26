@@ -90,19 +90,22 @@ defmodule TdCxWeb.ConfigurationControllerTest do
 
       assert [
                %{
-                 "content" => %{"field1" => %{"value" => "value", "origin" => "user"}},
+                 "content" => %{"field1" => "value"},
+                 "dynamic_content" => %{"field1" => %{"value" => "value", "origin" => "user"}},
                  "external_id" => "external_id",
                  "type" => "config"
                },
                %{
                  "content" => %{},
+                 "dynamic_content" => %{},
                  "external_id" => "another_external_id",
                  "type" => "another_config"
                },
                %{
-                 "content" => %{
+                 "content" => %{"field1" => "value", "secret_field" => "secret value"},
+                 "dynamic_content" => %{
                    "field1" => %{"value" => "value", "origin" => "user"},
-                   "secret_field" => "secret value"
+                   "secret_field" => %{"value" => "secret value", "origin" => "user"}
                  },
                  "external_id" => "secret_external_id",
                  "type" => "secret_config"
@@ -116,7 +119,8 @@ defmodule TdCxWeb.ConfigurationControllerTest do
 
       assert [
                %{
-                 "content" => %{"field1" => %{"value" => "value", "origin" => "user"}},
+                 "content" => %{"field1" => "value"},
+                 "dynamic_content" => %{"field1" => %{"value" => "value", "origin" => "user"}},
                  "external_id" => "external_id",
                  "type" => "config"
                }
@@ -132,7 +136,8 @@ defmodule TdCxWeb.ConfigurationControllerTest do
       conn = get(conn, Routes.configuration_path(conn, :show, "external_id"))
 
       assert %{
-               "content" => %{"field1" => %{"value" => "value", "origin" => "user"}},
+               "content" => %{"field1" => "value"},
+               "dynamic_content" => %{"field1" => %{"value" => "value", "origin" => "user"}},
                "external_id" => "external_id",
                "type" => "config"
              } = json_response(conn, 200)["data"]
@@ -143,9 +148,10 @@ defmodule TdCxWeb.ConfigurationControllerTest do
       conn = get(conn, Routes.configuration_path(conn, :show, "secret_external_id"))
 
       assert %{
-               "content" => %{
+               "content" => %{"field1" => "value", "secret_field" => "secret value"},
+               "dynamic_content" => %{
                  "field1" => %{"value" => "value", "origin" => "user"},
-                 "secret_field" => "secret value"
+                 "secret_field" => %{"value" => "secret value", "origin" => "user"}
                },
                "external_id" => "secret_external_id",
                "type" => "secret_config"
@@ -165,7 +171,8 @@ defmodule TdCxWeb.ConfigurationControllerTest do
 
       assert %{
                "id" => ^id,
-               "content" => %{"field1" => %{"value" => "value", "origin" => "user"}},
+               "content" => %{"field1" => "value"},
+               "dynamic_content" => %{"field1" => %{"value" => "value", "origin" => "user"}},
                "external_id" => ^external_id,
                "type" => "config",
                "secrets_key" => nil
@@ -211,7 +218,10 @@ defmodule TdCxWeb.ConfigurationControllerTest do
 
       assert %{
                "id" => ^id,
-               "content" => %{"field1" => %{"value" => "updated value", "origin" => "user"}},
+               "content" => %{"field1" => "updated value"},
+               "dynamic_content" => %{
+                 "field1" => %{"value" => "updated value", "origin" => "user"}
+               },
                "external_id" => ^external_id,
                "type" => "config",
                "secrets_key" => nil
@@ -384,7 +394,7 @@ defmodule TdCxWeb.ConfigurationControllerTest do
     insert(:configuration,
       content: %{
         "field1" => %{"value" => "value", "origin" => "user"},
-        "secret_field" => "secret value"
+        "secret_field" => %{"value" => "secret value", "origin" => "user"}
       },
       external_id: "secret_external_id",
       type: "secret_config"

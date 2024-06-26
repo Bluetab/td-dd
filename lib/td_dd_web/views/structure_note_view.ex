@@ -3,6 +3,7 @@ defmodule TdDdWeb.StructureNoteView do
 
   alias TdCache.TemplateCache
   alias TdDdWeb.StructureNoteView
+  alias TdDfLib.Content
   alias TdDfLib.Format
 
   def render("index.json", %{
@@ -51,6 +52,7 @@ defmodule TdDdWeb.StructureNoteView do
       _actions: Map.get(structure_note, :actions, %{})
     }
     |> add_cache_content(structure_note)
+    |> Content.legacy_content_support(:df_content)
   end
 
   def render("structure_note.json", %{structure_note: structure_note}) do
@@ -62,6 +64,7 @@ defmodule TdDdWeb.StructureNoteView do
       _actions: Map.get(structure_note, :actions, %{})
     }
     |> add_cache_content(structure_note)
+    |> Content.legacy_content_support(:df_content)
   end
 
   def render("search_structure_note.json", %{structure_note: structure_note}) do

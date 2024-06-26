@@ -10,6 +10,7 @@ defmodule TdDdWeb.GrantRequestView do
   alias TdDdWeb.GrantRequestGroupView
   alias TdDdWeb.GrantRequestView
   alias TdDdWeb.GrantView
+  alias TdDfLib.Content
   alias TdDfLib.Format
 
   @default_embeddings [:data_structure, :grant, :group, :approvals]
@@ -46,6 +47,7 @@ defmodule TdDdWeb.GrantRequestView do
     |> Map.put(:status_reason, status_reason)
     |> put_embeddings(grant_request, Map.get(assigns, :embed, @default_embeddings))
     |> add_cached_content()
+    |> Content.legacy_content_support(:metadata)
   end
 
   def render("grant_request_search.json", %{grant_request: grant_request} = _assigns) do

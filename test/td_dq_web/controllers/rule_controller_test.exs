@@ -29,6 +29,29 @@ defmodule TdDqWeb.RuleControllerTest do
     ]
   }
 
+  @df_template %{
+    id: System.unique_integer([:positive]),
+    label: "df_test",
+    name: "df_test",
+    scope: "dq",
+    content: [
+      %{
+        "name" => "Content Template",
+        "fields" => [
+          %{
+            "cardinality" => "?",
+            "label" => "foo",
+            "name" => "foo",
+            "subscribable" => false,
+            "type" => "string",
+            "values" => nil,
+            "widget" => "string"
+          }
+        ]
+      }
+    ]
+  }
+
   setup tags do
     start_supervised!(TdDq.MockRelationCache)
 
@@ -439,6 +462,31 @@ defmodule TdDqWeb.RuleControllerTest do
                conn
                |> post(Routes.rule_path(conn, :create), rule: params)
                |> json_response(:unprocessable_entity)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "renders dynamic content and legacy content", %{conn: conn, domain: domain} do
+      %{name: template_name} = CacheHelpers.insert_template(@df_template)
+
+      params =
+        string_params_for(:rule,
+          domain_id: domain.id,
+          df_name: template_name,
+          df_content: %{"foo" => %{"value" => "bar", "origin" => "user"}}
+        )
+        |> Map.delete("business_concept_id")
+
+      assert %{
+               "data" => data
+             } =
+               conn
+               |> post(Routes.rule_path(conn, :create), rule: params)
+               |> json_response(:created)
+
+      assert %{
+               "df_content" => %{"foo" => "bar"},
+               "dynamic_content" => %{"foo" => %{"value" => "bar", "origin" => "user"}}
+             } = data
     end
 
     @tag authentication: [role: "admin"]

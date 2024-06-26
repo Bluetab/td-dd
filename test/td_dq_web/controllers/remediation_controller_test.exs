@@ -174,7 +174,8 @@ defmodule TdDqWeb.RemediationControllerTest do
 
       assert %{
                "df_name" => ^df_name,
-               "df_content" => ^fd_content
+               "df_content" => %{"texto" => "new text"},
+               "dynamic_content" => ^fd_content
              } = data
     end
 
