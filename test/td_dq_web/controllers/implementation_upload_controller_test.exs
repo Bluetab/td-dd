@@ -511,7 +511,8 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
 
       assert %{
                "data" => %{
-                 "df_content" => df_content
+                 "df_content" => df_content,
+                 "dynamic_content" => dynamic_content
                }
              } =
                conn
@@ -519,13 +520,19 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
                |> json_response(:ok)
 
       assert %{
-               "my_domain1" => %{"value" => ^domain_id1, "origin" => "file"},
-               "my_domain2" => %{"value" => ^domain_id2, "origin" => "file"}
+               "my_domain1" => ^domain_id1,
+               "my_domain2" => ^domain_id2
              } = df_content
 
       assert %{
+               "my_domain1" => %{"value" => ^domain_id1, "origin" => "file"},
+               "my_domain2" => %{"value" => ^domain_id2, "origin" => "file"}
+             } = dynamic_content
+
+      assert %{
                "data" => %{
-                 "df_content" => df_content2
+                 "df_content" => df_content2,
+                 "dynamic_content" => dynamic_content2
                }
              } =
                conn
@@ -533,13 +540,19 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
                |> json_response(:ok)
 
       assert %{
-               "my_domain1" => %{"value" => ^domain_id1, "origin" => "file"},
-               "my_domain2" => %{"value" => nil, "origin" => "file"}
+               "my_domain1" => ^domain_id1,
+               "my_domain2" => nil
              } = df_content2
 
       assert %{
+               "my_domain1" => %{"value" => ^domain_id1, "origin" => "file"},
+               "my_domain2" => %{"value" => nil, "origin" => "file"}
+             } = dynamic_content2
+
+      assert %{
                "data" => %{
-                 "df_content" => df_content3
+                 "df_content" => df_content3,
+                 "dynamic_content" => dynamic_content3
                }
              } =
                conn
@@ -547,9 +560,14 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
                |> json_response(:ok)
 
       assert %{
+               "my_domain1" => nil,
+               "my_domain2" => nil
+             } = df_content3
+
+      assert %{
                "my_domain1" => %{"value" => nil, "origin" => "file"},
                "my_domain2" => %{"value" => nil, "origin" => "file"}
-             } = df_content3
+             } = dynamic_content3
     end
 
     @tag authentication: [role: "admin"]
@@ -594,12 +612,27 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
 
       assert %{
                "data" => %{
-                 "df_content" => df_content
+                 "df_content" => df_content,
+                 "dynamic_content" => dynamic_content
                }
              } =
                conn
                |> get(Routes.implementation_path(conn, :show, id1))
                |> json_response(:ok)
+
+      assert %{
+               "enriched_field" => %{
+                 "document" => %{
+                   "nodes" => [
+                     %{
+                       "nodes" => [%{"object" => "text", "leaves" => [%{"text" => "foo"}]}],
+                       "object" => "block",
+                       "type" => "paragraph"
+                     }
+                   ]
+                 }
+               }
+             } = df_content
 
       assert %{
                "enriched_field" => %{
@@ -616,18 +649,20 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
                  },
                  "origin" => "file"
                }
-             } = df_content
+             } = dynamic_content
 
       assert %{
                "data" => %{
-                 "df_content" => df_content2
+                 "df_content" => df_content2,
+                 "dynamic_content" => dynamic_content2
                }
              } =
                conn
                |> get(Routes.implementation_path(conn, :show, id2))
                |> json_response(:ok)
 
-      assert %{"enriched_field" => %{"value" => %{}, "origin" => "file"}} = df_content2
+      assert %{"enriched_field" => %{}} = df_content2
+      assert %{"enriched_field" => %{"value" => %{}, "origin" => "file"}} = dynamic_content2
     end
 
     @tag authentication: [role: "admin"]

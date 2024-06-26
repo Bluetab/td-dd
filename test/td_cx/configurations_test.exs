@@ -280,7 +280,7 @@ defmodule TdCx.ConfigurationsTest do
       {:ok, %Configuration{secrets_key: secrets_key} = configuration} =
         Configurations.create_configuration(@valid_secret_attrs)
 
-      assert %{"secret_field" => %{"value" => "secret_value", "origin" => "user"}} ==
+      assert %{"secret_field" => "secret_value"} ==
                Vault.read_secrets(secrets_key)
 
       assert {:ok, %Configuration{}} = Configurations.delete_configuration(configuration)

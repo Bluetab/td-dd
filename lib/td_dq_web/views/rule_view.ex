@@ -2,6 +2,7 @@ defmodule TdDqWeb.RuleView do
   use TdDqWeb, :view
 
   alias TdCache.ConceptCache
+  alias TdDfLib.Content
   alias TdDq.Rules
   alias TdDqWeb.RuleView
 
@@ -58,6 +59,7 @@ defmodule TdDqWeb.RuleView do
     |> add_current_version(rule)
     |> add_system_values(rule)
     |> add_dynamic_content(rule)
+    |> Content.legacy_content_support(:df_content)
   end
 
   def render("embedded.json", %{rule: rule}) do

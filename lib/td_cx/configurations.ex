@@ -197,9 +197,16 @@ defmodule TdCx.Configurations do
       {:error, msg} ->
         {:vault_error, msg}
 
-      _ ->
-        secrets = secrets || %{}
+      secrets when is_map(secrets) ->
+        secrets =
+          secrets
+          |> Enum.map(fn {key, val} -> {key, %{"value" => val, "origin" => "user"}} end)
+          |> Map.new()
+
         Map.put(configuration, :content, Map.merge(content || %{}, secrets))
+
+      _ ->
+        configuration
     end
   end
 
@@ -275,7 +282,18 @@ defmodule TdCx.Configurations do
   end
 
   defp insert_vault(key, [_ | _] = secrets, content) do
-    secret_config = Map.take(content, secrets)
+    secret_config =
+      content
+      |> Map.take(secrets)
+      |> Enum.map(fn
+        {key, %{"value" => value}} ->
+          {key, value}
+
+        val ->
+          val
+      end)
+      |> Map.new()
+
     Vault.write_secrets(key, secret_config)
   end
 

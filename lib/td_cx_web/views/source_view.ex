@@ -2,6 +2,7 @@ defmodule TdCxWeb.SourceView do
   use TdCxWeb, :view
 
   alias TdCx.Format
+  alias TdDfLib.Content
 
   def render("index.json", %{sources: sources}) do
     %{data: render_many(sources, __MODULE__, "source.json")}
@@ -27,6 +28,7 @@ defmodule TdCxWeb.SourceView do
     }
     |> add_cached_content(config)
     |> add_job_types(job_types)
+    |> Content.legacy_content_support(:config)
   end
 
   defp add_cached_content(source, nil), do: add_cached_content(source, %{})

@@ -430,7 +430,8 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
                "requests" => [
                  %{
                    "_embedded" => %{"data_structure" => %{"id" => ^ds_id, "external_id" => _}},
-                   "metadata" => @valid_metadata,
+                   "metadata" => %{"list" => "one", "string" => "foo"},
+                   "dynamic_content" => @valid_metadata,
                    "filters" => %{"foo" => "bar"}
                  }
                ]

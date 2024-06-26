@@ -2,6 +2,7 @@ defmodule TdDqWeb.RemediationView do
   use TdDqWeb, :view
 
   alias TdCache.TemplateCache
+  alias TdDfLib.Content
   alias TdDfLib.Format
 
   def render("show.json", %{actions: actions} = assigns) do
@@ -33,5 +34,6 @@ defmodule TdDqWeb.RemediationView do
       df_content: content
     }
     |> Map.merge(remediation_json)
+    |> Content.legacy_content_support(:df_content)
   end
 end

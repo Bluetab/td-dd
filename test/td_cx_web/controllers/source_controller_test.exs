@@ -147,7 +147,8 @@ defmodule TdCxWeb.SourceControllerTest do
                "external_id" => "some external_id",
                "active" => true,
                "type" => "foo_type",
-               "config" => %{"a" => %{"value" => "1", "origin" => "user"}}
+               "config" => %{"a" => "1"},
+               "dynamic_content" => %{"a" => %{"value" => "1", "origin" => "user"}}
              } = data
     end
 
@@ -163,7 +164,8 @@ defmodule TdCxWeb.SourceControllerTest do
                "external_id" => "some external_id",
                "active" => true,
                "type" => "foo_type",
-               "config" => %{"a" => %{"value" => "1", "origin" => "user"}}
+               "config" => %{"a" => "1"},
+               "dynamic_content" => %{"a" => %{"value" => "1", "origin" => "user"}}
              } = data
     end
 
@@ -194,7 +196,8 @@ defmodule TdCxWeb.SourceControllerTest do
 
       assert %{
                "id" => id,
-               "config" => %{"a" => %{"value" => "1", "origin" => "user"}},
+               "config" => %{"a" => "1"},
+               "dynamic_content" => %{"a" => %{"value" => "1", "origin" => "user"}},
                "external_id" => ^external_id,
                "type" => "foo_type",
                "active" => true
@@ -223,7 +226,8 @@ defmodule TdCxWeb.SourceControllerTest do
 
       assert %{
                "id" => ^id,
-               "config" => %{"a" => %{"value" => "3", "origin" => "user"}},
+               "config" => %{"a" => "3"},
+               "dynamic_content" => %{"a" => %{"value" => "3", "origin" => "user"}},
                "external_id" => ^external_id,
                "type" => "foo_type",
                "active" => false
@@ -266,6 +270,10 @@ defmodule TdCxWeb.SourceControllerTest do
       assert %{
                "id" => _id,
                "config" => %{
+                 "a" => "1",
+                 "b" => "foo"
+               },
+               "dynamic_content" => %{
                  "a" => %{"value" => "1", "origin" => "user"},
                  "b" => %{"value" => "foo", "origin" => "user"}
                },
@@ -306,7 +314,8 @@ defmodule TdCxWeb.SourceControllerTest do
 
       assert %{
                "id" => _id,
-               "config" => %{"a" => %{"value" => "3", "origin" => "user"}},
+               "config" => %{"a" => "3"},
+               "dynamic_content" => %{"a" => %{"value" => "3", "origin" => "user"}},
                "external_id" => ^external_id,
                "type" => "foo_type",
                "active" => false

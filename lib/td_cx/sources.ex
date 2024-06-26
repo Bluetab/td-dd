@@ -186,10 +186,18 @@ defmodule TdCx.Sources do
   end
 
   def enrich_secrets(source) do
-    secrets = Vault.read_secrets(source.secrets_key)
+    secrets =
+      source
+      |> Map.get(:secrets_key)
+      |> Vault.read_secrets()
 
     case secrets do
       %{} = secrets ->
+        secrets =
+          secrets
+          |> Enum.map(fn {key, val} -> {key, %{"value" => val, "origin" => "user"}} end)
+          |> Map.new()
+
         config = Map.get(source, :config) || %{}
         Map.put(source, :config, Map.merge(config, secrets))
 
@@ -242,7 +250,18 @@ defmodule TdCx.Sources do
        ) do
     secrets_key = build_secret_key(type, external_id)
 
-    case Vault.write_secrets(secrets_key, secrets) do
+    secret_config =
+      secrets
+      |> Enum.map(fn
+        {key, %{"value" => value}} ->
+          {key, value}
+
+        val ->
+          val
+      end)
+      |> Map.new()
+
+    case Vault.write_secrets(secrets_key, secret_config) do
       :ok ->
         attrs =
           attrs
@@ -357,7 +376,18 @@ defmodule TdCx.Sources do
     type = Map.get(attrs, "type") || Map.get(source, :type)
     secrets_key = build_secret_key(type, external_id)
 
-    case Vault.write_secrets(secrets_key, secrets) do
+    secret_config =
+      secrets
+      |> Enum.map(fn
+        {key, %{"value" => value}} ->
+          {key, value}
+
+        val ->
+          val
+      end)
+      |> Map.new()
+
+    case Vault.write_secrets(secrets_key, secret_config) do
       :ok ->
         attrs =
           attrs

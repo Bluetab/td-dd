@@ -1,6 +1,7 @@
 defmodule TdDqWeb.ImplementationView do
   use TdDqWeb, :view
 
+  alias TdDfLib.Content
   alias TdDq.Implementations
   alias TdDq.Rules
   alias TdDqWeb.Implementation.ConditionsView
@@ -89,6 +90,7 @@ defmodule TdDqWeb.ImplementationView do
     |> add_rule_results(implementation)
     |> maybe_render_data_structures(data_structures)
     |> add_dynamic_content(implementation)
+    |> Content.legacy_content_support(:df_content)
   end
 
   def render("implementation.json", %{implementation: implementation}) do
@@ -137,6 +139,7 @@ defmodule TdDqWeb.ImplementationView do
     |> add_rule_results(implementation)
     |> maybe_render_data_structures(data_structures)
     |> add_dynamic_content(implementation)
+    |> Content.legacy_content_support(:df_content)
   end
 
   defp add_first_population(mapping, %{populations: [%{conditions: conditions} | _]})
