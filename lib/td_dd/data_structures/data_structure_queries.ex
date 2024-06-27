@@ -227,8 +227,18 @@ defmodule TdDd.DataStructures.DataStructureQueries do
     |> join(:left, [dsv], ds in assoc(dsv, :data_structure), as: :ds)
     |> join(:left, [ds: ds], s in assoc(ds, :system), as: :sys)
     |> join(:left, [ds: ds], pn in assoc(ds, :published_note), as: :pn)
-    |> select_merge([ds: ds, sys: sys, pn: pn], %{
-      data_structure: %{ds | system: sys, published_note: pn}
+    |> join(:left, [ds: ds], dn in assoc(ds, :draft_note), as: :dn)
+    |> join(:left, [ds: ds], pan in assoc(ds, :pending_approval_note), as: :pan)
+    |> join(:left, [ds: ds], rn in assoc(ds, :rejected_note), as: :rn)
+    |> select_merge([ds: ds, sys: sys, pn: pn, dn: dn, pan: pan, rn: rn], %{
+      data_structure: %{
+        ds
+        | system: sys,
+          published_note: pn,
+          draft_note: dn,
+          pending_approval_note: pan,
+          rejected_note: rn
+      }
     })
     |> join(:left, [dsv], sm in StructureMetadata,
       as: :metadata,

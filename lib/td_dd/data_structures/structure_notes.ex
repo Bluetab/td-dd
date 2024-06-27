@@ -329,7 +329,7 @@ defmodule TdDd.DataStructures.StructureNotes do
   defp on_update_structure(
          {:ok, %{structure_note_update: %{status: status, data_structure_id: id}}} = res
        )
-       when status in [:published, :deprecated] do
+       when status in [:published, :deprecated, :draft, :pending_approval, :rejected] do
     Indexer.reindex(id)
 
     DataStructures.maybe_reindex_grant_requests(res)
