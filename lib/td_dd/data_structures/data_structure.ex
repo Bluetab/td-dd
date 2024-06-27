@@ -37,6 +37,9 @@ defmodule TdDd.DataStructures.DataStructure do
     field(:alias, :string)
 
     has_one(:published_note, StructureNote, where: [status: :published])
+    has_one(:draft_note, StructureNote, where: [status: :draft])
+    has_one(:pending_approval_note, StructureNote, where: [status: :pending_approval])
+    has_one(:rejected_note, StructureNote, where: [status: :rejected])
 
     belongs_to(:system, System, on_replace: :update)
     belongs_to(:source, Source)

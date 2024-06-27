@@ -65,7 +65,10 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
                  },
                  nested: %{path: "note.my_system"}
                },
-               "my_user" => %{terms: %{field: "note.my_user.raw", size: @default_size}}
+               "my_user" => %{terms: %{field: "note.my_user.raw", size: @default_size}},
+               "note_status" => %{
+                 terms: %{field: "non_published_note.status", size: @default_size}
+               }
              }
     end
 

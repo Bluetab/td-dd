@@ -269,6 +269,7 @@ config :td_core, TdCore.Search.Cluster,
     "type.raw" => System.get_env("AGG_TYPE_RAW_SIZE", "500") |> String.to_integer(),
     "confidential.raw" =>
       System.get_env("AGG_CONFIDENTIAL_RAW_SIZE", "500") |> String.to_integer(),
+    "note_status" => System.get_env("AGG_NOTE_STATUS_SIZE", "500") |> String.to_integer(),
     "class.raw" => System.get_env("AGG_CLASS_RAW_SIZE", "500") |> String.to_integer(),
     "field_type.raw" => System.get_env("AGG_FIELD_TYPE_RAW_SIZE", "500") |> String.to_integer(),
     "with_content.raw" =>
