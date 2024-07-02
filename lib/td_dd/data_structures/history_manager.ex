@@ -25,7 +25,28 @@ defmodule TdDd.DataStructures.HistoryManager do
   def purge_history(days) when is_integer(days) and days > 0 do
     [q1, q2] =
       Enum.map([DataStructureVersion, StructureMetadata], fn q ->
-        where(q, [d], d.deleted_at <= datetime_add(^DateTime.utc_now(), -(^days), "day"))
+        max_version_subquery =
+          q
+          |> group_by([d], d.data_structure_id)
+          |> select([d], %{
+            data_structure_id: d.data_structure_id,
+            max_version: max(d.version)
+          })
+
+        max_version_dsv_ids =
+          q
+          |> join(:inner, [d], mvs in subquery(max_version_subquery),
+            on:
+              d.data_structure_id ==
+                mvs.data_structure_id and
+                d.version == mvs.max_version
+          )
+          |> select([d], d.id)
+          |> Repo.all()
+
+        q
+        |> where([d], d.deleted_at <= datetime_add(^DateTime.utc_now(), -(^days), "day"))
+        |> where([d], d.id not in ^max_version_dsv_ids)
       end)
 
     Multi.new()
