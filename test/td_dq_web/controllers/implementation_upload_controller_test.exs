@@ -188,7 +188,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
         insert(
           :implementation,
           implementation_key: "boo_key_1",
-          df_content: %{string: "boo_1"},
+          df_content: %{string: %{value: "boo_1", origin: "user"}},
           implementation_type: "basic",
           rule_id: rule.id,
           domain_id: rule.domain_id,
@@ -204,7 +204,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
           :implementation,
           implementation_key: "boo_key_1",
           implementation_ref: implementation_ref,
-          df_content: %{string: "boo_1"},
+          df_content: %{string: %{value: "boo_1", origin: "user"}},
           implementation_type: "basic",
           rule_id: rule.id,
           domain_id: rule.domain_id,
@@ -233,7 +233,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
       assert %Implementation{
                id: ^implementation_boo_key_version_1_id,
                implementation_key: "boo_key_1",
-               df_content: %{"string" => "boo_1"},
+               df_content: %{"string" => %{"value" => "boo_1", "origin" => "user"}},
                status: :versioned,
                minimum: 10.0,
                goal: 11.0
@@ -245,7 +245,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
                %Implementation{
                  id: ^implementation_boo_key_version_2_id,
                  implementation_key: "boo_key_1",
-                 df_content: %{"string" => "boo_1_from_csv"},
+                 df_content: %{"string" => %{"value" => "boo_1_from_csv", "origin" => "file"}},
                  status: :published,
                  minimum: 14.0,
                  goal: 15.0
@@ -280,7 +280,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
         insert(
           :implementation,
           implementation_key: "boo_key_1",
-          df_content: %{string: "boo_1"},
+          df_content: %{string: %{value: "boo_1", origin: "user"}},
           implementation_type: "basic",
           rule_id: rule.id,
           domain_id: rule.domain_id,
@@ -296,7 +296,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
         insert(
           :implementation,
           implementation_key: "boo_key_2",
-          df_content: %{string: "boo_2"},
+          df_content: %{string: %{value: "boo_2", origin: "user"}},
           implementation_type: "basic",
           rule_id: rule.id,
           domain_id: rule.domain_id,
@@ -314,7 +314,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
           implementation_key: "boo_key_4",
           implementation_type: "basic",
           domain_id: domain_id,
-          df_content: %{string: "boo_4"},
+          df_content: %{string: %{value: "boo_4", origin: "user"}},
           status: :draft,
           version: 1,
           minimum: 10,
@@ -328,7 +328,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
           :implementation,
           implementation_key: "boo_key_5",
           implementation_type: "basic",
-          df_content: %{string: "boo_5"},
+          df_content: %{string: %{value: "boo_5", origin: "user"}},
           domain_id: domain_id,
           status: :published,
           implementation_type: "default",
@@ -370,7 +370,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
       assert %Implementation{
                id: ^implementation_boo_key_1_id,
                implementation_key: "boo_key_1",
-               df_content: %{"string" => "boo_1_from_csv"},
+               df_content: %{"string" => %{"value" => "boo_1_from_csv", "origin" => "file"}},
                status: :published,
                minimum: 11.0,
                goal: 12.0
@@ -380,7 +380,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
       #   New Implemementation inserted as "published"...
       assert %Implementation{
                implementation_key: "boo_key_2",
-               df_content: %{"string" => "boo_2_from_csv"},
+               df_content: %{"string" => %{"value" => "boo_2_from_csv", "origin" => "file"}},
                status: :published,
                minimum: 22.0,
                goal: 23.0
@@ -390,7 +390,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
       assert %Implementation{
                id: ^implementation_boo_key_2_id,
                implementation_key: "boo_key_2",
-               df_content: %{"string" => "boo_2"},
+               df_content: %{"string" => %{"value" => "boo_2", "origin" => "user"}},
                status: :versioned,
                version: 1,
                minimum: 10.0,
@@ -400,7 +400,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
       # This one is new
       assert %Implementation{
                implementation_key: "boo_key_3",
-               df_content: %{"string" => "boo_3_from_csv"},
+               df_content: %{"string" => %{"value" => "boo_3_from_csv", "origin" => "file"}},
                status: :published,
                minimum: 33.0,
                goal: 34.0
@@ -410,7 +410,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
       assert %Implementation{
                id: ^implementation_boo_key_4_id,
                implementation_key: "boo_key_4",
-               df_content: %{"string" => "boo_4_from_csv"},
+               df_content: %{"string" => %{"value" => "boo_4_from_csv", "origin" => "file"}},
                status: :published,
                minimum: 145.0,
                goal: 144.0
@@ -420,7 +420,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
       #   New Implemementation inserted as "published"...
       assert %Implementation{
                implementation_key: "boo_key_5",
-               df_content: %{"string" => "boo_5_from_csv"},
+               df_content: %{"string" => %{"value" => "boo_5_from_csv", "origin" => "file"}},
                status: :published,
                implementation_type: "default",
                minimum: 156.0,
@@ -434,7 +434,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
       assert %Implementation{
                id: ^implementation_boo_key_5_id,
                implementation_key: "boo_key_5",
-               df_content: %{"string" => "boo_5"},
+               df_content: %{"string" => %{"value" => "boo_5", "origin" => "user"}},
                status: :versioned,
                implementation_type: "default",
                version: 1,
@@ -448,7 +448,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
       # This one is new
       assert %Implementation{
                implementation_key: "boo_key_6",
-               df_content: %{"string" => "boo_6_from_csv"},
+               df_content: %{"string" => %{"value" => "boo_6_from_csv", "origin" => "file"}},
                status: :published,
                implementation_type: "basic",
                minimum: 167.0,
@@ -477,7 +477,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
               "label" => "My domain",
               "values" => nil,
               "widget" => "dropdown",
-              "default" => "",
+              "default" => %{"value" => "", "origin" => "default"},
               "cardinality" => "?",
               "subscribable" => false
             },
@@ -487,7 +487,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
               "label" => "My domain2",
               "values" => nil,
               "widget" => "dropdown",
-              "default" => "",
+              "default" => %{"value" => "", "origin" => "default"},
               "cardinality" => "?",
               "subscribable" => false
             }
@@ -511,36 +511,63 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
 
       assert %{
                "data" => %{
-                 "df_content" => df_content
+                 "df_content" => df_content,
+                 "dynamic_content" => dynamic_content
                }
              } =
                conn
                |> get(Routes.implementation_path(conn, :show, id1))
                |> json_response(:ok)
 
-      assert %{"my_domain1" => ^domain_id1, "my_domain2" => ^domain_id2} = df_content
+      assert %{
+               "my_domain1" => ^domain_id1,
+               "my_domain2" => ^domain_id2
+             } = df_content
+
+      assert %{
+               "my_domain1" => %{"value" => ^domain_id1, "origin" => "file"},
+               "my_domain2" => %{"value" => ^domain_id2, "origin" => "file"}
+             } = dynamic_content
 
       assert %{
                "data" => %{
-                 "df_content" => df_content2
+                 "df_content" => df_content2,
+                 "dynamic_content" => dynamic_content2
                }
              } =
                conn
                |> get(Routes.implementation_path(conn, :show, id2))
                |> json_response(:ok)
 
-      assert %{"my_domain1" => ^domain_id1, "my_domain2" => nil} = df_content2
+      assert %{
+               "my_domain1" => ^domain_id1,
+               "my_domain2" => nil
+             } = df_content2
+
+      assert %{
+               "my_domain1" => %{"value" => ^domain_id1, "origin" => "file"},
+               "my_domain2" => %{"value" => nil, "origin" => "file"}
+             } = dynamic_content2
 
       assert %{
                "data" => %{
-                 "df_content" => df_content3
+                 "df_content" => df_content3,
+                 "dynamic_content" => dynamic_content3
                }
              } =
                conn
                |> get(Routes.implementation_path(conn, :show, id3))
                |> json_response(:ok)
 
-      assert %{"my_domain1" => nil, "my_domain2" => nil} = df_content3
+      assert %{
+               "my_domain1" => nil,
+               "my_domain2" => nil
+             } = df_content3
+
+      assert %{
+               "my_domain1" => %{"value" => nil, "origin" => "file"},
+               "my_domain2" => %{"value" => nil, "origin" => "file"}
+             } = dynamic_content3
     end
 
     @tag authentication: [role: "admin"]
@@ -561,7 +588,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
               "label" => "Enriched field",
               "values" => nil,
               "widget" => "enriched_text",
-              "default" => "",
+              "default" => %{"value" => "", "origin" => "default"},
               "cardinality" => "?",
               "subscribable" => false
             }
@@ -585,7 +612,8 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
 
       assert %{
                "data" => %{
-                 "df_content" => df_content
+                 "df_content" => df_content,
+                 "dynamic_content" => dynamic_content
                }
              } =
                conn
@@ -607,8 +635,26 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
              } = df_content
 
       assert %{
+               "enriched_field" => %{
+                 "value" => %{
+                   "document" => %{
+                     "nodes" => [
+                       %{
+                         "nodes" => [%{"object" => "text", "leaves" => [%{"text" => "foo"}]}],
+                         "object" => "block",
+                         "type" => "paragraph"
+                       }
+                     ]
+                   }
+                 },
+                 "origin" => "file"
+               }
+             } = dynamic_content
+
+      assert %{
                "data" => %{
-                 "df_content" => df_content2
+                 "df_content" => df_content2,
+                 "dynamic_content" => dynamic_content2
                }
              } =
                conn
@@ -616,6 +662,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
                |> json_response(:ok)
 
       assert %{"enriched_field" => %{}} = df_content2
+      assert %{"enriched_field" => %{"value" => %{}, "origin" => "file"}} = dynamic_content2
     end
 
     @tag authentication: [role: "admin"]
@@ -754,7 +801,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
         insert(
           :implementation,
           implementation_key: "boo_key_2",
-          df_content: %{string: "boo_2"},
+          df_content: %{string: %{"value" => "boo_2", "origin" => "user"}},
           implementation_type: "basic",
           domain_id: domain_id,
           status: :published,

@@ -281,7 +281,12 @@ defmodule TdDd.DataStructures.StructureNotes do
   def maybe_update_alias(multi, "published", user_id) do
     Multi.update(multi, :update_alias, fn
       %{structure_note_update: %{data_structure: data_structure, df_content: %{} = content}} ->
-        DataStructure.alias_changeset(data_structure, Map.get(content, "alias"), user_id)
+        alias_value =
+          content
+          |> Map.get("alias", %{})
+          |> Map.get("value")
+
+        DataStructure.alias_changeset(data_structure, alias_value, user_id)
     end)
   end
 
@@ -324,7 +329,7 @@ defmodule TdDd.DataStructures.StructureNotes do
   defp on_update_structure(
          {:ok, %{structure_note_update: %{status: status, data_structure_id: id}}} = res
        )
-       when status in [:published, :deprecated] do
+       when status in [:published, :deprecated, :draft, :pending_approval, :rejected] do
     Indexer.reindex(id)
 
     DataStructures.maybe_reindex_grant_requests(res)

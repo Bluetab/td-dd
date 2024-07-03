@@ -47,7 +47,8 @@ defmodule TdDdWeb.GrantRequestControllerTest do
       assert [
                %{
                  "id" => ^id,
-                 "metadata" => ^request_metadata,
+                 "metadata" => %{"grant_meta" => "bar"},
+                 "dynamic_content" => ^request_metadata,
                  "filters" => _,
                  "inserted_at" => _,
                  "status" => "approved",

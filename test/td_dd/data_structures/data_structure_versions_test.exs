@@ -575,7 +575,10 @@ defmodule TdDd.DataStructures.DataStructureVersionsTest do
       %{data_structure_id: data_structure_id} = insert(:data_structure_version)
 
       assert [
-               {:data_structure_version, %{metadata: %{"description" => "some description"}}}
+               {:data_structure_version,
+                %{
+                  metadata: %{"description" => "some description"}
+                }}
                | _
              ] =
                DataStructureVersions.enriched_data_structure_version(
@@ -593,12 +596,17 @@ defmodule TdDd.DataStructures.DataStructureVersionsTest do
 
       insert(:structure_note,
         data_structure_id: data_structure_id,
-        df_content: %{"foo" => "bar"},
+        df_content: %{"foo" => %{"value" => "bar", "origin" => "user"}},
         status: :published
       )
 
       assert [
-               {:data_structure_version, %{published_note: %{df_content: %{"foo" => "bar"}}}}
+               {:data_structure_version,
+                %{
+                  published_note: %{
+                    df_content: %{"foo" => %{"value" => "bar", "origin" => "user"}}
+                  }
+                }}
                | _
              ] =
                DataStructureVersions.enriched_data_structure_version(

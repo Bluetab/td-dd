@@ -8,13 +8,13 @@ defmodule TdCx.SourcesTest do
   @moduletag sandbox: :shared
 
   @valid_attrs %{
-    "config" => %{"a" => "1"},
+    "config" => %{"a" => %{"value" => "1", "origin" => "user"}},
     "external_id" => "some external_id",
     "secrets_key" => "some secrets_key",
     "type" => "template_type",
     "active" => true
   }
-  @update_attrs %{"config" => %{"a" => "2"}, "active" => false}
+  @update_attrs %{"config" => %{"a" => %{"value" => "2", "origin" => "user"}}, "active" => false}
   @invalid_attrs %{"config" => 2, "external_id" => nil, "secrets_key" => nil, "type" => nil}
   @template %{
     name: "template_type",
@@ -48,8 +48,11 @@ defmodule TdCx.SourcesTest do
 
     test "gets source by content alias if exists" do
       insert(:source)
-      insert(:source, config: %{alias: "foo"})
-      %{id: id, config: config} = insert(:source, config: %{"alias" => "bar"})
+      insert(:source, config: %{alias: %{"value" => "foo", "origin" => "user"}})
+
+      %{id: id, config: config} =
+        insert(:source, config: %{"alias" => %{"value" => "bar", "origin" => "user"}})
+
       assert %{id: ^id, config: ^config} = Sources.get_source(%{alias: "bar"})
     end
   end
@@ -113,7 +116,7 @@ defmodule TdCx.SourcesTest do
 
     test "create_source/1 with valid data creates a source" do
       assert {:ok, %Source{} = source} = Sources.create_source(@valid_attrs)
-      assert source.config == %{"a" => "1"}
+      assert source.config == %{"a" => %{"value" => "1", "origin" => "user"}}
       assert source.external_id == "some external_id"
       # assert source.secrets_key == "some secrets_key"
       assert source.type == "template_type"
@@ -126,7 +129,7 @@ defmodule TdCx.SourcesTest do
     test "update_source/2 with valid data updates the source" do
       source = source_fixture()
       assert {:ok, %Source{} = source} = Sources.update_source(source, @update_attrs)
-      assert source.config == %{"a" => "2"}
+      assert source.config == %{"a" => %{"value" => "2", "origin" => "user"}}
     end
 
     test "update_source/2 with invalid data returns error changeset" do
@@ -184,13 +187,15 @@ defmodule TdCx.SourcesTest do
     end
 
     test "job_types/1 with valid and invalid data" do
-      source = insert(:source, config: %{"job_types" => ["catalog"]})
+      source =
+        insert(:source, config: %{"job_types" => %{"value" => ["catalog"], "origin" => "user"}})
+
       assert ["catalog"] = Sources.job_types(source)
 
-      source = insert(:source, config: %{"a" => "1"})
+      source = insert(:source, config: %{"a" => %{"value" => "1", "origin" => "user"}})
       assert [] = Sources.job_types(source)
 
-      source = insert(:source, config: %{"job_types" => nil})
+      source = insert(:source, config: %{"job_types" => %{"value" => nil, "origin" => "user"}})
       assert [] = Sources.job_types(source)
     end
   end
@@ -202,12 +207,16 @@ defmodule TdCx.SourcesTest do
     end
 
     test "obtains the alias of a source specified by id" do
-      %{id: source_id} = insert(:source, config: %{"alias" => "foo"})
+      %{id: source_id} =
+        insert(:source, config: %{"alias" => %{"value" => "foo", "origin" => "user"}})
+
       assert Sources.get_aliases(source_id) == ["foo"]
     end
 
     test "obtains the aliases of a source specified by id" do
-      %{id: source_id} = insert(:source, config: %{"aliases" => ["foo", "bar"]})
+      %{id: source_id} =
+        insert(:source, config: %{"aliases" => %{"value" => ["foo", "bar"], "origin" => "user"}})
+
       assert Sources.get_aliases(source_id) == ["foo", "bar"]
     end
   end
@@ -215,15 +224,24 @@ defmodule TdCx.SourcesTest do
   describe "Sources.query_sources/1" do
     test "returns a list of sources" do
       insert(:source)
-      insert(:source, config: %{alias: "foo"})
+      insert(:source, config: %{alias: %{"value" => "foo", "origin" => "user"}})
 
       %{id: id, config: config} =
-        insert(:source, config: %{"alias" => "bar", "job_types" => ["profile"]})
+        insert(:source,
+          config: %{
+            "alias" => %{"value" => "bar", "origin" => "user"},
+            "job_types" => %{"value" => ["profile"], "origin" => "user"}
+          }
+        )
 
       assert [%{id: ^id, config: ^config}] =
-               Sources.query_sources(%{alias: "bar", job_types: "profile"})
+               Sources.query_sources(%{
+                 alias: "bar",
+                 job_types: "profile"
+               })
 
-      %{id: id, config: config} = insert(:source, config: %{"aliases" => ["foo"]})
+      %{id: id, config: config} =
+        insert(:source, config: %{"aliases" => %{"value" => ["foo"], "origin" => "user"}})
 
       assert [%{id: ^id, config: ^config}] = Sources.query_sources(%{aliases: "foo"})
 

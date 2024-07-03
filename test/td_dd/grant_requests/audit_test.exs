@@ -10,7 +10,10 @@ defmodule TdDd.GrantRequests.AuditTest do
   @stream TdCache.Audit.stream()
 
   @template_name "grant_request_test_template"
-  @valid_metadata %{"list" => "one", "string" => "bar"}
+  @valid_metadata %{
+    "list" => %{"value" => "one", "origin" => "user"},
+    "string" => %{"value" => "bar", "origin" => "user"}
+  }
 
   setup do
     claims = build(:claims, role: "admin")

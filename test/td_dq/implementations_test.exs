@@ -2259,8 +2259,12 @@ defmodule TdDq.ImplementationsTest do
 
   describe "get_sources/1" do
     setup do
-      %{id: sid1} = source1 = insert(:source, config: %{"alias" => "foo"})
-      %{id: sid2} = source2 = insert(:source, config: %{"aliases" => ["bar", "baz"]})
+      %{id: sid1} =
+        source1 = insert(:source, config: %{"alias" => %{"value" => "foo", "origin" => "user"}})
+
+      %{id: sid2} =
+        source2 =
+        insert(:source, config: %{"aliases" => %{"value" => ["bar", "baz"], "origin" => "user"}})
 
       %{data_structure_id: structure_id1, data_structure: s1} =
         insert(:data_structure_version,

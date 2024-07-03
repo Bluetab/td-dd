@@ -54,6 +54,18 @@ defmodule TdDd.DataStructures.ElasticDocument do
       id_path = Enum.map(path, &Map.get(&1, "data_structure_id", 0))
       parent_id = List.last(Enum.map(path, &Integer.to_string(&1["data_structure_id"])), "")
 
+      note =
+        content
+        |> case do
+          note_content when is_map(note_content) ->
+            note_content
+            |> Enum.map(fn {key, %{"value" => value}} -> {key, value} end)
+            |> Map.new()
+
+          _ ->
+            content
+        end
+
       data_structure
       |> Map.take([
         :confidential,
@@ -65,7 +77,7 @@ defmodule TdDd.DataStructures.ElasticDocument do
         :source_id,
         :system_id
       ])
-      |> Map.put(:note, content)
+      |> Map.put(:note, note)
       |> Map.put(:domain, first_domain(data_structure))
       |> Map.put(:field_type, field_type(dsv))
       |> Map.put(:path_sort, path_sort(name_path))
@@ -103,6 +115,7 @@ defmodule TdDd.DataStructures.ElasticDocument do
         ])
       )
       |> maybe_put_alias(alias_name)
+      |> maybe_add_non_published_note(data_structure)
     end
 
     defp maybe_put_alias(map, nil), do: map
@@ -134,6 +147,22 @@ defmodule TdDd.DataStructures.ElasticDocument do
 
     defp source_alias(%{metadata: %{"alias" => value}}), do: value
     defp source_alias(_), do: nil
+
+    defp maybe_add_non_published_note(map, %{draft_note: %{id: id, status: status}}) do
+      Map.put(map, :non_published_note, %{id: id, status: status})
+    end
+
+    defp maybe_add_non_published_note(map, %{pending_approval_note: %{id: id, status: status}}) do
+      Map.put(map, :non_published_note, %{id: id, status: status})
+    end
+
+    defp maybe_add_non_published_note(map, %{rejected_note: %{id: id, status: status}}) do
+      Map.put(map, :non_published_note, %{id: id, status: status})
+    end
+
+    defp maybe_add_non_published_note(map, _) do
+      Map.put(map, :non_published_note, %{})
+    end
   end
 
   defimpl ElasticDocumentProtocol, for: DataStructureVersion do
@@ -188,7 +217,13 @@ defmodule TdDd.DataStructures.ElasticDocument do
         source_alias: %{type: "keyword", fields: @raw_sort},
         version: %{type: "long"},
         tags: %{type: "text", fields: %{raw: %{type: "keyword", null_value: ""}}},
-        with_profiling: %{type: "boolean", fields: @raw}
+        with_profiling: %{type: "boolean", fields: @raw},
+        non_published_note: %{
+          properties: %{
+            id: %{type: "long", index: false},
+            status: %{type: "keyword"}
+          }
+        }
       }
 
       dynamic_templates = [
@@ -241,6 +276,12 @@ defmodule TdDd.DataStructures.ElasticDocument do
           terms: %{
             field: "with_profiling.raw",
             size: Cluster.get_size_field("with_profiling.raw")
+          }
+        },
+        "note_status" => %{
+          terms: %{
+            field: "non_published_note.status",
+            size: Cluster.get_size_field("note_status")
           }
         }
       }

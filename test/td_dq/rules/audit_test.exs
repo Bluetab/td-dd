@@ -18,7 +18,11 @@ defmodule TdDq.Rules.AuditTest do
     claims = build(:claims, role: "admin")
 
     rule =
-      insert(:rule, df_name: template_name, domain_id: domain_id, df_content: %{"bar" => "foo"})
+      insert(:rule,
+        df_name: template_name,
+        domain_id: domain_id,
+        df_content: %{"bar" => %{"value" => "foo"}, "origin" => "user"}
+      )
 
     implementation = insert(:implementation, rule: rule, deleted_at: nil, domain_id: domain_id)
 
@@ -81,7 +85,11 @@ defmodule TdDq.Rules.AuditTest do
     test "publishes an event", %{rule: rule, claims: %{user_id: user_id}} do
       %{id: rule_id} = rule
 
-      params = %{df_content: %{"list" => "two"}, name: "new name"}
+      params = %{
+        df_content: %{"list" => %{"value" => "two", "origin" => "user"}},
+        name: "new name"
+      }
+
       changeset = Rule.changeset(rule, params)
 
       assert {:ok, event_id} = Audit.rule_updated(Repo, %{rule: rule}, changeset, user_id)
@@ -230,8 +238,8 @@ defmodule TdDq.Rules.AuditTest do
       %{id: implementation_id} = implementation
 
       df_content = %{
-        "new_field1" => "foo",
-        "new_field2" => "bar"
+        "new_field1" => %{"value" => "foo", "origin" => "user"},
+        "new_field2" => %{"value" => "bar", "origin" => "user"}
       }
 
       params = %{df_content: df_content}
@@ -386,7 +394,10 @@ defmodule TdDq.Rules.AuditTest do
         id: id
       } =
         remediation =
-        insert(:remediation, rule_result: rule_result, df_content: %{"foo" => "bar"})
+        insert(:remediation,
+          rule_result: rule_result,
+          df_content: %{"foo" => %{"value" => "bar", "origin" => "user"}}
+        )
 
       changeset = Remediation.changeset(remediation, %{})
 

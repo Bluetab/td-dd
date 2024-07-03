@@ -24,7 +24,7 @@ defmodule TdDq.Executions.GroupTest do
       params = %{
         "created_by_id" => 0,
         "executions" => [%{"implementation_id" => id}],
-        "df_content" => %{"doc" => @unsafe}
+        "df_content" => %{"doc" => %{"value" => @unsafe, "origin" => "user"}}
       }
 
       assert %{valid?: false, errors: errors} = Group.changeset(params)

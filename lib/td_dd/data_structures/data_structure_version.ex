@@ -54,6 +54,9 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     has_many(:parent_relations, DataStructureRelation, foreign_key: :child_id)
     has_one(:current_metadata, through: [:data_structure, :current_metadata])
     has_one(:published_note, through: [:data_structure, :published_note])
+    has_one(:draft_note, through: [:data_structure, :draft_note])
+    has_one(:pending_approval_note, through: [:data_structure, :pending_approval_note])
+    has_one(:rejected_note, through: [:data_structure, :rejected_note])
 
     many_to_many(:children, __MODULE__,
       join_through: DataStructureRelation,

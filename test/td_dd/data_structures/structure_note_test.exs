@@ -5,8 +5,15 @@ defmodule TdDd.DataStructures.StructureNoteTest do
   alias TdDd.DataStructures.StructureNote
 
   @moduletag sandbox: :shared
-  @invalid_content %{"string" => nil, "list" => "four"}
-  @valid_content %{"identifier" => "cero", "string" => "present", "list" => "one"}
+  @invalid_content %{
+    "string" => %{"value" => nil, "origin" => "user"},
+    "list" => %{"value" => "four", "origin" => "user"}
+  }
+  @valid_content %{
+    "identifier" => %{"value" => "cero", "origin" => "user"},
+    "string" => %{"value" => "present", "origin" => "user"},
+    "list" => %{"value" => "one", "origin" => "user"}
+  }
   @unsafe "javascript:alert(document)"
 
   setup do
@@ -52,7 +59,7 @@ defmodule TdDd.DataStructures.StructureNoteTest do
           "fields" => [
             %{
               "cardinality" => "1",
-              "default" => "",
+              "default" => %{"value" => "", "origin" => "user"},
               "label" => "Identifier",
               "name" => identifier_name,
               "subscribable" => false,
@@ -117,7 +124,7 @@ defmodule TdDd.DataStructures.StructureNoteTest do
     structure_note =
       insert(:structure_note,
         data_structure: data_structure_without_identifier,
-        df_content: %{"foo" => "old"}
+        df_content: %{"foo" => %{"value" => "old", "origin" => "user"}}
       )
 
     structure_note_with_identifier =
@@ -125,7 +132,10 @@ defmodule TdDd.DataStructures.StructureNoteTest do
         :structure_note,
         data_structure:
           data_structure_with_identifier |> Repo.preload(current_version: :structure_type),
-        df_content: %{"foo" => "old", identifier_name => identifier_value}
+        df_content: %{
+          "foo" => %{"value" => "old", "origin" => "user"},
+          identifier_name => %{"value" => identifier_value, "origin" => "user"}
+        }
       )
 
     [
@@ -154,7 +164,7 @@ defmodule TdDd.DataStructures.StructureNoteTest do
       attrs = %{
         version: 1,
         status: "draft",
-        df_content: %{"bar" => "bar"}
+        df_content: %{"bar" => %{"value" => "bar", "origin" => "user"}}
       }
 
       assert %Changeset{changes: changes} =
@@ -185,11 +195,18 @@ defmodule TdDd.DataStructures.StructureNoteTest do
     test "merges dynamic content replacing existing field", %{structure_note: structure_note} do
       assert %Changeset{changes: changes} =
                StructureNote.bulk_update_changeset(structure_note, %{
-                 df_content: %{"bar" => "bar", "foo" => "new"}
+                 df_content: %{
+                   "bar" => %{"value" => "bar", "origin" => "user"},
+                   "foo" => %{"value" => "new", "origin" => "user"}
+                 }
                })
 
       assert %{df_content: new_content} = changes
-      assert new_content == %{"bar" => "bar", "foo" => "new"}
+
+      assert new_content == %{
+               "bar" => %{"value" => "bar", "origin" => "user"},
+               "foo" => %{"value" => "new", "origin" => "user"}
+             }
     end
 
     test "merges dynamic content preserving existing field", %{
@@ -197,11 +214,15 @@ defmodule TdDd.DataStructures.StructureNoteTest do
     } do
       assert %Changeset{changes: changes} =
                StructureNote.bulk_update_changeset(structure_note, %{
-                 df_content: %{"bar" => "bar"}
+                 df_content: %{"bar" => %{"value" => "bar", "origin" => "user"}}
                })
 
       assert %{df_content: new_content} = changes
-      assert new_content == %{"bar" => "bar", "foo" => "old"}
+
+      assert new_content == %{
+               "bar" => %{"value" => "bar", "origin" => "user"},
+               "foo" => %{"value" => "old", "origin" => "user"}
+             }
     end
 
     test "does not replaces existing content with nil", %{structure_note: structure_note} do
@@ -218,7 +239,7 @@ defmodule TdDd.DataStructures.StructureNoteTest do
 
       assert %Changeset{valid?: false, errors: errors} =
                StructureNote.bulk_update_changeset(structure_note, %{
-                 df_content: %{"foo" => "bar"}
+                 df_content: %{"foo" => %{"value" => "bar", "origin" => "user"}}
                })
 
       assert length(errors) == 1
@@ -230,7 +251,7 @@ defmodule TdDd.DataStructures.StructureNoteTest do
     } do
       assert %Changeset{changes: changes} =
                StructureNote.bulk_update_changeset(structure_note, %{
-                 df_content: %{"foo" => "old"}
+                 df_content: %{"foo" => %{"value" => "old", "origin" => "user"}}
                })
 
       refute Map.has_key?(changes, :df_content)
@@ -251,7 +272,7 @@ defmodule TdDd.DataStructures.StructureNoteTest do
     end
 
     test "validates content is not unsafe", %{structure_note: structure_note} do
-      params = %{"df_content" => %{"foo" => [@unsafe]}}
+      params = %{"df_content" => %{"foo" => %{"value" => [@unsafe], "origin" => "user"}}}
 
       assert %{valid?: false, errors: errors} =
                StructureNote.bulk_update_changeset(structure_note, params)
@@ -264,21 +285,28 @@ defmodule TdDd.DataStructures.StructureNoteTest do
     test "replaces dynamic content with new content 1", %{structure_note: structure_note} do
       assert %Changeset{changes: changes} =
                StructureNote.changeset(structure_note, %{
-                 df_content: %{"bar" => "bar", "foo" => "new"}
+                 df_content: %{
+                   "bar" => %{"value" => "bar", "origin" => "user"},
+                   "foo" => %{"value" => "new", "origin" => "user"}
+                 }
                })
 
       assert %{df_content: new_content} = changes
-      assert new_content == %{"bar" => "bar", "foo" => "new"}
+
+      assert new_content == %{
+               "bar" => %{"value" => "bar", "origin" => "user"},
+               "foo" => %{"value" => "new", "origin" => "user"}
+             }
     end
 
     test "replaces dynamic content with new content 2", %{structure_note: structure_note} do
       assert %Changeset{changes: changes} =
                StructureNote.changeset(structure_note, %{
-                 df_content: %{"bar" => "bar"}
+                 df_content: %{"bar" => %{"value" => "bar", "origin" => "user"}}
                })
 
       assert %{df_content: new_content} = changes
-      assert new_content == %{"bar" => "bar"}
+      assert new_content == %{"bar" => %{"value" => "bar", "origin" => "user"}}
     end
 
     test "identifies unchanged dynamic content (new content identical)", %{
@@ -286,7 +314,7 @@ defmodule TdDd.DataStructures.StructureNoteTest do
     } do
       assert %Changeset{changes: changes} =
                StructureNote.changeset(structure_note, %{
-                 df_content: %{"foo" => "old"},
+                 df_content: %{"foo" => %{"value" => "old", "origin" => "user"}},
                  last_change_by: 123
                })
 
@@ -315,7 +343,9 @@ defmodule TdDd.DataStructures.StructureNoteTest do
       structure_note = insert(:structure_note, data_structure: data_structure)
 
       assert %Changeset{valid?: false, errors: errors} =
-               StructureNote.changeset(structure_note, %{df_content: %{"foo" => "bar"}})
+               StructureNote.changeset(structure_note, %{
+                 df_content: %{"foo" => %{"value" => "bar", "origin" => "user"}}
+               })
 
       assert length(errors) == 1
       assert {"invalid template", [reason: :template_not_found]} = errors[:df_content]
@@ -337,7 +367,10 @@ defmodule TdDd.DataStructures.StructureNoteTest do
     end
 
     test "validates content is not unsafe", %{structure_note: structure_note} do
-      params = %{"df_content" => Map.put(@valid_content, "string", @unsafe)}
+      params = %{
+        "df_content" =>
+          Map.put(@valid_content, "string", %{"value" => @unsafe, "origin" => "user"})
+      }
 
       assert %{valid?: false, errors: errors} = StructureNote.changeset(structure_note, params)
 
@@ -351,11 +384,13 @@ defmodule TdDd.DataStructures.StructureNoteTest do
     } do
       assert %Changeset{changes: changes} =
                StructureNote.changeset(structure_note_with_identifier, %{
-                 df_content: %{"text" => "some update"}
+                 df_content: %{"text" => %{"value" => "some update", "origin" => "user"}}
                })
 
       assert %{df_content: new_content} = changes
-      assert %{^identifier_name => ^identifier_value} = new_content
+
+      assert %{^identifier_name => %{"value" => ^identifier_value, "origin" => "user"}} =
+               new_content
     end
 
     test "keeps an already present identifier (i.e., editing) if extraneous identifier attr is passed",
@@ -367,13 +402,18 @@ defmodule TdDd.DataStructures.StructureNoteTest do
       assert %Changeset{changes: changes} =
                StructureNote.changeset(structure_note_with_identifier, %{
                  df_content: %{
-                   "text" => "some update",
-                   identifier_name => "11111111-1111-1111-1111-111111111111"
+                   "text" => %{"value" => "some update", "origin" => "user"},
+                   identifier_name => %{
+                     "value" => "11111111-1111-1111-1111-111111111111",
+                     "origin" => "user"
+                   }
                  }
                })
 
       assert %{df_content: new_content} = changes
-      assert %{^identifier_name => ^identifier_value} = new_content
+
+      assert %{^identifier_name => %{"value" => ^identifier_value, "origin" => "user"}} =
+               new_content
     end
 
     test "puts a new identifier if the template has an identifier field", %{
@@ -402,7 +442,7 @@ defmodule TdDd.DataStructures.StructureNoteTest do
       attrs = %{
         version: 1,
         status: "draft",
-        df_content: %{"bar" => "bar"}
+        df_content: %{"bar" => %{"value" => "bar", "origin" => "user"}}
       }
 
       assert %Changeset{changes: changes} =

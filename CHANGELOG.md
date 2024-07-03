@@ -1,5 +1,13 @@
 # Changelog
 
+## [6.8.0] 2024-07-03
+
+### Added
+
+- [TD-6499] Add new content format data origin
+- [TD-4647] Elasticsearch index for non-published note
+- [TD-4786] Add DSV last version protection on purge
+
 ## [6.7.0] 2024-06-13
 
 ### Added

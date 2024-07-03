@@ -1,6 +1,7 @@
 defmodule TdDdWeb.DataStructureView do
   use TdDdWeb, :view
 
+  alias TdCache.DomainCache
   alias TdDd.DataStructures
   alias TdDdWeb.DataStructureVersionView
   alias TdDdWeb.GrantRequestView
@@ -58,6 +59,7 @@ defmodule TdDdWeb.DataStructureView do
     data_structure
     |> data_structure_json()
     |> add_metadata(data_structure)
+    |> maybe_enrich_domains()
     |> add_system_with_keys(data_structure, ["external_id", "id", "name"])
     |> add_data_fields(data_structure)
     |> maybe_put_note(data_structure)
@@ -143,7 +145,8 @@ defmodule TdDdWeb.DataStructureView do
       :updated_at,
       :mutable_metadata,
       :metadata,
-      :version
+      :version,
+      :non_published_note
     ])
     |> Map.merge(dsv_attrs)
     |> Map.put_new(:metadata, %{})
@@ -344,4 +347,12 @@ defmodule TdDdWeb.DataStructureView do
   end
 
   defp add_tags(ds, _), do: ds
+
+  defp maybe_enrich_domains(%{domain_ids: [_ | _] = domain_ids} = ds) do
+    domains = Enum.map(domain_ids, &DomainCache.get!(&1))
+
+    Map.put(ds, :domains, domains)
+  end
+
+  defp maybe_enrich_domains(ds), do: ds
 end

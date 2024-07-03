@@ -139,6 +139,15 @@ defmodule TdDq.Implementations.ElasticDocument do
         implementation
         |> Map.get(:df_content)
         |> Format.search_values(template)
+        |> case do
+          impl_content when is_map(impl_content) ->
+            impl_content
+            |> Enum.map(fn {key, %{"value" => value}} -> {key, value} end)
+            |> Map.new()
+
+          impl_content ->
+            impl_content
+        end
 
       implementation
       |> Map.take(@implementation_keys)
@@ -316,6 +325,15 @@ defmodule TdDq.Implementations.ElasticDocument do
         rule
         |> Map.get(:df_content)
         |> Format.search_values(template)
+        |> case do
+          rule_content when is_map(rule_content) ->
+            rule_content
+            |> Enum.map(fn {key, %{"value" => value}} -> {key, value} end)
+            |> Map.new()
+
+          rule_content ->
+            rule_content
+        end
 
       rule = Map.put(rule, :df_content, df_content)
 

@@ -2,6 +2,7 @@ defmodule TdCxWeb.ConfigurationView do
   use TdCxWeb, :view
   alias TdCx.Format
   alias TdCxWeb.ConfigurationView
+  alias TdDfLib.Content
 
   def render("index.json", %{configurations: configurations}) do
     %{data: render_many(configurations, ConfigurationView, "configuration.json")}
@@ -20,6 +21,7 @@ defmodule TdCxWeb.ConfigurationView do
       type: configuration.type
     }
     |> add_cached_content()
+    |> Content.legacy_content_support(:content)
   end
 
   defp add_cached_content(configuration) do

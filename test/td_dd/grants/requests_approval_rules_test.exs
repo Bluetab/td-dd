@@ -7,7 +7,10 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
   @moduletag sandbox: :shared
 
   @template_name "grant_request_test_template"
-  @valid_metadata %{"list" => "one", "string" => "bar"}
+  @valid_metadata %{
+    "list" => %{"value" => "one", "origin" => "user"},
+    "string" => %{"value" => "bar", "origin" => "user"}
+  }
 
   @approver_role "approver_role"
 
@@ -242,7 +245,7 @@ defmodule TdDd.Grants.RequestsApprovalRulesTest do
 
       insert(:structure_note,
         data_structure: data_structure,
-        df_content: %{"foo" => "bar"},
+        df_content: %{"foo" => %{"value" => "bar", "origin" => "user"}},
         status: :published
       )
 

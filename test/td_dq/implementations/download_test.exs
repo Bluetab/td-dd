@@ -72,12 +72,15 @@ defmodule TdDq.Implementations.DownloadTest do
         executable: true,
         rule: %{
           df_content: %{
-            system: [
-              %{id: 1, name: "system", exernal_id: "exid"},
-              %{id: 2, name: "system1", exernal_id: "exid1"}
-            ],
-            domains: [domain_id_1, domain_id_2],
-            add_info1: ["field_value"]
+            system: %{
+              "value" => [
+                %{id: 1, name: "system", exernal_id: "exid"},
+                %{id: 2, name: "system1", exernal_id: "exid1"}
+              ],
+              "origin" => "user"
+            },
+            domains: %{"value" => [domain_id_1, domain_id_2], "origin" => "user"},
+            add_info1: %{"value" => ["field_value"], "origin" => "user"}
           },
           df_name: "download",
           name: "Rule"
@@ -118,11 +121,14 @@ defmodule TdDq.Implementations.DownloadTest do
         executable: true,
         rule: %{
           df_content: %{
-            system: [
-              %{id: 1, name: "system", exernal_id: "exid"},
-              %{id: 2, name: "system1", exernal_id: "exid1"}
-            ],
-            add_info1: ["field_value"]
+            system: %{
+              "value" => [
+                %{id: 1, name: "system", exernal_id: "exid"},
+                %{id: 2, name: "system1", exernal_id: "exid1"}
+              ],
+              "origin" => "user"
+            },
+            add_info1: %{"value" => ["field_value"], "origin" => "user"}
           },
           df_name: "download",
           name: "Rule"
@@ -143,11 +149,14 @@ defmodule TdDq.Implementations.DownloadTest do
         executable: false,
         rule: %{
           df_content: %{
-            system: [
-              %{id: 1, name: "system", exernal_id: "exid"},
-              %{id: 2, name: "system1", exernal_id: "exid1"}
-            ],
-            add_info1: ["field_value"]
+            system: %{
+              "value" => [
+                %{id: 1, name: "system", exernal_id: "exid"},
+                %{id: 2, name: "system1", exernal_id: "exid1"}
+              ],
+              "origin" => "user"
+            },
+            add_info1: %{"value" => ["field_value"], "origin" => "user"}
           },
           df_name: "download",
           name: "Rule"
@@ -184,11 +193,14 @@ defmodule TdDq.Implementations.DownloadTest do
         domain_ids: [domain_id_1],
         concepts: ["name"],
         df_content: %{
-          system: [
-            %{id: 1, name: "system", exernal_id: "exid"},
-            %{id: 2, name: "system1", exernal_id: "exid1"}
-          ],
-          add_info1: ["field_value"]
+          system: %{
+            "value" => [
+              %{id: 1, name: "system", exernal_id: "exid"},
+              %{id: 2, name: "system1", exernal_id: "exid1"}
+            ],
+            "origin" => "user"
+          },
+          add_info1: %{"value" => ["field_value"], "origin" => "user"}
         },
         df_name: "download",
         executable: true,
@@ -225,11 +237,14 @@ defmodule TdDq.Implementations.DownloadTest do
         domain_ids: [domain_id_1],
         concepts: ["name"],
         df_content: %{
-          system: [
-            %{id: 1, name: "system", exernal_id: "exid"},
-            %{id: 2, name: "system1", exernal_id: "exid1"}
-          ],
-          add_info1: ["field_value"]
+          system: %{
+            "value" => [
+              %{id: 1, name: "system", exernal_id: "exid"},
+              %{id: 2, name: "system1", exernal_id: "exid1"}
+            ],
+            "origin" => "user"
+          },
+          add_info1: %{"value" => ["field_value"], "origin" => "user"}
         },
         df_name: "download",
         executable: true,
