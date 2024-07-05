@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### FIXED
+
+- [TD-6659] Fix non admin request grant for default permission
+
 ## [6.8.1] 2024-07-05
 
 ### Fixed
