@@ -72,7 +72,8 @@ defmodule TdDd.DataStructures.Policy do
              :update_data_structure,
              :view_data_structures_profile,
              :view_grants,
-             :view_protected_metadata
+             :view_protected_metadata,
+             :manage_business_concept_links
            ] do
     Permissions.authorized?(claims, :view_data_structure, domain_ids) and
       Permissions.authorized?(claims, _permission = action, domain_ids)
