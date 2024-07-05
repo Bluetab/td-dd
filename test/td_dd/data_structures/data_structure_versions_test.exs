@@ -649,7 +649,7 @@ defmodule TdDd.DataStructures.DataStructureVersionsTest do
     end
 
     test "returns create_link action if user non admin has permissions" do
-      %{id: user_id} = user = CacheHelpers.insert_user()
+      %{id: user_id} = CacheHelpers.insert_user()
 
       claims = build(:claims, user_id: user_id, role: "user")
 
@@ -686,7 +686,7 @@ defmodule TdDd.DataStructures.DataStructureVersionsTest do
 
     test "returns empty actions if user non admin has not permissions" do
       for permission <- [:link_data_structure, :manage_business_concept_links] do
-        %{id: user_id} = user = CacheHelpers.insert_user()
+        %{id: user_id} = CacheHelpers.insert_user()
 
         claims = build(:claims, user_id: user_id, role: "user")
 
