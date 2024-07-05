@@ -634,13 +634,94 @@ defmodule TdDd.DataStructures.DataStructureVersionsTest do
                {:data_structure_version, _},
                {:tags, _},
                {:user_permissions, _},
-               {:actions, %{create_link: true}}
+               {:actions,
+                %{
+                  create_link: %{},
+                  create_struct_to_struct_link: %{href: "/api/v2", method: "POST"},
+                  manage_structure_acl_entry: %{}
+                }}
              ] =
                DataStructureVersions.enriched_data_structure_version(
                  claims,
                  data_structure_id,
                  "latest"
                )
+    end
+
+    test "returns create_link action if user non admin has permissions" do
+      %{id: user_id} = user = CacheHelpers.insert_user()
+
+      claims = build(:claims, user_id: user_id, role: "user")
+
+      %{id: domain_id} = CacheHelpers.insert_domain()
+
+      CacheHelpers.put_session_permissions(claims, %{
+        link_data_structure: [domain_id],
+        view_data_structure: [domain_id],
+        manage_business_concept_links: [domain_id]
+      })
+
+      data_structure = insert(:data_structure, domain_ids: [domain_id])
+
+      %{data_structure_id: data_structure_id} =
+        insert(:data_structure_version,
+          data_structure: data_structure
+        )
+
+      assert [
+               {:data_structure_version, _},
+               {:tags, _},
+               {:user_permissions, _},
+               {:actions,
+                %{
+                  create_link: %{}
+                }}
+             ] =
+               DataStructureVersions.enriched_data_structure_version(
+                 claims,
+                 data_structure_id,
+                 "latest"
+               )
+    end
+
+    test "returns empty actions if user non admin has not permissions" do
+      for permission <- [:link_data_structure, :manage_business_concept_links] do
+        %{id: user_id} = user = CacheHelpers.insert_user()
+
+        claims = build(:claims, user_id: user_id, role: "user")
+
+        %{id: domain_id} = CacheHelpers.insert_domain()
+
+        permissions =
+          Map.put(
+            %{
+              view_data_structure: [domain_id]
+            },
+            permission,
+            [domain_id]
+          )
+
+        CacheHelpers.put_session_permissions(claims, permissions)
+
+        data_structure = insert(:data_structure, domain_ids: [domain_id])
+
+        %{data_structure_id: data_structure_id} =
+          insert(:data_structure_version,
+            data_structure: data_structure
+          )
+
+        assert [
+                 {:data_structure_version, _},
+                 {:tags, _},
+                 {:user_permissions, _},
+                 {:actions, %{}}
+               ] =
+                 DataStructureVersions.enriched_data_structure_version(
+                   claims,
+                   data_structure_id,
+                   "latest"
+                 )
+      end
     end
 
     test "returns user_permissions" do

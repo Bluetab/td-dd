@@ -192,11 +192,19 @@ defmodule TdDd.DataStructures.DataStructureVersions do
   end
 
   defp actions(claims, %{data_structure: data_structure} = _dsv) do
-    [:link_data_structure, :link_structure_to_structure, :manage_structure_acl_entry]
+    [
+      :link_data_structure,
+      :link_structure_to_structure,
+      :manage_structure_acl_entry,
+      :manage_business_concept_links
+    ]
     |> Enum.filter(&permit?(DataStructures, &1, claims, data_structure))
     |> Map.new(fn
       :link_data_structure ->
-        {:create_link, true}
+        {:create_link_structure_to_concept, true}
+
+      :manage_business_concept_links ->
+        {:create_link_concept_to_structure, true}
 
       :link_structure_to_structure ->
         {
@@ -210,7 +218,28 @@ defmodule TdDd.DataStructures.DataStructureVersions do
       :manage_structure_acl_entry ->
         {:manage_structure_acl_entry, %{}}
     end)
+    |> transform_create_link()
   end
+
+  defp transform_create_link(
+         %{create_link_structure_to_concept: true, create_link_concept_to_structure: true} =
+           actions
+       ) do
+    actions
+    |> Map.delete(:create_link_structure_to_concept)
+    |> Map.delete(:create_link_concept_to_structure)
+    |> Map.put(:create_link, %{})
+  end
+
+  defp transform_create_link(%{create_link_structure_to_concept: true} = actions) do
+    Map.delete(actions, :create_link_structure_to_concept)
+  end
+
+  defp transform_create_link(%{create_link_concept_to_structure: true} = actions) do
+    Map.delete(actions, :create_link_concept_to_structure)
+  end
+
+  defp transform_create_link(actions), do: actions
 
   defp can_request_grant?(claims, data_structure) do
     {:ok, templates} = TemplateCache.list_by_scope("gr")

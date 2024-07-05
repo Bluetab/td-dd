@@ -1,5 +1,11 @@
 # Changelog
 
+## [6.8.1] 2024-07-05
+
+### Fixed
+
+- [TD-6142] Add correct permissions for create_link action
+
 ## [6.8.0] 2024-07-03
 
 ### Added
