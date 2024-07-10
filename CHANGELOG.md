@@ -6,6 +6,10 @@
 
 - [TD-6659] Fix non admin request grant for default permission
 
+### Changed
+
+- [TD-6602] Update td-cache, td-core and td-df-lib
+
 ## [6.8.1] 2024-07-05
 
 ### Fixed
