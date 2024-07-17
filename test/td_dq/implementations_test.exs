@@ -595,7 +595,70 @@ defmodule TdDq.ImplementationsTest do
         )
 
       assert %{dataset: [%{structure: %{name: ^structure_name}}]} =
-               Implementations.enrich_implementation_structures(implementation)
+               Implementations.enrich_implementation_structures(implementation,
+                 preload_structures: true
+               )
+    end
+
+    test "Enriches the current version of the implementation with deleted structure versions" do
+      domain = build(:domain)
+
+      data_structure_1 = insert(:data_structure, domain_ids: [domain.id])
+      data_structure_2 = insert(:data_structure, domain_ids: [domain.id])
+
+      Enum.each(0..2, fn i ->
+        insert(:data_structure_version,
+          deleted_at: DateTime.utc_now(),
+          data_structure: data_structure_1,
+          version: i
+        )
+
+        insert(:data_structure_version,
+          data_structure: data_structure_2,
+          version: i
+        )
+      end)
+
+      %{id: dsv_id_1, data_structure_id: data_structure_id_1} =
+        insert(:data_structure_version,
+          deleted_at: DateTime.utc_now(),
+          data_structure: data_structure_1,
+          version: 3
+        )
+
+      %{id: dsv_id_2} =
+        insert(:data_structure_version,
+          data_structure: data_structure_2,
+          version: 3
+        )
+
+      implementation =
+        insert(:implementation,
+          domain: domain,
+          dataset: [%{structure: %{id: data_structure_id_1}}]
+        )
+
+      insert(:implementation_structure,
+        implementation: implementation,
+        data_structure: data_structure_1
+      )
+
+      insert(:implementation_structure,
+        implementation: implementation,
+        data_structure: data_structure_2
+      )
+
+      assert %{
+               data_structures: [
+                 %{data_structure: %{current_version: %{id: cv_id_1}}},
+                 %{data_structure: %{current_version: %{id: cv_id_2}}}
+               ]
+             } =
+               Implementations.enrich_implementation_structures(implementation,
+                 preload_structures: true
+               )
+
+      assert [cv_id_1, cv_id_2] ||| [dsv_id_1, dsv_id_2]
     end
 
     test "enriches implementation dataset clauses structures" do
@@ -629,7 +692,10 @@ defmodule TdDq.ImplementationsTest do
                    ]
                  }
                ]
-             } = Implementations.enrich_implementation_structures(implementation)
+             } =
+               Implementations.enrich_implementation_structures(implementation,
+                 preload_structures: true
+               )
     end
 
     test "enriches implementation dataset with reference_dataset" do
@@ -641,7 +707,9 @@ defmodule TdDq.ImplementationsTest do
         )
 
       assert %{dataset: [%{structure: %{name: ^dataset_name, type: "reference_dataset"}}]} =
-               Implementations.enrich_implementation_structures(implementation)
+               Implementations.enrich_implementation_structures(implementation,
+                 preload_structures: true
+               )
     end
 
     test "implementation with invalid reference_dataset will simply return the invalid structure withou enriching" do
@@ -651,7 +719,9 @@ defmodule TdDq.ImplementationsTest do
         )
 
       assert %{dataset: [%{structure: %{type: "reference_dataset"}}]} =
-               Implementations.enrich_implementation_structures(implementation)
+               Implementations.enrich_implementation_structures(implementation,
+                 preload_structures: true
+               )
     end
 
     test "enriches implementation dataset clauses with reference_dataset_field" do
@@ -690,7 +760,10 @@ defmodule TdDq.ImplementationsTest do
                    ]
                  }
                ]
-             } = Implementations.enrich_implementation_structures(implementation)
+             } =
+               Implementations.enrich_implementation_structures(implementation,
+                 preload_structures: true
+               )
     end
 
     test "enriches implementation validations" do
@@ -705,7 +778,9 @@ defmodule TdDq.ImplementationsTest do
         )
 
       assert %{validation: [%{conditions: [%{structure: %{name: ^structure_name}}]}]} =
-               Implementations.enrich_implementation_structures(implementation)
+               Implementations.enrich_implementation_structures(implementation,
+                 preload_structures: true
+               )
     end
 
     test "enriches implementation validations with reference_dataset_field" do
@@ -739,7 +814,10 @@ defmodule TdDq.ImplementationsTest do
                    ]
                  }
                ]
-             } = Implementations.enrich_implementation_structures(implementation)
+             } =
+               Implementations.enrich_implementation_structures(implementation,
+                 preload_structures: true
+               )
     end
 
     test "implementation with invalida reference_dataset_field validation value
@@ -767,7 +845,9 @@ defmodule TdDq.ImplementationsTest do
         )
 
       assert %{validation: [%{conditions: [%{value: [_]}]}]} =
-               Implementations.enrich_implementation_structures(implementation)
+               Implementations.enrich_implementation_structures(implementation,
+                 preload_structures: true
+               )
     end
 
     test "enriches implementation populations" do
@@ -782,7 +862,9 @@ defmodule TdDq.ImplementationsTest do
         )
 
       assert %{populations: [%{conditions: [%{structure: %{name: ^structure_name}}]}]} =
-               Implementations.enrich_implementation_structures(implementation)
+               Implementations.enrich_implementation_structures(implementation,
+                 preload_structures: true
+               )
     end
 
     test "enriches implementation populations with reference_dataset_field" do
@@ -816,7 +898,10 @@ defmodule TdDq.ImplementationsTest do
                    ]
                  }
                ]
-             } = Implementations.enrich_implementation_structures(implementation)
+             } =
+               Implementations.enrich_implementation_structures(implementation,
+                 preload_structures: true
+               )
     end
 
     test "enriches implementation segments" do
@@ -829,7 +914,9 @@ defmodule TdDq.ImplementationsTest do
         )
 
       assert %{segments: [%{structure: %{name: ^structure_name}}]} =
-               Implementations.enrich_implementation_structures(implementation)
+               Implementations.enrich_implementation_structures(implementation,
+                 preload_structures: true
+               )
     end
   end
 

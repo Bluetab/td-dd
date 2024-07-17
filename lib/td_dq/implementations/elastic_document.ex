@@ -62,7 +62,10 @@ defmodule TdDq.Implementations.ElasticDocument do
     @impl Elasticsearch.Document
     def encode(%Implementation{domain_id: domain_id} = implementation) do
       rule = Map.get(implementation, :rule)
-      implementation = Implementations.enrich_implementation_structures(implementation, false)
+
+      implementation =
+        Implementations.enrich_implementation_structures(implementation, preload_structures: false)
+
       quality_event = QualityEvents.get_last_event_by_imp(implementation)
 
       result = RuleResults.get_latest_rule_result(implementation)

@@ -14,6 +14,7 @@ defmodule TdDq.Implementations do
   alias TdDd.Cache.StructureEntry
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.ReferenceData
   alias TdDd.Repo
   alias TdDd.Search.StructureEnricher
@@ -804,9 +805,16 @@ defmodule TdDq.Implementations do
     end
   end
 
+  def enrich_implementation_structures(implementation, opts \\ [])
+
+  def enrich_implementation_structures(implementation, opts) when is_list(opts) do
+    preload_structures = Keyword.get(opts, :preload_structures, false)
+    enrich_implementation_structures(implementation, preload_structures)
+  end
+
   def enrich_implementation_structures(
         %Implementation{} = implementation,
-        preload_structure \\ true
+        preload_structures
       ) do
     enriched_dataset =
       implementation
@@ -816,7 +824,7 @@ defmodule TdDq.Implementations do
     enriched_populations = Enum.map(implementation.populations, &enrich_conditions/1)
     enriched_validation = Enum.map(implementation.validation, &enrich_conditions/1)
     enriched_segments = Enum.map(implementation.segments, &enrich_condition/1)
-    enriched_data_structures = maybe_preload_structure(implementation, preload_structure)
+    enriched_data_structures = maybe_preload_structures(implementation, preload_structures)
 
     implementation
     |> Map.put(:dataset, enriched_dataset)
@@ -845,30 +853,48 @@ defmodule TdDq.Implementations do
 
   defp enrich_implementation_structure(structure), do: structure
 
-  defp maybe_preload_structure(implementation, true) do
+  defp maybe_preload_structures(implementation, true) do
+    dsv_query = from(dsv in DataStructureVersion, order_by: [desc: dsv.version])
+
     implementation
     |> Repo.preload(
       implementation_ref_struct: [
-        data_structures: [data_structure: [:system, :current_version]]
+        data_structures: [data_structure: [:system, latest_version: dsv_query]]
       ],
       data_structures: []
     )
+    |> Map.get(:implementation_ref_struct)
+    |> Map.get(:data_structures)
+    |> maybe_add_current_version()
     |> enrich_data_structures_path()
     |> Enum.map(&enrich_domains(&1))
   end
 
-  defp maybe_preload_structure(
+  defp maybe_preload_structures(
          %{implementation_ref_struct: %{data_structures: data_structures}},
          _
        )
        when is_list(data_structures),
        do: data_structures
 
-  defp maybe_preload_structure(
-         %{implementation_ref_struct: %{data_structures: _data_structures}},
+  defp maybe_preload_structures(
+         _,
          _
        ),
        do: []
+
+  defp maybe_add_current_version(data_structures) when is_list(data_structures) do
+    Enum.map(data_structures, fn
+      %{data_structure: %{latest_version: latest_version}} = imp_ds ->
+        Map.update!(
+          imp_ds,
+          :data_structure,
+          &Map.put(&1, :current_version, latest_version)
+        )
+    end)
+  end
+
+  defp maybe_add_current_version(imp), do: imp
 
   defp enrich_domains(
          %{data_structure: %DataStructure{domain_ids: [_ | _] = domain_ids} = structure} =
@@ -900,9 +926,7 @@ defmodule TdDq.Implementations do
 
   defp enrich_dataset_row(dataset_row), do: dataset_row
 
-  defp enrich_data_structures_path(%{
-         implementation_ref_struct: %{data_structures: [_ | _] = data_structures}
-       }) do
+  defp enrich_data_structures_path([_ | _] = data_structures) do
     data_structure_ids =
       data_structures
       |> Enum.map(fn
