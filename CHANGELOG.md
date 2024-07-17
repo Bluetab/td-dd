@@ -5,6 +5,7 @@
 ### FIXED
 
 - [TD-6659] Fix non admin request grant for default permission
+- [TD-5149] Enriches implementation with deleted structures 
 
 ### Changed
 

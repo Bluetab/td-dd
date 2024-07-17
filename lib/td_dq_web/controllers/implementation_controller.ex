@@ -37,7 +37,9 @@ defmodule TdDqWeb.ImplementationController do
       implementations =
         filters
         |> Implementations.list_implementations(preload: [:rule, :results], enrich: :source)
-        |> Enum.map(&Implementations.enrich_implementation_structures/1)
+        |> Enum.map(
+          &Implementations.enrich_implementation_structures(&1, preload_structures: true)
+        )
 
       conn
       |> Actions.put_actions(claims, Implementation)
@@ -166,7 +168,7 @@ defmodule TdDqWeb.ImplementationController do
       )
       |> add_last_rule_result()
       |> add_quality_event()
-      |> Implementations.enrich_implementation_structures()
+      |> Implementations.enrich_implementation_structures(preload_structures: true)
       |> filter_links_by_permission(claims)
       |> filter_data_structures_by_permission(claims)
 
