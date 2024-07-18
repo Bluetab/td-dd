@@ -15,7 +15,7 @@ defmodule TdDd.Lineage.Units.Node do
     field(:type, :string)
     field(:label, :map, default: %{})
     field(:deleted_at, :utc_datetime_usec)
-    field(:domain_ids, {:array, :integer}, virtual: true)
+    field(:domain_ids, {:array, :integer}, default: [])
     field(:parent_ids, {:array, :integer}, virtual: true)
 
     belongs_to(:structure, DataStructure)
@@ -31,7 +31,7 @@ defmodule TdDd.Lineage.Units.Node do
 
   def changeset(%__MODULE__{} = node, %{} = params) do
     node
-    |> cast(params, [:external_id, :type, :label, :structure_id])
+    |> cast(params, [:external_id, :type, :label, :structure_id, :domain_ids])
     |> validate_required([:external_id, :type, :label])
     |> validate_change(:label, &Validation.validate_safe/2)
     |> unique_constraint(:external_id)

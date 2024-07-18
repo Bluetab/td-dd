@@ -79,9 +79,11 @@ defmodule TdDd.Lineage.Import.Loader do
           }
         end)
 
+      chunk_size = Application.get_env(:td_dd, __MODULE__)[:nodes_chunk_size]
+
       {count, nodes} =
         Repo.chunk_insert_all(Node, entries,
-          chunk_size: 10_000,
+          chunk_size: chunk_size,
           conflict_target: [:external_id],
           on_conflict: {:replace, [:external_id, :type, :label, :updated_at, :deleted_at]},
           returning: [:id, :external_id]
@@ -112,9 +114,11 @@ defmodule TdDd.Lineage.Import.Loader do
           }
         end)
 
+      chunk_size = Application.get_env(:td_dd, __MODULE__)[:edges_chunk_size]
+
       {count, edges} =
         Repo.chunk_insert_all(Edge, entries,
-          chunk_size: 9_362,
+          chunk_size: chunk_size,
           conflict_target: [:unit_id, :start_id, :end_id],
           on_conflict: {:replace, [:type, :updated_at]},
           returning: [:id]
@@ -133,9 +137,11 @@ defmodule TdDd.Lineage.Import.Loader do
         |> Map.values()
         |> Enum.map(fn node_id -> %{node_id: node_id, unit_id: unit_id, deleted_at: nil} end)
 
+      chunk_size = Application.get_env(:td_dd, __MODULE__)[:units_chunk_size]
+
       {count, node_ids} =
         Repo.chunk_insert_all("units_nodes", entries,
-          chunk_size: 10_000,
+          chunk_size: chunk_size,
           conflict_target: [:unit_id, :node_id],
           on_conflict: {:replace, [:deleted_at]},
           returning: [:node_id]

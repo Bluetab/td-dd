@@ -5,46 +5,43 @@ defmodule TdDd.Lineage.NodeQuery do
 
   import Ecto.Query
 
+  require Logger
+
   alias TdDd.Lineage.Units.Node
   alias TdDd.Repo
 
-  @query_all """
-  SELECT * FROM (
-    WITH RECURSIVE node_agg_domain_ids AS
-    (SELECT e.start_id AS parent_id,
-            n.id AS child_id,
-            unnest(ds.domain_ids) AS domain_ids
-    FROM nodes n
-    LEFT JOIN edges e ON e.end_id = n.id
-    AND e.type = 'CONTAINS'
-    LEFT JOIN data_structures ds ON n.structure_id = ds.id
-    WHERE n.structure_id IS NOT NULL
-    UNION
-      (SELECT e.start_id AS parent_id,
-              agg.parent_id AS child_id,
-              unnest(agg.domain_ids) AS domain_ids
-        FROM
-          (SELECT DISTINCT parent_id,
-                          array_agg(domain_ids) OVER (PARTITION BY parent_id) AS domain_ids
+  @update_nodes_domains_ids """
+  UPDATE nodes AS n
+  SET domain_ids =query.domain_ids
+  FROM
+  (SELECT child_id, ARRAY_AGG(DISTINCT domain_ids) AS domain_ids
+  FROM(select child_id, UNNEST (domain_ids) AS domain_ids
+    FROM(
+    WITH RECURSIVE node_agg_domain_ids AS (
+      SELECT e.start_id AS parent_id, n.id AS child_id, ds.domain_ids
+      FROM nodes n
+      LEFT JOIN edges e ON e.end_id = n.id AND e.type = 'CONTAINS'
+      INNER JOIN data_structures ds ON n.structure_id = ds.id union
+        (SELECT e.start_id AS parent_id, agg.parent_id AS child_id, agg.domain_ids
+        FROM (SELECT DISTINCT parent_id, domain_ids
           FROM node_agg_domain_ids
-          WHERE parent_id IS NOT NULL ) agg
+          WHERE parent_id IS NOT NULL) agg
         LEFT JOIN nodes n ON n.id = agg.parent_id
-        LEFT JOIN edges e ON e.end_id = n.id
-        AND e.type = 'CONTAINS'
-        LEFT JOIN data_structures ds ON n.structure_id = ds.id))
-    SELECT child_id,
-        Array_agg(domain_ids) as domain_ids
+        LEFT JOIN edges e ON e.end_id = n.id AND e.type = 'CONTAINS'
+        LEFT JOIN data_structures ds ON n.structure_id = ds.id)
+      )
+    SELECT child_id, domain_ids
     FROM node_agg_domain_ids
-    GROUP BY child_id
-  ) AS SUBQ
+    GROUP BY child_id, domain_ids
+    ) AS SUBQ
+    UNION
+    SELECT un.node_id AS child_id, domain_id AS domain_ids
+    FROM units AS n
+    LEFT JOIN units_nodes AS un ON n.id = un.unit_id
+  ) AS X
+  GROUP BY child_id) AS query
+  WHERE n.id = query.child_id;
   """
-
-  def nodes_domain_ids do
-    "nodes_domain_ids"
-    |> with_cte("nodes_domain_ids", as: fragment(@query_all))
-    |> select([:child_id, :domain_ids])
-    |> Repo.all()
-  end
 
   def list_structure_domain_ids do
     Node
@@ -54,5 +51,23 @@ defmodule TdDd.Lineage.NodeQuery do
     |> distinct(true)
     |> Repo.all()
     |> List.flatten()
+  end
+
+  def update_nodes_domains do
+    Logger.info("Starting update_nodes_domains")
+
+    @update_nodes_domains_ids
+    |> Repo.query()
+    |> execution_result(@update_nodes_domains_ids)
+  end
+
+  defp execution_result({:error, error} = result, instruction) do
+    Logger.error("Error while executing the instruction '#{instruction}': #{inspect(error)}")
+    result
+  end
+
+  defp execution_result({:ok, %{num_rows: num_rows}} = result, _) do
+    Logger.info("Finished update_nodes_domains with #{num_rows} num_rows updated")
+    result
   end
 end

@@ -39,29 +39,39 @@ Run all aplication tests with `mix test`
 - DB_SSL_CACERTFILE: path of the certification authority cert file "/path/to/ca.crt", required when DB_SSL is true.
 - DB_SSL_VERSION: available versions are tlsv1.2, tlsv1.3 by default is tlsv1.2.
 
+### Lineaje nodes domains id refresh
+
+- LINEAGE_NODES_DOMAINS_IDS_REFRESHER: default hourly, refresh the lineaje nodes domains ids column to show graph
+
 ### Elastic bulk page size configuration
+
 - BULK_PAGE_SIZE_GRANTS: default 500
-- BULK_PAGE_SIZE_IMPLEMENTATIONS:  default 100
+- BULK_PAGE_SIZE_IMPLEMENTATIONS: default 100
 - BULK_PAGE_SIZE_JOBS: default 100
 - BULK_PAGE_SIZE_RULES: default 100
 - BULK_PAGE_SIZE_STRUCTURES: default 1000
 - BULK_PAGE_SIZE_GRANT_REQUESTS: default 500
 
-### Store chunk size 
--  GRANT_STORE_CHUNK_SIZE: default 1000
--  GRANT_REQUEST_STORE_CHUNK_SIZE: default 1000
--  STRUCTURE_STORE_CHUNK_SIZE: default 1000
--  DSV_STORE_CHUNK_SIZE: default 1000
+### Store chunk size
+
+- GRANT_STORE_CHUNK_SIZE: default 1000
+- GRANT_REQUEST_STORE_CHUNK_SIZE: default 1000
+- STRUCTURE_STORE_CHUNK_SIZE: default 1000
+- DSV_STORE_CHUNK_SIZE: default 1000
 
 # If the variable is set to false, it will not be deleted in the case that there is no index in the hot swap process.
--  DELETE_EXISTING_INDEX: detault true
+
+- DELETE_EXISTING_INDEX: detault true
 
 ### Elastic Configuracion
+
 # The bulk_wait_interval variable defines the time interval between batches of bulk operations in Elasticsearch.
-BULK_WAIT_INTERVAL_GRANTS: default 0 
+
+BULK_WAIT_INTERVAL_GRANTS: default 0
 
 ### Elastic aggregations
-- The aggregation variables are defined as follows:  AGG_<AGGREGATION_NAME>_SIZE
+
+- The aggregation variables are defined as follows: AGG\_<AGGREGATION_NAME>\_SIZE
 
 ## Deployment
 

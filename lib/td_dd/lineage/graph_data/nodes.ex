@@ -5,7 +5,6 @@ defmodule TdDd.Lineage.GraphData.Nodes do
   alias Graph.Traversal
   alias TdCache.TaxonomyCache
   alias TdDd.Lineage.GraphData.State
-  alias TdDd.Lineage.NodeQuery
   alias TdDd.Lineage.Units
 
   @doc """
@@ -13,8 +12,6 @@ defmodule TdDd.Lineage.GraphData.Nodes do
   consists of a list of parent nodes with the siblings of the selected child.
   """
   def query_nodes(external_id, opts, claims, %State{contains: t, roots: roots}) do
-    nodes_domain_ids = NodeQuery.nodes_domain_ids()
-
     case path(t, external_id) do
       :not_found ->
         {:error, :not_found}
@@ -22,7 +19,7 @@ defmodule TdDd.Lineage.GraphData.Nodes do
       path ->
         res =
           [nil | path]
-          |> Enum.map(&{&1, children(t, &1, roots, nodes_domain_ids, opts, claims)})
+          |> Enum.map(&{&1, children(t, &1, roots, opts, claims)})
           |> Enum.map(fn {parent, m} -> Map.put(m, :parent, parent) end)
 
         {:ok, res}
@@ -41,11 +38,11 @@ defmodule TdDd.Lineage.GraphData.Nodes do
     end
   end
 
-  defp children(%Graph{} = t, id, roots, nodes_domain_ids, opts, claims) do
+  defp children(%Graph{} = t, id, roots, opts, claims) do
     t
     |> do_children(id, roots)
     |> Enum.reject(&hidden?(t, &1))
-    |> get_nodes(claims, nodes_domain_ids, opts[:domain_id])
+    |> get_nodes(claims, opts[:domain_id])
     |> Enum.map(& &1.external_id)
     |> Enum.map(&Graph.vertex(t, &1))
     |> Enum.map(&node_label/1)
@@ -56,51 +53,23 @@ defmodule TdDd.Lineage.GraphData.Nodes do
   defp do_children(%Graph{} = _t, nil, roots), do: roots
   defp do_children(%Graph{} = t, id, _roots), do: Graph.out_neighbours(t, id)
 
-  defp get_nodes(children, claims, nodes_domain_ids, nil) do
+  defp get_nodes(children, claims, nil) do
     %{external_id: children}
     |> Units.list_nodes(preload: :units)
-    |> Enum.map(&domain_ids/1)
-    |> Enum.map(&node_domain_ids(&1, nodes_domain_ids))
     |> Enum.filter(&Bodyguard.permit?(Units, :view_lineage, claims, &1))
   end
 
-  defp get_nodes(children, claims, nodes_domain_ids, domain_id) do
+  defp get_nodes(children, claims, domain_id) do
     %{external_id: children}
     |> Units.list_nodes(preload: :units)
-    |> Enum.map(&domain_ids/1)
-    |> Enum.map(&node_domain_ids(&1, nodes_domain_ids))
     |> Enum.map(&parent_domain_ids/1)
     |> Enum.filter(fn %{parent_ids: parent_ids} -> domain_id in parent_ids end)
     # credo:disable-for-next-line
     |> Enum.filter(&Bodyguard.permit?(Units, :view_lineage, claims, &1))
   end
 
-  defp node_domain_ids(%{id: id, domain_ids: domain_ids} = node, nodes_domain_ids) do
-    nodes_domain_ids
-    |> Enum.find(fn %{child_id: child_id} ->
-      id == child_id
-    end)
-    |> case do
-      nil ->
-        node
-
-      %{domain_ids: node_domain_ids} ->
-        Map.put(node, :domain_ids, Enum.uniq(domain_ids ++ node_domain_ids))
-    end
-  end
-
   defp hidden?(%Graph{} = t, id) do
     Graph.vertex(t, id, "hidden") == true
-  end
-
-  defp domain_ids(%{units: units} = node) do
-    domain_ids =
-      units
-      |> Enum.map(& &1.domain_id)
-      |> Enum.filter(& &1)
-      |> Enum.uniq()
-
-    Map.put(node, :domain_ids, domain_ids)
   end
 
   defp parent_domain_ids(%{domain_ids: domain_ids} = node) do
