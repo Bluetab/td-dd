@@ -6,7 +6,7 @@ defmodule TdDd.MixProject do
       app: :td_dd,
       version:
         case System.get_env("APP_VERSION") do
-          nil -> "6.8.1-local"
+          nil -> "6.8.2-local"
           v -> v
         end,
       elixir: "~> 1.14",
@@ -80,11 +80,11 @@ defmodule TdDd.MixProject do
       {:codepagex, "~> 0.1.4"},
       {:bimap, "~> 1.1"},
       {:elasticsearch, "~> 1.1"},
-      {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "6.5.1", override: true},
+      {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "6.5.1"},
       {:td_cluster,
-       git: "https://github.com/Bluetab/td-cluster.git", tag: "5.19.0", override: true},
-      {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", branch: "hotfix/td-6713"},
-      {:td_core, git: "https://github.com/Bluetab/td-core.git", branch: "hotfix/td-6713"},
+       git: "https://github.com/Bluetab/td-cluster.git", tag: "5.19.0"},
+      {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "6.8.3"},
+      {:td_core, git: "https://github.com/Bluetab/td-core.git", tag: "6.8.4"},
       {:graph, git: "https://github.com/Bluetab/graph.git", tag: "1.3.0"},
       {:vaultex, "~> 1.0.1"},
       {:sobelow, "~> 0.11", only: [:dev, :test]}
