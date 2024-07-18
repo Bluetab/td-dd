@@ -79,7 +79,10 @@ config :td_dd, TdDdWeb.CustomParsersPlug, max_payload_length: 100_000_000
 
 config :td_dd, loader_worker: TdDd.Loader.Worker
 
-config :td_dd, TdDd.Lineage, timeout: 90_000
+config :td_dd, TdDd.Lineage,
+  timeout: 90_000,
+  nodes_timeout: 50_000
+
 config :td_dd, TdDd.DataStructures.BulkUpdater, timeout_seconds: 600
 
 config :td_dd, TdDd.ReferenceData,
@@ -158,6 +161,11 @@ config :td_dd, TdDd.Scheduler,
     grant_indexer: [
       schedule: "@daily",
       task: {TdCore.Search.IndexWorker, :reindex_grants, [:all]},
+      run_strategy: Quantum.RunStrategy.Local
+    ],
+    lineage_nodes_domains_ids_refresher: [
+      schedule: "@hourly",
+      task: {TdDd.Lineage.NodeQuery, :update_nodes_domains, []},
       run_strategy: Quantum.RunStrategy.Local
     ],
     rule_remover: [

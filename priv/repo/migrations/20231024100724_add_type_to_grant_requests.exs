@@ -1,6 +1,5 @@
 defmodule TdDd.Repo.Migrations.AddTypeToGrantRequests do
   use Ecto.Migration
-  alias Ecto.Multi
 
   @delete_data true
 
