@@ -52,6 +52,7 @@ defmodule TdDd.DataStructures.DataStructure do
     has_many(:grants, Grant)
     many_to_many(:tags, Tag, join_through: StructureTag)
     has_one(:current_version, DataStructureVersion, where: [deleted_at: nil])
+    has_one(:latest_version, DataStructureVersion)
     has_one(:current_metadata, StructureMetadata, where: [deleted_at: nil])
     has_many(:implementations, ImplementationStructure, where: [deleted_at: nil])
     has_many(:nodes, Node, foreign_key: :structure_id)

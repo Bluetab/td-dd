@@ -232,6 +232,35 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
     end
 
     @tag authentication: [
+           permissions: [
+             :create_grant_request,
+             :create_foreign_grant_request,
+             :view_data_structure
+           ]
+         ]
+    test "user with permission can create request_group user_id on authorized default role", %{
+      conn: conn,
+      domain: %{id: domain_id}
+    } do
+      %{id: ds_id} = insert(:data_structure, domain_ids: [domain_id])
+
+      CacheHelpers.put_default_permissions([:allow_foreign_grant_request])
+      %{id: user_id} = CacheHelpers.insert_user()
+
+      params = %{
+        "user_id" => user_id,
+        "requests" => [%{"data_structure_id" => ds_id}],
+        "type" => nil
+      }
+
+      assert conn
+             |> post(Routes.grant_request_group_path(conn, :create),
+               grant_request_group: params
+             )
+             |> json_response(:created)
+    end
+
+    @tag authentication: [
            user: "non_admin",
            permissions: [
              :create_grant_request_group,

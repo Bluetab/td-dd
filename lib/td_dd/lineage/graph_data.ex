@@ -416,7 +416,7 @@ defmodule TdDd.Lineage.GraphData do
 
     new_state = %State{contains: contains, depends: depends, roots: roots, ts: ts, notify: notify}
     maybe_notify(notify, {:load_finished, new_state})
-
+    Logger.info("Linage graph data was loaded correctly... ")
     new_state
   end
 

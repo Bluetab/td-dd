@@ -4,6 +4,7 @@ defmodule TdDdWeb.NodeControllerTest do
 
   alias TdDd.Lineage.GraphData
   alias TdDd.Lineage.GraphData.State
+  alias TdDd.Lineage.NodeQuery
 
   setup_all do
     start_supervised(GraphData)
@@ -47,7 +48,10 @@ defmodule TdDdWeb.NodeControllerTest do
         nodes: Enum.filter(nodes, &(&1.external_id in ["foo", "bar", "baz"]))
       )
 
+      NodeQuery.update_nodes_domains()
+
       conn = get(conn, Routes.node_path(conn, :index, domain_id: parent_domain_id))
+
       assert [%{"parent" => nil, "groups" => [group]}] = json_response(conn, 200)["data"]
       assert %{"external_id" => "foo", "name" => "foo"} = group
 
@@ -103,7 +107,8 @@ defmodule TdDdWeb.NodeControllerTest do
               insert(:node,
                 external_id: external_id,
                 type: "Resource",
-                structure_id: data_structure_id
+                structure_id: data_structure_id,
+                domain_ids: [domain_id]
               )
 
             _ ->
@@ -116,7 +121,8 @@ defmodule TdDdWeb.NodeControllerTest do
               insert(:node,
                 external_id: external_id,
                 type: "Resource",
-                structure_id: data_structure_id
+                structure_id: data_structure_id,
+                domain_ids: [not_permissions_domain_id]
               )
           end
         end)
@@ -168,24 +174,26 @@ defmodule TdDdWeb.NodeControllerTest do
       claims: claims,
       nodes: nodes
     } do
-      %{id: domain_id} = CacheHelpers.insert_domain()
+      %{id: domain_id_1} = CacheHelpers.insert_domain()
 
       insert(:unit,
-        domain_id: domain_id,
+        domain_id: domain_id_1,
         nodes: Enum.filter(nodes, &(&1.external_id in ["foo", "bar", "baz"]))
       )
 
-      %{id: domain_id} = CacheHelpers.insert_domain()
+      %{id: domain_id_2} = CacheHelpers.insert_domain()
 
-      CacheHelpers.put_session_permissions(claims, domain_id, [
+      CacheHelpers.put_session_permissions(claims, domain_id_2, [
         :view_data_structure,
         :view_lineage
       ])
 
       insert(:unit,
-        domain_id: domain_id,
+        domain_id: domain_id_2,
         nodes: Enum.filter(nodes, &(&1.external_id in ["xyz", "x", "y"]))
       )
+
+      NodeQuery.update_nodes_domains()
 
       conn = get(conn, Routes.node_path(conn, :index))
       assert [%{"parent" => nil, "groups" => [group]}] = json_response(conn, 200)["data"]
@@ -218,6 +226,57 @@ defmodule TdDdWeb.NodeControllerTest do
 
       assert [%{"parent" => nil} = first] = data
       refute Map.has_key?(first, "groups")
+    end
+
+    @tag authentication: [role: "admin"]
+    @tag contains: %{"foo" => ["bar", "baz"], "xyz" => ["x", "y"]}
+    @tag depends: [{"bar", "baz"}, {"x", "y"}]
+    test "refresh domain id in nodes for admin", %{
+      conn: conn,
+      nodes: nodes
+    } do
+      %{id: domain_id} = CacheHelpers.insert_domain()
+
+      insert(:unit,
+        domain_id: domain_id,
+        nodes: Enum.filter(nodes, &(&1.external_id in ["foo", "bar", "baz"]))
+      )
+
+      assert %{status: 204} = get(conn, Routes.node_path(conn, :update_nodes_domains))
+    end
+
+    @tag authentication: [role: "user"]
+    @tag contains: %{"foo" => ["bar", "baz"], "xyz" => ["x", "y"]}
+    @tag depends: [{"bar", "baz"}, {"x", "y"}]
+    test "refresh domain id in nodes for non admin", %{
+      conn: conn,
+      nodes: nodes
+    } do
+      %{id: domain_id} = CacheHelpers.insert_domain()
+
+      insert(:unit,
+        domain_id: domain_id,
+        nodes: Enum.filter(nodes, &(&1.external_id in ["foo", "bar", "baz"]))
+      )
+
+      assert %{status: 403} = get(conn, Routes.node_path(conn, :update_nodes_domains))
+    end
+
+    @tag authentication: [role: "user", permissions: ["view_lineage"]]
+    @tag contains: %{"foo" => ["bar", "baz"], "xyz" => ["x", "y"]}
+    @tag depends: [{"bar", "baz"}, {"x", "y"}]
+    test "refresh domain id in nodes for non admin with permission", %{
+      conn: conn,
+      nodes: nodes,
+      claims: %{user_id: _user_id},
+      domain: %{id: domain_id}
+    } do
+      insert(:unit,
+        domain_id: domain_id,
+        nodes: Enum.filter(nodes, &(&1.external_id in ["foo", "bar", "baz"]))
+      )
+
+      assert %{status: 204} = get(conn, Routes.node_path(conn, :update_nodes_domains))
     end
 
     defp create_nodes(contains, depends, domain_ids \\ []) do

@@ -101,6 +101,8 @@ defmodule TdDdWeb.Router do
 
     resources("/lineage_events", LineageEventController, only: [:index])
 
+    get("/lineage/update_nodes_domains", NodeController, :update_nodes_domains)
+
     resources("/nodes", NodeController, only: [:index, :show])
 
     resources("/units", UnitController, except: [:new, :edit], param: "name") do

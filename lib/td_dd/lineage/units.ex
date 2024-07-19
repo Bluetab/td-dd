@@ -85,12 +85,6 @@ defmodule TdDd.Lineage.Units do
     |> limit(1)
   end
 
-  def get_node(external_id, options \\ []) do
-    Node
-    |> Repo.get_by(external_id: external_id)
-    |> Repo.preload(options[:preload] || [])
-  end
-
   def list_nodes(clauses, options \\ []) do
     clauses
     |> Map.new()
