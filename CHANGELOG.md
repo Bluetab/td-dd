@@ -12,6 +12,12 @@
 - [TD-6602] Update td-cache, td-core and td-df-lib
 - [TD-6317] Improve performance of queries to retrieve nodes in linage
 
+## [6.8.2] 2024-07-18
+
+### Added
+
+- [TD-6713] Update td-df-lib and td-core
+
 ## [6.8.1] 2024-07-05
 
 ### Fixed
