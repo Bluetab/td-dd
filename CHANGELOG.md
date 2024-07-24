@@ -2,10 +2,14 @@
 
 ## [Unreleased]
 
-### FIXED
+### Added
+
+- [TD-6689] Add Implementations conditional linked concepts display
+
+### Fixed
 
 - [TD-6659] Fix non admin request grant for default permission
-- [TD-5149] Enriches implementation with deleted structures 
+- [TD-5149] Enriches implementation with deleted structures
 
 ### Changed
 

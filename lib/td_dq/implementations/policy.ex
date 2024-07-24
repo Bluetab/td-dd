@@ -190,9 +190,23 @@ defmodule TdDq.Implementations.Policy do
     Permissions.authorized?(claims, :execute_quality_rule_implementations, domain_id)
   end
 
-  def authorize(:view_published_concept, %{role: role} = claims, domain_id) do
+  def authorize(:view_published_concept, %{role: role} = claims, %Implementation{
+        domain_id: domain_id
+      }) do
     role == "admin" or
       Permissions.authorized?(claims, :view_published_business_concepts, domain_id)
+  end
+
+  def authorize(:view_draft_concept, %{role: role} = claims, %Implementation{domain_id: domain_id}) do
+    role == "admin" or
+      Permissions.authorized?(claims, :view_draft_business_concepts, domain_id)
+  end
+
+  def authorize(:view_approval_pending_concept, %{role: role} = claims, %Implementation{
+        domain_id: domain_id
+      }) do
+    role == "admin" or
+      Permissions.authorized?(claims, :view_approval_pending_business_concepts, domain_id)
   end
 
   def authorize(action, %{role: "admin"}, imp) when action in [:convert_raw, :convert_default],
