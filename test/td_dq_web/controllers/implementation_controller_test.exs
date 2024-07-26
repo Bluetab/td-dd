@@ -346,7 +346,11 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       concept_id_authorized = System.unique_integer([:positive])
 
-      CacheHelpers.insert_concept(%{id: concept_id_authorized, domain_id: domain.id})
+      CacheHelpers.insert_concept(%{
+        id: concept_id_authorized,
+        domain_id: domain.id,
+        status: "published"
+      })
 
       CacheHelpers.insert_link(
         implementation_ref,
@@ -359,7 +363,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       CacheHelpers.insert_concept(%{
         id: concept_id_forbidden,
-        domain_id: System.unique_integer([:positive])
+        domain_id: System.unique_integer([:positive]),
+        status: "rejected"
       })
 
       CacheHelpers.insert_link(
@@ -482,6 +487,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "clone" => %{"method" => "POST"},
                "link_concept" => %{"method" => "POST"},
                "link_structure" => %{"method" => "POST"},
+               "view_approval_pending_concept" => %{"method" => "POST"},
+               "view_draft_concept" => %{"method" => "POST"},
+               "view_published_concept" => %{"method" => "POST"},
                "move" => %{"method" => "POST"},
                "publish" => %{"method" => "POST"},
                "autoPublish" => %{
@@ -546,6 +554,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "clone" => %{"method" => "POST"},
                "link_concept" => %{"method" => "POST"},
                "link_structure" => %{"method" => "POST"},
+               "view_approval_pending_concept" => %{"method" => "POST"},
+               "view_draft_concept" => %{"method" => "POST"},
+               "view_published_concept" => %{"method" => "POST"},
                "autoPublish" => %{
                  "href" => "/api/rule_implementations/upload",
                  "method" => "POST"
@@ -579,6 +590,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "clone" => %{"method" => "POST"},
                "link_concept" => %{"method" => "POST"},
                "link_structure" => %{"method" => "POST"},
+               "view_approval_pending_concept" => %{"method" => "POST"},
+               "view_draft_concept" => %{"method" => "POST"},
+               "view_published_concept" => %{"method" => "POST"},
                "autoPublish" => %{
                  "href" => "/api/rule_implementations/upload",
                  "method" => "POST"
@@ -701,6 +715,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "clone" => %{"method" => "POST"},
                "link_concept" => %{"method" => "POST"},
                "link_structure" => %{"method" => "POST"},
+               "view_approval_pending_concept" => %{"method" => "POST"},
+               "view_draft_concept" => %{"method" => "POST"},
+               "view_published_concept" => %{"method" => "POST"},
                "move" => %{"method" => "POST"},
                "publish" => %{"method" => "POST"},
                "autoPublish" => %{
@@ -737,6 +754,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "clone" => %{"method" => "POST"},
                "link_concept" => %{"method" => "POST"},
                "link_structure" => %{"method" => "POST"},
+               "view_approval_pending_concept" => %{"method" => "POST"},
+               "view_draft_concept" => %{"method" => "POST"},
+               "view_published_concept" => %{"method" => "POST"},
                "autoPublish" => %{
                  "href" => "/api/rule_implementations/upload",
                  "method" => "POST"
@@ -770,6 +790,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "clone" => %{"method" => "POST"},
                "link_concept" => %{"method" => "POST"},
                "link_structure" => %{"method" => "POST"},
+               "view_approval_pending_concept" => %{"method" => "POST"},
+               "view_draft_concept" => %{"method" => "POST"},
+               "view_published_concept" => %{"method" => "POST"},
                "autoPublish" => %{
                  "href" => "/api/rule_implementations/upload",
                  "method" => "POST"
@@ -839,6 +862,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "clone" => %{"method" => "POST"},
                "link_concept" => %{"method" => "POST"},
                "link_structure" => %{"method" => "POST"},
+               "view_approval_pending_concept" => %{"method" => "POST"},
+               "view_draft_concept" => %{"method" => "POST"},
+               "view_published_concept" => %{"method" => "POST"},
                "move" => %{"method" => "POST"},
                "publish" => %{"method" => "POST"},
                "autoPublish" => %{
@@ -913,6 +939,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "clone" => %{"method" => "POST"},
                "link_concept" => %{"method" => "POST"},
                "link_structure" => %{"method" => "POST"},
+               "view_approval_pending_concept" => %{"method" => "POST"},
+               "view_draft_concept" => %{"method" => "POST"},
+               "view_published_concept" => %{"method" => "POST"},
                "move" => %{"method" => "POST"},
                "publish" => %{"method" => "POST"},
                "autoPublish" => %{
@@ -960,6 +989,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "clone" => %{"method" => "POST"},
                "link_concept" => %{"method" => "POST"},
                "link_structure" => %{"method" => "POST"},
+               "view_approval_pending_concept" => %{"method" => "POST"},
+               "view_draft_concept" => %{"method" => "POST"},
+               "view_published_concept" => %{"method" => "POST"},
                "move" => %{"method" => "POST"},
                "convert_raw" => %{"method" => "POST"},
                "convert_default" => %{"method" => "POST"},
@@ -1046,6 +1078,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "clone" => %{"method" => "POST"},
                "link_concept" => %{"method" => "POST"},
                "link_structure" => %{"method" => "POST"},
+               "view_approval_pending_concept" => %{"method" => "POST"},
+               "view_draft_concept" => %{"method" => "POST"},
+               "view_published_concept" => %{"method" => "POST"},
                "restore" => %{"method" => "POST"},
                "autoPublish" => %{
                  "href" => "/api/rule_implementations/upload",
@@ -1070,6 +1105,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "clone" => %{"method" => "POST"},
                "link_concept" => %{"method" => "POST"},
                "link_structure" => %{"method" => "POST"},
+               "view_approval_pending_concept" => %{"method" => "POST"},
+               "view_draft_concept" => %{"method" => "POST"},
+               "view_published_concept" => %{"method" => "POST"},
                "autoPublish" => %{
                  "href" => "/api/rule_implementations/upload",
                  "method" => "POST"
@@ -1134,6 +1172,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "submit" => %{"method" => "POST"},
                "link_concept" => %{"method" => "POST"},
                "link_structure" => %{"method" => "POST"},
+               "view_approval_pending_concept" => %{"method" => "POST"},
+               "view_draft_concept" => %{"method" => "POST"},
+               "view_published_concept" => %{"method" => "POST"},
                "publish" => %{"method" => "POST"},
                "move" => %{"method" => "POST"},
                "autoPublish" => %{
@@ -1179,6 +1220,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "execute" => %{"method" => "POST"},
                "link_concept" => %{"method" => "POST"},
                "link_structure" => %{"method" => "POST"},
+               "view_approval_pending_concept" => %{"method" => "POST"},
+               "view_draft_concept" => %{"method" => "POST"},
+               "view_published_concept" => %{"method" => "POST"},
                "autoPublish" => %{
                  "href" => "/api/rule_implementations/upload",
                  "method" => "POST"
@@ -1205,6 +1249,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "clone" => %{"method" => "POST"},
                "link_concept" => %{"method" => "POST"},
                "link_structure" => %{"method" => "POST"},
+               "view_approval_pending_concept" => %{"method" => "POST"},
+               "view_draft_concept" => %{"method" => "POST"},
+               "view_published_concept" => %{"method" => "POST"},
                "move" => %{"method" => "POST"},
                "convert_raw" => %{"method" => "POST"},
                "convert_default" => %{"method" => "POST"},
@@ -1291,6 +1338,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "clone" => %{"method" => "POST"},
                "link_concept" => %{"method" => "POST"},
                "link_structure" => %{"method" => "POST"},
+               "view_approval_pending_concept" => %{"method" => "POST"},
+               "view_draft_concept" => %{"method" => "POST"},
+               "view_published_concept" => %{"method" => "POST"},
                "restore" => %{"method" => "POST"},
                "autoPublish" => %{
                  "href" => "/api/rule_implementations/upload",
@@ -1355,6 +1405,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "submit" => %{"method" => "POST"},
                "link_concept" => %{"method" => "POST"},
                "link_structure" => %{"method" => "POST"},
+               "view_approval_pending_concept" => %{"method" => "POST"},
+               "view_draft_concept" => %{"method" => "POST"},
+               "view_published_concept" => %{"method" => "POST"},
                "publish" => %{"method" => "POST"},
                "move" => %{"method" => "POST"},
                "autoPublish" => %{
@@ -1397,6 +1450,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
                "execute" => %{"method" => "POST"},
                "link_concept" => %{"method" => "POST"},
                "link_structure" => %{"method" => "POST"},
+               "view_approval_pending_concept" => %{"method" => "POST"},
+               "view_draft_concept" => %{"method" => "POST"},
+               "view_published_concept" => %{"method" => "POST"},
                "autoPublish" => %{
                  "href" => "/api/rule_implementations/upload",
                  "method" => "POST"

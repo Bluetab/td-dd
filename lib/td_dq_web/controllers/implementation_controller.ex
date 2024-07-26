@@ -14,6 +14,12 @@ defmodule TdDqWeb.ImplementationController do
 
   @default_lang "es"
 
+  @state_permission_map %{
+    "published" => :view_published_concept,
+    "draft" => :view_draft_concept,
+    "pending_approval" => :view_approval_pending_concept
+  }
+
   action_fallback(TdDqWeb.FallbackController)
 
   def swagger_definitions do
@@ -37,7 +43,9 @@ defmodule TdDqWeb.ImplementationController do
       implementations =
         filters
         |> Implementations.list_implementations(preload: [:rule, :results], enrich: :source)
-        |> Enum.map(&Implementations.enrich_implementation_structures/1)
+        |> Enum.map(
+          &Implementations.enrich_implementation_structures(&1, preload_structures: true)
+        )
 
       conn
       |> Actions.put_actions(claims, Implementation)
@@ -166,7 +174,7 @@ defmodule TdDqWeb.ImplementationController do
       )
       |> add_last_rule_result()
       |> add_quality_event()
-      |> Implementations.enrich_implementation_structures()
+      |> Implementations.enrich_implementation_structures(preload_structures: true)
       |> filter_links_by_permission(claims)
       |> filter_data_structures_by_permission(claims)
 
@@ -180,14 +188,28 @@ defmodule TdDqWeb.ImplementationController do
   defp filter_links_by_permission(implementation, %{role: "admin"}), do: implementation
 
   defp filter_links_by_permission(%{links: [_ | _] = links} = implementation, claims) do
-    links = Enum.filter(links, fn link -> filter_link_by_permission(claims, link) end)
-    Map.put(implementation, :links, links)
+    permitted_links =
+      Enum.filter(links, fn %{status: status} = link ->
+        case Map.get(@state_permission_map, status) do
+          nil ->
+            false
+
+          permission ->
+            has_permission?(claims, link, permission)
+        end
+      end)
+
+    Map.put(
+      implementation,
+      :links,
+      permitted_links
+    )
   end
 
   defp filter_links_by_permission(implementation, _claims), do: implementation
 
-  defp filter_link_by_permission(claims, %{resource_type: :concept, domain: %{id: domain_id}}) do
-    Bodyguard.permit(Implementations, :view_published_concept, claims, domain_id)
+  defp has_permission?(claims, %{resource_type: :concept, domain_id: domain_id}, permission) do
+    Bodyguard.permit(Implementations, permission, claims, domain_id)
   end
 
   defp filter_link_by_permission(_claims, _), do: false

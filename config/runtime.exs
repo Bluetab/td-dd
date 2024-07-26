@@ -101,6 +101,11 @@ if config_env() == :prod do
         task: {TdDd.Search.IndexWorker, :reindex_grants, [:all]},
         run_strategy: Quantum.RunStrategy.Local
       ],
+      lineage_nodes_domains_ids_refresher: [
+        schedule: System.get_env("LINEAGE_NODES_DOMAINS_IDS_REFRESHER", "@hourly"),
+        task: {TdDd.Lineage.NodeQuery, :update_nodes_domains, []},
+        run_strategy: Quantum.RunStrategy.Local
+      ],
       rule_remover: [
         schedule: System.get_env("RULE_REMOVAL_SCHEDULE", "@hourly"),
         task: {TdDq.Rules.RuleRemover, :archive_inactive_rules, []},
@@ -164,6 +169,11 @@ if config_env() == :prod do
   config :td_dd, TdDd.Loader.Worker,
     timeout: System.get_env("SYNC_LOADER_TIMEOUT", "30000") |> String.to_integer()
 end
+
+config :td_dd, TdDd.Lineage.Import.Loader,
+  nodes_chunk_size: System.get_env("NODES_CHUNK_SIZE", "10000") |> String.to_integer(),
+  units_chunk_size: System.get_env("UNITS_CHUNK_SIZE", "10000") |> String.to_integer(),
+  edges_chunk_size: System.get_env("EDGES_CHUNK_SIZE", "500") |> String.to_integer()
 
 config :td_dd, TdDd.DataStructures.Search,
   es_scroll_size: System.get_env("ES_SCROLL_SIZE", "10000") |> String.to_integer(),

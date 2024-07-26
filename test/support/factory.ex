@@ -304,8 +304,13 @@ defmodule TdDd.Factory do
     %Units.Event{event: "EventType", inserted_at: DateTime.utc_now()}
   end
 
-  def node_factory do
-    %Units.Node{external_id: sequence("node_external_id"), type: "Resource"}
+  def node_factory(attrs) do
+    %Units.Node{
+      external_id: sequence("node_external_id"),
+      type: "Resource",
+      domain_ids: []
+    }
+    |> merge_attributes(attrs)
   end
 
   def edge_factory do

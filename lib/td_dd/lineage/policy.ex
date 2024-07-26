@@ -19,9 +19,8 @@ defmodule TdDd.Lineage.Policy do
   def authorize(:list, %{} = claims, LineageEvent),
     do: Permissions.authorized?(claims, :view_lineage)
 
-  def authorize(:view_lineage, %{} = claims, %Node{domain_ids: domain_ids = [_ | _]}) do
-    Permissions.authorized?(claims, :view_lineage, domain_ids)
-  end
+  def authorize(:view_lineage, %{} = claims, %Node{domain_ids: domain_ids = [_ | _]}),
+    do: Permissions.authorized?(claims, :view_lineage, domain_ids)
 
   def authorize(:view_lineage, %{} = claims, %Node{}),
     do: Permissions.authorized?(claims, :view_lineage)
