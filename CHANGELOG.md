@@ -1,12 +1,18 @@
 # Changelog
 
+## [Unrelease]
+
+### Added
+
+- [TD-6734] Update td-df-lib and td-core
+
 ## [6.9.1] 2024-07-26
 
 ### Added
 
 - [TD-6733] Update td-df-lib and td-core
 
-## [6.9.0] 2024-07-26 
+## [6.9.0] 2024-07-26
 
 ### Added
 
