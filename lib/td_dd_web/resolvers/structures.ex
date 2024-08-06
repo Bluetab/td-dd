@@ -173,8 +173,6 @@ defmodule TdDdWeb.Resolvers.Structures do
 
   defp handle_note_select(_content, _dsv, _), do: nil
 
-
-
   def ancestry(%{path: [_ | _] = path}, _args, _resolution), do: {:ok, path}
 
   def ancestry(_, _args, _resolution), do: {:ok, []}
