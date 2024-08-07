@@ -1699,12 +1699,11 @@ defmodule TdDdWeb.Schema.StructuresTest do
           version: 1
         )
 
-      %{df_content: main_note} =
-        insert(:structure_note,
-          data_structure_id: id_ds_main_id,
-          df_content: %{"foo main" => %{"value" => "bar main", "origin" => "user"}},
-          status: :published
-        )
+      insert(:structure_note,
+        data_structure_id: id_ds_main_id,
+        df_content: %{"foo main" => %{"value" => "bar main", "origin" => "user"}},
+        status: :published
+      )
 
       # child 1
       structure_child_1 = insert(:data_structure, external_id: "child_1", domain_ids: [domain_id])
