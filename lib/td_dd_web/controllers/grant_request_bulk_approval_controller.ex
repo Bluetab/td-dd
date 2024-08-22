@@ -10,7 +10,7 @@ defmodule TdDdWeb.GrantRequestBulkApprovalController do
     search_params =
       params
       |> Map.drop(["role", "comment", "is_rejection"])
-      |> maybe_fix_approved_params()
+      |> Search.apply_approve_filters()
 
     with claims <- conn.assigns[:current_resource],
          %{results: grant_requests} <- Search.search(search_params, claims),
@@ -22,16 +22,4 @@ defmodule TdDdWeb.GrantRequestBulkApprovalController do
       |> render("show.json", grant_request_bulk_approval: approvals)
     end
   end
-
-  defp maybe_fix_approved_params(
-         %{"must" => %{"must_not_approved_by" => approved_by} = filters} = params
-       ) do
-    must_without_approved = Map.delete(filters, "must_not_approved_by")
-
-    params
-    |> Map.put("must", must_without_approved)
-    |> Map.put("must_not", %{"approved_by" => approved_by})
-  end
-
-  defp maybe_fix_approved_params(params), do: params
 end

@@ -27,6 +27,19 @@ defmodule TdDd.GrantRequests.Search do
     Search.get_filters(search, @index)
   end
 
+  def apply_approve_filters(%{"must" => %{"must_not_approved_by" => approved_by} = must} = params) do
+    must =
+      must
+      |> Map.delete("must_not_approved_by")
+      |> Map.put("current_status", ["pending"])
+
+    params
+    |> Map.put("must", must)
+    |> Map.put("must_not", %{"approved_by" => approved_by})
+  end
+
+  def apply_approve_filters(params), do: params
+
   def search(params, claims, page \\ 0, size \\ 1000)
 
   def search(params, claims, page, size) do
@@ -61,7 +74,7 @@ defmodule TdDd.GrantRequests.Search do
   end
 
   defp search_permissions(%Claims{} = claims) do
-    permissions = ["approve_grant_request"]
+    permissions = ["manage_grants", "approve_grant_request"]
 
     ["domain", "structure"]
     |> Enum.map(fn resource_type ->
