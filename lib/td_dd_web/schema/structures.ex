@@ -131,6 +131,11 @@ defmodule TdDdWeb.Schema.Structures do
     field(:data_structure_link_count, :integer)
     field(:degree, :graph_degree)
 
+    field :has_note, :json do
+      arg(:select_fields, list_of(:string))
+      resolve(&Resolvers.Structures.has_note/3)
+    end
+
     field :note, :json do
       arg(:select_fields, list_of(:string))
       resolve(&Resolvers.Structures.note/3)

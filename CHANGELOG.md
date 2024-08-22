@@ -1,6 +1,14 @@
 # Changelog
 
- ## [6.9.2] 2024-07-29
+## [Unreleased]
+
+## [6.9.3] 2024-08-07
+
+### Fixed
+
+- [TD-6744] DataStructureVersion "has_note" refactor (v2)
+
+## [6.9.2] 2024-07-29
 
 ### Added
 
