@@ -58,7 +58,7 @@ defmodule TdDdWeb.GrantRequestFilterControllerTest do
   end
 
   @tag authentication: [user_name: "non_admin_user", permissions: ["approve_grant_request"]]
-  test "includes filerts from request parameters", %{conn: conn} do
+  test "includes filters from request parameters", %{conn: conn} do
     ElasticsearchMock
     |> expect(:request, fn
       _, :post, "/grant_requests/_search", %{query: query, size: 0}, _ ->
@@ -94,6 +94,35 @@ defmodule TdDdWeb.GrantRequestFilterControllerTest do
     assert %{"data" => %{}} =
              conn
              |> post(Routes.grant_request_filter_path(conn, :search, %{}))
+             |> json_response(:ok)
+  end
+
+  @tag authentication: [role: "admin"]
+  test "admin can search all grant requests filters with pending status with must not approved_by",
+       %{conn: conn} do
+    ElasticsearchMock
+    |> expect(:request, fn
+      _, :post, "/grant_requests/_search", %{query: query, size: 0}, _ ->
+        assert %{
+                 bool: %{
+                   must: %{term: %{"current_status" => "pending"}},
+                   must_not: %{term: %{"approved_by" => "rol1"}}
+                 }
+               } ==
+                 query
+
+        SearchHelpers.aggs_response()
+    end)
+
+    params = %{
+      "must" => %{
+        "must_not_approved_by" => ["rol1"]
+      }
+    }
+
+    assert %{"data" => %{}} =
+             conn
+             |> post(Routes.grant_request_filter_path(conn, :search, params))
              |> json_response(:ok)
   end
 end

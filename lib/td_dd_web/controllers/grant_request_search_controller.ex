@@ -17,7 +17,7 @@ defmodule TdDdWeb.GrantRequestSearchController do
     %{total: total} =
       response =
       params
-      |> maybe_fix_approved_params()
+      |> Search.apply_approve_filters()
       |> Search.search(claims, page, size)
       |> put_permissions(claims)
 
@@ -51,16 +51,4 @@ defmodule TdDdWeb.GrantRequestSearchController do
     permissions = Permissions.get_roles_by_user(:approve_grant_request, claims)
     Map.put(response, :permissions, permissions)
   end
-
-  defp maybe_fix_approved_params(
-         %{"must" => %{"must_not_approved_by" => approved_by} = must} = params
-       ) do
-    must_without_approved = Map.delete(must, "must_not_approved_by")
-
-    params
-    |> Map.put("must", must_without_approved)
-    |> Map.put("must_not", %{"approved_by" => approved_by})
-  end
-
-  defp maybe_fix_approved_params(params), do: params
 end

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- [TD-6715] On GrantRequests "must_not_approved_by" filters by pending status
+
 ## [6.9.3] 2024-08-07
 
 ### Fixed
