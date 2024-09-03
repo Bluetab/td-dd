@@ -6,6 +6,12 @@
 
 - [TD-6715] On GrantRequests "must_not_approved_by" filters by pending status
 
+## [6.10.0] 2024-09-03
+
+### Fixed
+
+- [TD-6804] Remove schema in migration querys
+
 ## [6.9.3] 2024-08-07
 
 ### Fixed
