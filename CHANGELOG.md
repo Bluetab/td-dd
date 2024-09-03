@@ -1,6 +1,10 @@
 # Changelog
 
-## [Unreleased]
+## [6.10.0] 2024-09-03
+
+### Fixed
+
+- [TD-6804] Remove schema in migration querys
 
 ## [6.9.3] 2024-08-07
 
