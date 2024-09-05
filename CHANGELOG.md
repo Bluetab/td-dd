@@ -1,5 +1,11 @@
 # Changelog
 
+## [6.11.0] 2024-09-05
+
+### Fixed
+
+- [TD-6715] On GrantRequests "must_not_approved_by" filters by pending status
+
 ## [6.10.0] 2024-09-03
 
 ### Fixed
