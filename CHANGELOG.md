@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-6791] Add Structure Note Search old template content support
+
 ## [6.11.0] 2024-09-05
 
 ### Fixed
