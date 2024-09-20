@@ -88,6 +88,9 @@ defmodule TdDq.Implementations.Policy do
         :manage_ruleless_implementations
       ])
 
+  def authorize("view_quality", %{} = claims, _params),
+    do: Permissions.authorized?(claims, :view_quality_rule)
+
   def authorize("download", %{} = claims, _params),
     do: Permissions.authorized?(claims, :view_quality_rule)
 
