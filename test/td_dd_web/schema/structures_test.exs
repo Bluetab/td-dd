@@ -1048,7 +1048,8 @@ defmodule TdDdWeb.Schema.StructuresTest do
                    "update" => true,
                    "update_domain" => true,
                    "update_grant_removal" => true,
-                   "view_profiling_permission" => true
+                   "view_profiling_permission" => true,
+                   "view_quality" => false
                  },
                  "relations" => %{
                    "children" => [
