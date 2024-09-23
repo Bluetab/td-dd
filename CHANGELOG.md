@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.12.0] 2024-09-23
+
+### Fixed
+
+- [TD-6791] Add Structure Note Search old template content support
+- [TD-5353] Hide the implementations tab in the structures view and apply permissions when retrieving data
+
 ## [6.11.0] 2024-09-05
 
 ### Fixed
