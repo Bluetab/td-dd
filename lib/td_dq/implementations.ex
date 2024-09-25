@@ -59,7 +59,7 @@ defmodule TdDq.Implementations do
     Implementation
     |> preload(^preloads)
     |> Repo.get!(id)
-    |> enrich(Keyword.get(opts, :enrich, []))
+    |> enrich(Keyword.get(opts, :enrich, []), lang: Keyword.get(opts, :lang))
   end
 
   def get_implementation(id) do
@@ -1099,16 +1099,16 @@ defmodule TdDq.Implementations do
 
   def enrich_implementations(target, opts), do: enrich(target, opts)
 
-  @spec enrich(Implementation.t() | [Implementation.t()], nil | atom | [atom]) ::
-          Implementation.t() | [Implementation.t()]
-  defp enrich(target, nil), do: target
+  defp enrich(target, items), do: enrich(target, items, [])
 
-  defp enrich(target, opts) when is_list(target) do
-    Enum.map(target, &enrich(&1, opts))
+  defp enrich(target, nil, _opts), do: target
+
+  defp enrich(target, items, opts) when is_list(target) do
+    Enum.map(target, &enrich(&1, items, opts))
   end
 
-  defp enrich(target, opts) when is_list(opts) do
-    Enum.reduce(opts, target, &enrich(&2, &1))
+  defp enrich(target, items, opts) when is_list(items) do
+    Enum.reduce(items, target, &enrich(&2, &1, opts))
   end
 
   defp enrich(
@@ -1116,7 +1116,8 @@ defmodule TdDq.Implementations do
            implementation_type: "raw",
            raw_content: %{source_id: source_id} = content
          } = implementation,
-         :source
+         :source,
+         _opts
        )
        when is_integer(source_id) do
     case Sources.get_source(source_id) do
@@ -1129,11 +1130,11 @@ defmodule TdDq.Implementations do
     end
   end
 
-  defp enrich(%Implementation{} = implementation, :links) do
-    Map.put(implementation, :links, get_implementation_links(implementation, "business_concept"))
+  defp enrich(%Implementation{} = implementation, :links, opts) do
+    Map.put(implementation, :links, get_implementation_links(implementation, "business_concept", opts))
   end
 
-  defp enrich(%Implementation{} = implementation, :execution_result_info) do
+  defp enrich(%Implementation{} = implementation, :execution_result_info, _opts) do
     quality_event = QualityEvents.get_event_by_imp(implementation.id)
 
     result = RuleResults.get_latest_rule_result(implementation)
@@ -1146,13 +1147,14 @@ defmodule TdDq.Implementations do
 
   defp enrich(
          %Implementation{rule: %Rule{} = rule} = implementation,
-         :current_business_concept_version
+         :current_business_concept_version,
+         _opts
        ) do
     bcv = Helpers.get_business_concept_version(rule)
     Map.put(implementation, :current_business_concept_version, bcv)
   end
 
-  defp enrich(%Implementation{domain_id: domain_id} = implementation, :domain)
+  defp enrich(%Implementation{domain_id: domain_id} = implementation, :domain, _opts)
        when is_integer(domain_id) do
     case TaxonomyCache.get_domain(domain_id) do
       %{id: ^domain_id} = domain ->
@@ -1163,16 +1165,22 @@ defmodule TdDq.Implementations do
     end
   end
 
-  defp enrich(target, _), do: target
+  defp enrich(target, _, _), do: target
 
-  def get_implementation_links(%Implementation{implementation_ref: id}) do
-    case LinkCache.list("implementation_ref", id) do
+  def get_implementation_links(implementation),
+    do: get_implementation_links(implementation, [])
+
+  def get_implementation_links(%Implementation{implementation_ref: id}, opts) when is_list(opts) do
+    case LinkCache.list("implementation_ref", id, opts) do
       {:ok, links} -> links
     end
   end
 
-  def get_implementation_links(%Implementation{implementation_ref: id}, target_type) do
-    case LinkCache.list("implementation_ref", id, target_type) do
+  def get_implementation_links(implementation, target_type) when is_binary(target_type),
+    do: get_implementation_links(implementation, target_type, [])
+
+  def get_implementation_links(%Implementation{implementation_ref: id}, target_type, opts) do
+    case LinkCache.list("implementation_ref", id, target_type, opts) do
       {:ok, links} -> links
     end
   end
