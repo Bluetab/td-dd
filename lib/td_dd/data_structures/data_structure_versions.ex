@@ -153,6 +153,7 @@ defmodule TdDd.DataStructures.DataStructureVersions do
   defp with_permissions(%{data_structure: data_structure} = dsv, claims) do
     if permit?(DataStructures, :view_data_structure, claims, data_structure) do
       tags = Tags.tags(dsv)
+
       dsv = DataStructures.profile_source(dsv)
 
       user_permissions = %{

@@ -19,7 +19,8 @@ defmodule TdDq.Implementations.Policy do
     "createRuleLess",
     "download",
     "upload",
-    "uploadResults"
+    "uploadResults",
+    "view_quality"
   ]
 
   def authorize(:query, %{role: "admin"}, _params), do: true
