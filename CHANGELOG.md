@@ -1,5 +1,11 @@
 # Changelog
 
+## [6.12.1] 2024-09-25
+
+### Fixed
+
+- [TD-6847] Fix data quality tab visibility
+
 ## [6.12.0] 2024-09-23
 
 ### Fixed
