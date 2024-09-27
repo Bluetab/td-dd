@@ -48,6 +48,7 @@ defmodule TdDdWeb.Resolvers.Structures do
         %{data_structure_id: data_structure_id, version: version},
         resolution
       ) do
+    lang = lang(resolution)
     query_fields =
       resolution
       |> Map.get(:definition)
@@ -61,7 +62,8 @@ defmodule TdDdWeb.Resolvers.Structures do
               claims,
               data_structure_id,
               version,
-              query_fields
+              query_fields,
+              lang: lang
             )},
          dsv <- enriched_dsv[:data_structure_version],
          actions <- enriched_dsv[:actions],
@@ -306,8 +308,9 @@ defmodule TdDdWeb.Resolvers.Structures do
     {:ok, profile}
   end
 
-  def links(dsv, _args, _resolution) do
-    {:ok, DataStructures.get_structure_links(dsv)}
+  def links(dsv, _args, resolution) do
+    lang = lang(resolution)
+    {:ok, DataStructures.get_structure_links(dsv, lang: lang)}
   end
 
   def data_structure_links(%{} = data_structure, _args, _resolution) do
@@ -330,6 +333,9 @@ defmodule TdDdWeb.Resolvers.Structures do
 
   defp claims(%{context: %{claims: claims}}), do: claims
   defp claims(_), do: nil
+
+  defp lang(%{context: %{lang: lang}}), do: lang
+  defp lang(_), do: nil
 
   defp get_permissions_opts(ds, claims) do
     ds

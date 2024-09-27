@@ -47,14 +47,35 @@ defmodule TdDd.DataStructures.DataStructureVersions do
         claims,
         data_structure_id,
         version,
-        query_fields \\ nil
-      ) do
+        query_fields \\ nil,
+        opts \\ []
+      )
+
+  def enriched_data_structure_version(claims, data_structure_id, version, opts_or_query, [])
+      when is_list(opts_or_query) do
+    if Keyword.keyword?(opts_or_query) do
+      do_enriched_data_structure_version(claims, data_structure_id, version, nil, opts_or_query)
+    else
+      do_enriched_data_structure_version(claims, data_structure_id, version, opts_or_query, [])
+    end
+  end
+
+  def enriched_data_structure_version(claims, data_structure_id, version, query_fields, opts),
+    do: do_enriched_data_structure_version(claims, data_structure_id, version, query_fields, opts)
+
+  defp do_enriched_data_structure_version(
+         claims,
+         data_structure_id,
+         version,
+         query_fields,
+         opts
+       ) do
     enriches = query_fields_to_enrich_opts(query_fields)
 
     data_structure_id
     |> DataStructures.get_data_structure!()
     |> enrich_opts(claims, enriches)
-    |> get_data_structure_version(data_structure_id, version)
+    |> get_data_structure_version(data_structure_id, version, opts)
     |> add_data_fields()
     |> merge_metadata()
     |> with_permissions(claims)
@@ -248,17 +269,30 @@ defmodule TdDd.DataStructures.DataStructureVersions do
       not Enum.empty?(templates)
   end
 
-  defp get_data_structure_version(opts, data_structure_version_id) do
-    DataStructures.get_data_structure_version!(data_structure_version_id, opts)
-  end
+  defp get_data_structure_version(enrich_fields, data_structure_version_id, version \\ nil, opts \\ [])
 
-  defp get_data_structure_version(opts, data_structure_id, "latest") do
-    DataStructures.get_latest_version(data_structure_id, opts)
-  end
+  defp get_data_structure_version(enrich_fields, data_structure_version_id, nil, []), do:
+    DataStructures.get_data_structure_version!(data_structure_version_id, enrich_fields)
 
-  defp get_data_structure_version(opts, data_structure_id, version) do
-    DataStructures.get_data_structure_version!(data_structure_id, version, opts)
-  end
+  defp get_data_structure_version(enrich_fields, data_structure_version_id, opts, []) when is_list(opts), do:
+         DataStructures.get_data_structure_version!(
+           data_structure_version_id,
+           enrich_fields,
+           opts
+         )
+
+  defp get_data_structure_version(enrich_fields, data_structure_id, "latest", opts),
+    do: DataStructures.get_latest_version(data_structure_id, enrich_fields, opts)
+
+  defp get_data_structure_version(enrich_fields, data_structure_id, version, opts)
+       when is_integer(version),
+       do:
+         DataStructures.get_data_structure_version!(
+           data_structure_id,
+           version,
+           enrich_fields,
+           opts
+         )
 
   defp add_data_fields(%{data_fields: data_fields} = dsv) do
     field_structures = Enum.map(data_fields, &field_structure_json/1)
