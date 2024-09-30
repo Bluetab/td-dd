@@ -12,6 +12,7 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureMetadata
+  alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.Tags.StructureTag
   alias TdDd.Grants.Grant
   alias TdDd.Profiles.Profile
@@ -323,15 +324,79 @@ defmodule TdDd.DataStructures.DataStructureQueries do
 
   def data_structures_query(enumerable) do
     Enum.reduce(enumerable, DataStructure, fn
-      {:deleted, false}, q -> join(q, :inner, [ds], u in assoc(ds, :current_version))
-      {:external_id, external_id}, q -> where(q, [ds], ds.external_id in ^List.wrap(external_id))
-      {:ids, ids}, q -> where(q, [ds], ds.id in ^ids)
-      {:limit, limit}, q -> limit(q, ^limit)
-      {:lineage, true}, q -> having_units(q)
-      {:min_id, id}, q -> where(q, [ds], ds.id >= ^id)
-      {:order_by, "id"}, q -> order_by(q, :id)
-      {:preload, preloads}, q -> preload(q, ^preloads)
-      {:since, since}, q -> where(q, [ds], ds.updated_at >= ^since)
+      {:deleted, false}, q ->
+        join(q, :inner, [ds], u in assoc(ds, :current_version))
+
+      {:external_id, external_id}, q ->
+        where(q, [ds], ds.external_id in ^List.wrap(external_id))
+
+      {:ids, ids}, q ->
+        where(q, [ds], ds.id in ^ids)
+
+      {:domain_ids, domain_ids}, q ->
+        where(q, [ds], fragment("? && ?", ds.domain_ids, ^domain_ids))
+
+      {:system_ids, system_ids}, q ->
+        where(q, [ds], ds.system_id in ^system_ids)
+
+      {:data_structure_types, ds_types}, q ->
+        q
+        |> join(:inner, [ds], u in assoc(ds, :current_version), as: :version_for_types)
+        |> where([version_for_types: v], v.type in ^ds_types)
+
+      {:has_note, has_note}, q ->
+        structure_notes =
+          StructureNote
+          |> group_by([sn], sn.data_structure_id)
+          |> select([sn], %{data_structure_id: sn.data_structure_id})
+
+        q
+        |> join(:left, [ds], sn in subquery(structure_notes),
+          as: :has_note,
+          on: ds.id == sn.data_structure_id
+        )
+        |> where([has_note: sn], is_nil(sn.data_structure_id) != ^has_note)
+
+      {:note_statuses, statuses}, q ->
+        latest_structure_note =
+          select(StructureNote, [sn], %{
+            data_structure_id: sn.data_structure_id,
+            status: sn.status,
+            row_number:
+              fragment(
+                "ROW_NUMBER() OVER (PARTITION BY ? ORDER BY ? DESC)",
+                sn.data_structure_id,
+                sn.version
+              )
+          })
+
+        q
+        |> join(:left, [ds], sn in subquery(latest_structure_note),
+          as: :latest_structure_note,
+          on: ds.id == sn.data_structure_id and sn.row_number == 1
+        )
+        |> where([latest_structure_note: sn], sn.status in ^statuses)
+
+      {:limit, 0}, q ->
+        q
+
+      {:limit, limit}, q ->
+        limit(q, ^limit)
+
+      {:lineage, true}, q ->
+        having_units(q)
+
+      {:min_id, id}, q ->
+        where(q, [ds], ds.id >= ^id)
+
+      {:order_by, "id"}, q ->
+        order_by(q, :id)
+
+      {:preload, preloads}, q ->
+        preload(q, ^preloads)
+
+      {:since, since}, q ->
+        where(q, [ds], ds.updated_at >= ^since)
     end)
   end
 

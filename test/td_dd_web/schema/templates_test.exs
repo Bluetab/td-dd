@@ -104,6 +104,22 @@ defmodule TdDdWeb.Schema.TemplatesTest do
       assert %{"templates" => [template]} = data
       assert %{"content" => ^content} = template
     end
+
+    @tag authentication: [role: "agent"]
+    test "returns data when queried actions scope by agent", %{conn: conn} do
+      CacheHelpers.insert_template(%{scope: "actions"})
+
+      assert %{"data" => _} =
+               response =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @templates,
+                 "variables" => %{"scope" => "actions"}
+               })
+               |> json_response(:ok)
+
+      assert response["errors"] == nil
+    end
   end
 
   describe "template query" do

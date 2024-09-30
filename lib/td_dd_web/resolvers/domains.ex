@@ -99,31 +99,31 @@ defmodule TdDdWeb.Resolvers.Domains do
     TaxonomyCache.reachable_domain_ids(0)
   end
 
-  defp permitted_domain_ids(%{role: "user", jti: jti}, "approveGrantRequests"),
+  defp permitted_domain_ids(%{jti: jti}, "approveGrantRequests"),
     do: Permissions.permitted_domain_ids(jti, :approve_grant_request)
 
-  defp permitted_domain_ids(%{role: "user", jti: jti}, "manageConcept"),
+  defp permitted_domain_ids(%{jti: jti}, "manageConcept"),
     do: Permissions.permitted_domain_ids(jti, :update_business_concept)
 
-  defp permitted_domain_ids(%{role: "user", jti: jti}, "manageConfiguration"),
+  defp permitted_domain_ids(%{jti: jti}, "manageConfiguration"),
     do: Permissions.permitted_domain_ids(jti, :manage_configurations)
 
-  defp permitted_domain_ids(%{role: "user", jti: jti}, "manageImplementations"),
+  defp permitted_domain_ids(%{jti: jti}, "manageImplementations"),
     do: Permissions.permitted_domain_ids(jti, :manage_quality_rule_implementations)
 
-  defp permitted_domain_ids(%{role: "user", jti: jti}, "manageIngest"),
+  defp permitted_domain_ids(%{jti: jti}, "manageIngest"),
     do: Permissions.permitted_domain_ids(jti, :update_ingest)
 
-  defp permitted_domain_ids(%{role: "user", jti: jti}, "manageNotes"),
+  defp permitted_domain_ids(%{jti: jti}, "manageNotes"),
     do: Permissions.permitted_domain_ids(jti, :update_data_structure)
 
-  defp permitted_domain_ids(%{role: "user", jti: jti}, "manageRawImplementations"),
+  defp permitted_domain_ids(%{jti: jti}, "manageRawImplementations"),
     do: Permissions.permitted_domain_ids(jti, :manage_raw_quality_rule_implementations)
 
-  defp permitted_domain_ids(%{role: "user", jti: jti}, "manageBasicImplementations"),
+  defp permitted_domain_ids(%{jti: jti}, "manageBasicImplementations"),
     do: Permissions.permitted_domain_ids(jti, :manage_basic_implementations)
 
-  defp permitted_domain_ids(%{role: "user", jti: jti}, "manageBasicRulelessImplementations") do
+  defp permitted_domain_ids(%{jti: jti}, "manageBasicRulelessImplementations") do
     jti
     |> Permissions.permitted_domain_ids([
       :manage_basic_implementations,
@@ -132,7 +132,7 @@ defmodule TdDdWeb.Resolvers.Domains do
     |> intersection()
   end
 
-  defp permitted_domain_ids(%{role: "user", jti: jti}, "manageRawRulelessImplementations") do
+  defp permitted_domain_ids(%{jti: jti}, "manageRawRulelessImplementations") do
     jti
     |> Permissions.permitted_domain_ids([
       :manage_raw_quality_rule_implementations,
@@ -141,7 +141,7 @@ defmodule TdDdWeb.Resolvers.Domains do
     |> intersection()
   end
 
-  defp permitted_domain_ids(%{role: "user", jti: jti}, "manageLinkedImplementations") do
+  defp permitted_domain_ids(%{jti: jti}, "manageLinkedImplementations") do
     jti
     |> Permissions.permitted_domain_ids([
       :manage_quality_rule_implementations,
@@ -151,7 +151,7 @@ defmodule TdDdWeb.Resolvers.Domains do
     |> intersection()
   end
 
-  defp permitted_domain_ids(%{role: "user", jti: jti}, "manageLinkedRawImplementations") do
+  defp permitted_domain_ids(%{jti: jti}, "manageLinkedRawImplementations") do
     jti
     |> Permissions.permitted_domain_ids([
       :manage_raw_quality_rule_implementations,
@@ -161,10 +161,10 @@ defmodule TdDdWeb.Resolvers.Domains do
     |> intersection()
   end
 
-  defp permitted_domain_ids(%{role: "user", jti: jti}, "manageRule"),
+  defp permitted_domain_ids(%{jti: jti}, "manageRule"),
     do: Permissions.permitted_domain_ids(jti, :manage_quality_rule)
 
-  defp permitted_domain_ids(%{role: "user", jti: jti}, "manageRulelessImplementations") do
+  defp permitted_domain_ids(%{jti: jti}, "manageRulelessImplementations") do
     jti
     |> Permissions.permitted_domain_ids([
       :manage_quality_rule_implementations,
@@ -173,25 +173,25 @@ defmodule TdDdWeb.Resolvers.Domains do
     |> intersection()
   end
 
-  defp permitted_domain_ids(%{role: "user", jti: jti}, "manageSource"),
+  defp permitted_domain_ids(%{jti: jti}, "manageSource"),
     do: Permissions.permitted_domain_ids(jti, :manage_data_sources)
 
-  defp permitted_domain_ids(%{role: "user", jti: jti}, "manageTags"),
+  defp permitted_domain_ids(%{jti: jti}, "manageTags"),
     do: Permissions.permitted_domain_ids(jti, :link_data_structure_tag)
 
-  defp permitted_domain_ids(%{role: "user", jti: jti}, "shareConcept"),
+  defp permitted_domain_ids(%{jti: jti}, "shareConcept"),
     do: Permissions.permitted_domain_ids(jti, :view_domain)
 
-  defp permitted_domain_ids(%{role: "user", jti: jti}, "createForeignGrantRequest"),
+  defp permitted_domain_ids(%{jti: jti}, "createForeignGrantRequest"),
     do: Permissions.permitted_domain_ids(jti, :create_foreign_grant_request)
 
-  defp permitted_domain_ids(%{role: "user", jti: jti}, "createQualityControls"),
+  defp permitted_domain_ids(%{jti: jti}, "createQualityControls"),
     do: Permissions.permitted_domain_ids(jti, :create_quality_controls)
 
-  defp permitted_domain_ids(%{role: "user", jti: jti}, "publishQualityControls"),
+  defp permitted_domain_ids(%{jti: jti}, "publishQualityControls"),
     do: Permissions.permitted_domain_ids(jti, :publish_quality_controls)
 
-  defp permitted_domain_ids(%{role: "user", jti: jti}, action_or_permission) do
+  defp permitted_domain_ids(%{jti: jti}, action_or_permission) do
     Permissions.permitted_domain_ids(jti, Macro.underscore(action_or_permission))
   end
 

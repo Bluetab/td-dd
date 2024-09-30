@@ -12,6 +12,11 @@ defmodule TdDdWeb.Schema.Structures do
   object :structure_queries do
     @desc "Get a list of data structures"
     field :data_structures, list_of(:data_structure) do
+      arg(:domain_ids, list_of(:integer))
+      arg(:system_ids, list_of(:integer))
+      arg(:has_note, :boolean)
+      arg(:note_statuses, list_of(:string))
+      arg(:data_structure_types, list_of(:string))
       arg(:since, :datetime)
       arg(:min_id, :integer)
       arg(:lineage, :boolean)

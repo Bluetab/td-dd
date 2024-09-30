@@ -5,16 +5,16 @@ defmodule TdDq.Functions.Policy do
 
   @behaviour Bodyguard.Policy
 
-  def authorize(:query, %{role: "user"} = claims, _params) do
+  def authorize(_action, %{role: "admin"} = _claims, _params), do: true
+  def authorize(_action, %{role: "service"} = _claims, _params), do: true
+
+  def authorize(:query, %{} = claims, _params) do
     Permissions.authorized_any?(claims, [
       :manage_quality_rule_implementations,
       :manage_raw_quality_rule_implementations,
       :create_grant_request
     ])
   end
-
-  def authorize(_action, %{role: "admin"} = _claims, _params), do: true
-  def authorize(_action, %{role: "service"} = _claims, _params), do: true
 
   def authorize(_action, _claims, _params), do: false
 end
