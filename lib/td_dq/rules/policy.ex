@@ -10,12 +10,11 @@ defmodule TdDq.Rules.Policy do
   import TdDq.Permissions, only: [authorized?: 2, authorized?: 3]
 
   def authorize(_action, %{role: "admin"}, _params), do: true
+  def authorize(:view, %{role: "service"}, _params), do: true
 
-  def authorize(:manage_quality_rule, %{role: "user"} = claims, _params) do
+  def authorize(:manage_quality_rule, %{} = claims, _params) do
     authorized?(claims, :manage_quality_rule)
   end
-
-  def authorize(:view, %{role: "service"}, _params), do: true
 
   def authorize(:view, %{} = claims, %Rule{business_concept_id: concept_id, domain_id: domain_id}) do
     authorized?(claims, :view_quality_rule, domain_id) and
@@ -39,7 +38,7 @@ defmodule TdDq.Rules.Policy do
       Enum.all?(business_concept_ids, &maybe_authorize_confidential(claims, &1))
   end
 
-  def authorize(:upsert, %{role: "user"} = _claims, %{
+  def authorize(:upsert, %{} = _claims, %{
         "domain_id" => domain_id,
         "business_concept_id" => business_concept_id
       })
@@ -55,7 +54,7 @@ defmodule TdDq.Rules.Policy do
     end
   end
 
-  def authorize(:upsert, %{role: "user"}, %{} = _params), do: true
+  def authorize(:upsert, %{}, %{} = _params), do: true
 
   def authorize(_action, _claims, _params), do: false
 

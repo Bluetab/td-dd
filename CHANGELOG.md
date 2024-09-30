@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-6824] Agent V2 permissions
+
 ## [6.12.1] 2024-09-25
 
 ### Fixed

@@ -11,7 +11,7 @@ defmodule TdDq.Remediations.Policy do
 
   def authorize(
         action,
-        %{role: "user"} = claims,
+        %{} = claims,
         %Remediation{
           rule_result: %RuleResult{
             implementation: %{domain_id: domain_id}
