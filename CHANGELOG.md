@@ -6,6 +6,10 @@
 
 - [TD-6824] Agent V2 permissions
 
+### Fixed
+
+- [TD-6859] Filters deleted sources when getting by external_id
+
 ## [6.12.1] 2024-09-25
 
 ### Fixed

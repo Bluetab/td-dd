@@ -170,7 +170,10 @@ defmodule TdCx.Sources do
 
   defp source_params(nil), do: %{}
   defp source_params(%{} = params), do: params
-  defp source_params(external_id) when is_binary(external_id), do: %{external_id: external_id}
+
+  defp source_params(external_id) when is_binary(external_id),
+    do: %{external_id: external_id, deleted: false}
+
   defp source_params(id) when is_integer(id), do: %{id: id}
   defp source_params(list) when is_list(list), do: Map.new(list)
 
