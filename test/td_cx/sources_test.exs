@@ -55,6 +55,14 @@ defmodule TdCx.SourcesTest do
 
       assert %{id: ^id, config: ^config} = Sources.get_source(%{alias: "bar"})
     end
+
+    test "filters deleted_at when getting by external_id" do
+      insert(:source, external_id: "external_id", deleted_at: DateTime.utc_now())
+
+      %{id: id} = insert(:source, external_id: "external_id")
+
+      assert %{id: ^id} = Sources.get_source("external_id")
+    end
   end
 
   describe "sources" do
