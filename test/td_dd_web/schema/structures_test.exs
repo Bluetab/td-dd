@@ -835,7 +835,19 @@ defmodule TdDdWeb.Schema.StructuresTest do
       Hierarchy.update_hierarchy([id, parent_dsv_id])
 
       ## Concepts relations
-      %{id: concept_id, name: concept_name} = CacheHelpers.insert_concept()
+      concept_name_es = "concept_name_es"
+
+      %{id: concept_id} =
+        CacheHelpers.insert_concept(%{
+          name: "concept_name_en",
+          content: %{},
+          i18n: %{
+            "es" => %{
+              "name" => concept_name_es,
+              "content" => %{}
+            }
+          }
+        })
 
       %{id: link_id} =
         CacheHelpers.insert_link(
@@ -876,6 +888,7 @@ defmodule TdDdWeb.Schema.StructuresTest do
       assert %{"data" => data} =
                response =
                conn
+               |> put_req_header("accept-language", "es")
                |> post("/api/v2", %{
                  "query" => @version_query,
                  "variables" => variables
@@ -984,7 +997,7 @@ defmodule TdDdWeb.Schema.StructuresTest do
                      "id" => "#{link_id}",
                      "link_count" => 1,
                      "link_tags" => [],
-                     "name" => "#{concept_name}",
+                     "name" => "#{concept_name_es}",
                      "resource_id" => "#{concept_id}",
                      "resource_type" => "concept",
                      "rule_count" => 0,

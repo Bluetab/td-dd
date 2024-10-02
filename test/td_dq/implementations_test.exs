@@ -241,6 +241,43 @@ defmodule TdDq.ImplementationsTest do
                }
              ] = links
     end
+
+    test "enriches links with lang" do
+      concept_id = System.unique_integer([:positive])
+
+      TdCache.ConceptCache.put(%{
+        id: concept_id,
+        name: "bc_name_en",
+        updated_at: DateTime.utc_now(),
+        i18n: %{
+          "es" => %{
+            "name" => "bc_name_es",
+            "content" => %{}
+          }
+        }
+      })
+
+      %{id: id, implementation_ref: implementation_ref} = insert(:implementation)
+
+      CacheHelpers.insert_link(
+        implementation_ref,
+        "implementation_ref",
+        "business_concept",
+        concept_id
+      )
+
+      assert %{links: links} =
+               Implementations.get_implementation!(id, enrich: [:links], lang: "es")
+
+      string_concept_id = Integer.to_string(concept_id)
+
+      assert [
+               %{
+                 resource_id: ^string_concept_id,
+                 name: "bc_name_es"
+               }
+             ] = links
+    end
   end
 
   describe "get_published_implementation_by_key/2" do
