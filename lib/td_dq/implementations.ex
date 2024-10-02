@@ -1131,7 +1131,11 @@ defmodule TdDq.Implementations do
   end
 
   defp enrich(%Implementation{} = implementation, :links, opts) do
-    Map.put(implementation, :links, get_implementation_links(implementation, "business_concept", opts))
+    Map.put(
+      implementation,
+      :links,
+      get_implementation_links(implementation, "business_concept", opts)
+    )
   end
 
   defp enrich(%Implementation{} = implementation, :execution_result_info, _opts) do
@@ -1170,7 +1174,8 @@ defmodule TdDq.Implementations do
   def get_implementation_links(implementation),
     do: get_implementation_links(implementation, [])
 
-  def get_implementation_links(%Implementation{implementation_ref: id}, opts) when is_list(opts) do
+  def get_implementation_links(%Implementation{implementation_ref: id}, opts)
+      when is_list(opts) do
     case LinkCache.list("implementation_ref", id, opts) do
       {:ok, links} -> links
     end

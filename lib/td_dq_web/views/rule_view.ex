@@ -40,7 +40,6 @@ defmodule TdDqWeb.RuleView do
   end
 
   def render("rule.json", %{rule: rule} = assigns) do
-
     lang = Map.get(assigns, :lang)
 
     rule
@@ -70,7 +69,7 @@ defmodule TdDqWeb.RuleView do
   end
 
   defp add_current_version(rule, %{business_concept_id: business_concept_id}, lang) do
-    case ConceptCache.get(business_concept_id, [lang: lang]) do
+    case ConceptCache.get(business_concept_id, lang: lang, refresh: true) do
       {:ok, %{business_concept_version_id: id} = concept} ->
         current_version =
           concept

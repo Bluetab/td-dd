@@ -49,6 +49,7 @@ defmodule TdDdWeb.Resolvers.Structures do
         resolution
       ) do
     lang = lang(resolution)
+
     query_fields =
       resolution
       |> Map.get(:definition)

@@ -174,7 +174,7 @@ defmodule TdDq.Implementations.ElasticDocument do
         concepts =
           rule_concept
           |> Map.get(:id)
-          |> then(& [List.wrap(&1) | linked_concepts])
+          |> then(&[List.wrap(&1) | linked_concepts])
           |> List.flatten()
           |> Enum.reject(&(&1 == nil))
 

@@ -157,12 +157,12 @@ defmodule TdDqWeb.ImplementationView do
     concepts_names =
       concepts
       |> Enum.map(fn concept_id ->
-        case ConceptCache.get(concept_id, [lang: lang]) do
+        case ConceptCache.get(concept_id, lang: lang) do
           {:ok, %{name: name}} -> name
           _ -> nil
         end
       end)
-      |> Enum.reject(& &1 == nil)
+      |> Enum.reject(&(&1 == nil))
 
     Map.put(implementation, :concepts, concepts_names)
   end

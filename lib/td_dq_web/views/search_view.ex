@@ -21,9 +21,11 @@ defmodule TdDqWeb.SearchView do
         Map.put(acc, :data, data)
 
       {:implementations, implementations}, acc ->
-        data = render_many(implementations, ImplementationView, "implementation.json", %{
-          lang: Map.get(assigns, :locale)
-        })
+        data =
+          render_many(implementations, ImplementationView, "implementation.json", %{
+            lang: Map.get(assigns, :locale)
+          })
+
         Map.put(acc, :data, data)
 
       {:scroll_id, scroll_id}, acc ->

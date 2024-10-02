@@ -198,7 +198,8 @@ defmodule TdDd.DataStructures do
 
   def get_data_structure_version!(id, nil, [], []), do: do_get_data_structure_version!(id)
 
-  def get_data_structure_version!(id, [_ | _] = enrich_or_opts, [], []) when is_list(enrich_or_opts) do
+  def get_data_structure_version!(id, [_ | _] = enrich_or_opts, [], [])
+      when is_list(enrich_or_opts) do
     if Keyword.keyword?(enrich_or_opts) do
       do_get_data_structure_version!(id, [], enrich_or_opts)
     else
@@ -206,8 +207,9 @@ defmodule TdDd.DataStructures do
     end
   end
 
-  def get_data_structure_version!(id, enrich_fields, opts, []) when is_list(enrich_fields) and is_list(opts), do:
-    do_get_data_structure_version!(id, enrich_fields, opts)
+  def get_data_structure_version!(id, enrich_fields, opts, [])
+      when is_list(enrich_fields) and is_list(opts),
+      do: do_get_data_structure_version!(id, enrich_fields, opts)
 
   def get_data_structure_version!(id, version, [_ | _] = enrich_or_opts, []) do
     if Keyword.keyword?(enrich_or_opts) do
@@ -217,11 +219,10 @@ defmodule TdDd.DataStructures do
     end
   end
 
-  def get_data_structure_version!(id, version, enrich_fields, opts), do:
-    do_get_data_structure_version!(id, version, enrich_fields, opts)
+  def get_data_structure_version!(id, version, enrich_fields, opts),
+    do: do_get_data_structure_version!(id, version, enrich_fields, opts)
 
-  defp do_get_data_structure_version!(id), do:
-    enriched_structure_version!(id)
+  defp do_get_data_structure_version!(id), do: enriched_structure_version!(id)
 
   defp do_get_data_structure_version!(data_structure_version_id, enrich_fields, opts) do
     with_protected_metadata = Enum.member?(enrich_fields, :with_protected_metadata)
@@ -896,8 +897,8 @@ defmodule TdDd.DataStructures do
     end
   end
 
-  def get_latest_version(target, enrich_fields, opts), do:
-    do_get_latest_version(target, enrich_fields, opts)
+  def get_latest_version(target, enrich_fields, opts),
+    do: do_get_latest_version(target, enrich_fields, opts)
 
   defp do_get_latest_version(%DataStructure{id: id}, enrich_fields, opts) do
     get_latest_version(id, enrich_fields, opts)
