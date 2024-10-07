@@ -166,15 +166,14 @@ defmodule TdDd.DataStructures.TagsTest do
     test "links tag to a given structure", %{claims: claims} do
       IndexWorker.clear()
       %{comment: comment} = build(:structure_tag)
-      structure = %{id: data_structure_id, external_id: external_id} = insert(:data_structure)
+
+      structure =
+        %{id: data_structure_id, external_id: external_id, updated_at: updated_at_before} =
+        insert(:data_structure)
+
       %{name: version_name} = insert(:data_structure_version, data_structure: structure)
 
-      tag =
-        %{
-          id: tag_id,
-          name: tag_name,
-          description: _tag_description
-        } = insert(:tag)
+      tag = %{id: tag_id, name: tag_name, description: _tag_description} = insert(:tag)
 
       params = %{comment: comment}
 
@@ -185,11 +184,14 @@ defmodule TdDd.DataStructures.TagsTest do
            comment: ^comment,
            data_structure: %{id: ^data_structure_id},
            tag: %{id: ^tag_id}
-         }
+         },
+         update_at_change: %{updated_at: updated_at_after}
        }} = Tags.tag_structure(structure, tag, params, claims)
 
       assert {:ok, [%{id: ^event_id, payload: payload}]} =
                Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+
+      assert updated_at_after != updated_at_before
 
       assert %{
                "comment" => ^comment,
@@ -206,7 +208,10 @@ defmodule TdDd.DataStructures.TagsTest do
 
     test "updates structure tag when it already exists", %{claims: claims} do
       %{comment: comment} = build(:structure_tag)
-      structure = %{id: data_structure_id, external_id: external_id} = insert(:data_structure)
+
+      structure =
+        %{id: data_structure_id, external_id: external_id, updated_at: updated_at_before} =
+        insert(:data_structure)
 
       tag = %{id: tag_id, name: tag_name} = insert(:tag)
 
@@ -223,11 +228,14 @@ defmodule TdDd.DataStructures.TagsTest do
            comment: ^comment,
            data_structure: %{id: ^data_structure_id},
            tag: %{id: ^tag_id}
-         }
+         },
+         update_at_change: %{updated_at: updated_at_after}
        }} = Tags.tag_structure(structure, tag, params, claims)
 
       assert {:ok, [%{id: ^event_id, payload: payload}]} =
                Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+
+      assert updated_at_after != updated_at_before
 
       assert %{
                "comment" => ^comment,
@@ -265,7 +273,10 @@ defmodule TdDd.DataStructures.TagsTest do
 
     test "deletes structure tag", %{claims: claims} do
       IndexWorker.clear()
-      structure = %{id: data_structure_id, external_id: external_id} = insert(:data_structure)
+
+      structure =
+        %{id: data_structure_id, external_id: external_id, updated_at: updated_at_before} =
+        insert(:data_structure)
 
       tag = %{id: tag_id, name: tag_name} = insert(:tag)
 
@@ -278,12 +289,15 @@ defmodule TdDd.DataStructures.TagsTest do
                 audit: event_id,
                 structure_tag: %{
                   data_structure_id: ^data_structure_id,
-                  tag_id: ^tag_id
+                  tag_id: ^tag_id,
+                  updated_at: updated_at_after
                 }
               }} = Tags.untag_structure(structure, tag, claims)
 
       assert {:ok, [%{id: ^event_id, payload: payload}]} =
                Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+
+      assert updated_at_after != updated_at_before
 
       assert %{
                "comment" => ^comment,

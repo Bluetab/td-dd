@@ -175,13 +175,15 @@ defmodule TdDd.DataStructuresTest do
   describe "logical_delete_data_structure/2" do
     test "logical_delete_data_structure/2 delete the logical data_structure version", %{
       data_structure_version: %{id: parent_version_id} = data_structure_version,
-      data_structure: %{id: id},
+      data_structure: %{id: id, updated_at: updated_at_before},
       claims: claims
     } do
       insert(:structure_metadata, data_structure_id: id, version: parent_version_id)
 
-      {:ok, result} = DataStructures.logical_delete_data_structure(data_structure_version, claims)
+      {:ok, %{update_at_change: %{updated_at: updated_at_after}} = result} =
+        DataStructures.logical_delete_data_structure(data_structure_version, claims)
 
+      assert updated_at_after != updated_at_before
       assert %{delete_dsv_descendents: {1, nil}} = result
       assert %{delete_metadata_descendents: {1, nil}} = result
       assert %{data_structure_version_descendents: [^parent_version_id]} = result.descendents
