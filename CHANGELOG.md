@@ -9,6 +9,7 @@
   - `rules`
   - `implementations`
   - `structure notes`
+- [TD-6837] Refresh `updated_at` field when create, update or delete tags and delete structure
 
 ### Fixed
 
