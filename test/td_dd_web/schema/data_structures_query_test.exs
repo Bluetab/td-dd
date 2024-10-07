@@ -94,10 +94,7 @@ defmodule TdDdWeb.Schema.DataStructuresQueryTest do
     end
 
     @tag authentication: [role: "agent"]
-    test "returns forbidden when agent role not has domain permissions", %{
-      conn: conn,
-      claims: claims
-    } do
+    test "returns forbidden when agent role not has domain permissions", %{conn: conn} do
       %{id: domain_id} = CacheHelpers.insert_domain()
 
       insert(:data_structure_version,

@@ -5,6 +5,10 @@
 ### Added
 
 - [TD-6824] Agent V2 permissions
+- [TD-6817] `td-df-lib` update to validate `user` and `user_group` template fields in the content of the following entities:
+  - `rules`
+  - `implementations`
+  - `structure notes`
 
 ### Fixed
 

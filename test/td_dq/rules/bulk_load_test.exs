@@ -38,6 +38,32 @@ defmodule TdDq.Rules.BulkLoadTest do
     }
   ]
 
+  @user_field_template [
+    %{
+      "name" => "group",
+      "fields" => [
+        %{
+          "cardinality" => "?",
+          "default" => %{"value" => "", "origin" => "user"},
+          "label" => "User",
+          "name" => "data_owner",
+          "type" => "user",
+          "values" => %{"processed_users" => [], "role_users" => "Data Owner"},
+          "widget" => "dropdown"
+        },
+        %{
+          "cardinality" => "*",
+          "default" => %{"value" => "", "origin" => "user"},
+          "label" => "User list",
+          "name" => "data_owner_multiple",
+          "type" => "user",
+          "values" => %{"processed_users" => [], "role_users" => "Data Owner"},
+          "widget" => "dropdown"
+        }
+      ]
+    }
+  ]
+
   @default_lang "en"
 
   setup do
@@ -47,14 +73,18 @@ defmodule TdDq.Rules.BulkLoadTest do
     %{name: hierarchy_template_name} =
       CacheHelpers.insert_template(scope: "dq", content: @hierarchy_template)
 
-    %{external_id: domain_external_id} = CacheHelpers.insert_domain()
+    %{name: user_field_template_name} =
+      CacheHelpers.insert_template(scope: "dq", content: @user_field_template)
+
+    domain = CacheHelpers.insert_domain()
     hierarchy = create_hierarchy()
     CacheHelpers.insert_hierarchy(hierarchy)
 
     [
-      external_id: domain_external_id,
+      domain: domain,
       template_name: template_name,
       hierarchy_template_name: hierarchy_template_name,
+      user_field_template_name: user_field_template_name,
       hierarchy: hierarchy,
       claims: build(:claims)
     ]
@@ -63,10 +93,10 @@ defmodule TdDq.Rules.BulkLoadTest do
   describe "bulk_load/3" do
     @tag authentication: [role: "admin"]
 
-    test "return ids from inserted rules", %{external_id: external_id, claims: claims} do
+    test "return ids from inserted rules", %{domain: domain, claims: claims} do
       rules =
         Enum.map(@rules, fn rule ->
-          Map.put(rule, "domain_external_id", external_id)
+          Map.put(rule, "domain_external_id", domain.external_id)
         end)
 
       assert {:ok, %{ids: [id1, id2], errors: []}} =
@@ -77,14 +107,14 @@ defmodule TdDq.Rules.BulkLoadTest do
     end
 
     test "returns ids with valid template", %{
-      external_id: domain_external_id,
+      domain: domain,
       template_name: template_name,
       claims: claims
     } do
       rules =
         Enum.map(@rules, fn rule ->
           rule
-          |> Map.put("domain_external_id", domain_external_id)
+          |> Map.put("domain_external_id", domain.external_id)
           |> Map.put("template", template_name)
           |> Map.put("string", "initial")
           |> Map.put("list", "one")
@@ -103,7 +133,7 @@ defmodule TdDq.Rules.BulkLoadTest do
     end
 
     test "returns ids with hierarchy valid template", %{
-      external_id: domain_external_id,
+      domain: domain,
       hierarchy_template_name: template_name,
       hierarchy: %{nodes: nodes},
       claims: claims
@@ -113,7 +143,7 @@ defmodule TdDq.Rules.BulkLoadTest do
       rules =
         Enum.map(@rules, fn rule ->
           rule
-          |> Map.put("domain_external_id", domain_external_id)
+          |> Map.put("domain_external_id", domain.external_id)
           |> Map.put("template", template_name)
           |> Map.put("integer", 1)
           |> Map.put("hierarchy_name_1", "children_1")
@@ -134,7 +164,7 @@ defmodule TdDq.Rules.BulkLoadTest do
     end
 
     test "returns ids with valid template with multiple field", %{
-      external_id: domain_external_id,
+      domain: domain,
       claims: claims
     } do
       template_content = [
@@ -159,7 +189,7 @@ defmodule TdDq.Rules.BulkLoadTest do
       rules =
         Enum.map(@rules, fn rule ->
           rule
-          |> Map.put("domain_external_id", domain_external_id)
+          |> Map.put("domain_external_id", domain.external_id)
           |> Map.put("template", template_name)
           |> Map.put("multi_string", "a|b|c")
         end)
@@ -175,7 +205,7 @@ defmodule TdDq.Rules.BulkLoadTest do
 
     test "returns ids with valid template that include fixed values translated with single cardinality",
          %{
-           external_id: domain_external_id,
+           domain: domain,
            claims: claims
          } do
       template_content = [
@@ -207,7 +237,7 @@ defmodule TdDq.Rules.BulkLoadTest do
       rules =
         Enum.map(@rules, fn rule ->
           rule
-          |> Map.put("domain_external_id", domain_external_id)
+          |> Map.put("domain_external_id", domain.external_id)
           |> Map.put("template", template_name)
           |> Map.put("i18n", "uno")
         end)
@@ -222,7 +252,7 @@ defmodule TdDq.Rules.BulkLoadTest do
 
     test "returns ids with valid template that include fixed values translated with multiple cardinality",
          %{
-           external_id: domain_external_id,
+           domain: domain,
            claims: claims
          } do
       template_content = [
@@ -255,7 +285,7 @@ defmodule TdDq.Rules.BulkLoadTest do
       rules =
         Enum.map(@rules, fn rule ->
           rule
-          |> Map.put("domain_external_id", domain_external_id)
+          |> Map.put("domain_external_id", domain.external_id)
           |> Map.put("template", template_name)
           |> Map.put("i18n", "uno|tres")
         end)
@@ -270,7 +300,7 @@ defmodule TdDq.Rules.BulkLoadTest do
 
     test "returns ids with valid template that include fixed values without i18n key and single cardinality",
          %{
-           external_id: domain_external_id,
+           domain: domain,
            claims: claims
          } do
       template_content = [
@@ -297,7 +327,7 @@ defmodule TdDq.Rules.BulkLoadTest do
       rules =
         Enum.map(@rules, fn rule ->
           rule
-          |> Map.put("domain_external_id", domain_external_id)
+          |> Map.put("domain_external_id", domain.external_id)
           |> Map.put("template", template_name)
           |> Map.put("i18n", "uno")
         end)
@@ -320,7 +350,7 @@ defmodule TdDq.Rules.BulkLoadTest do
 
     test "returns ids with valid template that include fixed values without i18n key and multiple cardinality",
          %{
-           external_id: domain_external_id,
+           domain: domain,
            claims: claims
          } do
       template_content = [
@@ -347,7 +377,7 @@ defmodule TdDq.Rules.BulkLoadTest do
       rules =
         Enum.map(@rules, fn rule ->
           rule
-          |> Map.put("domain_external_id", domain_external_id)
+          |> Map.put("domain_external_id", domain.external_id)
           |> Map.put("template", template_name)
           |> Map.put("i18n", "uno|tres")
         end)
@@ -369,12 +399,12 @@ defmodule TdDq.Rules.BulkLoadTest do
     end
 
     test "return error when domain_external_id not exit", %{
-      external_id: domain_external_id,
+      domain: domain,
       claims: claims
     } do
       [rule1, rule2] = @rules
 
-      rule1 = Map.put(rule1, "domain_external_id", domain_external_id)
+      rule1 = Map.put(rule1, "domain_external_id", domain.external_id)
       %{"name" => name} = rule2 = Map.put(rule2, "domain_external_id", "foo")
 
       assert {:ok, %{ids: [id], errors: [error]}} =
@@ -385,7 +415,7 @@ defmodule TdDq.Rules.BulkLoadTest do
     end
 
     test "return error with invalid df_content", %{
-      external_id: domain_external_id,
+      domain: domain,
       template_name: template_name,
       claims: claims
     } do
@@ -393,13 +423,13 @@ defmodule TdDq.Rules.BulkLoadTest do
 
       rule1 =
         rule1
-        |> Map.put("domain_external_id", domain_external_id)
+        |> Map.put("domain_external_id", domain.external_id)
         |> Map.put("template", template_name)
         |> Map.put("df_invalid", "baz")
 
       rule2 =
         rule2
-        |> Map.put("domain_external_id", domain_external_id)
+        |> Map.put("domain_external_id", domain.external_id)
         |> Map.put("template", "xwy")
 
       assert {:ok, %{ids: [], errors: [_e1, _e2]}} =
@@ -407,14 +437,14 @@ defmodule TdDq.Rules.BulkLoadTest do
     end
 
     test "return error with hierarchy more than one nodes", %{
-      external_id: domain_external_id,
+      domain: domain,
       hierarchy_template_name: template_name,
       claims: claims
     } do
       rules =
         Enum.map(@rules, fn rule ->
           rule
-          |> Map.put("domain_external_id", domain_external_id)
+          |> Map.put("domain_external_id", domain.external_id)
           |> Map.put("template", template_name)
           |> Map.put("integer", 1)
           |> Map.put("hierarchy_name_1", "children_2")
@@ -426,19 +456,17 @@ defmodule TdDq.Rules.BulkLoadTest do
     end
 
     test "return ids with a description", %{
-      external_id: domain_external_id,
+      domain: domain,
       claims: claims
     } do
       [rule1, rule2] = @rules
 
       rule1 =
         rule1
-        |> Map.put("domain_external_id", domain_external_id)
+        |> Map.put("domain_external_id", domain.external_id)
         |> Map.put("description", "bar")
 
-      rule2 =
-        rule2
-        |> Map.put("domain_external_id", domain_external_id)
+      rule2 = Map.put(rule2, "domain_external_id", domain.external_id)
 
       assert {:ok, %{ids: [id1, id2], errors: []}} =
                BulkLoad.bulk_load([rule1, rule2], claims, @default_lang)
@@ -458,6 +486,67 @@ defmodule TdDq.Rules.BulkLoadTest do
       assert %{description: ^description} = Rules.get_rule(id1)
       %{description: rule2description} = Rules.get_rule(id2)
       assert true = Enum.empty?(rule2description)
+    end
+
+    test "creates rule under valid user field value", %{
+      user_field_template_name: template_name,
+      domain: domain,
+      claims: claims
+    } do
+      full_name = "user"
+      full_name1 = "user1"
+      full_name2 = "user2"
+
+      rules =
+        Enum.map(@rules, fn rule ->
+          rule
+          |> Map.put("data_owner", full_name)
+          |> Map.put("data_owner_multiple", "#{full_name1}|#{full_name2}")
+          |> Map.put("template", template_name)
+          |> Map.put("domain_external_id", domain.external_id)
+        end)
+
+      user = CacheHelpers.insert_user(full_name: full_name)
+      user1 = CacheHelpers.insert_user(full_name: full_name1)
+      user2 = CacheHelpers.insert_user(full_name: full_name2)
+      CacheHelpers.insert_acl(domain.id, "Data Owner", [user.id, user1.id, user2.id])
+
+      assert {:ok, %{ids: [id1, id2], errors: []}} =
+               BulkLoad.bulk_load(rules, claims, @default_lang)
+
+      assert Repo.get!(Rules.Rule, id1).df_content == %{
+               "data_owner" => %{"value" => full_name, "origin" => "file"},
+               "data_owner_multiple" => %{"value" => [full_name1, full_name2], "origin" => "file"}
+             }
+
+      assert Repo.get!(Rules.Rule, id2).df_content == %{
+               "data_owner" => %{"value" => full_name, "origin" => "file"},
+               "data_owner_multiple" => %{"value" => [full_name1, full_name2], "origin" => "file"}
+             }
+    end
+
+    test "returns error under invalid user field value", %{
+      user_field_template_name: template_name,
+      domain: domain,
+      claims: claims
+    } do
+      rules =
+        Enum.map(@rules, fn rule ->
+          rule
+          |> Map.put("data_owner", "invalid_user_name")
+          |> Map.put("template", template_name)
+          |> Map.put("domain_external_id", domain.external_id)
+        end)
+
+      user = CacheHelpers.insert_user(full_name: "user")
+      CacheHelpers.insert_acl(domain.id, "Data Owner", [user.id])
+
+      assert {:ok, %{ids: [], errors: errors}} = BulkLoad.bulk_load(rules, claims, @default_lang)
+      assert Enum.count(errors) == 2
+
+      assert Enum.all?(errors, fn %{message: %{df_content: [error]}} ->
+               error == "data_owner: is invalid"
+             end)
     end
   end
 

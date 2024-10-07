@@ -1,0 +1,2 @@
+rule_name;implementation_key;template;data_owner;result_type;goal;minimum;domain_external_id
+rule_foo;foo_key_1;bar_template;invalid_user;percentage;90;10;domain_external_id
