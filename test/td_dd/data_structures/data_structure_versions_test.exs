@@ -810,7 +810,6 @@ defmodule TdDd.DataStructures.DataStructureVersionsTest do
         manage_structures_domain: [domain_id],
         update_data_structure: [domain_id],
         view_data_structure: [domain_id],
-        view_data_structure: [domain_id],
         view_data_structures_profile: [domain_id],
         view_quality_rule: [domain_id]
       })
