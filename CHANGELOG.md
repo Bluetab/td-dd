@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [TD-6469] Concepts links is returned in browser language
+
 ## [6.9.3] 2024-08-07
 
 ### Fixed
