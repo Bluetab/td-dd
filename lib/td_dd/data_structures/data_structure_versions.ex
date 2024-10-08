@@ -2,11 +2,12 @@ defmodule TdDd.DataStructures.DataStructureVersions do
   @moduledoc """
   The DataStructureVersion specific context.
   """
-  import Bodyguard, only: [permit?: 4]
+  import Bodyguard, only: [permit?: 4, permit?: 3]
 
   alias TdCache.TemplateCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Tags
+  alias TdDq.Implementations
 
   @controller_enrich_attrs [
     :data_fields,
@@ -178,6 +179,7 @@ defmodule TdDd.DataStructures.DataStructureVersions do
   defp with_permissions(%{data_structure: data_structure} = dsv, claims) do
     if permit?(DataStructures, :view_data_structure, claims, data_structure) do
       tags = Tags.tags(dsv)
+
       dsv = DataStructures.profile_source(dsv)
 
       user_permissions = %{
@@ -193,7 +195,8 @@ defmodule TdDd.DataStructures.DataStructureVersions do
           permit?(DataStructures, :manage_grant_removal, claims, data_structure) and
             permit?(DataStructures, :manage_foreign_grant_removal, claims, data_structure),
         create_foreign_grant_request:
-          permit?(DataStructures, :create_foreign_grant_request, claims, data_structure)
+          permit?(DataStructures, :create_foreign_grant_request, claims, data_structure),
+        view_quality: permit?(Implementations, "view_quality", claims)
       }
 
       [

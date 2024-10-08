@@ -7,7 +7,9 @@ defmodule TdDd.DataStructures.StructureNotes.Policy do
 
   @behaviour Bodyguard.Policy
 
-  def authorize(action, %{role: "user"} = claims, %DataStructure{domain_ids: domain_ids} = ds)
+  def authorize(_action, %{role: role}, _params) when role in ["admin", "service"], do: true
+
+  def authorize(action, claims, %DataStructure{domain_ids: domain_ids} = ds)
       when action in [
              :create,
              :delete,
@@ -25,7 +27,7 @@ defmodule TdDd.DataStructures.StructureNotes.Policy do
       Permissions.authorized?(claims, permission(action), domain_ids)
   end
 
-  def authorize(_action, %{role: role}, _params), do: role in ["admin", "service"]
+  def authorize(_action, _, _params), do: false
 
   defp permission(:create), do: :create_structure_note
   defp permission(:delete), do: :delete_structure_note

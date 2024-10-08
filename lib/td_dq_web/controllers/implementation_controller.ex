@@ -214,8 +214,6 @@ defmodule TdDqWeb.ImplementationController do
     Bodyguard.permit(Implementations, permission, claims, domain_id)
   end
 
-  defp filter_link_by_permission(_claims, _), do: false
-
   defp filter_data_structures_by_permission(implementation, %{role: "admin"}), do: implementation
 
   defp filter_data_structures_by_permission(

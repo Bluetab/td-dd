@@ -631,6 +631,28 @@ defmodule TdDdWeb.StructureNoteControllerTest do
       )
       |> json_response(:forbidden)
     end
+
+    @tag authentication: [role: "admin"]
+    test "search structure_notes returns df_content and dynamic_content fields", %{conn: conn} do
+      insert(:structure_note,
+        df_content: %{
+          "foo" => %{"value" => "var", "origin" => "user"}
+        }
+      )
+
+      assert [
+               %{
+                 "df_content" => %{"foo" => "var"},
+                 "dynamic_content" => %{
+                   "foo" => %{"value" => "var", "origin" => "user"}
+                 }
+               }
+             ] =
+               conn
+               |> post(Routes.structure_note_path(conn, :search))
+               |> json_response(:ok)
+               |> Map.get("data")
+    end
   end
 
   describe "create structure_note" do

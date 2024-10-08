@@ -30,6 +30,72 @@ defmodule TdDd.DataStructures.DataStructureQueriesTest do
       assert [_, _] = query_data_structures(ids: [id1, id2])
     end
 
+    test "filters by domain_ids" do
+      %{domain_ids: domain_ids1} = insert(:data_structure, domain_ids: [1])
+      %{domain_ids: domain_ids2} = insert(:data_structure, domain_ids: [2])
+
+      assert [%{domain_ids: ^domain_ids1}] = query_data_structures(domain_ids: domain_ids1)
+      assert [_, _] = query_data_structures(domain_ids: [domain_ids1, domain_ids2])
+    end
+
+    test "filters by systems" do
+      %{system_id: system_id1} = insert(:data_structure)
+      %{system_id: system_id2} = insert(:data_structure)
+
+      assert [%{system_id: ^system_id1}] = query_data_structures(system_ids: [system_id1])
+      assert [_, _] = query_data_structures(system_ids: [system_id1, system_id2])
+    end
+
+    test "filters by has_note" do
+      %{id: ds_id1} = insert(:data_structure)
+
+      %{id: ds_id2} = ds = insert(:data_structure)
+      insert(:structure_note, data_structure: ds, version: 0, status: :published)
+      insert(:structure_note, data_structure: ds, version: 1, status: :draft)
+
+      assert [%{id: ^ds_id1}] = query_data_structures(has_note: false)
+
+      assert [%{id: ^ds_id2}] = query_data_structures(has_note: true)
+
+      assert [%{id: ^ds_id1}, %{id: ^ds_id2}] = query_data_structures([])
+    end
+
+    test "filters by has_note with statuses" do
+      %{id: ds_draft} = ds = insert(:data_structure)
+      insert(:structure_note, data_structure: ds, version: 0, status: :published)
+      insert(:structure_note, data_structure: ds, version: 1, status: :draft)
+
+      %{data_structure_id: ds_published} = insert(:structure_note, status: :published)
+
+      %{id: ds_pending} = ds = insert(:data_structure)
+      insert(:structure_note, data_structure: ds, version: 0, status: :published)
+      insert(:structure_note, data_structure: ds, version: 1, status: :pending_approval)
+
+      assert [%{id: ^ds_draft}] = query_data_structures(note_statuses: [:draft])
+
+      assert [%{id: ^ds_draft}, %{id: ^ds_published}] =
+               query_data_structures(note_statuses: [:draft, :published])
+
+      assert [%{id: ^ds_pending}] = query_data_structures(note_statuses: [:pending_approval])
+    end
+
+    test "filters by data_structure_types" do
+      insert(:data_structure_version)
+
+      %{name: ds_type_name} = insert(:data_structure_type, name: "foo")
+
+      %{data_structure_id: ds_id_1} = insert(:data_structure_version, type: ds_type_name)
+
+      %{data_structure_id: ds_id_2} = insert(:data_structure_version, type: ds_type_name)
+
+      query_list =
+        [data_structure_types: [ds_type_name]]
+        |> query_data_structures()
+        |> Enum.map(fn %{id: id} -> %{id: id} end)
+
+      assert [%{id: ds_id_1}, %{id: ds_id_2}] ||| query_list
+    end
+
     test "filters by min_id" do
       _lower_id = insert(:data_structure)
       %{id: id} = insert(:data_structure)
@@ -41,6 +107,12 @@ defmodule TdDd.DataStructures.DataStructureQueriesTest do
       for _i <- 1..5, do: insert(:data_structure)
 
       assert [_, _] = query_data_structures(limit: 2)
+    end
+
+    test "return all results with limits = 0" do
+      for _i <- 1..5, do: insert(:data_structure)
+
+      assert length(query_data_structures(limit: 0)) == 5
     end
 
     test "orders results" do

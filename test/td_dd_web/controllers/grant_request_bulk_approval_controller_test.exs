@@ -164,6 +164,65 @@ defmodule TdDdWeb.GrantRequestBulkApprovalControllerTest do
 
       assert %{"id" => ^grant_id, "pending_removal" => true} = data
     end
+
+    @tag authentication: [role: "admin"]
+    test "admin can create approvals of grant requests with pending status and must not approved_by",
+         %{
+           conn: conn,
+           grant_request: %{user: user}
+         } do
+      IndexWorker.clear()
+
+      CacheHelpers.put_permissions_on_roles(%{
+        "approve_grant_request" => ["Approval Role 1", "Approval Role 2"]
+      })
+
+      %{id: grant_request1_id} = grant_request1 = create_grant_request(user, [])
+
+      %{id: grant_request2_id} = create_grant_request(user, [])
+
+      insert(:grant_request_approval,
+        grant_request_id: grant_request2_id,
+        role: "Approval Role 2"
+      )
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/grant_requests/_search", %{query: query, size: _}, _ ->
+        assert %{
+                 bool: %{
+                   must: %{term: %{"current_status" => "pending"}},
+                   must_not: %{term: %{"approved_by" => "Approval Role 2"}}
+                 }
+               } ==
+                 query
+
+        SearchHelpers.hits_response([grant_request1])
+      end)
+
+      params = %{
+        must: %{
+          "must_not_approved_by" => ["Approval Role 2"]
+        },
+        role: "Approval Role 2",
+        comment: "Approval Comment",
+        is_rejection: false
+      }
+
+      assert %{"data" => [first_approval]} =
+               conn
+               |> post(Routes.grant_request_bulk_approval_path(conn, :create, params))
+               |> json_response(:created)
+
+      assert %{
+               "comment" => params.comment,
+               "is_rejection" => params.is_rejection,
+               "role" => params.role
+             } == Map.take(first_approval, ["comment", "is_rejection", "role"])
+
+      assert [
+               {:reindex, _grant_requests, [^grant_request1_id]}
+             ] = IndexWorker.calls()
+    end
   end
 
   defp create_grant_request(context) do

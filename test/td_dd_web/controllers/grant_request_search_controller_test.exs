@@ -46,7 +46,7 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "admin can search all grant requests with pending status with mut not approved_by", %{
+    test "admin can search all grant requests with pending status with must not approved_by", %{
       conn: conn,
       grant_request: grant_request
     } do
@@ -56,7 +56,12 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
                              "/grant_requests/_search",
                              %{query: query, size: @query_size},
                              _ ->
-        assert %{bool: %{must: %{match_all: %{}}, must_not: %{term: %{"approved_by" => "rol1"}}}} ==
+        assert %{
+                 bool: %{
+                   must: %{term: %{"current_status" => "pending"}},
+                   must_not: %{term: %{"approved_by" => "rol1"}}
+                 }
+               } ==
                  query
 
         SearchHelpers.hits_response([grant_request])

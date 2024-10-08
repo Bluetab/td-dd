@@ -9,7 +9,7 @@ defmodule TdDd.DataStructures.Labels.Policy do
   def authorize(:query, %{role: "admin"}, _resource), do: true
   def authorize(:query, %{role: "service"}, _resource), do: true
 
-  def authorize(:query, %{role: "user"} = claims, _params) do
+  def authorize(:query, %{} = claims, _params) do
     Permissions.authorized?(claims, :link_structure_to_structure)
   end
 

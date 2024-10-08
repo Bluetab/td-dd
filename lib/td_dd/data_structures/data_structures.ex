@@ -833,25 +833,28 @@ defmodule TdDd.DataStructures do
   defp on_delete(res), do: res
 
   def logical_delete_data_structure(
-        %DataStructureVersion{} = data_structure_version,
+        %DataStructureVersion{data_structure: ds} = data_structure_version,
         %Claims{
           user_id: user_id
         }
       ) do
     now = DateTime.utc_now()
 
+    ds_changeset = DataStructure.changeset_updated_at(ds, user_id)
+
     Multi.new()
     |> Multi.run(:descendents, fn _, _ -> get_structure_descendents(data_structure_version) end)
     |> Multi.update_all(
       :delete_dsv_descendents,
       fn changes -> delete_dsv_descendents(changes) end,
-      set: [deleted_at: now]
+      set: [deleted_at: now, updated_at: now]
     )
     |> Multi.update_all(
       :delete_metadata_descendents,
       fn changes -> delete_metadata_descendents(changes) end,
-      set: [deleted_at: now]
+      set: [deleted_at: now, updated_at: now]
     )
+    |> Multi.update(:update_at_change, ds_changeset)
     |> Multi.run(:audit, Audit, :data_structure_deleted, [user_id])
     |> Repo.transaction()
     |> on_delete()

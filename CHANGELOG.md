@@ -6,6 +6,44 @@
 
 - [TD-6469] Concepts links is returned in browser language
 
+### Added
+
+- [TD-6824] Agent V2 permissions
+- [TD-6817] `td-df-lib` update to validate `user` and `user_group` template fields in the content of the following entities:
+  - `rules`
+  - `implementations`
+  - `structure notes`
+- [TD-6837] Refresh `updated_at` field when create, update or delete tags and delete structure
+
+### Fixed
+
+- [TD-6859] Filters deleted sources when getting by external_id
+
+## [6.12.1] 2024-09-25
+
+### Fixed
+
+- [TD-6847] Fix data quality tab visibility
+
+## [6.12.0] 2024-09-23
+
+### Fixed
+
+- [TD-6791] Add Structure Note Search old template content support
+- [TD-5353] Hide the implementations tab in the structures view and apply permissions when retrieving data
+
+## [6.11.0] 2024-09-05
+
+### Fixed
+
+- [TD-6715] On GrantRequests "must_not_approved_by" filters by pending status
+
+## [6.10.0] 2024-09-03
+
+### Fixed
+
+- [TD-6804] Remove schema in migration querys
+
 ## [6.9.3] 2024-08-07
 
 ### Fixed

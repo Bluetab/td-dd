@@ -6,7 +6,7 @@ defmodule TdDd.MixProject do
       app: :td_dd,
       version:
         case System.get_env("APP_VERSION") do
-          nil -> "6.9.3-local"
+          nil -> "6.12.1-local"
           v -> v
         end,
       elixir: "~> 1.14",
@@ -83,7 +83,8 @@ defmodule TdDd.MixProject do
       {:td_cache,
        git: "https://github.com/Bluetab/td-cache.git", branch: "feature/td-6469", override: true},
       {:td_cluster, git: "https://github.com/Bluetab/td-cluster.git", tag: "5.19.0"},
-      {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "6.9.6"},
+      {:td_df_lib,
+       git: "https://github.com/Bluetab/td-df-lib.git", tag: "6.13.0", override: true},
       {:td_core, git: "https://github.com/Bluetab/td-core.git", branch: "feature/td-6469"},
       {:graph, git: "https://github.com/Bluetab/graph.git", tag: "1.3.0"},
       {:vaultex, "~> 1.0.1"},

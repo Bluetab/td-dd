@@ -751,5 +751,96 @@ defmodule TdDd.DataStructures.DataStructureVersionsTest do
                  "latest"
                )
     end
+
+    test "returns user_permissions if user non admin dont has permissions" do
+      %{id: user_id} = CacheHelpers.insert_user()
+
+      claims = build(:claims, user_id: user_id, role: "user")
+
+      %{id: domain_id} = CacheHelpers.insert_domain()
+
+      CacheHelpers.put_session_permissions(claims, %{
+        view_data_structure: [domain_id]
+      })
+
+      data_structure = insert(:data_structure, domain_ids: [domain_id])
+
+      %{data_structure_id: data_structure_id} =
+        insert(:data_structure_version,
+          data_structure: data_structure
+        )
+
+      assert [
+               {:data_structure_version, _},
+               {:tags, _},
+               {:user_permissions,
+                %{
+                  confidential: false,
+                  create_foreign_grant_request: false,
+                  profile_permission: false,
+                  request_grant: false,
+                  update: false,
+                  update_domain: false,
+                  update_grant_removal: false,
+                  view_profiling_permission: false,
+                  view_quality: false
+                }},
+               {:actions, _}
+             ] =
+               DataStructureVersions.enriched_data_structure_version(
+                 claims,
+                 data_structure_id,
+                 "latest"
+               )
+    end
+
+    test "returns user_permissions if user non admin has permissions" do
+      %{id: user_id} = CacheHelpers.insert_user()
+
+      claims = build(:claims, user_id: user_id, role: "user")
+
+      %{id: domain_id} = CacheHelpers.insert_domain()
+
+      CacheHelpers.put_session_permissions(claims, %{
+        create_foreign_grant_request: [domain_id],
+        create_grant_request: [domain_id],
+        manage_confidential_structures: [domain_id],
+        manage_foreign_grant_removal: [domain_id],
+        manage_grant_removal: [domain_id],
+        manage_structures_domain: [domain_id],
+        update_data_structure: [domain_id],
+        view_data_structure: [domain_id],
+        view_data_structures_profile: [domain_id],
+        view_quality_rule: [domain_id]
+      })
+
+      data_structure = insert(:data_structure, domain_ids: [domain_id])
+
+      %{data_structure_id: data_structure_id} =
+        insert(:data_structure_version,
+          data_structure: data_structure
+        )
+
+      assert [
+               {:data_structure_version, _},
+               {:tags, _},
+               {:user_permissions,
+                %{
+                  confidential: true,
+                  create_foreign_grant_request: true,
+                  update: true,
+                  update_domain: true,
+                  update_grant_removal: true,
+                  view_profiling_permission: true,
+                  view_quality: true
+                }},
+               {:actions, _}
+             ] =
+               DataStructureVersions.enriched_data_structure_version(
+                 claims,
+                 data_structure_id,
+                 "latest"
+               )
+    end
   end
 end

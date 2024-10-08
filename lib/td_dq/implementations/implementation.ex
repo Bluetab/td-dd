@@ -249,9 +249,14 @@ defmodule TdDq.Implementations.Implementation do
 
   defp validate_content(%{} = changeset) do
     if template_name = get_field(changeset, :df_name) do
+      domain_id = get_field(changeset, :domain_id)
+
       changeset
       |> validate_required(:df_content)
-      |> validate_change(:df_content, Validation.validator(template_name))
+      |> validate_change(
+        :df_content,
+        Validation.validator(template_name, domain_ids: [domain_id])
+      )
     else
       validate_change(changeset, :df_content, &empty_content_validator/2)
     end

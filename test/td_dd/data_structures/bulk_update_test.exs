@@ -44,7 +44,8 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
           "description" => "description",
           "label" => "Role",
           "name" => "role",
-          "type" => "user"
+          "type" => "user",
+          "values" => %{"role_users" => "Data Owner"}
         },
         %{
           "cardinality" => "*",
@@ -607,6 +608,14 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         |> StructureNotes.delete_structure_note(user_id)
       end)
 
+      %{domain_ids: [domain_id]} = DataStructures.get_data_structure_by_external_id("ex_id1")
+
+      user_ids =
+        Enum.map(["Role", "Role 1", "Role 2"], fn full_name ->
+          CacheHelpers.insert_user(full_name: full_name).id
+        end)
+
+      CacheHelpers.insert_acl(domain_id, "Data Owner", user_ids)
       upload = %{path: "test/fixtures/td2942/upload.csv"}
 
       assert {:ok, %{update_notes: update_notes}} =
@@ -621,7 +630,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert %{
                "text" => %{"value" => "text", "origin" => "file"},
                "critical" => %{"value" => "Yes", "origin" => "file"},
-               "role" => %{"value" => ["Role"], "origin" => "file"},
+               "role" => %{"value" => ["Role", "Role 1"], "origin" => "file"},
                "key_value" => %{"value" => [""], "origin" => "file"}
              } = get_df_content_from_ext_id("ex_id1")
 
@@ -776,6 +785,12 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     test "returns error on content" do
       IndexWorker.clear()
       %{user_id: user_id} = build(:claims)
+      user = CacheHelpers.insert_user()
+
+      %{domain_ids: [domain_id], id: data_structure_id} =
+        DataStructures.get_data_structure_by_external_id("ex_id1")
+
+      CacheHelpers.insert_acl(domain_id, "Data Owner", [user.id])
       upload = %{path: "test/fixtures/td2942/upload_invalid.csv"}
 
       {:ok, %{update_notes: update_notes}} =
@@ -785,13 +800,15 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       [_, errored_notes] = BulkUpdate.split_succeeded_errors(update_notes)
 
-      [first_errored_note, _] = Enum.map(errored_notes, fn {_k, v} -> v end)
+      {:error, {changeset, _data_structure}} = Map.get(errored_notes, data_structure_id)
 
-      assert {:error, {%{errors: [df_content: {_, [critical: {_, validation}]}]}, _}} =
-               first_errored_note
+      assert {"invalid_content", fields} = changeset.errors[:df_content]
 
-      assert Keyword.get(validation, :validation) == :inclusion
-      assert Keyword.get(validation, :enum) == ["Yes", "No"]
+      assert fields[:role] ==
+               {"has an invalid entry", [validation: :subset, enum: [user.full_name]]}
+
+      assert fields[:critical] ==
+               {"is invalid", [validation: :inclusion, enum: ["Yes", "No"]]}
 
       assert %{"text" => %{"value" => "foo", "origin" => "user"}} =
                get_df_content_from_ext_id("ex_id1")
@@ -975,6 +992,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     %{id: id_t1, name: type1} = CacheHelpers.insert_template(content: @c1)
     %{id: id_t2, name: type2} = CacheHelpers.insert_template(content: @c2)
     %{id: id_t3, name: type3} = CacheHelpers.insert_template(content: @c3)
+    domain = CacheHelpers.insert_domain()
 
     insert(:data_structure_type, name: type1, template_id: id_t1)
     insert(:data_structure_type, name: type2, template_id: id_t2)
@@ -982,7 +1000,8 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
     sts1 =
       Enum.map(1..5, fn id ->
-        data_structure = insert(:data_structure, external_id: "ex_id#{id}")
+        data_structure =
+          insert(:data_structure, external_id: "ex_id#{id}", domain_ids: [domain.id])
 
         valid_structure_note(type1, data_structure,
           df_content: %{"text" => %{"value" => "foo", "origin" => "user"}}
@@ -992,6 +1011,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     sts2 =
       Enum.map(6..10, fn id ->
         data_structure = insert(:data_structure, external_id: "ex_id#{id}")
+
         valid_structure_note(type2, data_structure, [])
       end)
 

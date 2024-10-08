@@ -77,6 +77,7 @@ defmodule TdDdWeb.StructureNoteView do
       version: structure_note.version
     }
     |> add_cache_content(structure_note)
+    |> Content.legacy_content_support(:df_content)
   end
 
   defp add_cache_content(note, %{template_id: template_id} = structure_note) do

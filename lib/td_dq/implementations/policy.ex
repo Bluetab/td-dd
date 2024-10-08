@@ -19,7 +19,8 @@ defmodule TdDq.Implementations.Policy do
     "createRuleLess",
     "download",
     "upload",
-    "uploadResults"
+    "uploadResults",
+    "view_quality"
   ]
 
   def authorize(:query, %{role: "admin"}, _params), do: true
@@ -32,16 +33,16 @@ defmodule TdDq.Implementations.Policy do
 
   def authorize(:mutation, %{role: "admin"}, _params), do: true
 
-  def authorize(:mutation, %{role: "user"} = claims, :publish_implementation),
+  def authorize(:mutation, %{} = claims, :publish_implementation),
     do: Permissions.authorized?(claims, :publish_implementation)
 
-  def authorize(:mutation, %{role: "user"} = claims, :restore_implementation),
+  def authorize(:mutation, %{} = claims, :restore_implementation),
     do: Permissions.authorized?(claims, :publish_implementation)
 
-  def authorize(:mutation, %{role: "user"} = claims, :reject_implementation),
+  def authorize(:mutation, %{} = claims, :reject_implementation),
     do: Permissions.authorized?(claims, :publish_implementation)
 
-  def authorize(:mutation, %{role: "user"} = claims, :submit_implementation) do
+  def authorize(:mutation, %{} = claims, :submit_implementation) do
     Permissions.authorized_any?(claims, [
       :manage_ruleless_implementations,
       :manage_quality_rule_implementations,
@@ -87,6 +88,9 @@ defmodule TdDq.Implementations.Policy do
         :manage_quality_rule_implementations,
         :manage_ruleless_implementations
       ])
+
+  def authorize("view_quality", %{} = claims, _params),
+    do: Permissions.authorized?(claims, :view_quality_rule)
 
   def authorize("download", %{} = claims, _params),
     do: Permissions.authorized?(claims, :view_quality_rule)
