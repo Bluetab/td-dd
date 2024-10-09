@@ -165,12 +165,14 @@ defmodule TdDqWeb.ImplementationController do
 
   def show(conn, %{"id" => id}) do
     claims = conn.assigns[:current_resource]
+    locale = conn.assigns[:locale]
 
     implementation =
       id
       |> Implementations.get_implementation!(
         enrich: [:source, :links, :domain],
-        preload: [:rule]
+        preload: [:rule],
+        lang: locale
       )
       |> add_last_rule_result()
       |> add_quality_event()

@@ -55,6 +55,50 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
                |> json_response(:ok)
     end
 
+    @tag authentication: [role: "admin"]
+    test "search implementations in browser lang", %{conn: conn} do
+      implementation = insert(:implementation)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/implementations/_search", _, _ ->
+        SearchHelpers.hits_response([implementation])
+      end)
+
+      concept_name_es = "concept_name_es"
+      concept_id = System.unique_integer([:positive])
+
+      CacheHelpers.insert_concept(%{
+        id: concept_id,
+        status: "published",
+        name: "concept_name_en",
+        i18n: %{
+          "es" => %{
+            "name" => concept_name_es,
+            "content" => %{}
+          }
+        }
+      })
+
+      CacheHelpers.insert_link(
+        implementation.implementation_ref,
+        "implementation_ref",
+        "business_concept",
+        concept_id
+      )
+
+      assert %{
+               "data" => [
+                 %{
+                   "concepts" => [^concept_name_es]
+                 }
+               ]
+             } =
+               conn
+               |> put_req_header("accept-language", "es")
+               |> post(Routes.implementation_search_path(conn, :create))
+               |> json_response(:ok)
+    end
+
     @tag authentication: [role: "user"]
     test "user with no permissions cannot search implementations", %{conn: conn} do
       assert %{"errors" => %{} = errors} =

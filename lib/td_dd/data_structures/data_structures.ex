@@ -194,21 +194,46 @@ defmodule TdDd.DataStructures do
     |> Repo.all()
   end
 
-  @doc "Gets a single data_structure_version"
-  def get_data_structure_version!(id) do
-    enriched_structure_version!(id)
+  def get_data_structure_version!(id, version \\ nil, enrich_fields \\ [], opts \\ [])
+
+  def get_data_structure_version!(id, nil, [], []), do: do_get_data_structure_version!(id)
+
+  def get_data_structure_version!(id, [_ | _] = enrich_or_opts, [], [])
+      when is_list(enrich_or_opts) do
+    if Keyword.keyword?(enrich_or_opts) do
+      do_get_data_structure_version!(id, [], enrich_or_opts)
+    else
+      do_get_data_structure_version!(id, enrich_or_opts, [])
+    end
   end
 
-  def get_data_structure_version!(data_structure_version_id, opts) do
-    with_protected_metadata = Enum.member?(opts, :with_protected_metadata)
+  def get_data_structure_version!(id, enrich_fields, opts, [])
+      when is_list(enrich_fields) and is_list(opts),
+      do: do_get_data_structure_version!(id, enrich_fields, opts)
+
+  def get_data_structure_version!(id, version, [_ | _] = enrich_or_opts, []) do
+    if Keyword.keyword?(enrich_or_opts) do
+      do_get_data_structure_version!(id, version, [], enrich_or_opts)
+    else
+      do_get_data_structure_version!(id, version, enrich_or_opts, [])
+    end
+  end
+
+  def get_data_structure_version!(id, version, enrich_fields, opts),
+    do: do_get_data_structure_version!(id, version, enrich_fields, opts)
+
+  defp do_get_data_structure_version!(id), do: enriched_structure_version!(id)
+
+  defp do_get_data_structure_version!(data_structure_version_id, enrich_fields, opts) do
+    with_protected_metadata = Enum.member?(enrich_fields, :with_protected_metadata)
 
     data_structure_version_id
     |> enriched_structure_version!(with_protected_metadata: with_protected_metadata)
-    |> enrich(opts)
+    |> enrich(enrich_fields, opts)
   end
 
-  def get_data_structure_version!(data_structure_id, version, opts) do
-    with_protected_metadata = Enum.member?(opts, :with_protected_metadata)
+  defp do_get_data_structure_version!(data_structure_id, version, enrich_fields, opts) do
+    with_protected_metadata = Enum.member?(enrich_fields, :with_protected_metadata)
 
     DataStructureVersion
     |> Repo.get_by!(data_structure_id: data_structure_id, version: version)
@@ -217,7 +242,7 @@ defmodule TdDd.DataStructures do
       with_protected_metadata: with_protected_metadata,
       preload: @preload_dsv_assocs
     )
-    |> enrich(opts)
+    |> enrich(enrich_fields, opts)
   end
 
   def get_cached_content(%{} = content, %{structure_type: %{template_id: template_id}}) do
@@ -249,10 +274,9 @@ defmodule TdDd.DataStructures do
     end
   end
 
-  defp enrich(
+  defp enrich_defaults(
          %DataStructureVersion{id: id} = _data_structure_version,
-         with_protected_metadata,
-         :defaults
+         with_protected_metadata
        ) do
     enriched_structure_version!(id,
       with_protected_metadata: with_protected_metadata,
@@ -260,22 +284,24 @@ defmodule TdDd.DataStructures do
     )
   end
 
-  defp enrich(nil = _target, _opts), do: nil
+  defp enrich(target, enrich_fields, opts \\ [])
 
-  defp enrich(target, nil = _opts), do: target
+  defp enrich(nil = _target, _enrich_fields, _opts), do: nil
 
-  defp enrich(%DataStructureVersion{} = dsv, opts) do
+  defp enrich(target, nil = _enrich_fields, _opts), do: target
+
+  defp enrich(%DataStructureVersion{} = dsv, enrich_fields, opts) do
     deleted = not is_nil(Map.get(dsv, :deleted_at))
-    with_confidential = Enum.member?(opts, :with_confidential)
-    with_protected_metadata = Enum.member?(opts, :with_protected_metadata)
+    with_confidential = Enum.member?(enrich_fields, :with_confidential)
+    with_protected_metadata = Enum.member?(enrich_fields, :with_protected_metadata)
 
     dsv
-    |> enrich(with_protected_metadata, :defaults)
-    |> enrich(opts, :classifications, &get_classifications!/1)
-    |> enrich(opts, :system, &get_system!/1)
-    |> enrich(opts, :parent_relations, &get_parent_relations!/1)
-    |> enrich(
-      opts,
+    |> enrich_defaults(with_protected_metadata)
+    |> do_enrich(enrich_fields, :classifications, &get_classifications!/1)
+    |> do_enrich(enrich_fields, :system, &get_system!/1)
+    |> do_enrich(enrich_fields, :parent_relations, &get_parent_relations!/1)
+    |> do_enrich(
+      enrich_fields,
       :parents,
       &get_parents(
         &1,
@@ -284,8 +310,8 @@ defmodule TdDd.DataStructures do
         with_protected_metadata: false
       )
     )
-    |> enrich(
-      opts,
+    |> do_enrich(
+      enrich_fields,
       :children,
       &get_children(
         &1,
@@ -294,8 +320,8 @@ defmodule TdDd.DataStructures do
         with_protected_metadata: false
       )
     )
-    |> enrich(
-      opts,
+    |> do_enrich(
+      enrich_fields,
       :siblings,
       &get_siblings(
         &1,
@@ -304,13 +330,13 @@ defmodule TdDd.DataStructures do
         with_protected_metadata: false
       )
     )
-    |> enrich(
-      opts,
+    |> do_enrich(
+      enrich_fields,
       :data_fields,
       &get_field_structures(&1,
         deleted: deleted,
         preload:
-          if(Enum.member?(opts, :profile),
+          if(Enum.member?(enrich_fields, :profile),
             do: [:published_note, data_structure: :profile],
             else: [:published_note]
           ),
@@ -318,10 +344,10 @@ defmodule TdDd.DataStructures do
         with_protected_metadata: with_protected_metadata
       )
     )
-    |> enrich(opts, :data_field_degree, &get_field_degree/1)
-    |> enrich(opts, :data_field_links, &get_field_links/1)
-    |> enrich(
-      opts,
+    |> do_enrich(enrich_fields, :data_field_degree, &get_field_degree/1)
+    |> do_enrich(enrich_fields, :data_field_links, &get_field_links/1)
+    |> do_enrich(
+      enrich_fields,
       :relations,
       &get_relations(
         &1,
@@ -331,32 +357,32 @@ defmodule TdDd.DataStructures do
         with_protected_metadata: with_protected_metadata
       )
     )
-    |> enrich(opts, :relation_links, &get_relation_links/1)
-    |> enrich(opts, :versions, &get_versions!(&1, with_protected_metadata))
-    |> enrich(opts, :degree, &get_degree/1)
-    |> enrich(opts, :profile, &get_profile!/1)
-    |> enrich(opts, :links, &get_structure_links/1)
-    |> enrich(opts, :data_structure_link_count, &get_data_structure_link_count/1)
-    |> enrich(opts, :source, &get_source!/1)
-    |> enrich(
-      opts,
+    |> do_enrich(enrich_fields, :relation_links, &get_relation_links/1)
+    |> do_enrich(enrich_fields, :versions, &get_versions!(&1, with_protected_metadata))
+    |> do_enrich(enrich_fields, :degree, &get_degree/1)
+    |> do_enrich(enrich_fields, :profile, &get_profile!/1)
+    |> do_enrich(enrich_fields, :links, &get_structure_links(&1, opts))
+    |> do_enrich(enrich_fields, :data_structure_link_count, &get_data_structure_link_count/1)
+    |> do_enrich(enrich_fields, :source, &get_source!/1)
+    |> do_enrich(
+      enrich_fields,
       :metadata_versions,
       &get_metadata_versions!(
         &1,
         with_protected_metadata: with_protected_metadata
       )
     )
-    |> enrich(opts, :data_structure_type, &get_data_structure_type!/1)
-    |> enrich(opts, :grants, &get_grants/1)
-    |> enrich(opts, :grant, &get_grant(&1, opts[:user_id]))
-    |> enrich(opts, :implementation_count, &get_implementation_count!/1)
-    |> enrich(opts, :published_note, &get_published_note!/1)
+    |> do_enrich(enrich_fields, :data_structure_type, &get_data_structure_type!/1)
+    |> do_enrich(enrich_fields, :grants, &get_grants/1)
+    |> do_enrich(enrich_fields, :grant, &get_grant(&1, enrich_fields[:user_id]))
+    |> do_enrich(enrich_fields, :implementation_count, &get_implementation_count!/1)
+    |> do_enrich(enrich_fields, :published_note, &get_published_note!/1)
   end
 
-  defp enrich(%{} = target, opts, key, fun) do
+  defp do_enrich(%{} = target, enrich_fields, key, fun) do
     target_key = get_target_key(key)
 
-    case Enum.member?(opts, key) do
+    case Enum.member?(enrich_fields, key) do
       false -> target
       true -> Map.put(target, target_key, fun.(target))
     end
@@ -862,22 +888,33 @@ defmodule TdDd.DataStructures do
      }}
   end
 
-  def get_latest_version(target, opts \\ [])
+  def get_latest_version(target, enrich_fields \\ [], opts \\ [])
 
-  def get_latest_version(nil, _), do: nil
+  def get_latest_version(nil, _, _), do: nil
 
-  def get_latest_version(%DataStructure{id: id}, opts) do
-    get_latest_version(id, opts)
+  def get_latest_version(target, [_ | _] = enrich_or_opts, []) do
+    if Keyword.keyword?(enrich_or_opts) do
+      do_get_latest_version(target, [], enrich_or_opts)
+    else
+      do_get_latest_version(target, enrich_or_opts, [])
+    end
   end
 
-  def get_latest_version(data_structure_id, opts) do
+  def get_latest_version(target, enrich_fields, opts),
+    do: do_get_latest_version(target, enrich_fields, opts)
+
+  defp do_get_latest_version(%DataStructure{id: id}, enrich_fields, opts) do
+    get_latest_version(id, enrich_fields, opts)
+  end
+
+  defp do_get_latest_version(data_structure_id, enrich_fields, opts) do
     DataStructureVersion
     |> where(data_structure_id: ^data_structure_id)
     |> distinct(:data_structure_id)
     |> order_by(desc: :version)
     |> preload(data_structure: :source)
     |> Repo.one()
-    |> enrich(opts)
+    |> enrich(enrich_fields, opts)
   end
 
   def find_data_structure(%{} = clauses) do
@@ -916,14 +953,20 @@ defmodule TdDd.DataStructures do
     DataStructureLinks.link_count(this_ds_id)
   end
 
-  def get_structure_links(%{data_structure_id: id}) do
-    case LinkCache.list("data_structure", id) do
+  def get_structure_links(data_structure), do: get_structure_links(data_structure, [])
+
+  def get_structure_links(%{data_structure_id: id}, opts) when is_list(opts) do
+    case LinkCache.list("data_structure", id, opts) do
       {:ok, links} -> links
     end
   end
 
-  def get_structure_links(%{data_structure_id: id}, resource_type) do
-    case LinkCache.list("data_structure", id, resource_type) do
+  def get_structure_links(data_structure, resource_type) when is_binary(resource_type),
+    do: get_structure_links(data_structure, resource_type, [])
+
+  def get_structure_links(%{data_structure_id: id}, resource_type, opts)
+      when is_binary(resource_type) do
+    case LinkCache.list("data_structure", id, resource_type, opts) do
       {:ok, links} -> links
     end
   end

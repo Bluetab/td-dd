@@ -170,6 +170,43 @@ defmodule TdDqWeb.RuleControllerTest do
                |> json_response(:ok)
     end
 
+    @tag authentication: [role: "admin"]
+    test "gets rule by id with current concept version in browser lang", %{
+      conn: conn,
+      swagger_schema: schema
+    } do
+      concept_id = System.unique_integer([:positive])
+      concept_name_es = "concept_name_es"
+
+      CacheHelpers.insert_concept(%{
+        id: concept_id,
+        business_concept_version_id: concept_id,
+        status: "published",
+        name: "concept_name_en",
+        i18n: %{
+          "es" => %{
+            "name" => concept_name_es,
+            "content" => %{}
+          }
+        }
+      })
+
+      %{id: id} = insert(:rule, business_concept_id: concept_id)
+
+      assert %{
+               "data" => %{
+                 "current_business_concept_version" => %{
+                   "name" => ^concept_name_es
+                 }
+               }
+             } =
+               conn
+               |> put_req_header("accept-language", "es")
+               |> get(Routes.rule_path(conn, :show, id))
+               |> validate_resp_schema(schema, "RuleResponse")
+               |> json_response(:ok)
+    end
+
     @tag authentication: [role: "user"]
     test "unauthorized when user has no permissions", %{
       conn: conn

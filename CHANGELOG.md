@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [TD-6469] Concepts links is returned in browser language
+
 ### Added
 
 - [TD-6824] Agent V2 permissions

@@ -28,10 +28,10 @@ defmodule TdDqWeb.RuleView do
     %{data: render_many(rules, RuleView, "rule.json")}
   end
 
-  def render("show.json", %{rule: rule, user_permissions: user_permissions}) do
+  def render("show.json", %{rule: rule, user_permissions: user_permissions} = assigns) do
     %{
       user_permissions: user_permissions,
-      data: render_one(rule, RuleView, "rule.json")
+      data: render_one(rule, RuleView, "rule.json", %{lang: Map.get(assigns, :locale)})
     }
   end
 
@@ -39,7 +39,9 @@ defmodule TdDqWeb.RuleView do
     %{data: render_one(rule, RuleView, "rule.json")}
   end
 
-  def render("rule.json", %{rule: rule}) do
+  def render("rule.json", %{rule: rule} = assigns) do
+    lang = Map.get(assigns, :lang)
+
     rule
     |> Map.take([
       :active,
@@ -56,7 +58,7 @@ defmodule TdDqWeb.RuleView do
       :updated_by,
       :version
     ])
-    |> add_current_version(rule)
+    |> add_current_version(rule, lang)
     |> add_system_values(rule)
     |> add_dynamic_content(rule)
     |> Content.legacy_content_support(:df_content)
@@ -66,8 +68,8 @@ defmodule TdDqWeb.RuleView do
     Map.take(rule, [:id, :name])
   end
 
-  defp add_current_version(rule, %{business_concept_id: business_concept_id}) do
-    case ConceptCache.get(business_concept_id) do
+  defp add_current_version(rule, %{business_concept_id: business_concept_id}, lang) do
+    case ConceptCache.get(business_concept_id, lang: lang, refresh: true) do
       {:ok, %{business_concept_version_id: id} = concept} ->
         current_version =
           concept

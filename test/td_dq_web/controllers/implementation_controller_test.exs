@@ -336,6 +336,41 @@ defmodule TdDqWeb.ImplementationControllerTest do
              )
     end
 
+    @tag authentication: [role: "admin"]
+    test "render links in browser lang", %{conn: conn} do
+      %{id: id, implementation_ref: implementation_ref} = insert(:implementation)
+
+      concept_name_es = "concept_name_es"
+      concept_id = System.unique_integer([:positive])
+
+      CacheHelpers.insert_concept(%{
+        id: concept_id,
+        status: "published",
+        name: "concept_name_en",
+        i18n: %{
+          "es" => %{
+            "name" => concept_name_es,
+            "content" => %{}
+          }
+        }
+      })
+
+      CacheHelpers.insert_link(
+        implementation_ref,
+        "implementation_ref",
+        "business_concept",
+        concept_id
+      )
+
+      assert %{"data" => %{"links" => links}} =
+               conn
+               |> put_req_header("accept-language", "es")
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert [%{"name" => ^concept_name_es}] = links
+    end
+
     @tag authentication: [
            user_name: "non_admin",
            permissions: [:view_published_business_concepts, :view_quality_rule]
