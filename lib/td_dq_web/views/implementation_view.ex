@@ -53,9 +53,13 @@ defmodule TdDqWeb.ImplementationView do
     %{data: render_one(implementation, __MODULE__, "implementation.json")}
   end
 
-  def render("implementation.json", %{
-        implementation: %{implementation_type: "raw"} = implementation
-      }) do
+  def render(
+        "implementation.json",
+        %{
+          implementation: %{implementation_type: "raw"} = implementation
+        } = assigns
+      ) do
+    lang = Map.get(assigns, :lang)
     data_structures = Map.get(implementation, :data_structures)
 
     implementation
@@ -100,6 +104,7 @@ defmodule TdDqWeb.ImplementationView do
     |> maybe_render_data_structures(data_structures)
     |> add_dynamic_content(implementation)
     |> Content.legacy_content_support(:df_content)
+    |> enrich_concepts(lang)
   end
 
   def render("implementation.json", %{implementation: implementation} = assigns) do
