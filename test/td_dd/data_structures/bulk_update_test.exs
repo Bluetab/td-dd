@@ -61,6 +61,14 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
             ]
           },
           "widget" => "dropdown"
+        },
+        %{
+          "cardinality" => "?",
+          "label" => "Numeric",
+          "name" => "integer",
+          "type" => "integer",
+          "values" => nil,
+          "widget" => "number"
         }
       ]
     }
@@ -809,6 +817,8 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert fields[:critical] ==
                {"is invalid", [validation: :inclusion, enum: ["Yes", "No"]]}
+
+      assert fields[:integer] == :invalid_format
 
       assert %{"text" => %{"value" => "foo", "origin" => "user"}} =
                get_df_content_from_ext_id("ex_id1")

@@ -14,6 +14,7 @@
   - `implementations`
   - `structure notes`
 - [TD-6837] Refresh `updated_at` field when create, update or delete tags and delete structure
+- [TD-6773] `td-df-lib` returns error when number value has an invalid format and validates required columns in `table` template fields. 
 
 ### Fixed
 
