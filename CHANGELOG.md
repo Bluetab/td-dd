@@ -4,6 +4,7 @@
 
 ### Changed
 
+- [TD-6743] Remove incompatibilities with Elasticsearch v8
 - [TD-6469] Concepts links is returned in browser language
 
 ### Added
@@ -14,7 +15,7 @@
   - `implementations`
   - `structure notes`
 - [TD-6837] Refresh `updated_at` field when create, update or delete tags and delete structure
-- [TD-6773] `td-df-lib` returns error when number value has an invalid format and validates required columns in `table` template fields. 
+- [TD-6773] `td-df-lib` returns error when number value has an invalid format and validates required columns in `table` template fields.
 
 ### Fixed
 
