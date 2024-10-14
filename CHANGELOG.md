@@ -5,6 +5,7 @@
 ### Changed
 
 - [TD-6469] Concepts links is returned in browser language
+- [TD-6617] Update td-df-lib and td-core
 
 ### Added
 
