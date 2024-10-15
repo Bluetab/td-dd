@@ -165,12 +165,14 @@ defmodule TdDqWeb.ImplementationController do
 
   def show(conn, %{"id" => id}) do
     claims = conn.assigns[:current_resource]
+    locale = conn.assigns[:locale]
 
     implementation =
       id
       |> Implementations.get_implementation!(
         enrich: [:source, :links, :domain],
-        preload: [:rule]
+        preload: [:rule],
+        lang: locale
       )
       |> add_last_rule_result()
       |> add_quality_event()
@@ -211,8 +213,6 @@ defmodule TdDqWeb.ImplementationController do
   defp has_permission?(claims, %{resource_type: :concept, domain_id: domain_id}, permission) do
     Bodyguard.permit(Implementations, permission, claims, domain_id)
   end
-
-  defp filter_link_by_permission(_claims, _), do: false
 
   defp filter_data_structures_by_permission(implementation, %{role: "admin"}), do: implementation
 

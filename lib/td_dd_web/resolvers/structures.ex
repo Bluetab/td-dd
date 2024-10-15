@@ -5,6 +5,7 @@ defmodule TdDdWeb.Resolvers.Structures do
 
   import Absinthe.Resolution.Helpers, only: [on_load: 2]
 
+  alias TdCache.Permissions
   alias TdCore.Utils.CollectionUtils
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructureLinks
@@ -15,8 +16,39 @@ defmodule TdDdWeb.Resolvers.Structures do
 
   @permissions_attrs [:with_protected_metadata, :with_confidential, :profile]
 
-  def data_structures(_parent, args, _resolution) do
-    {:ok, DataStructures.list_data_structures(args)}
+  def data_structures(_parent, args, resolution) do
+    case claims(resolution) do
+      %{role: role} when role in ["admin", "service"] ->
+        {:ok, DataStructures.list_data_structures(args)}
+
+      %{role: "agent", jti: jti} ->
+        permitted_domain_ids = Permissions.permitted_domain_ids(jti, "view_data_structure")
+
+        args_domains_ids = Map.get(args, :domain_ids, [])
+
+        domain_ids =
+          case args_domains_ids do
+            [_ | _] = selected_domain_ids ->
+              permitted_domain_ids
+              |> MapSet.new()
+              |> MapSet.intersection(MapSet.new(selected_domain_ids))
+              |> MapSet.to_list()
+
+            _ ->
+              permitted_domain_ids
+          end
+
+        if length(args_domains_ids) != length(domain_ids) ||
+             permitted_domain_ids == [] do
+          {:error, :forbidden}
+        else
+          args = Map.put(args, :domain_ids, domain_ids)
+          {:ok, DataStructures.list_data_structures(args)}
+        end
+
+      _ ->
+        {:error, :forbidden}
+    end
   end
 
   def data_structure(_parent, %{id: id} = _args, resolution) do
@@ -48,6 +80,8 @@ defmodule TdDdWeb.Resolvers.Structures do
         %{data_structure_id: data_structure_id, version: version},
         resolution
       ) do
+    lang = lang(resolution)
+
     query_fields =
       resolution
       |> Map.get(:definition)
@@ -61,7 +95,8 @@ defmodule TdDdWeb.Resolvers.Structures do
               claims,
               data_structure_id,
               version,
-              query_fields
+              query_fields,
+              lang: lang
             )},
          dsv <- enriched_dsv[:data_structure_version],
          actions <- enriched_dsv[:actions],
@@ -306,8 +341,9 @@ defmodule TdDdWeb.Resolvers.Structures do
     {:ok, profile}
   end
 
-  def links(dsv, _args, _resolution) do
-    {:ok, DataStructures.get_structure_links(dsv)}
+  def links(dsv, _args, resolution) do
+    lang = lang(resolution)
+    {:ok, DataStructures.get_structure_links(dsv, lang: lang)}
   end
 
   def data_structure_links(%{} = data_structure, _args, _resolution) do
@@ -330,6 +366,9 @@ defmodule TdDdWeb.Resolvers.Structures do
 
   defp claims(%{context: %{claims: claims}}), do: claims
   defp claims(_), do: nil
+
+  defp lang(%{context: %{lang: lang}}), do: lang
+  defp lang(_), do: nil
 
   defp get_permissions_opts(ds, claims) do
     ds

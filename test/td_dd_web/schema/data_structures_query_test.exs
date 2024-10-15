@@ -14,6 +14,14 @@ defmodule TdDdWeb.Schema.DataStructuresQueryTest do
   }
   """
 
+  @structure_ids_query """
+    query DataStructures($domain_ids: [Int]) {
+    dataStructures(domain_ids: $domain_ids) {
+      id
+    }
+  }
+  """
+
   @external_id_query """
   query StructuresByExternalId($externalId: [String]) {
     dataStructures(externalId: $externalId) {
@@ -55,6 +63,59 @@ defmodule TdDdWeb.Schema.DataStructuresQueryTest do
       assert %{"dataStructures" => data_structures} = data
       assert [%{"id" => _, "externalId" => ^external_id, "units" => units}] = data_structures
       assert [%{"id" => _, "name" => ^unit_name}] = units
+    end
+
+    @tag authentication: [role: "agent"]
+    test "returns data when queried by agent role", %{conn: conn, claims: claims} do
+      %{id: domain_id} = CacheHelpers.insert_domain()
+      %{id: domain_id2} = CacheHelpers.insert_domain()
+
+      CacheHelpers.put_session_permissions(claims, %{
+        "view_data_structure" => [domain_id, domain_id2]
+      })
+
+      %{data_structure_id: ds_id} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, domain_ids: [domain_id])
+        )
+
+      variables = %{"domain_ids" => [domain_id]}
+
+      assert %{"data" => data} =
+               response =
+               conn
+               |> post("/api/v2", %{"query" => @structure_ids_query, "variables" => variables})
+               |> json_response(:ok)
+
+      assert response["errors"] == nil
+      assert %{"dataStructures" => data_structures} = data
+      string_ds_id = to_string(ds_id)
+      assert [%{"id" => ^string_ds_id}] = data_structures
+    end
+
+    @tag authentication: [role: "agent"]
+    test "returns forbidden when agent role not has domain permissions", %{conn: conn} do
+      %{id: domain_id} = CacheHelpers.insert_domain()
+
+      insert(:data_structure_version,
+        data_structure: build(:data_structure, domain_ids: [domain_id])
+      )
+
+      variables = %{"domain_ids" => [domain_id]}
+
+      assert response =
+               conn
+               |> post("/api/v2", %{"query" => @structure_ids_query, "variables" => variables})
+               |> json_response(:ok)
+
+      assert [%{"message" => "forbidden"}] = response["errors"]
+
+      assert response2 =
+               conn
+               |> post("/api/v2", %{"query" => @structure_ids_query})
+               |> json_response(:ok)
+
+      assert [%{"message" => "forbidden"}] = response2["errors"]
     end
 
     @tag authentication: [role: "service"]

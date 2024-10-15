@@ -6,20 +6,20 @@ defmodule TdDd.ReferenceData.Policy do
 
   @behaviour Bodyguard.Policy
 
-  def authorize(action, %{role: "user"} = claims, %{domain_ids: domain_ids})
-      when action in [:show, :download] do
-    Permissions.authorized?(claims, :view_data_structure, domain_ids)
-  end
-
-  def authorize(action, %{role: "user"} = claims, _params)
-      when action in [:list, :view, :query, :download] do
-    Permissions.authorized?(claims, :view_data_structure)
-  end
-
   def authorize(action, %{role: "service"}, _params) when action in [:list, :show, :view, :query],
     do: true
 
   def authorize(_action, %{role: "admin"}, _params), do: true
+
+  def authorize(action, %{} = claims, %{domain_ids: domain_ids})
+      when action in [:show, :download] do
+    Permissions.authorized?(claims, :view_data_structure, domain_ids)
+  end
+
+  def authorize(action, %{} = claims, _params)
+      when action in [:list, :view, :query, :download] do
+    Permissions.authorized?(claims, :view_data_structure)
+  end
 
   def authorize(_action, _claims, _params), do: false
 

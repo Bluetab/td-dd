@@ -1,6 +1,7 @@
 defmodule TdDqWeb.ImplementationView do
   use TdDqWeb, :view
 
+  alias TdCache.ConceptCache
   alias TdDfLib.Content
   alias TdDq.Implementations
   alias TdDq.Rules
@@ -19,13 +20,21 @@ defmodule TdDqWeb.ImplementationView do
     |> Map.put(:_actions, actions)
   end
 
-  def render("index.json", %{implementations: implementations}) do
-    %{data: render_many(implementations, __MODULE__, "implementation.json")}
+  def render("index.json", %{implementations: implementations} = assigns) do
+    %{
+      data:
+        render_many(implementations, __MODULE__, "implementation.json", %{
+          lang: Map.get(assigns, :locale)
+        })
+    }
   end
 
-  def render("show.json", %{implementation: implementation, actions: actions}) do
+  def render("show.json", %{implementation: implementation, actions: actions} = assigns) do
     %{
-      data: render_one(implementation, __MODULE__, "implementation.json"),
+      data:
+        render_one(implementation, __MODULE__, "implementation.json", %{
+          lang: Map.get(assigns, :locale)
+        }),
       _actions: actions
     }
   end
@@ -44,9 +53,13 @@ defmodule TdDqWeb.ImplementationView do
     %{data: render_one(implementation, __MODULE__, "implementation.json")}
   end
 
-  def render("implementation.json", %{
-        implementation: %{implementation_type: "raw"} = implementation
-      }) do
+  def render(
+        "implementation.json",
+        %{
+          implementation: %{implementation_type: "raw"} = implementation
+        } = assigns
+      ) do
+    lang = Map.get(assigns, :lang)
     data_structures = Map.get(implementation, :data_structures)
 
     implementation
@@ -91,10 +104,12 @@ defmodule TdDqWeb.ImplementationView do
     |> maybe_render_data_structures(data_structures)
     |> add_dynamic_content(implementation)
     |> Content.legacy_content_support(:df_content)
+    |> enrich_concepts(lang)
   end
 
-  def render("implementation.json", %{implementation: implementation}) do
+  def render("implementation.json", %{implementation: implementation} = assigns) do
     data_structures = Map.get(implementation, :data_structures)
+    lang = Map.get(assigns, :lang)
 
     implementation
     |> Map.take([
@@ -128,6 +143,7 @@ defmodule TdDqWeb.ImplementationView do
       :version
     ])
     |> Map.put(:dataset, render_many(implementation.dataset, DatasetView, "dataset_row.json"))
+    |> enrich_concepts(lang)
     |> add_segments(implementation)
     |> add_populations(implementation)
     |> add_first_population(implementation)
@@ -141,6 +157,22 @@ defmodule TdDqWeb.ImplementationView do
     |> add_dynamic_content(implementation)
     |> Content.legacy_content_support(:df_content)
   end
+
+  defp enrich_concepts(%{concepts: concepts} = implementation, lang) do
+    concepts_names =
+      concepts
+      |> Enum.map(fn concept_id ->
+        case ConceptCache.get(concept_id, lang: lang) do
+          {:ok, %{name: name}} -> name
+          _ -> nil
+        end
+      end)
+      |> Enum.reject(&(&1 == nil))
+
+    Map.put(implementation, :concepts, concepts_names)
+  end
+
+  defp enrich_concepts(implementation, _), do: implementation
 
   defp add_first_population(mapping, %{populations: [%{conditions: conditions} | _]})
        when is_list(conditions) do

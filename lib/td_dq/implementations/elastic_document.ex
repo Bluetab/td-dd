@@ -160,15 +160,23 @@ defmodule TdDq.Implementations.ElasticDocument do
       |> transform_segments()
       |> maybe_rule(rule)
       |> then(fn mapped_implementation ->
-        rule_concept = Map.get(mapped_implementation, :current_business_concept_version)
+        rule_concept = Map.get(mapped_implementation, :current_business_concept_version, %{})
 
         linked_concepts =
-          Implementations.get_implementation_links(implementation, "business_concept")
+          implementation
+          |> Implementations.get_implementation_links("business_concept")
+          |> Enum.map(fn link ->
+            link
+            |> Map.get(:resource_id)
+            |> String.to_integer()
+          end)
 
         concepts =
-          List.flatten([List.wrap(rule_concept) | linked_concepts])
-          |> Enum.map(&Map.get(&1, :name, ""))
-          |> Enum.reject(&(&1 == ""))
+          rule_concept
+          |> Map.get(:id)
+          |> then(&[List.wrap(&1) | linked_concepts])
+          |> List.flatten()
+          |> Enum.reject(&(&1 == nil))
 
         Map.put(mapped_implementation, :concepts, concepts)
       end)
@@ -421,7 +429,7 @@ defmodule TdDq.Implementations.ElasticDocument do
             }
           }
         },
-        concepts: %{type: "text", fields: @raw_sort},
+        concepts: %{type: "long", null_value: -1},
         updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
         inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
         implementation_key: %{type: "text", boost: 2.0, fields: @raw},

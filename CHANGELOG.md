@@ -1,5 +1,26 @@
 # Changelog
 
+## [6.13.0] 2024-10-15
+
+### Changed
+
+- [TD-6469] Concepts links is returned in browser language
+- [TD-6617] Update td-df-lib and td-core
+
+### Added
+
+- [TD-6824] Agent V2 permissions
+- [TD-6817] `td-df-lib` update to validate `user` and `user_group` template fields in the content of the following entities:
+  - `rules`
+  - `implementations`
+  - `structure notes`
+- [TD-6837] Refresh `updated_at` field when create, update or delete tags and delete structure
+- [TD-6773] `td-df-lib` returns error when number value has an invalid format and validates required columns in `table` template fields. 
+
+### Fixed
+
+- [TD-6859] Filters deleted sources when getting by external_id
+
 ## [6.12.1] 2024-09-25
 
 ### Fixed

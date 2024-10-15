@@ -33,6 +33,12 @@ defmodule TdDdWeb.Policy do
     :templates
   ]
 
+  @agent_allowed_resources [
+    :template,
+    :templates,
+    :data_structures
+  ]
+
   # Extract claims from Absinthe Resolution context
   def authorize(action, %{context: %{claims: claims}} = _resolution, params) do
     authorize(action, claims, params)
@@ -42,10 +48,14 @@ defmodule TdDdWeb.Policy do
   def authorize(:query, %{role: "admin"}, _resource), do: true
   def authorize(:query, %{role: "service"}, _resource), do: true
 
-  def authorize(:query, %{role: "user"}, resource) when resource in @user_allowed_resources,
+  # # agent accounts has granted access to some actions by default
+  def authorize(:query, %{role: "agent"}, resource) when resource in @agent_allowed_resources,
     do: true
 
-  def authorize(:query, %{role: "user"}, :remediations_connection), do: false
+  def authorize(:query, %{}, resource) when resource in @user_allowed_resources,
+    do: true
+
+  def authorize(:query, %{}, :remediations_connection), do: false
 
   def authorize(:query, %{} = claims, :data_structure),
     do: Bodyguard.permit(TdDd.DataStructures, :query, claims)

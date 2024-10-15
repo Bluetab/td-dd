@@ -3,11 +3,13 @@ defmodule TdDdWeb.Router do
 
   pipeline :api do
     plug TdDd.Auth.Pipeline.Unsecure
+    plug TdDd.I18n.Pipeline.Language
     plug :accepts, ["json"]
   end
 
   pipeline :api_auth do
     plug TdDd.Auth.Pipeline.Secure
+    plug TdDd.I18n.Pipeline.Language
   end
 
   scope "/api", TdDdWeb do

@@ -30,6 +30,48 @@ defmodule TdDqWeb.RuleSearchControllerTest do
     end
 
     @tag authentication: [role: "admin"]
+    test "search rules in browser lang", %{conn: conn} do
+      concept_name_es = "concept_name_es"
+      concept_id = System.unique_integer([:positive])
+
+      CacheHelpers.insert_concept(%{
+        id: concept_id,
+        business_concept_version_id: concept_id,
+        status: "published",
+        name: "concept_name_en",
+        i18n: %{
+          "es" => %{
+            "name" => concept_name_es,
+            "content" => %{}
+          }
+        }
+      })
+
+      rule = insert(:rule, business_concept_id: concept_id)
+
+      ElasticsearchMock
+      |> expect(:request, fn
+        _, :post, "/rules/_search", %{query: query, size: 20}, _ ->
+          assert query == %{bool: %{must: %{match_all: %{}}}}
+          SearchHelpers.hits_response([rule])
+      end)
+
+      assert %{
+               "data" => [
+                 %{
+                   "current_business_concept_version" => %{
+                     "name" => ^concept_name_es
+                   }
+                 }
+               ]
+             } =
+               conn
+               |> put_req_header("accept-language", "es")
+               |> post(Routes.rule_search_path(conn, :create))
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
     test "admin can search rules with must param", %{conn: conn, rule: rule} do
       ElasticsearchMock
       |> expect(:request, fn

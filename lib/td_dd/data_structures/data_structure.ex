@@ -86,6 +86,14 @@ defmodule TdDd.DataStructures.DataStructure do
     |> put_audit(last_change_by)
   end
 
+  def changeset_updated_at(%__MODULE__{} = data_structure, last_change_by)
+      when is_integer(last_change_by) do
+    data_structure
+    |> cast(%{}, [])
+    |> put_change(:updated_at, DateTime.utc_now())
+    |> put_audit(last_change_by)
+  end
+
   defp put_audit(%{changes: changes} = changeset, _last_change_by)
        when map_size(changes) == 0 do
     changeset

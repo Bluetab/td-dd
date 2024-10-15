@@ -3,11 +3,13 @@ defmodule TdDqWeb.Router do
 
   pipeline :api do
     plug TdDq.Auth.Pipeline.Unsecure
+    plug TdCore.I18n.Plug.Language
     plug :accepts, ["json"]
   end
 
   pipeline :api_auth do
     plug TdDq.Auth.Pipeline.Secure
+    plug TdCore.I18n.Plug.Language
   end
 
   scope "/api/swagger" do
