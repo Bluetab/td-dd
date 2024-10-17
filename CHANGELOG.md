@@ -1,5 +1,11 @@
 # Changelog
 
+## [6.13.1] 2024-10-17
+
+### Fixed
+
+- [TD-6895] Legacy df_content for concepts in elastic documents for rules and implementations
+
 ## [6.13.0] 2024-10-15
 
 ### Changed

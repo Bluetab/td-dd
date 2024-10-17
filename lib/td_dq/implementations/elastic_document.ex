@@ -8,6 +8,7 @@ defmodule TdDq.Implementations.ElasticDocument do
   alias TdCore.Search.Cluster
   alias TdCore.Search.ElasticDocument
   alias TdCore.Search.ElasticDocumentProtocol
+  alias TdDfLib.Content
   alias TdDq.Events.QualityEvents
   alias TdDq.Implementations
   alias TdDq.Implementations.Implementation
@@ -349,7 +350,13 @@ defmodule TdDq.Implementations.ElasticDocument do
       rule = Map.put(rule, :df_content, df_content)
 
       confidential = Helpers.confidential?(rule)
-      bcv = Helpers.get_business_concept_version(rule)
+
+      bcv =
+        rule
+        |> Helpers.get_business_concept_version()
+        |> Content.legacy_content_support(:content, :dynamic_content)
+        |> Map.delete(:dynamic_content)
+
       updated_by = Helpers.get_user(rule.updated_by)
 
       data
