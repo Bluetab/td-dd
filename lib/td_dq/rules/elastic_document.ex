@@ -8,6 +8,7 @@ defmodule TdDq.Rules.ElasticDocument do
   alias TdCore.Search.Cluster
   alias TdCore.Search.ElasticDocument
   alias TdCore.Search.ElasticDocumentProtocol
+  alias TdDfLib.Content
   alias TdDq.Rules.Rule
 
   defimpl Document, for: Rule do
@@ -29,7 +30,13 @@ defmodule TdDq.Rules.ElasticDocument do
       template = TemplateCache.get_by_name!(rule.df_name) || %{content: []}
       updated_by = Helpers.get_user(rule.updated_by)
       confidential = Helpers.confidential?(rule)
-      bcv = Helpers.get_business_concept_version(rule)
+
+      bcv =
+        rule
+        |> Helpers.get_business_concept_version()
+        |> Content.legacy_content_support(:content, :dynamic_content)
+        |> Map.delete(:dynamic_content)
+
       domain = Helpers.get_domain(rule)
       domain_ids = List.wrap(domain_id)
 
