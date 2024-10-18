@@ -320,10 +320,7 @@ defmodule TdDdWeb.DataStructureController do
     {lang, params} = Map.pop(params, "lang", @default_lang)
     structures_content_upload = Map.get(params, "structures")
 
-    auto_publish =
-      params
-      |> Map.get("auto_publish", "false")
-      |> String.to_existing_atom()
+    auto_publish = params |> Map.get("auto_publish", "false") |> String.to_existing_atom()
 
     with [_ | _] = contents <- BulkUpdate.from_csv(structures_content_upload, :simple),
          {:forbidden, []} <- {:forbidden, can_bulk_actions(contents, auto_publish, claims)},
