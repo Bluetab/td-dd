@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-6904] Show the name of the linked concept when implementations are downloaded
+
+
 ## [6.13.1] 2024-10-17
 
 ### Fixed
