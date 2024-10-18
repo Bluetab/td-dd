@@ -420,7 +420,7 @@ defmodule TdDq.Rules.SearchTest do
     end
 
     @tag authentication: [role: "user"]
-    test "filters by executable permission iff executable param is present", %{
+    test "filters by executable permission if executable param is present", %{
       claims: claims,
       implementation: implementation
     } do
