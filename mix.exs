@@ -81,7 +81,7 @@ defmodule TdDd.MixProject do
       {:bimap, "~> 1.1"},
       {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "6.13.0"},
       {:td_cluster, git: "https://github.com/Bluetab/td-cluster.git", tag: "5.19.0"},
-      {:td_core, git: "https://github.com/Bluetab/td-core.git", branch: "feature/td-6743"},
+      {:td_core, git: "https://github.com/Bluetab/td-core.git", tag: "6.13.3"},
       {:graph, git: "https://github.com/Bluetab/graph.git", tag: "1.3.0"},
       {:vaultex, "~> 1.0.1"},
       {:sobelow, "~> 0.11", only: [:dev, :test]}
