@@ -221,7 +221,7 @@ config :td_core, TdCore.Search.Cluster,
       System.get_env("ES_INDEXING_SLOWLOG_THRESHOLD_DEBUG", "2s"),
     "index.indexing.slowlog.threshold.index.trace" =>
       System.get_env("ES_INDEXING_SLOWLOG_THRESHOLD_TRACE", "500ms"),
-    "index.indexing.slowlog.level" => System.get_env("ES_INDEXING_SLOWLOG_LEVEL", "info"),
+    # "index.indexing.slowlog.level" => System.get_env("ES_INDEXING_SLOWLOG_LEVEL", "info"),
     "index.indexing.slowlog.source" => System.get_env("ES_INDEXING_SLOWLOG_SOURCE", "1000"),
     "index.mapping.total_fields.limit" => System.get_env("ES_MAPPING_TOTAL_FIELDS_LIMIT", "3000")
   }
