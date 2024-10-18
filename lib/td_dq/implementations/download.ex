@@ -3,6 +3,7 @@ defmodule TdDq.Implementations.Download do
   Helper module to download implementations.
   """
 
+  alias TdCache.ConceptCache
   alias TdCache.DomainCache
   alias TdCache.I18nCache
   alias TdCache.TemplateCache
@@ -109,7 +110,7 @@ defmodule TdDq.Implementations.Download do
          implementation.df_name,
          implementation.goal,
          implementation.minimum,
-         fill_concepts(implementation),
+         fill_concepts(implementation, lang),
          get_in(implementation, [:execution_result_info, :date])
          |> TdDd.Helpers.shift_zone(time_zone),
          get_in(implementation, [:execution_result_info, :records]),
@@ -241,11 +242,22 @@ defmodule TdDq.Implementations.Download do
     end
   end
 
-  defp fill_concepts(implementation) do
+  defp fill_concepts(implementation, lang) do
     implementation
     |> Map.get(:concepts, [])
+    |> Enum.map(&concept_name(&1, lang))
+    |> Enum.filter(& &1)
     |> Enum.join("|")
   end
+
+  defp concept_name(id, lang) when is_integer(id) do
+    case ConceptCache.get(id, lang: lang) do
+      {:ok, %{name: name}} -> name
+      {:ok, nil} -> nil
+    end
+  end
+
+  defp concept_name(_id, _lang), do: nil
 
   defp fill_result_details(%{execution_result_info: %{details: %{} = details}}, headers) do
     Enum.map(headers, fn

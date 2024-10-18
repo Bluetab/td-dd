@@ -50,15 +50,20 @@ defmodule TdDq.Implementations.DownloadTest do
     [template: template]
   end
 
+  defp create_concept(_) do
+    [concept: CacheHelpers.insert_concept(name: "name")]
+  end
+
   describe "Download.to_csv/3" do
     setup :create_template
+    setup :create_concept
 
     test "returns empty csv" do
       csv = Download.to_csv([], %{}, %{}, "es")
       assert csv == ""
     end
 
-    test "returns csv content with domain name from template" do
+    test "returns csv content with domain name from template", %{concept: concept} do
       %{id: domain_id_1, name: domain_name_1} =
         CacheHelpers.insert_domain(external_id: "domain1", name: "domain_name_1")
 
@@ -85,7 +90,7 @@ defmodule TdDq.Implementations.DownloadTest do
           df_name: "download",
           name: "Rule"
         },
-        concepts: ["name"],
+        concepts: [concept.id],
         execution_result_info: %{
           date: "2021-05-05T00:00:00Z",
           result_text: "quality_result.under_goal",
@@ -106,11 +111,11 @@ defmodule TdDq.Implementations.DownloadTest do
       assert csv ==
                """
                implementation_key;implementation_type;domain;Executable;rule;Rule Template Label;Implementation Template Label;goal;minimum;business_concepts;last_execution_at;records;errors;result;execution;inserted_at;structure_domains;Info;System;Domain\r
-               #{impl.implementation_key};#{impl.implementation_type};#{domain_name_1};Executable;#{impl.rule.name};#{impl.rule.df_name};#{impl.df_name};#{impl.goal};#{impl.minimum};#{impl.concepts};#{Helpers.shift_zone(impl.execution_result_info.date)};;;#{impl.execution_result_info.result};Under Goal;#{Helpers.shift_zone(impl.inserted_at)};#{domain_name_1};field_value;system|system1;domain_name_1|domain_name_2\r
+               #{impl.implementation_key};#{impl.implementation_type};#{domain_name_1};Executable;#{impl.rule.name};#{impl.rule.df_name};#{impl.df_name};#{impl.goal};#{impl.minimum};#{concept.name};#{Helpers.shift_zone(impl.execution_result_info.date)};;;#{impl.execution_result_info.result};Under Goal;#{Helpers.shift_zone(impl.inserted_at)};#{domain_name_1};field_value;system|system1;domain_name_1|domain_name_2\r
                """
     end
 
-    test "handles uninformed result fields" do
+    test "handles uninformed result fields", %{concept: concept} do
       %{id: domain_id_1, name: domain_name_1} =
         CacheHelpers.insert_domain(external_id: "domain1", name: "imp_domain_1")
 
@@ -133,7 +138,7 @@ defmodule TdDq.Implementations.DownloadTest do
           df_name: "download",
           name: "Rule"
         },
-        concepts: ["name"],
+        concepts: [concept.id],
         execution_result_info: nil,
         df_name: "impl_df_name_1",
         goal: "12",
@@ -161,7 +166,7 @@ defmodule TdDq.Implementations.DownloadTest do
           df_name: "download",
           name: "Rule"
         },
-        concepts: ["name"],
+        concepts: [concept.id],
         execution_result_info: %{
           date: "2021-05-05T00:00:00Z",
           result: "40.00"
@@ -180,18 +185,18 @@ defmodule TdDq.Implementations.DownloadTest do
       assert csv ==
                """
                implementation_key;implementation_type;domain;Executable;rule;Rule Template Label;Implementation Template Label;goal;minimum;business_concepts;last_execution_at;records;errors;result;execution;inserted_at;structure_domains;Info;System;Domain\r
-               #{impl.implementation_key};#{impl.implementation_type};#{domain_name_1};Executable;#{impl.rule.name};#{impl.rule.df_name};#{impl.df_name};#{impl.goal};#{impl.minimum};#{impl.concepts};;;;;;#{Helpers.shift_zone(impl.inserted_at)};;field_value;system|system1;\r
-               #{impl1.implementation_key};#{impl1.implementation_type};#{domain_name_1};Internal;#{impl1.rule.name};#{impl1.rule.df_name};#{impl1.df_name};#{impl1.goal};#{impl1.minimum};#{impl1.concepts};#{Helpers.shift_zone(impl1.execution_result_info.date)};;;#{impl1.execution_result_info.result};;#{Helpers.shift_zone(impl1.inserted_at)};;field_value;system|system1;\r
+               #{impl.implementation_key};#{impl.implementation_type};#{domain_name_1};Executable;#{impl.rule.name};#{impl.rule.df_name};#{impl.df_name};#{impl.goal};#{impl.minimum};#{concept.name};;;;;;#{Helpers.shift_zone(impl.inserted_at)};;field_value;system|system1;\r
+               #{impl1.implementation_key};#{impl1.implementation_type};#{domain_name_1};Internal;#{impl1.rule.name};#{impl1.rule.df_name};#{impl1.df_name};#{impl1.goal};#{impl1.minimum};#{concept.name};#{Helpers.shift_zone(impl1.execution_result_info.date)};;;#{impl1.execution_result_info.result};;#{Helpers.shift_zone(impl1.inserted_at)};;field_value;system|system1;\r
                """
     end
 
-    test "handles ruleless implementations" do
+    test "handles ruleless implementations", %{concept: concept} do
       %{id: domain_id_1, name: domain_name_1} =
         CacheHelpers.insert_domain(external_id: "domain1", name: "imp_domain_1")
 
       impl = %{
         domain_ids: [domain_id_1],
-        concepts: ["name"],
+        concepts: [concept.id],
         df_content: %{
           system: %{
             "value" => [
@@ -225,17 +230,17 @@ defmodule TdDq.Implementations.DownloadTest do
       assert csv ==
                """
                implementation_key;implementation_type;domain;Executable;rule;Rule Template Label;Implementation Template Label;goal;minimum;business_concepts;last_execution_at;records;errors;result;execution;inserted_at;structure_domains;Info;System;Domain\r
-               #{impl.implementation_key};#{impl.implementation_type};#{domain_name_1};Executable;;;#{impl.df_name};#{impl.goal};#{impl.minimum};#{impl.concepts};#{Helpers.shift_zone(impl.execution_result_info.date)};;;#{impl.execution_result_info.result};Under Goal;#{Helpers.shift_zone(impl.inserted_at)};;field_value;system|system1;\r
+               #{impl.implementation_key};#{impl.implementation_type};#{domain_name_1};Executable;;;#{impl.df_name};#{impl.goal};#{impl.minimum};#{concept.name};#{Helpers.shift_zone(impl.execution_result_info.date)};;;#{impl.execution_result_info.result};Under Goal;#{Helpers.shift_zone(impl.inserted_at)};;field_value;system|system1;\r
                """
     end
 
-    test "handles ruleless implementations with translations" do
+    test "handles ruleless implementations with translations", %{concept: concept} do
       %{id: domain_id_1, name: domain_name_1} =
         CacheHelpers.insert_domain(external_id: "domain1", name: "imp_domain_1")
 
       impl = %{
         domain_ids: [domain_id_1],
-        concepts: ["name"],
+        concepts: [concept.id],
         df_content: %{
           system: %{
             "value" => [
@@ -274,7 +279,7 @@ defmodule TdDq.Implementations.DownloadTest do
       assert csv ==
                """
                implementation_key;implementation_type;domain;Executable;rule;Rule Template Label;Implementation Template Label;goal;minimum;business_concepts;last_execution_at;Registros;Errores;result;execution;inserted_at;structure_domains;Info;System;Domain\r
-               #{impl.implementation_key};#{impl.implementation_type};#{domain_name_1};Executable;;;#{impl.df_name};#{impl.goal};#{impl.minimum};#{impl.concepts};#{Helpers.shift_zone(impl.execution_result_info.date)};;;#{impl.execution_result_info.result};Under Goal;#{Helpers.shift_zone(impl.inserted_at)};;field_value;system|system1;\r
+               #{impl.implementation_key};#{impl.implementation_type};#{domain_name_1};Executable;;;#{impl.df_name};#{impl.goal};#{impl.minimum};#{concept.name};#{Helpers.shift_zone(impl.execution_result_info.date)};;;#{impl.execution_result_info.result};Under Goal;#{Helpers.shift_zone(impl.inserted_at)};;field_value;system|system1;\r
                """
     end
   end
