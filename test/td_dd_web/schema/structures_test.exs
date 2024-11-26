@@ -1003,7 +1003,8 @@ defmodule TdDdWeb.Schema.StructuresTest do
                      "rule_count" => 0,
                      "shared_to" => [],
                      "shared_to_ids" => [],
-                     "tags" => []
+                     "tags" => [],
+                     "i18n" => "{\"es\":{\"content\":{},\"name\":\"concept_name_es\"}}"
                    }
                  ],
                  "grant" => %{"id" => "#{grant_id}"},
