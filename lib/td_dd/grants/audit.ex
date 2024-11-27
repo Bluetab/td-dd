@@ -52,12 +52,14 @@ defmodule TdDd.Grants.Audit do
   defp take_from_grant_request(%{
          id: id,
          data_structure: %{
+           id: data_structure_id,
            current_version: %{name: name}
          }
        }) do
     %{
       id: id,
       data_structure: %{
+        id: data_structure_id,
         current_version: %{name: name}
       }
     }
@@ -182,7 +184,7 @@ defmodule TdDd.Grants.Audit do
   defp with_acc_domain_ids(%{domain_ids: acc_domain_ids} = payload, %{
          data_structure: %{domain_ids: domain_ids}
        }) do
-    Map.put(payload, :domain_ids, [get_domain_ids(domain_ids) | acc_domain_ids])
+    Map.put(payload, :domain_ids, acc_domain_ids ++ [get_domain_ids(domain_ids)])
   end
 
   defp with_acc_domain_ids(%{} = payload, %{grant: %{data_structure: %{domain_ids: domain_ids}}}) do
