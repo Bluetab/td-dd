@@ -85,10 +85,17 @@ defmodule TdDq.Rules do
         %{resource_type: type, tags: tags} ->
           type == :concept and length(expandable_tags -- expandable_tags -- tags) > 0
       end)
-      |> Enum.map(&Map.get(&1, :resource_id, false))
+      |> Enum.map(fn %{resource_id: resource_id, name: name} ->
+        %{resource_id: resource_id, name: name}
+      end)
       |> Enum.filter(& &1)
       |> Enum.flat_map(fn data ->
-        list_rules(%{"business_concept_id" => String.to_integer(data)}, options)
+        list_rules(%{"business_concept_id" => String.to_integer(data.resource_id)}, options)
+        |> Enum.map(
+          &(&1
+            |> Map.put(:expandable_parent_name, data.name)
+            |> Map.put(:expandable_parent, data.resource_id))
+        )
       end)
 
     bc_expandable_childs

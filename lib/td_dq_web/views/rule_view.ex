@@ -56,7 +56,9 @@ defmodule TdDqWeb.RuleView do
       :name,
       :updated_at,
       :updated_by,
-      :version
+      :version,
+      :expandable_parent,
+      :expandable_parent_name
     ])
     |> add_current_version(rule, lang)
     |> add_system_values(rule)
