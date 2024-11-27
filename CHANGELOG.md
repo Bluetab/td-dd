@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-6651] Add structure_id for grant_request_group_creation event payload
+
 ## [6.13.3] 2024-11-05
 
 ### Changed
