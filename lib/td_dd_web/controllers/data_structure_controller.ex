@@ -521,7 +521,7 @@ defmodule TdDdWeb.DataStructureController do
 
   defp do_search(conn, params, page \\ 0, size \\ 50)
 
-  defp do_search(_conn, %{"scroll" => _, "scroll_id" => _} = scroll_params, _page, _size) do
+  defp do_search(_conn, %{"scroll_id" => _} = scroll_params, _page, _size) do
     Search.scroll_data_structures(scroll_params)
   end
 

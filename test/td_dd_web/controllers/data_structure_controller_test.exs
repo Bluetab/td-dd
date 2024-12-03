@@ -587,6 +587,21 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert length(data) == 5
     end
+
+    @tag authentication: [role: "admin"]
+    test "accepts scroll_id as param", %{conn: conn} do
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/_search/scroll", %{"scroll_id" => "some_scroll_id"}, _ ->
+        SearchHelpers.scroll_response([], 7)
+      end)
+
+      assert %{"data" => [], "scroll_id" => _scroll_id} =
+               conn
+               |> post(Routes.data_structure_path(conn, :search), %{
+                 "scroll_id" => "some_scroll_id"
+               })
+               |> json_response(:ok)
+    end
   end
 
   describe "update data_structure" do

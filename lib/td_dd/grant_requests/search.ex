@@ -42,6 +42,13 @@ defmodule TdDd.GrantRequests.Search do
 
   def search(params, claims, page \\ 0, size \\ 1000)
 
+  def search(%{"scroll_id" => _} = params, _claims, _page, _size) do
+    params
+    |> Map.take(["scroll", "scroll_id"])
+    |> Search.scroll()
+    |> transform_response()
+  end
+
   def search(params, claims, page, size) do
     aggs = ElasticDocumentProtocol.aggregations(%GrantRequest{})
     sort = Map.get(params, "sort", ["_score", "inserted_at"])
@@ -57,7 +64,7 @@ defmodule TdDd.GrantRequests.Search do
       query: query,
       sort: sort
     }
-    |> Search.search(@index)
+    |> do_search(params)
     |> transform_response()
   end
 
@@ -85,5 +92,13 @@ defmodule TdDd.GrantRequests.Search do
     |> Enum.reduce(%{}, fn ids_by_resource, acc ->
       Map.merge(acc, ids_by_resource, fn _k, v1, v2 -> Map.merge(v1, v2) end)
     end)
+  end
+
+  defp do_search(query, %{"scroll" => scroll} = _params) do
+    Search.search(query, @index, params: %{"scroll" => scroll})
+  end
+
+  defp do_search(query, _params) do
+    Search.search(query, @index)
   end
 end

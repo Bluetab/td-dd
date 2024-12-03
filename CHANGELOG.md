@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-6938] Add Grant Requests Search scroll and inserted_at filter
+
 ## [6.15.0] 2024-11-27
 
 ### Added

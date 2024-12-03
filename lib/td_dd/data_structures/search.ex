@@ -104,7 +104,7 @@ defmodule TdDd.DataStructures.Search do
     Search.search(search, @index, format: :raw)
   end
 
-  def scroll_data_structures(%{"scroll_id" => _, "scroll" => _} = params) do
+  def scroll_data_structures(%{"scroll_id" => _} = params) do
     params
     |> Map.take(["scroll_id", "scroll"])
     |> Search.scroll()
