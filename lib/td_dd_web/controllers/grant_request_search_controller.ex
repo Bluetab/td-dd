@@ -21,9 +21,15 @@ defmodule TdDdWeb.GrantRequestSearchController do
       |> Search.search(claims, page, size)
       |> put_permissions(claims)
 
+    assigns =
+      response
+      |> get_assigns()
+      |> maybe_put_filters(response)
+      |> maybe_put_scroll_id(response)
+
     conn
     |> put_resp_header("x-total-count", "#{total}")
-    |> render("search.json", search_assigns(response))
+    |> render("search.json", assigns)
   end
 
   def reindex_all(conn, _params) do
@@ -35,17 +41,19 @@ defmodule TdDdWeb.GrantRequestSearchController do
     end
   end
 
-  defp search_assigns(%{
-         results: grant_requests,
-         aggregations: aggregations,
-         permissions: permissions
-       }) do
-    [grant_requests: grant_requests, filters: aggregations, permissions: permissions]
-  end
-
-  defp search_assigns(%{results: grant_requests, permissions: permissions}) do
+  defp get_assigns(%{results: grant_requests, permissions: permissions}) do
     [grant_request: grant_requests, permissions: permissions]
   end
+
+  defp maybe_put_filters(assigns, %{aggregations: aggregations}),
+    do: Keyword.put(assigns, :filters, aggregations)
+
+  defp maybe_put_filters(assigns, _), do: assigns
+
+  defp maybe_put_scroll_id(assigns, %{scroll_id: scroll_id}),
+    do: Keyword.put(assigns, :scroll_id, scroll_id)
+
+  defp maybe_put_scroll_id(assigns, _), do: assigns
 
   defp put_permissions(response, claims) do
     permissions = Permissions.get_roles_by_user(:approve_grant_request, claims)

@@ -46,6 +46,72 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
     end
 
     @tag authentication: [role: "admin"]
+    test "includes scroll_id in response",
+         %{conn: conn} = context do
+      grant_requests =
+        Enum.map(1..5, fn _ ->
+          [{_, grant_request}] = create_grant_request(context)
+          grant_request
+        end)
+
+      ElasticsearchMock
+      |> expect(:request, fn _,
+                             :post,
+                             "/grant_requests/_search",
+                             _,
+                             [params: %{"scroll" => "1m"}] ->
+        SearchHelpers.scroll_response(grant_requests, 7)
+      end)
+      |> expect(:request, fn _, :post, "/_search/scroll", %{"scroll_id" => "some_scroll_id"}, _ ->
+        SearchHelpers.scroll_response([], 7)
+      end)
+
+      assert %{"data" => data, "scroll_id" => scroll_id} =
+               conn
+               |> post(Routes.grant_request_search_path(conn, :search), %{
+                 "filters" => %{"all" => true},
+                 "size" => 5,
+                 "scroll" => "1m"
+               })
+               |> json_response(:ok)
+
+      assert length(data) == 5
+
+      assert %{"data" => [], "scroll_id" => _scroll_id} =
+               conn
+               |> post(Routes.grant_request_search_path(conn, :search), %{
+                 "scroll_id" => scroll_id
+               })
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "includes inserted_at filter", %{conn: conn} do
+      now = NaiveDateTime.local_now()
+
+      ElasticsearchMock
+      |> expect(:request, fn _,
+                             :post,
+                             "/grant_requests/_search",
+                             %{
+                               query: %{
+                                 bool: %{
+                                   must: %{
+                                     range: %{"inserted_at" => %{"gte" => ^now}}
+                                   }
+                                 }
+                               }
+                             },
+                             [params: %{"track_total_hits" => "true"}] ->
+        SearchHelpers.hits_response([])
+      end)
+
+      post(conn, Routes.grant_request_search_path(conn, :search), %{
+        "must" => %{"inserted_at" => %{"gte" => now}}
+      })
+    end
+
+    @tag authentication: [role: "admin"]
     test "admin can search all grant requests with pending status with must not approved_by", %{
       conn: conn,
       grant_request: grant_request
