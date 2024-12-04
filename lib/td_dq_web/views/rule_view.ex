@@ -46,6 +46,7 @@ defmodule TdDqWeb.RuleView do
     |> Map.take([
       :active,
       :business_concept_id,
+      :business_concept_name,
       :deleted_at,
       :description,
       :domain_id,
@@ -56,9 +57,7 @@ defmodule TdDqWeb.RuleView do
       :name,
       :updated_at,
       :updated_by,
-      :version,
-      :expandable_parent,
-      :expandable_parent_name
+      :version
     ])
     |> add_current_version(rule, lang)
     |> add_system_values(rule)

@@ -37,6 +37,47 @@ defmodule TdDq.RulesTest do
                %{rule | domain: Map.take(domain, [:id, :external_id, :name])}
              ]
     end
+
+    test "lists BusinessConcept's rules" do
+      %{id: bc_id} = CacheHelpers.insert_concept()
+      rule = insert(:rule, business_concept_id: bc_id)
+      _another_rule = insert(:rule)
+      assert Rules.list_rules(%{"business_concept_id" => bc_id}) == [rule]
+    end
+
+    test "ignores childs options if no business_concept_id in params" do
+      %{id: bc_id} = CacheHelpers.insert_concept()
+      rule = insert(:rule, business_concept_id: bc_id)
+      another_rule = insert(:rule)
+      assert Rules.list_rules(%{}, childs: true) == [rule, another_rule]
+    end
+
+    test "lists BusinessConcept's rules with expandable rule" do
+      %{id: bc_id} = CacheHelpers.insert_concept()
+      %{id: bc_id2, name: bc_name} = CacheHelpers.insert_concept()
+      rule1 = insert(:rule, business_concept_id: bc_id)
+      rule2 = insert(:rule, business_concept_id: bc_id2)
+      _another_rule = insert(:rule)
+
+      tag_type = "expandable"
+      CacheHelpers.insert_tag(tag_type, "business_concept", true)
+      CacheHelpers.insert_tag("tag_type", "business_concept", false)
+
+      CacheHelpers.insert_link(
+        bc_id,
+        "business_concept",
+        "business_concept",
+        bc_id2,
+        [tag_type]
+      )
+
+      assert Rules.list_rules(%{"business_concept_id" => bc_id}) == [rule1]
+
+      assert Rules.list_rules(%{"business_concept_id" => "#{bc_id}"}, childs: true) == [
+               %{rule2 | business_concept_name: bc_name},
+               rule1
+             ]
+    end
   end
 
   describe "get_rule/1" do

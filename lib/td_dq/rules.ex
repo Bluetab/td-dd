@@ -41,65 +41,51 @@ defmodule TdDq.Rules do
     |> enrich(Keyword.get(options, :enrich))
   end
 
-  def list_rules(params, options) do
+  def list_rules(params, opts) do
     fields = Rule.__schema__(:fields)
-
     dynamic = filter(params, fields)
 
-    childs_rules =
-      case Map.get(Map.new(options), :childs, false) do
-        true -> get_linked_childs_rules(params, options)
-        _ -> []
-      end
-
-    query =
-      from(
-        p in Rule,
-        where: ^dynamic,
-        where: is_nil(p.deleted_at)
-      )
-
-    rules =
-      query
-      |> Repo.all()
-      |> enrich(Keyword.get(options, :enrich))
-
-    Enum.concat(rules, childs_rules)
+    from(
+      p in Rule,
+      where: ^dynamic,
+      where: is_nil(p.deleted_at)
+    )
+    |> Repo.all()
+    |> maybe_merge_childs(params, Keyword.get(opts, :childs))
+    |> enrich(Keyword.get(opts, :enrich))
   end
 
-  defp get_linked_childs_rules(%{"business_concept_id" => id}, options) do
-    options = Keyword.delete(options, :childs)
-
+  defp maybe_merge_childs(rules, %{"business_concept_id" => id}, true) do
     expandable_tags =
       TagCache.list()
-      |> Enum.filter(&(Map.get(&1, :expandable, "false") == "true"))
-      |> Enum.map(&Map.get(&1, :type))
+      |> Enum.filter(&(&1.expandable == "true"))
+      |> Enum.map(& &1.type)
 
-    bc_expandable_childs =
-      LinkCache.list("business_concept", String.to_integer(id), childs: true)
-      |> case do
-        {:ok, list} -> list
-        _ -> []
-      end
+    child_business_concepts =
+      "business_concept"
+      |> LinkCache.list(id, childs: true)
+      |> then(&elem(&1, 1))
       |> Enum.filter(fn
-        %{resource_type: type, tags: tags} ->
-          type == :concept and length(expandable_tags -- expandable_tags -- tags) > 0
+        %{resource_type: :concept, tags: tags} -> length(tags -- tags -- expandable_tags) > 0
+        _ -> false
       end)
-      |> Enum.map(fn %{resource_id: resource_id, name: name} ->
-        %{resource_id: resource_id, name: name}
-      end)
-      |> Enum.filter(& &1)
-      |> Enum.flat_map(fn data ->
-        list_rules(%{"business_concept_id" => String.to_integer(data.resource_id)}, options)
-        |> Enum.map(
-          &(&1
-            |> Map.put(:expandable_parent_name, data.name)
-            |> Map.put(:expandable_parent, data.resource_id))
-        )
-      end)
+      |> Enum.into(%{}, &{String.to_integer(&1.resource_id), &1.name})
 
-    bc_expandable_childs
+    bc_ids = Map.keys(child_business_concepts)
+
+    from(
+      p in Rule,
+      where: p.business_concept_id in ^bc_ids,
+      where: is_nil(p.deleted_at)
+    )
+    |> Repo.all()
+    |> Enum.map(
+      &%{&1 | business_concept_name: Map.get(child_business_concepts, &1.business_concept_id)}
+    )
+    |> Enum.concat(rules)
   end
+
+  defp maybe_merge_childs(rules, _, _), do: rules
 
   @doc """
   Gets a single rule.

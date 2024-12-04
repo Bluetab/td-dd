@@ -35,6 +35,8 @@ defmodule TdDq.Rules.Rule do
     field(:df_content, :map)
     field(:template, :map, virtual: true)
 
+    field(:business_concept_name, :string, virtual: true)
+
     has_many(:rule_implementations, Implementation)
     has_many(:rule_results, RuleResult)
 

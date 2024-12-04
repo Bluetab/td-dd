@@ -12,9 +12,9 @@ defmodule CacheHelpers do
   alias TdCache.I18nCache
   alias TdCache.ImplementationCache
   alias TdCache.LinkCache
-  alias TdCache.TagCache
   alias TdCache.Permissions
   alias TdCache.Redix
+  alias TdCache.TagCache
   alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
   alias TdCache.UserCache
@@ -34,9 +34,15 @@ defmodule CacheHelpers do
     structure_type
   end
 
-  def insert_link(source_id, source_type, target_type, target_id \\ nil) do
+  def insert_link(source_id, source_type, target_type, target_id, tags \\ [])
+
+  def insert_link(source_id, source_type, target_type, nil, tags) do
+    target_id = System.unique_integer([:positive])
+    insert_link(source_id, source_type, target_type, target_id, tags)
+  end
+
+  def insert_link(source_id, source_type, target_type, target_id, tags) do
     id = System.unique_integer([:positive])
-    target_id = if is_nil(target_id), do: System.unique_integer([:positive]), else: target_id
 
     link = %{
       id: id,
@@ -44,38 +50,15 @@ defmodule CacheHelpers do
       source_id: source_id,
       target_type: target_type,
       target_id: target_id,
+      tags: tags,
       updated_at: DateTime.utc_now()
     }
 
-    LinkCache.put(
-      link,
-      publish: false
-    )
+    LinkCache.put(link, publish: false)
 
     on_exit(fn -> LinkCache.delete(id, publish: false) end)
     _maybe_error = StructureEnricher.refresh()
     link
-  end
-
-  def insert_link(source_id, source_type, target_type, target_id, tags) do
-    id = System.unique_integer([:positive])
-    target_id = if is_nil(target_id), do: System.unique_integer([:positive]), else: target_id
-
-    LinkCache.put(
-      %{
-        id: id,
-        source_type: source_type,
-        source_id: source_id,
-        target_type: target_type,
-        target_id: target_id,
-        tags: List.wrap(tags),
-        updated_at: DateTime.utc_now()
-      },
-      publish: false
-    )
-
-    on_exit(fn -> LinkCache.delete(id, publish: false) end)
-    :ok
   end
 
   def insert_tag(type, target_type, expandable) do
