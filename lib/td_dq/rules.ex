@@ -56,10 +56,7 @@ defmodule TdDq.Rules do
   end
 
   defp maybe_merge_childs(rules, %{"business_concept_id" => id}, true) do
-    expandable_tags =
-      TagCache.list()
-      |> Enum.filter(&(&1.expandable == "true"))
-      |> Enum.map(& &1.type)
+    expandable_tags = TagCache.list_types(expandable: "true")
 
     child_business_concepts =
       "business_concept"
