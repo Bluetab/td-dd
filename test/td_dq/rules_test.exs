@@ -49,7 +49,7 @@ defmodule TdDq.RulesTest do
       %{id: bc_id} = CacheHelpers.insert_concept()
       rule = insert(:rule, business_concept_id: bc_id)
       another_rule = insert(:rule)
-      assert Rules.list_rules(%{}, childs: true) == [rule, another_rule]
+      assert Rules.list_rules(%{}, expandable_childs: true) == [rule, another_rule]
     end
 
     test "lists BusinessConcept's rules with expandable rule" do
@@ -73,10 +73,11 @@ defmodule TdDq.RulesTest do
 
       assert Rules.list_rules(%{"business_concept_id" => bc_id}) == [rule1]
 
-      assert Rules.list_rules(%{"business_concept_id" => "#{bc_id}"}, childs: true) == [
-               %{rule2 | business_concept_name: bc_name},
-               rule1
-             ]
+      assert Rules.list_rules(%{"business_concept_id" => "#{bc_id}"}, expandable_childs: true) ==
+               [
+                 %{rule2 | business_concept_name: bc_name},
+                 rule1
+               ]
     end
   end
 

@@ -51,7 +51,7 @@ defmodule TdDq.Rules do
       where: is_nil(p.deleted_at)
     )
     |> Repo.all()
-    |> maybe_merge_childs(params, Keyword.get(opts, :childs))
+    |> maybe_merge_childs(params, Keyword.get(opts, :expandable_childs))
     |> enrich(Keyword.get(opts, :enrich))
   end
 
@@ -60,7 +60,7 @@ defmodule TdDq.Rules do
 
     child_business_concepts =
       "business_concept"
-      |> LinkCache.list(id, childs: true)
+      |> LinkCache.list(id, without_parent_business_concepts: true)
       |> then(&elem(&1, 1))
       |> Enum.filter(fn
         %{resource_type: :concept, tags: tags} -> length(tags -- tags -- expandable_tags) > 0
