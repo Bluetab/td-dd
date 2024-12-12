@@ -94,6 +94,20 @@ defmodule TdDd.DataStructures.Tags do
         q
         |> join(:left, [t], c in subquery(sq), on: c.id == t.id)
         |> select_merge([t, c], %{structure_count: fragment("coalesce(?, 0)", c.count)})
+
+      {:since, since}, q ->
+        where(q, [t], t.updated_at >= ^since)
+        |> order_by(asc: :updated_at)
+
+      {:min_id, id}, q ->
+        where(q, [t], t.id >= ^id)
+        |> order_by(asc: :id)
+
+      {:size, size}, q ->
+        limit(q, ^size)
+
+      _, q ->
+        q
     end)
   end
 
