@@ -145,6 +145,11 @@ if config_env() == :prod do
       password: password
   end
 
+  with api_key when not is_nil(api_key) <- System.get_env("ES_API_KEY") do
+    config :td_core, TdCore.Search.Cluster,
+      default_headers: [{"Authorization", "ApiKey #{api_key}"}]
+  end
+
   config :td_dd, TdDd.DataStructures.BulkUpdater,
     timeout_seconds:
       System.get_env("CSV_BULK_UPDATER_TIMEOUT_SECONDS", "600") |> String.to_integer()
@@ -192,6 +197,35 @@ config :td_dd, TdDq.Search.Store,
   implementations:
     System.get_env("IMPLEMENTATION_STORE_CHUNK_SIZE", "1000") |> String.to_integer()
 
+optional_ssl_options =
+  case System.get_env("ES_SSL") do
+    "true" ->
+      cacertfile =
+        case System.get_env("ES_SSL_CACERTFILE", "generated") do
+          "generated" -> :certifi.cacertfile()
+          file -> file
+        end
+
+      [
+        ssl: [
+          cacertfile: cacertfile,
+          verify:
+            System.get_env("ES_SSL_VERIFY", "verify_none")
+            |> String.downcase()
+            |> String.to_atom()
+        ]
+      ]
+
+    _ ->
+      []
+  end
+
+elastic_default_options =
+  [
+    timeout: System.get_env("ES_TIMEOUT", "5000") |> String.to_integer(),
+    recv_timeout: System.get_env("ES_RECV_TIMEOUT", "40000") |> String.to_integer()
+  ] ++ optional_ssl_options
+
 config :td_core, TdCore.Search.Cluster,
   # If the variable delete_existing_index is set to false,
   # it will not be deleted in the case that there is no index in the hot swap process."
@@ -204,10 +238,7 @@ config :td_core, TdCore.Search.Cluster,
     rules: System.get_env("ES_ALIAS_RULES", "rules"),
     grant_requests: System.get_env("ES_ALIAS_GRANT_REQUESTS", "grant_requests")
   },
-  default_options: [
-    timeout: System.get_env("ES_TIMEOUT", "5000") |> String.to_integer(),
-    recv_timeout: System.get_env("ES_RECV_TIMEOUT", "40000") |> String.to_integer()
-  ],
+  default_options: elastic_default_options,
   default_settings: %{
     "number_of_shards" => System.get_env("ES_SHARDS", "1") |> String.to_integer(),
     "number_of_replicas" => System.get_env("ES_REPLICAS", "1") |> String.to_integer(),
