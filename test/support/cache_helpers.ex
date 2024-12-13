@@ -14,6 +14,7 @@ defmodule CacheHelpers do
   alias TdCache.LinkCache
   alias TdCache.Permissions
   alias TdCache.Redix
+  alias TdCache.TagCache
   alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
   alias TdCache.UserCache
@@ -33,9 +34,15 @@ defmodule CacheHelpers do
     structure_type
   end
 
-  def insert_link(source_id, source_type, target_type, target_id \\ nil) do
+  def insert_link(source_id, source_type, target_type, target_id, tags \\ [])
+
+  def insert_link(source_id, source_type, target_type, nil, tags) do
+    target_id = System.unique_integer([:positive])
+    insert_link(source_id, source_type, target_type, target_id, tags)
+  end
+
+  def insert_link(source_id, source_type, target_type, target_id, tags) do
     id = System.unique_integer([:positive])
-    target_id = if is_nil(target_id), do: System.unique_integer([:positive]), else: target_id
 
     link = %{
       id: id,
@@ -43,17 +50,30 @@ defmodule CacheHelpers do
       source_id: source_id,
       target_type: target_type,
       target_id: target_id,
+      tags: tags,
       updated_at: DateTime.utc_now()
     }
 
-    LinkCache.put(
-      link,
-      publish: false
-    )
+    LinkCache.put(link, publish: false)
 
     on_exit(fn -> LinkCache.delete(id, publish: false) end)
     _maybe_error = StructureEnricher.refresh()
     link
+  end
+
+  def insert_tag(type, target_type, expandable) do
+    id = System.unique_integer([:positive])
+
+    tag = %{
+      id: id,
+      value: %{"type" => type, "target_type" => target_type, "expandable" => expandable},
+      updated_at: DateTime.utc_now()
+    }
+
+    TagCache.put(tag)
+
+    on_exit(fn -> TagCache.delete(id) end)
+    tag
   end
 
   def insert_template(params \\ %{}) do
@@ -143,7 +163,7 @@ defmodule CacheHelpers do
           Redix.command!(["DEL", "user:#{user_id}:roles:#{resource_type}"])
         end)
 
-        UserCache.put_roles(user_id, resource_ids_by_role, resource_type)
+        UserCache.refresh_resource_roles(user_id, resource_type, resource_ids_by_role)
       end)
     end
 
