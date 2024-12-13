@@ -6,7 +6,9 @@ defmodule TdDq.Rules do
   import Ecto.Query
 
   alias Ecto.Multi
-  alias TdCache.ConceptCache
+  alias TdCache.LinkCache
+  alias TdCache.LinkCache
+  alias TdCache.TagCache
   alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
   alias TdDd.Repo
@@ -39,43 +41,48 @@ defmodule TdDq.Rules do
     |> enrich(Keyword.get(options, :enrich))
   end
 
-  def list_rules(params, options) do
+  def list_rules(params, opts) do
     fields = Rule.__schema__(:fields)
     dynamic = filter(params, fields)
 
-    query =
-      from(
-        p in Rule,
-        where: ^dynamic,
-        where: is_nil(p.deleted_at)
-      )
-
-    query
+    from(
+      p in Rule,
+      where: ^dynamic,
+      where: is_nil(p.deleted_at)
+    )
     |> Repo.all()
-    |> enrich(Keyword.get(options, :enrich))
+    |> maybe_merge_childs(params, Keyword.get(opts, :expandable_childs))
+    |> enrich(Keyword.get(opts, :enrich))
   end
 
-  def list_rules_with_bc_id do
-    Rule
-    |> where([r], is_nil(r.deleted_at))
-    |> where([r], not is_nil(r.business_concept_id))
+  defp maybe_merge_childs(rules, %{"business_concept_id" => id}, true) do
+    expandable_tags = TagCache.list_types(expandable: "true")
+
+    child_business_concepts =
+      "business_concept"
+      |> LinkCache.list(id, without_parent_business_concepts: true)
+      |> then(&elem(&1, 1))
+      |> Enum.filter(fn
+        %{resource_type: :concept, tags: tags} -> length(tags -- tags -- expandable_tags) > 0
+        _ -> false
+      end)
+      |> Enum.into(%{}, &{String.to_integer(&1.resource_id), &1.name})
+
+    bc_ids = Map.keys(child_business_concepts)
+
+    from(
+      p in Rule,
+      where: p.business_concept_id in ^bc_ids,
+      where: is_nil(p.deleted_at)
+    )
     |> Repo.all()
-    |> Enum.map(&preload_bc_version/1)
+    |> Enum.map(
+      &%{&1 | business_concept_name: Map.get(child_business_concepts, &1.business_concept_id)}
+    )
+    |> Enum.concat(rules)
   end
 
-  defp preload_bc_version(%{business_concept_id: nil} = rule), do: rule
-
-  defp preload_bc_version(%{business_concept_id: business_concept_id} = rule) do
-    case ConceptCache.get(business_concept_id) do
-      {:ok, %{name: name, business_concept_version_id: id}} ->
-        Map.put(rule, :current_business_concept_version, %{name: name, id: id})
-
-      _ ->
-        rule
-    end
-  end
-
-  defp preload_bc_version(rule), do: rule
+  defp maybe_merge_childs(rules, _, _), do: rules
 
   @doc """
   Gets a single rule.

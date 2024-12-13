@@ -49,7 +49,7 @@ defmodule TdDqWeb.RuleController do
 
     rules =
       params
-      |> Rules.list_rules(enrich: [:domain])
+      |> Rules.list_rules(enrich: [:domain], expandable_childs: true)
       |> Enum.filter(&Bodyguard.permit?(Rules, :view, claims, &1))
 
     conn
