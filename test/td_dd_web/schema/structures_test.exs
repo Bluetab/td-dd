@@ -1004,7 +1004,7 @@ defmodule TdDdWeb.Schema.StructuresTest do
                      "shared_to" => [],
                      "shared_to_ids" => [],
                      "tags" => [],
-                     "i18n" => "{\"es\":{\"content\":{},\"name\":\"concept_name_es\"}}"
+                     "i18n" => "{\"es\":{\"content\":{},\"name\":\"#{concept_name_es}\"}}"
                    }
                  ],
                  "grant" => %{"id" => "#{grant_id}"},

@@ -193,8 +193,8 @@ defmodule TdDd.GrantRequests.AuditTest do
 
       assert %{
                "domain_ids" => [
-                 [^domain_id_2, ^domain_2_parent_id],
-                 [^domain_id_1, ^domain_1_parent_id]
+                 [^domain_id_1, ^domain_1_parent_id],
+                 [^domain_id_2, ^domain_2_parent_id]
                ],
                "requests" => [
                  %{

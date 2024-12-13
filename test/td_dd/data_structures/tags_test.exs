@@ -25,10 +25,90 @@ defmodule TdDd.DataStructures.TagsTest do
   end
 
   describe "Tags.list_tags/1" do
+    setup do
+      now = NaiveDateTime.local_now()
+      five_days_ago = NaiveDateTime.add(now, -5, :day)
+      three_days_ago = NaiveDateTime.add(now, -3, :day)
+      one_day_ago = NaiveDateTime.add(now, -1, :day)
+
+      %{id: tag_id_1} = insert(:tag, updated_at: now)
+      %{id: tag_id_2} = insert(:tag, updated_at: five_days_ago)
+      %{id: tag_id_3} = insert(:tag, updated_at: three_days_ago)
+      %{id: tag_id_4} = insert(:tag, updated_at: one_day_ago)
+
+      {:ok,
+       tag_ids: [tag_id_1, tag_id_2, tag_id_3, tag_id_4],
+       four_days_ago: NaiveDateTime.add(now, -4, :day)}
+    end
+
     test "returns all data structure tags with structure count" do
       %{tag: %{id: id, name: name}} = insert(:structure_tag)
 
-      assert [%{id: ^id, name: ^name, structure_count: 1}] = Tags.list_tags(structure_count: true)
+      assert [%{id: ^id, name: ^name, structure_count: 1} | _] =
+               Tags.list_tags(structure_count: true)
+    end
+
+    test("with no params returns all items", %{
+      tag_ids: [tag_id_1, tag_id_2, tag_id_3, tag_id_4]
+    }) do
+      assert [tag_id_1, tag_id_2, tag_id_3, tag_id_4] ==
+               %{}
+               |> Tags.list_tags()
+               |> Enum.map(&Map.get(&1, :id))
+    end
+
+    @tag authentication: [role: "service"]
+    test("with since param returns updated_at after date", %{
+      tag_ids: [tag_id_1, _tag_id_2, tag_id_3, tag_id_4],
+      four_days_ago: four_days_ago
+    }) do
+      params = %{since: NaiveDateTime.to_string(four_days_ago)}
+
+      assert [tag_id_3, tag_id_4, tag_id_1] ==
+               params
+               |> Tags.list_tags()
+               |> Enum.map(&Map.get(&1, :id))
+    end
+
+    @tag authentication: [role: "service"]
+    test("with min_id param returns grater or equal ids", %{
+      tag_ids: [_tag_id_1, _tag_id_2, tag_id_3, tag_id_4]
+    }) do
+      params = %{min_id: tag_id_3}
+
+      assert [tag_id_3, tag_id_4] ==
+               params
+               |> Tags.list_tags()
+               |> Enum.map(&Map.get(&1, :id))
+    end
+
+    @tag authentication: [role: "service"]
+    test("with since, min_id and size params returns filtered results", %{
+      tag_ids: [_tag_id_1, tag_id_2, tag_id_3, _tag_id_4],
+      four_days_ago: four_days_ago
+    }) do
+      params = %{
+        since: NaiveDateTime.to_string(four_days_ago),
+        min_id: tag_id_2,
+        size: 1
+      }
+
+      assert [tag_id_3] ==
+               params
+               |> Tags.list_tags()
+               |> Enum.map(&Map.get(&1, :id))
+    end
+
+    @tag authentication: [role: "service"]
+    test("not allowed param will be omited", %{
+      tag_ids: [tag_id_1, tag_id_2, tag_id_3, tag_id_4]
+    }) do
+      params = %{anything: false}
+
+      assert [tag_id_1, tag_id_2, tag_id_3, tag_id_4] ==
+               params
+               |> Tags.list_tags()
+               |> Enum.map(&Map.get(&1, :id))
     end
   end
 

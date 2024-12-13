@@ -45,6 +45,8 @@ defmodule TdDdWeb.Router do
       only: [:index]
     )
 
+    post("/data_structures/tags/search", TagSearchController, :search)
+    post("/data_structures/structure_tags/search", StructureTagSearchController, :search)
     post("/data_structures/bulk_upload_domains", DataStructureController, :bulk_upload_domains)
     post("/data_structure_notes/search", StructureNoteController, :search)
     post("/data_structure_notes", StructureNoteController, :create_by_external_id)
