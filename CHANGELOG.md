@@ -1,5 +1,14 @@
 # Changelog
 
+## [6.16.0] 2024-12-16
+
+### Added
+
+- [TD-6938] Add Grant Requests Search scroll and inserted_at filter
+- [TD-6780] Add Tag and Structure Tag Seach controller and context
+- [TD-6982] Added SSL and ApiKey configuration for Elasticsearch
+- [TD-6888] Support for expandable Concept links
+
 ## [6.15.0] 2024-11-27
 
 ### Added

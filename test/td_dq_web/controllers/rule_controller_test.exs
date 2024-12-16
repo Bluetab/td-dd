@@ -356,6 +356,52 @@ defmodule TdDqWeb.RuleControllerTest do
                %{"id" => ^id2, "business_concept_id" => ^business_concept_id}
              ] = Enum.sort_by(data, & &1["id"])
     end
+
+    @tag authentication: [role: "admin"]
+    test "lists all rules of a concept with expandable link", %{
+      conn: conn,
+      domain: domain
+    } do
+      %{id: bc_id} = CacheHelpers.insert_concept(%{domain_id: domain.id})
+      %{id: bc_expandable_id, name: bc_name} = CacheHelpers.insert_concept()
+      %{id: bc_non_expandable_id} = CacheHelpers.insert_concept()
+
+      %{id: id1, business_concept_id: bc_id} = insert(:rule, business_concept_id: bc_id)
+      %{id: id2} = insert(:rule, business_concept_id: bc_expandable_id)
+      insert(:rule, business_concept_id: bc_non_expandable_id)
+
+      type_expandable = "expandable"
+      CacheHelpers.insert_tag(type_expandable, "business_concept", true)
+
+      CacheHelpers.insert_link(
+        bc_id,
+        "business_concept",
+        "business_concept",
+        bc_expandable_id,
+        [type_expandable]
+      )
+
+      CacheHelpers.insert_link(
+        bc_id,
+        "business_concept",
+        "business_concept",
+        bc_non_expandable_id
+      )
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.rule_path(conn, :get_rules_by_concept, bc_id))
+               |> json_response(:ok)
+
+      assert [
+               %{"id" => ^id1, "business_concept_id" => ^bc_id},
+               %{
+                 "id" => ^id2,
+                 "business_concept_id" => ^bc_expandable_id,
+                 "business_concept_name" => ^bc_name
+               }
+             ] = Enum.sort_by(data, & &1["id"])
+    end
   end
 
   describe "verify token is required" do

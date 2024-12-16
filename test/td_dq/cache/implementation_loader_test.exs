@@ -86,7 +86,7 @@ defmodule TdDd.Cache.ImplementationLoaderTest do
       |> Enum.map(&CacheHelpers.put_implementation(&1))
 
       [impl_id1, impl_id3, impl_id4]
-      |> Enum.map(&CacheHelpers.insert_link(&1, "implementation", "foo"))
+      |> Enum.map(&CacheHelpers.insert_link(&1, "implementation", "foo", nil))
 
       assert 3 == ImplementationLoader.do_migration_implementation_id_to_implementation_ref()
 
