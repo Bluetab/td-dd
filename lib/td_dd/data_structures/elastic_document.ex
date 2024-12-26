@@ -66,12 +66,19 @@ defmodule TdDd.DataStructures.ElasticDocument do
             content
         end
 
+      last_change_at =
+        case DateTime.compare(data_structure.updated_at, dsv.updated_at) do
+          :gt -> data_structure.updated_at
+          _ -> dsv.updated_at
+        end
+
       data_structure
       |> Map.take([
         :confidential,
         :domain_ids,
         :external_id,
         :id,
+        :updated_at,
         :inserted_at,
         :linked_concepts,
         :source_id,
@@ -109,11 +116,11 @@ defmodule TdDd.DataStructures.ElasticDocument do
           :group,
           :name,
           :type,
-          :updated_at,
           :version,
           :with_profiling
         ])
       )
+      |> Map.put(:last_change_at, last_change_at)
       |> maybe_put_alias(alias_name)
       |> maybe_add_non_published_note(data_structure)
     end
@@ -205,6 +212,7 @@ defmodule TdDd.DataStructures.ElasticDocument do
         linked_concepts: %{type: "boolean"},
         inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
         updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
+        last_change_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
         path: %{type: "keyword", fields: @text},
         path_sort: %{type: "keyword", normalizer: "sortable"},
         parent_id: %{
