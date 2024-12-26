@@ -32,6 +32,41 @@ defmodule TdDd.DataStructures.DataStructureVersionTest do
         assert String.length(field_type) == min(length, 32_766)
       end)
     end
+
+    test "updated_at takes data structure updated_at date" do
+      %{data_structure: %{updated_at: ds_updated_at}} = dsv = insert(:data_structure_version)
+
+      assert %{
+               last_change_at: _,
+               updated_at: ^ds_updated_at
+             } = Document.encode(dsv)
+    end
+
+    test "last_change_at takes data structure date as latest" do
+      ds = insert(:data_structure, updated_at: ~U[2024-12-31 00:00:00.000000Z])
+
+      %{data_structure: %{updated_at: ds_updated}} =
+        dsv =
+        insert(:data_structure_version,
+          updated_at: ~U[2024-01-01 00:00:00.000000Z],
+          data_structure: ds
+        )
+
+      assert %{last_change_at: ^ds_updated} = Document.encode(dsv)
+    end
+
+    test "last_change_at takes data structure version date as latest" do
+      ds = insert(:data_structure, updated_at: ~U[2024-01-01 00:00:00.000000Z])
+
+      %{updated_at: dsv_updated} =
+        dsv =
+        insert(:data_structure_version,
+          updated_at: ~U[2024-12-31 00:00:00.000000Z],
+          data_structure: ds
+        )
+
+      assert %{last_change_at: ^dsv_updated} = Document.encode(dsv)
+    end
   end
 
   defp random_string(length) do

@@ -143,6 +143,7 @@ defmodule TdDdWeb.DataStructureView do
       :system_id,
       :type,
       :updated_at,
+      :last_change_at,
       :mutable_metadata,
       :metadata,
       :version,

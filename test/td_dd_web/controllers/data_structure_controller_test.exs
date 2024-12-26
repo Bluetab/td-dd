@@ -543,6 +543,23 @@ defmodule TdDdWeb.DataStructureControllerTest do
       refute "my_grants" in Map.keys(data_structure)
       refute "my_grant_request" in Map.keys(data_structure)
     end
+
+    @tag authentication: [role: "admin"]
+    test "includes last_change_at field", %{conn: conn} do
+      dsv = insert(:data_structure_version)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", _, _ ->
+        SearchHelpers.hits_response([dsv])
+      end)
+
+      assert %{"data" => [data]} =
+               conn
+               |> post(data_structure_path(conn, :search), %{})
+               |> json_response(:ok)
+
+      assert Map.has_key?(data, "last_change_at")
+    end
   end
 
   describe "search with scroll" do
