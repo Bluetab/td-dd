@@ -2,6 +2,12 @@
 
 ## [6.16.0] 2024-12-16
 
+### Fixed
+
+- [TD-5713] Remove legacy boost from implementation and rule native mappings
+
+## [6.16.0] 2024-12-16
+
 ### Added
 
 - [TD-6938] Add Grant Requests Search scroll and inserted_at filter
