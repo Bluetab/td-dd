@@ -4,7 +4,7 @@
 
 ### Fixed
 
-- [TD-5713] Remove legacy boost from implementation and rule native mappings
+- [TD-7022] Remove legacy boost from implementation and rule native mappings
 
 ## [6.16.0] 2024-12-16
 
