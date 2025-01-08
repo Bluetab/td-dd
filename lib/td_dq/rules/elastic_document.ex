@@ -96,7 +96,6 @@ defmodule TdDq.Rules.ElasticDocument do
         version: %{type: "long"},
         name: %{
           type: "text",
-          boost: 2.0,
           fields: %{raw: %{type: "keyword", normalizer: "sortable"}}
         },
         active: %{type: "boolean", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
