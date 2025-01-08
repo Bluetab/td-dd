@@ -15,11 +15,11 @@ defmodule TdDd.Repo.Migrations.TryLoadBtreeGist do
           :ok
 
         {:error, %{postgres: %{message: message}}} ->
-          Logger.warn(message)
-          Logger.warn("Superuser must execute 'CREATE EXTENSION IF NOT EXISTS #{@extension}'")
+          Logger.warning(message)
+          Logger.warning("Superuser must execute 'CREATE EXTENSION IF NOT EXISTS #{@extension}'")
 
         _ ->
-          Logger.warn("Superuser must execute 'CREATE EXTENSION IF NOT EXISTS #{@extension}'")
+          Logger.warning("Superuser must execute 'CREATE EXTENSION IF NOT EXISTS #{@extension}'")
       end
     end
   end

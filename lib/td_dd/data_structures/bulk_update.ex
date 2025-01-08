@@ -211,17 +211,16 @@ defmodule TdDd.DataStructures.BulkUpdate do
             |> Enum.map(&String.trim(&1))
             |> Enum.map(&TaxonomyCache.get_by_external_id(&1))
 
-          if Enum.any?(domains, &is_nil(&1)) do
-            {index, {:error, {:domain, :not_exist}}}
+          with {:has_nil, false} <- {:has_nil, Enum.any?(domains, &is_nil(&1))},
+               params = %{domain_ids: Enum.map(domains, & &1.id)},
+               changeset = DataStructures.update_changeset(claims, structure, params),
+               {:can, true} <-
+                 {:can,
+                  Bodyguard.permit?(DataStructures, :update_data_structure, claims, changeset)} do
+            {index, check_data_structure(changeset)}
           else
-            params = %{domain_ids: Enum.map(domains, & &1.id)}
-            changeset = DataStructures.update_changeset(claims, structure, params)
-
-            if Bodyguard.permit?(DataStructures, :update_data_structure, claims, changeset) do
-              {index, check_data_structure(changeset)}
-            else
-              {index, {:error, {:update_domain, :forbidden}}}
-            end
+            {:has_nil, _} -> {index, {:error, {:domain, :not_exist}}}
+            {:can, _} -> {index, {:error, {:update_domain, :forbidden}}}
           end
       end)
       |> Enum.reduce([[], [], []], fn row, [changesets, ignored, errors] ->

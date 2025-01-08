@@ -1,6 +1,5 @@
 defmodule TdDdWeb.SystemControllerTest do
   use TdDdWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   import Mox
 
@@ -93,40 +92,37 @@ defmodule TdDdWeb.SystemControllerTest do
 
   describe "GET /api/systems" do
     @tag authentication: [role: "admin"]
-    test "admin can lists systems", %{conn: conn, swagger_schema: schema} do
+    test "admin can lists systems", %{conn: conn} do
       expect_search()
 
       assert %{"data" => [_system]} =
                conn
                |> get(Routes.system_path(conn, :index))
-               |> validate_resp_schema(schema, "SystemsResponse")
                |> json_response(:ok)
     end
 
     @tag authentication: [role: "service"]
-    test "service account can lists systems", %{conn: conn, swagger_schema: schema} do
+    test "service account can lists systems", %{conn: conn} do
       expect_search()
 
       assert %{"data" => [_system]} =
                conn
                |> get(Routes.system_path(conn, :index))
-               |> validate_resp_schema(schema, "SystemsResponse")
                |> json_response(:ok)
     end
   end
 
   describe "create system" do
     @tag authentication: [role: "admin"]
-    test "renders system when data is valid", %{conn: conn, swagger_schema: schema} do
+    test "renders system when data is valid", %{conn: conn} do
       assert %{"data" => %{"id" => _id}} =
                conn
                |> post(Routes.system_path(conn, :create), system: @create_attrs)
-               |> validate_resp_schema(schema, "SystemResponse")
                |> json_response(:created)
     end
 
     @tag authentication: [role: "admin"]
-    test "renders system when image file is valid", %{conn: conn, swagger_schema: schema} do
+    test "renders system when image file is valid", %{conn: conn} do
       valid_attr =
         @create_attrs
         |> new_attr_external_id()
@@ -135,7 +131,6 @@ defmodule TdDdWeb.SystemControllerTest do
       assert %{"data" => %{"id" => _id}} =
                conn
                |> post(Routes.system_path(conn, :create), system: valid_attr)
-               |> validate_resp_schema(schema, "SystemResponse")
                |> json_response(:created)
     end
 
@@ -164,7 +159,7 @@ defmodule TdDdWeb.SystemControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "generates identifier widget", %{conn: conn, swagger_schema: schema} do
+    test "generates identifier widget", %{conn: conn} do
       CacheHelpers.insert_template(@identifier_template)
 
       valid_attr =
@@ -188,18 +183,16 @@ defmodule TdDdWeb.SystemControllerTest do
              } =
                conn
                |> post(Routes.system_path(conn, :create), system: valid_attr)
-               |> validate_resp_schema(schema, "SystemResponse")
                |> json_response(:created)
 
       refute is_nil(identifier_value)
     end
 
     @tag authentication: [role: "admin"]
-    test "renders system when template not exists", %{conn: conn, swagger_schema: schema} do
+    test "renders system when template not exists", %{conn: conn} do
       assert %{"data" => %{"id" => _id}} =
                conn
                |> post(Routes.system_path(conn, :create), system: @create_attrs)
-               |> validate_resp_schema(schema, "SystemResponse")
                |> json_response(:created)
     end
   end
@@ -208,13 +201,11 @@ defmodule TdDdWeb.SystemControllerTest do
     @tag authentication: [role: "admin"]
     test "renders system when data is valid", %{
       conn: conn,
-      swagger_schema: schema,
       system: %TdDdSystem{id: id} = system
     } do
       assert %{"data" => data} =
                conn
                |> put(Routes.system_path(conn, :update, system), system: @update_attrs)
-               |> validate_resp_schema(schema, "SystemResponse")
                |> json_response(:ok)
 
       assert %{
@@ -238,7 +229,6 @@ defmodule TdDdWeb.SystemControllerTest do
     @tag authentication: [role: "admin"]
     test "renders system when image file is valid", %{
       conn: conn,
-      swagger_schema: schema,
       system: %TdDdSystem{id: id} = system
     } do
       valid_attr =
@@ -248,7 +238,6 @@ defmodule TdDdWeb.SystemControllerTest do
       assert %{"data" => data} =
                conn
                |> put(Routes.system_path(conn, :update, system), system: valid_attr)
-               |> validate_resp_schema(schema, "SystemResponse")
                |> json_response(:ok)
 
       assert %{
@@ -268,7 +257,6 @@ defmodule TdDdWeb.SystemControllerTest do
       assert %{"data" => data} =
                conn
                |> put(Routes.system_path(conn, :update, system), system: valid_attr)
-               |> validate_resp_schema(schema, "SystemResponse")
                |> json_response(:ok)
 
       assert %{

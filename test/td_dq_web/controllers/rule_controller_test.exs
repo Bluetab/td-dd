@@ -1,6 +1,5 @@
 defmodule TdDqWeb.RuleControllerTest do
   use TdDqWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger_dq.json"
 
   alias TdCache.Audit
   alias TdCache.Redix
@@ -71,11 +70,10 @@ defmodule TdDqWeb.RuleControllerTest do
 
   describe "index" do
     @tag authentication: [role: "admin"]
-    test "lists all rules", %{conn: conn, swagger_schema: schema} do
+    test "lists all rules", %{conn: conn} do
       assert %{"data" => [_rule]} =
                conn
                |> get(Routes.rule_path(conn, :index))
-               |> validate_resp_schema(schema, "RulesResponse")
                |> json_response(:ok)
     end
 
@@ -83,8 +81,7 @@ defmodule TdDqWeb.RuleControllerTest do
     test "lists all rules with preloaded domains", %{
       conn: conn,
       domain: %{id: domain_id, external_id: external_id, name: name},
-      rule: %{id: rule_id},
-      swagger_schema: schema
+      rule: %{id: rule_id}
     } do
       assert %{
                "data" => [
@@ -101,31 +98,27 @@ defmodule TdDqWeb.RuleControllerTest do
              } =
                conn
                |> get(Routes.rule_path(conn, :index))
-               |> validate_resp_schema(schema, "RulesResponse")
                |> json_response(:ok)
     end
 
     @tag authentication: [role: "service"]
-    test "service account can view all rules", %{conn: conn, swagger_schema: schema} do
+    test "service account can view all rules", %{conn: conn} do
       assert %{"data" => [_rule]} =
                conn
                |> get(Routes.rule_path(conn, :index))
-               |> validate_resp_schema(schema, "RulesResponse")
                |> json_response(:ok)
     end
 
     @tag authentication: [user_name: "not_an_admin", permissions: [:view_quality_rule]]
     test "lists all rules depending on permissions", %{
       conn: conn,
-      rule: %{id: rule_id},
-      swagger_schema: schema
+      rule: %{id: rule_id}
     } do
       insert(:rule)
 
       assert %{"data" => data} =
                conn
                |> get(Routes.rule_path(conn, :index))
-               |> validate_resp_schema(schema, "RulesResponse")
                |> json_response(:ok)
 
       assert [%{"id" => ^rule_id}] = data
@@ -134,21 +127,19 @@ defmodule TdDqWeb.RuleControllerTest do
 
   describe "get rule" do
     @tag authentication: [role: "admin"]
-    test "gets rule by id", %{conn: conn, swagger_schema: schema} do
+    test "gets rule by id", %{conn: conn} do
       %{id: id, name: name} = insert(:rule)
 
       assert %{"data" => %{"id" => ^id, "name" => ^name}} =
                conn
                |> get(Routes.rule_path(conn, :show, id))
-               |> validate_resp_schema(schema, "RuleResponse")
                |> json_response(:ok)
     end
 
     @tag authentication: [role: "admin"]
     test "gets rule by id with enriched domain", %{
       conn: conn,
-      domain: %{id: domain_id, external_id: external_id, name: domain_name},
-      swagger_schema: schema
+      domain: %{id: domain_id, external_id: external_id, name: domain_name}
     } do
       %{id: id, name: name} = insert(:rule, domain_id: domain_id)
 
@@ -166,14 +157,12 @@ defmodule TdDqWeb.RuleControllerTest do
              } =
                conn
                |> get(Routes.rule_path(conn, :show, id))
-               |> validate_resp_schema(schema, "RuleResponse")
                |> json_response(:ok)
     end
 
     @tag authentication: [role: "admin"]
     test "gets rule by id with current concept version in browser lang", %{
-      conn: conn,
-      swagger_schema: schema
+      conn: conn
     } do
       concept_id = System.unique_integer([:positive])
       concept_name_es = "concept_name_es"
@@ -203,7 +192,6 @@ defmodule TdDqWeb.RuleControllerTest do
                conn
                |> put_req_header("accept-language", "es")
                |> get(Routes.rule_path(conn, :show, id))
-               |> validate_resp_schema(schema, "RuleResponse")
                |> json_response(:ok)
     end
 
@@ -222,7 +210,6 @@ defmodule TdDqWeb.RuleControllerTest do
     @tag authentication: [user_name: "not_an_admin", permissions: [:view_quality_rule]]
     test "gets rule when user has permissions", %{
       conn: conn,
-      swagger_schema: schema,
       domain: %{id: domain_id}
     } do
       business_concept_id = System.unique_integer([:positive])
@@ -233,14 +220,13 @@ defmodule TdDqWeb.RuleControllerTest do
       %{"data" => %{"id" => ^id, "name" => ^name}} =
         conn
         |> get(Routes.rule_path(conn, :show, id))
-        |> validate_resp_schema(schema, "RuleResponse")
         |> json_response(:ok)
     end
   end
 
   describe "get_rules_by_concept" do
     @tag authentication: [role: "admin"]
-    test "lists all rules of a concept", %{conn: conn, swagger_schema: schema, domain: domain} do
+    test "lists all rules of a concept", %{conn: conn, domain: domain} do
       business_concept_id = System.unique_integer([:positive])
       CacheHelpers.insert_concept(%{id: business_concept_id, domain_id: domain.id})
 
@@ -252,7 +238,6 @@ defmodule TdDqWeb.RuleControllerTest do
       assert %{"data" => data} =
                conn
                |> get(Routes.rule_path(conn, :get_rules_by_concept, business_concept_id))
-               |> validate_resp_schema(schema, "RulesResponse")
                |> json_response(:ok)
 
       assert [
@@ -264,7 +249,6 @@ defmodule TdDqWeb.RuleControllerTest do
     @tag authentication: [role: "admin"]
     test "lists domains which the user can manage a concept", %{
       conn: conn,
-      swagger_schema: schema,
       domain: %{id: domain_id}
     } do
       business_concept_id = System.unique_integer([:positive])
@@ -279,7 +263,6 @@ defmodule TdDqWeb.RuleControllerTest do
       assert %{"_actions" => actions} =
                conn
                |> get(Routes.rule_path(conn, :get_rules_by_concept, business_concept_id))
-               |> validate_resp_schema(schema, "RulesResponse")
                |> json_response(:ok)
 
       assert %{"domain_ids" => [%{"id" => ^domain_id}, %{"id" => ^another_domain_id}]} = actions
@@ -288,8 +271,7 @@ defmodule TdDqWeb.RuleControllerTest do
     @tag authentication: [role: "admin"]
     test "lists all rules of a concept with entiched domains", %{
       conn: conn,
-      domain: %{id: domain_id, external_id: external_id, name: name},
-      swagger_schema: schema
+      domain: %{id: domain_id, external_id: external_id, name: name}
     } do
       business_concept_id = System.unique_integer([:positive])
       CacheHelpers.insert_concept(%{id: business_concept_id, domain_id: domain_id})
@@ -319,7 +301,6 @@ defmodule TdDqWeb.RuleControllerTest do
              } =
                conn
                |> get(Routes.rule_path(conn, :get_rules_by_concept, business_concept_id))
-               |> validate_resp_schema(schema, "RulesResponse")
                |> json_response(:ok)
     end
 
@@ -329,7 +310,6 @@ defmodule TdDqWeb.RuleControllerTest do
          ]
     test "lists all rules of a confidential concept", %{
       conn: conn,
-      swagger_schema: schema,
       domain: domain
     } do
       business_concept_id = System.unique_integer([:positive])
@@ -348,7 +328,6 @@ defmodule TdDqWeb.RuleControllerTest do
       assert %{"data" => data} =
                conn
                |> get(Routes.rule_path(conn, :get_rules_by_concept, business_concept_id))
-               |> validate_resp_schema(schema, "RulesResponse")
                |> json_response(:ok)
 
       assert [
@@ -417,13 +396,12 @@ defmodule TdDqWeb.RuleControllerTest do
 
   describe "create rule" do
     @tag authentication: [role: "admin"]
-    test "renders rule when data is valid", %{conn: conn, swagger_schema: schema, domain: domain} do
+    test "renders rule when data is valid", %{conn: conn, domain: domain} do
       params = string_params_for(:rule, domain_id: domain.id) |> Map.delete("business_concept_id")
 
       assert %{"data" => data} =
                conn
                |> post(Routes.rule_path(conn, :create), rule: params)
-               |> validate_resp_schema(schema, "RuleResponse")
                |> json_response(:created)
 
       assert %{"id" => _id} = data
@@ -521,8 +499,7 @@ defmodule TdDqWeb.RuleControllerTest do
     @tag authentication: [role: "admin"]
     test "renders rule when data is valid without business concept", %{
       conn: conn,
-      domain: domain,
-      swagger_schema: schema
+      domain: domain
     } do
       rule_params =
         string_params_for(:rule, domain_id: domain.id)
@@ -531,7 +508,6 @@ defmodule TdDqWeb.RuleControllerTest do
       assert %{"data" => data} =
                conn
                |> post(Routes.rule_path(conn, :create), rule: rule_params)
-               |> validate_resp_schema(schema, "RuleResponse")
                |> json_response(:created)
 
       assert %{"id" => _id, "business_concept_id" => nil} = data
@@ -604,8 +580,7 @@ defmodule TdDqWeb.RuleControllerTest do
     @tag authentication: [role: "admin"]
     test "renders rule when data is valid", %{
       conn: conn,
-      rule: %Rule{id: id, domain_id: domain_id} = rule,
-      swagger_schema: schema
+      rule: %Rule{id: id, domain_id: domain_id} = rule
     } do
       params =
         string_params_for(:rule, domain_id: domain_id)
@@ -614,7 +589,6 @@ defmodule TdDqWeb.RuleControllerTest do
       assert %{"data" => data} =
                conn
                |> put(Routes.rule_path(conn, :update, rule), rule: params)
-               |> validate_resp_schema(schema, "RuleResponse")
                |> json_response(:ok)
 
       assert %{"id" => ^id} = data
@@ -671,13 +645,12 @@ defmodule TdDqWeb.RuleControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "renders errors when data is invalid", %{conn: conn, rule: rule, swagger_schema: schema} do
+    test "renders errors when data is invalid", %{conn: conn, rule: rule} do
       params = %{"name" => nil}
 
       assert %{"errors" => errors} =
                conn
                |> put(Routes.rule_path(conn, :update, rule), rule: params)
-               |> validate_resp_schema(schema, "RuleResponse")
                |> json_response(:unprocessable_entity)
 
       assert errors != %{}

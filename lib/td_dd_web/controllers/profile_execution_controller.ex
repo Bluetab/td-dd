@@ -1,21 +1,10 @@
 defmodule TdDdWeb.ProfileExecutionController do
-  use PhoenixSwagger
   use TdDdWeb, :controller
 
   alias TdDd.Executions
   alias TdDd.Executions.ProfileExecution
-  alias TdDdWeb.SwaggerDefinitions
 
   action_fallback(TdDdWeb.FallbackController)
-
-  def swagger_definitions do
-    SwaggerDefinitions.profile_execution_group_swagger_definitions()
-  end
-
-  swagger_path :index do
-    description("List Executions")
-    response(200, "OK", Schema.ref(:ProfileExecutionsResponse))
-  end
 
   def index(conn, params) do
     claims = conn.assigns[:current_resource]
@@ -29,12 +18,6 @@ defmodule TdDdWeb.ProfileExecutionController do
            |> Enum.filter(&Bodyguard.permit?(TdDd.Profiles, :view, claims, &1)) do
       render(conn, "index.json", profile_executions: executions)
     end
-  end
-
-  swagger_path :show do
-    description("Show Execution")
-    response(200, "OK", Schema.ref(:ProfileExecutionsResponse))
-    response(400, "Client Error")
   end
 
   def show(conn, %{"id" => id}) do

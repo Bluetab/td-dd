@@ -145,7 +145,9 @@ defmodule TdDdWeb.Router do
 
     resources("/relation_types", RelationTypeController, except: [:new, :edit])
 
-    resources("/data_structure_types", DataStructureTypeController, only: [:index, :show, :update])
+    resources("/data_structure_types", DataStructureTypeController,
+      only: [:index, :show, :update]
+    )
 
     resources("/grants", GrantController, except: [:create, :new, :edit])
     get("/grants/search/reindex_all", GrantSearchController, :reindex_all_grants)
@@ -176,31 +178,5 @@ defmodule TdDdWeb.Router do
     resources("/reference_data", ReferenceDataController, except: [:edit, :new]) do
       resources("/csv", ReferenceDataDownloadController, only: [:show], singleton: true)
     end
-  end
-
-  scope "/api/swagger" do
-    forward("/", PhoenixSwagger.Plug.SwaggerUI, otp_app: :td_dd, swagger_file: "swagger.json")
-  end
-
-  def swagger_info do
-    %{
-      schemes: ["http", "https"],
-      info: %{
-        version: :td_dd |> Application.spec(:vsn) |> to_string(),
-        title: "Truedat Data Dictionary Service"
-      },
-      securityDefinitions: %{
-        bearer: %{
-          type: "apiKey",
-          name: "Authorization",
-          in: "header"
-        }
-      },
-      security: [
-        %{
-          bearer: []
-        }
-      ]
-    }
   end
 end

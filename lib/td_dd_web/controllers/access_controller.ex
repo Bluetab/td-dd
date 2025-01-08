@@ -1,6 +1,5 @@
 defmodule TdDdWeb.AccessController do
   use TdDdWeb, :controller
-  use PhoenixSwagger
 
   alias TdDd.Access.BulkLoad
 

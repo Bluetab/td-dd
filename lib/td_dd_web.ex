@@ -22,7 +22,6 @@ defmodule TdDdWeb do
       use Phoenix.Controller, namespace: TdDdWeb, log: log
 
       import Plug.Conn
-      import TdDdWeb.Gettext
 
       alias TdDdWeb.ErrorView
       alias TdDdWeb.Router.Helpers, as: Routes
@@ -61,7 +60,6 @@ defmodule TdDdWeb do
         only: [get_flash: 1, get_flash: 2, view_module: 1, view_template: 1]
 
       import TdDdWeb.ErrorHelpers
-      import TdDdWeb.Gettext
       alias TdDdWeb.Router.Helpers, as: Routes
     end
   end
@@ -77,7 +75,6 @@ defmodule TdDdWeb do
   def channel do
     quote do
       use Phoenix.Channel
-      import TdDdWeb.Gettext
     end
   end
 

@@ -1,7 +1,7 @@
 defmodule TdDdWeb.GrantRequestControllerTest do
   use TdDdWeb.ConnCase
 
-  alias TdCore.Search.IndexWorker
+  alias TdCore.Search.IndexWorkerMock
 
   @moduletag sandbox: :shared
   @template_name "grant_request_controller_test_template"
@@ -10,7 +10,7 @@ defmodule TdDdWeb.GrantRequestControllerTest do
     start_supervised!(TdDd.Search.StructureEnricher)
     CacheHelpers.insert_template(name: @template_name)
 
-    IndexWorker.clear()
+    IndexWorkerMock.clear()
 
     :ok
   end
@@ -370,7 +370,7 @@ defmodule TdDdWeb.GrantRequestControllerTest do
       conn: conn,
       grant_request: %{id: grant_request_id} = grant_request
     } do
-      IndexWorker.clear()
+      IndexWorkerMock.clear()
 
       assert conn
              |> delete(Routes.grant_request_path(conn, :delete, grant_request))
@@ -380,7 +380,7 @@ defmodule TdDdWeb.GrantRequestControllerTest do
         get(conn, Routes.grant_request_path(conn, :show, grant_request))
       end
 
-      assert [{:delete, :grant_requests, [^grant_request_id]}] = IndexWorker.calls()
+      assert [{:delete, :grant_requests, [^grant_request_id]}] = IndexWorkerMock.calls()
     end
 
     @tag authentication: [user_name: "non_admin"]
@@ -388,13 +388,13 @@ defmodule TdDdWeb.GrantRequestControllerTest do
       conn: conn,
       grant_request: grant_request
     } do
-      IndexWorker.clear()
+      IndexWorkerMock.clear()
 
       assert conn
              |> delete(Routes.grant_request_path(conn, :delete, grant_request))
              |> response(:forbidden)
 
-      assert [] = IndexWorker.calls()
+      assert [] = IndexWorkerMock.calls()
     end
   end
 

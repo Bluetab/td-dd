@@ -11,10 +11,6 @@ defmodule TdCxWeb.Router do
     plug TdCx.Auth.Pipeline.Secure
   end
 
-  scope "/api/swagger" do
-    forward "/", PhoenixSwagger.Plug.SwaggerUI, otp_app: :td_dd, swagger_file: "swagger_cx.json"
-  end
-
   scope "/api", TdCxWeb do
     pipe_through :api
     get "/ping", PingController, :ping
@@ -41,27 +37,5 @@ defmodule TdCxWeb.Router do
     post("/jobs/search", JobController, :search)
     post("/job_filters/search", JobFilterController, :search)
     get("/jobs/search/reindex_all", SearchController, :reindex_all)
-  end
-
-  def swagger_info do
-    %{
-      schemes: ["http", "https"],
-      info: %{
-        version: :td_dd |> Application.spec(:vsn) |> to_string(),
-        title: "Truedat Connector Management Service"
-      },
-      securityDefinitions: %{
-        bearer: %{
-          type: "apiKey",
-          name: "Authorization",
-          in: "header"
-        }
-      },
-      security: [
-        %{
-          bearer: []
-        }
-      ]
-    }
   end
 end

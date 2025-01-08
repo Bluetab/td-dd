@@ -319,7 +319,10 @@ defmodule TdCx.SourcesTest do
                  id: ^source_without_events_id,
                  events: []
                }
-             ] = Sources.query_sources(%{with_latest_event: true})
+             ] =
+               %{with_latest_event: true}
+               |> Sources.query_sources()
+               |> Enum.sort_by(& &1.id)
     end
 
     test "returns a list of sources and their latest events as a map, excluding logically deleted",

@@ -108,8 +108,6 @@ guides](http://www.phoenixframework.org/docs/deployment).
 - [phoenix](https://hex.pm/packages/phoenix) - A productive web framework
 - [ecto](https://hex.pm/packages/ecto) - Elixir toolkit for database integration
 - [postgrex](https://hex.pm/packages/postgrex) - Elixir PostgreSQL driver
-- [gettext](https://hex.pm/packages/gettext) - Internationalization and
-  localization support
 - [cowboy](https://hex.pm/packages/cowboy) - An HTTP server for Erlang/OTP
 - [httpoison](https://hex.pm/packages/httpoison) - An HTTP client
 - [credo](https://hex.pm/packages/credo) - Static code analysis
@@ -118,10 +116,6 @@ guides](http://www.phoenixframework.org/docs/deployment).
 - [ex_machina](https://hex.pm/packages/ex_machina) - A factory library for test
   data
 - [cors_plug](https://hex.pm/packages/cors_plug) - Plug for CORS support
-- [phoenix_swagger](https://hex.pm/packages/phoenix_swagger) - Swagger
-  integration for Phoenix framework
-- [ex_json_schema](https://hex.pm/packages/ex_json_schema) - JSON Schema
-  validator
 - [elasticsearch](https://hex.pm/packages/elasticsearch) - Client for
   Elasticsearch
 - [vaultex](https://hex.pm/packages/vaultex) - Client for HashiCorp Vault

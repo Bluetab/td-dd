@@ -6,7 +6,7 @@ defmodule TdDd.DataStructuresTest do
   alias Elasticsearch.Document
   alias TdCache.Redix
   alias TdCache.Redix.Stream
-  alias TdCore.Search.IndexWorker
+  alias TdCore.Search.IndexWorkerMock
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
@@ -41,7 +41,7 @@ defmodule TdDd.DataStructuresTest do
 
     start_supervised!(TdDd.Search.StructureEnricher)
 
-    IndexWorker.clear()
+    IndexWorkerMock.clear()
 
     [
       domain: domain,
@@ -85,7 +85,7 @@ defmodule TdDd.DataStructuresTest do
                DataStructures.update_data_structure(claims, data_structure, params, false)
 
       assert {:reindex, :implementations, [^implementation_id]} =
-               Enum.find(IndexWorker.calls(), fn {action, index, _} ->
+               Enum.find(IndexWorkerMock.calls(), fn {action, index, _} ->
                  action == :reindex and index == :implementations
                end)
 
@@ -1820,7 +1820,7 @@ defmodule TdDd.DataStructuresTest do
       assert {:ok, _} = DataStructures.update_structure_metadata(mm, @update_attrs)
 
       assert {:reindex, :grant_requests, [^grant_request_id1, ^grant_request_id2]} =
-               Enum.find(IndexWorker.calls(), fn {action, index, _} ->
+               Enum.find(IndexWorkerMock.calls(), fn {action, index, _} ->
                  action == :reindex and index == :grant_requests
                end)
     end
@@ -1849,7 +1849,7 @@ defmodule TdDd.DataStructuresTest do
                DataStructures.update_data_structure(claims, parent_data_structure, params, true)
 
       assert {:reindex, :grant_requests, [_, _]} =
-               Enum.find(IndexWorker.calls(), fn {action, index, _} ->
+               Enum.find(IndexWorkerMock.calls(), fn {action, index, _} ->
                  action == :reindex and index == :grant_requests
                end)
     end
@@ -1877,7 +1877,7 @@ defmodule TdDd.DataStructuresTest do
                DataStructures.update_data_structure(claims, data_structure, params, false)
 
       assert {:reindex, :grant_requests, [^grant_request_id]} =
-               Enum.find(IndexWorker.calls(), fn {action, index, _} ->
+               Enum.find(IndexWorkerMock.calls(), fn {action, index, _} ->
                  action == :reindex and index == :grant_requests
                end)
     end
@@ -1897,7 +1897,7 @@ defmodule TdDd.DataStructuresTest do
                DataStructures.update_data_structure(claims, data_structure, params, false)
 
       assert {:reindex, :grant_requests, [^grant_request_id]} =
-               Enum.find(IndexWorker.calls(), fn {action, index, _} ->
+               Enum.find(IndexWorkerMock.calls(), fn {action, index, _} ->
                  action == :reindex and index == :grant_requests
                end)
     end

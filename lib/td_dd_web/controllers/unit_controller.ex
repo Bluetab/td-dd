@@ -1,20 +1,10 @@
 defmodule TdDdWeb.UnitController do
   use TdDdWeb, :controller
-  use PhoenixSwagger
 
   alias TdDd.Lineage.Import
   alias TdDd.Lineage.Units
 
   action_fallback(TdDdWeb.FallbackController)
-
-  def swagger_definitions do
-    TdDdWeb.SwaggerDefinitions.unit_swagger_definitions()
-  end
-
-  swagger_path :index do
-    description("List of Units")
-    response(200, "OK", Schema.ref(:UnitsResponse))
-  end
 
   def index(conn, _params) do
     claims = conn.assigns[:current_resource]
@@ -23,12 +13,6 @@ defmodule TdDdWeb.UnitController do
          units <- Units.list_units(status: true) do
       render(conn, "index.json", units: units)
     end
-  end
-
-  swagger_path :show do
-    description("Show Unit")
-    response(200, "OK", Schema.ref(:UnitResponse))
-    response(400, "Client Error")
   end
 
   def show(conn, %{"name" => name}) do
@@ -40,12 +24,6 @@ defmodule TdDdWeb.UnitController do
     end
   end
 
-  swagger_path :create do
-    description("Create Unit")
-    response(200, "OK", Schema.ref(:UnitResponse))
-    response(400, "Client Error")
-  end
-
   def create(conn, %{} = params) do
     claims = conn.assigns[:current_resource]
 
@@ -53,12 +31,6 @@ defmodule TdDdWeb.UnitController do
          {:ok, unit} <- Units.create_unit(params) do
       render(conn, "show.json", unit: unit)
     end
-  end
-
-  swagger_path :update do
-    description("Replace Unit")
-    response(202, "Accepted")
-    response(400, "Client Error")
   end
 
   def update(conn, %{"nodes" => nodes, "rels" => rels} = params) do
@@ -70,12 +42,6 @@ defmodule TdDdWeb.UnitController do
       Import.load(nodes_path, rels_path, params)
       send_resp(conn, :accepted, "")
     end
-  end
-
-  swagger_path :delete do
-    description("Delete Unit")
-    response(202, "Accepted")
-    response(400, "Client Error")
   end
 
   def delete(conn, %{"name" => name} = params) do

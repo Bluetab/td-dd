@@ -78,7 +78,7 @@ defmodule TdDd.ReferenceData do
   @spec read_file(binary()) :: [[binary()]]
   defp read_file(path) do
     path
-    |> File.stream!(read_ahead: 100_000)
+    |> File.stream!()
     |> CsvParser.parse_stream(skip_headers: false)
     |> Enum.to_list()
   end

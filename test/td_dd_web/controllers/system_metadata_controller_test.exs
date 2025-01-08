@@ -4,8 +4,11 @@ defmodule TdDdWeb.SystemMetadataControllerTest do
   import Mox
 
   setup_all do
+    on_exit(fn ->
+      Application.put_env(:td_dd, :loader_worker, TdDd.Loader.Worker)
+    end)
+
     Application.put_env(:td_dd, :loader_worker, TdDd.Loader.MockWorker)
-    Mox.defmock(TdDd.Loader.MockWorker, for: TdDd.Loader.Worker.Behaviour)
     :ok
   end
 

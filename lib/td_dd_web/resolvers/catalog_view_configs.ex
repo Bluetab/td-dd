@@ -59,7 +59,6 @@ defmodule TdDdWeb.Resolvers.CatalogViewConfigs do
       CatalogViewConfigs.delete_by_id(id)
     else
       {:claims, nil} -> {:error, :unauthorized}
-      {:tag, nil} -> {:error, :not_found}
       {:error, :forbidden} -> {:error, :forbidden}
     end
   end

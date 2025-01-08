@@ -7,22 +7,6 @@ defmodule TdDqWeb.ImplementationResultController do
 
   action_fallback(TdDqWeb.FallbackController)
 
-  def swagger_definitions do
-    SwaggerDefinitions.rule_result_swagger_definitions()
-  end
-
-  swagger_path :create do
-    description("Creates a RuleResult")
-    produces("application/json")
-
-    parameters do
-      result(:body, Schema.ref(:RuleResultCreate), "Result create attrs")
-    end
-
-    response(201, "Created", Schema.ref(:RuleResultResponse))
-    response(400, "Client Error")
-  end
-
   def create(conn, %{"implementation_id" => key, "rule_result" => params}) do
     claims = conn.assigns[:current_resource]
 

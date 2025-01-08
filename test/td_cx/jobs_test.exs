@@ -3,11 +3,11 @@ defmodule TdCx.Sources.JobsTest do
 
   import Mox
 
-  alias TdCore.Search.IndexWorker
+  alias TdCore.Search.IndexWorkerMock
   alias TdCx.Jobs
 
   setup do
-    IndexWorker.clear()
+    IndexWorkerMock.clear()
 
     :ok
   end
@@ -22,7 +22,7 @@ defmodule TdCx.Sources.JobsTest do
     assert job.source_id == source.id
     assert %{foo: "bar"} = job.parameters
     refute is_nil(job.external_id)
-    assert [{:reindex, :jobs, [_]}] = IndexWorker.calls()
+    assert [{:reindex, :jobs, [_]}] = IndexWorkerMock.calls()
   end
 
   test "get_job!/2 will get a job with its events" do

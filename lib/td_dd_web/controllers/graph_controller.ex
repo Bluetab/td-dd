@@ -1,8 +1,6 @@
 defmodule TdDdWeb.GraphController do
   use TdDdWeb, :controller
 
-  # use PhoenixSwagger
-
   alias TdDd.Lineage
   alias TdDd.Lineage.Graph
   alias TdDd.Lineage.Graphs

@@ -7,7 +7,6 @@ defmodule TdDd.DataStructures.Audit do
 
   import TdDd.Audit.AuditSupport, only: [publish: 1, publish: 4, publish: 5, publish: 6]
 
-  alias Ecto.Changeset
   alias TdCache.TaxonomyCache
   alias TdDd.DataStructures.RelationTypes
 
@@ -308,10 +307,6 @@ defmodule TdDd.DataStructures.Audit do
     link
     |> Map.take([:target_id])
     |> then(&publish("struct_struct_link_deleted", "data_structure_link", source_id, user_id, &1))
-  end
-
-  defp with_domain_ids(%Changeset{} = changeset, %{data_structure: %{domain_ids: domain_ids}}) do
-    Changeset.put_change(changeset, :domain_ids, get_domain_ids(domain_ids))
   end
 
   defp with_domain_ids(%{domain_ids: acc_domain_ids} = payload, %{

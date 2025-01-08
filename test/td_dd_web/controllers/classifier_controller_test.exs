@@ -1,13 +1,12 @@
 defmodule TdDdWeb.ClassifierControllerTest do
   use TdDdWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  alias TdCore.Search.IndexWorker
+  alias TdCore.Search.IndexWorkerMock
 
   setup do
     system = insert(:system)
 
-    IndexWorker.clear()
+    IndexWorkerMock.clear()
 
     [system: system]
   end
@@ -18,14 +17,12 @@ defmodule TdDdWeb.ClassifierControllerTest do
     @tag authentication: [role: "user"]
     test "user can list system classifiers", %{
       conn: conn,
-      swagger_schema: schema,
       system: system,
       classifier: %{id: id, name: name}
     } do
       assert %{"data" => [classifier]} =
                conn
                |> get(Routes.system_classifier_path(conn, :index, system))
-               |> validate_resp_schema(schema, "ClassifiersResponse")
                |> json_response(:ok)
 
       assert %{"id" => ^id, "name" => ^name, "filters" => [_filter], "rules" => [_rules]} =
@@ -37,8 +34,7 @@ defmodule TdDdWeb.ClassifierControllerTest do
     @tag authentication: [role: "admin"]
     test "renders classifier when data is valid", %{
       conn: conn,
-      system: system,
-      swagger_schema: schema
+      system: system
     } do
       params =
         string_params_for(:classifier,
@@ -49,7 +45,6 @@ defmodule TdDdWeb.ClassifierControllerTest do
       assert %{"data" => classifier} =
                conn
                |> post(Routes.system_classifier_path(conn, :create, system), classifier: params)
-               |> validate_resp_schema(schema, "ClassifierResponse")
                |> json_response(:created)
 
       assert %{"id" => _, "name" => _, "filters" => [_], "rules" => [_]} = classifier

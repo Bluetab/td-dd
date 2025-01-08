@@ -13,6 +13,8 @@ defmodule TdDd.Repo.Migrations.CreateClassifierRules do
       timestamps(type: :utc_datetime_usec)
     end
 
-    create constraint("classifier_rules", :values_xor_regex, check: "num_nulls(regex, values) = 1")
+    create constraint("classifier_rules", :values_xor_regex,
+             check: "num_nulls(regex, values) = 1"
+           )
   end
 end

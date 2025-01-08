@@ -1,5 +1,4 @@
 defmodule TdDdWeb.ProfileEventController do
-  use PhoenixSwagger
   use TdDdWeb, :controller
 
   alias TdDd.Executions
@@ -7,19 +6,8 @@ defmodule TdDdWeb.ProfileEventController do
   alias TdDd.Executions.ProfileEvents
   alias TdDd.Executions.ProfileExecution
   alias TdDd.Profiles
-  alias TdDdWeb.SwaggerDefinitions
 
   action_fallback(TdDdWeb.FallbackController)
-
-  def swagger_definitions do
-    SwaggerDefinitions.profile_event_swagger_definitions()
-  end
-
-  swagger_path :create do
-    description("Create Event")
-    response(201, "Created", Schema.ref(:ProfileEventResponse))
-    response(400, "Client Error")
-  end
 
   def create(conn, %{"profile_execution_id" => id, "profile_event" => event}) do
     claims = conn.assigns[:current_resource]

@@ -10,7 +10,9 @@ defmodule TdDd.Repo.Migrations.AlterDataStructuresExternalIdUnique do
            where: "external_id IS NOT NULL"
          )
 
-    drop unique_index("data_structures", [:system_id, :group, :name], where: "external_id IS NULL")
+    drop unique_index("data_structures", [:system_id, :group, :name],
+           where: "external_id IS NULL"
+         )
 
     create unique_index("data_structures", [:external_id])
   end

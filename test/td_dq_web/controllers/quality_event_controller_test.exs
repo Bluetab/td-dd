@@ -1,6 +1,5 @@
 defmodule TdDqWeb.QualityEventControllerTest do
   use TdDqWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger_dq.json"
 
   @moduletag sandbox: :shared
 
@@ -18,7 +17,6 @@ defmodule TdDqWeb.QualityEventControllerTest do
     @tag authentication: [role: "admin"]
     test "creates an event as an admin user", %{
       conn: conn,
-      swagger_schema: schema,
       execution: execution
     } do
       assert %{id: id} = execution
@@ -31,14 +29,12 @@ defmodule TdDqWeb.QualityEventControllerTest do
                |> post(Routes.execution_quality_event_path(conn, :create, id),
                  quality_event: params
                )
-               |> validate_resp_schema(schema, "QualityEventResponse")
                |> json_response(:created)
     end
 
     @tag authentication: [role: "admin"]
     test "creates a failed event as an admin user", %{
       conn: conn,
-      swagger_schema: schema,
       execution: execution
     } do
       assert %{id: id} = execution
@@ -51,14 +47,12 @@ defmodule TdDqWeb.QualityEventControllerTest do
                |> post(Routes.execution_quality_event_path(conn, :create, id),
                  quality_event: params
                )
-               |> validate_resp_schema(schema, "QualityEventResponse")
                |> json_response(:created)
     end
 
     @tag authentication: [role: "service"]
     test "creates an avent as a service user", %{
       conn: conn,
-      swagger_schema: schema,
       execution: execution
     } do
       assert %{id: id} = execution
@@ -71,7 +65,6 @@ defmodule TdDqWeb.QualityEventControllerTest do
                |> post(Routes.execution_quality_event_path(conn, :create, id),
                  quality_event: params
                )
-               |> validate_resp_schema(schema, "QualityEventResponse")
                |> json_response(:created)
     end
 

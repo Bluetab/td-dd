@@ -122,7 +122,7 @@ defmodule TdDd.Loader.Worker do
 
   @impl true
   def handle_info({:DOWN, ref, :process, _pid, _error}, %{task: _} = state) do
-    Logger.warn("Task #{inspect(ref)} failed")
+    Logger.warning("Task #{inspect(ref)} failed")
     {:noreply, Map.delete(state, :task)}
   end
 
@@ -236,7 +236,7 @@ defmodule TdDd.Loader.Worker do
             post_process(structure_ids, deleted_ids, opts)
 
           e ->
-            Logger.warn("Bulk load failed after #{ms}ms (#{inspect(e)})")
+            Logger.warning("Bulk load failed after #{ms}ms (#{inspect(e)})")
 
             maybe_create_event(
               %{
@@ -256,9 +256,9 @@ defmodule TdDd.Loader.Worker do
     pos = errors |> Enum.take(3) |> Enum.join(", ")
 
     case Enum.count(errors) do
-      1 -> Logger.warn("Metadata load failed with one invalid record (#{pos})")
-      n when n <= 3 -> Logger.warn("Metadata load failed with #{n} invalid records (#{pos})")
-      n when n > 3 -> Logger.warn("Metadata load failed with #{n} invalid records (#{pos}...)")
+      1 -> Logger.warning("Metadata load failed with one invalid record (#{pos})")
+      n when n <= 3 -> Logger.warning("Metadata load failed with #{n} invalid records (#{pos})")
+      n when n > 3 -> Logger.warning("Metadata load failed with #{n} invalid records (#{pos}...)")
     end
   end
 
@@ -275,11 +275,14 @@ defmodule TdDd.Loader.Worker do
             post_process(structure_ids, [], opts)
 
           {:error, :missing_external_ids, [id | _ids], _} = e ->
-            Logger.warn("Bulk #{op} failed after #{ms}ms (missing external_ids including #{id})")
+            Logger.warning(
+              "Bulk #{op} failed after #{ms}ms (missing external_ids including #{id})"
+            )
+
             e
 
           e ->
-            Logger.warn("Bulk #{op} failed after #{ms}ms (#{inspect(e)})")
+            Logger.warning("Bulk #{op} failed after #{ms}ms (#{inspect(e)})")
             e
         end
       end
@@ -298,7 +301,7 @@ defmodule TdDd.Loader.Worker do
             Logger.info("Bulk load process completed in #{ms}ms (#{count} upserts)")
 
           _ ->
-            Logger.warn("Bulk load failed after #{ms}")
+            Logger.warning("Bulk load failed after #{ms}")
         end
       end
     )

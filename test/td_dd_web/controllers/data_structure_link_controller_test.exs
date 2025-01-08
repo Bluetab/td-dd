@@ -1,6 +1,5 @@
 defmodule TdDdWeb.DataStructureLinkControllerTest do
   use TdDdWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   describe "index" do
     setup do
@@ -440,7 +439,7 @@ defmodule TdDdWeb.DataStructureLinkControllerTest do
   end
 
   @tag authentication: [role: "service"]
-  test "create: bulk load", %{conn: conn, swagger_schema: schema} do
+  test "create: bulk load", %{conn: conn} do
     insert(:data_structure, external_id: "ds1_external_id")
     insert(:data_structure, external_id: "ds2_external_id")
     insert(:data_structure, external_id: "ds3_external_id")
@@ -479,7 +478,6 @@ defmodule TdDdWeb.DataStructureLinkControllerTest do
                Routes.data_structure_link_path(conn, :create),
                %{"data_structure_links" => links}
              )
-             |> validate_resp_schema(schema, "BulkCreateDataStructureLinksResponse")
              |> json_response(:created)
 
     assert data == %{

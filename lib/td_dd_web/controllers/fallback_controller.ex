@@ -58,7 +58,7 @@ defmodule TdDdWeb.FallbackController do
   end
 
   def call(conn, {:cp, {:error, error}}) do
-    Logger.warn("File copy operation failed with error #{inspect(error)}")
+    Logger.warning("File copy operation failed with error #{inspect(error)}")
     render_error(conn, :insufficient_storage)
   end
 

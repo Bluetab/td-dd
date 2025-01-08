@@ -14,7 +14,9 @@ defmodule TdDd.Grants.Audit do
         group: group
       }) do
     %{id: id, created_by_id: created_by_id, requests: requests} =
-      Repo.preload(group, requests: [grant: [:data_structure], data_structure: [:current_version]])
+      Repo.preload(group,
+        requests: [grant: [:data_structure], data_structure: [:current_version]]
+      )
 
     payload =
       Enum.reduce(
@@ -141,7 +143,9 @@ defmodule TdDd.Grants.Audit do
         grant_request_status: grant_request_status
       }) do
     %{id: id, user_id: user_id, status: status, grant_request: grant_request} =
-      Repo.preload(grant_request_status, grant_request: [:group, data_structure: :current_version])
+      Repo.preload(grant_request_status,
+        grant_request: [:group, data_structure: :current_version]
+      )
 
     payload =
       %{

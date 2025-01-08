@@ -1,6 +1,5 @@
 defmodule TdDdWeb.ReferenceDataControllerTest do
   use TdDdWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   @path "test/fixtures/reference_data/dataset1.csv"
 

@@ -22,7 +22,6 @@ defmodule TdCxWeb do
       use Phoenix.Controller, namespace: TdCxWeb
 
       import Plug.Conn
-      import TdCxWeb.Gettext
       alias TdCxWeb.Router.Helpers, as: Routes
     end
   end
@@ -38,7 +37,6 @@ defmodule TdCxWeb do
         only: [get_flash: 1, get_flash: 2, view_module: 1, view_template: 1]
 
       import TdCxWeb.ErrorHelpers
-      import TdCxWeb.Gettext
       alias TdCxWeb.Router.Helpers, as: Routes
     end
   end
@@ -54,7 +52,6 @@ defmodule TdCxWeb do
   def channel do
     quote do
       use Phoenix.Channel
-      import TdCxWeb.Gettext
     end
   end
 

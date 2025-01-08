@@ -17,7 +17,6 @@ defmodule TdDdWeb.Resolvers.Implementations do
     else
       {:claims, nil} -> {:error, :unauthorized}
       {:error, :forbidden} -> {:error, :forbidden}
-      {:error, :implementation, changeset, _} -> {:error, changeset}
     end
   end
 

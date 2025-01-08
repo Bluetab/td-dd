@@ -65,7 +65,9 @@ defmodule TdDq.Implementations.ElasticDocument do
       rule = Map.get(implementation, :rule)
 
       implementation =
-        Implementations.enrich_implementation_structures(implementation, preload_structures: false)
+        Implementations.enrich_implementation_structures(implementation,
+          preload_structures: false
+        )
 
       quality_event = QualityEvents.get_last_event_by_imp(implementation)
 

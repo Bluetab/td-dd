@@ -65,7 +65,7 @@ defmodule TdDd.Lineage.Import do
   @impl true
   def handle_info({:DOWN, ref, :process, _pid, _error}, state) do
     {unit_name, state} = Map.pop(state, ref)
-    Logger.warn("Load failed for unit=#{unit_name}")
+    Logger.warning("Load failed for unit=#{unit_name}")
     {:ok, unit} = Units.get_by(name: unit_name)
     Units.insert_event(unit, "LoadFailed")
     {:noreply, state}
@@ -79,7 +79,7 @@ defmodule TdDd.Lineage.Import do
         Loader.load(unit, nodes_path, rels_path, Keyword.take(opts, [:timeout]))
 
       {:error, failed_operation, _failed_value, _changes} = error ->
-        Logger.warn("Failed loading unit #{name} - operation #{failed_operation}")
+        Logger.warning("Failed loading unit #{name} - operation #{failed_operation}")
         error
     end
   end

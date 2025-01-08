@@ -1,6 +1,5 @@
 defmodule TdDqWeb.FunctionsControllerTest do
   use TdDqWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger_dq.json"
 
   describe "PUT /api/functions" do
     @tag authentication: [role: "user", permissions: ["manage_quality_rule_implementations"]]
@@ -12,13 +11,12 @@ defmodule TdDqWeb.FunctionsControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "returns functions", %{conn: conn, swagger_schema: schema} do
+    test "returns functions", %{conn: conn} do
       params = %{"functions" => [string_params_for(:function)]}
 
       assert %{"data" => data} =
                conn
                |> put(Routes.functions_path(conn, :update), params)
-               |> validate_resp_schema(schema, "FunctionsResponse")
                |> json_response(:ok)
 
       assert [%{"id" => _}] = data
