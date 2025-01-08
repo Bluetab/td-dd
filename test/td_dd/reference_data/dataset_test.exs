@@ -46,27 +46,31 @@ defmodule TdDd.ReferenceData.DatasetTest do
     end
 
     test "validates maximum rows" do
-      Application.put_env(:td_dd, TdDd.ReferenceData, max_rows: 2)
+      max_rows = Application.get_env(:td_dd, TdDd.ReferenceData)[:max_rows]
+
+      data = for _ <- 1..(max_rows + 1), do: ["foo", "bar"]
 
       params = %{
         name: "dataset1",
-        data: [["foo", "bar"], ["foo1", "bar1"], ["foo2", "bar2"]]
+        data: data
       }
 
       assert %{valid?: false, errors: errors} = Dataset.changeset(params)
-      assert errors[:data] == {"maximum 2 rows", []}
+      assert errors[:data] == {"maximum #{max_rows} rows", []}
     end
 
     test "validates maximum columns" do
-      Application.put_env(:td_dd, TdDd.ReferenceData, max_rows: 10, max_cols: 2)
+      max_cols = Application.get_env(:td_dd, TdDd.ReferenceData)[:max_cols]
+
+      row = for i <- 1..(max_cols + 1), do: "col#{i}"
 
       params = %{
         name: "dataset1",
-        data: [["foo", "bar", "baz"], ["foo1", "bar1", "baz1"]]
+        data: [row, row]
       }
 
       assert %{valid?: false, errors: errors} = Dataset.changeset(params)
-      assert errors[:data] == {"maximum 2 columns", []}
+      assert errors[:data] == {"maximum #{max_cols} columns", []}
     end
 
     test "validates cast unique domain_ids" do

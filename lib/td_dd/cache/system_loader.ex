@@ -82,7 +82,7 @@ defmodule TdDd.Cache.SystemLoader do
       |> Enum.map(fn {res, _} -> res end)
 
     if Enum.any?(results, &(&1 != :ok)) do
-      Logger.warn("Cache loading failed")
+      Logger.warning("Cache loading failed")
     else
       Logger.info("Cached #{length(results)} systems")
     end

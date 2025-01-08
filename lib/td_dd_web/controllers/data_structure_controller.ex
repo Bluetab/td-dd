@@ -1,9 +1,9 @@
 defmodule TdDdWeb.DataStructureController do
   use TdDdWeb, :controller
-  use PhoenixSwagger
 
   import Bodyguard, only: [permit?: 4]
 
+  alias TdCore.Utils.FileHash
   alias TdDd.CSV.Download
   alias TdDd.DataStructures
   alias TdDd.DataStructures.BulkUpdate
@@ -18,8 +18,6 @@ defmodule TdDdWeb.DataStructureController do
   alias TdDd.DataStructures.Tags
   alias TdDd.Grants
   alias TdDd.Grants.Requests
-  alias TdDd.Utils.FileHash
-  alias TdDdWeb.SwaggerDefinitions
 
   @lift_attrs [:class, :description, :metadata, :group, :name, :type, :deleted_at]
   @enrich_attrs [
@@ -46,28 +44,9 @@ defmodule TdDdWeb.DataStructureController do
 
   action_fallback(TdDdWeb.FallbackController)
 
-  def swagger_definitions do
-    SwaggerDefinitions.data_structure_swagger_definitions()
-  end
-
-  swagger_path :index do
-    description("List Data Structures")
-    response(200, "OK", Schema.ref(:DataStructuresResponse))
-  end
-
   def index(conn, _params) do
     %{results: data_structures} = do_search(conn, %{}, 0, 10_000)
     render(conn, "index.json", data_structures: data_structures)
-  end
-
-  swagger_path :search do
-    description("Data Structures")
-
-    parameters do
-      search(:body, Schema.ref(:DataStructureSearchRequest), "Search query parameter")
-    end
-
-    response(200, "OK", Schema.ref(:DataStructuresResponse))
   end
 
   def search(conn, params) do
@@ -77,21 +56,6 @@ defmodule TdDdWeb.DataStructureController do
     |> put_resp_header("x-total-count", "#{total}")
     |> put_actions(params, total)
     |> render("index.json", search_assigns(response))
-  end
-
-  swagger_path :update do
-    description("Update Data Structures")
-    produces("application/json")
-
-    parameters do
-      id(:path, :integer, "Data Structure ID", required: true)
-      data_field(:body, Schema.ref(:DataStructureUpdate), "Data Structure update attrs")
-    end
-
-    response(201, "OK", Schema.ref(:DataStructureResponse))
-    response(400, "Client Error")
-    response(403, "Forbidden")
-    response(422, "Unprocessable Entity")
   end
 
   def update(conn, %{"id" => id, "data_structure" => structure_params} = params) do
@@ -123,21 +87,6 @@ defmodule TdDdWeb.DataStructureController do
     end)
   end
 
-  swagger_path :delete do
-    description("Delete Data Structure")
-    produces("application/json")
-
-    parameters do
-      id(:path, :integer, "Data Structure ID", required: true)
-      logical(:query, :boolean, "Logical delete flag")
-    end
-
-    response(204, "No Content")
-    response(400, "Client Error")
-    response(403, "Forbidden")
-    response(422, "Unprocessable Entity")
-  end
-
   def delete(conn, %{"id" => id, "logical" => "true"}) do
     claims = conn.assigns[:current_resource]
 
@@ -158,16 +107,6 @@ defmodule TdDdWeb.DataStructureController do
            DataStructures.delete_data_structure(data_structure, claims) do
       send_resp(conn, :no_content, "")
     end
-  end
-
-  swagger_path :get_system_structures do
-    description("List System Root Data Structures")
-
-    parameters do
-      system_id(:path, :string, "List of organizational units", required: true)
-    end
-
-    response(200, "OK", Schema.ref(:DataStructuresResponse))
   end
 
   def get_system_structures(conn, %{"system_id" => system_id} = params) do
@@ -195,23 +134,6 @@ defmodule TdDdWeb.DataStructureController do
     conn
     |> put_resp_header("x-total-count", "#{total}")
     |> render("index.json", data_structures: data_structures)
-  end
-
-  swagger_path :bulk_update do
-    description("Bulk Update of extra info structures")
-    produces("application/json")
-
-    parameters do
-      bulk_update_request(
-        :body,
-        Schema.ref(:BulkUpdateRequest),
-        "Search query filter parameters and update attributes"
-      )
-    end
-
-    response(200, "OK", Schema.ref(:BulkUpdateResponse))
-    response(403, "User is not authorized to perform this action")
-    response(422, "Error during bulk update")
   end
 
   def bulk_update(conn, %{
@@ -249,23 +171,6 @@ defmodule TdDdWeb.DataStructureController do
       |> put_resp_content_type("application/json", "utf-8")
       |> send_resp(:ok, body)
     end
-  end
-
-  swagger_path :bulk_upload_domains do
-    description("structures domains bulk update by CSV upload")
-    produces("application/json")
-    consumes("multipart/form-data")
-
-    parameter(
-      :structures_domains,
-      :formData,
-      :file,
-      "Structures domains CSV file (column headers: external_id, domain_external_ids)"
-    )
-
-    response(200, "OK", Schema.ref(:BulkUploadDomainsResponse))
-    response(403, "User is not authorized to perform this action")
-    response(422, "Invalid CSV format (bad headers...)")
   end
 
   def bulk_upload_domains(conn, params) do
@@ -417,19 +322,6 @@ defmodule TdDdWeb.DataStructureController do
     |> Map.put("without", "deleted_at")
     |> Map.drop(["page", "size"])
     |> Search.scroll_data_structures(claims, permission)
-  end
-
-  swagger_path :csv do
-    description("Download CSV of structures")
-    produces("application/json")
-
-    parameters do
-      search(:body, Schema.ref(:DataStructureSearchRequest), "Search query parameter")
-    end
-
-    response(200, "OK")
-    response(403, "User is not authorized to perform this action")
-    response(422, "Error while CSV download")
   end
 
   def csv(conn, params) do

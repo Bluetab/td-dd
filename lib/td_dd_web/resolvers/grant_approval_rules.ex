@@ -57,7 +57,6 @@ defmodule TdDdWeb.Resolvers.GrantApprovalRules do
       ApprovalRules.delete(approval_rule)
     else
       {:claims, nil} -> {:error, :unauthorized}
-      {:source, nil} -> {:error, :not_found}
       {:error, error} -> {:error, error}
     end
   end

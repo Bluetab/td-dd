@@ -86,7 +86,6 @@ defmodule TdDdWeb.Resolvers.Sources do
       {:claims, nil} -> {:error, :unauthorized}
       {:source, nil} -> {:error, :not_found}
       {:error, error} -> {:error, error}
-      {:vault_error, error} -> {:error, error}
     end
   end
 

@@ -179,7 +179,7 @@ defmodule TdDd.Lineage do
   def handle_info({:timeout, %{ref: ref} = task}, state) do
     {task_info, state} = pop_in(state.tasks[ref])
 
-    Logger.warn(
+    Logger.warning(
       "Task timeout, reference: #{inspect(ref)}}, trying to shut it down in #{@shutdown_timeout}..."
     )
 

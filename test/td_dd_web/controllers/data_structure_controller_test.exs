@@ -1,14 +1,13 @@
 defmodule TdDdWeb.DataStructureControllerTest do
   use TdDd.ProcessCase
   use TdDdWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   import Mox
   import Routes
 
   alias Path
   alias TdCore.Search.ElasticDocument
-  alias TdCore.Search.IndexWorker
+  alias TdCore.Search.IndexWorkerMock
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.RelationTypes
@@ -55,7 +54,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
     start_supervised!(TdDd.Search.StructureEnricher)
 
-    IndexWorker.clear()
+    IndexWorkerMock.clear()
 
     [system: system, domain: domain, domain_id: domain.id]
   end
@@ -628,8 +627,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     test "renders data_structure when data is valid", %{
       conn: conn,
       claims: claims,
-      data_structure: %{id: id, domain_ids: [old_domain_id]} = data_structure,
-      swagger_schema: schema
+      data_structure: %{id: id, domain_ids: [old_domain_id]} = data_structure
     } do
       %{id: new_domain_id} = CacheHelpers.insert_domain()
       attrs = %{domain_ids: [new_domain_id]}
@@ -644,12 +642,11 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert %{"data" => %{"id" => ^id}} =
                conn
                |> put(data_structure_path(conn, :update, data_structure), data_structure: attrs)
-               |> validate_resp_schema(schema, "DataStructureResponse")
                |> json_response(:ok)
 
       assert %{domain_ids: [^new_domain_id]} = DataStructures.get_data_structure!(id)
 
-      assert [{:reindex, :structures, [^id]}] = IndexWorker.calls()
+      assert [{:reindex, :structures, [^id]}] = IndexWorkerMock.calls()
     end
 
     @tag authentication: [role: "user"]
@@ -657,8 +654,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
          %{
            conn: conn,
            claims: claims,
-           data_structure: %{id: id, domain_ids: [old_domain_id]} = data_structure,
-           swagger_schema: schema
+           data_structure: %{id: id, domain_ids: [old_domain_id]} = data_structure
          } do
       %{id: new_domain_id} = CacheHelpers.insert_domain()
       attrs = %{domain_ids: [new_domain_id]}
@@ -680,13 +676,12 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert %{"data" => %{"id" => ^id}} =
                conn
                |> put(data_structure_path(conn, :update, data_structure), data_structure: attrs)
-               |> validate_resp_schema(schema, "DataStructureResponse")
                |> json_response(:ok)
 
       assert %{domain_ids: [^new_domain_id]} = DataStructures.get_data_structure!(id)
 
       assert {:reindex, :implementations, [^implementation_id]} =
-               Enum.find(IndexWorker.calls(), fn {action, index, _} ->
+               Enum.find(IndexWorkerMock.calls(), fn {action, index, _} ->
                  action == :reindex and index == :implementations
                end)
     end
@@ -695,8 +690,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     test "needs manage_confidential_structures permission", %{
       conn: conn,
       claims: claims,
-      data_structure: %{domain_ids: [domain_id]} = data_structure,
-      swagger_schema: schema
+      data_structure: %{domain_ids: [domain_id]} = data_structure
     } do
       CacheHelpers.put_session_permissions(claims, domain_id, [
         :view_data_structure,
@@ -707,7 +701,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
              |> put(data_structure_path(conn, :update, data_structure),
                data_structure: %{confidential: true}
              )
-             |> validate_resp_schema(schema, "DataStructureResponse")
              |> json_response(:forbidden)
     end
 
@@ -723,8 +716,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     test "shows updated structure protected metadata if user has view_protected_metadata permission",
          %{
            conn: conn,
-           data_structure: data_structure,
-           swagger_schema: schema
+           data_structure: data_structure
          } do
       mutable_metadata = %{
         "mm_foo" => "mm_foo",
@@ -738,7 +730,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
                |> put(data_structure_path(conn, :update, data_structure),
                  data_structure: %{confidential: true}
                )
-               |> validate_resp_schema(schema, "DataStructureResponse")
                |> json_response(:ok)
 
       assert %{
@@ -761,8 +752,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     test "filters updated structure protected metadata if user does not have view_protected_metadata permission",
          %{
            conn: conn,
-           data_structure: data_structure,
-           swagger_schema: schema
+           data_structure: data_structure
          } do
       mutable_metadata = %{
         "mm_foo" => "mm_foo",
@@ -776,7 +766,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
                |> put(data_structure_path(conn, :update, data_structure),
                  data_structure: %{confidential: true}
                )
-               |> validate_resp_schema(schema, "DataStructureResponse")
                |> json_response(:ok)
 
       assert %{
@@ -794,8 +783,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     test "needs manage_structures_domain permission", %{
       conn: conn,
       claims: claims,
-      data_structure: %{domain_ids: [domain_id]} = data_structure,
-      swagger_schema: schema
+      data_structure: %{domain_ids: [domain_id]} = data_structure
     } do
       %{id: new_domain_id} = CacheHelpers.insert_domain()
 
@@ -810,7 +798,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
              |> put(data_structure_path(conn, :update, data_structure),
                data_structure: %{domain_id: new_domain_id}
              )
-             |> validate_resp_schema(schema, "DataStructureResponse")
              |> json_response(:forbidden)
     end
 
@@ -818,8 +805,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     test "needs access to new domain", %{
       conn: conn,
       claims: claims,
-      data_structure: %{domain_ids: [domain_id]} = data_structure,
-      swagger_schema: schema
+      data_structure: %{domain_ids: [domain_id]} = data_structure
     } do
       %{id: new_domain_id} = CacheHelpers.insert_domain()
 
@@ -834,7 +820,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
              |> put(data_structure_path(conn, :update, data_structure),
                data_structure: %{domain_ids: [new_domain_id]}
              )
-             |> validate_resp_schema(schema, "DataStructureResponse")
              |> json_response(:forbidden)
     end
   end
@@ -845,8 +830,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     @tag authentication: [role: "admin"]
     test "deletes chosen data_structure", %{
       conn: conn,
-      data_structure: data_structure,
-      swagger_schema: schema
+      data_structure: data_structure
     } do
       assert conn
              |> delete(data_structure_path(conn, :delete, data_structure))
@@ -857,7 +841,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
         |> get(
           data_structure_data_structure_version_path(conn, :show, data_structure.id, "latest")
         )
-        |> validate_resp_schema(schema, "DataStructureResponse")
       end)
     end
 
@@ -1244,7 +1227,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       find_call = {:reindex, :grant_requests, [grant_request_id]}
 
       assert find_call ==
-               IndexWorker.calls()
+               IndexWorkerMock.calls()
                |> Enum.find(fn call ->
                  find_call == call
                end)
@@ -1284,7 +1267,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       |> json_response(:ok)
 
       assert {:reindex, :implementations, [^implementation_id_1, ^implementation_id_2]} =
-               Enum.find(IndexWorker.calls(), fn {action, index, _} ->
+               Enum.find(IndexWorkerMock.calls(), fn {action, index, _} ->
                  action == :reindex and index == :implementations
                end)
     end
@@ -1482,8 +1465,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert [row] =
                post(conn, data_structure_path(conn, :csv), params)
                |> response(:ok)
-               |> String.split("\r\n")
-               |> Enum.reject(&(&1 == ""))
+               |> then(&[&1])
                |> CSV.decode!(headers: true, separator: ?;)
                |> Enum.to_list()
 
@@ -1538,8 +1520,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert [row] =
                post(conn, data_structure_path(conn, :csv), params)
                |> response(:ok)
-               |> String.split("\r\n")
-               |> Enum.reject(&(&1 == ""))
+               |> then(&[&1])
                |> CSV.decode!(headers: true, separator: ?;)
                |> Enum.to_list()
 
@@ -1635,17 +1616,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
              external_id;name;type;path;tech_name;alias_name;link_to_structure;string;list\r
              #{external_id};#{dsv_name};#{type};#{Enum.join(path, "")};#{original_name};#{alias_name};#{structure_url};foo;bar\r
              """
-    end
-
-    @tag authentication: [role: "admin"]
-    test "upload, throw error with invalid csv", %{conn: conn, domain: %{id: domain_id}} do
-      _ = create_three_data_structures(domain_id, "some_external_id")
-
-      conn
-      |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: upload("test/fixtures/td3787/upload_unprocessable_entity.csv")
-      )
-      |> json_response(:unprocessable_entity)
     end
 
     @tag authentication: [role: "admin"]

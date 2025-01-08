@@ -1,7 +1,6 @@
 defmodule TdDd.Lineage.GraphDataIntegrationTest do
   use TdDd.ProcessCase
   use TdDdWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   alias TdDd.Lineage.GraphData
   alias TdDd.Lineage.GraphData.State

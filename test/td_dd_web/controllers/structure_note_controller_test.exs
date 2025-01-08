@@ -1,6 +1,5 @@
 defmodule TdDdWeb.StructureNoteControllerTest do
   use TdDdWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   alias TdCluster.TestHelpers.TdAiMock
   alias TdDd.DataStructures.StructureNote
@@ -405,7 +404,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "only list structure notes of its data structure", %{conn: conn, swagger_schema: schema} do
+    test "only list structure notes of its data structure", %{conn: conn} do
       %{id: first_data_structure_id} = first_data_structure = insert(:data_structure)
       %{id: second_data_structure_id} = second_data_structure = insert(:data_structure)
 
@@ -421,7 +420,11 @@ defmodule TdDdWeb.StructureNoteControllerTest do
             status: :published,
             version: 2
           ),
-          insert(:structure_note, data_structure: first_data_structure, status: :draft, version: 3)
+          insert(:structure_note,
+            data_structure: first_data_structure,
+            status: :draft,
+            version: 3
+          )
         ]
         |> Enum.map(fn sn -> sn.id end)
 
@@ -443,7 +446,6 @@ defmodule TdDdWeb.StructureNoteControllerTest do
       assert first_structure_notes |||
                conn
                |> get(Routes.data_structure_note_path(conn, :index, first_data_structure_id))
-               |> validate_resp_schema(schema, "StructureNotesResponse")
                |> json_response(:ok)
                |> Map.get("data")
                |> Enum.map(fn sn -> Map.get(sn, "id") end)
@@ -657,7 +659,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
 
   describe "create structure_note" do
     @tag authentication: [role: "admin"]
-    test "renders structure_note when data is valid", %{conn: conn, swagger_schema: schema} do
+    test "renders structure_note when data is valid", %{conn: conn} do
       %{id: data_structure_id} = insert(:data_structure)
       create_attrs = string_params_for(:structure_note)
 
@@ -666,7 +668,6 @@ defmodule TdDdWeb.StructureNoteControllerTest do
         |> post(Routes.data_structure_note_path(conn, :create, data_structure_id),
           structure_note: create_attrs
         )
-        |> validate_resp_schema(schema, "StructureNoteResponse")
         |> json_response(:created)
 
       assert %{
@@ -765,7 +766,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
 
   describe "update structure_note" do
     @tag authentication: [role: "admin"]
-    test "renders structure_note when data is valid", %{conn: conn, swagger_schema: schema} do
+    test "renders structure_note when data is valid", %{conn: conn} do
       data_structure = insert(:data_structure)
 
       %StructureNote{id: id} =
@@ -794,7 +795,6 @@ defmodule TdDdWeb.StructureNoteControllerTest do
                  ),
                  structure_note: update_attrs
                )
-               |> validate_resp_schema(schema, "StructureNoteResponse")
                |> json_response(:ok)
                |> Map.get("data")
 

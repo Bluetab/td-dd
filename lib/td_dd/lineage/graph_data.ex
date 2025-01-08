@@ -98,7 +98,7 @@ defmodule TdDd.Lineage.GraphData do
   @impl true
   def handle_info({:DOWN, ref, :process, _pid, result}, state) do
     unless result == :normal do
-      Logger.warn("#{inspect(ref)} failed")
+      Logger.warning("#{inspect(ref)} failed")
     end
 
     Process.send_after(self(), :refresh, @refresh_interval)
@@ -432,7 +432,7 @@ defmodule TdDd.Lineage.GraphData do
         g
 
       {:error, :bad_vertex} ->
-        Logger.warn("Bad edge #{id}")
+        Logger.warning("Bad edge #{id}")
         g
     end
   end
@@ -466,10 +466,10 @@ defmodule TdDd.Lineage.GraphData do
   end
 
   defp hash(%__MODULE__{source_ids: source_ids, ids: _ids, type: type} = graph_data, opts) do
-    '''
+    ~c"""
     Constant hash across lineage loads. Node ids might change for new lineage
     load, so avoid using them.
-    '''
+    """
 
     hash =
       opts

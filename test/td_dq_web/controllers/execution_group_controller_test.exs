@@ -1,6 +1,5 @@
 defmodule TdDqWeb.ExecutionGroupControllerTest do
   use TdDqWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger_dq.json"
 
   import Mox
 
@@ -20,13 +19,11 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
   describe "GET /api/execution_groups" do
     @tag authentication: [user_name: "not_an_admin", permissions: [:view_quality_rule]]
     test "returns an OK response with the list of execution groups", %{
-      conn: conn,
-      swagger_schema: schema
+      conn: conn
     } do
       assert %{"data" => groups} =
                conn
                |> get(Routes.execution_group_path(conn, :index))
-               |> validate_resp_schema(schema, "ExecutionGroupsResponse")
                |> json_response(:ok)
 
       assert length(groups) == 5
@@ -45,7 +42,6 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
     @tag authentication: [user_name: "not_an_admin", permissions: [:view_quality_rule]]
     test "returns an OK response with the execution group", %{
       conn: conn,
-      swagger_schema: schema,
       groups: groups
     } do
       %{id: id} = Enum.random(groups)
@@ -53,7 +49,6 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
       assert %{"data" => data} =
                conn
                |> get(Routes.execution_group_path(conn, :show, id))
-               |> validate_resp_schema(schema, "ExecutionGroupResponse")
                |> json_response(:ok)
 
       assert %{"id" => ^id, "inserted_at" => _, "_embedded" => embedded} = data
@@ -79,7 +74,6 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
          ]
     test "returns an OK response with the created execution group", %{
       conn: conn,
-      swagger_schema: schema,
       domain: domain
     } do
       %{id: rule_id} = insert(:rule, business_concept_id: "42", domain_id: domain.id)
@@ -110,7 +104,6 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
       assert %{"data" => data} =
                conn
                |> post(Routes.execution_group_path(conn, :create, params))
-               |> validate_resp_schema(schema, "ExecutionGroupResponse")
                |> json_response(:created)
 
       assert %{"id" => _, "inserted_at" => _, "df_content" => %{"foo" => "bar"}} = data

@@ -90,16 +90,16 @@ defmodule TdCxWeb.ConfigurationControllerTest do
 
       assert [
                %{
-                 "content" => %{"field1" => "value"},
-                 "dynamic_content" => %{"field1" => %{"value" => "value", "origin" => "user"}},
-                 "external_id" => "external_id",
-                 "type" => "config"
-               },
-               %{
                  "content" => %{},
                  "dynamic_content" => %{},
                  "external_id" => "another_external_id",
                  "type" => "another_config"
+               },
+               %{
+                 "content" => %{"field1" => "value"},
+                 "dynamic_content" => %{"field1" => %{"value" => "value", "origin" => "user"}},
+                 "external_id" => "external_id",
+                 "type" => "config"
                },
                %{
                  "content" => %{"field1" => "value", "secret_field" => "secret value"},
@@ -110,7 +110,11 @@ defmodule TdCxWeb.ConfigurationControllerTest do
                  "external_id" => "secret_external_id",
                  "type" => "secret_config"
                }
-             ] = json_response(conn, 200)["data"]
+             ] =
+               conn
+               |> json_response(200)
+               |> Map.get("data")
+               |> Enum.sort_by(& &1["external_id"])
     end
 
     @tag authentication: [role: "user"]

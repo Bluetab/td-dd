@@ -1,6 +1,5 @@
 defmodule TdDdWeb.GrantsControllerTest do
   use TdDdWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   @moduletag sandbox: :shared
 

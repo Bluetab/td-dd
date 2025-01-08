@@ -21,7 +21,11 @@ defmodule TdDqWeb.RuleResultControllerTest do
         ri = insert(:implementation, implementation_key: "ri135", rule: rule, status: :published)
 
         ri_ruleless =
-          insert(:implementation, implementation_key: "ri_ruleless", rule: nil, status: :published)
+          insert(:implementation,
+            implementation_key: "ri_ruleless",
+            rule: nil,
+            status: :published
+          )
 
         rule_results = %Plug.Upload{path: fixture}
 

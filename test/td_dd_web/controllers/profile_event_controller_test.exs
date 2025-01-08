@@ -1,6 +1,5 @@
 defmodule TdDdWeb.ProfileEventControllerTest do
   use TdDdWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   @moduletag sandbox: :shared
 
@@ -18,7 +17,6 @@ defmodule TdDdWeb.ProfileEventControllerTest do
     @tag authentication: [role: "admin"]
     test "creates an event when the user is an admin", %{
       conn: conn,
-      swagger_schema: schema,
       execution: execution
     } do
       assert %{id: id} = execution
@@ -31,14 +29,12 @@ defmodule TdDdWeb.ProfileEventControllerTest do
                |> post(Routes.profile_execution_profile_event_path(conn, :create, id),
                  profile_event: params
                )
-               |> validate_resp_schema(schema, "ProfileEventResponse")
                |> json_response(:created)
     end
 
     @tag authentication: [role: "service"]
     test "creates an event when the user is service", %{
       conn: conn,
-      swagger_schema: schema,
       execution: execution
     } do
       assert %{id: id} = execution
@@ -51,7 +47,6 @@ defmodule TdDdWeb.ProfileEventControllerTest do
                |> post(Routes.profile_execution_profile_event_path(conn, :create, id),
                  profile_event: params
                )
-               |> validate_resp_schema(schema, "ProfileEventResponse")
                |> json_response(:created)
     end
 

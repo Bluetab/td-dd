@@ -50,7 +50,7 @@ services:
       - VAULT_DEV_ROOT_TOKEN_ID=vault_secret_token1234
 
   build:
-    image: bluetab/elixir:1.14.5-alpine-20230524124559
+    image: bluetab/elixir:1.18.1-otp-27-alpine-20250107094535
     command: ci/build.sh
     environment:
       APP_VERSION: "${APP_VERSION}"
@@ -63,7 +63,7 @@ services:
       - "${CI_PROJECT_DIR}:/code"
 
   test:
-    image: bluetab/elixir:1.14.5-alpine-20230524124559
+    image: bluetab/elixir:1.18.1-otp-27-alpine-20250107094535
     command: ci/test.sh
     environment:
       HOME: /tmp # CURRENT_UID doesn't have a home

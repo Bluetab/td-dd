@@ -1,6 +1,5 @@
 defmodule TdDdWeb.ProfileExecutionGroupControllerTest do
   use TdDdWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   @moduletag sandbox: :shared
 
@@ -50,13 +49,11 @@ defmodule TdDdWeb.ProfileExecutionGroupControllerTest do
     @tag authentication: [user_name: "not_an_admin"]
     @tag permissions: [:view_data_structures_profile]
     test "returns an OK response with the list of execution groups", %{
-      conn: conn,
-      swagger_schema: schema
+      conn: conn
     } do
       assert %{"data" => groups} =
                conn
                |> get(Routes.profile_execution_group_path(conn, :index))
-               |> validate_resp_schema(schema, "ProfileExecutionGroupsResponse")
                |> json_response(:ok)
 
       assert length(groups) == 5
@@ -76,7 +73,6 @@ defmodule TdDdWeb.ProfileExecutionGroupControllerTest do
     @tag permissions: [:view_data_structure, :view_data_structures_profile]
     test "returns an OK response with the execution group", %{
       conn: conn,
-      swagger_schema: schema,
       groups: groups
     } do
       %{id: id} = Enum.random(groups)
@@ -84,7 +80,6 @@ defmodule TdDdWeb.ProfileExecutionGroupControllerTest do
       assert %{"data" => data} =
                conn
                |> get(Routes.profile_execution_group_path(conn, :show, id))
-               |> validate_resp_schema(schema, "ProfileExecutionGroupResponse")
                |> json_response(:ok)
 
       assert %{"id" => ^id, "inserted_at" => _, "_embedded" => embedded} = data
@@ -106,8 +101,7 @@ defmodule TdDdWeb.ProfileExecutionGroupControllerTest do
     @tag authentication: [user_name: "not_an_admin"]
     @tag permissions: [:profile_structures, :view_data_structures_profile]
     test "returns an OK response with the created execution group", %{
-      conn: conn,
-      swagger_schema: schema
+      conn: conn
     } do
       %{id: id1} = insert(:data_structure)
       %{id: id2} = insert(:data_structure)
@@ -117,7 +111,6 @@ defmodule TdDdWeb.ProfileExecutionGroupControllerTest do
       assert %{"data" => data} =
                conn
                |> post(Routes.profile_execution_group_path(conn, :create, params))
-               |> validate_resp_schema(schema, "ProfileExecutionGroupResponse")
                |> json_response(:created)
 
       assert %{"id" => _, "inserted_at" => _} = data

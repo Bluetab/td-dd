@@ -13,8 +13,6 @@ defmodule TdCxWeb.Locale do
         conn
 
       locale ->
-        Gettext.put_locale(TdCxWeb.Gettext, locale)
-
         conn
         |> fetch_session
         |> put_session(:locale, locale)

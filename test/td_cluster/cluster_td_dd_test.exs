@@ -9,13 +9,13 @@ defmodule TdCluster.ClusterTdDdTest do
   @moduletag sandbox: :shared
 
   setup do
-    Application.put_env(:td_cluster, TdCluster.ClusterHandler, TdCluster.ClusterHandlerImpl)
     start_supervised!(TdDd.Search.StructureEnricher)
     :ok
   end
 
   describe "test Cluster.TdDd functions" do
     test "get_reference_dataset/1" do
+      Application.put_env(:td_cluster, TdCluster.ClusterHandler, TdCluster.ClusterHandlerImpl)
       %{id: id, name: name, headers: headers} = insert(:reference_dataset)
 
       assert {:ok,
@@ -24,13 +24,19 @@ defmodule TdCluster.ClusterTdDdTest do
                 name: ^name,
                 headers: ^headers
               }} = Cluster.TdDd.get_reference_dataset(id)
+
+      Application.put_env(:td_cluster, TdCluster.ClusterHandler, MockClusterHandler)
     end
 
     test "get_latest_structure_version/1" do
+      Application.put_env(:td_cluster, TdCluster.ClusterHandler, TdCluster.ClusterHandlerImpl)
       %{id: id, data_structure_id: data_structure_id} = insert(:data_structure_version)
 
       %{id: child_id} =
-        insert(:data_structure_version, class: "field", metadata: %{"data_type_class" => "string"})
+        insert(:data_structure_version,
+          class: "field",
+          metadata: %{"data_type_class" => "string"}
+        )
 
       relation_type_id = RelationTypes.default_id!()
 
@@ -51,6 +57,8 @@ defmodule TdCluster.ClusterTdDdTest do
                   }
                 ]
               }} = Cluster.TdDd.get_latest_structure_version(data_structure_id)
+
+      Application.put_env(:td_cluster, TdCluster.ClusterHandler, MockClusterHandler)
     end
   end
 end

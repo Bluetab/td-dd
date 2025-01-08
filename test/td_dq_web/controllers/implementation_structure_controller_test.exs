@@ -3,10 +3,10 @@ defmodule TdDqWeb.ImplementationStructureControllerTest do
 
   import TdDd.TestOperators
 
-  alias TdCore.Search.IndexWorker
+  alias TdCore.Search.IndexWorkerMock
 
   setup %{conn: conn} do
-    IndexWorker.clear()
+    IndexWorkerMock.clear()
 
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
@@ -154,7 +154,7 @@ defmodule TdDqWeb.ImplementationStructureControllerTest do
 
       [
         {:reindex, :implementations, implementation_reindexed}
-      ] = IndexWorker.calls()
+      ] = IndexWorkerMock.calls()
 
       assert implementation_reindexed ||| [implementation_id, implementation_ref_id]
     end
@@ -433,7 +433,7 @@ defmodule TdDqWeb.ImplementationStructureControllerTest do
 
       [
         {:reindex, :implementations, implementation_reindexed}
-      ] = IndexWorker.calls()
+      ] = IndexWorkerMock.calls()
 
       assert implementation_reindexed ||| [implementation_id, implementation_ref_id]
     end

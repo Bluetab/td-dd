@@ -8,15 +8,6 @@ defmodule TdDqWeb.ExecutionGroupController do
 
   action_fallback(TdDqWeb.FallbackController)
 
-  def swagger_definitions do
-    SwaggerDefinitions.execution_group_swagger_definitions()
-  end
-
-  swagger_path :index do
-    description("List Execution Groups")
-    response(200, "OK", Schema.ref(:ExecutionGroupsResponse))
-  end
-
   def index(conn, _params) do
     claims = conn.assigns[:current_resource]
 
@@ -24,12 +15,6 @@ defmodule TdDqWeb.ExecutionGroupController do
          groups <- Executions.list_groups() do
       render(conn, "index.json", execution_groups: groups)
     end
-  end
-
-  swagger_path :show do
-    description("Show Execution Group")
-    response(200, "OK", Schema.ref(:ExecutionGroupResponse))
-    response(400, "Client Error")
   end
 
   def show(conn, %{} = params) do
@@ -42,12 +27,6 @@ defmodule TdDqWeb.ExecutionGroupController do
            ) do
       render(conn, "show.json", execution_group: group)
     end
-  end
-
-  swagger_path :create do
-    description("Create Execution Group")
-    response(201, "Created", Schema.ref(:ExecutionGroupResponse))
-    response(400, "Client Error")
   end
 
   def create(conn, %{} = params) do

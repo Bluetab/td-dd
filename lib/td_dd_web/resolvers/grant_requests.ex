@@ -8,15 +8,14 @@ defmodule TdDdWeb.Resolvers.GrantRequests do
 
   def latest_grant_request(_parent, args, resolution) do
     with {:claims, %{user_id: user_id} = claims} <- {:claims, claims(resolution)},
-         {:grant_request, grant_request} <-
+         {:grant_request, %{} = grant_request} <-
            {:grant_request, Requests.latest_grant_request(args, user_id)},
          :ok <- Bodyguard.permit(Requests, :view, claims, grant_request) do
       {:ok, grant_request}
     else
       {:claims, nil} -> {:error, :unauthorized}
       {:error, :forbidden} -> {:error, :forbidden}
-      {:can, false} -> {:error, :forbidden}
-      {:error, :grant_request, changeset, _} -> {:error, changeset}
+      {:grant_request, changeset} -> {:error, changeset}
     end
   end
 

@@ -1,29 +1,10 @@
 defmodule TdCxWeb.SourceController do
   use TdCxWeb, :controller
-  use PhoenixSwagger
 
   alias TdCx.Sources
   alias TdCx.Sources.Source
-  alias TdCxWeb.SwaggerDefinitions
 
   action_fallback(TdCxWeb.FallbackController)
-
-  def swagger_definitions do
-    SwaggerDefinitions.source_definitions()
-  end
-
-  swagger_path :index do
-    description("Get sources of the given type")
-    produces("application/json")
-
-    parameters do
-      type(:query, :string, "type of source", required: false)
-    end
-
-    response(200, "OK", Schema.ref(:SourcesResponse))
-    response(403, "Forbidden")
-    response(422, "Client Error")
-  end
 
   def index(conn, %{"type" => source_type} = params) do
     claims = conn.assigns[:current_resource]
@@ -48,19 +29,6 @@ defmodule TdCxWeb.SourceController do
     end
   end
 
-  swagger_path :create do
-    description("Creates a new source")
-    produces("application/json")
-
-    parameters do
-      source(:body, Schema.ref(:CreateSource), "Parameters used to create a source")
-    end
-
-    response(200, "OK", Schema.ref(:SourceResponse))
-    response(403, "Forbidden")
-    response(422, "Client Error")
-  end
-
   def create(conn, %{"source" => source_params}) do
     claims = conn.assigns[:current_resource]
 
@@ -73,19 +41,6 @@ defmodule TdCxWeb.SourceController do
     end
   end
 
-  swagger_path :show do
-    description("Get source with the given external_id")
-    produces("application/json")
-
-    parameters do
-      external_id(:path, :string, "external id of source", required: true)
-    end
-
-    response(200, "OK", Schema.ref(:SourceResponse))
-    response(403, "Forbidden")
-    response(422, "Client Error")
-  end
-
   def show(conn, %{"external_id" => external_id}) do
     claims = conn.assigns[:current_resource]
 
@@ -95,27 +50,6 @@ defmodule TdCxWeb.SourceController do
       job_types = Sources.job_types(source)
       render(conn, "show.json", source: source, job_types: job_types)
     end
-  end
-
-  swagger_path :update do
-    description("Updates config or secrets of source")
-    produces("application/json")
-
-    parameters do
-      external_id(:path, :string, "external_id of source", required: true)
-
-      merge_content(
-        :body,
-        :string,
-        "if true, the body content will be merged on top of the current value"
-      )
-
-      source(:body, Schema.ref(:UpdateSource), "Parameters used to update a source")
-    end
-
-    response(200, "OK", Schema.ref(:SourceResponse))
-    response(403, "Forbidden")
-    response(422, "Client Error")
   end
 
   def update(conn, %{"external_id" => external_id, "source" => source_params}) do
@@ -136,18 +70,6 @@ defmodule TdCxWeb.SourceController do
          {:ok, %Source{} = source} <- Sources.update_source_config(source, config) do
       render(conn, "show.json", source: source)
     end
-  end
-
-  swagger_path :delete do
-    description("Deletes a source")
-
-    parameters do
-      external_id(:path, :string, "Source external id", required: true)
-    end
-
-    response(204, "No Content")
-    response(403, "Forbidden")
-    response(422, "Client Error")
   end
 
   def delete(conn, %{"external_id" => external_id}) do

@@ -1,6 +1,5 @@
 defmodule TdDdWeb.GroupControllerTest do
   use TdDdWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   setup do
     [system: insert(:system)]
@@ -8,11 +7,10 @@ defmodule TdDdWeb.GroupControllerTest do
 
   describe "index" do
     @tag authentication: [role: "admin"]
-    test "index", %{conn: conn, swagger_schema: schema, system: %{external_id: external_id}} do
+    test "index", %{conn: conn, system: %{external_id: external_id}} do
       assert %{"data" => []} =
                conn
                |> get(Routes.system_group_path(conn, :index, external_id))
-               |> validate_resp_schema(schema, "GroupsResponse")
                |> json_response(:ok)
     end
   end

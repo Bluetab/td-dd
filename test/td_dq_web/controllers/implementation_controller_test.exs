@@ -1,8 +1,6 @@
 defmodule TdDqWeb.ImplementationControllerTest do
   use TdDqWeb.ConnCase
 
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger_dq.json"
-
   import Mox
 
   alias TdDd.DataStructures.Hierarchy
@@ -112,7 +110,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
   describe "GET /api/implementations/:id" do
     @tag authentication: [role: "admin"]
-    test "includes the source external_id in the response", %{conn: conn, swagger_schema: schema} do
+    test "includes the source external_id in the response", %{conn: conn} do
       %{id: source_id, external_id: source_external_id} = insert(:source)
 
       %{id: id} =
@@ -121,7 +119,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert %{"data" => data} =
                conn
                |> get(Routes.implementation_path(conn, :show, id))
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
 
       assert %{"raw_content" => content} = data
@@ -130,20 +127,18 @@ defmodule TdDqWeb.ImplementationControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "includes executable in response", %{conn: conn, swagger_schema: schema} do
+    test "includes executable in response", %{conn: conn} do
       %{id: id} = insert(:implementation)
 
       assert %{"data" => %{"executable" => true}} =
                conn
                |> get(Routes.implementation_path(conn, :show, id))
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
     end
 
     @tag authentication: [role: "admin"]
     test "includes related structures with current version and system in the response", %{
-      conn: conn,
-      swagger_schema: schema
+      conn: conn
     } do
       %{id: system_id, name: system_name} = insert(:system)
       %{id: data_structure_id} = data_structure = insert(:data_structure, system_id: system_id)
@@ -161,7 +156,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert %{"data" => %{"data_structures" => data_structures}} =
                conn
                |> get(Routes.implementation_path(conn, :show, id))
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
 
       assert [
@@ -181,8 +175,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
     @tag authentication: [role: "admin"]
     test "data_structures has enriched path", %{
-      conn: conn,
-      swagger_schema: schema
+      conn: conn
     } do
       domain_id = System.unique_integer([:positive])
       %{id: system_id} = insert(:system)
@@ -223,7 +216,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert %{"data" => %{"data_structures" => data_structures}} =
                conn
                |> get(Routes.implementation_path(conn, :show, id))
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
 
       assert [
@@ -299,7 +291,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
            ]
          ]
     test "includes execute action if user is assigned execute_quality_rule_implementations permission",
-         %{conn: conn, swagger_schema: schema, domain: domain} do
+         %{conn: conn, domain: domain} do
       %{id: id} = insert(:implementation, domain_id: domain.id, status: "published")
 
       assert %{
@@ -311,7 +303,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
              } =
                conn
                |> get(Routes.implementation_path(conn, :show, id))
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
     end
 
@@ -320,7 +311,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
            permissions: [:view_published_business_concepts, :view_quality_rule]
          ]
     test "does not include execute action if user is not assigned execute_quality_rule_implementations permission",
-         %{conn: conn, swagger_schema: schema, domain: domain} do
+         %{conn: conn, domain: domain} do
       %{id: id} = insert(:implementation, domain_id: domain.id)
 
       refute match?(
@@ -331,7 +322,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
                },
                conn
                |> get(Routes.implementation_path(conn, :show, id))
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
              )
     end
@@ -1498,27 +1488,24 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
   describe "index" do
     @tag authentication: [role: "admin"]
-    test "lists all implementations", %{conn: conn, swagger_schema: schema} do
+    test "lists all implementations", %{conn: conn} do
       assert %{"data" => [_]} =
                conn
                |> get(Routes.implementation_path(conn, :index))
-               |> validate_resp_schema(schema, "ImplementationsResponse")
                |> json_response(:ok)
     end
 
     @tag authentication: [role: "service"]
-    test "service account can view implementations", %{conn: conn, swagger_schema: schema} do
+    test "service account can view implementations", %{conn: conn} do
       assert %{"data" => [_]} =
                conn
                |> get(Routes.implementation_path(conn, :index))
-               |> validate_resp_schema(schema, "ImplementationsResponse")
                |> json_response(:ok)
     end
 
     @tag authentication: [role: "admin"]
     test "lists all implementations filtered by rule business_concept_id and state", %{
-      conn: conn,
-      swagger_schema: schema
+      conn: conn
     } do
       %{rule: rule} =
         insert(:implementation,
@@ -1538,7 +1525,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
                  is_rule_active: true,
                  rule_business_concept_id: "42"
                })
-               |> validate_resp_schema(schema, "ImplementationsResponse")
                |> json_response(:ok)
 
       assert length(data) == 4
@@ -1548,7 +1534,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
   describe "create implementation" do
     @tag authentication: [role: "admin"]
-    test "renders implementation when data is valid", %{conn: conn, swagger_schema: schema} do
+    test "renders implementation when data is valid", %{conn: conn} do
       rule = insert(:rule)
 
       creation_attrs =
@@ -1627,7 +1613,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> post(Routes.implementation_path(conn, :create),
                  rule_implementation: creation_attrs
                )
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:created)
 
       assert %{"id" => id} = data
@@ -1635,7 +1620,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert %{"data" => data} =
                conn
                |> get(Routes.implementation_path(conn, :show, id))
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
 
       assert rule.id == data["rule_id"]
@@ -1669,7 +1653,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "renders implementation with refence data", %{conn: conn, swagger_schema: schema} do
+    test "renders implementation with refence data", %{conn: conn} do
       rule = insert(:rule)
       %{id: rd_id} = insert(:reference_dataset, name: "foo_reference_dataset")
 
@@ -1708,7 +1692,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> post(Routes.implementation_path(conn, :create),
                  rule_implementation: creation_attrs
                )
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:created)
 
       assert %{"id" => id} = data
@@ -1716,7 +1699,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert %{"data" => data} =
                conn
                |> get(Routes.implementation_path(conn, :show, id))
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
 
       assert [
@@ -1752,8 +1734,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
     @tag authentication: [role: "admin"]
     test "return error when try to create more than one draft", %{
-      conn: conn,
-      swagger_schema: schema
+      conn: conn
     } do
       rule = insert(:rule)
 
@@ -1767,7 +1748,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> post(Routes.implementation_path(conn, :create),
                  rule_implementation: creation_attrs
                )
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:created)
 
       assert %{"errors" => error} =
@@ -1775,7 +1755,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> post(Routes.implementation_path(conn, :create),
                  rule_implementation: creation_attrs
                )
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:unprocessable_entity)
 
       assert %{"implementation_key" => ["duplicated"]} = error
@@ -1785,7 +1764,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
     test "return error when try to create a draft with an existing implementation_key and different implementation_ref",
          %{
            conn: conn,
-           swagger_schema: schema,
            claims: claims
          } do
       rule = insert(:rule)
@@ -1800,7 +1778,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> post(Routes.implementation_path(conn, :create),
                  rule_implementation: creation_attrs
                )
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:created)
 
       implementation = Implementations.get_implementation!(id)
@@ -1817,7 +1794,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> post(Routes.implementation_path(conn, :create),
                  rule_implementation: creation_attrs
                )
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:unprocessable_entity)
 
       assert %{"implementation_key" => ["duplicated"]} = error
@@ -1827,7 +1803,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
     test "return success when try to create a draft on existing implementation_ref with same implementation_key",
          %{
            conn: conn,
-           swagger_schema: schema,
            claims: claims
          } do
       rule = insert(:rule)
@@ -1843,7 +1818,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> post(Routes.implementation_path(conn, :create),
                  rule_implementation: creation_attrs
                )
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:created)
 
       %{implementation_ref: imp_ref} = implementation = Implementations.get_implementation!(id)
@@ -1862,7 +1836,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> put(Routes.implementation_path(conn, :update, implementation),
                  rule_implementation: creation_attrs
                )
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
 
       assert id != new_id
@@ -1873,7 +1846,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
     test "return success when try to create a draft on existing implementation_ref with different implementation_key",
          %{
            conn: conn,
-           swagger_schema: schema,
            claims: claims
          } do
       rule = insert(:rule)
@@ -1889,7 +1861,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> post(Routes.implementation_path(conn, :create),
                  rule_implementation: creation_attrs
                )
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:created)
 
       %{implementation_ref: imp_ref, version: 1, status: :draft} =
@@ -1909,7 +1880,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> put(Routes.implementation_path(conn, :update, implementation),
                  rule_implementation: Map.put(creation_attrs, "implementation_key", "fuaah!")
                )
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
 
       assert id != new_id
@@ -1922,7 +1892,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
     test "return 200 but does not create a new draft when editing published implementation with same information",
          %{
            conn: conn,
-           swagger_schema: schema,
            claims: claims
          } do
       rule_implementation_attr = string_params_for(:implementation)
@@ -1950,7 +1919,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> put(Routes.implementation_path(conn, :update, implementation),
                  rule_implementation: rule_implementation_attr
                )
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
     end
 
@@ -1958,7 +1926,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
     test "return 200 and create a new draft when editing published implementation with different information",
          %{
            conn: conn,
-           swagger_schema: schema,
            claims: claims
          } do
       rule_implementation_attr = string_params_for(:implementation, goal: 30, minimum: 10)
@@ -1983,7 +1950,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> put(Routes.implementation_path(conn, :update, implementation),
                  rule_implementation: rule_implementation_attr |> Map.put("goal", 45)
                )
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
 
       assert id != new_id
@@ -1996,7 +1962,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
     test "return 200 and create a new published when editing published implementation with different information",
          %{
            conn: conn,
-           swagger_schema: schema,
            claims: claims,
            domain: %{id: domain_id}
          } do
@@ -2026,14 +1991,13 @@ defmodule TdDqWeb.ImplementationControllerTest do
                    |> Map.put("goal", 45)
                    |> Map.put("status", "published")
                )
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
 
       assert id != new_id
     end
 
     @tag authentication: [role: "admin"]
-    test "renders implementation with segments", %{conn: conn, swagger_schema: schema} do
+    test "renders implementation with segments", %{conn: conn} do
       rule = insert(:rule)
       structure_id = 12_554
 
@@ -2048,7 +2012,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> post(Routes.implementation_path(conn, :create),
                  rule_implementation: creation_attrs
                )
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:created)
 
       assert %{"id" => id} = data
@@ -2056,7 +2019,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert %{"data" => data} =
                conn
                |> get(Routes.implementation_path(conn, :show, id))
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
 
       assert rule.id == data["rule_id"]
@@ -2065,8 +2027,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
     @tag authentication: [role: "admin"]
     test "can create raw rule implementation with alias", %{
-      conn: conn,
-      swagger_schema: schema
+      conn: conn
     } do
       rule = insert(:rule)
 
@@ -2080,7 +2041,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> post(Routes.implementation_path(conn, :create),
                  rule_implementation: creation_attrs
                )
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:created)
 
       assert %{
@@ -2206,8 +2166,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
     test "non admin with ruleless implementation permission can create ruleless implementation",
          %{
            conn: conn,
-           domain: domain,
-           swagger_schema: schema
+           domain: domain
          } do
       %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
 
@@ -2220,7 +2179,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert %{"data" => data} =
                conn
                |> post(Routes.implementation_path(conn, :create), rule_implementation: params)
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:created)
 
       assert %{"id" => id} = data
@@ -2228,7 +2186,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert %{"data" => data} =
                conn
                |> get(Routes.implementation_path(conn, :show, id))
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
 
       assert %{"data_structures" => [%{"data_structure_id" => ^data_structure_id}]} = data
@@ -2417,8 +2374,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
     @tag authentication: [role: "admin"]
     test "errors trying to create raw rule implementation without source_id", %{
-      conn: conn,
-      swagger_schema: schema
+      conn: conn
     } do
       rule = insert(:rule)
 
@@ -2440,7 +2396,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> post(Routes.implementation_path(conn, :create),
                  rule_implementation: creation_attrs
                )
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:unprocessable_entity)
 
       assert %{
@@ -2547,7 +2502,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
   describe "update implementation" do
     @tag authentication: [role: "admin"]
-    test "renders implementation when data is valid", %{conn: conn, swagger_schema: schema} do
+    test "renders implementation when data is valid", %{conn: conn} do
       %{implementation_ref: ref} = implementation = insert(:implementation)
 
       params =
@@ -2559,7 +2514,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> put(Routes.implementation_path(conn, :update, implementation),
                  rule_implementation: params
                )
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
 
       assert %{"id" => id} = data
@@ -2569,7 +2523,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert %{"data" => data} =
                conn
                |> get(Routes.implementation_path(conn, :show, id))
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
 
       assert implementation.rule_id == data["rule_id"]
@@ -2595,7 +2548,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
     @tag authentication: [role: "admin"]
     test "create new implementation with same implementation_ref when previous one has published status",
-         %{conn: conn, swagger_schema: schema} do
+         %{conn: conn} do
       %{implementation_ref: ref, id: published_id} =
         implementation = insert(:implementation, status: :published)
 
@@ -2614,7 +2567,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> put(Routes.implementation_path(conn, :update, implementation),
                  rule_implementation: params
                )
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
 
       assert %{"id" => id} = data
@@ -3028,8 +2980,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
     @tag authentication: [role: "admin"]
     test "can update rule implementation implementation key", %{
-      conn: conn,
-      swagger_schema: schema
+      conn: conn
     } do
       implementation = insert(:implementation)
       update_attrs = %{implementation_key: "updated"}
@@ -3039,7 +2990,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> put(Routes.implementation_path(conn, :update, implementation),
                  rule_implementation: update_attrs
                )
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
 
       assert %{"id" => id} = data
@@ -3047,7 +2997,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert %{"data" => data} =
                conn
                |> get(Routes.implementation_path(conn, :show, id))
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
 
       assert implementation.rule_id == data["rule_id"]
@@ -3171,7 +3120,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "accepts base64 encoded raw_content", %{conn: conn, swagger_schema: schema} do
+    test "accepts base64 encoded raw_content", %{conn: conn} do
       %{id: id} = insert(:raw_implementation, domain_id: 123)
 
       params = %{
@@ -3188,7 +3137,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert %{"data" => data} =
                conn
                |> patch(Routes.implementation_path(conn, :update, id, params))
-               |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
 
       assert %{
@@ -3614,8 +3562,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
     for role <- ["admin", "service"] do
       @tag authentication: [role: "service"]
       test "#{role} account can search implementations", %{
-        conn: conn,
-        swagger_schema: schema
+        conn: conn
       } do
         %{id: id, implementation_ref: ref} = implementation = insert(:implementation)
 
@@ -3635,7 +3582,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
         assert %{"data" => data} =
                  conn
                  |> post(Routes.rule_implementation_path(conn, :search_rule_implementations, 123))
-                 |> validate_resp_schema(schema, "ImplementationsResponse")
                  |> json_response(:ok)
 
         assert [%{"id" => ^id, "implementation_ref" => ^ref}] = data
@@ -3644,8 +3590,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
     @tag authentication: [role: "admin"]
     test "search implementations with raw_content", %{
-      conn: conn,
-      swagger_schema: schema
+      conn: conn
     } do
       %{rule_id: rule_id} = implementation = insert(:raw_implementation)
 
@@ -3660,14 +3605,13 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> post(
                  Routes.rule_implementation_path(conn, :search_rule_implementations, rule_id)
                )
-               |> validate_resp_schema(schema, "ImplementationsResponse")
                |> json_response(:ok)
 
       assert [%{"rule_id" => ^rule_id}] = data
     end
 
     @tag authentication: [role: "admin"]
-    test "lists all deleted implementations of a rule", %{conn: conn, swagger_schema: schema} do
+    test "lists all deleted implementations of a rule", %{conn: conn} do
       %{id: id} = implementation = insert(:implementation, deleted_at: DateTime.utc_now())
 
       ElasticsearchMock
@@ -3692,7 +3636,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
                    status: "deleted"
                  )
                )
-               |> validate_resp_schema(schema, "ImplementationsResponse")
                |> json_response(:ok)
 
       assert [%{"id" => ^id}] = data

@@ -7,13 +7,14 @@ defmodule TdDdWeb.Resolvers.ImplementationResults do
 
   def result(_parent, %{id: id}, resolution) do
     with {:claims, %{} = claims} <- {:claims, claims(resolution)},
-         result <- RuleResults.get_rule_result(id, preload: [:implementation]),
+         {:result, %{} = result} <-
+           {:result, RuleResults.get_rule_result(id, preload: [:implementation])},
          :ok <- Bodyguard.permit(RuleResults, :view, claims, result) do
       {:ok, result}
     else
       {:claims, nil} -> {:error, :unauthorized}
       {:error, :forbidden} -> {:error, :forbidden}
-      {:error, :result, changeset, _} -> {:error, changeset}
+      {:result, _} -> {:error, :not_found}
     end
   end
 

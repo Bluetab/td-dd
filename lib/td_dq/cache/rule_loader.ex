@@ -92,7 +92,7 @@ defmodule TdDq.Cache.RuleLoader do
       end
 
     case count do
-      :error -> Logger.warn("RuleLoader: error reading keys from cache")
+      :error -> Logger.warning("RuleLoader: error reading keys from cache")
       0 -> Logger.debug("RuleLoader: no stale rules in cache")
       n -> Logger.info("RuleLoader: deleted #{n} stale rules from cache")
     end

@@ -1,7 +1,7 @@
 defmodule TdDdWeb.GrantRequestGroupControllerTest do
   use TdDdWeb.ConnCase
 
-  alias TdCore.Search.IndexWorker
+  alias TdCore.Search.IndexWorkerMock
 
   @valid_metadata %{
     "list" => %{"value" => "one", "origin" => "user"},
@@ -24,7 +24,7 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
       "type" => @template_name
     }
 
-    IndexWorker.clear()
+    IndexWorkerMock.clear()
 
     [
       data_structure: data_structure,
@@ -379,7 +379,9 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
 
       assert %{"data" => data} =
                conn
-               |> post(Routes.grant_request_group_path(conn, :create), grant_request_group: params)
+               |> post(Routes.grant_request_group_path(conn, :create),
+                 grant_request_group: params
+               )
                |> json_response(:created)
 
       assert %{"id" => id} = data
@@ -421,7 +423,9 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
 
       assert %{"message" => "at least one request is required"} =
                conn
-               |> post(Routes.grant_request_group_path(conn, :create), grant_request_group: params)
+               |> post(Routes.grant_request_group_path(conn, :create),
+                 grant_request_group: params
+               )
                |> json_response(:unprocessable_entity)
     end
 
@@ -443,7 +447,9 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
 
       assert %{"data" => data} =
                conn
-               |> post(Routes.grant_request_group_path(conn, :create), grant_request_group: params)
+               |> post(Routes.grant_request_group_path(conn, :create),
+                 grant_request_group: params
+               )
                |> json_response(:created)
 
       assert %{"id" => id} = data
@@ -488,7 +494,9 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
 
       assert %{"data" => data} =
                conn
-               |> post(Routes.grant_request_group_path(conn, :create), grant_request_group: params)
+               |> post(Routes.grant_request_group_path(conn, :create),
+                 grant_request_group: params
+               )
                |> json_response(:created)
 
       assert %{"id" => id} = data
@@ -519,7 +527,9 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
 
       assert %{"message" => "DataStructure"} =
                conn
-               |> post(Routes.grant_request_group_path(conn, :create), grant_request_group: params)
+               |> post(Routes.grant_request_group_path(conn, :create),
+                 grant_request_group: params
+               )
                |> json_response(:not_found)
 
       params = %{
@@ -529,7 +539,9 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
 
       assert %{"message" => "DataStructure"} =
                conn
-               |> post(Routes.grant_request_group_path(conn, :create), grant_request_group: params)
+               |> post(Routes.grant_request_group_path(conn, :create),
+                 grant_request_group: params
+               )
                |> json_response(:not_found)
     end
 
@@ -550,7 +562,9 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
 
       assert %{"errors" => errors} =
                conn
-               |> post(Routes.grant_request_group_path(conn, :create), grant_request_group: params)
+               |> post(Routes.grant_request_group_path(conn, :create),
+                 grant_request_group: params
+               )
                |> json_response(:unprocessable_entity)
 
       assert %{"requests" => [%{"metadata" => ["list: can't be blank - string: can't be blank"]}]} =
@@ -567,13 +581,13 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
       group: group,
       grant_request_id: grant_request_id
     } do
-      IndexWorker.clear()
+      IndexWorkerMock.clear()
 
       assert conn
              |> delete(Routes.grant_request_group_path(conn, :delete, group))
              |> response(:no_content)
 
-      assert [{:delete, :grant_requests, [^grant_request_id]}] = IndexWorker.calls()
+      assert [{:delete, :grant_requests, [^grant_request_id]}] = IndexWorkerMock.calls()
 
       assert_error_sent 404, fn ->
         get(conn, Routes.grant_request_group_path(conn, :show, group))

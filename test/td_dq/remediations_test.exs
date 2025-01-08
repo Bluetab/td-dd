@@ -39,7 +39,9 @@ defmodule TdDq.Remediations.RemediationsTest do
       %{id: id} = insert(:rule_result)
       remediation_1 = insert(:remediation, df_name: df_name, rule_result_id: id)
       remediation_2 = insert(:remediation, df_name: df_name, rule_result_id: id)
-      assert [remediation_1, remediation_2] == Remediations.list_remediations()
+
+      assert [remediation_1, remediation_2] ==
+               Remediations.list_remediations() |> Enum.sort_by(& &1.id)
     end
 
     test "get_remediations/1 returns the remediation with given id", %{template: %{name: df_name}} do

@@ -518,7 +518,9 @@ defmodule TdDd.DataStructures.DataStructureVersionsTest do
       ] =
         ["parent", "child"]
         |> Enum.map(
-          &insert(:data_structure_version, data_structure: build(:data_structure, external_id: &1))
+          &insert(:data_structure_version,
+            data_structure: build(:data_structure, external_id: &1)
+          )
         )
 
       %{id: relation_type_id} = insert(:relation_type)

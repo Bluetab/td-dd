@@ -8,13 +8,14 @@ defmodule TdCluster.ClusterTdDdTasksTest do
   @moduletag sandbox: :shared
 
   setup do
-    Application.put_env(:td_cluster, TdCluster.ClusterHandler, TdCluster.ClusterHandlerImpl)
     start_supervised!(Search.Tasks)
     :ok
   end
 
   describe "test Cluster.TdDd.Tasks functions" do
     test "correctly handles task logging lifecycle" do
+      Application.put_env(:td_cluster, TdCluster.ClusterHandler, TdCluster.ClusterHandlerImpl)
+
       index = :fake_index
 
       {:ok, :ok} = Cluster.TdDd.Tasks.log_start(index)
@@ -66,6 +67,8 @@ defmodule TdCluster.ClusterTdDdTasksTest do
              ] =
                Search.Tasks.ets_table()
                |> :ets.tab2list()
+
+      Application.put_env(:td_cluster, TdCluster.ClusterHandler, MockClusterHandler)
     end
   end
 end
