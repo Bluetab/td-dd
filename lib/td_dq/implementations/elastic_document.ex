@@ -65,7 +65,9 @@ defmodule TdDq.Implementations.ElasticDocument do
       rule = Map.get(implementation, :rule)
 
       implementation =
-        Implementations.enrich_implementation_structures(implementation, preload_structures: false)
+        Implementations.enrich_implementation_structures(implementation,
+          preload_structures: false
+        )
 
       quality_event = QualityEvents.get_last_event_by_imp(implementation)
 
@@ -415,7 +417,7 @@ defmodule TdDq.Implementations.ElasticDocument do
           properties: %{
             df_name: %{type: "text", fields: @raw},
             version: %{type: "long"},
-            name: %{type: "text", boost: 1.5, fields: @raw_sort},
+            name: %{type: "text", fields: @raw_sort},
             active: %{type: "boolean", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
             df_content: %{properties: get_dynamic_mappings("dq")}
           }
@@ -439,7 +441,7 @@ defmodule TdDq.Implementations.ElasticDocument do
         concepts: %{type: "long", null_value: -1},
         updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
         inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-        implementation_key: %{type: "text", boost: 2.0, fields: @raw},
+        implementation_key: %{type: "text", fields: @raw},
         implementation_type: %{type: "text", fields: @raw_sort},
         execution_result_info: %{
           properties: %{

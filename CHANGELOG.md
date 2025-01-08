@@ -1,5 +1,11 @@
 # Changelog
 
+## [6.16.1] 2025-01-08
+
+### Fixed
+
+- [TD-7022] Remove legacy boost from implementation and rule native mappings
+
 ## [6.16.0] 2024-12-16
 
 ### Added
