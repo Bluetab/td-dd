@@ -16,6 +16,12 @@
   - updated_at takes Data Structure date
   - new field last_change_at takes Structure or Version most recient date
 
+## [6.16.1] 2025-01-08
+
+### Fixed
+
+- [TD-7022] Remove legacy boost from implementation and rule native mappings
+
 ## [6.16.0] 2024-12-16
 
 ### Added
