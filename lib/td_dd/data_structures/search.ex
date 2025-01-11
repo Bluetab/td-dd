@@ -20,20 +20,17 @@ defmodule TdDd.DataStructures.Search do
   def get_filter_values(claims, permission, params)
 
   def get_filter_values(%Claims{} = claims, permission, %{} = params) do
-    aggs = ElasticDocumentProtocol.aggregations(%DataStructureVersion{})
-    query = build_query(claims, permission, params, aggs)
+    query_data = %{aggs: aggs} = ElasticDocumentProtocol.query_data(%DataStructureVersion{})
+    query = build_query(claims, permission, params, query_data)
     search = %{query: query, aggs: aggs, size: 0}
     Search.get_filters(search, @index)
   end
 
   def get_bucket_paths(%Claims{} = claims, permission, %{} = params) do
-    aggs =
-      Map.merge(
-        DSElasticDocument.id_path_agg(),
-        ElasticDocumentProtocol.aggregations(%DataStructureVersion{})
-      )
+    query_data = %{aggs: aggs} = ElasticDocumentProtocol.query_data(%DataStructureVersion{})
+    aggs = Map.merge(DSElasticDocument.id_path_agg(), aggs)
 
-    query = build_query(claims, permission, params, aggs)
+    query = build_query(claims, permission, params, %{query_data | aggs: aggs})
     search = %{query: query, aggs: aggs, size: 0}
     {:ok, %{"id_path" => %{buckets: buckets}}} = Search.get_filters(search, @index)
 
@@ -99,7 +96,7 @@ defmodule TdDd.DataStructures.Search do
   end
 
   def get_aggregations(%Claims{} = claims, aggs) do
-    query = build_query(claims, "view_data_structure", %{}, aggs)
+    query = build_query(claims, "view_data_structure", %{}, %{aggs: aggs})
     search = %{query: query, aggs: aggs, size: 0}
     Search.search(search, @index, format: :raw)
   end
@@ -112,8 +109,8 @@ defmodule TdDd.DataStructures.Search do
   end
 
   def scroll_data_structures(params, %Claims{} = claims, permission) do
-    aggs = ElasticDocumentProtocol.aggregations(%DataStructureVersion{})
-    query = build_query(claims, permission, params, aggs)
+    query_data = ElasticDocumentProtocol.query_data(%DataStructureVersion{})
+    query = build_query(claims, permission, params, query_data)
     sort = Map.get(params, "sort", ["_score", "name.raw", "id"])
 
     %{limit: limit, size: size, ttl: ttl} = scroll_opts!()
@@ -170,8 +167,11 @@ defmodule TdDd.DataStructures.Search do
     |> search_data_structures(claims, permission, 0, 1_000)
   end
 
-  defp maybe_put_query(transformed_params, %{"query" => query}) do
-    Map.put(transformed_params, "query", query)
+  defp maybe_put_query(transformed_params, %{"query" => query}) when is_binary(query) do
+    case String.trim(query) do
+      "" -> transformed_params
+      _ -> Map.put(transformed_params, "query", query)
+    end
   end
 
   defp maybe_put_query(transformed_params, %{}), do: transformed_params
@@ -179,17 +179,17 @@ defmodule TdDd.DataStructures.Search do
   def search_data_structures(params, claims, permission, page \\ 0, size \\ 50)
 
   def search_data_structures(params, %Claims{} = claims, permission, page, size) do
-    aggs = ElasticDocumentProtocol.aggregations(%DataStructureVersion{})
-    query = build_query(claims, permission, params, aggs)
+    query_data = ElasticDocumentProtocol.query_data(%DataStructureVersion{})
+    query = build_query(claims, permission, params, query_data)
     sort = Map.get(params, "sort", ["_score", "name.raw"])
 
     do_search(%{query: query, sort: sort, from: page * size, size: size}, params)
   end
 
-  defp build_query(%Claims{} = claims, permission, %{} = params, %{} = aggs) do
+  defp build_query(%Claims{} = claims, permission, %{} = params, %{} = query_data) do
     claims
     |> search_permissions(permission)
-    |> Query.build_query(params, aggs)
+    |> Query.build_query(params, query_data)
   end
 
   defp do_search(query, %{"scroll" => scroll} = _params) do

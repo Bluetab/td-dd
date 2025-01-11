@@ -12,10 +12,10 @@ defmodule TdCx.Jobs.Search do
   @index :jobs
 
   def get_filter_values(%Claims{role: role}, params) when role in ["admin", "service"] do
-    query = Query.build_query(%{match_all: %{}}, params)
+    query_data = %{aggs: aggs} = fetch_query_data()
+    opts = Keyword.new(query_data)
 
-    aggs = ElasticDocumentProtocol.aggregations(%Job{})
-
+    query = Query.build_query(%{match_all: %{}}, params, opts)
     search = %{query: query, aggs: aggs, size: 0}
 
     Search.get_filters(search, @index)
@@ -27,10 +27,10 @@ defmodule TdCx.Jobs.Search do
 
   # Admin or service account search
   def search_jobs(params, %Claims{role: role}, page, size) when role in ["admin", "service"] do
-    aggs = ElasticDocumentProtocol.aggregations(%Job{})
+    query_data = fetch_query_data()
+    opts = Keyword.new(query_data)
 
-    query = Query.build_query(%{match_all: %{}}, params, aggs)
-
+    query = Query.build_query(%{match_all: %{}}, params, opts)
     sort = Map.get(params, "sort", ["_score", "external_id.raw"])
 
     %{
@@ -58,5 +58,26 @@ defmodule TdCx.Jobs.Search do
   defp transform_response(%{results: results} = response) do
     results = Enum.map(results, &Map.get(&1, "_source"))
     %{response | results: results}
+  end
+
+  defp fetch_query_data do
+    %Job{}
+    |> ElasticDocumentProtocol.query_data()
+    |> with_search_clauses()
+  end
+
+  defp with_search_clauses(%{fields: fields} = query_data) do
+    multi_match_bool_prefix = %{
+      multi_match: %{
+        type: "bool_prefix",
+        fields: fields,
+        lenient: true,
+        fuzziness: "AUTO"
+      }
+    }
+
+    query_data
+    |> Map.take([:aggs])
+    |> Map.put(:clauses, [multi_match_bool_prefix])
   end
 end
