@@ -16,28 +16,27 @@ config :td_core, TdCore.Search.Cluster,
 config :td_core, TdCore.Search.Cluster,
   indexes: [
     grants: [
-      dsv_no_sercheabled_fields: ["note"],
-      grant_no_sercheabled_fields: ["detail"],
+      dsv_no_searcheable_fields: ["note"],
+      grant_no_searcheable_fields: ["detail"],
       store: TdDd.Search.Store,
       sources: [TdDd.Grants.GrantStructure],
       bulk_action: "index",
       settings: %{
         analysis: %{
           analyzer: %{
-            ngram: %{
-              filter: ["lowercase", "asciifolding"],
-              tokenizer: "ngram"
+            default: %{
+              type: "custom",
+              tokenizer: "standard",
+              filter: ["lowercase", "asciifolding"]
             }
           },
           normalizer: %{
             sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
           },
-          tokenizer: %{
-            ngram: %{
-              type: "ngram",
-              min_gram: 3,
-              max_gram: 3,
-              token_chars: ["letter", "digit"]
+          filter: %{
+            es_stem: %{
+              type: "stemmer",
+              language: "light_spanish"
             }
           }
         }
@@ -52,13 +51,25 @@ config :td_core, TdCore.Search.Cluster,
         analysis: %{
           analyzer: %{
             default: %{
-              type: "pattern",
-              pattern: "\\W|_",
-              lowercase: true
+              type: "custom",
+              tokenizer: "split_on_non_word",
+              filter: ["lowercase", "asciifolding"]
             }
           },
           normalizer: %{
             sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
+          },
+          tokenizer: %{
+            split_on_non_word: %{
+              type: "pattern",
+              pattern: "\\W+|_"
+            }
+          },
+          filter: %{
+            es_stem: %{
+              type: "stemmer",
+              language: "light_spanish"
+            }
           }
         }
       }
@@ -70,8 +81,21 @@ config :td_core, TdCore.Search.Cluster,
       bulk_action: "index",
       settings: %{
         analysis: %{
+          analyzer: %{
+            default: %{
+              type: "custom",
+              tokenizer: "standard",
+              filter: ["lowercase", "asciifolding"]
+            }
+          },
           normalizer: %{
             sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
+          },
+          filter: %{
+            es_stem: %{
+              type: "stemmer",
+              language: "light_spanish"
+            }
           }
         }
       }
@@ -85,13 +109,25 @@ config :td_core, TdCore.Search.Cluster,
         analysis: %{
           analyzer: %{
             default: %{
-              type: "pattern",
-              pattern: "\\W|_",
-              lowercase: true
+              type: "custom",
+              tokenizer: "split_on_non_word",
+              filter: ["lowercase", "asciifolding"]
             }
           },
           normalizer: %{
             sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
+          },
+          tokenizer: %{
+            split_on_non_word: %{
+              type: "pattern",
+              pattern: "\\W+|_"
+            }
+          },
+          filter: %{
+            es_stem: %{
+              type: "stemmer",
+              language: "light_spanish"
+            }
           }
         }
       }
@@ -104,20 +140,19 @@ config :td_core, TdCore.Search.Cluster,
       settings: %{
         analysis: %{
           analyzer: %{
-            ngram: %{
-              filter: ["lowercase", "asciifolding"],
-              tokenizer: "ngram"
+            default: %{
+              type: "custom",
+              tokenizer: "standard",
+              filter: ["lowercase", "asciifolding"]
             }
           },
           normalizer: %{
             sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
           },
-          tokenizer: %{
-            ngram: %{
-              type: "ngram",
-              min_gram: 3,
-              max_gram: 3,
-              token_chars: ["letter", "digit"]
+          filter: %{
+            es_stem: %{
+              type: "stemmer",
+              language: "light_spanish"
             }
           }
         }
@@ -131,20 +166,19 @@ config :td_core, TdCore.Search.Cluster,
       settings: %{
         analysis: %{
           analyzer: %{
-            ngram: %{
-              filter: ["lowercase", "asciifolding"],
-              tokenizer: "ngram"
+            default: %{
+              type: "custom",
+              tokenizer: "standard",
+              filter: ["lowercase", "asciifolding"]
             }
           },
           normalizer: %{
             sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
           },
-          tokenizer: %{
-            ngram: %{
-              type: "ngram",
-              min_gram: 3,
-              max_gram: 3,
-              token_chars: ["letter", "digit"]
+          filter: %{
+            es_stem: %{
+              type: "stemmer",
+              language: "light_spanish"
             }
           }
         }

@@ -97,10 +97,12 @@ defmodule TdDq.Rules.Search.Query do
     {:cont, [@executable, domain_filter(domain_ids) | acc]}
   end
 
-  def build_query(%{} = permissions, params, aggs) do
+  def build_query(%{} = permissions, params, query_data) do
+    opts = Keyword.new(query_data)
+
     permissions
     |> build_filters()
-    |> Query.build_query(params, aggs)
+    |> Query.build_query(params, opts)
   end
 
   defp domain_filter(domain_ids) do

@@ -137,7 +137,7 @@ config :td_dd, TdDd.Scheduler,
     ],
     job_indexer: [
       schedule: "@daily",
-      task: {TdCx.Search.IndexWorker, :reindex, []},
+      task: {TdCore.Search.IndexWorker, :reindex, [:jobs, :all]},
       run_strategy: Quantum.RunStrategy.Local
     ],
     implementation_cache_refresher: [
@@ -147,12 +147,12 @@ config :td_dd, TdDd.Scheduler,
     ],
     rule_indexer: [
       schedule: "@daily",
-      task: {TdCore.Search.IndexWorker, :reindex, []},
+      task: {TdCore.Search.IndexWorker, :reindex, [:rules, :all]},
       run_strategy: Quantum.RunStrategy.Local
     ],
     grant_indexer: [
       schedule: "@daily",
-      task: {TdCore.Search.IndexWorker, :reindex_grants, [:all]},
+      task: {TdCore.Search.IndexWorker, :reindex, [:grants, :all]},
       run_strategy: Quantum.RunStrategy.Local
     ],
     lineage_nodes_domains_ids_refresher: [

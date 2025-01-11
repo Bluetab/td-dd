@@ -83,7 +83,7 @@ if config_env() == :prod do
       ],
       job_indexer: [
         schedule: System.get_env("ES_REFRESH_SCHEDULE", "@daily"),
-        task: {TdCx.Search.IndexWorker, :reindex, []},
+        task: {TdCore.Search.IndexWorker, :reindex, [:jobs, :all]},
         run_strategy: Quantum.RunStrategy.Local
       ],
       implementation_cache_refresher: [
@@ -93,12 +93,12 @@ if config_env() == :prod do
       ],
       rule_indexer: [
         schedule: System.get_env("ES_REFRESH_SCHEDULE", "@daily"),
-        task: {TdDq.Search.IndexWorker, :reindex, []},
+        task: {TdCore.Search.IndexWorker, :reindex, [:rules, :all]},
         run_strategy: Quantum.RunStrategy.Local
       ],
       grant_indexer: [
         schedule: System.get_env("ES_REFRESH_SCHEDULE", "@daily"),
-        task: {TdDd.Search.IndexWorker, :reindex_grants, [:all]},
+        task: {TdCore.Search.IndexWorker, :reindex, [:grants, :all]},
         run_strategy: Quantum.RunStrategy.Local
       ],
       lineage_nodes_domains_ids_refresher: [

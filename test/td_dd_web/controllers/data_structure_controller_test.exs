@@ -174,7 +174,28 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
-        assert %{bool: %{must: [%{multi_match: _}, %{match_all: %{}}]}} = query
+        assert %{
+                 bool: %{
+                   must: %{
+                     multi_match: %{
+                       fields: [
+                         "ngram_name*^3",
+                         "ngram_original_name*^1.5",
+                         "ngram_path*",
+                         "system.name",
+                         "description",
+                         "note.string"
+                       ],
+                       fuzziness: "AUTO",
+                       lenient: true,
+                       query: "foo",
+                       type: "bool_prefix"
+                     }
+                   },
+                   must_not: %{exists: %{field: "deleted_at"}}
+                 }
+               } = query
+
         SearchHelpers.hits_response([dsv])
       end)
 
@@ -254,7 +275,28 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
-        assert %{bool: %{must: [%{multi_match: _}, %{match_all: %{}}]}} = query
+        assert %{
+                 bool: %{
+                   must: %{
+                     multi_match: %{
+                       fields: [
+                         "ngram_name*^3",
+                         "ngram_original_name*^1.5",
+                         "ngram_path*",
+                         "system.name",
+                         "description",
+                         "note.string"
+                       ],
+                       fuzziness: "AUTO",
+                       lenient: true,
+                       query: "foo",
+                       type: "bool_prefix"
+                     }
+                   },
+                   must_not: %{exists: %{field: "deleted_at"}}
+                 }
+               } = query
+
         SearchHelpers.hits_response([dsv])
       end)
 

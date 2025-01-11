@@ -15,12 +15,12 @@ defmodule TdDd.GrantRequests.Search do
   @index :grant_requests
 
   def get_filter_values(%Claims{} = claims, params) do
-    aggs = ElasticDocumentProtocol.aggregations(%GrantRequest{})
+    query_data = %{aggs: aggs} = fetch_query_data()
 
     query =
       claims
       |> search_permissions()
-      |> Query.build_query(params, aggs)
+      |> Query.build_query(params, query_data)
 
     search = %{query: query, aggs: aggs, size: 0}
 
@@ -50,13 +50,13 @@ defmodule TdDd.GrantRequests.Search do
   end
 
   def search(params, claims, page, size) do
-    aggs = ElasticDocumentProtocol.aggregations(%GrantRequest{})
+    query_data = fetch_query_data()
     sort = Map.get(params, "sort", ["_score", "inserted_at"])
 
     query =
       claims
       |> search_permissions()
-      |> Query.build_query(params, aggs)
+      |> Query.build_query(params, query_data)
 
     %{
       from: page * size,
@@ -100,5 +100,26 @@ defmodule TdDd.GrantRequests.Search do
 
   defp do_search(query, _params) do
     Search.search(query, @index)
+  end
+
+  defp fetch_query_data do
+    %GrantRequest{}
+    |> ElasticDocumentProtocol.query_data()
+    |> with_search_clauses()
+  end
+
+  defp with_search_clauses(%{fields: fields} = query_data) do
+    multi_match_bool_prefix = %{
+      multi_match: %{
+        type: "bool_prefix",
+        fields: fields,
+        lenient: true,
+        fuzziness: "AUTO"
+      }
+    }
+
+    query_data
+    |> Map.take([:aggs])
+    |> Map.put(:clauses, [multi_match_bool_prefix])
   end
 end

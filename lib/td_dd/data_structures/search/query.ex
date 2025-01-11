@@ -56,77 +56,33 @@ defmodule TdDd.DataStructures.Search.Query do
     Query.term_or_terms("domain_ids", domain_ids)
   end
 
-  def build_query(permissions, params, aggs) do
+  def build_query(permissions, params, query_data) do
     permissions
     |> build_filters()
-    |> do_build_query(params, aggs)
+    |> do_build_query(params, query_data)
   end
 
-  defp do_build_query(filters, params, aggs) do
-    {query, params} = Map.pop(params, "query", "")
-    words = Regex.split(~r/\s/, query, trim: true)
-
-    filters
-    |> Query.build_query(params, aggs)
-    |> do_build_query(words)
+  defp do_build_query(filters, params, query_data) do
+    opts = query_data |> with_search_clauses() |> Keyword.new()
+    Query.build_query(filters, params, opts)
   end
 
-  defp do_build_query(query, []), do: query
-
-  defp do_build_query(%{bool: %{must: must} = bool} = query, words) do
-    must_query = build_bool_query(words)
-
-    %{query | bool: Map.put(bool, :must, List.flatten([must_query, must]))}
-  end
-
-  defp do_build_query(%{bool: bool} = query, words) do
-    must_query = build_bool_query(words)
-
-    %{query | bool: Map.put(bool, :must, must_query)}
-  end
-
-  defp build_bool_query(words) do
-    words
-    |> Enum.map(&multi_match/1)
-    |> maybe_bool_query()
-  end
-
-  defp multi_match(query) do
-    %{
+  defp with_search_clauses(%{fields: fields} = query_data) do
+    multi_match_bool_prefix = %{
       multi_match: %{
-        query: query,
+        type: "bool_prefix",
+        fields: fields,
         lenient: true,
-        type: "phrase_prefix",
-        fields: [
-          "name^2",
-          "name.ngram",
-          "original_name^1.5",
-          "original_name.ngram",
-          "system.name",
-          "path.text",
-          "description",
-          "note.*"
-        ]
+        fuzziness: "AUTO"
       }
     }
+
+    query_data
+    |> Map.take([:aggs])
+    |> Map.put(:clauses, [multi_match_bool_prefix])
   end
 
-  defp maybe_bool_query([clause]), do: clause
-
-  defp maybe_bool_query(should) do
-    # https://www.elastic.co/guide/en/elasticsearch/reference/6.2/query-dsl-minimum-should-match.html
-    # If there are 2 clauses they are both required. For 3 or more clauses only
-    # 75% are required.
-    %{bool: %{should: should, minimum_should_match: "2<-75%"}}
+  defp with_search_clauses(query_data) do
+    Map.take(query_data, [:aggs])
   end
-
-  def maybe_add_search_after(query, [_ | _] = results) do
-    maybe_add_search_after(query, List.last(results))
-  end
-
-  def maybe_add_search_after(query, %{"sort" => last_element}) do
-    Map.put(query, :search_after, last_element)
-  end
-
-  def maybe_add_search_after(query, _), do: query
 end

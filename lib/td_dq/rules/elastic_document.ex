@@ -63,6 +63,7 @@ defmodule TdDq.Rules.ElasticDocument do
         current_business_concept_version: bcv,
         version: rule.version,
         name: rule.name,
+        ngram_name: rule.name,
         active: rule.active,
         description: RichText.to_plain_text(rule.description),
         deleted_at: rule.deleted_at,
@@ -78,6 +79,9 @@ defmodule TdDq.Rules.ElasticDocument do
 
   defimpl ElasticDocumentProtocol, for: Rule do
     use ElasticDocument
+
+    @boosted_fields ~w(ngram_name^3)
+    @search_fields ~w(description)
 
     def mappings(_) do
       content_mappings = %{properties: get_dynamic_mappings("dq")}
@@ -98,6 +102,7 @@ defmodule TdDq.Rules.ElasticDocument do
           type: "text",
           fields: %{raw: %{type: "keyword", normalizer: "sortable"}}
         },
+        ngram_name: %{type: "search_as_you_type"},
         active: %{type: "boolean", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
         description: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
         deleted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
@@ -113,7 +118,7 @@ defmodule TdDq.Rules.ElasticDocument do
             id: %{type: "long"},
             name: %{type: "text", fields: @raw_sort},
             content: %{
-              properties: get_dynamic_mappings("bg", "user")
+              properties: get_dynamic_mappings("bg", type: "user")
             }
           }
         },
@@ -125,12 +130,26 @@ defmodule TdDq.Rules.ElasticDocument do
         df_content: content_mappings
       }
 
-      settings = Cluster.setting(:rules)
+      settings = :rules |> Cluster.setting() |> apply_lang_settings()
 
       %{mappings: %{properties: properties}, settings: settings}
     end
 
     def aggregations(_) do
+      merged_aggregations("dq", "bg")
+    end
+
+    def query_data(_) do
+      native_fields = @boosted_fields ++ @search_fields
+      content_schema = Templates.content_schema_for_scope("dq")
+
+      %{
+        fields: native_fields ++ dynamic_search_fields(content_schema),
+        aggs: merged_aggregations(content_schema, "bg")
+      }
+    end
+
+    defp native_aggregations do
       %{
         "active.raw" => %{
           terms: %{field: "active.raw", size: Cluster.get_size_field("active.raw")}
@@ -140,7 +159,17 @@ defmodule TdDq.Rules.ElasticDocument do
         },
         "taxonomy" => %{terms: %{field: "domain_ids", size: Cluster.get_size_field("taxonomy")}}
       }
-      |> merge_dynamic_fields("dq", "df_content")
+    end
+
+    defp merged_aggregations(dq_content_or_scope, bg_content_or_scope) do
+      native_aggregations = native_aggregations()
+
+      native_aggregations
+      |> merge_dynamic_aggregations(dq_content_or_scope)
+      |> merge_dynamic_aggregations(
+        bg_content_or_scope,
+        "current_business_concept_version.content"
+      )
     end
   end
 end

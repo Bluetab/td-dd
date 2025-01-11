@@ -5,7 +5,13 @@ defmodule TdDd.Grants.Search.Query do
 
   alias TdCore.Search.Query
 
-  def build_filters(%{"manage_grants" => manage_scope, "view_grants" => view_scope}, user_id) do
+  def build_query(%{} = permissions, user_id, params, query_data) do
+    permissions
+    |> build_filters(user_id)
+    |> do_build_query(params, query_data)
+  end
+
+  defp build_filters(%{"manage_grants" => manage_scope, "view_grants" => view_scope}, user_id) do
     user_filter = %{term: %{"user_id" => user_id}}
 
     case union(manage_scope, view_scope) do
@@ -15,7 +21,7 @@ defmodule TdDd.Grants.Search.Query do
     end
   end
 
-  def build_filters(%{} = permissions, user_id) do
+  defp build_filters(%{} = permissions, user_id) do
     permissions
     |> Map.put_new("manage_grants", :none)
     |> Map.put_new("view_grants", :none)
@@ -23,21 +29,16 @@ defmodule TdDd.Grants.Search.Query do
     |> build_filters(user_id)
   end
 
-  def build_query(%{} = permissions, user_id, params, aggs) do
-    permissions
-    |> build_filters(user_id)
-    |> do_build_query(params, aggs)
+  defp do_build_query(filters, params, query_data) do
+    opts = Keyword.new(query_data)
+    Query.build_query(filters, params, opts)
   end
 
-  def do_build_query(filters, params, aggs) do
-    Query.build_query(filters, params, aggs)
-  end
-
-  def union(:none, scope), do: scope
-  def union(scope, :none), do: scope
-  def union(:all, _), do: :all
-  def union(_, :all), do: :all
-  def union(ids, other_ids), do: Enum.uniq(ids ++ other_ids)
+  defp union(:none, scope), do: scope
+  defp union(scope, :none), do: scope
+  defp union(:all, _), do: :all
+  defp union(_, :all), do: :all
+  defp union(ids, other_ids), do: Enum.uniq(ids ++ other_ids)
 
   defp domain_filter(domain_ids) do
     Query.term_or_terms("data_structure_version.domain_ids", domain_ids)
