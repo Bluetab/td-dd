@@ -22,15 +22,6 @@ defmodule TdDqWeb.ImplementationController do
 
   action_fallback(TdDqWeb.FallbackController)
 
-  def swagger_definitions do
-    SwaggerDefinitions.implementation_definitions()
-  end
-
-  swagger_path :index do
-    description("List Quality Rules")
-    response(200, "OK", Schema.ref(:ImplementationsResponse))
-  end
-
   def index(conn, params) do
     claims = conn.assigns[:current_resource]
 
@@ -79,22 +70,6 @@ defmodule TdDqWeb.ImplementationController do
   defp retrieve_boolean_value("true"), do: true
   defp retrieve_boolean_value("false"), do: false
   defp retrieve_boolean_value(_), do: false
-
-  swagger_path :create do
-    description("Creates a Rule Implementation")
-    produces("application/json")
-
-    parameters do
-      rule_implementation(
-        :body,
-        Schema.ref(:ImplementationCreate),
-        "Rule Implementation creation parameters"
-      )
-    end
-
-    response(201, "Created", Schema.ref(:ImplementationResponse))
-    response(400, "Client Error")
-  end
 
   def create(conn, %{
         "rule_implementation" =>
@@ -149,18 +124,6 @@ defmodule TdDqWeb.ImplementationController do
       |> put_resp_header("location", Routes.implementation_path(conn, :show, implementation))
       |> render("show.json", implementation: implementation)
     end
-  end
-
-  swagger_path :show do
-    description("Show Quality Rule")
-    produces("application/json")
-
-    parameters do
-      id(:path, :integer, "Quality Rule ID", required: true)
-    end
-
-    response(200, "OK", Schema.ref(:ImplementationResponse))
-    response(400, "Client Error")
   end
 
   def show(conn, %{"id" => id}) do
@@ -230,19 +193,6 @@ defmodule TdDqWeb.ImplementationController do
 
   defp filter_data_structures_by_permission(implementation, _claims), do: implementation
 
-  swagger_path :update do
-    description("Updates Quality Rule")
-    produces("application/json")
-
-    parameters do
-      rule(:body, Schema.ref(:ImplementationUpdate), "Quality Rule update parameters")
-      id(:path, :integer, "Quality Rule ID", required: true)
-    end
-
-    response(200, "OK", Schema.ref(:ImplementationResponse))
-    response(400, "Client Error")
-  end
-
   def update(conn, %{"id" => id, "rule_implementation" => implementation_params}) do
     claims = conn.assigns[:current_resource]
 
@@ -262,18 +212,6 @@ defmodule TdDqWeb.ImplementationController do
     end
   end
 
-  swagger_path :delete do
-    description("Delete Quality Rule")
-    produces("application/json")
-
-    parameters do
-      id(:path, :integer, "Quality Rule ID", required: true)
-    end
-
-    response(204, "No Content")
-    response(400, "Client Error")
-  end
-
   def delete(conn, %{"id" => id}) do
     claims = conn.assigns[:current_resource]
     implementation = Implementations.get_implementation!(id)
@@ -283,16 +221,6 @@ defmodule TdDqWeb.ImplementationController do
            Implementations.delete_implementation(implementation, claims) do
       send_resp(conn, :no_content, "")
     end
-  end
-
-  swagger_path :search_rule_implementations do
-    description("List Quality Rules")
-
-    parameters do
-      rule_id(:path, :integer, "Rule ID", required: true)
-    end
-
-    response(200, "OK", Schema.ref(:ImplementationsResponse))
   end
 
   def search_rule_implementations(conn, %{"rule_id" => id} = params) do
@@ -305,19 +233,6 @@ defmodule TdDqWeb.ImplementationController do
       |> Actions.put_actions(claims)
       |> render("index.json", implementations: implementations)
     end
-  end
-
-  swagger_path :csv do
-    description("Download CSV of implementations")
-    produces("application/json")
-
-    parameters do
-      search(:body, Schema.ref(:ImplementationsSearchFilters), "Search query parameter")
-    end
-
-    response(200, "OK")
-    response(403, "User is not authorized to perform this action")
-    response(422, "Error while CSV download")
   end
 
   def csv(conn, params) do

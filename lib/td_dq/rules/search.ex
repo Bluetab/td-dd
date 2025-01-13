@@ -16,14 +16,15 @@ defmodule TdDq.Rules.Search do
   def get_filter_values(claims, params, index \\ :rules)
 
   def get_filter_values(%Claims{} = claims, params, index) do
-    query = build_query(claims, params, index)
-    aggs = aggregations(index)
+    query_data = %{aggs: aggs} = fetch_query_data(index)
+    query = build_query(claims, params, index, query_data)
     search = %{query: query, aggs: aggs, size: 0}
     Search.get_filters(search, index)
   end
 
   def search_rules(params, %Claims{} = claims, page \\ 0, size \\ 50) do
-    query = build_query(claims, params, :rules)
+    query_data = fetch_query_data(:rules)
+    query = build_query(claims, params, :rules, query_data)
     sort = Map.get(params, "sort", ["_score", "name.raw"])
 
     %{from: page * size, size: size, query: query, sort: sort}
@@ -31,31 +32,34 @@ defmodule TdDq.Rules.Search do
   end
 
   def search_implementations(params, %Claims{} = claims, page \\ 0, size \\ 50) do
-    query = build_query(claims, params, :implementations)
+    query_data = fetch_query_data(:implementations)
+    query = build_query(claims, params, :implementations, query_data)
     sort = Map.get(params, "sort", ["_score", "implementation_key.raw"])
 
     %{from: page * size, size: size, query: query, sort: sort}
     |> do_search(:implementations, params)
   end
 
-  def build_query(%Claims{} = claims, %{"must" => _} = params, index) do
-    build_query(%Claims{} = claims, params, index, filter_type: :must)
-  end
-
   def build_query(%Claims{} = claims, params, index) do
-    build_query(%Claims{} = claims, params, index, filter_type: :filters)
+    query_data = fetch_query_data(index)
+    build_query(claims, params, index, query_data)
   end
 
-  def build_query(%Claims{} = claims, params, :rules = index, _opts) do
-    aggs = aggregations(index)
+  def build_query(%Claims{} = claims, %{"must" => _} = params, index, query_data) do
+    build_query(%Claims{} = claims, params, index, query_data, filter_type: :must)
+  end
 
+  def build_query(%Claims{} = claims, params, index, query_data) do
+    build_query(%Claims{} = claims, params, index, query_data, filter_type: :filters)
+  end
+
+  def build_query(%Claims{} = claims, params, :rules, query_data, _opts) do
     claims
     |> search_permissions(:not_executable)
-    |> Query.build_query(params, aggs)
+    |> Query.build_query(params, query_data)
   end
 
-  def build_query(%Claims{} = claims, params, :implementations = index, opts) do
-    aggs = aggregations(index)
+  def build_query(%Claims{} = claims, params, :implementations, query_data, opts) do
     filter_or_must = Atom.to_string(opts[:filter_type])
 
     {executable, params} =
@@ -71,7 +75,7 @@ defmodule TdDq.Rules.Search do
 
     claims
     |> search_permissions(executable)
-    |> Query.build_query(params, aggs)
+    |> Query.build_query(params, query_data)
   end
 
   defp search_permissions(%Claims{} = claims, executable) do
@@ -130,14 +134,6 @@ defmodule TdDq.Rules.Search do
     Map.put(response, :results, results)
   end
 
-  defp aggregations(:rules) do
-    ElasticDocumentProtocol.aggregations(%Rule{})
-  end
-
-  defp aggregations(:implementations) do
-    ElasticDocumentProtocol.aggregations(%Implementation{})
-  end
-
   defp put_default_filters(%{"must" => _} = params, %{role: "service"}) do
     defaults = %{"status" => ["published"]}
     Map.update(params, "must", defaults, &Map.merge(defaults, &1))
@@ -149,4 +145,31 @@ defmodule TdDq.Rules.Search do
   end
 
   defp put_default_filters(%{} = params, _claims), do: params
+
+  defp fetch_query_data(:rules) do
+    %Rule{}
+    |> ElasticDocumentProtocol.query_data()
+    |> with_search_clauses()
+  end
+
+  defp fetch_query_data(:implementations) do
+    %Implementation{}
+    |> ElasticDocumentProtocol.query_data()
+    |> with_search_clauses()
+  end
+
+  defp with_search_clauses(%{fields: fields} = query_data) do
+    multi_match_boolean_prefix = %{
+      multi_match: %{
+        type: "bool_prefix",
+        fields: fields,
+        lenient: true,
+        fuzziness: "AUTO"
+      }
+    }
+
+    query_data
+    |> Map.take([:aggs])
+    |> Map.put(:clauses, [multi_match_boolean_prefix])
+  end
 end

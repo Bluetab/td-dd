@@ -1,22 +1,12 @@
 defmodule TdDdWeb.ProfileExecutionGroupController do
-  use PhoenixSwagger
   use TdDdWeb, :controller
 
   alias TdDd.Executions
   alias TdDd.Executions.ProfileGroup
-  alias TdDdWeb.SwaggerDefinitions
+
   alias Truedat.Auth.Claims
 
   action_fallback(TdDdWeb.FallbackController)
-
-  def swagger_definitions do
-    SwaggerDefinitions.profile_execution_group_swagger_definitions()
-  end
-
-  swagger_path :index do
-    description("List Execution Groups")
-    response(200, "OK", Schema.ref(:ProfileExecutionGroupsResponse))
-  end
 
   def index(conn, _params) do
     claims = conn.assigns[:current_resource]
@@ -25,12 +15,6 @@ defmodule TdDdWeb.ProfileExecutionGroupController do
          groups <- Executions.list_profile_groups() do
       render(conn, "index.json", profile_execution_groups: groups)
     end
-  end
-
-  swagger_path :show do
-    description("Show Execution Group")
-    response(200, "OK", Schema.ref(:ProfileExecutionGroupResponse))
-    response(400, "Client Error")
   end
 
   def show(conn, %{} = params) do
@@ -50,12 +34,6 @@ defmodule TdDdWeb.ProfileExecutionGroupController do
       group = Map.put(group, :executions, executions)
       render(conn, "show.json", profile_execution_group: group)
     end
-  end
-
-  swagger_path :create do
-    description("Create Execution Group")
-    response(201, "Created", Schema.ref(:ProfileExecutionGroupResponse))
-    response(400, "Client Error")
   end
 
   def create(conn, %{} = params) do

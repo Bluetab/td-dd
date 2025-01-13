@@ -1,5 +1,27 @@
 # Changelog
 
+## [7.0.0] 2025-01-13
+
+### Changed
+
+- [TD-6911]
+  - update Elixir 1.18
+  - update dependencies
+  - update Docker RUNTIME_BASE=alpine:3.21
+  - remove swagger
+- [TD-3612] Update td-core
+
+### Added
+
+- [TD-5713]
+  - Updates all default analyzers to take `asciifolding` into account.
+  - `search_as_you_type` type for identifiers.
+  - Defines scope for native and dynamic fields search.
+  - Introduces multi match prefix matching query type for `rules`, `implementations` and `jobs`.
+- [TD-6981] Add logic to indexed Structures updating dates
+  - updated_at takes Data Structure date
+  - new field last_change_at takes Structure or Version most recient date
+
 ## [6.16.1] 2025-01-08
 
 ### Fixed
@@ -14,6 +36,7 @@
 - [TD-6780] Add Tag and Structure Tag Seach controller and context
 - [TD-6982] Added SSL and ApiKey configuration for Elasticsearch
 - [TD-6888] Support for expandable Concept links
+
 
 ## [6.15.0] 2024-11-27
 

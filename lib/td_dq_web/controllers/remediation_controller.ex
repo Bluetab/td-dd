@@ -7,23 +7,6 @@ defmodule TdDqWeb.RemediationController do
 
   action_fallback(TdDqWeb.FallbackController)
 
-  def swagger_definitions do
-    TdDqWeb.SwaggerDefinitions.remediation_swagger_definitions()
-  end
-
-  swagger_path :show do
-    description("Get remediation plan from the rule result it belongs to")
-    produces("application/json")
-
-    parameters do
-      rule_result_id(:path, :integer, "rule result id", required: true)
-    end
-
-    response(200, "OK", Schema.ref(:RemediationResponse))
-    response(403, "Forbidden")
-    response(422, "Unprocessable Entity")
-  end
-
   def show(conn, %{"rule_result_id" => rule_result_id}) do
     with claims <- conn.assigns[:current_resource],
          %RuleResult{remediation: remediation} = rule_result <-
@@ -38,20 +21,6 @@ defmodule TdDqWeb.RemediationController do
         render(conn, "show.json", remediation: remediation)
       end
     end
-  end
-
-  swagger_path :create do
-    description("Creates a rule result remediation plan")
-    produces("application/json")
-
-    parameters do
-      rule_result_id(:path, :integer, "rule result id", required: true)
-      remediation(:body, Schema.ref(:RemediationCreate), "Remediation create attrs")
-    end
-
-    response(201, "OK", Schema.ref(:RemediationResponse))
-    response(403, "Forbidden")
-    response(422, "Unprocessable Entity")
   end
 
   def create(conn, %{"rule_result_id" => rule_result_id, "remediation" => remediation_params}) do
@@ -72,20 +41,6 @@ defmodule TdDqWeb.RemediationController do
     end
   end
 
-  swagger_path :update do
-    description("Update rule result remediation plan")
-    produces("application/json")
-
-    parameters do
-      rule_result_id(:path, :integer, "rule result id", required: true)
-      remediation(:body, Schema.ref(:RemediationUpdate), "Remediation plan update attrs")
-    end
-
-    response(201, "OK", Schema.ref(:RemediationResponse))
-    response(403, "Forbidden")
-    response(422, "Unprocessable Entity")
-  end
-
   def update(conn, %{"rule_result_id" => rule_result_id, "remediation" => remediation_params}) do
     with claims <- conn.assigns[:current_resource],
          %RuleResult{remediation: remediation} = rule_result <-
@@ -97,20 +52,6 @@ defmodule TdDqWeb.RemediationController do
       |> put_actions(rule_result)
       |> render("show.json", remediation: remediation)
     end
-  end
-
-  swagger_path :delete do
-    description("Delete a rule result remediation plan")
-    produces("application/json")
-
-    parameters do
-      rule_result_id(:path, :integer, "rule result id", required: true)
-    end
-
-    response(204, "No Content")
-    response(403, "Forbidden")
-    response(404, "Not found")
-    response(422, "Unprocessable Entity")
   end
 
   def delete(conn, %{"rule_result_id" => rule_result_id}) do

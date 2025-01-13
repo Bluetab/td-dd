@@ -1,7 +1,6 @@
 defmodule TdDdWeb.DataStructureVersionControllerTest do
   use TdDd.DataStructureCase
   use TdDdWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   import Mox
 

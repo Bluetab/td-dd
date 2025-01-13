@@ -1,18 +1,10 @@
 defmodule TdDdWeb.GrantSearchController do
-  use PhoenixSwagger
   use TdDdWeb, :controller
 
   alias TdDd.Grants.Search
   alias TdDd.Grants.Search.Indexer
 
   action_fallback(TdDdWeb.FallbackController)
-
-  swagger_path :reindex_all_grants do
-    description("Reindex all grants ES indexes with DB content")
-    produces("application/json")
-    response(202, "Accepted")
-    response(500, "Client Error")
-  end
 
   def reindex_all_grants(conn, _params) do
     claims = conn.assigns[:current_resource]
@@ -21,14 +13,6 @@ defmodule TdDdWeb.GrantSearchController do
       Indexer.reindex(:all)
       send_resp(conn, :accepted, "")
     end
-  end
-
-  swagger_path :search_grants do
-    description("Search for grants")
-    produces("application/json")
-
-    response(200, "Accepted")
-    response(500, "Client Error")
   end
 
   def search_grants(conn, params) do

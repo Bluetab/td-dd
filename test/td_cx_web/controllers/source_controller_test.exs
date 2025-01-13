@@ -264,7 +264,9 @@ defmodule TdCxWeb.SourceControllerTest do
 
       assert %{"data" => data} =
                conn
-               |> put(Routes.source_path(conn, :update, external_id), source_config: source_config)
+               |> put(Routes.source_path(conn, :update, external_id),
+                 source_config: source_config
+               )
                |> json_response(:ok)
 
       assert %{

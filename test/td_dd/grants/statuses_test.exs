@@ -5,29 +5,29 @@ defmodule TdDd.Grants.StatusesTest do
   alias TdDd.Grants.GrantRequestStatus
   alias TdDd.Grants.Statuses
 
-  alias TdCore.Search.IndexWorker
+  alias TdCore.Search.IndexWorkerMock
 
   setup do
-    IndexWorker.clear()
+    IndexWorkerMock.clear()
 
     [grant_request: insert(:grant_request, current_status: "approved")]
   end
 
   describe "Requests.create_grant_request_status/2" do
     test "fails with non valid current grant request status", %{grant_request: request} do
-      IndexWorker.clear()
+      IndexWorkerMock.clear()
 
       assert {:error, :grant_request_status,
               %Changeset{errors: [status: {"invalid status change", _}]},
               _} = Statuses.create_grant_request_status(request, "not_valid_status", 0)
 
-      assert IndexWorker.calls() == []
+      assert IndexWorkerMock.calls() == []
     end
 
     test "creates grant request status with valid status change", %{
       grant_request: %{id: id} = request
     } do
-      IndexWorker.clear()
+      IndexWorkerMock.clear()
 
       assert {:ok,
               %{
@@ -37,11 +37,11 @@ defmodule TdDd.Grants.StatusesTest do
                 }
               }} = Statuses.create_grant_request_status(request, "processing", 0)
 
-      assert [{:reindex, :grant_requests, [^id]}] = IndexWorker.calls()
+      assert [{:reindex, :grant_requests, [^id]}] = IndexWorkerMock.calls()
     end
 
     test "allows to create failed status with a reason if current is processing" do
-      IndexWorker.clear()
+      IndexWorkerMock.clear()
       %{id: id} = request = insert(:grant_request, current_status: "processing")
       reason = "failed reason"
 
@@ -54,7 +54,7 @@ defmodule TdDd.Grants.StatusesTest do
                 }
               }} = Statuses.create_grant_request_status(request, "failed", 0, reason)
 
-      assert [{:reindex, :grant_requests, [^id]}] = IndexWorker.calls()
+      assert [{:reindex, :grant_requests, [^id]}] = IndexWorkerMock.calls()
     end
   end
 end

@@ -1,6 +1,5 @@
 defmodule TdDdWeb.LabelControllerTest do
   use TdDdWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   @tag authentication: [role: "user"]
   test "create label: permission", %{conn: conn} do

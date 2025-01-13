@@ -5,7 +5,11 @@ defmodule TdDdWeb.Schema do
 
   use Absinthe.Schema
 
+  alias TdDd.DataStructures
+  alias TdDd.Repo
   alias TdDdWeb.Schema.Middleware
+  alias TdDq.Implementations
+  alias TdDq.Rules.RuleResults
 
   import_types(Absinthe.Plug.Types)
   import_types(Absinthe.Type.Custom)
@@ -71,13 +75,13 @@ defmodule TdDdWeb.Schema do
   end
 
   def context(ctx) do
-    timeout = Application.get_env(:td_dd, TdDd.Repo)[:timeout]
+    timeout = Application.get_env(:td_dd, Repo)[:timeout]
 
     loader =
       Dataloader.new()
-      |> Dataloader.add_source(TdDd.DataStructures, TdDd.DataStructures.datasource())
-      |> Dataloader.add_source(TdDq.Rules.RuleResults, TdDq.Rules.RuleResults.datasource())
-      |> Dataloader.add_source(TdDq.Implementations, TdDq.Implementations.datasource())
+      |> Dataloader.add_source(DataStructures, DataStructures.datasource())
+      |> Dataloader.add_source(RuleResults, RuleResults.datasource())
+      |> Dataloader.add_source(Implementations, Implementations.datasource())
       |> Dataloader.add_source(TdDq.Rules, TdDq.Rules.datasource())
       |> Dataloader.add_source(TdDq.Executions, TdDq.Executions.datasource())
       |> Dataloader.add_source(

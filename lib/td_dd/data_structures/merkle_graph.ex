@@ -163,7 +163,7 @@ defmodule TdDd.DataStructures.MerkleGraph do
 
   defp validate_nil(%Graph.Vertex{id: external_id}) do
     message = "vertex exists: #{external_id}"
-    Logger.warn(message)
+    Logger.warning(message)
     {:error, message}
   end
 
@@ -246,7 +246,7 @@ defmodule TdDd.DataStructures.MerkleGraph do
 
   defp add_relation(%{parent_external_id: id, child_external_id: id}, _graph) do
     message = "reflexive relations are not permitted (#{id})"
-    Logger.warn(message)
+    Logger.warning(message)
     {:halt, {:error, message}}
   end
 
@@ -264,7 +264,7 @@ defmodule TdDd.DataStructures.MerkleGraph do
   defp add_vertex(id, graph, labels) do
     if Graph.has_vertex?(graph, id) do
       message = "duplicate #{id}"
-      Logger.warn(message)
+      Logger.warning(message)
       {:halt, {:error, message}}
     else
       {:cont, {:ok, Graph.add_vertex(graph, id, labels)}}

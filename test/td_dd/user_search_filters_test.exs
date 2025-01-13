@@ -138,7 +138,11 @@ defmodule TdDd.UserSearchFiltersTest do
       insert(:user_search_filter, is_global: true, user_id: user_id, scope: "rule_implementation")
 
     usf8 =
-      insert(:user_search_filter, is_global: true, user_id: user_id2, scope: "rule_implementation")
+      insert(:user_search_filter,
+        is_global: true,
+        user_id: user_id2,
+        scope: "rule_implementation"
+      )
 
     insert(:user_search_filter, is_global: false, user_id: user_id2, scope: "rule_implementation")
 

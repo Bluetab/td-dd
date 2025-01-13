@@ -8,6 +8,7 @@ defmodule TdDd.Cache.ImplementationLoaderTest do
 
   describe "ImplementationLoader.cache_implementations/2" do
     setup do
+      TdCache.Redix.del!()
       start_supervised!(TdDd.Search.StructureEnricher)
       :ok
     end

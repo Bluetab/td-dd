@@ -1,8 +1,7 @@
 defmodule TdDqWeb.ImplementationResultControllerTest do
   use TdDqWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger_dq.json"
 
-  alias TdCore.Search.IndexWorker
+  alias TdCore.Search.IndexWorkerMock
 
   setup context do
     %{id: domain_id} =
@@ -14,7 +13,7 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
     %{id: id} = implementation = insert(:implementation, domain_id: domain_id, status: :published)
     execution = insert(:execution, group: build(:execution_group), implementation_id: id)
 
-    IndexWorker.clear()
+    IndexWorkerMock.clear()
 
     [
       execution: execution,
@@ -27,7 +26,6 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
     @tag authentication: [role: "user", permissions: [:manage_rule_results]]
     test "returns 201 Created with the result for a published implementation", %{
       conn: conn,
-      swagger_schema: schema,
       implementation: %{implementation_key: key}
     } do
       params =
@@ -44,7 +42,6 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
                  Routes.implementation_implementation_result_path(conn, :create, key),
                  rule_result: params
                )
-               |> validate_resp_schema(schema, "RuleResultResponse")
                |> json_response(:created)
 
       assert %{
@@ -58,8 +55,7 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
     test "returns 404 not found when try to create results when implementation is not published ",
          %{
            conn: conn,
-           domain_id: domain_id,
-           swagger_schema: schema
+           domain_id: domain_id
          } do
       %{id: id, implementation_key: key} =
         _implementation = insert(:implementation, domain_id: domain_id, status: :draft)
@@ -79,7 +75,7 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
         Routes.implementation_implementation_result_path(conn, :create, key),
         rule_result: params
       )
-      |> validate_resp_schema(schema, "RuleResultResponse")
+
       ### conflict
       |> json_response(:not_found)
     end
@@ -87,7 +83,6 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
     @tag authentication: [role: "user", permissions: [:manage_rule_results]]
     test "returns 201 Created with the result with segments on a published implementation", %{
       conn: conn,
-      swagger_schema: schema,
       implementation: %{implementation_key: key}
     } do
       params =
@@ -108,7 +103,6 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
                  Routes.implementation_implementation_result_path(conn, :create, key),
                  rule_result: params
                )
-               |> validate_resp_schema(schema, "RuleResultResponse")
                |> json_response(:created)
 
       assert %{
@@ -138,8 +132,7 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
     @tag authentication: [role: "service"]
     test "returns 404 not found when try to create results on non-existent implementation",
          %{
-           conn: conn,
-           swagger_schema: schema
+           conn: conn
          } do
       key = "non-existent implementation key"
 
@@ -156,7 +149,6 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
         Routes.implementation_implementation_result_path(conn, :create, key),
         rule_result: params
       )
-      |> validate_resp_schema(schema, "RuleResultResponse")
       |> json_response(:not_found)
     end
 
@@ -180,7 +172,7 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
       assert [
                {:reindex, :rules, [^rule_id]},
                {:reindex, :implementations, [^implementation_id]}
-             ] = IndexWorker.calls()
+             ] = IndexWorkerMock.calls()
     end
 
     @tag authentication: [role: "admin"]

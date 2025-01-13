@@ -1,6 +1,5 @@
 defmodule TdDdWeb.GrantControllerTest do
   use TdDdWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   alias TdDd.Grants.Grant
 
@@ -36,8 +35,7 @@ defmodule TdDdWeb.GrantControllerTest do
     @tag authentication: [role: "admin"]
     test "renders grant when data is valid", %{
       conn: conn,
-      data_structure: %{id: data_structure_id, external_id: data_structure_external_id},
-      swagger_schema: schema
+      data_structure: %{id: data_structure_id, external_id: data_structure_external_id}
     } do
       insert(:data_structure_version, data_structure_id: data_structure_id)
 
@@ -47,13 +45,11 @@ defmodule TdDdWeb.GrantControllerTest do
                  Routes.data_structure_grant_path(conn, :create, data_structure_external_id),
                  grant: @create_attrs
                )
-               |> validate_resp_schema(schema, "GrantResponse")
                |> json_response(:created)
 
       assert %{"data" => data} =
                conn
                |> get(Routes.grant_path(conn, :show, id))
-               |> validate_resp_schema(schema, "GrantResponse")
                |> json_response(:ok)
 
       assert %{
@@ -73,8 +69,7 @@ defmodule TdDdWeb.GrantControllerTest do
     @tag authentication: [permissions: [:view_data_structure, :manage_grants]]
     test "user with permissions can create a grant", %{
       conn: conn,
-      data_structure: %{external_id: data_structure_external_id},
-      swagger_schema: schema
+      data_structure: %{external_id: data_structure_external_id}
     } do
       assert %{"data" => %{"id" => id}} =
                conn
@@ -82,13 +77,11 @@ defmodule TdDdWeb.GrantControllerTest do
                  Routes.data_structure_grant_path(conn, :create, data_structure_external_id),
                  grant: @create_attrs
                )
-               |> validate_resp_schema(schema, "GrantResponse")
                |> json_response(:created)
 
       assert %{"data" => data} =
                conn
                |> get(Routes.grant_path(conn, :show, id))
-               |> validate_resp_schema(schema, "GrantResponse")
                |> json_response(:ok)
 
       assert %{
@@ -168,11 +161,10 @@ defmodule TdDdWeb.GrantControllerTest do
     setup :create_data_structure
 
     @tag authentication: [role: "admin"]
-    test "can show grant", %{conn: conn, grant: %{id: id}, swagger_schema: schema} do
+    test "can show grant", %{conn: conn, grant: %{id: id}} do
       assert %{"data" => %{"id" => ^id}} =
                conn
                |> get(Routes.grant_path(conn, :show, id))
-               |> validate_resp_schema(schema, "GrantResponse")
                |> json_response(:ok)
     end
 
@@ -364,8 +356,7 @@ defmodule TdDdWeb.GrantControllerTest do
     @tag authentication: [role: "admin"]
     test "renders grant when data is valid", %{
       conn: conn,
-      grant: %Grant{id: id, user_id: user_id} = grant,
-      swagger_schema: schema
+      grant: %Grant{id: id, user_id: user_id} = grant
     } do
       assert %{"data" => %{"id" => ^id}} =
                conn
@@ -375,7 +366,6 @@ defmodule TdDdWeb.GrantControllerTest do
       assert %{"data" => data} =
                conn
                |> get(Routes.grant_path(conn, :show, id))
-               |> validate_resp_schema(schema, "GrantResponse")
                |> json_response(:ok)
 
       assert %{

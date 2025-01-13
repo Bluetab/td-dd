@@ -742,7 +742,7 @@ defmodule TdDd.Grants.Requests do
     }
   end
 
-  # FIXME: refactor me please!!
+  # TODO: refactor me please!!
   defp get_roles_by_structure_map(nil), do: %{}
 
   defp get_roles_by_structure_map(roles) do

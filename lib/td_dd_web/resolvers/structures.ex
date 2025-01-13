@@ -108,7 +108,7 @@ defmodule TdDdWeb.Resolvers.Structures do
        |> Map.put(:user_permissions, user_permissions)}
     else
       {:claims, nil} -> {:error, :unauthorized}
-      {:enriched_dsv, nil} -> {:error, :not_found}
+      {:enriched_dsv, :not_found} -> {:error, :not_found}
       {:enriched_dsv, :forbidden} -> {:error, :forbidden}
     end
   end

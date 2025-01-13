@@ -53,7 +53,6 @@ config :logger, :console,
 
 # Configuration for Phoenix
 config :phoenix, :json_library, Jason
-config :phoenix_swagger, json_library: Jason
 
 config :td_dd, Truedat.Auth.Guardian,
   allowed_algos: ["HS512"],
@@ -61,13 +60,6 @@ config :td_dd, Truedat.Auth.Guardian,
   aud: "truedat",
   ttl: {1, :hours},
   secret_key: "SuperSecretTruedat"
-
-config :td_dd, :phoenix_swagger,
-  swagger_files: %{
-    "priv/static/swagger.json" => [router: TdDdWeb.Router],
-    "priv/static/swagger_cx.json" => [router: TdCxWeb.Router],
-    "priv/static/swagger_dq.json" => [router: TdDqWeb.Router]
-  }
 
 config :codepagex, :encodings, [
   :ascii,
@@ -145,7 +137,7 @@ config :td_dd, TdDd.Scheduler,
     ],
     job_indexer: [
       schedule: "@daily",
-      task: {TdCx.Search.IndexWorker, :reindex, []},
+      task: {TdCore.Search.IndexWorker, :reindex, [:jobs, :all]},
       run_strategy: Quantum.RunStrategy.Local
     ],
     implementation_cache_refresher: [
@@ -155,12 +147,12 @@ config :td_dd, TdDd.Scheduler,
     ],
     rule_indexer: [
       schedule: "@daily",
-      task: {TdCore.Search.IndexWorker, :reindex, []},
+      task: {TdCore.Search.IndexWorker, :reindex, [:rules, :all]},
       run_strategy: Quantum.RunStrategy.Local
     ],
     grant_indexer: [
       schedule: "@daily",
-      task: {TdCore.Search.IndexWorker, :reindex_grants, [:all]},
+      task: {TdCore.Search.IndexWorker, :reindex, [:grants, :all]},
       run_strategy: Quantum.RunStrategy.Local
     ],
     lineage_nodes_domains_ids_refresher: [

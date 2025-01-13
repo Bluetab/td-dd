@@ -45,9 +45,10 @@ defmodule TdDd.GrantRequests.ElasticDocument do
         |> Format.search_values(template)
         |> case do
           metad when is_map(metad) ->
-            metad
-            |> Enum.map(fn {key, %{"value" => value}} -> {key, value} end)
-            |> Map.new()
+            Enum.into(metad, %{}, fn
+              {key, %{"value" => value}} -> {key, value}
+              {key, value} -> {key, value}
+            end)
 
           metad ->
             metad
@@ -115,6 +116,8 @@ defmodule TdDd.GrantRequests.ElasticDocument do
   defimpl ElasticDocumentProtocol, for: GrantRequest do
     use ElasticDocument
 
+    @search_fields ~w(user.full_name)
+
     def mappings(_) do
       %{mappings: %{properties: dsv_properties}, settings: _settings} =
         ElasticDocumentProtocol.mappings(%DataStructureVersion{})
@@ -161,11 +164,42 @@ defmodule TdDd.GrantRequests.ElasticDocument do
         request_type: %{type: "keyword"}
       }
 
-      settings = Cluster.setting(:grant_requests)
+      settings = :grant_requests |> Cluster.setting() |> apply_lang_settings()
       %{mappings: %{properties: properties}, settings: settings}
     end
 
     def aggregations(_) do
+      merged_aggregations("gr", "dd")
+    end
+
+    def query_data(_) do
+      structure_native_fields =
+        %DataStructureVersion{}
+        |> ElasticDocumentProtocol.query_data()
+        |> Map.get(:native_fields, [])
+
+      data_structure_version_fields =
+        Enum.map(structure_native_fields, &"data_structure_version.#{&1}")
+
+      grant_structure_version_fields =
+        Enum.map(structure_native_fields, &"grant.data_structure_version.#{&1}")
+
+      gr_content_schema = Templates.content_schema_for_scope("gr")
+      dd_content_schema = Templates.content_schema_for_scope("dd")
+
+      dynamic_fields =
+        dynamic_search_fields(gr_content_schema, "metadata") ++
+          dynamic_search_fields(dd_content_schema, "note")
+
+      %{
+        aggs: merged_aggregations(gr_content_schema, dd_content_schema),
+        fields:
+          @search_fields ++
+            dynamic_fields ++ data_structure_version_fields ++ grant_structure_version_fields
+      }
+    end
+
+    defp native_aggregations do
       %{
         "approved_by" => %{
           terms: %{field: "approved_by", size: Cluster.get_size_field("approved_by")}
@@ -177,8 +211,14 @@ defmodule TdDd.GrantRequests.ElasticDocument do
         "taxonomy" => %{terms: %{field: "domain_ids", size: Cluster.get_size_field("taxonomy")}},
         "type" => %{terms: %{field: "type", size: Cluster.get_size_field("type")}}
       }
-      |> merge_dynamic_fields("gr", "metadata")
-      |> merge_dynamic_fields("dd", "note")
+    end
+
+    defp merged_aggregations(gr_scope_or_content, dd_scope_or_content) do
+      native_aggregations = native_aggregations()
+
+      native_aggregations
+      |> merge_dynamic_aggregations(gr_scope_or_content, "metadata")
+      |> merge_dynamic_aggregations(dd_scope_or_content, "note")
     end
   end
 end

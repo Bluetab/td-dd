@@ -18,18 +18,6 @@ defmodule TdDqWeb.RuleResultController do
     end
   end
 
-  swagger_path :delete do
-    description("Delete Rule Result")
-    produces("application/json")
-
-    parameters do
-      id(:path, :integer, "Rule Result ID", required: true)
-    end
-
-    response(422, "Unprocessable Entity")
-    response(500, "Internal Server Error")
-  end
-
   def delete(conn, %{"id" => id}) do
     with claims <- conn.assigns[:current_resource],
          rule_result <- RuleResults.get_rule_result(id),

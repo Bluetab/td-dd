@@ -109,14 +109,14 @@ defmodule TdDd.Repo do
 
   defp log_messages({:ok, %{messages: messages}}) when is_list(messages) do
     Enum.each(messages, fn
-      %{severity: "WARNING", message: message} -> Logger.warn("#{message}")
+      %{severity: "WARNING", message: message} -> Logger.warning("#{message}")
       %{severity: severity, message: message} -> Logger.info("#{severity} #{message}")
       _ -> :ok
     end)
   end
 
   defp log_messages({:error, %{postgres: %{message: message}}}) when is_binary(message) do
-    Logger.warn(message)
+    Logger.warning(message)
   end
 
   defp log_messages({:error, %{message: message}}) when is_binary(message) do

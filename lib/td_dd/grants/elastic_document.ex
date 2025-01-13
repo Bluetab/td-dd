@@ -64,6 +64,8 @@ defmodule TdDd.Grants.ElasticDocument do
   defimpl ElasticDocumentProtocol, for: GrantStructure do
     use ElasticDocument
 
+    @search_fields ~w(user.full_name)
+
     def mappings(_) do
       %{mappings: %{properties: dsv_properties}, settings: _settings} =
         ElasticDocumentProtocol.mappings(%DataStructureVersion{})
@@ -76,7 +78,7 @@ defmodule TdDd.Grants.ElasticDocument do
         |> Map.new()
 
       dsv_properties =
-        maybe_not_searcheable_field(dsv_properties, grants_config, :dsv_no_sercheabled_fields)
+        maybe_not_searcheable_field(dsv_properties, grants_config, :dsv_no_searcheable_fields)
 
       properties =
         %{
@@ -98,9 +100,9 @@ defmodule TdDd.Grants.ElasticDocument do
             }
           }
         }
-        |> maybe_not_searcheable_field(grants_config, :grant_no_sercheabled_fields)
+        |> maybe_not_searcheable_field(grants_config, :grant_no_searcheable_fields)
 
-      settings = Cluster.setting(:grants)
+      settings = :grants |> Cluster.setting() |> apply_lang_settings()
       %{mappings: %{properties: properties}, settings: settings}
     end
 
@@ -131,6 +133,16 @@ defmodule TdDd.Grants.ElasticDocument do
           }
         }
       }
+    end
+
+    def query_data(_) do
+      structure_native_fields =
+        %DataStructureVersion{}
+        |> ElasticDocumentProtocol.query_data()
+        |> Map.get(:native_fields, [])
+        |> Enum.map(&"data_structure_version.#{&1}")
+
+      %{aggs: aggregations(%GrantStructure{}), fields: @search_fields ++ structure_native_fields}
     end
 
     defp maybe_not_searcheable_field(properties, config, config_key) do

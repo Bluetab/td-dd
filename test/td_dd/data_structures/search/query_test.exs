@@ -78,9 +78,17 @@ defmodule TdDd.DataStructures.Search.QueryTest do
     test "includes a must multi_match clause for a single word" do
       assert %{
                bool: %{
-                 must: [%{multi_match: %{query: "foo"}}, @match_all]
+                 must: %{
+                   multi_match: %{
+                     fields: [],
+                     fuzziness: "AUTO",
+                     lenient: true,
+                     query: " foo     ",
+                     type: "bool_prefix"
+                   }
+                 }
                }
-             } = Query.build_query(@all_permissions, %{"query" => " foo     "}, %{})
+             } = Query.build_query(@all_permissions, %{"query" => " foo     "}, %{fields: []})
     end
 
     test "includes a must exists and multi_match clause for a single word" do
@@ -94,30 +102,31 @@ defmodule TdDd.DataStructures.Search.QueryTest do
              } =
                Query.build_query(
                  @all_permissions,
-                 %{"query" => " foo     ", "must" => %{"exists" => %{"field" => "foo.moo"}}},
-                 %{}
+                 %{"query" => "foo", "must" => %{"exists" => %{"field" => "foo.moo"}}},
+                 %{fields: []}
                )
     end
 
     test "includes a multi_match clause for each word in the query term" do
       assert %{
                bool: %{
-                 must: [
-                   %{
-                     bool: %{
-                       minimum_should_match: "2<-75%",
-                       should: [%{multi_match: %{query: "foo"}}, %{multi_match: %{query: "bar"}}]
-                     }
-                   },
-                   %{match_all: %{}}
-                 ]
+                 must: %{
+                   multi_match: %{
+                     fields: [],
+                     fuzziness: "AUTO",
+                     lenient: true,
+                     query: " foo   bar  ",
+                     type: "bool_prefix"
+                   }
+                 }
                }
-             } = Query.build_query(@all_permissions, %{"query" => " foo   bar  "}, %{})
+             } = Query.build_query(@all_permissions, %{"query" => " foo   bar  "}, %{fields: []})
     end
 
     test "does not include a must clause for an empty search term" do
-      assert Query.build_query(@all_permissions, %{"query" => "  "}, %{}) ==
-               %{bool: %{must: @match_all}}
+      assert Query.build_query(@all_permissions, %{"query" => "  "}, %{}) == %{
+               bool: %{must: %{simple_query_string: %{query: "  "}}}
+             }
     end
   end
 

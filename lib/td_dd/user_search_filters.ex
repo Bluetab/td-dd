@@ -58,7 +58,7 @@ defmodule TdDd.UserSearchFilters do
   defp maybe_filter(results, scope, claims) do
     case permitted_domain_ids(scope, claims) do
       [] ->
-        if is_default_permission(scope), do: results, else: []
+        if default_permission?(scope), do: results, else: []
 
       domain_ids ->
         Enum.reject(results, fn
@@ -82,16 +82,16 @@ defmodule TdDd.UserSearchFilters do
 
   defp permitted_domain_ids(_scope, _claims), do: []
 
-  defp is_default_permission("data_structure"),
-    do: Permissions.is_default_permission?("view_data_structure")
+  defp default_permission?("data_structure"),
+    do: Permissions.default_permission?("view_data_structure")
 
-  defp is_default_permission("rule"),
-    do: Permissions.is_default_permission?("view_quality_rule")
+  defp default_permission?("rule"),
+    do: Permissions.default_permission?("view_quality_rule")
 
-  defp is_default_permission("rule_implementation"),
-    do: Permissions.is_default_permission?("view_quality_rule")
+  defp default_permission?("rule_implementation"),
+    do: Permissions.default_permission?("view_quality_rule")
 
-  defp is_default_permission(_scope), do: false
+  defp default_permission?(_scope), do: false
 
   @doc """
   Gets a single user_search_filter.

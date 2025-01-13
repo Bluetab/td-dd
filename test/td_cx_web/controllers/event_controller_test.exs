@@ -3,12 +3,12 @@ defmodule TdCxWeb.EventControllerTest do
 
   import Mox
 
-  alias TdCore.Search.IndexWorker
+  alias TdCore.Search.IndexWorkerMock
 
   setup do
     start_supervised!(TdCx.Cache.SourcesLatestEvent)
 
-    IndexWorker.clear()
+    IndexWorkerMock.clear()
 
     :ok
   end
@@ -41,7 +41,7 @@ defmodule TdCxWeb.EventControllerTest do
 
     @tag authentication: [role: "admin"]
     test "admin can create event for a job", %{conn: conn, job: %{external_id: external_id}} do
-      IndexWorker.clear()
+      IndexWorkerMock.clear()
       %{"type" => type, "message" => message} = params = string_params_for(:event)
 
       assert %{"data" => event} =
@@ -49,7 +49,7 @@ defmodule TdCxWeb.EventControllerTest do
                |> post(Routes.job_event_path(conn, :index, external_id), event: params)
                |> json_response(:created)
 
-      assert [{:reindex, :jobs, [_]}] = IndexWorker.calls()
+      assert [{:reindex, :jobs, [_]}] = IndexWorkerMock.calls()
 
       assert %{"id" => _id, "type" => ^type, "message" => ^message} = event
     end
@@ -59,7 +59,7 @@ defmodule TdCxWeb.EventControllerTest do
       conn: conn,
       job: %{external_id: external_id}
     } do
-      IndexWorker.clear()
+      IndexWorkerMock.clear()
       %{"type" => type, "message" => message} = params = string_params_for(:event)
 
       assert %{"data" => event} =
@@ -67,7 +67,7 @@ defmodule TdCxWeb.EventControllerTest do
                |> post(Routes.job_event_path(conn, :index, external_id), event: params)
                |> json_response(:created)
 
-      assert [{:reindex, :jobs, [_]}] = IndexWorker.calls()
+      assert [{:reindex, :jobs, [_]}] = IndexWorkerMock.calls()
       assert %{"id" => _id, "type" => ^type, "message" => ^message} = event
     end
 

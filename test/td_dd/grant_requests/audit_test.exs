@@ -3,7 +3,7 @@ defmodule TdDd.GrantRequests.AuditTest do
 
   alias TdCache.Redix
   alias TdCache.Redix.Stream
-  alias TdCore.Search.IndexWorker
+  alias TdCore.Search.IndexWorkerMock
   alias TdDd.Grants.Requests
   alias TdDd.Grants.Statuses
 
@@ -17,7 +17,7 @@ defmodule TdDd.GrantRequests.AuditTest do
 
   setup do
     claims = build(:claims, role: "admin")
-    IndexWorker.clear()
+    IndexWorkerMock.clear()
 
     on_exit(fn ->
       Redix.del!(@stream)

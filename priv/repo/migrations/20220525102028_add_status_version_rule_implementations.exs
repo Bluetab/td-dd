@@ -49,7 +49,9 @@ defmodule TdDd.Repo.Migrations.AddStatusVersionRuleImplementations do
            name: :draft_implementation_key_index
          )
 
-    create unique_index("rule_implementations", [:implementation_key], where: "deleted_at IS NULL")
+    create unique_index("rule_implementations", [:implementation_key],
+             where: "deleted_at IS NULL"
+           )
 
     alter table("rule_implementations") do
       remove(:version)

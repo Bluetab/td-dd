@@ -9,15 +9,6 @@ defmodule TdDqWeb.RuleController do
 
   action_fallback(TdDqWeb.FallbackController)
 
-  def swagger_definitions do
-    SwaggerDefinitions.rule_definitions()
-  end
-
-  swagger_path :index do
-    description("List Rules")
-    response(200, "OK", Schema.ref(:RulesResponse))
-  end
-
   def index(conn, params) do
     claims = conn.assigns[:current_resource]
     manage_permission = Bodyguard.permit?(TdDq.Rules, :manage_quality_rule, claims)
@@ -32,16 +23,6 @@ defmodule TdDqWeb.RuleController do
       rules: rules,
       user_permissions: user_permissions
     )
-  end
-
-  swagger_path :get_rules_by_concept do
-    description("List Rules of a Business Concept")
-
-    parameters do
-      business_concept_id(:path, :string, "Business Concept ID", required: true)
-    end
-
-    response(200, "OK", Schema.ref(:RulesResponse))
   end
 
   def get_rules_by_concept(conn, %{"business_concept_id" => _id} = params) do
@@ -96,18 +77,6 @@ defmodule TdDqWeb.RuleController do
     end)
   end
 
-  swagger_path :create do
-    description("Creates a Rule")
-    produces("application/json")
-
-    parameters do
-      rule(:body, Schema.ref(:RuleCreate), "Rule creation parameters")
-    end
-
-    response(201, "Created", Schema.ref(:RuleResponse))
-    response(400, "Client Error")
-  end
-
   def create(conn, %{"rule" => params}) do
     claims = conn.assigns[:current_resource]
 
@@ -120,18 +89,6 @@ defmodule TdDqWeb.RuleController do
     end
   end
 
-  swagger_path :show do
-    description("Show Rule")
-    produces("application/json")
-
-    parameters do
-      id(:path, :integer, "Rule ID", required: true)
-    end
-
-    response(200, "OK", Schema.ref(:RuleResponse))
-    response(400, "Client Error")
-  end
-
   def show(conn, %{"id" => id}) do
     claims = conn.assigns[:current_resource]
     rule = Rules.get_rule!(id, enrich: [:domain])
@@ -139,19 +96,6 @@ defmodule TdDqWeb.RuleController do
     with :ok <- Bodyguard.permit(Rules, :view, claims, rule) do
       render(conn, "show.json", rule: rule, user_permissions: get_user_permissions(claims, rule))
     end
-  end
-
-  swagger_path :update do
-    description("Updates Rule")
-    produces("application/json")
-
-    parameters do
-      rule(:body, Schema.ref(:RuleUpdate), "Rule update parameters")
-      id(:path, :integer, "Rule ID", required: true)
-    end
-
-    response(200, "OK", Schema.ref(:RuleResponse))
-    response(400, "Client Error")
   end
 
   def update(conn, %{"id" => id, "rule" => params}) do
@@ -162,18 +106,6 @@ defmodule TdDqWeb.RuleController do
          {:ok, %{rule: rule}} <- Rules.update_rule(rule, params, claims) do
       render(conn, "show.json", rule: rule, user_permissions: get_user_permissions(claims, rule))
     end
-  end
-
-  swagger_path :delete do
-    description("Delete Rule")
-    produces("application/json")
-
-    parameters do
-      id(:path, :integer, "Rule ID", required: true)
-    end
-
-    response(200, "OK")
-    response(400, "Client Error")
   end
 
   def delete(conn, %{"id" => id}) do

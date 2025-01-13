@@ -381,8 +381,7 @@ defmodule TdDq.RuleResultsTest do
       total_segment_result =
         [chunk | rest_segments]
         |> List.flatten()
-        |> Enum.filter(&(NaiveDateTime.to_iso8601(&1.updated_at) >= last_chunk_updated_at))
-        |> Enum.count()
+        |> Enum.count(&(NaiveDateTime.to_iso8601(&1.updated_at) >= last_chunk_updated_at))
 
       assert {^total_segment_result, _} =
                Enum.reduce(

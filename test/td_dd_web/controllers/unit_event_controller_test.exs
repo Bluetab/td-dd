@@ -1,6 +1,5 @@
 defmodule TdDdWeb.UnitEventControllerTest do
   use TdDdWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   setup do
     events = Enum.map(1..5, fn id -> build(:unit_event, event: "Event #{id}") end)
@@ -13,13 +12,11 @@ defmodule TdDdWeb.UnitEventControllerTest do
     @tag authentication: [role: "admin"]
     test "GET /api/units/:name/events returns the list of events", %{
       conn: conn,
-      swagger_schema: schema,
       unit: unit
     } do
       assert %{"data" => events} =
                conn
                |> get(Routes.unit_event_path(conn, :index, unit.name))
-               |> validate_resp_schema(schema, "UnitEventsResponse")
                |> json_response(:ok)
 
       assert length(events) == 5

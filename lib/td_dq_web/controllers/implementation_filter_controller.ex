@@ -9,20 +9,6 @@ defmodule TdDqWeb.ImplementationFilterController do
 
   action_fallback(TdDqWeb.FallbackController)
 
-  def swagger_definitions do
-    SwaggerDefinitions.filter_swagger_definitions()
-  end
-
-  swagger_path :search do
-    description("List Implementation Filters")
-
-    parameters do
-      search(:body, Schema.ref(:FilterRequest), "Filter parameters")
-    end
-
-    response(200, "OK", Schema.ref(:FilterResponse))
-  end
-
   def search(conn, params) do
     claims = conn.assigns[:current_resource]
     params = Map.put(params, "without", "deleted_at")

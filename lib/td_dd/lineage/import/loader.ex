@@ -29,16 +29,16 @@ defmodule TdDd.Lineage.Import.Loader do
         do_load(unit, graph)
 
       %Validations{valid: false} = validations ->
-        Logger.warn("Validations failed for unit #{unit.name}")
+        Logger.warning("Validations failed for unit #{unit.name}")
         Units.insert_event(unit, "LoadFailed", Validations.to_map(validations))
 
       {:error, %{} = info} = error ->
-        Logger.warn("Error reading unit #{unit.name}: #{inspect(info)}")
+        Logger.warning("Error reading unit #{unit.name}: #{inspect(info)}")
         Units.insert_event(unit, "LoadFailed", info)
         error
 
       error ->
-        Logger.warn("Error reading unit #{unit.name}: #{inspect(error)}")
+        Logger.warning("Error reading unit #{unit.name}: #{inspect(error)}")
         Units.insert_event(unit, "LoadFailed")
         error
     end
@@ -169,7 +169,7 @@ defmodule TdDd.Lineage.Import.Loader do
 
       {:error, failed_operation, _failed_value, %{unit: unit}} ->
         Units.insert_event(unit, "LoadFailed", %{failed_operation: failed_operation})
-        Logger.warn("Load failed on #{failed_operation}")
+        Logger.warning("Load failed on #{failed_operation}")
 
       _ ->
         :ignore

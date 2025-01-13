@@ -5,14 +5,6 @@ defmodule TdDqWeb.RuleSearchController do
   alias TdDq.Rules.Search
   alias TdDq.Rules.Search.Indexer
 
-  swagger_path :reindex do
-    description("Reindex rule index with DB content")
-    produces("application/json")
-
-    response(202, "Accepted")
-    response(500, "Client Error")
-  end
-
   def reindex(conn, _params) do
     claims = conn.assigns[:current_resource]
 
@@ -20,14 +12,6 @@ defmodule TdDqWeb.RuleSearchController do
       Indexer.reindex(:all)
       send_resp(conn, :accepted, "")
     end
-  end
-
-  swagger_path :create do
-    description("Search for rules")
-    produces("application/json")
-
-    response(200, "Accepted")
-    response(500, "Client Error")
   end
 
   def create(conn, params) do

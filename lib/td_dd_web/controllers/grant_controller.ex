@@ -1,6 +1,5 @@
 defmodule TdDdWeb.GrantController do
   use TdDdWeb, :controller
-  use PhoenixSwagger
 
   alias TdDd.CSV.Download
   alias TdDd.DataStructures
@@ -8,23 +7,10 @@ defmodule TdDdWeb.GrantController do
   alias TdDd.Grants
   alias TdDd.Grants.Grant
   alias TdDd.Grants.Search
-  alias TdDdWeb.SwaggerDefinitions
 
   action_fallback(TdDdWeb.FallbackController)
 
   @grant_actions [:manage_grant_removal, :manage_grant_removal_request, :update]
-
-  def swagger_definitions do
-    SwaggerDefinitions.grant_swagger_definitions()
-  end
-
-  swagger_path :index do
-    description("Get grants")
-    produces("application/json")
-
-    response(200, "OK", Schema.ref(:GrantResponse))
-    response(422, "Client Error")
-  end
 
   def index(conn, _params) do
     claims = conn.assigns[:current_resource]
@@ -33,25 +19,6 @@ defmodule TdDdWeb.GrantController do
          grants <- Grants.list_active_grants([]) do
       render(conn, "index.json", grants: grants)
     end
-  end
-
-  swagger_path :create do
-    description("Creates a Grant")
-    produces("application/json")
-
-    parameters do
-      data_structure_external_id(:path, :string, "Data Structure External Id", required: true)
-
-      grant(
-        :body,
-        Schema.ref(:GrantCreate),
-        "Grant create attrs"
-      )
-    end
-
-    response(201, "OK", Schema.ref(:GrantResponse))
-    response(403, "Forbidden")
-    response(422, "Unprocessable Entity")
   end
 
   def create(conn, %{"grant" => grant_params, "data_structure_id" => data_structure_external_id}) do
@@ -72,19 +39,6 @@ defmodule TdDdWeb.GrantController do
     end
   end
 
-  swagger_path :show do
-    description("Shows Grant")
-    produces("application/json")
-
-    parameters do
-      id(:path, :string, "Grant Id", required: true)
-    end
-
-    response(200, "OK", Schema.ref(:GrantResponse))
-    response(403, "Forbidden")
-    response(404, "Not Found")
-  end
-
   def show(conn, %{"id" => id}) do
     with claims <- conn.assigns[:current_resource],
          %Grant{} = grant <-
@@ -98,25 +52,6 @@ defmodule TdDdWeb.GrantController do
 
       render(conn, "show.json", grant: grant, actions: actions)
     end
-  end
-
-  swagger_path :update do
-    description("Updates Grant")
-    produces("application/json")
-
-    parameters do
-      id(:path, :string, "Grant Id", required: true)
-
-      grant(
-        :body,
-        Schema.ref(:GrantUpdate),
-        "Grant update attrs"
-      )
-    end
-
-    response(201, "OK", Schema.ref(:GrantResponse))
-    response(403, "Forbidden")
-    response(422, "Unprocessable Entity")
   end
 
   def update(conn, %{"id" => id, "action" => "mark_pending_removal"}) do
@@ -164,19 +99,6 @@ defmodule TdDdWeb.GrantController do
     end
   end
 
-  swagger_path :delete do
-    description("Deletes a Grant")
-    produces("application/json")
-
-    parameters do
-      id(:path, :integer, "Grant ID", required: true)
-    end
-
-    response(202, "Accepted")
-    response(403, "Forbidden")
-    response(422, "Unprocessable Entity")
-  end
-
   def delete(conn, %{"id" => id}) do
     with claims <- conn.assigns[:current_resource],
          %Grant{} = grant <- Grants.get_grant!(id, preload: [:data_structure, :system]),
@@ -184,19 +106,6 @@ defmodule TdDdWeb.GrantController do
          {:ok, %{grant: %Grant{}}} <- Grants.delete_grant(grant, claims) do
       send_resp(conn, :no_content, "")
     end
-  end
-
-  swagger_path :csv do
-    description("Download CSV of grants")
-    produces("application/json")
-
-    parameters do
-      search(:body, Schema.ref(:GrantCSVRequest), "Search query parameter")
-    end
-
-    response(200, "OK")
-    response(403, "User is not authorized to perform this action")
-    response(422, "Error during CSV download")
   end
 
   def csv(conn, %{"search_by" => search_by, "header_labels" => header_labels} = params) do

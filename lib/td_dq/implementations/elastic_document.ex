@@ -196,6 +196,7 @@ defmodule TdDq.Implementations.ElasticDocument do
       |> Map.put(:linked_structures_ids, linked_structures_ids)
       |> Map.put(:structure_links, structure_links)
       |> Map.put(:df_content, df_content)
+      |> Map.put(:ngram_implementation_key, implementation.implementation_key)
     end
 
     defp add_dsv_fields(structure_fields, %DataStructureVersion{
@@ -391,6 +392,9 @@ defmodule TdDq.Implementations.ElasticDocument do
   defimpl ElasticDocumentProtocol, for: Implementation do
     use ElasticDocument
 
+    @boosted_fields ~w(ngram_implementation_key^3)
+    @search_fields ~w(implementation_type)
+
     def mappings(_) do
       content_mappings = %{properties: get_dynamic_mappings("ri")}
 
@@ -434,7 +438,7 @@ defmodule TdDq.Implementations.ElasticDocument do
             id: %{type: "long", index: false},
             name: %{type: "text", fields: @raw_sort},
             content: %{
-              properties: get_dynamic_mappings("bg", "user")
+              properties: get_dynamic_mappings("bg", type: "user")
             }
           }
         },
@@ -442,6 +446,7 @@ defmodule TdDq.Implementations.ElasticDocument do
         updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
         inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
         implementation_key: %{type: "text", fields: @raw},
+        ngram_implementation_key: %{type: "search_as_you_type"},
         implementation_type: %{type: "text", fields: @raw_sort},
         execution_result_info: %{
           properties: %{
@@ -509,12 +514,30 @@ defmodule TdDq.Implementations.ElasticDocument do
         status: %{type: "keyword"}
       }
 
-      settings = Cluster.setting(:implementations)
+      settings = :implementations |> Cluster.setting() |> apply_lang_settings()
 
       %{mappings: %{properties: properties}, settings: settings}
     end
 
     def aggregations(_) do
+      merged_aggregations("ri", "dq", "bg")
+    end
+
+    def query_data(_) do
+      ri_content_schema = Templates.content_schema_for_scope("ri")
+      dq_content_schema = Templates.content_schema_for_scope("dq")
+
+      native_fields = @boosted_fields ++ @search_fields
+
+      fields =
+        native_fields ++
+          dynamic_search_fields(ri_content_schema, "df_content") ++
+          dynamic_search_fields(dq_content_schema, "rule.df_content")
+
+      %{aggs: merged_aggregations(ri_content_schema, dq_content_schema, "bg"), fields: fields}
+    end
+
+    defp native_aggregations do
       %{
         "execution_result_info.result_text" => %{
           terms: %{
@@ -549,8 +572,18 @@ defmodule TdDq.Implementations.ElasticDocument do
           meta: %{type: "search", index: "structures"}
         }
       }
-      |> merge_dynamic_fields("ri", "df_content")
-      |> merge_dynamic_fields("dq", "rule.df_content")
+    end
+
+    defp merged_aggregations(ri_scope_or_content, dq_scope_or_content, bg_content_or_scope) do
+      native_aggregations = native_aggregations()
+
+      native_aggregations
+      |> merge_dynamic_aggregations(ri_scope_or_content, "df_content")
+      |> merge_dynamic_aggregations(dq_scope_or_content, "rule.df_content")
+      |> merge_dynamic_aggregations(
+        bg_content_or_scope,
+        "current_business_concept_version.content"
+      )
     end
 
     defp get_condition_mappings(opts \\ [:operator, :structure, :value, :modifier]) do

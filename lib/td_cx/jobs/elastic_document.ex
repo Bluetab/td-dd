@@ -45,6 +45,8 @@ defmodule TdCx.Jobs.ElasticDocument do
   defimpl ElasticDocumentProtocol, for: Job do
     use ElasticDocument
 
+    @search_fields ~w(external_id source.external_id message)
+
     def mappings(_) do
       mapping_type = %{
         id: %{type: "long"},
@@ -63,7 +65,7 @@ defmodule TdCx.Jobs.ElasticDocument do
         message: %{type: "text"}
       }
 
-      settings = Cluster.setting(:jobs)
+      settings = :jobs |> Cluster.setting() |> apply_lang_settings()
 
       %{mappings: %{properties: mapping_type}, settings: settings}
     end
@@ -82,7 +84,10 @@ defmodule TdCx.Jobs.ElasticDocument do
         "status" => %{terms: %{field: "status.raw", size: Cluster.get_size_field("status")}},
         "type" => %{terms: %{field: "type.raw", size: Cluster.get_size_field("type")}}
       }
-      |> merge_dynamic_fields("cx", "content")
+    end
+
+    def query_data(_) do
+      %{fields: @search_fields, aggs: aggregations(%Job{})}
     end
   end
 end

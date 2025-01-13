@@ -81,7 +81,9 @@ defmodule TdDq.Implementations.ConditionRow do
     if value_left <= value_right do
       changeset
     else
-      add_error(changeset, :value, "invalid.range", validation: :invalid_length_between_value_type)
+      add_error(changeset, :value, "invalid.range",
+        validation: :invalid_length_between_value_type
+      )
     end
   end
 
@@ -141,11 +143,11 @@ defmodule TdDq.Implementations.ConditionRow do
 
   # Several fields
   defp valid_attribute(%{"fields" => fields}, %{"operator" => %{"value_type" => value_type}}) do
-    is_valid_type_value(value_type, fields)
+    valid_type_value?(value_type, fields)
   end
 
   defp valid_attribute(%{"raw" => raw}, %{"operator" => %{"value_type" => value_type}}) do
-    is_valid_type_value(value_type, raw)
+    valid_type_value?(value_type, raw)
   end
 
   defp valid_attribute(
@@ -168,27 +170,27 @@ defmodule TdDq.Implementations.ConditionRow do
 
   defp valid_attribute(_, _), do: false
 
-  defp is_valid_type_value("number", value) do
+  defp valid_type_value?("number", value) do
     is_integer(value) || is_float(value)
   end
 
-  defp is_valid_type_value("string", value) do
+  defp valid_type_value?("string", value) do
     is_binary(value)
   end
 
-  defp is_valid_type_value("date", value) do
-    is_binary(value) && is_date(value)
+  defp valid_type_value?("date", value) do
+    is_binary(value) && date?(value)
   end
 
-  defp is_valid_type_value("timestamp", value) do
-    is_binary(value) && is_timestamp(value)
+  defp valid_type_value?("timestamp", value) do
+    is_binary(value) && timestamp?(value)
   end
 
-  defp is_valid_type_value("string_list", value) do
+  defp valid_type_value?("string_list", value) do
     is_list(value)
   end
 
-  defp is_valid_type_value("field_list", value) do
+  defp valid_type_value?("field_list", value) do
     is_list(value) and
       Enum.all?(value, fn
         %{"id" => id} -> is_integer(id)
@@ -196,18 +198,18 @@ defmodule TdDq.Implementations.ConditionRow do
       end)
   end
 
-  defp is_valid_type_value(_other_type, _value) do
+  defp valid_type_value?(_other_type, _value) do
     false
   end
 
-  defp is_date(date) do
+  defp date?(date) do
     case TdDq.DateParser.parse(date, [:utc_date]) do
       {:ok, _date, _} -> true
       _ -> false
     end
   end
 
-  defp is_timestamp(date) do
+  defp timestamp?(date) do
     case TdDq.DateParser.parse(date, [:utc]) do
       {:ok, _date, _} -> true
       _ -> false

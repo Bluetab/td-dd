@@ -12,10 +12,6 @@ defmodule TdDqWeb.Router do
     plug TdCore.I18n.Plug.Language
   end
 
-  scope "/api/swagger" do
-    forward("/", PhoenixSwagger.Plug.SwaggerUI, otp_app: :td_dd, swagger_file: "swagger_dq.json")
-  end
-
   scope "/api", TdDqWeb do
     pipe_through :api
     get("/ping", PingController, :ping)
@@ -80,28 +76,5 @@ defmodule TdDqWeb.Router do
 
     resources("/functions", FunctionsController, only: [:update], singleton: true)
     resources("/functions", FunctionController, only: [:index, :create, :delete])
-  end
-
-  def swagger_info do
-    %{
-      schemes: ["http", "https"],
-      info: %{
-        version: Application.spec(:td_dd, :vsn),
-        title: "Truedat Data Quality Service"
-      },
-      basePath: "/",
-      securityDefinitions: %{
-        bearer: %{
-          type: "apiKey",
-          name: "Authorization",
-          in: "header"
-        }
-      },
-      security: [
-        %{
-          bearer: []
-        }
-      ]
-    }
   end
 end

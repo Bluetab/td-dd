@@ -2,7 +2,7 @@ defmodule TdDd.DataStructures.TagsTest do
   use TdDd.DataStructureCase
 
   alias TdCache.Redix.Stream
-  alias TdCore.Search.IndexWorker
+  alias TdCore.Search.IndexWorkerMock
   alias TdDd.DataStructures.Tags
   alias TdDd.DataStructures.Tags.StructureTag
   alias TdDd.DataStructures.Tags.Tag
@@ -12,7 +12,7 @@ defmodule TdDd.DataStructures.TagsTest do
   @stream TdCache.Audit.stream()
 
   setup do
-    IndexWorker.clear()
+    IndexWorkerMock.clear()
 
     :ok
   end
@@ -244,7 +244,7 @@ defmodule TdDd.DataStructures.TagsTest do
     end
 
     test "links tag to a given structure", %{claims: claims} do
-      IndexWorker.clear()
+      IndexWorkerMock.clear()
       %{comment: comment} = build(:structure_tag)
 
       structure =
@@ -283,7 +283,7 @@ defmodule TdDd.DataStructures.TagsTest do
                }
              } = Jason.decode!(payload)
 
-      assert [{:reindex, :structures, _}] = IndexWorker.calls()
+      assert [{:reindex, :structures, _}] = IndexWorkerMock.calls()
     end
 
     test "updates structure tag when it already exists", %{claims: claims} do
@@ -352,7 +352,7 @@ defmodule TdDd.DataStructures.TagsTest do
     end
 
     test "deletes structure tag", %{claims: claims} do
-      IndexWorker.clear()
+      IndexWorkerMock.clear()
 
       structure =
         %{id: data_structure_id, external_id: external_id, updated_at: updated_at_before} =
@@ -394,7 +394,7 @@ defmodule TdDd.DataStructures.TagsTest do
                data_structure_id: data_structure_id
              )
 
-      assert [{:reindex, :structures, _}] = IndexWorker.calls()
+      assert [{:reindex, :structures, _}] = IndexWorkerMock.calls()
     end
 
     test "not_found if structure tag does not exist", %{claims: claims} do

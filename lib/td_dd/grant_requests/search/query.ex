@@ -5,10 +5,12 @@ defmodule TdDd.GrantRequests.Search.Query do
 
   alias TdCore.Search.Query
 
-  def build_query(%{} = permissions, params, aggs) do
+  def build_query(%{} = permissions, params, query_data) do
+    opts = Keyword.new(query_data)
+
     permissions
     |> build_filters()
-    |> Query.build_query(params, aggs)
+    |> Query.build_query(params, opts)
   end
 
   defp build_filters(%{

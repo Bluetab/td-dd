@@ -1567,13 +1567,6 @@ defmodule TdDdWeb.Schema.StructuresTest do
 
     @tag authentication: [role: "admin"]
     test "count accesses to database when retrieve metadata for children", %{conn: conn} do
-      defmodule QueryCounter do
-        def start, do: {:ok, _pid} = Agent.start_link(fn -> 0 end, name: :query_counter)
-        def stop, do: Agent.stop(:query_counter)
-        def total, do: Agent.get(:query_counter, & &1)
-        def count(_, _, %{repo: TdDd.Repo}, _), do: Agent.update(:query_counter, &(&1 + 1))
-      end
-
       number_of_children = 20
       ds_main_id = insert_family_of_structures(number_of_children, 20, 2000)
       query_variables = %{"dataStructureId" => ds_main_id, "version" => "latest"}
@@ -1643,7 +1636,7 @@ defmodule TdDdWeb.Schema.StructuresTest do
       memory_consumption_limit = expected_memory_consumption * expected_memory_tolerance
 
       if memory_consumed > memory_consumption_limit do
-        Logger.warn(
+        Logger.warning(
           "\n High memory consumed: #{memory_consumed} Mbytes \n Consider to review in memory operations"
         )
       end
@@ -2132,4 +2125,11 @@ defmodule TdDdWeb.Schema.StructuresTest do
       relation_type_id: relation_type_id
     )
   end
+end
+
+defmodule(QueryCounter) do
+  def start, do: {:ok, _pid} = Agent.start_link(fn -> 0 end, name: :query_counter)
+  def stop, do: Agent.stop(:query_counter)
+  def total, do: Agent.get(:query_counter, & &1)
+  def count(_, _, %{repo: TdDd.Repo}, _), do: Agent.update(:query_counter, &(&1 + 1))
 end

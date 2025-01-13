@@ -1,6 +1,5 @@
 defmodule TdDdWeb.ProfileExecutionControllerTest do
   use TdDdWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   @moduletag sandbox: :shared
 
@@ -46,13 +45,11 @@ defmodule TdDdWeb.ProfileExecutionControllerTest do
   describe "GET /api/profile_executions" do
     @tag authentication: [role: "service"]
     test "returns an OK response with the list of executions", %{
-      conn: conn,
-      swagger_schema: schema
+      conn: conn
     } do
       assert %{"data" => executions} =
                conn
                |> get(Routes.profile_execution_path(conn, :index))
-               |> validate_resp_schema(schema, "ProfileExecutionsResponse")
                |> json_response(:ok)
 
       assert length(executions) == 5
@@ -63,7 +60,6 @@ defmodule TdDdWeb.ProfileExecutionControllerTest do
     @tag authentication: [role: "admin"]
     test "returns an OK response execution data", %{
       conn: conn,
-      swagger_schema: schema,
       executions: [execution | _]
     } do
       %{
@@ -90,7 +86,6 @@ defmodule TdDdWeb.ProfileExecutionControllerTest do
              } =
                conn
                |> get(Routes.profile_execution_path(conn, :show, id))
-               |> validate_resp_schema(schema, "ProfileExecutionResponse")
                |> json_response(:ok)
     end
 
@@ -98,7 +93,6 @@ defmodule TdDdWeb.ProfileExecutionControllerTest do
     @tag permissions: [:view_data_structure, :view_data_structures_profile]
     test "returns an OK response execution data when user has permissions", %{
       conn: conn,
-      swagger_schema: schema,
       executions: [execution | _]
     } do
       %{
@@ -125,7 +119,6 @@ defmodule TdDdWeb.ProfileExecutionControllerTest do
              } =
                conn
                |> get(Routes.profile_execution_path(conn, :show, id))
-               |> validate_resp_schema(schema, "ProfileExecutionResponse")
                |> json_response(:ok)
     end
 

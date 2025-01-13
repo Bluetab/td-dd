@@ -1,6 +1,5 @@
 defmodule TdDdWeb.StructureNoteController do
   use TdDdWeb, :controller
-  use PhoenixSwagger
 
   import Bodyguard, only: [permit?: 4]
 
@@ -9,28 +8,11 @@ defmodule TdDdWeb.StructureNoteController do
   alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.StructureNotes
   alias TdDd.DataStructures.StructureNotesWorkflow
-  alias TdDdWeb.SwaggerDefinitions
+
   alias TdDfLib.MapDiff
 
   action_fallback(TdDdWeb.FallbackController)
   @data_structure_type_preload [:system, [current_version: :structure_type]]
-
-  def swagger_definitions do
-    SwaggerDefinitions.structure_note_swagger_definitions()
-  end
-
-  swagger_path :index do
-    description("List StructureNotes of a DataStructure")
-    produces("application/json")
-
-    parameters do
-      data_structure_id(:path, :string, "Data Structure Id", required: true)
-    end
-
-    response(200, "OK", Schema.ref(:StructureNotesResponse))
-    response(403, "Forbidden")
-    response(404, "Not Found")
-  end
 
   def index(conn, %{"data_structure_id" => data_structure_id}) do
     with claims <- conn.assigns[:current_resource],
@@ -66,25 +48,6 @@ defmodule TdDdWeb.StructureNoteController do
 
       render(conn, "search.json", structure_notes: structure_notes)
     end
-  end
-
-  swagger_path :create do
-    description("Creates Structure Note")
-    produces("application/json")
-
-    parameters do
-      data_structure_id(:path, :string, "Data Structure Id", required: true)
-
-      structure_note(
-        :body,
-        Schema.ref(:CreateStructureNote),
-        "StructureNote create attrs"
-      )
-    end
-
-    response(201, "OK", Schema.ref(:StructureNoteResponse))
-    response(403, "Forbidden")
-    response(422, "Unprocessable Entity")
   end
 
   def create(
@@ -158,43 +121,9 @@ defmodule TdDdWeb.StructureNoteController do
     end
   end
 
-  swagger_path :show do
-    description("Shows Structure Note")
-    produces("application/json")
-
-    parameters do
-      data_structure_id(:path, :integer, "Data Structure ID", required: true)
-      id(:path, :string, "Structure Note Id", required: true)
-    end
-
-    response(200, "OK", Schema.ref(:StructureNoteResponse))
-    response(403, "Forbidden")
-    response(404, "Not Found")
-  end
-
   def show(conn, %{"id" => id}) do
     structure_note = StructureNotes.get_structure_note!(id)
     render(conn, "show.json", structure_note: structure_note)
-  end
-
-  swagger_path :update do
-    description("Updates Structure Note")
-    produces("application/json")
-
-    parameters do
-      data_structure_id(:path, :string, "Data Structure Id", required: true)
-      id(:path, :string, "Structure Note Id", required: true)
-
-      structure_note(
-        :body,
-        Schema.ref(:UpdateStructureNote),
-        "StructureNote update attrs"
-      )
-    end
-
-    response(201, "OK", Schema.ref(:StructureNoteResponse))
-    response(403, "Forbidden")
-    response(422, "Unprocessable Entity")
   end
 
   def update(conn, %{
@@ -225,20 +154,6 @@ defmodule TdDdWeb.StructureNoteController do
         actions: available_actions(conn, structure_note, claims, data_structure)
       )
     end
-  end
-
-  swagger_path :delete do
-    description("Deletes Structure Note")
-    produces("application/json")
-
-    parameters do
-      data_structure_id(:path, :integer, "Data Structure ID", required: true)
-      id(:path, :integer, "Data Structure Note ID", required: true)
-    end
-
-    response(202, "Accepted")
-    response(403, "Forbidden")
-    response(422, "Unprocessable Entity")
   end
 
   def delete(conn, %{"id" => id}) do
@@ -288,7 +203,7 @@ defmodule TdDdWeb.StructureNoteController do
   defp can(%{status: _status}, %{"status" => nil}, _claims, _data_structure), do: {:can, true}
 
   defp can(%{status: status}, %{"status" => to_status}, claims, data_structure) do
-    {:can, is_available(status, String.to_atom(to_status), claims, data_structure)}
+    {:can, available?(status, String.to_atom(to_status), claims, data_structure)}
   end
 
   defp can(%{status: :draft}, %{"df_content" => _df_content}, claims, data_structure) do
@@ -358,7 +273,7 @@ defmodule TdDdWeb.StructureNoteController do
     data_structure
     |> StructureNotesWorkflow.available_actions()
     |> Enum.filter(fn action ->
-      is_available(nil, action, claims, data_structure)
+      available?(nil, action, claims, data_structure)
     end)
   end
 
@@ -366,7 +281,7 @@ defmodule TdDdWeb.StructureNoteController do
     structure_note
     |> StructureNotesWorkflow.available_actions()
     |> Enum.filter(fn action ->
-      is_available(status, action, claims, data_structure)
+      available?(status, action, claims, data_structure)
     end)
   end
 
@@ -406,43 +321,43 @@ defmodule TdDdWeb.StructureNoteController do
 
   defp add_template_id(structure_note, _), do: structure_note
 
-  defp is_available(:draft, :published, claims, data_structure),
+  defp available?(:draft, :published, claims, data_structure),
     do: permit?(StructureNotes, :publish_draft, claims, data_structure)
 
-  defp is_available(nil, :draft, claims, data_structure),
+  defp available?(nil, :draft, claims, data_structure),
     do: permit?(StructureNotes, :edit, claims, data_structure)
 
-  defp is_available(nil, :ai_suggestions, claims, data_structure),
+  defp available?(nil, :ai_suggestions, claims, data_structure),
     do: permit?(StructureNotes, :ai_suggestions, claims, data_structure)
 
-  defp is_available(:draft, :edited, claims, data_structure),
+  defp available?(:draft, :edited, claims, data_structure),
     do: permit?(StructureNotes, :edit, claims, data_structure)
 
-  defp is_available(:draft, :ai_suggestions, claims, data_structure),
+  defp available?(:draft, :ai_suggestions, claims, data_structure),
     do: permit?(StructureNotes, :ai_suggestions, claims, data_structure)
 
-  defp is_available(_, :pending_approval, claims, data_structure),
+  defp available?(_, :pending_approval, claims, data_structure),
     do: permit?(StructureNotes, :submit, claims, data_structure)
 
-  defp is_available(_, :rejected, claims, data_structure),
+  defp available?(_, :rejected, claims, data_structure),
     do: permit?(StructureNotes, :reject, claims, data_structure)
 
-  defp is_available(:rejected, :draft, claims, data_structure),
+  defp available?(:rejected, :draft, claims, data_structure),
     do: permit?(StructureNotes, :unreject, claims, data_structure)
 
-  defp is_available(_, :draft, claims, data_structure),
+  defp available?(_, :draft, claims, data_structure),
     do: permit?(StructureNotes, :unreject, claims, data_structure)
 
-  defp is_available(_, :deprecated, claims, data_structure),
+  defp available?(_, :deprecated, claims, data_structure),
     do: permit?(StructureNotes, :deprecate, claims, data_structure)
 
-  defp is_available(_, :published, claims, data_structure),
+  defp available?(_, :published, claims, data_structure),
     do: permit?(StructureNotes, :publish, claims, data_structure)
 
-  defp is_available(_, :deleted, claims, data_structure),
+  defp available?(_, :deleted, claims, data_structure),
     do: permit?(StructureNotes, :delete, claims, data_structure)
 
-  defp is_available(_, _, _claims, _data_structure), do: false
+  defp available?(_, _, _claims, _data_structure), do: false
 
   defp listable_statuses(claims, data_structure) do
     [

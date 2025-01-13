@@ -1,6 +1,5 @@
 defmodule TdDqWeb.RuleFilterControllerTest do
   use TdDqWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger_dq.json"
 
   import Mox
 

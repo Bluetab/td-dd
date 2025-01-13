@@ -1,6 +1,5 @@
 defmodule TdDdWeb.GrantFilterControllerTest do
   use TdDdWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   import Mox
 

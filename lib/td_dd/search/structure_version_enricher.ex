@@ -33,7 +33,7 @@ defmodule TdDd.Search.StructureVersionEnricher do
     |> Map.values()
     |> Enum.filter(&is_map/1)
     |> do_filters(filters)
-    |> Enum.filter(fn {_, v} -> is_primitive?(v) end)
+    |> Enum.filter(fn {_, v} -> primitive?(v) end)
     |> Map.new()
   end
 
@@ -48,9 +48,9 @@ defmodule TdDd.Search.StructureVersionEnricher do
     |> Map.take(filters)
   end
 
-  defp is_primitive?(v) when is_binary(v), do: true
-  defp is_primitive?(v) when is_boolean(v), do: true
-  defp is_primitive?(v) when is_number(v), do: true
-  defp is_primitive?([v | _]), do: is_primitive?(v)
-  defp is_primitive?(_), do: false
+  defp primitive?(v) when is_binary(v), do: true
+  defp primitive?(v) when is_boolean(v), do: true
+  defp primitive?(v) when is_number(v), do: true
+  defp primitive?([v | _]), do: primitive?(v)
+  defp primitive?(_), do: false
 end

@@ -1,6 +1,5 @@
 defmodule TdDdWeb.UnitControllerTest do
   use TdDdWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   alias TdDd.TaskSupervisor
 
@@ -14,13 +13,12 @@ defmodule TdDdWeb.UnitControllerTest do
 
   describe "Unit Controller" do
     @tag authentication: [role: "admin"]
-    test "GET /api/units returns the list of units", %{conn: conn, swagger_schema: schema} do
+    test "GET /api/units returns the list of units", %{conn: conn} do
       Enum.each(1..5, fn _ -> insert(:unit, events: [build(:unit_event)]) end)
 
       assert %{"data" => units} =
                conn
                |> get(Routes.unit_path(conn, :index))
-               |> validate_resp_schema(schema, "UnitsResponse")
                |> json_response(:ok)
 
       assert length(units) == 5
@@ -28,13 +26,12 @@ defmodule TdDdWeb.UnitControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "GET /api/units/:name returns a unit", %{conn: conn, swagger_schema: schema} do
+    test "GET /api/units/:name returns a unit", %{conn: conn} do
       %{name: name} = insert(:unit, events: [build(:unit_event, event: "LoadStarted")])
 
       assert %{"data" => data} =
                conn
                |> get(Routes.unit_path(conn, :show, name))
-               |> validate_resp_schema(schema, "UnitResponse")
                |> json_response(:ok)
 
       assert %{"name" => ^name, "status" => status} = data
@@ -42,24 +39,21 @@ defmodule TdDdWeb.UnitControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "POST /api/units creates a unit", %{conn: conn, swagger_schema: schema} do
+    test "POST /api/units creates a unit", %{conn: conn} do
       %{name: name} = build(:unit)
 
       assert conn
              |> post(Routes.unit_path(conn, :create, name: name))
-             |> validate_resp_schema(schema, "UnitResponse")
              |> json_response(:ok)
     end
 
     @tag authentication: [role: "admin"]
     test "POST /api/units returns 422 if params are invalid", %{
-      conn: conn,
-      swagger_schema: schema
+      conn: conn
     } do
       assert %{"errors" => errors} =
                conn
                |> post(Routes.unit_path(conn, :create, []))
-               |> validate_resp_schema(schema, "UnitResponse")
                |> json_response(:unprocessable_entity)
 
       assert %{"name" => ["can't be blank"]} = errors
@@ -76,8 +70,7 @@ defmodule TdDdWeb.UnitControllerTest do
 
     @tag authentication: [role: "service"]
     test "PUT /api/units/:name replaces lineage unit metadata", %{
-      conn: conn,
-      swagger_schema: schema
+      conn: conn
     } do
       %{name: unit_name} = build(:unit)
 
@@ -93,7 +86,6 @@ defmodule TdDdWeb.UnitControllerTest do
       assert %{"data" => data} =
                conn
                |> get(Routes.unit_path(conn, :show, unit_name))
-               |> validate_resp_schema(schema, "UnitResponse")
                |> json_response(:ok)
 
       assert %{"status" => status} = data
@@ -103,8 +95,7 @@ defmodule TdDdWeb.UnitControllerTest do
 
     @tag authentication: [role: "service"]
     test "PUT /api/units/:name replaces lineage unit with metadata", %{
-      conn: conn,
-      swagger_schema: schema
+      conn: conn
     } do
       %{name: unit_name} = build(:unit)
 
@@ -120,7 +111,6 @@ defmodule TdDdWeb.UnitControllerTest do
       assert %{"data" => data} =
                conn
                |> get(Routes.unit_path(conn, :show, unit_name))
-               |> validate_resp_schema(schema, "UnitResponse")
                |> json_response(:ok)
 
       assert %{"status" => status} = data

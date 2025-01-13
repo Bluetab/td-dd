@@ -1,12 +1,11 @@
 defmodule TdDdWeb.MetadataControllerTest do
   use TdDdWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   import Ecto.Query
   import ExUnit.CaptureLog
   import Mox
 
-  alias TdCore.Search.IndexWorker
+  alias TdCore.Search.IndexWorkerMock
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
@@ -31,7 +30,7 @@ defmodule TdDdWeb.MetadataControllerTest do
     start_supervised!(TdDd.Search.StructureEnricher)
     insert(:system, name: "Power BI", external_id: "pbi")
 
-    IndexWorker.clear()
+    IndexWorkerMock.clear()
 
     case tags[:fixture] do
       nil ->
@@ -142,7 +141,7 @@ defmodule TdDdWeb.MetadataControllerTest do
                {:reindex, :structures, _},
                {:reindex, :structures, _},
                {:delete, :structures, [_, _, _]}
-             ] = IndexWorker.calls()
+             ] = IndexWorkerMock.calls()
     end
 
     @tag authentication: [role: "service"]

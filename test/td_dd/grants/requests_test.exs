@@ -4,7 +4,7 @@ defmodule TdDd.Grants.RequestsTest do
 
   import TdDd.TestOperators
 
-  alias TdCore.Search.IndexWorker
+  alias TdCore.Search.IndexWorkerMock
   alias TdDd.Grants
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestApproval
@@ -19,7 +19,7 @@ defmodule TdDd.Grants.RequestsTest do
   }
 
   setup tags do
-    IndexWorker.clear()
+    IndexWorkerMock.clear()
 
     case Map.get(tags, :role, "user") do
       "admin" ->
@@ -49,7 +49,7 @@ defmodule TdDd.Grants.RequestsTest do
     end
 
     test "create_grant_request_group/2 with valid data creates a grant_request_group" do
-      IndexWorker.clear()
+      IndexWorkerMock.clear()
       %{id: domain_id} = CacheHelpers.insert_domain()
       %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain_id])
       %{user_id: user_id} = build(:claims)
@@ -73,7 +73,7 @@ defmodule TdDd.Grants.RequestsTest do
 
       assert %{status: "pending"} = Repo.get_by!(GrantRequestStatus, grant_request_id: request_id)
 
-      assert [{:reindex, :grant_requests, [^request_id]}] = IndexWorker.calls()
+      assert [{:reindex, :grant_requests, [^request_id]}] = IndexWorkerMock.calls()
     end
 
     test "create_grant_request_group/2 with modification_grant" do
@@ -374,14 +374,14 @@ defmodule TdDd.Grants.RequestsTest do
     end
 
     test "delete_grant_request/1 deletes the grant_request", %{claims: claims} do
-      IndexWorker.clear()
+      IndexWorkerMock.clear()
       %{id: grant_request_id} = grant_request = insert(:grant_request)
       assert {:ok, %GrantRequest{}} = Requests.delete_grant_request(grant_request)
 
       assert_raise Ecto.NoResultsError, fn ->
         Requests.get_grant_request!(grant_request.id, claims)
 
-        assert IndexWorker.calls() == [{:delete_grant_request, [grant_request_id]}]
+        assert IndexWorkerMock.calls() == [{:delete_grant_request, [grant_request_id]}]
       end
     end
 
@@ -419,7 +419,7 @@ defmodule TdDd.Grants.RequestsTest do
       domain_id: domain_id,
       request: request
     } do
-      IndexWorker.clear()
+      IndexWorkerMock.clear()
 
       CacheHelpers.put_grant_request_approvers([
         %{user_id: user_id, resource_id: domain_id, role: "approver"}
@@ -431,7 +431,7 @@ defmodule TdDd.Grants.RequestsTest do
       assert %{is_rejection: false, user: user} = approval
       assert %{id: ^user_id, user_name: _} = user
 
-      assert [{:reindex, :grant_requests, [_]}] = IndexWorker.calls()
+      assert [{:reindex, :grant_requests, [_]}] = IndexWorkerMock.calls()
     end
 
     test "admin can approve a grant request without having the role", %{
@@ -495,7 +495,7 @@ defmodule TdDd.Grants.RequestsTest do
       domain_id: domain_id,
       request: %{grant: %{id: grant_id} = grant} = request
     } do
-      IndexWorker.clear()
+      IndexWorkerMock.clear()
 
       CacheHelpers.put_grant_request_approvers([
         %{user_id: user_id, resource_id: domain_id, role: "approver"}
@@ -518,7 +518,8 @@ defmodule TdDd.Grants.RequestsTest do
 
       assert %{pending_removal: true} = Grants.get_grant(grant_id)
 
-      assert [{:reindex, :grants, [_]}, {:reindex, :grant_requests, [_]}] = IndexWorker.calls()
+      assert [{:reindex, :grants, [_]}, {:reindex, :grant_requests, [_]}] =
+               IndexWorkerMock.calls()
     end
   end
 
@@ -530,7 +531,7 @@ defmodule TdDd.Grants.RequestsTest do
       claims: claims,
       multiple_grant_requests: grant_requests
     } do
-      IndexWorker.clear()
+      IndexWorkerMock.clear()
 
       bulk_params = %{"comment" => "", "role" => "admin"}
 
@@ -571,7 +572,7 @@ defmodule TdDd.Grants.RequestsTest do
   defp setup_request_access(context), do: setup_request(context, :grant_access)
 
   defp setup_request(%{claims: %{user_id: user_id}}, request_type) do
-    IndexWorker.clear()
+    IndexWorkerMock.clear()
     %{id: domain_id} = CacheHelpers.insert_domain()
     CacheHelpers.insert_user(user_id: user_id)
 
