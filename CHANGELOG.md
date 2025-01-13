@@ -9,6 +9,7 @@
   - update dependencies
   - update Docker RUNTIME_BASE=alpine:3.21
   - remove swagger
+- [TD-3612] Update td-core
 
 ### Added
 
