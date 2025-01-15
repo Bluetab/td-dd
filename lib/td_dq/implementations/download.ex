@@ -119,6 +119,7 @@ defmodule TdDq.Implementations.Download do
          get_in(implementation, [:execution_result_info, :result_text])
          |> translate(headers[:content_labels]),
          TdDd.Helpers.shift_zone(implementation.inserted_at, time_zone),
+         TdDd.Helpers.shift_zone(implementation.updated_at, time_zone),
          get_domain(implementation.structure_domain_ids)
        ] ++
          fill_result_details(implementation, headers[:result_details_headers]) ++
@@ -169,6 +170,7 @@ defmodule TdDq.Implementations.Download do
       "result",
       "execution",
       "inserted_at",
+      "updated_at",
       "structure_domains"
     ]
     |> Enum.map(fn h ->

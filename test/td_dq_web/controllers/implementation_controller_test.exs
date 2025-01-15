@@ -3737,15 +3737,31 @@ defmodule TdDqWeb.ImplementationControllerTest do
       end)
 
       [
-        %{implementation_key: key_0, rule: %{name: name_0}, inserted_at: inserted_at_0},
+        %{
+          implementation_key: key_0,
+          rule: %{name: name_0},
+          inserted_at: inserted_at_0,
+          updated_at: updated_at_0
+        },
         %{
           implementation_key: key_1,
           rule: %{name: name_1},
           results: [%{records: records_1, errors: errors_1}],
-          inserted_at: inserted_at_1
+          inserted_at: inserted_at_1,
+          updated_at: updated_at_1
         },
-        %{implementation_key: key_2, rule: %{name: name_2}, inserted_at: inserted_at_2},
-        %{implementation_key: key_3, rule: %{name: name_3}, inserted_at: inserted_at_3}
+        %{
+          implementation_key: key_2,
+          rule: %{name: name_2},
+          inserted_at: inserted_at_2,
+          updated_at: updated_at_2
+        },
+        %{
+          implementation_key: key_3,
+          rule: %{name: name_3},
+          inserted_at: inserted_at_3,
+          updated_at: updated_at_3
+        }
       ] = [previous_implementation | new_implementations]
 
       assert %{resp_body: body} = post(conn, Routes.implementation_path(conn, :csv, %{}))
@@ -3757,8 +3773,18 @@ defmodule TdDqWeb.ImplementationControllerTest do
         |> TdDd.Helpers.shift_zone(time_zone)
         |> String.replace("+", "\\+")
 
+      ts_0_1 =
+        DateTime.to_string(updated_at_0)
+        |> TdDd.Helpers.shift_zone(time_zone)
+        |> String.replace("+", "\\+")
+
       ts_1 =
         DateTime.to_string(inserted_at_1)
+        |> TdDd.Helpers.shift_zone(time_zone)
+        |> String.replace("+", "\\+")
+
+      ts_1_1 =
+        DateTime.to_string(updated_at_1)
         |> TdDd.Helpers.shift_zone(time_zone)
         |> String.replace("+", "\\+")
 
@@ -3767,18 +3793,28 @@ defmodule TdDqWeb.ImplementationControllerTest do
         |> TdDd.Helpers.shift_zone(time_zone)
         |> String.replace("+", "\\+")
 
+      ts_2_1 =
+        DateTime.to_string(updated_at_2)
+        |> TdDd.Helpers.shift_zone(time_zone)
+        |> String.replace("+", "\\+")
+
       ts_3 =
         DateTime.to_string(inserted_at_3)
         |> TdDd.Helpers.shift_zone(time_zone)
         |> String.replace("+", "\\+")
 
+      ts_3_1 =
+        DateTime.to_string(updated_at_3)
+        |> TdDd.Helpers.shift_zone(time_zone)
+        |> String.replace("+", "\\+")
+
       for regex <- [
             # credo:disable-for-lines:5 Credo.Check.Readability.MaxLineLength
-            "implementation_key;implementation_type;domain;executable;rule;rule_template;implementation_template;goal;minimum;business_concepts;last_execution_at;records;errors;result;execution;inserted_at;structure_domains;result_details_Query;result_details_baz_title;result_details_foo_title;result_details_jaz_title;dataset_external_id_1;validation_field_1\r",
-            ~r/#{key_0};default;;[\w+.]+;#{name_0};;;\d*\.?\d*;\d*\.?\d*;[\w+]+|[\w+]+;;;;;;#{ts_0};;;;;;;\r/,
-            ~r/#{key_1};default;;[\w+.]+;#{name_1};;;\d*\.?\d*;\d*\.?\d*;;[[:ascii:]]+;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;#{ts_1};;FOO;baz;;;;\r/,
-            ~r/#{key_2};default;;[\w+.]+;#{name_2};;;\d*\.?\d*;\d*\.?\d*;;[[:ascii:]]+;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;#{ts_2};;;bazz;\"{\"\"x\"\":\"\"foo\"\"}\";jaz;;\r/,
-            ~r/#{key_3};default;;[\w+.]+;#{name_3};;;\d*\.?\d*;\d*\.?\d*;;;;;;;#{ts_3};;;;;;;\r/
+            "implementation_key;implementation_type;domain;executable;rule;rule_template;implementation_template;goal;minimum;business_concepts;last_execution_at;records;errors;result;execution;inserted_at;updated_at;structure_domains;result_details_Query;result_details_baz_title;result_details_foo_title;result_details_jaz_title;dataset_external_id_1;validation_field_1\r",
+            ~r/#{key_0};default;;[\w+.]+;#{name_0};;;\d*\.?\d*;\d*\.?\d*;[\w+]+|[\w+]+;;;;;;#{ts_0};#{ts_0_1};;;;;;;\r/,
+            ~r/#{key_1};default;;[\w+.]+;#{name_1};;;\d*\.?\d*;\d*\.?\d*;;[[:ascii:]]+;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;#{ts_1};#{ts_1_1};;FOO;baz;;;;\r/,
+            ~r/#{key_2};default;;[\w+.]+;#{name_2};;;\d*\.?\d*;\d*\.?\d*;;[[:ascii:]]+;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;#{ts_2};#{ts_2_1};;;bazz;\"{\"\"x\"\":\"\"foo\"\"}\";jaz;;\r/,
+            ~r/#{key_3};default;;[\w+.]+;#{name_3};;;\d*\.?\d*;\d*\.?\d*;;;;;;;#{ts_3};#{ts_3_1};;;;;;;\r/
           ] do
         assert body =~ regex
       end
@@ -3824,7 +3860,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       for regex <- [
             # credo:disable-for-lines:5 Credo.Check.Readability.MaxLineLength
-            "implementation_key;implementation_type;domain;executable;rule;rule_template;implementation_template;goal;minimum;business_concepts;last_execution_at;records;errors;result;execution;inserted_at;structure_domains;result_details_Query;result_details_baz_title;result_details_foo_title;result_details_jaz_title;dataset_external_id_1;validation_field_1\r",
+            "implementation_key;implementation_type;domain;executable;rule;rule_template;implementation_template;goal;minimum;business_concepts;last_execution_at;records;errors;result;execution;inserted_at;updated_at;structure_domains;result_details_Query;result_details_baz_title;result_details_foo_title;result_details_jaz_title;dataset_external_id_1;validation_field_1\r",
             ~r/#{key_1};default;;[\w+.]+;#{name_1};;;\d*\.?\d*;\d*\.?\d*;;[[:ascii:]]+;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;[[:ascii:]]+;;#{query};#{detail_field1};;;;\r/,
             ~r/#{key_2};default;;[\w+.]+;#{name_2};;;\d*\.?\d*;\d*\.?\d*;;[[:ascii:]]+;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;[[:ascii:]]+;;#{baz_title};\"{\"\"x\"\":\"\"foo\"\"}\";#{jaz_title};;\r/,
             ~r/#{key_3};default;;[\w+.]+;#{name_3};;;\d*\.?\d*;\d*\.?\d*;;;;;;;[[:ascii:]]+;;;;;;\r/
@@ -3877,7 +3913,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       for regex <- [
             # credo:disable-for-lines:5 Credo.Check.Readability.MaxLineLength
-            "implementation_key;implementation_type;domain;executable;rule;rule_template;implementation_template;goal;minimum;business_concepts;last_execution_at;records;errors;result;execution;inserted_at;structure_domains;result_details_Query;result_details_baz_title;result_details_foo_title;result_details_jaz_title;dataset_external_id_1;validation_field_1\r",
+            "implementation_key;implementation_type;domain;executable;rule;rule_template;implementation_template;goal;minimum;business_concepts;last_execution_at;records;errors;result;execution;inserted_at;updated_at;structure_domains;result_details_Query;result_details_baz_title;result_details_foo_title;result_details_jaz_title;dataset_external_id_1;validation_field_1\r",
             ~r/#{key_1};default;;[\w+.]+;#{name_1};;;\d*\.?\d*;\d*\.?\d*;;[[:ascii:]]+;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;[[:ascii:]]+;;#{query};#{detail_field1};;;;\r/,
             ~r/#{key_2};default;;[\w+.]+;#{name_2};;;\d*\.?\d*;\d*\.?\d*;;[[:ascii:]]+;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;[[:ascii:]]+;;#{baz_title};\"{\"\"x\"\":\"\"foo\"\"}\";#{jaz_title};;\r/,
             ~r/#{key_3};default;;[\w+.]+;#{name_3};;;\d*\.?\d*;\d*\.?\d*;;;;;;;[[:ascii:]]+;;;;;;\r/
