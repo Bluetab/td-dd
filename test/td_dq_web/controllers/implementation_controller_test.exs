@@ -3810,11 +3810,11 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       for regex <- [
             # credo:disable-for-lines:5 Credo.Check.Readability.MaxLineLength
-            "implementation_key;implementation_type;domain;executable;rule;rule_template;implementation_template;goal;minimum;business_concepts;last_execution_at;records;errors;result;execution;inserted_at;updated_at;structure_domains;result_details_Query;result_details_baz_title;result_details_foo_title;result_details_jaz_title;dataset_external_id_1;validation_field_1\r",
-            ~r/#{key_0};default;;[\w+.]+;#{name_0};;;\d*\.?\d*;\d*\.?\d*;[\w+]+|[\w+]+;;;;;;#{insertet_at_0};#{updated_at_0};;;;;;;\r/,
-            ~r/#{key_1};default;;[\w+.]+;#{name_1};;;\d*\.?\d*;\d*\.?\d*;;[[:ascii:]]+;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;#{insertet_at_1};#{updated_at_1};;FOO;baz;;;;\r/,
-            ~r/#{key_2};default;;[\w+.]+;#{name_2};;;\d*\.?\d*;\d*\.?\d*;;[[:ascii:]]+;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;#{insertet_at_2};#{updated_at_2};;;bazz;\"{\"\"x\"\":\"\"foo\"\"}\";jaz;;\r/,
-            ~r/#{key_3};default;;[\w+.]+;#{name_3};;;\d*\.?\d*;\d*\.?\d*;;;;;;;#{insertet_at_3};#{updated_at_3};;;;;;;\r/
+            "implementation_key;implementation_type;domain;executable;rule;rule_template;implementation_template;goal;minimum;records;errors;result;execution;last_execution_at;inserted_at;updated_at;business_concepts;structure_domains;dataset_external_id_1;validation_field_1;result_details_Query;result_details_baz_title;result_details_foo_title;result_details_jaz_title\r",
+            ~r/#{key_0};default;;[\w+.]+;#{name_0};;;\d*\.?\d*;\d*\.?\d*;;;;;;#{insertet_at_0};#{updated_at_0};[\w+]+|[\w+]+;;;;;;;\r/,
+            ~r/#{key_1};default;;[\w+.]+;#{name_1};;;\d*\.?\d*;\d*\.?\d*;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;[[:ascii:]]+;#{insertet_at_1};#{updated_at_1};;;;;FOO;baz;;\r/,
+            ~r/#{key_2};default;;[\w+.]+;#{name_2};;;\d*\.?\d*;\d*\.?\d*;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;[[:ascii:]]+;#{insertet_at_2};#{updated_at_2};;;;;;bazz;\"{\"\"x\"\":\"\"foo\"\"}\";jaz\r/,
+            ~r/#{key_3};default;;[\w+.]+;#{name_3};;;\d*\.?\d*;\d*\.?\d*;;;;;;#{insertet_at_3};#{updated_at_3};;;;;;;;\r/
           ] do
         assert body =~ regex
       end
@@ -3860,10 +3860,10 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       for regex <- [
             # credo:disable-for-lines:5 Credo.Check.Readability.MaxLineLength
-            "implementation_key;implementation_type;domain;executable;rule;rule_template;implementation_template;goal;minimum;business_concepts;last_execution_at;records;errors;result;execution;inserted_at;updated_at;structure_domains;result_details_Query;result_details_baz_title;result_details_foo_title;result_details_jaz_title;dataset_external_id_1;validation_field_1\r",
-            ~r/#{key_1};default;;[\w+.]+;#{name_1};;;\d*\.?\d*;\d*\.?\d*;;[[:ascii:]]+;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;[[:ascii:]]+;;#{query};#{detail_field1};;;;\r/,
-            ~r/#{key_2};default;;[\w+.]+;#{name_2};;;\d*\.?\d*;\d*\.?\d*;;[[:ascii:]]+;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;[[:ascii:]]+;;#{baz_title};\"{\"\"x\"\":\"\"foo\"\"}\";#{jaz_title};;\r/,
-            ~r/#{key_3};default;;[\w+.]+;#{name_3};;;\d*\.?\d*;\d*\.?\d*;;;;;;;[[:ascii:]]+;;;;;;\r/
+            "implementation_key;implementation_type;domain;executable;rule;rule_template;implementation_template;goal;minimum;records;errors;result;execution;last_execution_at;inserted_at;updated_at;business_concepts;structure_domains;dataset_external_id_1;validation_field_1;result_details_Query;result_details_baz_title;result_details_foo_title;result_details_jaz_title\r",
+            ~r/#{key_1};default;;[\w+.]+;#{name_1};;;\d*\.?\d*;\d*\.?\d*;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;[[:ascii:]]+;[[:ascii:]]+;[[:ascii:]]+;;;;;#{query};#{detail_field1};;\r/,
+            ~r/#{key_2};default;;[\w+.]+;#{name_2};;;\d*\.?\d*;\d*\.?\d*;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;[[:ascii:]]+;[[:ascii:]]+;[[:ascii:]]+;;;;;;#{baz_title};\"{\"\"x\"\":\"\"foo\"\"}\";#{jaz_title}\r/,
+            ~r/#{key_3};default;;[\w+.]+;#{name_3};;;\d*\.?\d*;\d*\.?\d*;;;;;;[[:ascii:]]+;[[:ascii:]]+;;;;;;;;\r/
           ] do
         assert body =~ regex
       end
@@ -3873,7 +3873,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
            role: "non-admin",
            permissions: @rule_implementation_permissions ++ [:manage_segments]
          ]
-    test "download implementations without result details for non-admin", %{
+    test "download implementations with result details for non-admin", %{
       conn: conn,
       implementations: implementations
     } do
@@ -3913,10 +3913,10 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       for regex <- [
             # credo:disable-for-lines:5 Credo.Check.Readability.MaxLineLength
-            "implementation_key;implementation_type;domain;executable;rule;rule_template;implementation_template;goal;minimum;business_concepts;last_execution_at;records;errors;result;execution;inserted_at;updated_at;structure_domains;result_details_Query;result_details_baz_title;result_details_foo_title;result_details_jaz_title;dataset_external_id_1;validation_field_1\r",
-            ~r/#{key_1};default;;[\w+.]+;#{name_1};;;\d*\.?\d*;\d*\.?\d*;;[[:ascii:]]+;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;[[:ascii:]]+;;#{query};#{detail_field1};;;;\r/,
-            ~r/#{key_2};default;;[\w+.]+;#{name_2};;;\d*\.?\d*;\d*\.?\d*;;[[:ascii:]]+;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;[[:ascii:]]+;;#{baz_title};\"{\"\"x\"\":\"\"foo\"\"}\";#{jaz_title};;\r/,
-            ~r/#{key_3};default;;[\w+.]+;#{name_3};;;\d*\.?\d*;\d*\.?\d*;;;;;;;[[:ascii:]]+;;;;;;\r/
+            "implementation_key;implementation_type;domain;executable;rule;rule_template;implementation_template;goal;minimum;records;errors;result;execution;last_execution_at;inserted_at;updated_at;business_concepts;structure_domains;dataset_external_id_1;validation_field_1;result_details_Query;result_details_baz_title;result_details_foo_title;result_details_jaz_title\r",
+            ~r/#{key_1};default;;[\w+.]+;#{name_1};;;\d*\.?\d*;\d*\.?\d*;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;[[:ascii:]]+;[[:ascii:]]+;[[:ascii:]]+;;;;;#{query};#{detail_field1};;\r/,
+            ~r/#{key_2};default;;[\w+.]+;#{name_2};;;\d*\.?\d*;\d*\.?\d*;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;[[:ascii:]]+;[[:ascii:]]+;[[:ascii:]]+;;;;;;#{baz_title};\"{\"\"x\"\":\"\"foo\"\"}\";#{jaz_title}\r/,
+            ~r/#{key_3};default;;[\w+.]+;#{name_3};;;\d*\.?\d*;\d*\.?\d*;;;;;;[[:ascii:]]+;[[:ascii:]]+;;;;;;;;\r/
           ] do
         assert body =~ regex
       end

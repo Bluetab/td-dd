@@ -27,29 +27,30 @@ defmodule TdDq.Implementations.Download do
     {implementation_fields, implementation_field_headers} =
       fields_with_headers(implementations, lang, &template_content/1)
 
-    result_details_headers =
+    result_details_fields =
       implementations
       |> result_headers(&result_content/1)
       |> Enum.sort()
 
+    result_details_headers =
+      Enum.map(result_details_fields, fn header ->
+        "result_details_" <> Atom.to_string(header)
+      end)
+
     headers =
       header_labels
       |> build_headers(lang)
-      |> Kernel.++(
-        Enum.map(result_details_headers, fn header ->
-          "result_details_" <> Atom.to_string(header)
-        end)
-      )
       |> concat_headers(implementations, :datasets)
       |> concat_headers(implementations, :validations)
 
-    headers = headers ++ rule_field_headers ++ implementation_field_headers
+    headers =
+      headers ++ rule_field_headers ++ implementation_field_headers ++ result_details_headers
 
     implementations =
       format_implementations(
         %{
           content_labels: content_labels,
-          result_details_headers: result_details_headers
+          result_details_fields: result_details_fields
         },
         %{
           implementations: implementations,
@@ -110,19 +111,18 @@ defmodule TdDq.Implementations.Download do
          implementation.df_name,
          implementation.goal,
          implementation.minimum,
-         fill_concepts(implementation, lang),
-         get_in(implementation, [:execution_result_info, :date])
-         |> TdDd.Helpers.shift_zone(time_zone),
          get_in(implementation, [:execution_result_info, :records]),
          get_in(implementation, [:execution_result_info, :errors]),
          get_in(implementation, [:execution_result_info, :result]),
          get_in(implementation, [:execution_result_info, :result_text])
          |> translate(headers[:content_labels]),
+         get_in(implementation, [:execution_result_info, :date])
+         |> TdDd.Helpers.shift_zone(time_zone),
          TdDd.Helpers.shift_zone(implementation.inserted_at, time_zone),
          TdDd.Helpers.shift_zone(implementation.updated_at, time_zone),
+         fill_concepts(implementation, lang),
          get_domain(implementation.structure_domain_ids)
        ] ++
-         fill_result_details(implementation, headers[:result_details_headers]) ++
          fill_with(
            get_implementation_fields(implementation, :datasets),
            number_of_dataset_external_ids,
@@ -143,6 +143,7 @@ defmodule TdDq.Implementations.Download do
         lang: lang,
         domain_type: :with_domain_name
       )
+      |> Kernel.++(fill_result_details(implementation, headers[:result_details_fields]))
     end)
   end
 
@@ -163,14 +164,14 @@ defmodule TdDq.Implementations.Download do
       "implementation_template",
       "goal",
       "minimum",
-      "business_concepts",
-      "last_execution_at",
       "records",
       "errors",
       "result",
       "execution",
+      "last_execution_at",
       "inserted_at",
       "updated_at",
+      "business_concepts",
       "structure_domains"
     ]
     |> Enum.map(fn h ->
