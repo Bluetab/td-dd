@@ -3768,7 +3768,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       time_zone = Application.get_env(:td_dd, :time_zone)
 
-      insertet_at_0 =
+      inserted_at_0 =
         DateTime.to_string(inserted_at_0)
         |> TdDd.Helpers.shift_zone(time_zone)
         |> String.replace("+", "\\+")
@@ -3778,7 +3778,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
         |> TdDd.Helpers.shift_zone(time_zone)
         |> String.replace("+", "\\+")
 
-      insertet_at_1 =
+      inserted_at_1 =
         DateTime.to_string(inserted_at_1)
         |> TdDd.Helpers.shift_zone(time_zone)
         |> String.replace("+", "\\+")
@@ -3788,7 +3788,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
         |> TdDd.Helpers.shift_zone(time_zone)
         |> String.replace("+", "\\+")
 
-      insertet_at_2 =
+      inserted_at_2 =
         DateTime.to_string(inserted_at_2)
         |> TdDd.Helpers.shift_zone(time_zone)
         |> String.replace("+", "\\+")
@@ -3798,7 +3798,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
         |> TdDd.Helpers.shift_zone(time_zone)
         |> String.replace("+", "\\+")
 
-      insertet_at_3 =
+      inserted_at_3 =
         DateTime.to_string(inserted_at_3)
         |> TdDd.Helpers.shift_zone(time_zone)
         |> String.replace("+", "\\+")
@@ -3811,10 +3811,10 @@ defmodule TdDqWeb.ImplementationControllerTest do
       for regex <- [
             # credo:disable-for-lines:5 Credo.Check.Readability.MaxLineLength
             "implementation_key;implementation_type;domain;executable;rule;rule_template;implementation_template;goal;minimum;records;errors;result;execution;last_execution_at;inserted_at;updated_at;business_concepts;structure_domains;dataset_external_id_1;validation_field_1;result_details_Query;result_details_baz_title;result_details_foo_title;result_details_jaz_title\r",
-            ~r/#{key_0};default;;[\w+.]+;#{name_0};;;\d*\.?\d*;\d*\.?\d*;;;;;;#{insertet_at_0};#{updated_at_0};[\w+]+|[\w+]+;;;;;;;\r/,
-            ~r/#{key_1};default;;[\w+.]+;#{name_1};;;\d*\.?\d*;\d*\.?\d*;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;[[:ascii:]]+;#{insertet_at_1};#{updated_at_1};;;;;FOO;baz;;\r/,
-            ~r/#{key_2};default;;[\w+.]+;#{name_2};;;\d*\.?\d*;\d*\.?\d*;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;[[:ascii:]]+;#{insertet_at_2};#{updated_at_2};;;;;;bazz;\"{\"\"x\"\":\"\"foo\"\"}\";jaz\r/,
-            ~r/#{key_3};default;;[\w+.]+;#{name_3};;;\d*\.?\d*;\d*\.?\d*;;;;;;#{insertet_at_3};#{updated_at_3};;;;;;;;\r/
+            ~r/#{key_0};default;;[\w+.]+;#{name_0};;;\d*\.?\d*;\d*\.?\d*;;;;;;#{inserted_at_0};#{updated_at_0};[\w+]+|[\w+]+;;;;;;;\r/,
+            ~r/#{key_1};default;;[\w+.]+;#{name_1};;;\d*\.?\d*;\d*\.?\d*;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;[[:ascii:]]+;#{inserted_at_1};#{updated_at_1};;;;;FOO;baz;;\r/,
+            ~r/#{key_2};default;;[\w+.]+;#{name_2};;;\d*\.?\d*;\d*\.?\d*;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;[[:ascii:]]+;#{inserted_at_2};#{updated_at_2};;;;;;bazz;\"{\"\"x\"\":\"\"foo\"\"}\";jaz\r/,
+            ~r/#{key_3};default;;[\w+.]+;#{name_3};;;\d*\.?\d*;\d*\.?\d*;;;;;;#{inserted_at_3};#{updated_at_3};;;;;;;;\r/
           ] do
         assert body =~ regex
       end
