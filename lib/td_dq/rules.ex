@@ -63,7 +63,7 @@ defmodule TdDq.Rules do
       |> LinkCache.list(id, without_parent_business_concepts: true)
       |> then(&elem(&1, 1))
       |> Enum.filter(fn
-        %{resource_type: :concept, tags: tags} -> length(tags -- tags -- expandable_tags) > 0
+        %{resource_type: :concept, tags: tags} -> length(tags -- (tags -- expandable_tags)) > 0
         _ -> false
       end)
       |> Enum.into(%{}, &{String.to_integer(&1.resource_id), &1.name})
