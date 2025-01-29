@@ -8,7 +8,30 @@ defmodule TdDd.Search.StructureEnricherTest do
   setup do
     %{id: parent_id} = parent_domain = CacheHelpers.insert_domain()
     domain = CacheHelpers.insert_domain(%{parent_id: parent_id})
-    %{id: template_id, name: template_name} = template = CacheHelpers.insert_template()
+
+    %{id: template_id, name: template_name} =
+      template =
+      CacheHelpers.insert_template(
+        scope: "dd",
+        content: [
+          build(:template_group,
+            fields: [
+              build(:template_field, name: "string"),
+              build(:template_field,
+                name: "list",
+                type: "list",
+                values: %{"fixed" => ["one", "two", "three"]}
+              ),
+              build(:template_field,
+                name: "url",
+                type: "url",
+                cardinality: "*",
+                widget: "pair_list"
+              )
+            ]
+          )
+        ]
+      )
 
     CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
 
@@ -41,7 +64,7 @@ defmodule TdDd.Search.StructureEnricherTest do
     end
 
     test "formats the content for search", %{template: %{name: template_name}} do
-      valid_content = %{"string" => "initial", "list" => "one"}
+      valid_content = %{"string" => "initial", "list" => "one", "url" => nil}
 
       note = insert(:structure_note, df_content: Map.put(valid_content, "foo", "bar"))
       data_structure = insert(:data_structure, published_note: note)

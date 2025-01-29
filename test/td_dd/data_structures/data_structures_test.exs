@@ -25,7 +25,30 @@ defmodule TdDd.DataStructuresTest do
 
   setup do
     domain = CacheHelpers.insert_domain()
-    %{id: template_id, name: template_name} = template = CacheHelpers.insert_template()
+
+    %{id: template_id, name: template_name} =
+      template =
+      CacheHelpers.insert_template(
+        scope: "dd",
+        content: [
+          build(:template_group,
+            fields: [
+              build(:template_field, name: "string"),
+              build(:template_field,
+                name: "list",
+                type: "list",
+                values: %{"fixed" => ["one", "two", "three"]}
+              ),
+              build(:template_field,
+                name: "url",
+                type: "url",
+                cardinality: "*",
+                widget: "pair_list"
+              )
+            ]
+          )
+        ]
+      )
 
     CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
 
@@ -468,10 +491,10 @@ defmodule TdDd.DataStructuresTest do
       assert %{search_content: search_content} = data_structure
       assert %{alias: "baz"} = data_structure
 
-      assert search_content == %{
+      assert %{
                "string" => %{"value" => "initial", "origin" => "user"},
                "list" => %{"value" => "one", "origin" => "user"}
-             }
+             } = search_content
     end
 
     test "returns values suitable for bulk-indexing encoding", %{
@@ -502,7 +525,7 @@ defmodule TdDd.DataStructuresTest do
                original_name: ^original_name
              } = document
 
-      assert note == %{"list" => "one", "string" => "initial"}
+      assert note == %{"list" => "one", "string" => "initial", "url" => nil}
 
       assert ["yayo", "papa"] = path
     end

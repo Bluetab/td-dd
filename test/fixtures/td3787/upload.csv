@@ -1,2 +1,2 @@
-external_id;list;string
-some_external_id_1;one;the new content from csv
+external_id;list;string;url
+some_external_id_1;one;the new content from csv;[com] (www.com.com)|[] (www.net.net)|www.org.org

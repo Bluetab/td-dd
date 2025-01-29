@@ -29,7 +29,30 @@ defmodule TdDdWeb.DataStructureControllerTest do
   setup :verify_on_exit!
 
   setup context do
-    %{id: template_id, name: template_name} = CacheHelpers.insert_template(name: @template_name)
+    # CacheHelpers.insert_template(name: @template_name)
+    %{id: template_id, name: template_name} =
+      CacheHelpers.insert_template(
+        scope: "dd",
+        name: @template_name,
+        content: [
+          build(:template_group,
+            fields: [
+              build(:template_field, name: "string"),
+              build(:template_field,
+                name: "list",
+                type: "list",
+                values: %{"fixed" => ["one", "two", "three"]}
+              ),
+              build(:template_field,
+                name: "url",
+                type: "url",
+                cardinality: "*",
+                widget: "pair_list"
+              )
+            ]
+          )
+        ]
+      )
 
     %{id: template_with_multifields_id, name: template_with_multifields_name} =
       CacheHelpers.insert_template(name: @template_with_multifields_name, cardinality: "+")
@@ -1600,8 +1623,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
       %{name: name, type: type, path: path} = dsv
 
       assert body == """
-             external_id;name;type;path;string;list\r
-             #{external_id};#{name};#{type};#{Enum.join(path, "")};foo;bar\r
+             external_id;name;type;path;string;list;url\r
+             #{external_id};#{name};#{type};#{Enum.join(path, "")};foo;bar;\r
              """
     end
 
@@ -1655,8 +1678,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
       structure_url = "https://truedat.td.dd/structure/" <> to_string(data_structure_id)
 
       assert body == """
-             external_id;name;type;path;tech_name;alias_name;link_to_structure;string;list\r
-             #{external_id};#{dsv_name};#{type};#{Enum.join(path, "")};#{original_name};#{alias_name};#{structure_url};foo;bar\r
+             external_id;name;type;path;tech_name;alias_name;link_to_structure;string;list;url\r
+             #{external_id};#{dsv_name};#{type};#{Enum.join(path, "")};#{original_name};#{alias_name};#{structure_url};foo;bar;\r
              """
     end
 
@@ -2099,7 +2122,15 @@ defmodule TdDdWeb.DataStructureControllerTest do
         data_structure: data_structure,
         df_content: %{
           "string" => %{"value" => "xyzzy", "origin" => "user"},
-          "list" => %{"value" => "two", "origin" => "user"}
+          "list" => %{"value" => "two", "origin" => "user"},
+          "url" => %{
+            "origin" => "file",
+            "value" => [
+              %{"url_name" => "com", "url_value" => "www.com.com"},
+              %{"url_name" => "", "url_value" => "www.net.net"},
+              %{"url_name" => "", "url_value" => "www.org.org"}
+            ]
+          }
         },
         status: :published
       )
@@ -2117,7 +2148,15 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert latest_note.df_content == %{
                "string" => %{"value" => "the new content from csv", "origin" => "file"},
-               "list" => %{"value" => "one", "origin" => "file"}
+               "list" => %{"value" => "one", "origin" => "file"},
+               "url" => %{
+                 "origin" => "file",
+                 "value" => [
+                   %{"url_name" => "com", "url_value" => "www.com.com"},
+                   %{"url_name" => "", "url_value" => "www.net.net"},
+                   %{"url_name" => "", "url_value" => "www.org.org"}
+                 ]
+               }
              }
     end
 
@@ -2164,7 +2203,15 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert latest_note.df_content == %{
                "string" => %{"value" => "the new content from csv", "origin" => "file"},
-               "list" => %{"value" => "one", "origin" => "file"}
+               "list" => %{"value" => "one", "origin" => "file"},
+               "url" => %{
+                 "origin" => "file",
+                 "value" => [
+                   %{"url_name" => "com", "url_value" => "www.com.com"},
+                   %{"url_name" => "", "url_value" => "www.net.net"},
+                   %{"url_name" => "", "url_value" => "www.org.org"}
+                 ]
+               }
              }
 
       assert data_structure.id

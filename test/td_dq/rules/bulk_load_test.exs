@@ -398,6 +398,58 @@ defmodule TdDq.Rules.BulkLoadTest do
               }} = BulkLoad.bulk_load(rules, claims, "es")
     end
 
+    test "returns ids with valid template that include url field type",
+         %{
+           domain: domain,
+           claims: claims
+         } do
+      template_content = [
+        %{
+          "fields" => [
+            %{
+              "cardinality" => "*",
+              "label" => "URLS",
+              "name" => "urls",
+              "type" => "url",
+              "values" => nil,
+              "widget" => "pair_list"
+            }
+          ],
+          "name" => "group_name0"
+        }
+      ]
+
+      %{name: template_name} =
+        CacheHelpers.insert_template(
+          scope: "dq",
+          content: template_content
+        )
+
+      rules =
+        Enum.map(@rules, fn rule ->
+          rule
+          |> Map.put("domain_external_id", domain.external_id)
+          |> Map.put("template", template_name)
+          |> Map.put("urls", "[com] (www.com.com)|[] (www.net.net)|www.org.org")
+        end)
+
+      assert {:ok, %{ids: [rule_1_id, _], errors: []}} =
+               BulkLoad.bulk_load(rules, claims, @default_lang)
+
+      %{
+        df_content: %{
+          "urls" => %{
+            "origin" => "file",
+            "value" => [
+              %{"url_name" => "com", "url_value" => "www.com.com"},
+              %{"url_name" => "", "url_value" => "www.net.net"},
+              %{"url_name" => "", "url_value" => "www.org.org"}
+            ]
+          }
+        }
+      } = Rules.get_rule(rule_1_id)
+    end
+
     test "return error when domain_external_id not exit", %{
       domain: domain,
       claims: claims

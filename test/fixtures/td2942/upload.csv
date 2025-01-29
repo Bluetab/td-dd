@@ -1,4 +1,4 @@
-external_id;text;critical;enriched_text;urls_one_or_none;role;key_value;integer;hierarchy_name_1;hierarchy_name_2
+external_id;text;critical;enriched_text;urls_none_or_more;role;key_value;integer;hierarchy_name_1;hierarchy_name_2
 ex_id1;text;Yes;;;Role|Role 1;;;;
 ex_id2;text2;Yes;;;Role;;;;
 ex_id3;;No;;;Role;;;;
@@ -9,3 +9,7 @@ ex_id4;;No;;;Role 1;;;;
 ex_id5;;No;;;Role 2;Elemento 2;;;
 ex_id9;;;I’m 9;;;;9;;
 ex_id10;;;;;;;;children_1;children_1|father
+ex_id16;URL Single url without name;;;https://www.google.es;;;;;ex_id16;;;Single url;https://www.google.es;;;;;
+ex_id17;URL Single url with name;;;[Google] (https://www.google.es);;;;;
+ex_id18;URL Multiple urls;;;[Google] (https://www.google.es)|[] (https://www.google.es)|https://www.google.es;;;;;
+ex_id19;URL No url;;;;;;;;
