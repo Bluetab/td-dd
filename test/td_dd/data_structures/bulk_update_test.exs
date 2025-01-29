@@ -86,14 +86,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
           "widget" => "enriched_text"
         },
         %{
-          "cardinality" => "*",
-          "label" => "Urls One Or None",
-          "name" => "urls_one_or_none",
-          "type" => "url",
-          "values" => nil,
-          "widget" => "pair_list"
-        },
-        %{
           "cardinality" => "?",
           "label" => "Numeric",
           "name" => "integer",
@@ -154,6 +146,29 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
           "type" => "string",
           "values" => %{"fixed" => ["pear", "banana", "apple", "peach"]},
           "widget" => "checkbox"
+        }
+      ]
+    }
+  ]
+
+  @url_template [
+    %{
+      "name" => "url_template",
+      "fields" => [
+        %{
+          "cardinality" => "?",
+          "label" => "Text",
+          "name" => "text",
+          "type" => "string",
+          "widget" => "string"
+        },
+        %{
+          "cardinality" => "*",
+          "label" => "Urls None or More",
+          "name" => "urls_none_or_more",
+          "type" => "url",
+          "values" => nil,
+          "widget" => "pair_list"
         }
       ]
     }
@@ -632,7 +647,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                |> BulkUpdate.do_csv_bulk_update(user_id)
 
       ids = Map.keys(update_notes)
-      assert length(ids) == 10
+      assert length(ids) == 14
       assert Enum.all?(ids, fn id -> id in structure_ids end)
 
       assert %{
@@ -673,16 +688,13 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                get_df_content_from_ext_id("ex_id6")
 
       text = to_enriched_text("Enriched text")
-      url = to_content_url("https://www.google.es")
 
       assert %{
                "enriched_text" => %{"value" => ^text, "origin" => "file"},
-               "urls_one_or_none" => %{"value" => ^url, "origin" => "file"},
                "integer" => %{"value" => 3, "origin" => "file"}
              } = get_df_content_from_ext_id("ex_id7")
 
       assert %{
-               "urls_one_or_none" => %{"value" => ^url, "origin" => "file"},
                "integer" => %{"value" => 2, "origin" => "file"}
              } = get_df_content_from_ext_id("ex_id8")
 
@@ -697,9 +709,57 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert %{
                "hierarchy_name_1" => %{"value" => ^key_node_2, "origin" => "file"},
-               "hierarchy_name_2" => %{"value" => [^key_node_2, ^key_node_1], "origin" => "file"},
-               "urls_one_or_none" => %{"value" => _, "origin" => "file"}
+               "hierarchy_name_2" => %{"value" => [^key_node_2, ^key_node_1], "origin" => "file"}
              } = get_df_content_from_ext_id("ex_id10")
+
+      assert %{
+               "text" => %{"value" => "URL Single url without name"},
+               "urls_none_or_more" => %{
+                 "value" => [
+                   %{
+                     "url_name" => "",
+                     "url_value" => "https://www.google.es"
+                   }
+                 ],
+                 "origin" => "file"
+               }
+             } = get_df_content_from_ext_id("ex_id16")
+
+      assert %{
+               "text" => %{"value" => "URL Single url with name"},
+               "urls_none_or_more" => %{
+                 "value" => [
+                   %{"url_name" => "Google", "url_value" => "https://www.google.es"}
+                 ],
+                 "origin" => "file"
+               }
+             } = get_df_content_from_ext_id("ex_id17")
+
+      assert %{
+               "text" => %{"value" => "URL Multiple urls"},
+               "urls_none_or_more" => %{
+                 "value" => [
+                   %{"url_name" => "Google", "url_value" => "https://www.google.es"},
+                   %{
+                     "url_name" => "",
+                     "url_value" => "https://www.google.es"
+                   },
+                   %{
+                     "url_name" => "",
+                     "url_value" => "https://www.google.es"
+                   }
+                 ],
+                 "origin" => "file"
+               }
+             } = get_df_content_from_ext_id("ex_id18")
+
+      assert %{
+               "text" => %{"value" => "URL No url"},
+               "urls_none_or_more" => %{
+                 "value" => [%{"url_name" => "", "url_value" => ""}],
+                 "origin" => "file"
+               }
+             } = get_df_content_from_ext_id("ex_id19")
 
       assert [{:reindex, :structures, ^ids}] = IndexWorkerMock.calls()
     end
@@ -1002,11 +1062,16 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     %{id: id_t1, name: type1} = CacheHelpers.insert_template(content: @c1)
     %{id: id_t2, name: type2} = CacheHelpers.insert_template(content: @c2)
     %{id: id_t3, name: type3} = CacheHelpers.insert_template(content: @c3)
+
+    %{id: url_template_id, name: url_template_name} =
+      CacheHelpers.insert_template(content: @url_template)
+
     domain = CacheHelpers.insert_domain()
 
     insert(:data_structure_type, name: type1, template_id: id_t1)
     insert(:data_structure_type, name: type2, template_id: id_t2)
     insert(:data_structure_type, name: type3, template_id: id_t3)
+    insert(:data_structure_type, name: url_template_name, template_id: url_template_id)
 
     sts1 =
       Enum.map(1..5, fn id ->
@@ -1032,7 +1097,14 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         valid_structure_note(type3, data_structure, opts)
       end)
 
-    [sts: sts1 ++ sts2 ++ sts3]
+    url_sts =
+      Enum.map(16..19, fn id ->
+        data_structure = insert(:data_structure, external_id: "ex_id#{id}")
+
+        valid_structure_note(url_template_name, data_structure, [])
+      end)
+
+    [sts: sts1 ++ sts2 ++ sts3 ++ url_sts]
   end
 
   defp insert_i18n_messages(_) do
@@ -1050,10 +1122,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       %{message_id: "fields.label_i18n_test.Checkbox Fixed.banana", definition: "plátano"},
       %{message_id: "fields.label_i18n_test.Checkbox Fixed.apple", definition: "manzana"}
     ])
-  end
-
-  defp to_content_url(url) do
-    [%{"url_name" => url, "url_value" => url}]
   end
 
   defp to_enriched_text(text) do

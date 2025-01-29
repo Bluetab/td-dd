@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [TD-6921] Download/Upload of fields of type link must include both name and url
+
 ### Added
 
 - [TD-6690] Add updated_at in csv downloaded
@@ -16,6 +20,7 @@
   - update Docker RUNTIME_BASE=alpine:3.21
   - remove swagger
 - [TD-3612] Update td-core
+- [TD-6921] Change Download / Upload URL field type format
 
 ### Added
 
