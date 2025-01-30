@@ -277,7 +277,9 @@ defmodule TdDd.DataStructures.BulkUpdate do
           |> Map.new()
 
         fields = Map.keys(content)
-        content_schema = Enum.filter(template_fields, &(Map.get(&1, "name") in fields))
+
+        content_schema =
+          Enum.filter(template_fields, &(Map.get(&1, "name") in fields))
 
         content =
           Parser.format_content(%{

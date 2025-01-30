@@ -78,6 +78,7 @@ defmodule TdDd.MixProject do
       {:codepagex, "~> 0.1.9"},
       {:bimap, "~> 1.3"},
       {:td_core, git: "https://github.com/Bluetab/td-core.git", tag: "7.0.2"},
+      {:td_df_lib, path: "../lib/td-df-lib", override: true},
       {:vaultex, "~> 1.0.1"},
       {:sobelow, "~> 0.13", only: [:dev, :test]}
     ]

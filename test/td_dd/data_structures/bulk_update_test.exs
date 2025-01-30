@@ -838,7 +838,8 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       [_, errored_notes] = BulkUpdate.split_succeeded_errors(update_notes)
 
-      [first_errored_note | _] = Enum.map(errored_notes, fn {_k, v} -> v end)
+      [first_errored_note, second_errored_note | _] =
+        Enum.map(errored_notes, fn {_k, v} -> v end)
 
       assert {:error,
               {%{
@@ -846,13 +847,36 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                    df_content:
                      {_,
                       [
-                        hierarchy_name_1: {"has more than one node children_2"},
-                        hierarchy_name_2: {"has more than one node children_2"}
+                        {:hierarchy_name_2, {"incorrect depth", []}},
+                        {:hierarchy_name_1,
+                         {"template.upload.failed.hierarchy_value_error",
+                          [name: "hierarchy_name_1", value: "hierarchy"]}},
+                        {:hierarchy_name_2,
+                         {"is invalid", [type: {:array, :string}, validation: :cast]}},
+                        {:hierarchy_name_1, {"is invalid", [type: :string, validation: :cast]}}
                       ]}
                  ]
-               }, _}} = first_errored_note
+               },
+               %TdDd.DataStructures.DataStructure{
+                 external_id: "ex_id9"
+               }}} = first_errored_note
 
-      assert [{:reindex, :structures, [_]}] = IndexWorkerMock.calls()
+      assert {:error,
+              {%{
+                 errors: [
+                   df_content:
+                     {_,
+                      [
+                        hierarchy_name_2: {"has more than one node children_2"},
+                        hierarchy_name_1: {"has more than one node children_2"}
+                      ]}
+                 ]
+               },
+               %TdDd.DataStructures.DataStructure{
+                 external_id: "ex_id10"
+               }}} = second_errored_note
+
+      assert [{:reindex, :structures, [_ | _]}] = IndexWorkerMock.calls()
     end
 
     test "accept file utf8 with bom" do
