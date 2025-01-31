@@ -847,13 +847,14 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                    df_content:
                      {_,
                       [
-                        {:hierarchy_name_2, {"incorrect depth", []}},
-                        {:hierarchy_name_1,
-                         {"template.upload.failed.hierarchy_value_error",
-                          [name: "hierarchy_name_1", value: "hierarchy"]}},
-                        {:hierarchy_name_2,
-                         {"is invalid", [type: {:array, :string}, validation: :cast]}},
-                        {:hierarchy_name_1, {"is invalid", [type: :string, validation: :cast]}}
+                        hierarchy_name_2:
+                          {"template.upload.failed.hierarchy_value_error",
+                           [{:name, "hierarchy_name_2"}, {:value, "hierarchy"}]},
+                        hierarchy_name_1:
+                          {"template.upload.failed.hierarchy_value_error",
+                           [name: "hierarchy_name_1", value: "hierarchy"]},
+                        hierarchy_name_2: :not_found,
+                        hierarchy_name_1: :not_found
                       ]}
                  ]
                },
