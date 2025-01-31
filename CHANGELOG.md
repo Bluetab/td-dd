@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-6921] Download/Upload of fields of type link must include both name and url
+
+### Added
+
+- [TD-6690] Add updated_at in csv downloaded
+
 ## [7.0.0] 2025-01-13
 
 ### Changed
@@ -10,6 +20,7 @@
   - update Docker RUNTIME_BASE=alpine:3.21
   - remove swagger
 - [TD-3612] Update td-core
+- [TD-6921] Change Download / Upload URL field type format
 
 ### Added
 
@@ -36,7 +47,6 @@
 - [TD-6780] Add Tag and Structure Tag Seach controller and context
 - [TD-6982] Added SSL and ApiKey configuration for Elasticsearch
 - [TD-6888] Support for expandable Concept links
-
 
 ## [6.15.0] 2024-11-27
 
