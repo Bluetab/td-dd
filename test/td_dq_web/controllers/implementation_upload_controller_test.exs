@@ -268,6 +268,30 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
       rule: rule,
       domain: %{id: domain_id}
     } do
+      %{name: df_name} =
+        CacheHelpers.insert_template(
+          scope: "dq",
+          name: "bar_template",
+          content: [
+            build(:template_group,
+              fields: [
+                build(:template_field, name: "string"),
+                build(:template_field,
+                  name: "list",
+                  type: "list",
+                  values: %{"fixed" => ["one", "two", "three"]}
+                ),
+                build(:template_field,
+                  name: "url",
+                  type: "url",
+                  cardinality: "*",
+                  widget: "pair_list"
+                )
+              ]
+            )
+          ]
+        )
+
       assert rule.domain_id == domain_id
 
       # Override factory with:
@@ -280,6 +304,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
         insert(
           :implementation,
           implementation_key: "boo_key_1",
+          df_name: df_name,
           df_content: %{string: %{value: "boo_1", origin: "user"}},
           implementation_type: "basic",
           rule_id: rule.id,
@@ -296,6 +321,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
         insert(
           :implementation,
           implementation_key: "boo_key_2",
+          df_name: df_name,
           df_content: %{string: %{value: "boo_2", origin: "user"}},
           implementation_type: "basic",
           rule_id: rule.id,
@@ -314,6 +340,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
           implementation_key: "boo_key_4",
           implementation_type: "basic",
           domain_id: domain_id,
+          df_name: df_name,
           df_content: %{string: %{value: "boo_4", origin: "user"}},
           status: :draft,
           version: 1,
@@ -328,6 +355,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
           :implementation,
           implementation_key: "boo_key_5",
           implementation_type: "basic",
+          df_name: df_name,
           df_content: %{string: %{value: "boo_5", origin: "user"}},
           domain_id: domain_id,
           status: :published,
@@ -366,21 +394,41 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
              ] == errors
 
       uploaded_implementations = Enum.map(ids, &TdDq.Implementations.get_implementation(&1))
+
       # This one was in draft and has been updated, so it still has the same id
       assert %Implementation{
                id: ^implementation_boo_key_1_id,
                implementation_key: "boo_key_1",
-               df_content: %{"string" => %{"value" => "boo_1_from_csv", "origin" => "file"}},
+               df_content: %{
+                 "string" => %{"value" => "boo_1_from_csv", "origin" => "file"},
+                 "url" => %{
+                   "value" => [
+                     %{"url_name" => "com", "url_value" => "http://www.com.com"},
+                     %{"url_name" => "", "url_value" => "http://www.net.net"},
+                     %{"url_name" => "", "url_value" => "http://www.org.org"}
+                   ],
+                   "origin" => "file"
+                 }
+               },
                status: :published,
                minimum: 11.0,
                goal: 12.0
-             } = Enum.find(uploaded_implementations, &(&1.implementation_key == "boo_key_1"))
+             } =
+               Enum.find(uploaded_implementations, &(&1.implementation_key == "boo_key_1"))
 
       # This one was already published and has been updated, so:
       #   New Implemementation inserted as "published"...
       assert %Implementation{
                implementation_key: "boo_key_2",
-               df_content: %{"string" => %{"value" => "boo_2_from_csv", "origin" => "file"}},
+               df_content: %{
+                 "string" => %{"value" => "boo_2_from_csv", "origin" => "file"},
+                 "url" => %{
+                   "value" => [
+                     %{"url_name" => "com", "url_value" => "http://www.com.com"}
+                   ],
+                   "origin" => "file"
+                 }
+               },
                status: :published,
                minimum: 22.0,
                goal: 23.0
@@ -400,7 +448,15 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
       # This one is new
       assert %Implementation{
                implementation_key: "boo_key_3",
-               df_content: %{"string" => %{"value" => "boo_3_from_csv", "origin" => "file"}},
+               df_content: %{
+                 "string" => %{"value" => "boo_3_from_csv", "origin" => "file"},
+                 "url" => %{
+                   "value" => [
+                     %{"url_name" => "", "url_value" => "http://www.net.net"}
+                   ],
+                   "origin" => "file"
+                 }
+               },
                status: :published,
                minimum: 33.0,
                goal: 34.0
@@ -410,7 +466,15 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
       assert %Implementation{
                id: ^implementation_boo_key_4_id,
                implementation_key: "boo_key_4",
-               df_content: %{"string" => %{"value" => "boo_4_from_csv", "origin" => "file"}},
+               df_content: %{
+                 "string" => %{"value" => "boo_4_from_csv", "origin" => "file"},
+                 "url" => %{
+                   "value" => [
+                     %{"url_name" => "", "url_value" => "http://www.org.org"}
+                   ],
+                   "origin" => "file"
+                 }
+               },
                status: :published,
                minimum: 145.0,
                goal: 144.0
@@ -842,6 +906,29 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
     @tag authentication: [role: "admin"]
     test "uploads implementations with and without rules", %{conn: conn} do
       CacheHelpers.insert_domain(external_id: "some_domain_id")
+
+      CacheHelpers.insert_template(
+        scope: "dq",
+        name: "bar_template",
+        content: [
+          build(:template_group,
+            fields: [
+              build(:template_field, name: "string"),
+              build(:template_field,
+                name: "list",
+                type: "list",
+                values: %{"fixed" => ["one", "two", "three"]}
+              ),
+              build(:template_field,
+                name: "url",
+                type: "url",
+                cardinality: "*",
+                widget: "pair_list"
+              )
+            ]
+          )
+        ]
+      )
 
       attrs = %{
         implementations: %Plug.Upload{
