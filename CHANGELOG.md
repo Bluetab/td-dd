@@ -5,6 +5,7 @@
 ### Changed
 
 - [TD-6921] Download/Upload of fields of type link must include both name and url
+- [TD-6022] Upload of hierarchy fields should validate that the value is a valid one
 
 ### Added
 
