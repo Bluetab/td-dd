@@ -204,6 +204,7 @@ config :td_dd, TdDd.Scheduler,
   ]
 
 config :bodyguard, default_error: :forbidden
+config :flop, repo: TdDd.Repo
 
 import_config "metadata.exs"
 import_config "profiling.exs"

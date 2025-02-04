@@ -251,6 +251,68 @@ defmodule TdDdWeb.Schema.StructuresTest do
   }
   """
 
+  @siblings_query """
+  query DataStructureVersion($dataStructureId: ID!, $version: String!, $siblings_limit: Int) {
+    dataStructureVersion(dataStructureId: $dataStructureId, version: $version) {
+      id
+      siblings(limit: $siblings_limit) {
+        id
+        dataStructure {
+          external_id
+          id
+          domain_ids
+          domains { id,name }
+        }
+      }
+    }
+  }
+  """
+
+  @version_data_fields_query """
+  query DataStructureVersion($dataStructureId: ID!, $version: String!, $data_fields_limit: Int) {
+    dataStructureVersion(dataStructureId: $dataStructureId, version: $version) {
+      id
+      dataFields(first: $data_fields_limit) {
+        id
+        name
+      }
+    }
+  }
+  """
+
+  @data_fields_query """
+  query DataFields($dataStructureId: ID!, $version: String!, $first: Int, $last: Int, $before: Cursor, $after: Cursor, $search: String, $filters: DataFieldsFilter) {
+    dataFields(dataStructureId: $dataStructureId, version: $version, first: $first, last: $last, before: $before, after: $after, search: $search, filters: $filters) {
+      page {
+        id
+        name
+        has_note
+        data_structure_id
+        id
+        type
+        profile {
+          max
+          min
+          most_frequent
+          null_count
+        }
+        links
+        degree {
+            in
+            out
+        }
+      }
+      pageInfo {
+        startCursor
+        endCursor
+        hasNextPage
+        hasPreviousPage
+      }
+
+    }
+  }
+  """
+
   @domains_herarchy_query """
   query DataStructureVersion($dataStructureId: ID!, $version: String!) {
     dataStructureVersion(dataStructureId: $dataStructureId, version: $version) {
@@ -1261,6 +1323,114 @@ defmodule TdDdWeb.Schema.StructuresTest do
     end
 
     @tag authentication: [role: "user", permissions: [:view_data_structure]]
+    test "returns siblings", %{conn: conn, domain: %{id: domain_id}} do
+      %{id: parent_id} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, domain_ids: [domain_id])
+        )
+
+      %{id: id, data_structure_id: data_structure_id} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, domain_ids: [domain_id])
+        )
+
+      %{id: sibling_id} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, domain_ids: [domain_id])
+        )
+
+      relation_type_id = RelationTypes.default_id!()
+
+      insert(:data_structure_relation,
+        parent_id: parent_id,
+        child_id: id,
+        relation_type_id: relation_type_id
+      )
+
+      insert(:data_structure_relation,
+        parent_id: parent_id,
+        child_id: sibling_id,
+        relation_type_id: relation_type_id
+      )
+
+      variables = %{"dataStructureId" => data_structure_id, "version" => "latest"}
+
+      %{"data" => %{"dataStructureVersion" => %{"siblings" => siblings}}} =
+        conn
+        |> post("/api/v2", %{
+          "query" => @siblings_query,
+          "variables" => variables
+        })
+        |> json_response(:ok)
+
+      assert Enum.count(siblings) == 2
+      assert Enum.find(siblings, &(&1["id"] == Integer.to_string(id)))
+      assert Enum.find(siblings, &(&1["id"] == Integer.to_string(sibling_id)))
+
+      variables = %{
+        "dataStructureId" => data_structure_id,
+        "version" => "latest",
+        "siblings_limit" => 1
+      }
+
+      %{"data" => %{"dataStructureVersion" => %{"siblings" => siblings}}} =
+        conn
+        |> post("/api/v2", %{
+          "query" => @siblings_query,
+          "variables" => variables
+        })
+        |> json_response(:ok)
+
+      assert Enum.count(siblings) == 1
+    end
+
+    @tag authentication: [role: "service"]
+    test "returns version data fields", %{conn: conn} do
+      %{id: dsv_father_id, data_structure_id: data_structure_id} =
+        insert(:data_structure_version, version: 1, class: "table", name: "table")
+
+      %{id: dsv_child_1_id} =
+        insert(:data_structure_version, version: 1, class: "field", name: "field_1")
+
+      %{id: dsv_child_2_id} =
+        insert(:data_structure_version, version: 1, class: "field", name: "field_2")
+
+      ## Structure relations
+      create_relation(dsv_father_id, dsv_child_1_id)
+      create_relation(dsv_father_id, dsv_child_2_id)
+
+      variables = %{"dataStructureId" => data_structure_id, "version" => "latest"}
+
+      %{"data" => %{"dataStructureVersion" => %{"dataFields" => data_fields}}} =
+        conn
+        |> post("/api/v2", %{
+          "query" => @version_data_fields_query,
+          "variables" => variables
+        })
+        |> json_response(:ok)
+
+      assert Enum.count(data_fields) == 2
+      assert Enum.find(data_fields, &(&1["id"] == Integer.to_string(dsv_child_1_id)))
+      assert Enum.find(data_fields, &(&1["id"] == Integer.to_string(dsv_child_2_id)))
+
+      variables = %{
+        "dataStructureId" => data_structure_id,
+        "version" => "latest",
+        "data_fields_limit" => 1
+      }
+
+      %{"data" => %{"dataStructureVersion" => %{"dataFields" => data_fields}}} =
+        conn
+        |> post("/api/v2", %{
+          "query" => @version_data_fields_query,
+          "variables" => variables
+        })
+        |> json_response(:ok)
+
+      assert Enum.count(data_fields) == 1
+    end
+
+    @tag authentication: [role: "user", permissions: [:view_data_structure]]
     test "returns data siblings when the siblings have permissions by the user",
          %{
            conn: conn,
@@ -1975,7 +2145,10 @@ defmodule TdDdWeb.Schema.StructuresTest do
 
       assert %{
                "data" => %{
-                 "dataStructureVersion" => %{"children" => children, "data_fields" => data_fields}
+                 "dataStructureVersion" => %{
+                   "children" => children,
+                   "data_fields" => data_fields
+                 }
                }
              } =
                response =
@@ -2111,6 +2284,413 @@ defmodule TdDdWeb.Schema.StructuresTest do
              ] = data_structure_relations
 
       assert id == to_string(expected_id)
+    end
+  end
+
+  describe "dataFields query" do
+    @tag authentication: [role: "service"]
+    test "returns data fields for latest data structure version", %{conn: conn} do
+      %{id: dsv_father_id, data_structure_id: data_structure_id} =
+        insert(:data_structure_version, version: 1, class: "table", name: "table")
+
+      %{id: dsv_child_1_id, data_structure: child_data_structure} =
+        insert(:data_structure_version, version: 1, class: "field", name: "field_1")
+
+      %{id: dsv_child_2_id} =
+        insert(:data_structure_version, version: 1, class: "field", name: "field_2")
+
+      ## Structure relations
+      create_relation(dsv_father_id, dsv_child_1_id)
+      create_relation(dsv_father_id, dsv_child_2_id)
+
+      ## Structure Note
+      insert(:structure_note,
+        data_structure_id: child_data_structure.id,
+        df_content: %{"foo" => %{"value" => "bar", "origin" => "user"}},
+        status: :published
+      )
+
+      ## Structure Profile
+      insert(:profile,
+        data_structure_id: child_data_structure.id,
+        min: "1",
+        max: "2",
+        null_count: 5,
+        most_frequent: ~s([["A", "76"]])
+      )
+
+      ## Concepts relations
+      %{id: concept_id} = CacheHelpers.insert_concept(%{name: "concept_name"})
+
+      CacheHelpers.insert_link(
+        child_data_structure.id,
+        "data_structure",
+        "business_concept",
+        concept_id
+      )
+
+      ### Graph
+      contains = %{"foo" => [child_data_structure.external_id, "baz"]}
+      depends = [{child_data_structure.external_id, "baz"}]
+      GraphData.state(state: setup_state(%{contains: contains, depends: depends}))
+
+      variables = %{"dataStructureId" => data_structure_id, "version" => "latest"}
+
+      %{"data" => %{"dataFields" => %{"page" => data_fields, "pageInfo" => page_info}}} =
+        conn
+        |> post("/api/v2", %{
+          "query" => @data_fields_query,
+          "variables" => variables
+        })
+        |> json_response(:ok)
+
+      assert Enum.count(data_fields) == 2
+      assert child = Enum.find(data_fields, &(&1["id"] == Integer.to_string(dsv_child_1_id)))
+      assert child["degree"] == %{"in" => 0, "out" => 1}
+      assert child["has_note"]
+
+      assert child["profile"] == %{
+               "max" => "2",
+               "min" => "1",
+               "most_frequent" => [%{"k" => "A", "v" => 76}],
+               "null_count" => 5
+             }
+
+      assert [link] = child["links"]
+      assert link["name"] == "concept_name"
+      assert Enum.find(data_fields, &(&1["id"] == Integer.to_string(dsv_child_2_id)))
+
+      assert page_info["endCursor"]
+      assert page_info["startCursor"]
+      refute page_info["hasNextPage"]
+      refute page_info["hasPreviousPage"]
+
+      variables = %{"dataStructureId" => data_structure_id, "version" => "latest", "first" => 1}
+
+      %{"data" => %{"dataFields" => %{"page" => data_fields, "pageInfo" => page_info}}} =
+        conn
+        |> post("/api/v2", %{
+          "query" => @data_fields_query,
+          "variables" => variables
+        })
+        |> json_response(:ok)
+
+      assert Enum.count(data_fields) == 1
+
+      assert page_info["endCursor"]
+      assert page_info["startCursor"]
+      assert page_info["hasNextPage"]
+      refute page_info["hasPreviousPage"]
+    end
+
+    @tag authentication: [role: "service"]
+    test "returns empty list if data structure version doesn't exist", %{conn: conn} do
+      variables = %{"dataStructureId" => 0, "version" => "latest"}
+
+      %{"data" => %{"dataFields" => %{"page" => data_fields, "pageInfo" => page_info}}} =
+        conn
+        |> post("/api/v2", %{
+          "query" => @data_fields_query,
+          "variables" => variables
+        })
+        |> json_response(:ok)
+
+      assert data_fields == []
+
+      assert page_info == %{
+               "endCursor" => nil,
+               "hasNextPage" => false,
+               "hasPreviousPage" => false,
+               "startCursor" => nil
+             }
+    end
+
+    @tag authentication: [role: "user", permissions: [:view_data_structure]]
+    test "filters out data fields where user has no permissions", %{
+      conn: conn,
+      domain: %{id: domain_id}
+    } do
+      %{id: dsv_father_id, data_structure_id: data_structure_id} =
+        insert(:data_structure_version,
+          version: 1,
+          class: "table",
+          name: "table"
+        )
+
+      # structure with permissions in domain_id
+      %{id: dsv_child_1_id} =
+        insert(:data_structure_version,
+          version: 1,
+          class: "field",
+          name: "field_1",
+          data_structure: build(:data_structure, domain_ids: [domain_id])
+        )
+
+      # structure without permissions in domain_id
+      %{id: dsv_child_2_id} =
+        insert(:data_structure_version, version: 1, class: "field", name: "field_2")
+
+      ## Structure relations
+      create_relation(dsv_father_id, dsv_child_1_id)
+      create_relation(dsv_father_id, dsv_child_2_id)
+
+      variables = %{
+        "dataStructureId" => data_structure_id,
+        "version" => "latest"
+      }
+
+      %{"data" => %{"dataFields" => %{"page" => data_fields, "pageInfo" => page_info}}} =
+        conn
+        |> post("/api/v2", %{
+          "query" => @data_fields_query,
+          "variables" => variables
+        })
+        |> json_response(:ok)
+
+      assert Enum.count(data_fields) == 1
+      assert Enum.find(data_fields, &(String.to_integer(&1["id"]) == dsv_child_1_id))
+      refute Enum.find(data_fields, &(String.to_integer(&1["id"]) == dsv_child_2_id))
+
+      assert page_info["endCursor"]
+      assert page_info["startCursor"]
+      refute page_info["hasNextPage"]
+      refute page_info["hasPreviousPage"]
+    end
+
+    @tag authentication: [role: "service"]
+    test "returns data fields for version other than latest", %{conn: conn} do
+      data_structure = insert(:data_structure)
+
+      # initial version
+      %{id: dsv_father_id} =
+        insert(:data_structure_version,
+          version: 0,
+          class: "table",
+          name: "table",
+          data_structure_id: data_structure.id
+        )
+
+      %{id: dsv_child_1_id} =
+        insert(:data_structure_version, version: 0, class: "field", name: "field_1")
+
+      %{id: dsv_child_2_id} =
+        insert(:data_structure_version, version: 0, class: "field", name: "field_2")
+
+      create_relation(dsv_father_id, dsv_child_1_id)
+      create_relation(dsv_father_id, dsv_child_2_id)
+
+      # latest version
+      %{id: dsv_father_id} =
+        insert(:data_structure_version,
+          version: 1,
+          class: "table",
+          name: "table",
+          data_structure_id: data_structure.id
+        )
+
+      %{id: dsv_child_1_id} =
+        insert(:data_structure_version, version: 1, class: "field", name: "field_1")
+
+      create_relation(dsv_father_id, dsv_child_1_id)
+
+      variables = %{
+        "dataStructureId" => data_structure.id,
+        "version" => "0"
+      }
+
+      %{"data" => %{"dataFields" => %{"page" => data_fields}}} =
+        conn
+        |> post("/api/v2", %{
+          "query" => @data_fields_query,
+          "variables" => variables
+        })
+        |> json_response(:ok)
+
+      assert Enum.count(data_fields) == 2
+      assert Enum.find(data_fields, &(&1["name"] == "field_1"))
+      assert Enum.find(data_fields, &(&1["name"] == "field_2"))
+
+      variables = %{
+        "dataStructureId" => data_structure.id,
+        "version" => "latest"
+      }
+
+      %{"data" => %{"dataFields" => %{"page" => data_fields}}} =
+        conn
+        |> post("/api/v2", %{
+          "query" => @data_fields_query,
+          "variables" => variables
+        })
+        |> json_response(:ok)
+
+      assert Enum.count(data_fields) == 1
+      assert Enum.find(data_fields, &(&1["name"] == "field_1"))
+      refute Enum.find(data_fields, &(&1["name"] == "field_2"))
+    end
+
+    @tag authentication: [role: "service"]
+    test "paginates over results sorted by name", %{conn: conn} do
+      %{id: dsv_father_id, data_structure_id: data_structure_id} =
+        insert(:data_structure_version, version: 1, class: "table", name: "table")
+
+      %{id: dsv_child_1_id} =
+        insert(:data_structure_version, version: 1, class: "field", name: "field_1")
+
+      %{id: dsv_child_2_id} =
+        insert(:data_structure_version, version: 1, class: "field", name: "field_2")
+
+      create_relation(dsv_father_id, dsv_child_1_id)
+      create_relation(dsv_father_id, dsv_child_2_id)
+
+      variables = %{
+        "dataStructureId" => data_structure_id,
+        "first" => 1,
+        "version" => "latest"
+      }
+
+      %{"data" => %{"dataFields" => %{"page" => data_fields, "pageInfo" => page_info}}} =
+        conn
+        |> post("/api/v2", %{
+          "query" => @data_fields_query,
+          "variables" => variables
+        })
+        |> json_response(:ok)
+
+      assert Enum.count(data_fields) == 1
+      data_field = List.first(data_fields)
+      assert data_field["name"] == "field_1"
+
+      assert page_info["endCursor"]
+      assert page_info["startCursor"]
+      assert page_info["hasNextPage"]
+      refute page_info["hasPreviousPage"]
+
+      variables = %{
+        "dataStructureId" => data_structure_id,
+        "after" => page_info["endCursor"],
+        "first" => 1,
+        "version" => "latest"
+      }
+
+      %{"data" => %{"dataFields" => %{"page" => data_fields, "pageInfo" => page_info}}} =
+        conn
+        |> post("/api/v2", %{
+          "query" => @data_fields_query,
+          "variables" => variables
+        })
+        |> json_response(:ok)
+
+      assert Enum.count(data_fields) == 1
+      data_field = List.first(data_fields)
+      assert data_field["name"] == "field_2"
+
+      assert page_info["endCursor"]
+      assert page_info["startCursor"]
+      refute page_info["hasNextPage"]
+      assert page_info["hasPreviousPage"]
+
+      variables = %{
+        "dataStructureId" => data_structure_id,
+        "before" => page_info["endCursor"],
+        "last" => 2,
+        "version" => "latest"
+      }
+
+      %{"data" => %{"dataFields" => %{"page" => data_fields, "pageInfo" => page_info}}} =
+        conn
+        |> post("/api/v2", %{
+          "query" => @data_fields_query,
+          "variables" => variables
+        })
+        |> json_response(:ok)
+
+      assert Enum.count(data_fields) == 1
+      data_field = List.first(data_fields)
+      assert data_field["name"] == "field_1"
+
+      assert page_info["endCursor"]
+      assert page_info["startCursor"]
+      assert page_info["hasNextPage"]
+      refute page_info["hasPreviousPage"]
+    end
+
+    @tag authentication: [role: "service"]
+    test "searchs data fields by name", %{conn: conn} do
+      %{id: dsv_father_id, data_structure_id: data_structure_id} =
+        insert(:data_structure_version, version: 1, class: "table", name: "table")
+
+      %{id: dsv_child_1_id} =
+        insert(:data_structure_version, version: 1, class: "field", name: "field_1")
+
+      %{id: dsv_child_2_id} =
+        insert(:data_structure_version, version: 1, class: "field", name: "field_2")
+
+      %{id: dsv_child_3_id} =
+        insert(:data_structure_version, version: 1, class: "field", name: "name")
+
+      create_relation(dsv_father_id, dsv_child_1_id)
+      create_relation(dsv_father_id, dsv_child_2_id)
+      create_relation(dsv_father_id, dsv_child_3_id)
+
+      variables = %{
+        "dataStructureId" => data_structure_id,
+        "search" => "Iel",
+        "version" => "latest"
+      }
+
+      %{"data" => %{"dataFields" => %{"page" => data_fields, "pageInfo" => page_info}}} =
+        conn
+        |> post("/api/v2", %{
+          "query" => @data_fields_query,
+          "variables" => variables
+        })
+        |> json_response(:ok)
+
+      refute page_info["hasNextPage"]
+      refute page_info["hasPreviousPage"]
+      assert Enum.count(data_fields) == 2
+
+      assert Enum.find(data_fields, &(&1["name"] == "field_1"))
+      assert Enum.find(data_fields, &(&1["name"] == "field_2"))
+      refute Enum.find(data_fields, &(&1["name"] == "name"))
+
+      variables = %{
+        "dataStructureId" => data_structure_id,
+        "first" => 1,
+        "search" => "Iel",
+        "version" => "latest"
+      }
+
+      %{"data" => %{"dataFields" => %{"page" => data_fields, "pageInfo" => page_info}}} =
+        conn
+        |> post("/api/v2", %{
+          "query" => @data_fields_query,
+          "variables" => variables
+        })
+        |> json_response(:ok)
+
+      assert page_info["hasNextPage"]
+      refute page_info["hasPreviousPage"]
+      assert Enum.count(data_fields) == 1
+
+      variables = %{
+        "dataStructureId" => data_structure_id,
+        "search" => "me",
+        "version" => "latest"
+      }
+
+      %{"data" => %{"dataFields" => %{"page" => data_fields, "pageInfo" => page_info}}} =
+        conn
+        |> post("/api/v2", %{
+          "query" => @data_fields_query,
+          "variables" => variables
+        })
+        |> json_response(:ok)
+
+      refute page_info["hasNextPage"]
+      refute page_info["hasPreviousPage"]
+      assert Enum.count(data_fields) == 1
+      assert Enum.find(data_fields, &(&1["name"] == "name"))
     end
   end
 

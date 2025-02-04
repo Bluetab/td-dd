@@ -79,7 +79,8 @@ defmodule TdDd.MixProject do
       {:bimap, "~> 1.3"},
       {:td_core, git: "https://github.com/Bluetab/td-core.git", tag: "7.1.2"},
       {:vaultex, "~> 1.0.1"},
-      {:sobelow, "~> 0.13", only: [:dev, :test]}
+      {:sobelow, "~> 0.13", only: [:dev, :test]},
+      {:flop, "~> 0.26.1"}
     ]
   end
 

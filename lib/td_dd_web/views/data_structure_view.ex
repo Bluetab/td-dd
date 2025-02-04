@@ -147,7 +147,9 @@ defmodule TdDdWeb.DataStructureView do
       :mutable_metadata,
       :metadata,
       :version,
-      :non_published_note
+      :non_published_note,
+      :degree,
+      :note
     ])
     |> Map.merge(dsv_attrs)
     |> Map.put_new(:metadata, %{})
@@ -315,8 +317,7 @@ defmodule TdDdWeb.DataStructureView do
       :description,
       :deleted_at,
       :inserted_at,
-      :links,
-      :degree
+      :links
     ])
     |> Map.put(:id, data_structure_id)
     |> Map.put(:external_id, external_id)

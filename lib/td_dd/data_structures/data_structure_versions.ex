@@ -127,7 +127,6 @@ defmodule TdDd.DataStructures.DataStructureVersions do
   defp query_fields_to_enrich_opts(query_fields),
     do: Enum.flat_map(query_fields, &field_to_enrich_opt/1)
 
-  defp field_to_enrich_opt(:siblings), do: [:siblings]
   defp field_to_enrich_opt(:versions), do: [:versions]
   defp field_to_enrich_opt(:implementation_count), do: [:implementation_count]
   defp field_to_enrich_opt(:data_structure_link_count), do: [:data_structure_link_count]
@@ -144,14 +143,7 @@ defmodule TdDd.DataStructures.DataStructureVersions do
   defp field_to_enrich_opt(:metadata),
     do: [:with_protected_metadata, :metadata_versions]
 
-  # These static preloads are present even if degree or links GraphQL fields
-  # are not requested.
-  defp field_to_enrich_opt(:data_fields),
-    do: [
-      :data_fields,
-      :data_field_degree,
-      :data_field_links
-    ]
+  defp field_to_enrich_opt(:data_fields), do: [:data_fields]
 
   defp field_to_enrich_opt(_), do: []
 
@@ -308,14 +300,12 @@ defmodule TdDd.DataStructures.DataStructureVersions do
         opts
       )
 
-  defp add_data_fields(%{data_fields: data_fields} = dsv) do
+  defp add_data_fields(%{data_fields: data_fields} = dsv) when is_list(data_fields) do
     field_structures = Enum.map(data_fields, &field_structure_json/1)
     Map.put(dsv, :data_fields, field_structures)
   end
 
-  defp add_data_fields(dsv) do
-    Map.put(dsv, :data_fields, [])
-  end
+  defp add_data_fields(dsv), do: Map.put(dsv, :data_fields, [])
 
   defp field_structure_json(
          %{
