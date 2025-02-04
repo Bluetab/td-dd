@@ -106,6 +106,38 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
           "type" => "hierarchy",
           "values" => %{"hierarchy" => %{"id" => 1}},
           "widget" => "dropdown"
+        },
+        %{
+          "name" => "father",
+          "type" => "string",
+          "label" => "father",
+          "values" => %{"fixed" => ["a1", "a2", "b1", "b2"]},
+          "widget" => "dropdown",
+          "default" => %{"value" => "", "origin" => "default"},
+          "cardinality" => "?",
+          "subscribable" => false,
+          "ai_suggestion" => false
+        },
+        %{
+          "name" => "son",
+          "type" => "string",
+          "label" => "son",
+          "values" => %{
+            "switch" => %{
+              "on" => "father",
+              "values" => %{
+                "a1" => ["a11", "a12", "a13"],
+                "a2" => ["a21", "a22", "a23"],
+                "b1" => ["b11", "b12", "b13"],
+                "b2" => ["b21", "b22", "b23"]
+              }
+            }
+          },
+          "widget" => "dropdown",
+          "default" => %{"value" => "", "origin" => "default"},
+          "cardinality" => "?",
+          "subscribable" => false,
+          "ai_suggestion" => false
         }
       ]
     }
@@ -932,6 +964,168 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                }}} = second_errored_note
 
       assert [{:reindex, :structures, [_ | _]}] = IndexWorkerMock.calls()
+    end
+
+    test "returns error on dependant invalid content" do
+      IndexWorkerMock.clear()
+
+      previus_ex_id9 =
+        get_df_content_from_ext_id("ex_id9")
+
+      previus_ex_id10 =
+        get_df_content_from_ext_id("ex_id10")
+
+      %{user_id: user_id} = build(:claims)
+      upload = %{path: "test/fixtures/upload_invalid_dependant.csv"}
+
+      {:ok, %{update_notes: update_notes}} =
+        upload
+        |> BulkUpdate.from_csv(@default_lang)
+        |> BulkUpdate.do_csv_bulk_update(user_id)
+
+      [_, errored_notes] =
+        BulkUpdate.split_succeeded_errors(update_notes)
+
+      [first_errored_note, second_errored_note | _] =
+        Enum.map(errored_notes, fn {_k, v} -> v end)
+
+      [first_errored_note_id, second_errored_note_id | _] =
+        Enum.map(errored_notes, fn {k, _v} -> k end)
+
+      assert {:error,
+              {%{
+                 errors: [
+                   df_content:
+                     {_,
+                      [
+                        son: {"is invalid", [validation: :inclusion, enum: ["b11", "b12", "b13"]]}
+                      ]}
+                 ]
+               },
+               %TdDd.DataStructures.DataStructure{
+                 external_id: "ex_id9"
+               }}} = first_errored_note
+
+      assert {:error,
+              {%{
+                 errors: [
+                   df_content:
+                     {_,
+                      [
+                        son: {"is invalid", [validation: :inclusion, enum: ["a11", "a12", "a13"]]}
+                      ]}
+                 ]
+               },
+               %TdDd.DataStructures.DataStructure{
+                 external_id: "ex_id10"
+               }}} = second_errored_note
+
+      assert previus_ex_id9 ==
+               get_df_content_from_ext_id("ex_id9")
+
+      assert previus_ex_id10 ==
+               get_df_content_from_ext_id("ex_id10")
+
+      assert [{:reindex, :structures, [first_errored_note_id, second_errored_note_id]}] ==
+               IndexWorkerMock.calls()
+    end
+
+    test "create valid notes and update invalid notes using csv_bulk_update" do
+      IndexWorkerMock.clear()
+
+      previus_ex_id9 = get_df_content_from_ext_id("ex_id9")
+
+      previus_ex_id10 = get_df_content_from_ext_id("ex_id10")
+
+      %{user_id: user_id} = build(:claims)
+      upload = %{path: "test/fixtures/upload_valid_dependant.csv"}
+
+      {:ok, %{update_notes: update_notes}} =
+        upload
+        |> BulkUpdate.from_csv(@default_lang)
+        |> BulkUpdate.do_csv_bulk_update(user_id)
+
+      [_created_notes, errored_notes] =
+        BulkUpdate.split_succeeded_errors(update_notes)
+
+      assert map_size(errored_notes) == 0
+
+      intermediate_ex_id9 =
+        get_df_content_from_ext_id("ex_id9")
+
+      intermediate_ex_id10 =
+        get_df_content_from_ext_id("ex_id10")
+
+      assert previus_ex_id9 != intermediate_ex_id9 and
+               %{
+                 "father" => %{"origin" => "file", "value" => "b1"},
+                 "son" => %{"origin" => "file", "value" => "b11"}
+               } == intermediate_ex_id9
+
+      assert previus_ex_id10 != intermediate_ex_id10 and
+               %{
+                 "father" => %{"origin" => "file", "value" => "a1"},
+                 "son" => %{"origin" => "file", "value" => "a11"}
+               } == intermediate_ex_id10
+
+      assert [{:reindex, :structures, [_, _]}] = IndexWorkerMock.calls()
+
+      IndexWorkerMock.clear()
+
+      upload = %{path: "test/fixtures/upload_invalid_dependant.csv"}
+
+      {:ok, %{update_notes: update_notes}} =
+        upload
+        |> BulkUpdate.from_csv(@default_lang)
+        |> BulkUpdate.do_csv_bulk_update(user_id)
+
+      [updated_notes, errored_notes] =
+        BulkUpdate.split_succeeded_errors(update_notes)
+
+      assert map_size(updated_notes) == 0
+
+      [first_errored_note, second_errored_note | _] =
+        Enum.map(errored_notes, fn {_k, v} -> v end)
+
+      [first_errored_note_id, second_errored_note_id | _] =
+        Enum.map(errored_notes, fn {k, _v} -> k end)
+
+      assert {:error,
+              {%{
+                 errors: [
+                   df_content:
+                     {_,
+                      [
+                        son: {"is invalid", [validation: :inclusion, enum: ["b11", "b12", "b13"]]}
+                      ]}
+                 ]
+               },
+               %TdDd.DataStructures.DataStructure{
+                 external_id: "ex_id9"
+               }}} = first_errored_note
+
+      assert {:error,
+              {%{
+                 errors: [
+                   df_content:
+                     {_,
+                      [
+                        son: {"is invalid", [validation: :inclusion, enum: ["a11", "a12", "a13"]]}
+                      ]}
+                 ]
+               },
+               %TdDd.DataStructures.DataStructure{
+                 external_id: "ex_id10"
+               }}} = second_errored_note
+
+      assert intermediate_ex_id9 ==
+               get_df_content_from_ext_id("ex_id9")
+
+      assert intermediate_ex_id10 ==
+               get_df_content_from_ext_id("ex_id10")
+
+      assert [{:reindex, :structures, [^first_errored_note_id, ^second_errored_note_id]}] =
+               IndexWorkerMock.calls()
     end
 
     test "accept file utf8 with bom" do
