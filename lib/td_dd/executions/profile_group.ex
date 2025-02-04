@@ -27,6 +27,6 @@ defmodule TdDd.Executions.ProfileGroup do
     struct
     |> cast(params, [:created_by_id, :filters])
     |> validate_required(:created_by_id)
-    |> cast_assoc(:executions, with: &ProfileExecution.changeset/2, required: true)
+    |> cast_assoc(:executions, with: &ProfileExecution.changeset/2)
   end
 end

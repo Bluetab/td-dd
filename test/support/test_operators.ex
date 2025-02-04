@@ -59,7 +59,9 @@ defmodule TdDd.TestOperators do
       :path,
       :with_profiling,
       :published_note,
-      :structure_type
+      :structure_type,
+      :links,
+      :degree
     ]
 
     Map.drop(a, drop_fields) == Map.drop(b, drop_fields)

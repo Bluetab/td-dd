@@ -3,6 +3,7 @@ defmodule TdDd.ExecutionsTest do
 
   alias TdCache.Redix
   alias TdCache.Redix.Stream
+  alias TdDd.DataStructures.RelationTypes
   alias TdDd.Executions
 
   @moduletag sandbox: :shared
@@ -119,7 +120,7 @@ defmodule TdDd.ExecutionsTest do
              } = Jason.decode!(payload)
     end
 
-    test "iserts a group with default event" do
+    test "inserts a group with default event" do
       %{id: id} = insert(:data_structure)
 
       params = %{
@@ -136,6 +137,49 @@ defmodule TdDd.ExecutionsTest do
           %{profile_events: []}
         ]
       } = Executions.get_profile_group(%{"id" => id}, preload: [executions: :profile_events])
+    end
+
+    test "inserts a group given the parent structure id" do
+      %{id: father, data_structure_id: data_structure_id} =
+        insert(:data_structure_version, class: "table", name: "table")
+
+      %{id: child_1, data_structure_id: child_structure_1} =
+        insert(:data_structure_version, class: "field", name: "field_1")
+
+      %{id: child_2, data_structure_id: child_structure_2} =
+        insert(:data_structure_version, class: "field", name: "field_2")
+
+      insert(:data_structure_relation,
+        parent_id: father,
+        child_id: child_1,
+        relation_type_id: RelationTypes.default_id!()
+      )
+
+      insert(:data_structure_relation,
+        parent_id: father,
+        child_id: child_2,
+        relation_type_id: RelationTypes.default_id!()
+      )
+
+      params = %{created_by_id: 0, parent_structure_id: data_structure_id}
+
+      assert {:ok, %{profile_group: %{id: group_id} = profile_group, audit: event_id}} =
+               Executions.create_profile_group(params, chunk_every: 1)
+
+      assert profile_group.created_by_id == params.created_by_id
+      assert Enum.count(profile_group.executions) == 2
+      assert Enum.find(profile_group.executions, &(&1.data_structure_id == child_structure_1))
+      assert Enum.find(profile_group.executions, &(&1.data_structure_id == child_structure_2))
+
+      assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+
+      resource_id = "#{group_id}"
+
+      assert %{
+               event: "execution_group_created",
+               resource_type: "profile_execution_group",
+               resource_id: ^resource_id
+             } = event
     end
   end
 

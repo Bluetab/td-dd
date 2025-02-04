@@ -657,7 +657,6 @@ defmodule TdDd.DataStructuresTest do
 
   describe "data_structures" do
     @update_attrs %{
-      # description: "some updated description",
       df_content: %{"string" => "changed", "list" => "two"}
     }
     @invalid_attrs %{
@@ -1775,6 +1774,47 @@ defmodule TdDd.DataStructuresTest do
     test "generates a valid query" do
       %{parent: parent} = create_relation()
       assert [_] = DataStructures.get_field_structures(parent, with_confidential: false)
+    end
+
+    test "gets only structures with profile" do
+      parent =
+        %{id: dsv_father_id} =
+        insert(:data_structure_version, version: 1, class: "table", name: "table")
+
+      %{id: dsv_child_1_id, data_structure: child_data_structure} =
+        insert(:data_structure_version, version: 1, class: "field", name: "field_1")
+
+      %{id: dsv_child_2_id} =
+        insert(:data_structure_version, version: 1, class: "field", name: "field_2")
+
+      ## Structure relations
+      insert(:data_structure_relation,
+        parent_id: dsv_father_id,
+        child_id: dsv_child_1_id,
+        relation_type_id: RelationTypes.default_id!()
+      )
+
+      insert(:data_structure_relation,
+        parent_id: dsv_father_id,
+        child_id: dsv_child_2_id,
+        relation_type_id: RelationTypes.default_id!()
+      )
+
+      ## Structure Profile
+      insert(:profile,
+        data_structure_id: child_data_structure.id,
+        min: "1",
+        max: "2",
+        null_count: 5,
+        most_frequent: ~s([["A", "76"]])
+      )
+
+      assert [data_field] =
+               DataStructures.get_field_structures(parent,
+                 search: %{data_fields_filter: %{has_profile: true}}
+               )
+
+      assert data_field.id == dsv_child_1_id
     end
   end
 

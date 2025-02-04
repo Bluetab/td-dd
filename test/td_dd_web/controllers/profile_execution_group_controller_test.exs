@@ -3,6 +3,8 @@ defmodule TdDdWeb.ProfileExecutionGroupControllerTest do
 
   @moduletag sandbox: :shared
 
+  alias TdDd.DataStructures.RelationTypes
+
   setup_all do
     [domain: CacheHelpers.insert_domain()]
   end
@@ -126,6 +128,57 @@ defmodule TdDdWeb.ProfileExecutionGroupControllerTest do
                conn
                |> post(Routes.profile_execution_group_path(conn, :index, params))
                |> json_response(:forbidden)
+    end
+
+    @tag authentication: [user_name: "not_an_admin"]
+    @tag permissions: [:profile_structures, :view_data_structures_profile, :view_data_structure]
+    test "returns an OK response with the created execution group when parent structure id was specified",
+         %{
+           conn: conn,
+           domain: %{id: domain_id}
+         } do
+      %{id: father, data_structure_id: data_structure_id} =
+        insert(:data_structure_version,
+          version: 1,
+          class: "table",
+          name: "table"
+        )
+
+      # structure with permissions in domain_id
+      %{id: child_1} =
+        insert(:data_structure_version,
+          version: 1,
+          class: "field",
+          name: "field_1",
+          data_structure: build(:data_structure, domain_ids: [domain_id])
+        )
+
+      # structure without permissions in domain_id
+      %{id: child_2} =
+        insert(:data_structure_version, class: "field", name: "field_2")
+
+      insert(:data_structure_relation,
+        parent_id: father,
+        child_id: child_1,
+        relation_type_id: RelationTypes.default_id!()
+      )
+
+      insert(:data_structure_relation,
+        parent_id: father,
+        child_id: child_2,
+        relation_type_id: RelationTypes.default_id!()
+      )
+
+      params = %{"parent_structure_id" => data_structure_id}
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.profile_execution_group_path(conn, :create, params))
+               |> json_response(:created)
+
+      assert %{"id" => _, "inserted_at" => _} = data
+      assert [execution] = get_in(data, ["_embedded", "executions"])
+      assert execution["_embedded"]["latest"]["name"] == "field_1"
     end
   end
 end

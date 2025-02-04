@@ -10,12 +10,6 @@ defmodule TdDd.Executions.ProfileGroupTest do
       assert {_, [validation: :required]} = errors[:created_by_id]
     end
 
-    test "validates required assocs" do
-      params = %{"created_by_id" => 0, "executions" => []}
-      assert %{errors: errors} = ProfileGroup.changeset(params)
-      assert {_, [validation: :required]} = errors[:executions]
-    end
-
     test "casts execution params and inserts correctly" do
       %{id: id1} = insert(:data_structure)
       %{id: id2} = insert(:data_structure)

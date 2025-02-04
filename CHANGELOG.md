@@ -2,14 +2,15 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-6690] Add updated_at in csv downloaded
+- [TD-6868] Implement a limit on data structure relationships when fetching and paginating `data_fields`.
+
 ### Changed
 
 - [TD-6921] Download/Upload of fields of type link must include both name and url
 - [TD-6022] Upload of hierarchy fields should validate that the value is a valid one
-
-### Added
-
-- [TD-6690] Add updated_at in csv downloaded
 
 ## [7.0.0] 2025-01-13
 

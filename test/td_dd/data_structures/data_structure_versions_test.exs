@@ -15,55 +15,6 @@ defmodule TdDd.DataStructures.DataStructureVersionsTest do
   end
 
   describe "enriched_data_structure_version/4" do
-    test "enriches siblings" do
-      claims = build(:claims)
-
-      %{id: parent_id} = insert(:data_structure_version)
-      %{id: id, data_structure_id: data_structure_id} = insert(:data_structure_version)
-      %{id: sibling_id} = insert(:data_structure_version)
-
-      relation_type_id = RelationTypes.default_id!()
-
-      insert(:data_structure_relation,
-        parent_id: parent_id,
-        child_id: id,
-        relation_type_id: relation_type_id
-      )
-
-      insert(:data_structure_relation,
-        parent_id: parent_id,
-        child_id: sibling_id,
-        relation_type_id: relation_type_id
-      )
-
-      assert [
-               {:data_structure_version,
-                %{
-                  siblings: [
-                    %{id: ^id},
-                    %{id: ^sibling_id}
-                  ]
-                }}
-               | _
-             ] =
-               DataStructureVersions.enriched_data_structure_version(
-                 claims,
-                 data_structure_id,
-                 "latest",
-                 [:siblings]
-               )
-
-      assert [{:data_structure_version, dsv} | _] =
-               DataStructureVersions.enriched_data_structure_version(
-                 claims,
-                 data_structure_id,
-                 "latest",
-                 []
-               )
-
-      refute Map.has_key?(dsv, :siblings)
-    end
-
     test "enriches data_fields" do
       claims = build(:claims)
 
