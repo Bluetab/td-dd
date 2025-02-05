@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-7056] Add updated_at in csv downloaded
+
 ## [7.1.0] 2025-02-05
 
 ### Added
