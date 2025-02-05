@@ -58,6 +58,20 @@ defmodule TdDdWeb.Schema.Structures do
       arg(:order_by, :string, default_value: "id")
       resolve(&Resolvers.Structures.data_structure_relations/3)
     end
+
+    @desc "Get a list of data fields"
+    field :data_fields, :paginated_data_fields do
+      arg(:data_structure_id, non_null(:id))
+      arg(:version, non_null(:string))
+      arg(:after, :cursor)
+      arg(:before, :cursor)
+      arg(:first, :integer, default_value: 1_000)
+      arg(:last, :integer)
+      arg(:order_by, list_of(:data_field_order), default_value: [:name])
+      arg(:search, :string)
+      arg(:filters, :data_fields_filter)
+      resolve(&Resolvers.Structures.data_fields/3)
+    end
   end
 
   object :data_structure do
@@ -114,18 +128,31 @@ defmodule TdDdWeb.Schema.Structures do
 
     field :parents, list_of(:data_structure_version) do
       arg(:deleted, :boolean, default_value: false)
+      arg(:limit, :integer, default_value: 50)
       resolve(&Resolvers.Structures.parents/3)
     end
 
     field :children, list_of(:data_structure_version) do
       arg(:deleted, :boolean, default_value: false)
+      arg(:limit, :integer, default_value: 1_000)
       resolve(&Resolvers.Structures.children/3)
     end
 
-    field(:siblings, list_of(:data_structure_version))
+    field :siblings, list_of(:data_structure_version) do
+      arg(:limit, :integer, default_value: 1_000)
+      resolve(&Resolvers.Structures.siblings/3)
+    end
+
     field(:versions, list_of(:data_structure_version))
 
-    field :data_fields, list_of(:data_structure_version)
+    field :data_fields, list_of(:data_structure_version) do
+      arg(:first, :integer, default_value: 1_000)
+      arg(:last, :integer)
+      arg(:after, :cursor)
+      arg(:before, :cursor)
+      arg(:order_by, list_of(:data_field_order), default_value: [:name])
+      resolve(&Resolvers.Structures.data_fields/3)
+    end
 
     field(:ancestry, list_of(:json), resolve: &Resolvers.Structures.ancestry/3)
 
@@ -236,5 +263,18 @@ defmodule TdDdWeb.Schema.Structures do
     field(:total_count, :integer)
     field(:unique_count, :integer)
     field(:value, :json)
+  end
+
+  object :paginated_data_fields do
+    field :page, list_of(:data_structure_version)
+    field :page_info, :page_info
+  end
+
+  input_object :data_fields_filter do
+    field :has_profile, :boolean
+  end
+
+  enum :data_field_order do
+    value(:name)
   end
 end

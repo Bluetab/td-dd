@@ -1,6 +1,7 @@
 defmodule TdDdWeb.ProfileExecutionGroupController do
   use TdDdWeb, :controller
 
+  alias TdCore.Search
   alias TdDd.Executions
   alias TdDd.Executions.ProfileGroup
 
@@ -39,9 +40,14 @@ defmodule TdDdWeb.ProfileExecutionGroupController do
   def create(conn, %{} = params) do
     claims = conn.assigns[:current_resource]
 
+    # If a parent ID for structure fields is specified, the profile should only be executed for fields that the user
+    # was able to view.
+    domain_ids = Search.Permissions.get_search_permissions(["view_data_structure"], claims)
+
     with :ok <- Bodyguard.permit(TdDd.Profiles, :create, claims),
          %{} = creation_params <- creation_params(claims, params),
-         {:ok, %{profile_group: %{id: id}}} <- Executions.create_profile_group(creation_params),
+         {:ok, %{profile_group: %{id: id}}} <-
+           Executions.create_profile_group(creation_params, domain_ids: domain_ids),
          %ProfileGroup{} = group <-
            Executions.get_profile_group(%{"id" => id},
              preload: [executions: [:data_structure, :profile]],
@@ -64,6 +70,13 @@ defmodule TdDdWeb.ProfileExecutionGroupController do
     |> Map.delete("data_structure_ids")
     |> Map.put("executions", execution_params)
     |> Map.put("created_by_id", user_id)
+  end
+
+  defp creation_params(
+         %Claims{user_id: user_id},
+         %{"parent_structure_id" => parent_structure_id}
+       ) do
+    %{parent_structure_id: parent_structure_id, created_by_id: user_id}
   end
 
   defp creation_params(_claims, %{} = params), do: params

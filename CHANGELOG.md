@@ -1,5 +1,18 @@
 # Changelog
 
+## [7.1.0] 2025-02-05
+
+### Added
+
+- [TD-6690] Add updated_at in csv downloaded
+- [TD-6868] Implement a limit on data structure relationships when fetching and paginating `data_fields`.
+
+### Changed
+
+- [TD-6921] Download/Upload of fields of type link must include both name and url
+- [TD-6022] Upload of hierarchy fields should validate that the value is a valid one
+- [TD-5119] Bulk uploads are not validating the values of the fields that depend on the value of another field
+
 ## [7.0.0] 2025-01-13
 
 ### Changed
@@ -10,6 +23,7 @@
   - update Docker RUNTIME_BASE=alpine:3.21
   - remove swagger
 - [TD-3612] Update td-core
+- [TD-6921] Change Download / Upload URL field type format
 
 ### Added
 
@@ -36,7 +50,6 @@
 - [TD-6780] Add Tag and Structure Tag Seach controller and context
 - [TD-6982] Added SSL and ApiKey configuration for Elasticsearch
 - [TD-6888] Support for expandable Concept links
-
 
 ## [6.15.0] 2024-11-27
 

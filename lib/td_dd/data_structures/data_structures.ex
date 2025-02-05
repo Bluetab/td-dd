@@ -295,6 +295,21 @@ defmodule TdDd.DataStructures do
     with_confidential = Enum.member?(enrich_fields, :with_confidential)
     with_protected_metadata = Enum.member?(enrich_fields, :with_protected_metadata)
 
+    data_fields_opts =
+      Keyword.merge(
+        [
+          deleted: deleted,
+          preload:
+            if(Enum.member?(enrich_fields, :profile),
+              do: [:published_note, data_structure: :profile],
+              else: [:published_note]
+            ),
+          with_confidential: with_confidential,
+          with_protected_metadata: with_protected_metadata
+        ],
+        opts[:data_fields] || []
+      )
+
     dsv
     |> enrich_defaults(with_protected_metadata)
     |> do_enrich(enrich_fields, :classifications, &get_classifications!/1)
@@ -333,16 +348,7 @@ defmodule TdDd.DataStructures do
     |> do_enrich(
       enrich_fields,
       :data_fields,
-      &get_field_structures(&1,
-        deleted: deleted,
-        preload:
-          if(Enum.member?(enrich_fields, :profile),
-            do: [:published_note, data_structure: :profile],
-            else: [:published_note]
-          ),
-        with_confidential: with_confidential,
-        with_protected_metadata: with_protected_metadata
-      )
+      &get_field_structures(&1, data_fields_opts)
     )
     |> do_enrich(enrich_fields, :data_field_degree, &get_field_degree/1)
     |> do_enrich(enrich_fields, :data_field_links, &get_field_links/1)
@@ -437,18 +443,84 @@ defmodule TdDd.DataStructures do
 
   def get_field_structures(data_structure_version, opts) do
     data_structure_version
+    |> get_field_structures_query(opts)
+    |> with_limit(opts[:search])
+    |> Repo.all()
+    |> enrich_data_fiels(opts)
+  end
+
+  def stream_field_structures(data_structure_version, opts \\ []) do
+    data_structure_version
+    |> get_field_structures_query(opts)
+    |> Repo.stream()
+  end
+
+  defp get_paginated_field_structures(data_structure_version, opts) do
+    search_args = flop_search_args(opts[:search])
+
+    {:ok, {data_fields, meta}} =
+      data_structure_version
+      |> get_field_structures_query(opts)
+      |> Flop.validate_and_run(search_args, for: DataStructureVersion)
+
+    {enrich_data_fiels(data_fields, opts), meta}
+  end
+
+  defp get_field_structures_query(data_structure_version, opts) do
+    data_structure_version
     |> Ecto.assoc(:children)
     |> where(class: "field")
     |> join(:inner, [child], child_ds in assoc(child, :data_structure), as: :child_ds)
+    |> profile_condition(opts[:search])
     |> with_confidential(
       Keyword.get(opts, :with_confidential),
       dynamic([child_ds: child_ds], child_ds.confidential == false)
     )
+    |> with_data_structure_domain_ids(opts[:domain_ids])
     |> with_deleted(opts, dynamic([child], is_nil(child.deleted_at)))
     |> select([child], child)
-    |> Repo.all()
+  end
+
+  defp profile_condition(query, %{data_fields_filter: %{has_profile: true}}) do
+    join(query, :inner, [child_ds: child_ds], profile in assoc(child_ds, :profile), as: :profile)
+  end
+
+  defp profile_condition(query, _has_profile), do: query
+
+  defp with_data_structure_domain_ids(query, %{"view_data_structure" => :all}), do: query
+
+  defp with_data_structure_domain_ids(query, %{"view_data_structure" => :none}),
+    do: where(query, [], false)
+
+  defp with_data_structure_domain_ids(query, %{"view_data_structure" => domain_ids})
+       when is_list(domain_ids) do
+    where(query, [child_ds: child_ds], fragment("? && ?", child_ds.domain_ids, ^domain_ids))
+  end
+
+  defp with_data_structure_domain_ids(query, _domain_permissions), do: query
+
+  defp flop_search_args(%{} = search_args) do
+    search_args
+    |> eval_search_query()
+    |> Map.drop([:search, :data_fields_filter])
+  end
+
+  defp flop_search_args(_search_args), do: %{}
+
+  defp eval_search_query(%{search: search_query} = search_args) when is_binary(search_query) do
+    case String.trim(search_query) do
+      "" -> search_args
+      full_text -> Map.put(search_args, :filters, [%{field: :name, op: :=~, value: full_text}])
+    end
+  end
+
+  defp eval_search_query(search_args), do: search_args
+
+  defp enrich_data_fiels(data_fields, opts) do
+    data_fields
     |> Repo.preload(opts[:preload] || [])
     |> protect_metadata(Keyword.get(opts, :with_protected_metadata))
+    |> Enum.map(&enrich(&1, [:links, :degree]))
   end
 
   def get_mutable_metadata(nil, _), do: []
@@ -524,9 +596,10 @@ defmodule TdDd.DataStructures do
   end
 
   def get_siblings(%DataStructureVersion{id: id}, opts \\ []) do
-    default = Keyword.get(opts, :default)
-    confidential = Keyword.get(opts, :with_confidential)
     default_relation_type_id = RelationTypes.default_id!()
+    confidential = Keyword.get(opts, :with_confidential)
+    default = Keyword.get(opts, :default)
+    limit = Keyword.get(opts, :limit)
 
     DataStructureRelation
     |> where([r], r.child_id == ^id)
@@ -555,10 +628,27 @@ defmodule TdDd.DataStructures do
     |> order_by([sibling: s], asc: s.data_structure_id, desc: s.version)
     |> distinct([sibling: s], s)
     |> select([sibling: s], s)
+    |> with_limit(limit)
     |> Repo.all()
     |> Repo.preload(@preload_dsv_assocs)
     |> Enum.uniq_by(& &1.data_structure_id)
     |> protect_metadata(Keyword.get(opts, :with_protected_metadata))
+  end
+
+  def siblings({:siblings, batch_key}, data_structure_versions) do
+    sibling = batch_key[:add_siblings]
+
+    Map.new(data_structure_versions, fn data_structure_version ->
+      {data_structure_version, get_siblings(sibling, batch_key)}
+    end)
+  end
+
+  def data_fields({:data_fields, batch_key}, data_structure_versions) do
+    parent = batch_key[:add_fields]
+
+    Map.new(data_structure_versions, fn data_structure_version ->
+      {data_structure_version, get_paginated_field_structures(parent, batch_key)}
+    end)
   end
 
   defp get_relations(%DataStructureVersion{} = version, opts) do
@@ -922,6 +1012,10 @@ defmodule TdDd.DataStructures do
   end
 
   defp get_degree(%{data_structure: %{external_id: external_id}}) do
+    get_degree(external_id)
+  end
+
+  defp get_degree(external_id) when is_binary(external_id) do
     case GraphData.degree(external_id) do
       {:ok, degree} -> degree
       {:error, _} -> nil
@@ -930,7 +1024,15 @@ defmodule TdDd.DataStructures do
 
   defp get_degree(_), do: nil
 
-  defp get_field_degree(%{data_fields: data_fields}) do
+  defp get_field_degree(%{data_fields: {data_fields, _meta}}) do
+    get_field_degree(data_fields)
+  end
+
+  defp get_field_degree(%{data_fields: data_fields}) when is_list(data_fields) do
+    get_field_degree(data_fields)
+  end
+
+  defp get_field_degree(data_fields) when is_list(data_fields) do
     data_fields
     |> Repo.preload(data_structure: :system)
     |> Enum.map(&add_degree/1)
@@ -945,7 +1047,15 @@ defmodule TdDd.DataStructures do
   defp do_add_degree(nil, dsv), do: dsv
   defp do_add_degree(degree, dsv), do: Map.put(dsv, :degree, degree)
 
-  defp get_field_links(%{data_fields: data_fields}) do
+  defp get_field_links(%{data_fields: {data_fields, _meta}}) do
+    get_field_links(data_fields)
+  end
+
+  defp get_field_links(%{data_fields: data_fields}) when is_list(data_fields) do
+    get_field_links(data_fields)
+  end
+
+  defp get_field_links(data_fields) when is_list(data_fields) do
     Enum.map(data_fields, &Map.put(&1, :links, get_structure_links(&1)))
   end
 
@@ -1041,6 +1151,16 @@ defmodule TdDd.DataStructures do
 
   defp relation_type_condition(query, _not_false, default, _custom),
     do: where(query, ^default)
+
+  defp with_limit(query, limit) when is_integer(limit) do
+    limit(query, ^limit)
+  end
+
+  defp with_limit(query, %{first: limit}) when is_integer(limit) do
+    limit(query, ^limit)
+  end
+
+  defp with_limit(query, _limit), do: query
 
   @doc """
   Returns a Map whose keys are external ids and whose values are data
@@ -1278,6 +1398,7 @@ defmodule TdDd.DataStructures do
       {:add_children, parent}, q -> add_children(q, parent)
       {:add_parents, child}, q -> add_parents(q, child)
       {:preload, preload}, q -> preload(q, ^preload)
+      {:limit, limit}, q -> limit(q, ^limit)
     end)
   end
 

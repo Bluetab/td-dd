@@ -88,8 +88,19 @@ defmodule TdDdWeb.Schema do
         TdDq.Executions.KV,
         Dataloader.KV.new(&TdDq.Executions.kv_datasource/2, timeout: timeout)
       )
+      |> Dataloader.add_source(
+        :siblings,
+        Dataloader.KV.new(&TdDd.DataStructures.siblings/2, timeout: timeout)
+      )
+      |> Dataloader.add_source(
+        :data_fields,
+        Dataloader.KV.new(&TdDd.DataStructures.data_fields/2, timeout: timeout)
+      )
       |> Dataloader.add_source(TdCx.Sources, TdCx.Sources.datasource())
-      |> Dataloader.add_source(:domain_actions, Dataloader.KV.new(fetch_permission_domains(ctx)))
+      |> Dataloader.add_source(
+        :domain_actions,
+        Dataloader.KV.new(fetch_permission_domains(ctx), timeout: timeout)
+      )
 
     Map.put(ctx, :loader, loader)
   end

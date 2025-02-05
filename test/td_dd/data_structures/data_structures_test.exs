@@ -25,7 +25,30 @@ defmodule TdDd.DataStructuresTest do
 
   setup do
     domain = CacheHelpers.insert_domain()
-    %{id: template_id, name: template_name} = template = CacheHelpers.insert_template()
+
+    %{id: template_id, name: template_name} =
+      template =
+      CacheHelpers.insert_template(
+        scope: "dd",
+        content: [
+          build(:template_group,
+            fields: [
+              build(:template_field, name: "string"),
+              build(:template_field,
+                name: "list",
+                type: "list",
+                values: %{"fixed" => ["one", "two", "three"]}
+              ),
+              build(:template_field,
+                name: "url",
+                type: "url",
+                cardinality: "*",
+                widget: "pair_list"
+              )
+            ]
+          )
+        ]
+      )
 
     CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
 
@@ -468,10 +491,10 @@ defmodule TdDd.DataStructuresTest do
       assert %{search_content: search_content} = data_structure
       assert %{alias: "baz"} = data_structure
 
-      assert search_content == %{
+      assert %{
                "string" => %{"value" => "initial", "origin" => "user"},
                "list" => %{"value" => "one", "origin" => "user"}
-             }
+             } = search_content
     end
 
     test "returns values suitable for bulk-indexing encoding", %{
@@ -502,7 +525,7 @@ defmodule TdDd.DataStructuresTest do
                original_name: ^original_name
              } = document
 
-      assert note == %{"list" => "one", "string" => "initial"}
+      assert note == %{"list" => "one", "string" => "initial", "url" => nil}
 
       assert ["yayo", "papa"] = path
     end
@@ -634,7 +657,6 @@ defmodule TdDd.DataStructuresTest do
 
   describe "data_structures" do
     @update_attrs %{
-      # description: "some updated description",
       df_content: %{"string" => "changed", "list" => "two"}
     }
     @invalid_attrs %{
@@ -1752,6 +1774,47 @@ defmodule TdDd.DataStructuresTest do
     test "generates a valid query" do
       %{parent: parent} = create_relation()
       assert [_] = DataStructures.get_field_structures(parent, with_confidential: false)
+    end
+
+    test "gets only structures with profile" do
+      parent =
+        %{id: dsv_father_id} =
+        insert(:data_structure_version, version: 1, class: "table", name: "table")
+
+      %{id: dsv_child_1_id, data_structure: child_data_structure} =
+        insert(:data_structure_version, version: 1, class: "field", name: "field_1")
+
+      %{id: dsv_child_2_id} =
+        insert(:data_structure_version, version: 1, class: "field", name: "field_2")
+
+      ## Structure relations
+      insert(:data_structure_relation,
+        parent_id: dsv_father_id,
+        child_id: dsv_child_1_id,
+        relation_type_id: RelationTypes.default_id!()
+      )
+
+      insert(:data_structure_relation,
+        parent_id: dsv_father_id,
+        child_id: dsv_child_2_id,
+        relation_type_id: RelationTypes.default_id!()
+      )
+
+      ## Structure Profile
+      insert(:profile,
+        data_structure_id: child_data_structure.id,
+        min: "1",
+        max: "2",
+        null_count: 5,
+        most_frequent: ~s([["A", "76"]])
+      )
+
+      assert [data_field] =
+               DataStructures.get_field_structures(parent,
+                 search: %{data_fields_filter: %{has_profile: true}}
+               )
+
+      assert data_field.id == dsv_child_1_id
     end
   end
 

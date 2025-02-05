@@ -135,7 +135,13 @@ defmodule TdDd.Loader do
   def structure_ids(_repo, %{} = changes) do
     structure_ids =
       changes
-      |> Map.drop([:context, :graph, :insert_relations, :update_hierarchy, :maybe_inherit_domains])
+      |> Map.drop([
+        :context,
+        :graph,
+        :insert_relations,
+        :update_hierarchy,
+        :maybe_inherit_domains
+      ])
       |> Enum.flat_map(&structure_ids/1)
       |> Enum.uniq()
 

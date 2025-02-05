@@ -6,15 +6,18 @@ defmodule TdDdWeb.Resolvers.Structures do
   import Absinthe.Resolution.Helpers, only: [on_load: 2]
 
   alias TdCache.Permissions
+  alias TdCore.Search
   alias TdCore.Utils.CollectionUtils
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructureLinks
+  alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.DataStructureVersions
   alias TdDd.DataStructures.Relations
   alias TdDd.DataStructures.Tags
   alias TdDfLib.Parser
 
   @permissions_attrs [:with_protected_metadata, :with_confidential, :profile]
+  @search_args [:after, :before, :first, :last, :order_by, :search]
 
   def data_structures(_parent, args, resolution) do
     case claims(resolution) do
@@ -81,12 +84,8 @@ defmodule TdDdWeb.Resolvers.Structures do
         resolution
       ) do
     lang = lang(resolution)
-
-    query_fields =
-      resolution
-      |> Map.get(:definition)
-      |> Map.get(:selections)
-      |> Enum.map(fn %{schema_node: %{identifier: identifier}} -> identifier end)
+    query_fields = get_query_fields(resolution) -- [:siblings]
+    opts = enrich_data_fields_opts([lang: lang], query_fields)
 
     with {:claims, claims} when not is_nil(claims) <- {:claims, claims(resolution)},
          {:enriched_dsv, [_ | _] = enriched_dsv} <-
@@ -96,7 +95,7 @@ defmodule TdDdWeb.Resolvers.Structures do
               data_structure_id,
               version,
               query_fields,
-              lang: lang
+              opts
             )},
          dsv <- enriched_dsv[:data_structure_version],
          actions <- enriched_dsv[:actions],
@@ -104,6 +103,7 @@ defmodule TdDdWeb.Resolvers.Structures do
       {:ok,
        dsv
        |> maybe_check_siblings_permission(claims)
+       |> enrich_data_fields(claims)
        |> Map.put(:actions, actions)
        |> Map.put(:user_permissions, user_permissions)}
     else
@@ -119,6 +119,28 @@ defmodule TdDdWeb.Resolvers.Structures do
   end
 
   defp maybe_check_siblings_permission(dsv, _claims), do: dsv
+
+  defp enrich_data_fields(%{data_fields: data_fields} = dsv, claims) when is_list(data_fields) do
+    Map.put(
+      dsv,
+      :data_fields,
+      Enum.filter(data_fields, &check_structure_related_permision(&1, claims))
+    )
+  end
+
+  defp enrich_data_fields(dsv, _claims), do: dsv
+
+  defp enrich_data_fields_opts(opts, query_fields) do
+    # this is only needed to check some pemission flags
+    # in TdDd.DataStructures.DataStructureVersions.with_permissions/2.
+    # data_fields will be fetched in their corresponding
+    # resolver: resolve(&Resolvers.Structures.data_fields/3)
+    if Enum.member?(query_fields, :data_fields) do
+      Keyword.put(opts, :data_fields, search: %{first: 1})
+    else
+      opts
+    end
+  end
 
   def domain_id(%{domain_ids: domain_ids}, _args, _resolution) do
     domain_id =
@@ -333,6 +355,56 @@ defmodule TdDdWeb.Resolvers.Structures do
     end)
   end
 
+  def siblings(
+        %{data_structure: data_structure} = data_structure_version,
+        args,
+        %{context: %{loader: loader, claims: claims}} = _resolution
+      ) do
+    deleted = not is_nil(Map.get(data_structure_version, :deleted_at))
+
+    opts =
+      data_structure
+      |> get_permissions_opts(claims)
+      |> Keyword.put(:limit, Map.get(args, :limit))
+      |> Keyword.put(:deleted, deleted)
+      |> Keyword.put(:add_siblings, data_structure_version)
+
+    loader
+    |> Dataloader.load(:siblings, {:siblings, opts}, data_structure_version.id)
+    |> on_load(fn loader ->
+      siblings =
+        loader
+        |> Dataloader.get(:siblings, {:siblings, opts}, data_structure_version.id)
+        |> Enum.filter(&check_structure_related_permision(&1, claims))
+
+      {:ok, siblings}
+    end)
+  end
+
+  def data_fields(%DataStructureVersion{} = parent, args, resolution) do
+    load_data_fields(parent, resolution, args)
+  end
+
+  def data_fields(
+        _,
+        %{data_structure_id: data_structure_id, version: "latest"} = args,
+        resolution
+      ) do
+    data_structure_id
+    |> DataStructures.get_latest_version()
+    |> load_data_fields(resolution, args)
+  end
+
+  def data_fields(
+        _,
+        %{data_structure_id: data_structure_id, version: version} = args,
+        resolution
+      ) do
+    data_structure_id
+    |> DataStructures.get_data_structure_version!(version)
+    |> load_data_fields(resolution, args)
+  end
+
   def profile(%{data_structure: ds} = dsv, _args, %{context: %{claims: claims}} = _resolution) do
     opts = get_permissions_opts(ds, claims)
 
@@ -379,5 +451,106 @@ defmodule TdDdWeb.Resolvers.Structures do
     |> Enum.map(fn permission ->
       {permission, true}
     end)
+  end
+
+  defp load_data_fields(
+         %DataStructureVersion{} = parent,
+         %{context: %{loader: loader}} = resolution,
+         args
+       ) do
+    opts = data_field_options(parent, resolution, args)
+
+    loader
+    |> Dataloader.load(:data_fields, {:data_fields, opts}, parent.id)
+    |> on_load(fn loader ->
+      loader
+      |> Dataloader.get(:data_fields, {:data_fields, opts}, parent.id)
+      |> data_fields_response(resolution)
+    end)
+  end
+
+  defp load_data_fields(nil, resolution, _args) do
+    data_fields_response({[], %{}}, resolution)
+  end
+
+  defp data_field_options(
+         %{data_structure: data_structure} = data_structure_version,
+         %{context: %{claims: claims}} = resolution,
+         args
+       ) do
+    query_fields = get_query_fields(resolution)
+    deleted = not is_nil(Map.get(data_structure_version, :deleted_at))
+    search_opts = search_opts(args)
+
+    data_structure
+    |> get_permissions_opts(claims)
+    |> Keyword.put(:deleted, deleted)
+    |> Keyword.put(:add_fields, data_structure_version)
+    |> Keyword.put(
+      :preload,
+      if(Enum.member?(query_fields, :profile),
+        do: [:published_note, data_structure: :profile],
+        else: [:published_note]
+      )
+    )
+    |> Keyword.put(:search, search_opts)
+    |> Keyword.put(:domain_ids, domain_ids(["view_data_structure"], claims))
+  end
+
+  defp data_fields_response({page, meta}, %{definition: %{schema_node: schema}}) do
+    if schema.type == :paginated_data_fields do
+      page_info = page_info(meta)
+      {:ok, %{page: page, page_info: page_info}}
+    else
+      {:ok, page}
+    end
+  end
+
+  defp get_query_fields(resolution) do
+    resolution
+    |> Map.get(:definition)
+    |> Map.get(:selections)
+    |> Enum.map(fn %{schema_node: %{identifier: identifier}} -> identifier end)
+  end
+
+  defp domain_ids(permissions, claims) do
+    Search.Permissions.get_search_permissions(permissions, claims)
+  end
+
+  defp search_opts(args) do
+    args
+    |> Map.take(@search_args)
+    |> Map.put(:data_fields_filter, Map.get(args, :filters))
+    |> then(fn
+      %{before: before} = args when is_binary(before) ->
+        args
+        |> Map.drop([:first, :after])
+        |> Map.put_new(:last, 1_000)
+
+      %{after: after_cursor} = args when is_binary(after_cursor) ->
+        Map.drop(args, [:last, :before])
+
+      %{last: last} = args when is_number(last) ->
+        Map.drop(args, [:first, :after])
+
+      other ->
+        other
+    end)
+  end
+
+  defp page_info(meta) when map_size(meta) > 0 do
+    meta
+    |> Map.take([:start_cursor, :end_cursor])
+    |> Map.put(:has_next_page, meta.has_next_page?)
+    |> Map.put(:has_previous_page, meta.has_previous_page?)
+  end
+
+  defp page_info(_meta) do
+    %{
+      has_next_page: false,
+      has_previous_page: false,
+      start_cursor: nil,
+      end_cursor: nil
+    }
   end
 end

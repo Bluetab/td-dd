@@ -33,5 +33,6 @@ defmodule TdDd.Profiles.Policy do
 
   defp profilable?(%{class: "field"}), do: true
   defp profilable?(%{data_fields: [_ | _]}), do: true
+  defp profilable?(%{data_fields: {_version = [_ | _], _meta}}), do: true
   defp profilable?(_), do: false
 end

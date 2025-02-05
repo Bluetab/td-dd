@@ -63,6 +63,9 @@ defmodule TdDdWeb.Policy do
   def authorize(:query, %{} = claims, :data_structure_version),
     do: Bodyguard.permit(TdDd.DataStructures, :query, claims)
 
+  def authorize(:query, %{} = claims, :data_fields),
+    do: Bodyguard.permit(TdDd.DataStructures, :query, claims)
+
   def authorize(:query, %{} = claims, :functions),
     do: Bodyguard.permit(TdDq.Functions, :query, claims)
 

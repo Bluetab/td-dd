@@ -213,7 +213,9 @@ defmodule TdDq.ExecutionsTest do
                Executions.list_executions(%{source: source_external_id_3})
 
       assert [%{id: ^execution_id_2}] =
-               Executions.list_executions(%{sources: [source_external_id_2, source_external_id_3]})
+               Executions.list_executions(%{
+                 sources: [source_external_id_2, source_external_id_3]
+               })
 
       assert [
                %{id: ^execution_id},

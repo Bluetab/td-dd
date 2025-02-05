@@ -24,7 +24,9 @@ defmodule TdDd.GrantRequests.Search.Query do
 
   defp build_filters(%{"approve_grant_request" => %{"domain" => :all}}), do: %{match_all: %{}}
 
-  defp build_filters(%{"approve_grant_request" => %{"domain" => domain_ids, "structure" => :none}}) do
+  defp build_filters(%{
+         "approve_grant_request" => %{"domain" => domain_ids, "structure" => :none}
+       }) do
     %{bool: %{should: [domain_filter(domain_ids)]}}
   end
 

@@ -13,6 +13,7 @@ defmodule TdDd.Executions do
   alias TdDd.Executions.ProfileGroup
   alias TdDd.Repo
 
+  @bulk_insertion_chunk 100
   @doc """
   Fetches the `Execution` with the given id.
   """
@@ -113,7 +114,39 @@ defmodule TdDd.Executions do
   @doc """
   Create an execution group.
   """
-  def create_profile_group(%{} = params) do
+  def create_profile_group(_params, _opts \\ [])
+
+  def create_profile_group(%{parent_structure_id: structure_id} = params, opts) do
+    Multi.new()
+    |> Multi.run(:structure, fn _repo, _params ->
+      case DataStructures.get_data_structure(structure_id) do
+        %DataStructures.DataStructure{} = structure -> {:ok, structure}
+        nil -> {:error, :structure_not_found}
+      end
+    end)
+    |> Multi.run(:data_structure_version, fn _repo, %{structure: structure} ->
+      case DataStructures.get_latest_version(structure) do
+        %DataStructures.DataStructureVersion{} = version -> {:ok, version}
+        nil -> {:error, :version_not_found}
+      end
+    end)
+    |> Multi.insert(
+      :inserted_profile_group,
+      params
+      |> Map.delete(:parent_structure_id)
+      |> ProfileGroup.changeset()
+    )
+    |> Multi.merge(fn %{data_structure_version: version, inserted_profile_group: profile_group} ->
+      profile_executions_insertion(version, profile_group, opts)
+    end)
+    |> Multi.run(:profile_group, fn _repo, %{inserted_profile_group: profile_group} ->
+      {:ok, Repo.preload(profile_group, executions: from(e in ProfileExecution, limit: 1_000))}
+    end)
+    |> Multi.run(:audit, Audit, :execution_group_created, [])
+    |> Repo.transaction()
+  end
+
+  def create_profile_group(%{} = params, _opts) do
     params
     |> ProfileGroup.changeset()
     |> do_create_profile_group()
@@ -176,5 +209,29 @@ defmodule TdDd.Executions do
       false -> target
       true -> Map.put(target, key, fun.(target))
     end
+  end
+
+  defp profile_executions_insertion(data_structure_version, profile_group, opts) do
+    date = DateTime.utc_now()
+    timestamps = %{inserted_at: date, updated_at: date}
+
+    data_structure_version
+    |> DataStructures.stream_field_structures(opts)
+    |> Stream.chunk_every(opts[:chunk_every] || @bulk_insertion_chunk)
+    |> Enum.reduce(Multi.new(), fn [head | _tail] = chunk, multi ->
+      Multi.insert_all(
+        multi,
+        {:chunk, head.id},
+        ProfileExecution,
+        Enum.map(chunk, &execution_params(&1, profile_group, timestamps))
+      )
+    end)
+  end
+
+  defp execution_params(data_field, profile_group, timestamps) do
+    data_field
+    |> Map.take([:data_structure_id])
+    |> Map.put(:profile_group_id, profile_group.id)
+    |> Map.merge(timestamps)
   end
 end
