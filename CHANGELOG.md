@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-6871] In "Implementations search" response, changed "concept" field structure, to send id and name.
+
 ## [7.1.0] 2025-02-05
 
 ### Added
