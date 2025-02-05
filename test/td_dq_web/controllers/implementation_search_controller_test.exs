@@ -89,7 +89,7 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
       assert %{
                "data" => [
                  %{
-                   "concepts" => [^concept_name_es]
+                   "concepts" => [%{"id" => ^concept_id, "name" => ^concept_name_es}]
                  }
                ]
              } =

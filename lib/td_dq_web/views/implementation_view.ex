@@ -163,7 +163,7 @@ defmodule TdDqWeb.ImplementationView do
       concepts
       |> Enum.map(fn concept_id ->
         case ConceptCache.get(concept_id, lang: lang) do
-          {:ok, %{name: name}} -> name
+          {:ok, %{name: name}} -> %{id: concept_id, name: name}
           _ -> nil
         end
       end)
