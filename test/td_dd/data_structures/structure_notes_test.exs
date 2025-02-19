@@ -140,6 +140,7 @@ defmodule TdDd.DataStructures.StructureNotesTest do
 
     test "create_structure_note/3 with valid data creates a structure_note" do
       data_structure = insert(:data_structure)
+      IndexWorkerMock.clear()
 
       %{id: grant_request_id} =
         insert(:grant_request,
@@ -164,17 +165,46 @@ defmodule TdDd.DataStructures.StructureNotesTest do
                end)
     end
 
+    test "create_structure_note/3 with valid data creates a structure_note and reindex structure" do
+      %{id: data_structure_id} = data_structure = insert(:data_structure)
+      IndexWorkerMock.clear()
+
+      %{id: grant_request_id} =
+        insert(:grant_request,
+          data_structure: data_structure
+        )
+
+      params = %{"df_content" => %{}, "status" => "draft", "version" => 42}
+
+      assert {:ok, %StructureNote{} = structure_note} =
+               StructureNotes.create_structure_note(data_structure, params, @user_id)
+
+      assert structure_note.df_content == %{}
+      assert structure_note.status == :draft
+      assert structure_note.version == 42
+
+      assert [
+               {:reindex, :structures, ^data_structure_id},
+               {:reindex, :grant_requests, [^grant_request_id]}
+             ] = IndexWorkerMock.calls()
+    end
+
     test "create_structure_note/3 with invalid data returns error changeset" do
       data_structure = insert(:data_structure)
+      IndexWorkerMock.clear()
 
       params = %{"df_content" => nil, "status" => nil, "version" => nil}
 
       assert {:error, %Changeset{}} =
                StructureNotes.create_structure_note(data_structure, params, @user_id)
+
+      assert [] = IndexWorkerMock.calls()
+      IndexWorkerMock.clear()
     end
 
     test "update_structure_note/3 with valid data updates the structure_note" do
       structure_note = insert(:structure_note)
+      IndexWorkerMock.clear()
 
       params = %{"df_content" => %{}, "status" => "published"}
 
@@ -183,10 +213,48 @@ defmodule TdDd.DataStructures.StructureNotesTest do
 
       assert structure_note.df_content == %{}
       assert structure_note.status == :published
+      assert [{:reindex, :structures, _ids}] = IndexWorkerMock.calls()
+      IndexWorkerMock.clear()
+    end
+
+    test "update_structure_note/3 with draft state and reindex structure", %{
+      data_structure_type: type
+    } do
+      %{data_structure_id: data_structure_id, data_structure: data_structure} =
+        insert(:data_structure_version, type: type.name)
+
+      IndexWorkerMock.clear()
+
+      params = %{"df_content" => %{}, "status" => "draft", "version" => 42}
+
+      assert {:ok, %StructureNote{} = structure_note} =
+               StructureNotes.create_structure_note(data_structure, params, @user_id)
+
+      assert structure_note.df_content == %{}
+      assert structure_note.status == :draft
+      assert structure_note.version == 42
+
+      assert [{:reindex, :structures, ^data_structure_id}] = IndexWorkerMock.calls()
+
+      IndexWorkerMock.clear()
+      assert [] = IndexWorkerMock.calls()
+
+      params = %{
+        "df_content" => %{"bar" => %{"value" => "foo", "origin" => "user"}},
+        "status" => "published"
+      }
+
+      assert {:ok, %{structure_note_update: structure_note}} =
+               StructureNotes.update_structure_note(structure_note, params, @user_id)
+
+      assert %{df_content: %{"bar" => %{"value" => "foo", "origin" => "user"}}} = structure_note
+      assert [{:reindex, :structures, ^data_structure_id}] = IndexWorkerMock.calls()
+      IndexWorkerMock.clear()
     end
 
     test "update_structure_note/3 with invalid data returns error changeset" do
       structure_note = insert(:structure_note)
+      IndexWorkerMock.clear()
 
       params = %{"df_content" => nil, "status" => nil, "version" => nil}
 
@@ -194,6 +262,8 @@ defmodule TdDd.DataStructures.StructureNotesTest do
                StructureNotes.update_structure_note(structure_note, params, @user_id)
 
       assert structure_note <~> StructureNotes.get_structure_note!(structure_note.id)
+      assert [] = IndexWorkerMock.calls()
+      IndexWorkerMock.clear()
     end
 
     test "update_structure_note/3 updates structure alias when published", %{
@@ -201,6 +271,7 @@ defmodule TdDd.DataStructures.StructureNotesTest do
     } do
       %{data_structure_id: data_structure_id} = insert(:data_structure_version, type: type.name)
       structure_note = insert(:structure_note, data_structure_id: data_structure_id)
+      IndexWorkerMock.clear()
 
       params = %{
         "df_content" => %{"alias" => %{"value" => "foo", "origin" => "user"}},
@@ -211,6 +282,8 @@ defmodule TdDd.DataStructures.StructureNotesTest do
                StructureNotes.update_structure_note(structure_note, params, @user_id)
 
       assert %{alias: "foo"} = structure
+      assert [{:reindex, :structures, ^data_structure_id}] = IndexWorkerMock.calls()
+      IndexWorkerMock.clear()
     end
 
     test "update_structure_note/3 publishes Audit structure_note_updated event", %{
@@ -257,6 +330,8 @@ defmodule TdDd.DataStructures.StructureNotesTest do
     test "update_structure_note/3 publishes Audit structure_note_published event", %{
       data_structure_type: type
     } do
+      IndexWorkerMock.clear()
+
       [
         _,
         %{data_structure_id: parent_id},
@@ -298,6 +373,9 @@ defmodule TdDd.DataStructures.StructureNotesTest do
                "data_structure_id" => ^data_structure_id,
                "field_parent_id" => ^parent_id
              } = Jason.decode!(payload)
+
+      assert [{:reindex, :structures, ^data_structure_id}] = IndexWorkerMock.calls()
+      IndexWorkerMock.clear()
     end
 
     test "delete_structure_note/1 deletes the structure_note" do

@@ -50,7 +50,7 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
         user_id
       ) do
     if can_create_new_draft(latest_note) != :ok,
-      do: StructureNotes.delete_structure_note(latest_note, user_id)
+      do: StructureNotes.delete_structure_note(latest_note, user_id, is_bulk_update: true)
 
     structure_note_params =
       params
@@ -151,9 +151,14 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
 
   def delete(%StructureNote{status: status} = structure_note, user_id) do
     case status do
-      :rejected -> StructureNotes.delete_structure_note(structure_note, user_id)
-      :draft -> StructureNotes.delete_structure_note(structure_note, user_id)
-      _ -> {:error, :undeletable_status}
+      :rejected ->
+        StructureNotes.delete_structure_note(structure_note, user_id)
+
+      :draft ->
+        StructureNotes.delete_structure_note(structure_note, user_id)
+
+      _ ->
+        {:error, :undeletable_status}
     end
   end
 

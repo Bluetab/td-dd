@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-7070] Reindexing of structures when
+  - A new note is created
+  - A note is deleted
+  - A note is bulk updated
+
 ## [7.1.1] 2025-02-05
 
 ### Changed
