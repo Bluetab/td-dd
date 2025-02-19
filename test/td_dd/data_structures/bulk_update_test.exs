@@ -660,7 +660,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         |> DataStructures.get_data_structure_by_external_id()
         |> Map.get(:id)
         |> StructureNotes.get_latest_structure_note()
-        |> StructureNotes.delete_structure_note(user_id)
+        |> StructureNotes.delete_structure_note(user_id, is_bulk_update: true)
       end)
 
       %{domain_ids: [domain_id]} = DataStructures.get_data_structure_by_external_id("ex_id1")
@@ -813,7 +813,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       |> DataStructures.get_data_structure_by_external_id()
       |> Map.get(:id)
       |> StructureNotes.get_latest_structure_note()
-      |> StructureNotes.delete_structure_note(user_id)
+      |> StructureNotes.delete_structure_note(user_id, is_bulk_update: true)
 
       upload = %{path: "test/fixtures/td5929/structures_in_native_lang.csv"}
 
@@ -855,7 +855,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       |> DataStructures.get_data_structure_by_external_id()
       |> Map.get(:id)
       |> StructureNotes.get_latest_structure_note()
-      |> StructureNotes.delete_structure_note(user_id)
+      |> StructureNotes.delete_structure_note(user_id, is_bulk_update: true)
 
       upload = %{path: "test/fixtures/td5929/structures_in_native_lang_with_invalid_values.csv"}
 
