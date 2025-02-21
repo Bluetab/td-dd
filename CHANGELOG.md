@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-7086] Add Execution Group dynamic_content and df_content on API response
+
 ### Fixed
 
 - [TD-7070] Reindexing of structures when

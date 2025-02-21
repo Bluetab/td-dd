@@ -1,6 +1,7 @@
 defmodule TdDqWeb.ExecutionView do
   use TdDqWeb, :view
 
+  alias TdDfLib.Content
   alias TdDqWeb.QualityEventView
   alias TdDqWeb.RuleResultView
   alias TdDqWeb.RuleView
@@ -36,7 +37,16 @@ defmodule TdDqWeb.ExecutionView do
 
   defp put_embedding({:implementation, %{} = implementation}, %{} = acc) do
     implementation =
-      Map.take(implementation, [:id, :implementation_key, :rule_id, :minimum, :goal, :result_type])
+      Map.take(implementation, [
+        :id,
+        :implementation_key,
+        :rule_id,
+        :minimum,
+        :goal,
+        :result_type,
+        :df_content
+      ])
+      |> Content.legacy_content_support(:df_content)
 
     Map.put(acc, :implementation, implementation)
   end
