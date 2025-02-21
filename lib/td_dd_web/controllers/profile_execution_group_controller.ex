@@ -72,12 +72,8 @@ defmodule TdDdWeb.ProfileExecutionGroupController do
     |> Map.put("created_by_id", user_id)
   end
 
-  defp creation_params(
-         %Claims{user_id: user_id},
-         %{"parent_structure_id" => parent_structure_id}
-       ) do
-    %{parent_structure_id: parent_structure_id, created_by_id: user_id}
-  end
+  defp creation_params(%Claims{user_id: user_id}, %{"parent_structure_id" => parent_structure_id}),
+    do: %{parent_structure_id: parent_structure_id, created_by_id: user_id}
 
   defp creation_params(_claims, %{} = params), do: params
 end
