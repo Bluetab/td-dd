@@ -360,10 +360,11 @@ defmodule TdDd.Grants.RequestsTest do
       {:ok, grants} =
         Requests.list_grant_requests(claims, %{action: "approve", status: "pending"})
 
-      assert [
-               %GrantRequest{id: ^gr_id_1, pending_roles: ["approver2"]},
-               %GrantRequest{id: ^gr_id_2, pending_roles: ["approver1", "approver2"]}
-             ] = grants
+      assert Enum.count(grants) == 2
+      assert g1 = Enum.find(grants, &(&1.id == gr_id_1))
+      assert g2 = Enum.find(grants, &(&1.id == gr_id_2))
+      assert g1.pending_roles == ["approver2"]
+      assert g2.pending_roles == ["approver1", "approver2"]
     end
   end
 

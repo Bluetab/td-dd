@@ -99,10 +99,10 @@ defmodule TdDdWeb.FallbackController do
     |> send_resp(:unprocessable_entity, Jason.encode!(error))
   end
 
-  def call(conn, {:forbidden, [{_, %{row_index: row_index}} | _]}) do
+  def call(conn, {:forbidden, [{_, %{row_meta: %{index: index}}} | _]}) do
     error = %{
       errors: %{
-        row: row_index,
+        row: index,
         note: [:insufficient_permissions]
       }
     }

@@ -19,6 +19,8 @@ defmodule TdDd.DataCase do
 
   using do
     quote do
+      use Oban.Testing, repo: TdDd.Repo, prefix: "private"
+
       alias TdDd.Repo
 
       import Assertions

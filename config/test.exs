@@ -1,5 +1,7 @@
 import Config
 
+config :td_dd, Oban, testing: :manual
+
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
 config :td_dd, TdDdWeb.Endpoint, server: false
@@ -43,3 +45,6 @@ config :td_cluster, groups: [:dd]
 config :td_cluster, TdCluster.ClusterHandler, MockClusterHandler
 
 config :td_cache, :event_stream, streams: []
+
+# File upload base dir for testing
+config :td_dd, :file_upload_dir, Path.join(["test", "upload"])

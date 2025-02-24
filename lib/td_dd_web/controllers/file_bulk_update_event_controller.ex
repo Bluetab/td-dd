@@ -1,8 +1,8 @@
-defmodule TdDdWeb.CsvBulkUpdateEventController do
+defmodule TdDdWeb.FileBulkUpdateEventController do
   use TdDdWeb, :controller
 
   alias TdDd.DataStructures.BulkUpdate
-  alias TdDd.DataStructures.CsvBulkUpdateEvents
+  alias TdDd.DataStructures.FileBulkUpdateEvents
 
   action_fallback(TdDdWeb.FallbackController)
 
@@ -10,7 +10,7 @@ defmodule TdDdWeb.CsvBulkUpdateEventController do
     with %{user_id: user_id} = claims <- conn.assigns[:current_resource],
          :ok <- Bodyguard.permit(BulkUpdate, :bulk_upload, claims) do
       render(conn, "index.json", %{
-        csv_bulk_update_events: CsvBulkUpdateEvents.get_by_user_id(user_id)
+        file_bulk_update_events: FileBulkUpdateEvents.get_by_user_id(user_id)
       })
     end
   end

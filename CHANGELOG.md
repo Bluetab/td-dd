@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [TD-7034] Upload structures through a xlsx endpoint
+
 ### Added
 
 - [TD-7086] Add Execution Group dynamic_content and df_content on API response
