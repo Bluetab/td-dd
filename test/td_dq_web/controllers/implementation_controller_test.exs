@@ -3724,7 +3724,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
                    }
                  }
 
-          assert sort == ["_score", "implementation_key.raw"]
+          assert sort == ["_score", "implementation_key.sort"]
 
           SearchHelpers.scroll_response([
             previous_implementation

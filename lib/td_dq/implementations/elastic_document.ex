@@ -445,7 +445,7 @@ defmodule TdDq.Implementations.ElasticDocument do
         concepts: %{type: "long", null_value: -1},
         updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
         inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-        implementation_key: %{type: "text", fields: @raw},
+        implementation_key: %{type: "text", fields: @raw_sort},
         ngram_implementation_key: %{type: "search_as_you_type"},
         implementation_type: %{type: "text", fields: @raw_sort},
         execution_result_info: %{
