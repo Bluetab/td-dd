@@ -579,9 +579,9 @@ defmodule TdDd.Factory do
     |> merge_attributes(attrs)
   end
 
-  def csv_bulk_update_event_factory do
-    %TdDd.DataStructures.CsvBulkUpdateEvent{
-      csv_hash: "47D90FDF1AD967BD7DBBDAE28664278E",
+  def file_bulk_update_event_factory do
+    %TdDd.DataStructures.FileBulkUpdateEvent{
+      hash: "47D90FDF1AD967BD7DBBDAE28664278E",
       inserted_at: "2022-04-24T11:08:18.215905Z",
       message: nil,
       response: %{errors: [], ids: [1, 2]},

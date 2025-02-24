@@ -6,11 +6,22 @@
 
 import Config
 
+config :td_dd, Oban,
+  prefix: "private",
+  plugins: [{Oban.Plugins.Pruner, max_age: 2 * 24 * 60 * 60}],
+  engine: Oban.Engines.Basic,
+  notifier: Oban.Notifiers.Postgres,
+  queues: [xlsx_upload_queue: 10],
+  repo: TdDd.Repo
+
 config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
 config :td_dd, :time_zone, System.get_env("TZ", "Etc/UTC")
 
 # Language
 config :td_dd, :lang, "en"
+
+# File upload base dir
+config :td_dd, :file_upload_dir, Path.join(["priv", "upload"])
 
 # Environment
 config :td_dd, :env, Mix.env()

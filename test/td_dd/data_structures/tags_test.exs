@@ -44,8 +44,13 @@ defmodule TdDd.DataStructures.TagsTest do
     test "returns all data structure tags with structure count" do
       %{tag: %{id: id, name: name}} = insert(:structure_tag)
 
-      assert [%{id: ^id, name: ^name, structure_count: 1} | _] =
-               Tags.list_tags(structure_count: true)
+      assert tags = [_ | _] = Tags.list_tags(structure_count: true)
+
+      assert tags |> Enum.find(&(&1.id == id)) |> Map.take([:id, :name, :structure_count]) == %{
+               id: id,
+               name: name,
+               structure_count: 1
+             }
     end
 
     test("with no params returns all items", %{

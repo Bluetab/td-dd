@@ -12,7 +12,8 @@ defmodule TdDd.Application do
         TdDd.Repo,
         TdCxWeb.Endpoint,
         TdDdWeb.Endpoint,
-        TdDqWeb.Endpoint
+        TdDqWeb.Endpoint,
+        {Oban, Application.fetch_env!(:td_dd, Oban)}
       ] ++ workers(env)
 
     # See https://hexdocs.pm/elixir/Supervisor.html

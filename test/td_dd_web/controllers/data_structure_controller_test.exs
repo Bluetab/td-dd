@@ -391,7 +391,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
              } = actions
 
       refute Map.has_key?(actions, "bulkUpdate")
-      assert href == "/api/data_structures/bulk_update_template_content"
+      assert href == "/api/data_structures/xlsx/upload"
     end
 
     @tag authentication: [
@@ -412,7 +412,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
              } = actions
 
       refute Map.has_key?(actions, "bulkUpdate")
-      assert href == "/api/data_structures/bulk_update_template_content"
+      assert href == "/api/data_structures/xlsx/upload"
     end
 
     @tag authentication: [role: "user", permissions: ["view_data_structure"]]
@@ -1469,221 +1469,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "gets csv content using scroll to search", %{conn: conn} do
-      dsv = insert(:data_structure_version)
-
-      ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", _, opts ->
-        assert opts == [params: %{"scroll" => "1m"}]
-        SearchHelpers.scroll_response([dsv])
-      end)
-      |> expect(:request, fn _, :post, "/_search/scroll", body, [] ->
-        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
-        SearchHelpers.scroll_response([])
-      end)
-
-      assert %{resp_body: resp_body} = post(conn, data_structure_path(conn, :csv, %{}))
-      assert [_header, _row, ""] = String.split(resp_body, "\r\n")
-    end
-
-    @tag authentication: [
-           role: "user",
-           permissions: [:manage_structures_domain, :view_data_structure]
-         ]
-    test "gets csv content using scroll to search, filter by taxonomy", %{
-      conn: conn,
-      domain: %{id: domain_id}
-    } do
-      %{id: child_domain_id} = CacheHelpers.insert_domain(parent_id: domain_id)
-
-      %{name: name} =
-        dsv =
-        insert(:data_structure_version,
-          data_structure: build(:data_structure, domain_ids: [child_domain_id])
-        )
-
-      ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, opts ->
-        assert opts == [params: %{"scroll" => "1m"}]
-
-        assert %{
-                 bool: %{
-                   must: [
-                     # The query taxonomy filter gets converted to the field "domain_ids"
-                     %{terms: %{"domain_ids" => [_domain_id, _child_domain_id]}},
-                     %{term: %{"confidential" => false}}
-                   ],
-                   must_not: %{exists: %{field: "deleted_at"}}
-                 }
-               } = query
-
-        SearchHelpers.scroll_response([dsv])
-      end)
-      |> expect(:request, fn _, :post, "/_search/scroll", body, opts ->
-        assert opts == []
-        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
-        SearchHelpers.scroll_response([])
-      end)
-
-      params = %{"filters" => %{"taxonomy" => [domain_id]}}
-
-      assert [row] =
-               post(conn, data_structure_path(conn, :csv), params)
-               |> response(:ok)
-               |> then(&[&1])
-               |> CSV.decode!(headers: true, separator: ?;)
-               |> Enum.to_list()
-
-      assert %{"name" => ^name} = row
-    end
-
-    @tag authentication: [
-           role: "user",
-           permissions: [:manage_structures_domain, :view_data_structure]
-         ]
-    test "gets csv content using scroll to search, filter by taxonomy, with tech_name, alias_name and structure_link",
-         %{
-           conn: conn,
-           domain: %{id: domain_id}
-         } do
-      %{id: child_domain_id} = CacheHelpers.insert_domain(parent_id: domain_id)
-
-      %{name: name} =
-        dsv =
-        insert(:data_structure_version,
-          data_structure: build(:data_structure, domain_ids: [child_domain_id])
-        )
-
-      ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, opts ->
-        assert opts == [params: %{"scroll" => "1m"}]
-
-        assert %{
-                 bool: %{
-                   must: [
-                     # The query taxonomy filter gets converted to the field "domain_ids"
-                     %{terms: %{"domain_ids" => [_domain_id, _child_domain_id]}},
-                     %{term: %{"confidential" => false}}
-                   ],
-                   must_not: %{exists: %{field: "deleted_at"}}
-                 }
-               } = query
-
-        SearchHelpers.scroll_response([dsv])
-      end)
-      |> expect(:request, fn _, :post, "/_search/scroll", body, opts ->
-        assert opts == []
-        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
-        SearchHelpers.scroll_response([])
-      end)
-
-      params = %{
-        "filters" => %{"taxonomy" => [domain_id]},
-        :structure_url_schema => "https://truedat.td.dd/structure/:id"
-      }
-
-      assert [row] =
-               post(conn, data_structure_path(conn, :csv), params)
-               |> response(:ok)
-               |> then(&[&1])
-               |> CSV.decode!(headers: true, separator: ?;)
-               |> Enum.to_list()
-
-      assert %{"tech_name" => ^name} = row
-    end
-
-    @tag authentication: [role: "admin"]
-    test "gets editable csv content using scroll to search", %{
-      conn: conn,
-      data_structure: data_structure,
-      data_structure_version: dsv
-    } do
-      insert(:structure_note,
-        data_structure: data_structure,
-        df_content: %{
-          "string" => %{"value" => "foo", "origin" => "user"},
-          "list" => %{"value" => "bar", "origin" => "user"}
-        },
-        status: :published
-      )
-
-      ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", _, opts ->
-        assert opts == [params: %{"scroll" => "1m"}]
-        SearchHelpers.scroll_response([dsv])
-      end)
-      |> expect(:request, fn _, :post, "/_search/scroll", body, [] ->
-        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
-        SearchHelpers.scroll_response([])
-      end)
-
-      assert %{resp_body: body} = post(conn, data_structure_path(conn, :editable_csv, %{}))
-
-      %{external_id: external_id} = data_structure
-      %{name: name, type: type, path: path} = dsv
-
-      assert body == """
-             external_id;name;type;path;string;list;url\r
-             #{external_id};#{name};#{type};#{Enum.join(path, "")};foo;bar;\r
-             """
-    end
-
-    @tag authentication: [role: "admin"]
-    test "gets editable csv content using scroll to search with tech_name, alias_name and structure_link",
-         %{
-           conn: conn,
-           data_structure: data_structure,
-           data_structure_version: dsv
-         } do
-      insert(:structure_note,
-        data_structure: data_structure,
-        df_content: %{
-          "string" => %{"value" => "foo", "origin" => "user"},
-          "list" => %{"value" => "bar", "origin" => "user"}
-        },
-        status: :published
-      )
-
-      ElasticsearchMock
-      |> expect(:request, fn _, :post, "/structures/_search", _, opts ->
-        assert opts == [params: %{"scroll" => "1m"}]
-        SearchHelpers.scroll_response([dsv])
-      end)
-      |> expect(:request, fn _, :post, "/_search/scroll", body, [] ->
-        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
-        SearchHelpers.scroll_response([])
-      end)
-
-      assert %{resp_body: body} =
-               post(
-                 conn,
-                 data_structure_path(conn, :editable_csv, %{
-                   :structure_url_schema => "https://truedat.td.dd/structure/:id"
-                 })
-               )
-
-      %{alias: alias_name, external_id: external_id} = data_structure
-
-      %{
-        data_structure_id: data_structure_id,
-        name: dsv_name,
-        type: type,
-        path: path
-      } = dsv
-
-      # original_name as
-      # TdDd.DataStructures.DataStructureVersion ->
-      #  Elasticsearch.Document maybe_put_alias does
-      original_name = dsv_name
-      structure_url = "https://truedat.td.dd/structure/" <> to_string(data_structure_id)
-
-      assert body == """
-             external_id;name;type;path;tech_name;alias_name;link_to_structure;string;list;url\r
-             #{external_id};#{dsv_name};#{type};#{Enum.join(path, "")};#{original_name};#{alias_name};#{structure_url};foo;bar;\r
-             """
-    end
-
-    @tag authentication: [role: "admin"]
     test "upload, allow load csv with multiple valid rows", %{
       conn: conn,
       domain: %{id: domain_id}
@@ -1691,7 +1476,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       {ids, _} = create_three_data_structures(domain_id, "some_external_id")
 
       assert %{
-               "csv_hash" => _csv_hash,
+               "hash" => _hash,
                "status" => "JUST_STARTED",
                "task_reference" => _task_reference
              } =
@@ -1705,7 +1490,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert [
                %{
-                 "csv_hash" => _csv_hash,
+                 "hash" => _hash,
                  "status" => "COMPLETED",
                  "task_reference" => _task_reference,
                  "response" => %{"ids" => ^ids, "errors" => []}
@@ -1713,7 +1498,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                | _
              ] =
                conn
-               |> get(Routes.csv_bulk_update_event_path(conn, :index))
+               |> get(Routes.file_bulk_update_event_path(conn, :index))
                |> json_response(:ok)
     end
 
@@ -1726,7 +1511,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
         create_three_data_structures(domain_id, "some_external_id")
 
       assert %{
-               "csv_hash" => _csv_hash,
+               "hash" => _hash,
                "status" => "JUST_STARTED",
                "task_reference" => _task_reference
              } =
@@ -1740,7 +1525,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert [
                %{
-                 "csv_hash" => _csv_hash,
+                 "hash" => _hash,
                  "status" => "COMPLETED",
                  "task_reference" => _task_reference,
                  "response" => %{
@@ -1758,7 +1543,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                | _
              ] =
                conn
-               |> get(Routes.csv_bulk_update_event_path(conn, :index))
+               |> get(Routes.file_bulk_update_event_path(conn, :index))
                |> json_response(:ok)
     end
 
@@ -1771,7 +1556,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
         create_three_data_structures(domain_id, "some_external_id")
 
       assert %{
-               "csv_hash" => _csv_hash,
+               "hash" => _hash,
                "status" => "JUST_STARTED",
                "task_reference" => _task_reference
              } =
@@ -1785,7 +1570,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert [
                %{
-                 "csv_hash" => _csv_hash,
+                 "hash" => _hash,
                  "status" => "COMPLETED",
                  "task_reference" => _task_reference,
                  "response" => %{
@@ -1809,7 +1594,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                | _
              ] =
                conn
-               |> get(Routes.csv_bulk_update_event_path(conn, :index))
+               |> get(Routes.file_bulk_update_event_path(conn, :index))
                |> json_response(:ok)
     end
 
@@ -1821,7 +1606,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       {[id_one, _, id_three], _} = create_three_data_structures(domain_id, "some_external_id")
 
       assert %{
-               "csv_hash" => _csv_hash,
+               "hash" => _hash,
                "status" => "JUST_STARTED",
                "task_reference" => _task_reference
              } =
@@ -1835,7 +1620,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert [
                %{
-                 "csv_hash" => _csv_hash,
+                 "hash" => _hash,
                  "status" => "COMPLETED",
                  "task_reference" => _task_reference,
                  "response" => %{"ids" => [^id_one, ^id_three], "errors" => []}
@@ -1843,7 +1628,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                | _
              ] =
                conn
-               |> get(Routes.csv_bulk_update_event_path(conn, :index))
+               |> get(Routes.file_bulk_update_event_path(conn, :index))
                |> json_response(:ok)
     end
 
@@ -1867,7 +1652,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert [
                %{
-                 "csv_hash" => _csv_hash,
+                 "hash" => _hash,
                  "filename" => "upload.csv",
                  "status" => "COMPLETED",
                  "task_reference" => _task_reference,
@@ -1876,7 +1661,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                | _
              ] =
                conn
-               |> get(Routes.csv_bulk_update_event_path(conn, :index))
+               |> get(Routes.file_bulk_update_event_path(conn, :index))
                |> json_response(:ok)
     end
 
@@ -1904,7 +1689,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert [
                %{
-                 "csv_hash" => _csv_hash,
+                 "hash" => _hash,
                  "status" => "FAILED",
                  "task_reference" => _task_reference,
                  "response" => nil,
@@ -1913,7 +1698,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                | _
              ] =
                conn
-               |> get(Routes.csv_bulk_update_event_path(conn, :index))
+               |> get(Routes.file_bulk_update_event_path(conn, :index))
                |> json_response(:ok)
     end
 
@@ -1942,7 +1727,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert [
                %{
-                 "csv_hash" => _csv_hash,
+                 "hash" => _hash,
                  "status" => "FAILED",
                  "task_reference" => _task_reference,
                  "response" => nil,
@@ -1951,7 +1736,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                | _
              ] =
                conn
-               |> get(Routes.csv_bulk_update_event_path(conn, :index))
+               |> get(Routes.file_bulk_update_event_path(conn, :index))
                |> json_response(:ok)
     end
 
@@ -1979,7 +1764,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert [
                %{
-                 "csv_hash" => _csv_hash,
+                 "hash" => _hash,
                  "status" => "COMPLETED",
                  "task_reference" => _task_reference,
                  "response" => %{"ids" => _, "errors" => []}
@@ -1987,7 +1772,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                | _
              ] =
                conn
-               |> get(Routes.csv_bulk_update_event_path(conn, :index))
+               |> get(Routes.file_bulk_update_event_path(conn, :index))
                |> json_response(:ok)
 
       %{df_content: %{"string" => %{"value" => multifields, "origin" => "file"}}} =
@@ -2039,7 +1824,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert [
                %{
-                 "csv_hash" => _csv_hash,
+                 "hash" => _hash,
                  "status" => "COMPLETED",
                  "task_reference" => _task_reference,
                  "response" => %{"ids" => _, "errors" => []}
@@ -2047,7 +1832,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                | _
              ] =
                conn
-               |> get(Routes.csv_bulk_update_event_path(conn, :index))
+               |> get(Routes.file_bulk_update_event_path(conn, :index))
                |> json_response(:ok)
     end
 
@@ -2087,7 +1872,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert [
                %{
-                 "csv_hash" => _csv_hash,
+                 "hash" => _hash,
                  "status" => "COMPLETED",
                  "task_reference" => _task_reference,
                  "response" => %{"ids" => _, "errors" => []}
@@ -2095,7 +1880,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                | _
              ] =
                conn
-               |> get(Routes.csv_bulk_update_event_path(conn, :index))
+               |> get(Routes.file_bulk_update_event_path(conn, :index))
                |> json_response(:ok)
     end
 

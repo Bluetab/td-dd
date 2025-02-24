@@ -96,7 +96,8 @@ defmodule TdDdWeb.GrantRequestBulkApprovalControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/grant_requests/_search", %{query: query, size: _}, _ ->
-        assert %{bool: %{must: %{terms: %{"id" => grant_requests_ids}}}} == query
+        assert %{bool: %{must: %{terms: %{"id" => query_grant_requests_ids}}}} = query
+        assert Enum.sort(grant_requests_ids) == Enum.sort(query_grant_requests_ids)
 
         SearchHelpers.hits_response([grant_request1, grant_request2])
       end)
@@ -120,8 +121,13 @@ defmodule TdDdWeb.GrantRequestBulkApprovalControllerTest do
              } == Map.take(first_approval, ["comment", "is_rejection", "role"])
 
       assert [
-               {:reindex, _grant_requests, [^grant_request1_id, ^grant_request2_id]}
+               {:reindex, _grant_requests, [_ | _] = indexed_grant_requests}
              ] = IndexWorkerMock.calls()
+
+      assert Enum.count(indexed_grant_requests) == 2
+
+      assert Enum.sort([grant_request1_id, grant_request2_id]) ==
+               Enum.sort(indexed_grant_requests)
     end
 
     @tag authentication: [role: "admin"]
