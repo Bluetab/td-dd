@@ -5,6 +5,7 @@
 ### Changed
 
 - [TD-7034] Upload structures through a xlsx endpoint
+- [TD-7107] Update implementation_key to be sortable
 
 ### Added
 
