@@ -6,7 +6,7 @@ defmodule TdDd.MixProject do
       app: :td_dd,
       version:
         case System.get_env("APP_VERSION") do
-          nil -> "7.1.1-local"
+          nil -> "7.2.0-local"
           v -> v
         end,
       elixir: "~> 1.18",
@@ -69,7 +69,7 @@ defmodule TdDd.MixProject do
       {:quantum, "~> 3.5.3"},
       {:mox, "~> 1.2", only: :test},
       {:assertions, "~> 0.20.1", only: :test},
-      {:inflex, "~> 2.1", only: :test},
+      {:inflex, "~> 2.1"},
       {:cors_plug, "~> 3.0.3"},
       {:csv, "~> 3.2.1"},
       {:nimble_csv, "~> 1.2"},
@@ -80,6 +80,10 @@ defmodule TdDd.MixProject do
       {:td_core, git: "https://github.com/Bluetab/td-core.git", tag: "7.1.3"},
       {:vaultex, "~> 1.0.1"},
       {:sobelow, "~> 0.13", only: [:dev, :test]},
+      {:elixlsx, "~> 0.6"},
+      {:xlsx_reader, "~> 0.8.7"},
+      {:igniter, "~> 0.5"},
+      {:oban, "~> 2.19"},
       {:flop, "~> 0.26.1"}
     ]
   end

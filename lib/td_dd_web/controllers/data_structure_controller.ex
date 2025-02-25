@@ -4,17 +4,14 @@ defmodule TdDdWeb.DataStructureController do
   import Bodyguard, only: [permit?: 4]
 
   alias TdCore.Utils.FileHash
-  alias TdDd.CSV.Download
   alias TdDd.DataStructures
   alias TdDd.DataStructures.BulkUpdate
   alias TdDd.DataStructures.BulkUpdater
-  alias TdDd.DataStructures.CsvBulkUpdateEvent
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.DataStructureVersions
+  alias TdDd.DataStructures.FileBulkUpdateEvent
   alias TdDd.DataStructures.Search
-  alias TdDd.DataStructures.StructureNotes
-  alias TdDd.DataStructures.StructureNotesWorkflow
   alias TdDd.DataStructures.Tags
   alias TdDd.Grants
   alias TdDd.Grants.Requests
@@ -207,7 +204,7 @@ defmodule TdDdWeb.DataStructureController do
           %{
             "external_id" =>
               Enum.find(rows, nil, fn
-                {_, _, ^index} -> true
+                {_, _, %{index: ^index}} -> true
                 _ -> false
               end)
               |> Tuple.to_list()
@@ -228,7 +225,8 @@ defmodule TdDdWeb.DataStructureController do
     auto_publish = params |> Map.get("auto_publish", "false") |> String.to_existing_atom()
 
     with [_ | _] = contents <- BulkUpdate.from_csv(structures_content_upload, :simple),
-         {:forbidden, []} <- {:forbidden, can_bulk_actions(contents, auto_publish, claims)},
+         {:forbidden, []} <-
+           {:forbidden, BulkUpdate.reject_rows(contents, auto_publish, claims)},
          csv_hash <- FileHash.hash(structures_content_upload.path, :md5) do
       {code, response} =
         case BulkUpdater.bulk_csv_update(
@@ -239,14 +237,11 @@ defmodule TdDdWeb.DataStructureController do
                lang
              ) do
           {:just_started, ^csv_hash, task_reference} ->
-            {
-              :accepted,
-              %{csv_hash: csv_hash, status: "JUST_STARTED", task_reference: task_reference}
-            }
+            {:accepted, %{hash: csv_hash, status: "JUST_STARTED", task_reference: task_reference}}
 
-          {:already_started, %CsvBulkUpdateEvent{csv_hash: ^csv_hash} = event} ->
+          {:already_started, %FileBulkUpdateEvent{hash: ^csv_hash} = event} ->
             {:accepted,
-             TdDdWeb.CsvBulkUpdateEventView.render("show.json", %{csv_bulk_update_event: event})}
+             TdDdWeb.FileBulkUpdateEventView.render("show.json", %{file_bulk_update_event: event})}
         end
 
       conn
@@ -281,94 +276,11 @@ defmodule TdDdWeb.DataStructureController do
     end)
   end
 
-  defp can_bulk_actions(
-         [{_content, %{data_structure: _, row_index: _}} | _] = contents,
-         auto_publish,
-         claims
-       )
-       when is_list(contents) do
-    contents
-    |> Enum.reject(fn
-      {_content, %{data_structure: nil}} ->
-        true
-
-      {_content, %{data_structure: data_structure}} ->
-        can_edit =
-          case StructureNotesWorkflow.get_action_editable_action(data_structure) do
-            :create -> permit?(StructureNotes, :create, claims, data_structure)
-            :edit -> permit?(StructureNotes, :edit, claims, data_structure)
-            _ -> true
-          end
-
-        if auto_publish do
-          can_edit and
-            permit?(StructureNotes, :publish_draft, claims, data_structure)
-        else
-          can_edit
-        end
-    end)
-  end
-
-  defp can_bulk_actions(contents, auto_publish, claims) do
-    contents
-    |> Enum.map(fn {_, data_structure, row_index} ->
-      {%{}, %{data_structure: data_structure, row_index: row_index}}
-    end)
-    |> can_bulk_actions(auto_publish, claims)
-  end
-
   defp search_all_structures(claims, permission, params) do
     params
     |> Map.put("without", "deleted_at")
     |> Map.drop(["page", "size"])
     |> Search.scroll_data_structures(claims, permission)
-  end
-
-  def csv(conn, params) do
-    header_labels = Map.get(params, "header_labels", %{})
-    {lang, params} = Map.pop(params, "lang", @default_lang)
-    structure_url_schema = Map.get(params, "structure_url_schema", nil)
-    params = Map.drop(params, ["header_labels", "page", "size", "structure_url_schema"])
-
-    permission = conn.assigns[:search_permission]
-    claims = conn.assigns[:current_resource]
-
-    %{results: data_structures} = search_all_structures(claims, permission, params)
-
-    case data_structures do
-      [] ->
-        send_resp(conn, :no_content, "")
-
-      _ ->
-        conn
-        |> put_resp_content_type("text/csv", "utf-8")
-        |> put_resp_header("content-disposition", "attachment; filename=\"structures.zip\"")
-        |> send_resp(
-          :ok,
-          Download.to_csv(data_structures, header_labels, structure_url_schema, lang)
-        )
-    end
-  end
-
-  def editable_csv(conn, params) do
-    {lang, params} = Map.pop(params, "lang", @default_lang)
-    structure_url_schema = Map.get(params, "structure_url_schema", nil)
-    params = Map.drop(params, ["page", "size", "structure_url_schema"])
-    permission = conn.assigns[:search_permission]
-    claims = conn.assigns[:current_resource]
-
-    %{results: data_structures} = search_all_structures(claims, permission, params)
-
-    case data_structures do
-      [] ->
-        send_resp(conn, :no_content, "")
-
-      _ ->
-        conn
-        |> put_resp_content_type("text/csv", "utf-8")
-        |> put_resp_header("content-disposition", "attachment; filename=\"structures.zip\"")
-        |> send_resp(:ok, Download.to_editable_csv(data_structures, structure_url_schema, lang))
-    end
   end
 
   defp get_data_structure(id, enrich_attrs) do
@@ -556,13 +468,13 @@ defmodule TdDdWeb.DataStructureController do
 
         :bulk_upload, acc ->
           Map.put(acc, "bulkUpload", %{
-            href: Routes.data_structure_path(conn, :bulk_update_template_content),
+            href: Routes.xlsx_path(conn, :upload),
             method: "POST"
           })
 
         :auto_publish, acc ->
           Map.put(acc, "autoPublish", %{
-            href: Routes.data_structure_path(conn, :bulk_update_template_content),
+            href: Routes.xlsx_path(conn, :upload),
             method: "POST"
           })
 

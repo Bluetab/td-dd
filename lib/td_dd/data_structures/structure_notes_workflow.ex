@@ -20,14 +20,17 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
     auto_publish = opts[:auto_publish] == true
     is_bulk_update = opts[:is_bulk_update] == true
     latest_note = get_latest_structure_note(data_structure_id)
-    is_strict_update = false
+    is_strict_update = opts[:is_strict_update] || false
 
     case require_modification?(data_structure_id, params, is_bulk_update, auto_publish) do
       true ->
         structure_note =
           case latest_note do
-            %{status: :draft} -> update(latest_note, params, is_strict_update, user_id, type)
-            _not_update -> bulk_create(data_structure, params, latest_note, user_id)
+            %{status: :draft} ->
+              update(latest_note, params, is_strict_update, user_id, type, opts)
+
+            _not_update ->
+              bulk_create(data_structure, params, latest_note, user_id)
           end
 
         case {structure_note, auto_publish} do
@@ -50,7 +53,7 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
         user_id
       ) do
     if can_create_new_draft(latest_note) != :ok,
-      do: StructureNotes.delete_structure_note(latest_note, user_id)
+      do: StructureNotes.delete_structure_note(latest_note, user_id, is_bulk_update: true)
 
     structure_note_params =
       params
@@ -109,28 +112,29 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
     end
   end
 
-  def update(structure_note, attrs, is_strict, user_id, type \\ nil)
+  def update(structure_note, attrs, is_strict, user_id, type \\ nil, opts \\ [])
 
   def update(
         %StructureNote{status: :draft} = structure_note,
         %{"df_content" => df_content} = attrs,
         is_strict,
         user_id,
-        type
+        type,
+        opts
       ) do
     case attrs do
       %{"status" => "draft"} ->
-        update_content(structure_note, df_content, user_id, is_strict, type)
+        update_content(structure_note, df_content, user_id, is_strict, type, opts)
 
       %{"status" => _other_status} ->
         {:error, :only_draft_are_editable}
 
       _ ->
-        update_content(structure_note, df_content, user_id, is_strict, type)
+        update_content(structure_note, df_content, user_id, is_strict, type, opts)
     end
   end
 
-  def update(structure_note, %{"status" => status}, _is_strict, user_id, _type) do
+  def update(structure_note, %{"status" => status}, _is_strict, user_id, _type, _opts) do
     case status do
       "pending_approval" -> send_for_approval(structure_note, user_id)
       "published" -> publish(structure_note, user_id)
@@ -141,28 +145,34 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
     end
   end
 
-  def update(%StructureNote{status: _status}, %{"df_content" => _df_content}, _, _, _type) do
+  def update(%StructureNote{status: _status}, %{"df_content" => _df_content}, _, _, _type, _opts) do
     {:error, :only_draft_are_editable}
   end
 
-  def update(_structure_note, _attrs, _, _, _type) do
+  def update(_structure_note, _attrs, _, _, _type, _opts) do
     {:error, :bad_request}
   end
 
   def delete(%StructureNote{status: status} = structure_note, user_id) do
     case status do
-      :rejected -> StructureNotes.delete_structure_note(structure_note, user_id)
-      :draft -> StructureNotes.delete_structure_note(structure_note, user_id)
-      _ -> {:error, :undeletable_status}
+      :rejected ->
+        StructureNotes.delete_structure_note(structure_note, user_id)
+
+      :draft ->
+        StructureNotes.delete_structure_note(structure_note, user_id)
+
+      _ ->
+        {:error, :undeletable_status}
     end
   end
 
   # Lifecycle actions for structure notes
-  defp update_content(structure_note, new_df_content, user_id, true = _is_strict, type) do
+  defp update_content(structure_note, new_df_content, user_id, true = _is_strict, type, opts) do
     case StructureNotes.update_structure_note(
            structure_note,
            %{"df_content" => new_df_content, "type" => type},
-           user_id
+           user_id,
+           opts
          ) do
       {:ok, %{structure_note: structure_note}} -> {:ok, structure_note}
       {:error, :structure_note, err, _} -> {:error, err}
@@ -170,7 +180,7 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
     end
   end
 
-  defp update_content(structure_note, new_df_content, user_id, false = _is_strict, type) do
+  defp update_content(structure_note, new_df_content, user_id, false = _is_strict, type, _opts) do
     StructureNotes.bulk_update_structure_note(
       structure_note,
       %{"df_content" => new_df_content, "type" => type},
@@ -351,11 +361,10 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
   defp require_modification?(data_structure_id, params, is_bulk_update, auto_publish) do
     case {get_latest_structure_note(data_structure_id, :published), params} do
       {%{df_content: df_content}, %{"df_content" => raw_params_df_content}} ->
-        params_df_content = :maps.filter(fn _k, v -> v != "" end, raw_params_df_content)
-        latest_content = Map.take(df_content, Map.keys(params_df_content))
+        latest_content = Map.take(df_content, Map.keys(raw_params_df_content))
 
         case {is_bulk_update, auto_publish, latest_content} do
-          {true, true, ^params_df_content} -> false
+          {true, true, ^raw_params_df_content} -> false
           _ -> true
         end
 

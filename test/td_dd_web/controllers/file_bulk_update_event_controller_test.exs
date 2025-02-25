@@ -1,4 +1,4 @@
-defmodule TdDdWeb.CsvBulkUpdateEventControllerTest do
+defmodule TdDdWeb.FileBulkUpdateEventControllerTest do
   use TdDdWeb.ConnCase
 
   describe "index" do
@@ -6,7 +6,7 @@ defmodule TdDdWeb.CsvBulkUpdateEventControllerTest do
     test "admin can list upload events", %{conn: conn} do
       assert [] =
                conn
-               |> get(Routes.csv_bulk_update_event_path(conn, :index))
+               |> get(Routes.file_bulk_update_event_path(conn, :index))
                |> json_response(:ok)
     end
 
@@ -15,7 +15,7 @@ defmodule TdDdWeb.CsvBulkUpdateEventControllerTest do
       conn: conn
     } do
       assert conn
-             |> get(Routes.csv_bulk_update_event_path(conn, :index))
+             |> get(Routes.file_bulk_update_event_path(conn, :index))
              |> response(:forbidden)
     end
 
@@ -25,7 +25,7 @@ defmodule TdDdWeb.CsvBulkUpdateEventControllerTest do
     } do
       assert [] =
                conn
-               |> get(Routes.csv_bulk_update_event_path(conn, :index))
+               |> get(Routes.file_bulk_update_event_path(conn, :index))
                |> json_response(:ok)
     end
   end

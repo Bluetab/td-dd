@@ -20,8 +20,10 @@ defmodule TdDq.ExecutionsTest do
     end
 
     test "preloads implementations, executions and rule results" do
-      %{id: implementation_id} = insert(:implementation)
-      %{id: id} = insert(:execution_group)
+      %{id: implementation_id} =
+        insert(:implementation, df_content: %{foo: %{value: :bar, origin: "user"}})
+
+      %{id: id} = insert(:execution_group, df_content: %{fee: :bez})
 
       %{id: execution_id, result_id: result_id} =
         insert(:execution,
@@ -30,10 +32,21 @@ defmodule TdDq.ExecutionsTest do
           result: build(:rule_result)
         )
 
-      assert %{implementations: [%{id: ^implementation_id}]} =
+      assert %{
+               implementations: [
+                 %{
+                   id: ^implementation_id,
+                   df_content: %{"foo" => %{"origin" => "user", "value" => "bar"}}
+                 }
+               ],
+               df_content: %{"fee" => "bez"}
+             } =
                Executions.get_group(%{"id" => id}, preload: :implementations)
 
-      assert %{executions: [%{id: ^execution_id, result: %{id: ^result_id}}]} =
+      assert %{
+               executions: [%{id: ^execution_id, result: %{id: ^result_id}}],
+               df_content: %{"fee" => "bez"}
+             } =
                Executions.get_group(%{"id" => id}, preload: [executions: :result])
     end
   end

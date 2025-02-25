@@ -13,8 +13,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
   alias TdDd.DataStructures.DataStructureType
   import Ecto.Query
 
-  @derive {Flop.Schema,
-           filterable: [:name], sortable: [:name], default_limit: 50}
+  @derive {Flop.Schema, filterable: [:name], sortable: [:name], default_limit: 50}
 
   @typedoc "A data structure version"
   @type t :: %__MODULE__{}

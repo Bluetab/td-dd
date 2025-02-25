@@ -1,15 +1,15 @@
-defmodule TdDdWeb.CsvBulkUpdateEventView do
+defmodule TdDdWeb.FileBulkUpdateEventView do
   use TdDdWeb, :view
 
-  def render("index.json", %{csv_bulk_update_events: events}) do
+  def render("index.json", %{file_bulk_update_events: events}) do
     render_many(events, __MODULE__, "show.json")
   end
 
-  def render("show.json", %{csv_bulk_update_event: event}) do
+  def render("show.json", %{file_bulk_update_event: event}) do
     Map.take(event, [
       :user_id,
       :response,
-      :csv_hash,
+      :hash,
       :status,
       :task_reference,
       :message,

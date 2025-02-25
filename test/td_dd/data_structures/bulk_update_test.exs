@@ -660,7 +660,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         |> DataStructures.get_data_structure_by_external_id()
         |> Map.get(:id)
         |> StructureNotes.get_latest_structure_note()
-        |> StructureNotes.delete_structure_note(user_id)
+        |> StructureNotes.delete_structure_note(user_id, is_bulk_update: true)
       end)
 
       %{domain_ids: [domain_id]} = DataStructures.get_data_structure_by_external_id("ex_id1")
@@ -676,7 +676,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert {:ok, %{update_notes: update_notes}} =
                upload
                |> BulkUpdate.from_csv(@default_lang)
-               |> BulkUpdate.do_csv_bulk_update(user_id)
+               |> BulkUpdate.file_bulk_update(user_id)
 
       ids = Map.keys(update_notes)
       assert length(ids) == 14
@@ -813,14 +813,14 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       |> DataStructures.get_data_structure_by_external_id()
       |> Map.get(:id)
       |> StructureNotes.get_latest_structure_note()
-      |> StructureNotes.delete_structure_note(user_id)
+      |> StructureNotes.delete_structure_note(user_id, is_bulk_update: true)
 
       upload = %{path: "test/fixtures/td5929/structures_in_native_lang.csv"}
 
       assert {:ok, %{update_notes: update_notes}} =
                upload
                |> BulkUpdate.from_csv(lang)
-               |> BulkUpdate.do_csv_bulk_update(user_id)
+               |> BulkUpdate.file_bulk_update(user_id)
 
       ids = Map.keys(update_notes)
       assert length(ids) == 2
@@ -855,14 +855,14 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       |> DataStructures.get_data_structure_by_external_id()
       |> Map.get(:id)
       |> StructureNotes.get_latest_structure_note()
-      |> StructureNotes.delete_structure_note(user_id)
+      |> StructureNotes.delete_structure_note(user_id, is_bulk_update: true)
 
       upload = %{path: "test/fixtures/td5929/structures_in_native_lang_with_invalid_values.csv"}
 
       assert {:ok, %{update_notes: update_notes}} =
                upload
                |> BulkUpdate.from_csv(lang)
-               |> BulkUpdate.do_csv_bulk_update(user_id)
+               |> BulkUpdate.file_bulk_update(user_id)
 
       [_, notes_errors] = BulkUpdate.split_succeeded_errors(update_notes)
       [note_error] = Enum.map(notes_errors, fn {_k, v} -> v end)
@@ -896,7 +896,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       {:ok, %{update_notes: update_notes}} =
         upload
         |> BulkUpdate.from_csv(@default_lang)
-        |> BulkUpdate.do_csv_bulk_update(user_id)
+        |> BulkUpdate.file_bulk_update(user_id)
 
       [_, errored_notes] = BulkUpdate.split_succeeded_errors(update_notes)
 
@@ -926,7 +926,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       {:ok, %{update_notes: update_notes}} =
         upload
         |> BulkUpdate.from_csv(@default_lang)
-        |> BulkUpdate.do_csv_bulk_update(user_id)
+        |> BulkUpdate.file_bulk_update(user_id)
 
       [_, errored_notes] = BulkUpdate.split_succeeded_errors(update_notes)
 
@@ -981,7 +981,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       {:ok, %{update_notes: update_notes}} =
         upload
         |> BulkUpdate.from_csv(@default_lang)
-        |> BulkUpdate.do_csv_bulk_update(user_id)
+        |> BulkUpdate.file_bulk_update(user_id)
 
       [_, errored_notes] =
         BulkUpdate.split_succeeded_errors(update_notes)
@@ -1043,7 +1043,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       {:ok, %{update_notes: update_notes}} =
         upload
         |> BulkUpdate.from_csv(@default_lang)
-        |> BulkUpdate.do_csv_bulk_update(user_id)
+        |> BulkUpdate.file_bulk_update(user_id)
 
       [_created_notes, errored_notes] =
         BulkUpdate.split_succeeded_errors(update_notes)
@@ -1077,7 +1077,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       {:ok, %{update_notes: update_notes}} =
         upload
         |> BulkUpdate.from_csv(@default_lang)
-        |> BulkUpdate.do_csv_bulk_update(user_id)
+        |> BulkUpdate.file_bulk_update(user_id)
 
       [updated_notes, errored_notes] =
         BulkUpdate.split_succeeded_errors(update_notes)
@@ -1136,7 +1136,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert {:ok, %{update_notes: _update_notes}} =
                upload
                |> BulkUpdate.from_csv(@default_lang)
-               |> BulkUpdate.do_csv_bulk_update(user_id)
+               |> BulkUpdate.file_bulk_update(user_id)
 
       assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
       assert length(ids_reindex) == 9

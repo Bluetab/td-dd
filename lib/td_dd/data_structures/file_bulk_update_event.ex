@@ -1,5 +1,5 @@
-defmodule TdDd.DataStructures.CsvBulkUpdateEvent do
-  @moduledoc "CSV Bulk Update Event entity"
+defmodule TdDd.DataStructures.FileBulkUpdateEvent do
+  @moduledoc "File Bulk Update Event entity"
 
   use Ecto.Schema
 
@@ -7,10 +7,10 @@ defmodule TdDd.DataStructures.CsvBulkUpdateEvent do
 
   alias TdDfLib.Validation
 
-  schema "csv_bulk_update_events" do
+  schema "file_bulk_update_events" do
     field(:user_id, :integer)
     field(:response, :map)
-    field(:csv_hash, :string)
+    field(:hash, :string)
     field(:task_reference, :string)
     field(:status, :string)
     field(:node, :string)
@@ -29,14 +29,14 @@ defmodule TdDd.DataStructures.CsvBulkUpdateEvent do
     |> cast(params, [
       :user_id,
       :response,
-      :csv_hash,
+      :hash,
       :task_reference,
       :status,
       :message,
       :filename
     ])
     |> put_node
-    |> validate_required([:user_id, :csv_hash, :filename, :task_reference, :status, :node])
+    |> validate_required([:user_id, :hash, :filename, :status, :node])
     |> validate_change(:response, &Validation.validate_safe/2)
     |> validate_length(:message, max: 1_000)
   end

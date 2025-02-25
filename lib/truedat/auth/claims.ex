@@ -14,6 +14,16 @@ defmodule Truedat.Auth.Claims do
           jti: binary() | nil
         }
 
-  @derive {Jason.Encoder, only: [:user_id, :user_name]}
+  @derive {Jason.Encoder, only: [:user_id, :user_name, :jti, :role]}
   defstruct [:user_id, :user_name, :role, :jti, :exp]
+
+  def coerce(claims) do
+    %__MODULE__{
+      user_id: claims["user_id"],
+      user_name: claims["user_name"],
+      role: claims["role"],
+      jti: claims["jti"],
+      exp: claims["exp"]
+    }
+  end
 end

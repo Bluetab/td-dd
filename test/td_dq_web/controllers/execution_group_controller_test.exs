@@ -40,22 +40,39 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
 
   describe "GET /api/execution_groups/:id" do
     @tag authentication: [user_name: "not_an_admin", permissions: [:view_quality_rule]]
-    test "returns an OK response with the execution group", %{
-      conn: conn,
-      groups: groups
-    } do
-      %{id: id} = Enum.random(groups)
+    test "returns an OK response with the execution group", %{conn: conn} do
+      %{id: id} = execution_group = insert(:execution_group, df_content: %{fee: "beer"})
+
+      implementation =
+        insert(:implementation, df_content: %{foo: %{value: "bar", origin: "user"}})
+
+      insert(:execution, group: execution_group, implementation: implementation)
 
       assert %{"data" => data} =
                conn
                |> get(Routes.execution_group_path(conn, :show, id))
                |> json_response(:ok)
 
-      assert %{"id" => ^id, "inserted_at" => _, "_embedded" => embedded} = data
-      assert %{"executions" => [execution]} = embedded
-
-      assert %{"_embedded" => %{"implementation" => %{"id" => _, "implementation_key" => _}}} =
-               execution
+      assert %{
+               "id" => ^id,
+               "inserted_at" => _,
+               "df_content" => %{"fee" => "beer"},
+               "_embedded" => %{
+                 "executions" => [
+                   %{
+                     "_embedded" => %{
+                       "implementation" => %{
+                         "id" => _,
+                         "implementation_key" => _,
+                         "df_content" => %{"foo" => "bar"},
+                         "dynamic_content" => %{"foo" => %{"value" => "bar", "origin" => "user"}}
+                       }
+                     }
+                   }
+                 ]
+               }
+             } =
+               data
     end
 
     @tag authentication: [user_name: "not_an_admin"]

@@ -8,8 +8,8 @@ defmodule TdDd.DataStructures.BulkUpdater do
   require Logger
 
   alias TdDd.DataStructures.BulkUpdate
-  alias TdDd.DataStructures.CsvBulkUpdateEvent
-  alias TdDd.DataStructures.CsvBulkUpdateEvents
+  alias TdDd.DataStructures.FileBulkUpdateEvent
+  alias TdDd.DataStructures.FileBulkUpdateEvents
 
   @shutdown_timeout 2000
 
@@ -75,10 +75,10 @@ defmodule TdDd.DataStructures.BulkUpdater do
           with [_ | _] = contents <-
                  BulkUpdate.from_csv(structures_content_upload, lang),
                {:ok, %{updates: updates, update_notes: update_notes}} <-
-                 BulkUpdate.do_csv_bulk_update(contents, user_id, auto_publish),
+                 BulkUpdate.file_bulk_update(contents, user_id, auto_publish: auto_publish),
                [updated_notes, not_updated_notes] <-
                  BulkUpdate.split_succeeded_errors(update_notes) do
-            make_summary(updates, updated_notes, not_updated_notes)
+            BulkUpdate.make_summary(updates, updated_notes, not_updated_notes)
           else
             error -> error
           end
@@ -89,10 +89,10 @@ defmodule TdDd.DataStructures.BulkUpdater do
 
     task_timer = Process.send_after(self(), {:timeout, task}, timeout())
 
-    CsvBulkUpdateEvents.create_event(%{
+    FileBulkUpdateEvents.create_event(%{
       user_id: user_id,
       status: "STARTED",
-      csv_hash: csv_hash,
+      hash: csv_hash,
       task_reference: ref_to_string(task.ref),
       filename: filename
     })
@@ -127,20 +127,20 @@ defmodule TdDd.DataStructures.BulkUpdater do
   end
 
   def pending_update(csv_hash) do
-    case CsvBulkUpdateEvents.last_event_by_hash(csv_hash) do
+    case FileBulkUpdateEvents.last_event_by_hash(csv_hash) do
       nil ->
         :not_pending
 
-      %CsvBulkUpdateEvent{status: "COMPLETED"} ->
+      %FileBulkUpdateEvent{status: "COMPLETED"} ->
         :not_pending
 
-      %CsvBulkUpdateEvent{status: "FAILED"} ->
+      %FileBulkUpdateEvent{status: "FAILED"} ->
         :not_pending
 
-      %CsvBulkUpdateEvent{status: "TIMED_OUT"} ->
+      %FileBulkUpdateEvent{status: "TIMED_OUT"} ->
         :not_pending
 
-      %CsvBulkUpdateEvent{status: "ALREADY_STARTED"} = event_pending ->
+      %FileBulkUpdateEvent{status: "ALREADY_STARTED"} = event_pending ->
         {:already_started, event_pending}
     end
   end
@@ -223,10 +223,10 @@ defmodule TdDd.DataStructures.BulkUpdater do
   def create_event(summary, task_info) do
     %{csv_hash: csv_hash, filename: filename, user_id: user_id, task: %{ref: ref}} = task_info
 
-    CsvBulkUpdateEvents.create_event(%{
+    FileBulkUpdateEvents.create_event(%{
       response: summary,
       user_id: user_id,
-      csv_hash: csv_hash,
+      hash: csv_hash,
       filename: filename,
       status: "COMPLETED",
       task_reference: ref_to_string(ref)
@@ -236,9 +236,9 @@ defmodule TdDd.DataStructures.BulkUpdater do
   def create_event(task_info, fail_type, message) do
     %{csv_hash: csv_hash, filename: filename, user_id: user_id, task: %{ref: ref}} = task_info
 
-    CsvBulkUpdateEvents.create_event(%{
+    FileBulkUpdateEvents.create_event(%{
       user_id: user_id,
-      csv_hash: csv_hash,
+      hash: csv_hash,
       filename: filename,
       status: fail_type_to_str(fail_type),
       task_reference: ref_to_string(ref),
@@ -251,52 +251,5 @@ defmodule TdDd.DataStructures.BulkUpdater do
       :DOWN -> "FAILED"
       :timeout -> "TIMED_OUT"
     end
-  end
-
-  defp make_summary(updates, updated_notes, not_updated_notes) do
-    %{
-      ids: Enum.uniq(Map.keys(updates) ++ Map.keys(updated_notes)),
-      errors:
-        not_updated_notes
-        |> Enum.map(fn {_id, {:error, {error, %{row: row, external_id: external_id} = _ds}}} ->
-          get_messsage_from_error(error)
-          |> Enum.map(fn ms ->
-            ms
-            |> Map.put(:row, row)
-            |> Map.put(:external_id, external_id)
-          end)
-        end)
-        |> List.flatten()
-    }
-  end
-
-  defp get_messsage_from_error(%Ecto.Changeset{errors: errors}) do
-    errors
-    |> Enum.map(fn {k, v} ->
-      case v do
-        {_error, nested_errors} ->
-          get_message_from_nested_errors(k, nested_errors)
-
-        _ ->
-          %{
-            field: nil,
-            message: "#{k}.default"
-          }
-      end
-    end)
-    |> List.flatten()
-  end
-
-  defp get_message_from_nested_errors(k, nested_errors) do
-    Enum.map(nested_errors, fn
-      {field, {_, [{_, e} | _]}} ->
-        %{field: field, message: "#{k}.#{e}"}
-
-      {field, {e}} ->
-        %{field: field, message: "#{k}.#{e}"}
-
-      {field, e} ->
-        %{field: field, message: e}
-    end)
   end
 end

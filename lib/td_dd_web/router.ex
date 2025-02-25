@@ -30,8 +30,8 @@ defmodule TdDdWeb.Router do
     post("/data_structures/metadata", MetadataController, :upload)
     post("/data_structures/search", DataStructureController, :search)
     post("/data_structures/bulk_update", DataStructureController, :bulk_update)
-    post("/data_structures/csv", DataStructureController, :csv)
-    post("/data_structures/editable_csv", DataStructureController, :editable_csv)
+    post("/data_structures/xlsx/download", DataStructures.XLSXController, :download)
+    post("/data_structures/xlsx/upload", DataStructures.XLSXController, :upload)
 
     post(
       "/data_structures/bulk_update_template_content",
@@ -41,7 +41,7 @@ defmodule TdDdWeb.Router do
 
     resources(
       "/data_structures/bulk_update_template_content_events",
-      CsvBulkUpdateEventController,
+      FileBulkUpdateEventController,
       only: [:index]
     )
 

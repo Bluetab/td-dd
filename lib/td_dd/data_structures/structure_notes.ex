@@ -189,7 +189,7 @@ defmodule TdDd.DataStructures.StructureNotes do
       {:error, :structure_note, err, _} -> {:error, err}
       err -> err
     end
-    |> on_update()
+    |> on_update(is_bulk_update: true)
   end
 
   @doc "Updates a structure_note with bulk_update behaviour"
@@ -214,7 +214,7 @@ defmodule TdDd.DataStructures.StructureNotes do
         {:error, :structure_note, err, _} -> {:error, err}
         err -> err
       end
-      |> on_update()
+      |> on_update(is_bulk_update: true)
     end
   end
 
@@ -292,9 +292,12 @@ defmodule TdDd.DataStructures.StructureNotes do
 
   def maybe_update_alias(multi, _status, _user_id), do: multi
 
+  def delete_structure_note(_structure_note, _user_id, opts \\ [])
+
   def delete_structure_note(
         %StructureNote{} = structure_note,
-        user_id
+        user_id,
+        opts
       ) do
     %{data_structure: data_structure} =
       structure_note =
@@ -315,24 +318,29 @@ defmodule TdDd.DataStructures.StructureNotes do
       {:error, _, changeset, _} ->
         {:error, changeset}
     end
-    |> DataStructures.maybe_reindex_grant_requests()
+    |> on_update(opts)
   end
 
   defp on_update(res, opts \\ []) do
-    case opts[:is_bulk_update] == true do
-      false -> on_update_structure(res)
-      _ -> res
-    end
-    |> DataStructures.maybe_reindex_grant_requests()
-  end
-
-  defp on_update_structure(
-         {:ok, %{structure_note_update: %{status: status, data_structure_id: id}}} = res
-       )
-       when status in [:published, :deprecated, :draft, :pending_approval, :rejected] do
-    Indexer.reindex(id)
+    if opts[:is_bulk_update] != true, do: on_update_structure(res)
 
     DataStructures.maybe_reindex_grant_requests(res)
+    res
+  end
+
+  defp on_update_structure({:ok, %{structure_note_update: %{data_structure_id: id}}} = res) do
+    Indexer.reindex(id)
+    res
+  end
+
+  defp on_update_structure({:ok, %{structure_note: %{data_structure_id: id}}} = res) do
+    Indexer.reindex(id)
+    res
+  end
+
+  defp on_update_structure({:ok, %StructureNote{data_structure_id: id}} = res) do
+    Indexer.reindex(id)
+    res
   end
 
   defp on_update_structure(res), do: res

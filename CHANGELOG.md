@@ -1,5 +1,23 @@
 # Changelog
 
+## [7.2.0] 2025-02-25
+
+### Changed
+
+- [TD-7034] Upload structures through a xlsx endpoint
+- [TD-7107] Update implementation_key to be sortable
+
+### Added
+
+- [TD-7086] Add Execution Group dynamic_content and df_content on API response
+
+### Fixed
+
+- [TD-7070] Reindexing of structures when
+  - A new note is created
+  - A note is deleted
+  - A note is bulk updated
+
 ## [7.1.1] 2025-02-05
 
 ### Changed

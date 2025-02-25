@@ -58,7 +58,7 @@ defmodule TdDq.Implementations.Search do
   def scroll_implementations(params, %Claims{} = claims) do
     query = RulesSearch.build_query(claims, params, :implementations)
 
-    sort = Map.get(params, "sort", ["_score", "implementation_key.raw"])
+    sort = Map.get(params, "sort", ["_score", "implementation_key.sort"])
 
     %{limit: limit, size: size, ttl: ttl} = scroll_opts!()
 
