@@ -1,5 +1,11 @@
 # Changelog
 
+## [7.2.1] 2025-02-26
+
+### Changed
+
+- [TD-7136] Default clause for metadata parse
+
 ## [7.2.0] 2025-02-25
 
 ### Changed
