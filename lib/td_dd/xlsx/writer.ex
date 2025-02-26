@@ -252,4 +252,6 @@ defmodule TdDd.XLSX.Writer do
   end
 
   defp parse_metadata(nil), do: ""
+
+  defp parse_metadata(metadata), do: metadata
 end
