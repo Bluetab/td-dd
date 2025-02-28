@@ -229,6 +229,7 @@ defmodule TdDd.XLSX.Writer do
 
   defp get_alias_name(structure) do
     case structure do
+      %{note: %{"alias" => alias_value}} when is_binary(alias_value) -> alias_value
       %{note: %{"alias" => %{"value" => alias_value}}} -> alias_value
       _ -> ""
     end

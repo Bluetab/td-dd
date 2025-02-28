@@ -353,7 +353,10 @@ defmodule TdDd.DataStructures.BulkUpdate do
         content =
           Parser.format_content(%{
             content: content,
-            content_schema: Enum.filter(content_schema, fn %{"name" => name} -> name in effective_fields_names end),
+            content_schema:
+              Enum.filter(content_schema, fn %{"name" => name} ->
+                name in effective_fields_names
+              end),
             domain_ids: data_structure.domain_ids,
             lang: lang
           })
@@ -391,11 +394,11 @@ defmodule TdDd.DataStructures.BulkUpdate do
          user_id,
          opts
        ) do
-
-    opts = opts
-    |> Keyword.put_new(:auto_publish, false)
-    |> Keyword.put_new(:is_bulk_update, true)
-    |> Keyword.put_new(:is_strict_update, false)
+    opts =
+      opts
+      |> Keyword.put_new(:auto_publish, false)
+      |> Keyword.put_new(:is_bulk_update, true)
+      |> Keyword.put_new(:is_strict_update, false)
 
     case StructureNotesWorkflow.create_or_update(data_structure, params, user_id, opts) do
       {:ok, structure_note} -> {:ok, structure_note}

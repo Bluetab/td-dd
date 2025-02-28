@@ -130,6 +130,12 @@ defmodule TdDd.XLSX.WriterTest do
                   "type" => "domain",
                   "label" => "domain_inside_note_field_label",
                   "cardinality" => "*"
+                },
+                %{
+                  "name" => "alias",
+                  "type" => "string",
+                  "label" => "alias",
+                  "cardinality" => "?"
                 }
               ]
             }
@@ -144,6 +150,7 @@ defmodule TdDd.XLSX.WriterTest do
         template: %{"name" => "template_1"},
         note: %{
           "field_name" => %{"value" => ["field_value"], "origin" => "user"},
+          "alias" => %{"value" => "alias_value", "origin" => "user"},
           "domain_inside_note_field" => %{
             "value" => [],
             "origin" => "user"
@@ -207,7 +214,7 @@ defmodule TdDd.XLSX.WriterTest do
         )
 
       assert [headers | content] = rows["type_1"]
-      assert Enum.count(headers) == 10
+      assert Enum.count(headers) == 11
 
       assert Enum.take(headers, 8) == [
                ["external_id", {:bg_color, "#ffd428"}],
@@ -235,18 +242,28 @@ defmodule TdDd.XLSX.WriterTest do
                  end
                )
 
+      assert ["alias", {:bg_color, "#ffe994"}] ==
+               Enum.find(
+                 headers,
+                 fn
+                   [header, _] -> header == "alias"
+                   _ -> false
+                 end
+               )
+
       assert content == [
                [
                  "ext_id",
                  "TechName_1",
                  "TechName_1",
-                 "",
+                 "alias_value",
                  "https://truedat.td.dd/structure/0",
                  domain.name,
                  "type_1",
                  "foo > bar",
                  "field_value",
-                 ""
+                 "",
+                 "alias_value"
                ]
              ]
 

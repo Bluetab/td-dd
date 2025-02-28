@@ -667,18 +667,19 @@ defmodule TdDd.XLSX.UploadTest do
                {"critical: can't be blank",
                 [critical: {"can't be blank", [validation: :required]}]}
 
-      source_note = Enum.find(structures, fn %{data_structure: %{external_id: external_id}} ->
-        external_id == "ex_id2"
-      end)
+      source_note =
+        Enum.find(structures, fn %{data_structure: %{external_id: external_id}} ->
+          external_id == "ex_id2"
+        end)
 
       assert source_note.df_content == %{
-        "critical" => %{"origin" => "user", "value" => "No"},
-        "text" => %{"origin" => "user", "value" => "foo"},
-        "urls_one_or_none" => %{
-          "origin" => "user",
-          "value" => [%{"url_name" => "", "url_value" => "https://foo.bar"}]
-        }
-      }
+               "critical" => %{"origin" => "user", "value" => "No"},
+               "text" => %{"origin" => "user", "value" => "foo"},
+               "urls_one_or_none" => %{
+                 "origin" => "user",
+                 "value" => [%{"url_name" => "", "url_value" => "https://foo.bar"}]
+               }
+             }
 
       {_id, note} =
         Enum.find(update_notes, fn
@@ -690,14 +691,14 @@ defmodule TdDd.XLSX.UploadTest do
         end)
 
       assert note.df_content == %{
-        "critical" => %{"origin" => "file", "value" => "Yes"},
-        "enriched_text" => %{"origin" => "file", "value" => %{}},
-        "text" => %{"origin" => "file", "value" => ""},
-        "urls_one_or_none" => %{
-          "origin" => "user",
-          "value" => [%{"url_name" => "", "url_value" => "https://foo.bar"}]
-        }
-      }
+               "critical" => %{"origin" => "file", "value" => "Yes"},
+               "enriched_text" => %{"origin" => "file", "value" => %{}},
+               "text" => %{"origin" => "file", "value" => ""},
+               "urls_one_or_none" => %{
+                 "origin" => "user",
+                 "value" => [%{"url_name" => "", "url_value" => "https://foo.bar"}]
+               }
+             }
     end
 
     setup do
