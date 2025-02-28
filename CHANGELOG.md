@@ -4,7 +4,7 @@
 
 ### Added
 
-- [TD-7144] Introduce simple query string query for rules and implementations"
+- [TD-7144] Introduce simple query string query for rules and implementations
 
 ### Changed
 
