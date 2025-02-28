@@ -394,6 +394,7 @@ defmodule TdDq.Implementations.ElasticDocument do
 
     @boosted_fields ~w(ngram_implementation_key^3)
     @search_fields ~w(implementation_type)
+    @simple_search_fields ~w(implementation_key)
 
     def mappings(_) do
       content_mappings = %{properties: get_dynamic_mappings("ri")}
@@ -534,7 +535,7 @@ defmodule TdDq.Implementations.ElasticDocument do
           dynamic_search_fields(ri_content_schema, "df_content") ++
           dynamic_search_fields(dq_content_schema, "rule.df_content")
 
-      %{aggs: merged_aggregations(ri_content_schema, dq_content_schema, "bg"), fields: fields}
+      %{aggs: merged_aggregations(ri_content_schema, dq_content_schema, "bg"), fields: fields, simple_search_fields: @simple_search_fields}
     end
 
     defp native_aggregations do
