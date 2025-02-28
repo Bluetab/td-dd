@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-7136] Merge old content with new one on file upload
+
 ## [7.2.1] 2025-02-26
 
 ### Changed
