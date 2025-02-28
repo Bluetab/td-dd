@@ -25,6 +25,7 @@ defmodule TdDd.XLSX.Upload do
       opts
       |> Keyword.put(:is_strict_update, true)
       |> Keyword.put(:store_events, true)
+      |> Keyword.put(:merge_content, true)
       |> Keyword.put(:upload_params, params)
 
     with {:parsed, rows} when is_list(rows) <- {:parsed, Reader.parse(path, opts)},
