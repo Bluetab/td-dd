@@ -9,6 +9,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
   alias Ecto.Changeset
   alias Ecto.Multi
   alias TdCache.TaxonomyCache
+  alias TdCache.TemplateCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
@@ -17,8 +18,8 @@ defmodule TdDd.DataStructures.BulkUpdate do
   alias TdDd.DataStructures.StructureNotes
   alias TdDd.DataStructures.StructureNotesWorkflow
   alias TdDd.Repo
+  alias TdDfLib.Format
   alias TdDfLib.Parser
-  alias TdDfLib.Templates
   alias Truedat.Auth.Claims
 
   require Logger
@@ -337,12 +338,15 @@ defmodule TdDd.DataStructures.BulkUpdate do
   defp format_content(row, data_structure, row_meta, lang) do
     data_structure
     |> DataStructures.template_name()
-    |> Templates.content_schema()
+    |> TemplateCache.get_by_name!()
     |> case do
-      {:error, error} ->
-        {:error, error}
+      nil ->
+        {:error, :template_not_found}
 
-      content_schema ->
+      %{content: content_schema} ->
+        content_schema =
+          Format.flatten_content_fields(content_schema, lang)
+
         field_names = Enum.map(content_schema, &Map.get(&1, "name"))
 
         content =
