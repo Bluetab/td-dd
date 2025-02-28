@@ -36,6 +36,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
         %{
           "cardinality" => "?",
           "name" => "hierarchy_name_1",
+          "label" => "Hierarchy name 1",
           "type" => "hierarchy",
           "values" => %{"hierarchy" => %{"id" => 1}},
           "widget" => "dropdown"
@@ -43,6 +44,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
         %{
           "cardinality" => "*",
           "name" => "hierarchy_name_2",
+          "label" => "Hierarchy name 2",
           "type" => "hierarchy",
           "values" => %{"hierarchy" => %{"id" => 1}},
           "widget" => "dropdown"
