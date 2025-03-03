@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-7144] Introduce simple query string query for rules and implementations
+
 ### Changed
 
 - [TD-7136] Merge old content with new one on file upload

@@ -82,6 +82,7 @@ defmodule TdDq.Rules.ElasticDocument do
 
     @boosted_fields ~w(ngram_name^3)
     @search_fields ~w(description)
+    @simple_search_fields ~w(name)
 
     def mappings(_) do
       content_mappings = %{properties: get_dynamic_mappings("dq")}
@@ -145,6 +146,7 @@ defmodule TdDq.Rules.ElasticDocument do
 
       %{
         fields: native_fields ++ dynamic_search_fields(content_schema),
+        simple_search_fields: @simple_search_fields,
         aggs: merged_aggregations(content_schema, "bg")
       }
     end
