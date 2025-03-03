@@ -96,6 +96,7 @@ defmodule TdDd.XLSX.UploadTest do
         %{
           "cardinality" => "?",
           "name" => "hierarchy_name_1",
+          "label" => "Hierarchy name 1",
           "type" => "hierarchy",
           "values" => %{"hierarchy" => %{"id" => 1}},
           "widget" => "dropdown"
@@ -103,6 +104,7 @@ defmodule TdDd.XLSX.UploadTest do
         %{
           "cardinality" => "*",
           "name" => "hierarchy_name_2",
+          "label" => "Hierarchy name 2",
           "type" => "hierarchy",
           "values" => %{"hierarchy" => %{"id" => 1}},
           "widget" => "dropdown"
@@ -224,7 +226,11 @@ defmodule TdDd.XLSX.UploadTest do
           valid_structure_note(type1, data_structure,
             df_content: %{
               "text" => %{"value" => "foo", "origin" => "user"},
-              "critical" => %{"value" => "No", "origin" => "user"}
+              "critical" => %{"value" => "No", "origin" => "user"},
+              "urls_one_or_none" => %{
+                "value" => [%{"url_name" => "", "url_value" => "https://foo.bar"}],
+                "origin" => "user"
+              }
             }
           )
         end)
@@ -622,6 +628,77 @@ defmodule TdDd.XLSX.UploadTest do
                  message: "forbidden",
                  task_reference: "oban:1"
                }
+    end
+
+    test "removes empty fields", %{
+      claims: %{user_id: user_id} = claims,
+      domain: %{id: domain_id},
+      structures: structures
+    } do
+      CacheHelpers.put_session_permissions(claims, %{
+        create_structure_note: [domain_id],
+        publish_structure_note_from_draft: [domain_id],
+        edit_structure_note: [domain_id],
+        view_data_structure: [domain_id]
+      })
+
+      {:ok, %{update_notes: update_notes}} =
+        Upload.structures(
+          %{
+            path: "test/fixtures/xlsx/upload_empty_fields.xlsx",
+            file_name: "upload_empty_fields.xlsx",
+            hash: "hash"
+          },
+          user_id: user_id,
+          claims: claims,
+          task_reference: "oban:1"
+        )
+
+      assert {_id, {:error, {changeset, _data_structure}}} =
+               Enum.find(update_notes, fn
+                 {_id, %{data_structure: _data_structure}} ->
+                   false
+
+                 {_id, {:error, {_changeset, data_structure}}} ->
+                   data_structure.external_id == "ex_id1"
+               end)
+
+      assert changeset.errors[:df_content] ==
+               {"critical: can't be blank",
+                [critical: {"can't be blank", [validation: :required]}]}
+
+      source_note =
+        Enum.find(structures, fn %{data_structure: %{external_id: external_id}} ->
+          external_id == "ex_id2"
+        end)
+
+      assert source_note.df_content == %{
+               "critical" => %{"origin" => "user", "value" => "No"},
+               "text" => %{"origin" => "user", "value" => "foo"},
+               "urls_one_or_none" => %{
+                 "origin" => "user",
+                 "value" => [%{"url_name" => "", "url_value" => "https://foo.bar"}]
+               }
+             }
+
+      {_id, note} =
+        Enum.find(update_notes, fn
+          {_id, %{data_structure: data_structure}} ->
+            data_structure.external_id == "ex_id2"
+
+          {_id, {:error, {_changeset, data_structure}}} ->
+            data_structure.external_id == "ex_id2"
+        end)
+
+      assert note.df_content == %{
+               "critical" => %{"origin" => "file", "value" => "Yes"},
+               "enriched_text" => %{"origin" => "file", "value" => %{}},
+               "text" => %{"origin" => "file", "value" => ""},
+               "urls_one_or_none" => %{
+                 "origin" => "user",
+                 "value" => [%{"url_name" => "", "url_value" => "https://foo.bar"}]
+               }
+             }
     end
 
     setup do

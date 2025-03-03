@@ -96,6 +96,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         %{
           "cardinality" => "?",
           "name" => "hierarchy_name_1",
+          "label" => "Hierarchy name 1",
           "type" => "hierarchy",
           "values" => %{"hierarchy" => %{"id" => 1}},
           "widget" => "dropdown"
@@ -104,6 +105,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
           "cardinality" => "*",
           "name" => "hierarchy_name_2",
           "type" => "hierarchy",
+          "label" => "Hierarchy name 2",
           "values" => %{"hierarchy" => %{"id" => 1}},
           "widget" => "dropdown"
         },

@@ -464,6 +464,62 @@ defmodule TdDq.Rules.SearchTest do
       params = %{"scroll" => "1m"}
       assert %{results: [_]} = Search.search_implementations(params, claims)
     end
+
+    @tag authentication: [role: "service"]
+    test "builds multi match query", %{claims: claims, implementation: implementation} do
+      expect(ElasticsearchMock, :request, fn
+        _, :post, "/implementations/_search", query, _params ->
+          assert query == %{
+            size: 50,
+            sort: ["_score", "implementation_key.sort"],
+            from: 0,
+            query: %{
+              bool: %{
+                must: [
+                  %{
+                    multi_match: %{
+                      type: "bool_prefix",
+                      fields: ["ngram_implementation_key^3", "implementation_type"],
+                      query: "foo",
+                      fuzziness: "AUTO",
+                      lenient: true
+                    }
+                  },
+                  %{term: %{"status" => "published"}}
+                ]
+              }
+            }
+          }
+          SearchHelpers.hits_response([implementation])
+      end)
+
+      params = %{"query" => "foo"}
+      assert %{results: [_]} = Search.search_implementations(params, claims)
+    end
+
+    @tag authentication: [role: "service"]
+    test "builds simple query string when using wildcard", %{claims: claims, implementation: implementation} do
+      expect(ElasticsearchMock, :request, fn
+        _, :post, "/implementations/_search", query, _params ->
+          assert query.query == %{
+            bool: %{
+              must: [
+                %{
+                  simple_query_string: %{
+                    fields: ["implementation_key"],
+                    query: "\"foo\""
+                  }
+                },
+                %{term: %{"status" => "published"}}
+              ]
+            }
+          }
+          SearchHelpers.hits_response([implementation])
+      end)
+
+      params = %{"query" => "\"foo\""}
+      assert %{results: [_]} = Search.search_implementations(params, claims)
+    end
   end
 
   defp create_rule(_), do: [rule: insert(:rule)]

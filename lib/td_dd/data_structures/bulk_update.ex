@@ -9,6 +9,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
   alias Ecto.Changeset
   alias Ecto.Multi
   alias TdCache.TaxonomyCache
+  alias TdCache.TemplateCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
@@ -17,8 +18,8 @@ defmodule TdDd.DataStructures.BulkUpdate do
   alias TdDd.DataStructures.StructureNotes
   alias TdDd.DataStructures.StructureNotesWorkflow
   alias TdDd.Repo
+  alias TdDfLib.Format
   alias TdDfLib.Parser
-  alias TdDfLib.Templates
   alias Truedat.Auth.Claims
 
   require Logger
@@ -158,15 +159,13 @@ defmodule TdDd.DataStructures.BulkUpdate do
   end
 
   def file_bulk_update(rows, user_id, opts \\ []) do
-    auto_publish = opts[:auto_publish] || false
-    is_strict_update = opts[:is_strict_update] || false
     store_events = opts[:store_events] || false
     upload_params = Map.put(opts[:upload_params] || %{}, :user_id, user_id)
 
     Multi.new()
     |> Multi.run(
       :update_notes,
-      &file_bulk_update_notes(&1, &2, rows, user_id, auto_publish, is_strict_update)
+      &file_bulk_update_notes(&1, &2, rows, user_id, opts)
     )
     |> Multi.run(:updates, &data_structure_file_bulk_update(&1, &2, rows, user_id))
     |> Multi.run(:audit, &audit(&1, &2, user_id))
@@ -193,15 +192,11 @@ defmodule TdDd.DataStructures.BulkUpdate do
          _changes_so_far,
          rows,
          user_id,
-         auto_publish,
-         is_strict_update
+         opts
        ) do
     rows
     |> Enum.map(fn {content, %{data_structure: data_structure, row_meta: row_meta}} ->
-      {
-        update_structure_notes(data_structure, content, user_id, auto_publish, is_strict_update),
-        row_meta
-      }
+      {update_structure_notes(data_structure, content, user_id, opts), row_meta}
     end)
     |> Enum.reduce_while(%{}, &reduce_file_notes_results/2)
     |> case do
@@ -337,12 +332,15 @@ defmodule TdDd.DataStructures.BulkUpdate do
   defp format_content(row, data_structure, row_meta, lang) do
     data_structure
     |> DataStructures.template_name()
-    |> Templates.content_schema()
+    |> TemplateCache.get_by_name!()
     |> case do
-      {:error, error} ->
-        {:error, error}
+      nil ->
+        {:error, :template_not_found}
 
-      content_schema ->
+      %{content: content_schema} ->
+        content_schema =
+          Format.flatten_content_fields(content_schema, lang)
+
         field_names = Enum.map(content_schema, &Map.get(&1, "name"))
 
         content =
@@ -350,10 +348,15 @@ defmodule TdDd.DataStructures.BulkUpdate do
           |> Map.take(field_names)
           |> Enum.into(%{}, fn {key, value} -> {key, %{"value" => value, "origin" => "file"}} end)
 
+        effective_fields_names = Map.keys(content)
+
         content =
           Parser.format_content(%{
             content: content,
-            content_schema: content_schema,
+            content_schema:
+              Enum.filter(content_schema, fn %{"name" => name} ->
+                name in effective_fields_names
+              end),
             domain_ids: data_structure.domain_ids,
             lang: lang
           })
@@ -377,7 +380,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
 
   defp bulk_update_notes(_repo, _changes_so_far, data_structures, params, user_id, auto_publish) do
     data_structures
-    |> Enum.map(&update_structure_notes(&1, params, user_id, auto_publish))
+    |> Enum.map(&update_structure_notes(&1, params, user_id, auto_publish: auto_publish))
     |> Enum.reduce_while(%{}, &reduce_notes_results/2)
     |> case do
       %{} = res -> {:ok, res}
@@ -389,10 +392,13 @@ defmodule TdDd.DataStructures.BulkUpdate do
          data_structure,
          params,
          user_id,
-         auto_publish,
-         is_strict_update \\ false
+         opts
        ) do
-    opts = [auto_publish: auto_publish, is_bulk_update: true, is_strict_update: is_strict_update]
+    opts =
+      opts
+      |> Keyword.put_new(:auto_publish, false)
+      |> Keyword.put_new(:is_bulk_update, true)
+      |> Keyword.put_new(:is_strict_update, false)
 
     case StructureNotesWorkflow.create_or_update(data_structure, params, user_id, opts) do
       {:ok, structure_note} -> {:ok, structure_note}

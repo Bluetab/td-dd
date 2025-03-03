@@ -168,6 +168,8 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
 
   # Lifecycle actions for structure notes
   defp update_content(structure_note, new_df_content, user_id, true = _is_strict, type, opts) do
+    new_df_content = merge_content(structure_note, new_df_content, opts)
+
     case StructureNotes.update_structure_note(
            structure_note,
            %{"df_content" => new_df_content, "type" => type},
@@ -370,6 +372,14 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
 
       _ ->
         true
+    end
+  end
+
+  defp merge_content(%{df_content: df_content}, new_df_content, opts) do
+    if opts[:merge_content] do
+      Map.merge(df_content, new_df_content)
+    else
+      new_df_content
     end
   end
 end
