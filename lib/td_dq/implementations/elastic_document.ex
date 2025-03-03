@@ -535,7 +535,11 @@ defmodule TdDq.Implementations.ElasticDocument do
           dynamic_search_fields(ri_content_schema, "df_content") ++
           dynamic_search_fields(dq_content_schema, "rule.df_content")
 
-      %{aggs: merged_aggregations(ri_content_schema, dq_content_schema, "bg"), fields: fields, simple_search_fields: @simple_search_fields}
+      %{
+        aggs: merged_aggregations(ri_content_schema, dq_content_schema, "bg"),
+        fields: fields,
+        simple_search_fields: @simple_search_fields
+      }
     end
 
     defp native_aggregations do
