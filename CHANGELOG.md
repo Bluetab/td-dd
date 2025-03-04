@@ -4,7 +4,9 @@
 
 ### Fixed
 
-- [TD-7145] Handle empty fields in xlsx bulk upload for notes in status other than `draft`
+- [TD-7145]: 
+  - Handle empty fields in xlsx bulk upload for notes in status other than `draft`.
+  - Put empty fields in row tail.
 
 ## [7.2.2] 2025-03-03
 

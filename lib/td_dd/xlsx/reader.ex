@@ -46,6 +46,16 @@ defmodule TdDd.XLSX.Reader do
 
   defp rows_for_sheet(package, sheet) do
     {:ok, [headers | content]} = XlsxReader.sheet(package, sheet, number_type: String)
-    Enum.map(content, fn row -> headers |> Enum.zip(row) |> Map.new() end)
+    Enum.map(content, fn row -> create_row(headers, row) end)
+  end
+
+  defp create_row(headers, row) do
+    # issue in: https://github.com/xavier/xlsx_reader/issues/37
+    # remove asap
+    fill_tail = List.duplicate("", max(0, length(headers) - length(row)))
+
+    headers
+    |> Enum.zip(row ++ fill_tail)
+    |> Map.new()
   end
 end
