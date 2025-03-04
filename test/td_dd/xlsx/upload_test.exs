@@ -699,6 +699,255 @@ defmodule TdDd.XLSX.UploadTest do
                  "value" => [%{"url_name" => "", "url_value" => "https://foo.bar"}]
                }
              }
+
+      assert [{:reindex, :structures, indexed_structures}] = IndexWorkerMock.calls()
+      assert Enum.count(indexed_structures) == 2
+    end
+
+    test "removes empty fields when note is published", %{
+      claims: %{user_id: user_id} = claims,
+      domain: %{id: domain_id}
+    } do
+      CacheHelpers.put_session_permissions(claims, %{
+        create_structure_note: [domain_id],
+        publish_structure_note_from_draft: [domain_id],
+        edit_structure_note: [domain_id],
+        view_data_structure: [domain_id]
+      })
+
+      data_structure =
+        insert(:data_structure, external_id: "ex_id23", domain_ids: [domain_id])
+
+      valid_structure_note("type_1", data_structure,
+        df_content: %{
+          "text" => %{"value" => "foo", "origin" => "user"},
+          "critical" => %{"value" => "No", "origin" => "user"},
+          "urls_one_or_none" => %{
+            "value" => [%{"url_name" => "", "url_value" => "https://foo.bar"}],
+            "origin" => "user"
+          }
+        },
+        status: "published"
+      )
+
+      {:ok, %{update_notes: update_notes}} =
+        Upload.structures(
+          %{
+            path: "test/fixtures/xlsx/upload_empty_with_status.xlsx",
+            file_name: "upload_empty_with_status.xlsx",
+            hash: "hash"
+          },
+          user_id: user_id,
+          claims: claims,
+          task_reference: "oban:1"
+        )
+
+      {_id, note} =
+        Enum.find(update_notes, fn
+          {_id, %{data_structure: data_structure}} ->
+            data_structure.external_id == "ex_id23"
+        end)
+
+      assert note.status == :draft
+
+      assert note.df_content == %{
+               "critical" => %{"origin" => "file", "value" => "Yes"},
+               "enriched_text" => %{"origin" => "file", "value" => %{}},
+               "text" => %{"origin" => "file", "value" => ""},
+               "urls_one_or_none" => %{
+                 "origin" => "user",
+                 "value" => [%{"url_name" => "", "url_value" => "https://foo.bar"}]
+               }
+             }
+
+      assert [{:reindex, :structures, indexed_structures}] = IndexWorkerMock.calls()
+      assert Enum.count(indexed_structures) == 1
+    end
+
+    test "removes empty fields when note is published and auto publish = true", %{
+      claims: %{user_id: user_id} = claims,
+      domain: %{id: domain_id}
+    } do
+      CacheHelpers.put_session_permissions(claims, %{
+        create_structure_note: [domain_id],
+        publish_structure_note_from_draft: [domain_id],
+        edit_structure_note: [domain_id],
+        view_data_structure: [domain_id]
+      })
+
+      data_structure =
+        insert(:data_structure, external_id: "ex_id23", domain_ids: [domain_id])
+
+      valid_note =
+        valid_structure_note("type_1", data_structure,
+          df_content: %{
+            "text" => %{"value" => "foo", "origin" => "user"},
+            "critical" => %{"value" => "No", "origin" => "user"},
+            "urls_one_or_none" => %{
+              "value" => [%{"url_name" => "", "url_value" => "https://foo.bar"}],
+              "origin" => "user"
+            }
+          },
+          status: "published"
+        )
+
+      assert valid_note.version == 1
+
+      {:ok, %{update_notes: update_notes}} =
+        Upload.structures(
+          %{
+            path: "test/fixtures/xlsx/upload_empty_with_status.xlsx",
+            file_name: "upload_empty_with_status.xlsx",
+            hash: "hash"
+          },
+          user_id: user_id,
+          claims: claims,
+          task_reference: "oban:1",
+          auto_publish: true
+        )
+
+      {_id, note} =
+        Enum.find(update_notes, fn
+          {_id, %{data_structure: data_structure}} ->
+            data_structure.external_id == "ex_id23"
+        end)
+
+      assert note.version == 2
+      assert note.status == :published
+
+      assert note.df_content == %{
+               "critical" => %{"origin" => "file", "value" => "Yes"},
+               "enriched_text" => %{"origin" => "file", "value" => %{}},
+               "text" => %{"origin" => "file", "value" => ""},
+               "urls_one_or_none" => %{
+                 "origin" => "user",
+                 "value" => [%{"url_name" => "", "url_value" => "https://foo.bar"}]
+               }
+             }
+
+      assert [{:reindex, :structures, indexed_structures}] = IndexWorkerMock.calls()
+      assert Enum.count(indexed_structures) == 1
+    end
+
+    test "removes empty fields when note is deprecated", %{
+      claims: %{user_id: user_id} = claims,
+      domain: %{id: domain_id}
+    } do
+      CacheHelpers.put_session_permissions(claims, %{
+        create_structure_note: [domain_id],
+        publish_structure_note_from_draft: [domain_id],
+        edit_structure_note: [domain_id],
+        view_data_structure: [domain_id]
+      })
+
+      data_structure =
+        insert(:data_structure, external_id: "ex_id23", domain_ids: [domain_id])
+
+      valid_structure_note("type_1", data_structure,
+        df_content: %{
+          "text" => %{"value" => "foo", "origin" => "user"},
+          "critical" => %{"value" => "No", "origin" => "user"},
+          "urls_one_or_none" => %{
+            "value" => [%{"url_name" => "", "url_value" => "https://foo.bar"}],
+            "origin" => "user"
+          }
+        },
+        status: "deprecated"
+      )
+
+      {:ok, %{update_notes: update_notes}} =
+        Upload.structures(
+          %{
+            path: "test/fixtures/xlsx/upload_empty_with_status.xlsx",
+            file_name: "upload_empty_with_status.xlsx",
+            hash: "hash"
+          },
+          user_id: user_id,
+          claims: claims,
+          task_reference: "oban:1"
+        )
+
+      {_id, note} =
+        Enum.find(update_notes, fn
+          {_id, %{data_structure: data_structure}} ->
+            data_structure.external_id == "ex_id23"
+        end)
+
+      assert note.status == :draft
+
+      assert note.df_content == %{
+               "critical" => %{"origin" => "file", "value" => "Yes"},
+               "enriched_text" => %{"origin" => "file", "value" => %{}},
+               "text" => %{"origin" => "file", "value" => ""},
+               "urls_one_or_none" => %{
+                 "origin" => "user",
+                 "value" => [%{"url_name" => "", "url_value" => "https://foo.bar"}]
+               }
+             }
+
+      assert [{:reindex, :structures, indexed_structures}] = IndexWorkerMock.calls()
+      assert Enum.count(indexed_structures) == 1
+    end
+
+    test "removes empty fields when note is deprecated and auto published = true", %{
+      claims: %{user_id: user_id} = claims,
+      domain: %{id: domain_id}
+    } do
+      CacheHelpers.put_session_permissions(claims, %{
+        create_structure_note: [domain_id],
+        publish_structure_note_from_draft: [domain_id],
+        edit_structure_note: [domain_id],
+        view_data_structure: [domain_id]
+      })
+
+      data_structure =
+        insert(:data_structure, external_id: "ex_id23", domain_ids: [domain_id])
+
+      valid_structure_note("type_1", data_structure,
+        df_content: %{
+          "text" => %{"value" => "foo", "origin" => "user"},
+          "critical" => %{"value" => "No", "origin" => "user"},
+          "urls_one_or_none" => %{
+            "value" => [%{"url_name" => "", "url_value" => "https://foo.bar"}],
+            "origin" => "user"
+          }
+        },
+        status: "deprecated"
+      )
+
+      {:ok, %{update_notes: update_notes}} =
+        Upload.structures(
+          %{
+            path: "test/fixtures/xlsx/upload_empty_with_status.xlsx",
+            file_name: "upload_empty_with_status.xlsx",
+            hash: "hash"
+          },
+          user_id: user_id,
+          claims: claims,
+          task_reference: "oban:1",
+          auto_publish: true
+        )
+
+      {_id, note} =
+        Enum.find(update_notes, fn
+          {_id, %{data_structure: data_structure}} ->
+            data_structure.external_id == "ex_id23"
+        end)
+
+      assert note.status == :published
+
+      assert note.df_content == %{
+               "critical" => %{"origin" => "file", "value" => "Yes"},
+               "enriched_text" => %{"origin" => "file", "value" => %{}},
+               "text" => %{"origin" => "file", "value" => ""},
+               "urls_one_or_none" => %{
+                 "origin" => "user",
+                 "value" => [%{"url_name" => "", "url_value" => "https://foo.bar"}]
+               }
+             }
+
+      assert [{:reindex, :structures, indexed_structures}] = IndexWorkerMock.calls()
+      assert Enum.count(indexed_structures) == 1
     end
 
     setup do
