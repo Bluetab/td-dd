@@ -379,7 +379,7 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
 
   defp merge_content(
          %{"df_content" => %{} = new_df_content} = params,
-         %{df_content: df_content},
+         %{df_content: %{} = df_content},
          opts
        ) do
     if opts[:merge_content] do
