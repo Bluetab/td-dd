@@ -1,5 +1,11 @@
 # Changelog
 
+# [Unreleased]
+
+### Fixed
+
+- [TD-7145] Handle empty fields in xlsx bulk upload for notes in status other than `draft`
+
 ## [7.2.2] 2025-03-03
 
 ### Added
