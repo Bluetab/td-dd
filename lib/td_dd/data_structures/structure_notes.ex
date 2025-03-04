@@ -137,7 +137,7 @@ defmodule TdDd.DataStructures.StructureNotes do
     |> Repo.one()
   end
 
-  def create_structure_note(%DataStructure{id: id} = data_structure, attrs, user_id) do
+  def create_structure_note(%DataStructure{id: id} = data_structure, attrs, user_id, opts \\ []) do
     changeset =
       StructureNote.create_changeset(
         %StructureNote{},
@@ -157,7 +157,7 @@ defmodule TdDd.DataStructures.StructureNotes do
       {:error, :structure_note, err, _} -> {:error, err}
       err -> err
     end
-    |> on_update()
+    |> on_update(opts)
   end
 
   def bulk_create_structure_note(data_structure, attrs, nil, user_id) do
@@ -321,7 +321,7 @@ defmodule TdDd.DataStructures.StructureNotes do
     |> on_update(opts)
   end
 
-  defp on_update(res, opts \\ []) do
+  defp on_update(res, opts) do
     if opts[:is_bulk_update] != true, do: on_update_structure(res)
 
     DataStructures.maybe_reindex_grant_requests(res)
