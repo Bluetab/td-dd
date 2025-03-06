@@ -88,7 +88,11 @@ defmodule TdDd.DataStructures.Search.QueryTest do
                    }
                  }
                }
-             } = Query.build_query(@all_permissions, %{"query" => " foo     "}, %{fields: []})
+             } =
+               Query.build_query(@all_permissions, %{"query" => " foo     "}, %{
+                 fields: [],
+                 simple_search_fields: []
+               })
     end
 
     test "includes a must exists and multi_match clause for a single word" do
@@ -103,7 +107,7 @@ defmodule TdDd.DataStructures.Search.QueryTest do
                Query.build_query(
                  @all_permissions,
                  %{"query" => "foo", "must" => %{"exists" => %{"field" => "foo.moo"}}},
-                 %{fields: []}
+                 %{fields: [], simple_search_fields: []}
                )
     end
 
@@ -120,12 +124,25 @@ defmodule TdDd.DataStructures.Search.QueryTest do
                    }
                  }
                }
-             } = Query.build_query(@all_permissions, %{"query" => " foo   bar  "}, %{fields: []})
+             } =
+               Query.build_query(@all_permissions, %{"query" => " foo   bar  "}, %{
+                 fields: [],
+                 simple_search_fields: []
+               })
     end
 
     test "does not include a must clause for an empty search term" do
       assert Query.build_query(@all_permissions, %{"query" => "  "}, %{}) == %{
                bool: %{must: %{simple_query_string: %{query: "  "}}}
+             }
+    end
+
+    test "includes simple query string search when wildcard is provided" do
+      assert Query.build_query(@all_permissions, %{"query" => "\"foo\""}, %{
+               fields: [],
+               simple_search_fields: []
+             }) == %{
+               bool: %{must: %{simple_query_string: %{query: "\"foo\"", fields: []}}}
              }
     end
   end
