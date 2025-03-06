@@ -136,13 +136,23 @@ defmodule TdDd.Grants.ElasticDocument do
     end
 
     def query_data(_) do
+      structure_query_data = ElasticDocumentProtocol.query_data(%DataStructureVersion{})
+
       structure_native_fields =
-        %DataStructureVersion{}
-        |> ElasticDocumentProtocol.query_data()
+        structure_query_data
         |> Map.get(:native_fields, [])
         |> Enum.map(&"data_structure_version.#{&1}")
 
-      %{aggs: aggregations(%GrantStructure{}), fields: @search_fields ++ structure_native_fields}
+      structure_simple_search_fields =
+        structure_query_data
+        |> Map.get(:simple_search_fields, [])
+        |> Enum.map(&"data_structure_version.#{&1}")
+
+      %{
+        aggs: aggregations(%GrantStructure{}),
+        fields: @search_fields ++ structure_native_fields,
+        simple_search_fields: @search_fields ++ structure_simple_search_fields
+      }
     end
 
     defp maybe_not_searcheable_field(properties, config, config_key) do
