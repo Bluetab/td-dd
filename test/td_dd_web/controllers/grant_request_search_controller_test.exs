@@ -28,20 +28,79 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
       conn: conn,
       grant_request: grant_request
     } do
-      ElasticsearchMock
-      |> expect(:request, fn _,
-                             :post,
-                             "/grant_requests/_search",
-                             %{query: query, size: @query_size},
-                             _ ->
-        assert %{bool: %{must: %{match_all: %{}}}} == query
+      expect(ElasticsearchMock, :request, fn _,
+                                             :post,
+                                             "/grant_requests/_search",
+                                             %{query: query, size: @query_size},
+                                             _ ->
+        assert %{
+                 bool: %{
+                   must: %{
+                     multi_match: %{
+                       type: "bool_prefix",
+                       fields: [
+                         "user.full_name",
+                         "data_structure_version.ngram_name*^3",
+                         "data_structure_version.ngram_original_name*^1.5",
+                         "data_structure_version.ngram_path*",
+                         "data_structure_version.system.name",
+                         "data_structure_version.description",
+                         "grant.data_structure_version.ngram_name*^3",
+                         "grant.data_structure_version.ngram_original_name*^1.5",
+                         "grant.data_structure_version.ngram_path*",
+                         "grant.data_structure_version.system.name",
+                         "grant.data_structure_version.description"
+                       ],
+                       query: "foo",
+                       fuzziness: "AUTO",
+                       lenient: true
+                     }
+                   }
+                 }
+               } == query
 
         SearchHelpers.hits_response([grant_request])
       end)
 
       assert %{"data" => [_]} =
                conn
-               |> post(Routes.grant_request_search_path(conn, :search))
+               |> post(Routes.grant_request_search_path(conn, :search, %{"query" => "foo"}))
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "admin can search grant requests with wildcard query", %{
+      conn: conn,
+      grant_request: grant_request
+    } do
+      expect(ElasticsearchMock, :request, fn _,
+                                             :post,
+                                             "/grant_requests/_search",
+                                             %{query: query, size: @query_size},
+                                             _ ->
+        assert %{
+                 bool: %{
+                   must: %{
+                     simple_query_string: %{
+                       fields: [
+                         "user.full_name",
+                         "data_structure_version.name*",
+                         "data_structure_version.original_name*",
+                         "grant.data_structure_version.name*",
+                         "grant.data_structure_version.original_name*"
+                       ],
+                       query: "\"foo\""
+                     }
+                   }
+                 }
+               } == query
+
+        SearchHelpers.hits_response([grant_request])
+      end)
+
+      assert %{"data" => [_]} =
+               conn
+               |> post(Routes.grant_request_search_path(conn, :search, %{"query" => "\"foo\""}))
                |> json_response(:ok)
     end
 
