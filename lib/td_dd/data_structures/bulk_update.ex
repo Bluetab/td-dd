@@ -65,7 +65,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
     |> parse_rows(opts)
     |> Enum.filter(fn {_row, data_structure, _row_meta} -> data_structure end)
     |> Enum.reduce_while([], fn {row, data_structure, row_meta}, acc ->
-      case format_content(row, data_structure, row_meta, opts[:lang]) do
+      case format_content(row, data_structure, row_meta, opts) do
         {:error, error} -> {:halt, {:error, error}}
         content -> {:cont, acc ++ [content]}
       end
@@ -82,14 +82,12 @@ defmodule TdDd.DataStructures.BulkUpdate do
     |> Enum.with_index(2)
     |> Enum.map(fn
       {%{"external_id" => external_id} = row, index} ->
-        {
-          row,
-          DataStructures.get_data_structure_by_external_id(
-            external_id,
-            opts[:preload] || []
-          ),
-          %{index: index, sheet: opts[:sheet]}
-        }
+        data_structure =
+          external_id
+          |> DataStructures.get_data_structure_by_external_id(opts[:preload] || [])
+          |> with_latest_note()
+
+        {row, data_structure, %{index: index, sheet: opts[:sheet]}}
 
       {row, index} ->
         {row, nil, %{index: index, sheet: opts[:sheet]}}
@@ -268,13 +266,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
         end
       end)
 
-    %{
-      updated: updated,
-      errors:
-        errored
-        |> Kernel.++(errors)
-        |> Enum.sort_by(fn {index, _} -> index end, :asc)
-    }
+    %{updated: updated, errors: Enum.sort_by(errored ++ errors, fn {index, _} -> index end, :asc)}
   end
 
   def reject_rows(
@@ -329,7 +321,9 @@ defmodule TdDd.DataStructures.BulkUpdate do
     %{ids: Enum.uniq(Map.keys(updates) ++ Map.keys(updated_notes)), errors: errors}
   end
 
-  defp format_content(row, data_structure, row_meta, lang) do
+  defp format_content(row, data_structure, row_meta, opts) do
+    lang = opts[:lang]
+
     data_structure
     |> DataStructures.template_name()
     |> TemplateCache.get_by_name!()
@@ -347,6 +341,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
           row
           |> Map.take(field_names)
           |> Enum.into(%{}, fn {key, value} -> {key, %{"value" => value, "origin" => "file"}} end)
+          |> merge_content(data_structure.latest_note, opts)
 
         effective_fields_names = Map.keys(content)
 
@@ -509,4 +504,23 @@ defmodule TdDd.DataStructures.BulkUpdate do
   end
 
   defp on_complete(errors), do: errors
+
+  defp with_latest_note(%DataStructure{} = data_structure) do
+    %DataStructure{
+      data_structure
+      | latest_note: StructureNotes.get_latest_structure_note(data_structure)
+    }
+  end
+
+  defp with_latest_note(data_structure), do: data_structure
+
+  defp merge_content(%{} = new_df_content, %{df_content: %{} = df_content}, opts) do
+    if opts[:merge_content] do
+      Map.merge(df_content, new_df_content)
+    else
+      new_df_content
+    end
+  end
+
+  defp merge_content(new_df_content, _latest_note, _opts), do: new_df_content
 end

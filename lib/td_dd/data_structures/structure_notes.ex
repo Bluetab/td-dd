@@ -130,7 +130,14 @@ defmodule TdDd.DataStructures.StructureNotes do
     |> Repo.one()
   end
 
-  def get_latest_structure_note(data_structure_id) do
+  def get_latest_structure_note(%DataStructure{id: id}) do
+    StructureNote
+    |> latest_structure_note_query(id)
+    |> preload(:data_structure)
+    |> Repo.one()
+  end
+
+  def get_latest_structure_note(data_structure_id) when is_integer(data_structure_id) do
     StructureNote
     |> latest_structure_note_query(data_structure_id)
     |> preload(:data_structure)
