@@ -104,8 +104,6 @@ defmodule TdDd.Grants.Search do
   end
 
   defp fetch_query_data(params) do
-    IO.puts("fetch_query_data")
-
     %GrantStructure{}
     |> ElasticDocumentProtocol.query_data()
     |> with_search_clauses(params)
