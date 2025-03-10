@@ -12,6 +12,10 @@
   - Handle empty fields in xlsx bulk upload for notes in status other than `draft`.
   - Put empty fields in row tail.
 
+### Added
+
+- [TD-7155] Introduce simple query string query for structures, grants, grant requests and jobs
+
 ## [7.2.2] 2025-03-03
 
 ### Added

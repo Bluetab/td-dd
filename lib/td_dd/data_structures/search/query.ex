@@ -8,6 +8,7 @@ defmodule TdDd.DataStructures.Search.Query do
   @match_all %{match_all: %{}}
   @match_none %{match_none: %{}}
   @not_confidential %{term: %{"confidential" => false}}
+  @accepted_wildcards ["\"", ")"]
 
   def build_filters(%{
         "view_data_structure" => view_scope,
@@ -63,26 +64,40 @@ defmodule TdDd.DataStructures.Search.Query do
   end
 
   defp do_build_query(filters, params, query_data) do
-    opts = query_data |> with_search_clauses() |> Keyword.new()
+    opts = query_data |> with_search_clauses(params) |> Keyword.new()
     Query.build_query(filters, params, opts)
   end
 
-  defp with_search_clauses(%{fields: fields} = query_data) do
-    multi_match_bool_prefix = %{
-      multi_match: %{
-        type: "bool_prefix",
-        fields: fields,
-        lenient: true,
-        fuzziness: "AUTO"
-      }
-    }
-
+  defp with_search_clauses(
+         %{fields: _fields, simple_search_fields: _simple_search_fields} = query_data,
+         params
+       ) do
     query_data
     |> Map.take([:aggs])
-    |> Map.put(:clauses, [multi_match_bool_prefix])
+    |> Map.put(:clauses, [clause_for_query(query_data, params)])
   end
 
-  defp with_search_clauses(query_data) do
+  defp with_search_clauses(query_data, _params) do
     Map.take(query_data, [:aggs])
+  end
+
+  defp clause_for_query(query_data, %{"query" => query}) when is_binary(query) do
+    if String.last(query) in @accepted_wildcards do
+      simple_query_string_clause(query_data)
+    else
+      multi_match_boolean_prefix(query_data)
+    end
+  end
+
+  defp clause_for_query(query_data, _params) do
+    multi_match_boolean_prefix(query_data)
+  end
+
+  defp multi_match_boolean_prefix(%{fields: fields}) do
+    %{multi_match: %{type: "bool_prefix", fields: fields, lenient: true, fuzziness: "AUTO"}}
+  end
+
+  defp simple_query_string_clause(%{simple_search_fields: fields}) do
+    %{simple_query_string: %{fields: fields}}
   end
 end

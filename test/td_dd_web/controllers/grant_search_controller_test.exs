@@ -13,11 +13,29 @@ defmodule TdDdWeb.GrantSearchControllerTest do
   describe "search" do
     @tag authentication: [role: "admin"]
     test "admin can search all grants without deleted_at", %{conn: conn, grant: grant} do
-      ElasticsearchMock
-      |> expect(:request, fn _, :post, "/grants/_search", %{query: query, size: 20}, _ ->
+      expect(ElasticsearchMock, :request, fn _,
+                                             :post,
+                                             "/grants/_search",
+                                             %{query: query, size: 20},
+                                             _ ->
         assert query == %{
                  bool: %{
-                   must: %{match_all: %{}},
+                   must: %{
+                     multi_match: %{
+                       type: "bool_prefix",
+                       fields: [
+                         "user.full_name",
+                         "data_structure_version.ngram_name*^3",
+                         "data_structure_version.ngram_original_name*^1.5",
+                         "data_structure_version.ngram_path*",
+                         "data_structure_version.system.name",
+                         "data_structure_version.description"
+                       ],
+                       query: "foo",
+                       fuzziness: "AUTO",
+                       lenient: true
+                     }
+                   },
                    must_not: %{exists: %{field: "deleted_at"}}
                  }
                }
@@ -27,7 +45,39 @@ defmodule TdDdWeb.GrantSearchControllerTest do
 
       assert %{"data" => [_]} =
                conn
-               |> post(Routes.grant_search_path(conn, :search_grants))
+               |> post(Routes.grant_search_path(conn, :search_grants, %{"query" => "foo"}))
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "admin can search all grants using wildcard", %{conn: conn, grant: grant} do
+      expect(ElasticsearchMock, :request, fn _,
+                                             :post,
+                                             "/grants/_search",
+                                             %{query: query, size: 20},
+                                             _ ->
+        assert query == %{
+                 bool: %{
+                   must: %{
+                     simple_query_string: %{
+                       fields: [
+                         "user.full_name",
+                         "data_structure_version.name*",
+                         "data_structure_version.original_name*"
+                       ],
+                       query: "\"foo\""
+                     }
+                   },
+                   must_not: %{exists: %{field: "deleted_at"}}
+                 }
+               }
+
+        SearchHelpers.hits_response([grant])
+      end)
+
+      assert %{"data" => [_]} =
+               conn
+               |> post(Routes.grant_search_path(conn, :search_grants, %{"query" => "\"foo\""}))
                |> json_response(:ok)
     end
 

@@ -13,9 +13,10 @@ defmodule TdDd.GrantRequests.Search do
   require Logger
 
   @index :grant_requests
+  @accepted_wildcards ["\"", ")"]
 
   def get_filter_values(%Claims{} = claims, params) do
-    query_data = %{aggs: aggs} = fetch_query_data()
+    query_data = %{aggs: aggs} = fetch_query_data(params)
 
     query =
       claims
@@ -50,7 +51,7 @@ defmodule TdDd.GrantRequests.Search do
   end
 
   def search(params, claims, page, size) do
-    query_data = fetch_query_data()
+    query_data = fetch_query_data(params)
     sort = Map.get(params, "sort", ["_score", "inserted_at"])
 
     query =
@@ -102,24 +103,35 @@ defmodule TdDd.GrantRequests.Search do
     Search.search(query, @index)
   end
 
-  defp fetch_query_data do
+  defp fetch_query_data(params) do
     %GrantRequest{}
     |> ElasticDocumentProtocol.query_data()
-    |> with_search_clauses()
+    |> with_search_clauses(params)
   end
 
-  defp with_search_clauses(%{fields: fields} = query_data) do
-    multi_match_bool_prefix = %{
-      multi_match: %{
-        type: "bool_prefix",
-        fields: fields,
-        lenient: true,
-        fuzziness: "AUTO"
-      }
-    }
-
+  defp with_search_clauses(query_data, params) do
     query_data
     |> Map.take([:aggs])
-    |> Map.put(:clauses, [multi_match_bool_prefix])
+    |> Map.put(:clauses, [clause_for_query(query_data, params)])
+  end
+
+  defp clause_for_query(query_data, %{"query" => query}) when is_binary(query) do
+    if String.last(query) in @accepted_wildcards do
+      simple_query_string_clause(query_data)
+    else
+      multi_match_boolean_prefix(query_data)
+    end
+  end
+
+  defp clause_for_query(query_data, _params) do
+    multi_match_boolean_prefix(query_data)
+  end
+
+  defp multi_match_boolean_prefix(%{fields: fields}) do
+    %{multi_match: %{type: "bool_prefix", fields: fields, lenient: true, fuzziness: "AUTO"}}
+  end
+
+  defp simple_query_string_clause(%{simple_search_fields: fields}) do
+    %{simple_query_string: %{fields: fields}}
   end
 end
