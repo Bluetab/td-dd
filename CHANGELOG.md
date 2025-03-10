@@ -2,9 +2,13 @@
 
 # [Unreleased]
 
+### Changed
+
+- [TD-6927] Permissions for QX
+
 ### Fixed
 
-- [TD-7145]: 
+- [TD-7145]:
   - Handle empty fields in xlsx bulk upload for notes in status other than `draft`.
   - Put empty fields in row tail.
 
