@@ -470,26 +470,27 @@ defmodule TdDq.Rules.SearchTest do
       expect(ElasticsearchMock, :request, fn
         _, :post, "/implementations/_search", query, _params ->
           assert query == %{
-            size: 50,
-            sort: ["_score", "implementation_key.sort"],
-            from: 0,
-            query: %{
-              bool: %{
-                must: [
-                  %{
-                    multi_match: %{
-                      type: "bool_prefix",
-                      fields: ["ngram_implementation_key^3", "implementation_type"],
-                      query: "foo",
-                      fuzziness: "AUTO",
-                      lenient: true
-                    }
-                  },
-                  %{term: %{"status" => "published"}}
-                ]
-              }
-            }
-          }
+                   size: 50,
+                   sort: ["_score", "implementation_key.sort"],
+                   from: 0,
+                   query: %{
+                     bool: %{
+                       must: [
+                         %{
+                           multi_match: %{
+                             type: "bool_prefix",
+                             fields: ["ngram_implementation_key^3", "implementation_type"],
+                             query: "foo",
+                             fuzziness: "AUTO",
+                             lenient: true
+                           }
+                         },
+                         %{term: %{"status" => "published"}}
+                       ]
+                     }
+                   }
+                 }
+
           SearchHelpers.hits_response([implementation])
       end)
 
@@ -498,22 +499,26 @@ defmodule TdDq.Rules.SearchTest do
     end
 
     @tag authentication: [role: "service"]
-    test "builds simple query string when using wildcard", %{claims: claims, implementation: implementation} do
+    test "builds simple query string when using wildcard", %{
+      claims: claims,
+      implementation: implementation
+    } do
       expect(ElasticsearchMock, :request, fn
         _, :post, "/implementations/_search", query, _params ->
           assert query.query == %{
-            bool: %{
-              must: [
-                %{
-                  simple_query_string: %{
-                    fields: ["implementation_key"],
-                    query: "\"foo\""
-                  }
-                },
-                %{term: %{"status" => "published"}}
-              ]
-            }
-          }
+                   bool: %{
+                     must: [
+                       %{
+                         simple_query_string: %{
+                           fields: ["implementation_key"],
+                           query: "\"foo\""
+                         }
+                       },
+                       %{term: %{"status" => "published"}}
+                     ]
+                   }
+                 }
+
           SearchHelpers.hits_response([implementation])
       end)
 

@@ -173,16 +173,21 @@ defmodule TdDd.GrantRequests.ElasticDocument do
     end
 
     def query_data(_) do
-      structure_native_fields =
-        %DataStructureVersion{}
-        |> ElasticDocumentProtocol.query_data()
-        |> Map.get(:native_fields, [])
+      structure_query_data = ElasticDocumentProtocol.query_data(%DataStructureVersion{})
+      structure_native_fields = Map.get(structure_query_data, :native_fields, [])
+      structure_simple_search_fields = Map.get(structure_query_data, :simple_search_fields, [])
 
       data_structure_version_fields =
-        Enum.map(structure_native_fields, &"data_structure_version.#{&1}")
+        nested_search_fields(structure_native_fields, "data_structure_version")
 
       grant_structure_version_fields =
-        Enum.map(structure_native_fields, &"grant.data_structure_version.#{&1}")
+        nested_search_fields(structure_native_fields, "grant.data_structure_version")
+
+      data_structure_simple_search_fields =
+        nested_search_fields(structure_simple_search_fields, "data_structure_version")
+
+      grant_structure_simple_search_fields =
+        nested_search_fields(structure_simple_search_fields, "grant.data_structure_version")
 
       gr_content_schema = Templates.content_schema_for_scope("gr")
       dd_content_schema = Templates.content_schema_for_scope("dd")
@@ -191,11 +196,18 @@ defmodule TdDd.GrantRequests.ElasticDocument do
         dynamic_search_fields(gr_content_schema, "metadata") ++
           dynamic_search_fields(dd_content_schema, "note")
 
+      fields =
+        @search_fields ++
+          dynamic_fields ++ data_structure_version_fields ++ grant_structure_version_fields
+
+      simple_search_fields =
+        @search_fields ++
+          data_structure_simple_search_fields ++ grant_structure_simple_search_fields
+
       %{
         aggs: merged_aggregations(gr_content_schema, dd_content_schema),
-        fields:
-          @search_fields ++
-            dynamic_fields ++ data_structure_version_fields ++ grant_structure_version_fields
+        fields: fields,
+        simple_search_fields: simple_search_fields
       }
     end
 
@@ -219,6 +231,10 @@ defmodule TdDd.GrantRequests.ElasticDocument do
       native_aggregations
       |> merge_dynamic_aggregations(gr_scope_or_content, "metadata")
       |> merge_dynamic_aggregations(dd_scope_or_content, "note")
+    end
+
+    defp nested_search_fields(fields, prefix) do
+      Enum.map(fields, &"#{prefix}.#{&1}")
     end
   end
 end

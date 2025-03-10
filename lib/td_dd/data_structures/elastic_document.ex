@@ -185,6 +185,7 @@ defmodule TdDd.DataStructures.ElasticDocument do
 
     @boosted_fields ~w(ngram_name*^3 ngram_original_name*^1.5 ngram_path*)
     @search_fields ~w(system.name description)
+    @simple_search_fields ~w(name* original_name*)
 
     def mappings(_) do
       content_mappings = %{properties: get_dynamic_mappings("dd")}
@@ -269,6 +270,7 @@ defmodule TdDd.DataStructures.ElasticDocument do
       %{
         fields: native_fields ++ dynamic_search_fields(content_schema, "note"),
         aggs: merged_aggregations(content_schema),
+        simple_search_fields: @simple_search_fields,
         native_fields: native_fields
       }
     end

@@ -15,11 +15,16 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
         user_id,
         opts \\ []
       ) do
+    latest_note = get_latest_structure_note(data_structure_id)
     type = DataStructures.get_data_structure_type(data_structure)
-    params = Map.put(params, "type", type)
+
+    params =
+      params
+      |> Map.put("type", type)
+      |> merge_content(latest_note, opts)
+
     auto_publish = opts[:auto_publish] == true
     is_bulk_update = opts[:is_bulk_update] == true
-    latest_note = get_latest_structure_note(data_structure_id)
     is_strict_update = opts[:is_strict_update] || false
 
     case require_modification?(data_structure_id, params, is_bulk_update, auto_publish) do
@@ -30,7 +35,7 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
               update(latest_note, params, is_strict_update, user_id, type, opts)
 
             _not_update ->
-              bulk_create(data_structure, params, latest_note, user_id)
+              bulk_create(data_structure, params, is_strict_update, latest_note, user_id, opts)
           end
 
         case {structure_note, auto_publish} do
@@ -46,12 +51,7 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
     end
   end
 
-  def bulk_create(
-        data_structure,
-        params,
-        latest_note,
-        user_id
-      ) do
+  defp bulk_create(data_structure, params, is_strict_update, latest_note, user_id, opts) do
     if can_create_new_draft(latest_note) != :ok,
       do: StructureNotes.delete_structure_note(latest_note, user_id, is_bulk_update: true)
 
@@ -60,12 +60,16 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
       |> Map.put("status", "draft")
       |> Map.put("version", next_version(latest_note))
 
-    StructureNotes.bulk_create_structure_note(
-      data_structure,
-      structure_note_params,
-      latest_note,
-      user_id
-    )
+    if is_strict_update do
+      StructureNotes.create_structure_note(data_structure, structure_note_params, user_id, opts)
+    else
+      StructureNotes.bulk_create_structure_note(
+        data_structure,
+        structure_note_params,
+        latest_note,
+        user_id
+      )
+    end
   end
 
   def create(
@@ -168,8 +172,6 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
 
   # Lifecycle actions for structure notes
   defp update_content(structure_note, new_df_content, user_id, true = _is_strict, type, opts) do
-    new_df_content = merge_content(structure_note, new_df_content, opts)
-
     case StructureNotes.update_structure_note(
            structure_note,
            %{"df_content" => new_df_content, "type" => type},
@@ -375,11 +377,18 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
     end
   end
 
-  defp merge_content(%{df_content: df_content}, new_df_content, opts) do
+  defp merge_content(
+         %{"df_content" => %{} = new_df_content} = params,
+         %{df_content: %{} = df_content},
+         opts
+       ) do
     if opts[:merge_content] do
-      Map.merge(df_content, new_df_content)
+      merged = Map.merge(df_content, new_df_content)
+      Map.put(params, "df_content", merged)
     else
-      new_df_content
+      params
     end
   end
+
+  defp merge_content(params, _latest_note, _opts), do: params
 end

@@ -53,12 +53,77 @@ defmodule TdCxWeb.JobControllerTest do
     } do
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/jobs/_search", _, _ -> SearchHelpers.hits_response([job])
+        _, :post, "/jobs/_search", query, _ ->
+          assert query == %{
+                   size: 50,
+                   sort: ["_score", "external_id.raw"],
+                   from: 0,
+                   query: %{
+                     bool: %{
+                       must: %{
+                         multi_match: %{
+                           type: "bool_prefix",
+                           fields: ["external_id", "source.external_id", "message"],
+                           query: external_id,
+                           fuzziness: "AUTO",
+                           lenient: true
+                         }
+                       }
+                     }
+                   }
+                 }
+
+          SearchHelpers.hits_response([job])
       end)
 
       assert %{"data" => data} =
                conn
-               |> post(Routes.job_path(conn, :search), %{})
+               |> post(Routes.job_path(conn, :search), %{"query" => external_id})
+               |> json_response(:ok)
+
+      assert data == [
+               %{
+                 "external_id" => external_id,
+                 "source" => %{"external_id" => source.external_id, "type" => source.type},
+                 "source_id" => source.id,
+                 "status" => "PENDING",
+                 "type" => type,
+                 "start_date" => DateTime.to_iso8601(job.inserted_at),
+                 "end_date" => DateTime.to_iso8601(job.updated_at)
+               }
+             ]
+    end
+
+    @tag authentication: [role: "admin"]
+    test "search all using wildcard", %{
+      conn: conn,
+      job: %{external_id: external_id, source: source, type: type} = job
+    } do
+      ElasticsearchMock
+      |> expect(:request, fn
+        _, :post, "/jobs/_search", query, _ ->
+          assert query == %{
+                   size: 50,
+                   sort: ["_score", "external_id.raw"],
+                   from: 0,
+                   query: %{
+                     bool: %{
+                       must: %{
+                         simple_query_string: %{
+                           fields: ["external_id"],
+                           query: "\"#{external_id}\""
+                         }
+                       }
+                     }
+                   }
+                 }
+
+          SearchHelpers.hits_response([job])
+      end)
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.job_path(conn, :search), %{"query" => "\"#{external_id}\""})
                |> json_response(:ok)
 
       assert data == [
