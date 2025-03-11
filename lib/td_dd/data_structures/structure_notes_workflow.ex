@@ -15,13 +15,9 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
         user_id,
         opts \\ []
       ) do
-    latest_note = get_latest_structure_note(data_structure_id)
+    latest_note = get_latest_structure_note(data_structure)
     type = DataStructures.get_data_structure_type(data_structure)
-
-    params =
-      params
-      |> Map.put("type", type)
-      |> merge_content(latest_note, opts)
+    params = Map.put(params, "type", type)
 
     auto_publish = opts[:auto_publish] == true
     is_bulk_update = opts[:is_bulk_update] == true
@@ -199,7 +195,7 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
   defp unreject(structure_note, user_id), do: simple_transition(structure_note, :draft, user_id)
 
   defp publish(structure_note, user_id, opts \\ []) do
-    with {:ok, _} <- structure_note |> can_transit_to(:published) do
+    with {:ok, _} <- can_transit_to(structure_note, :published) do
       case get_latest_structure_note(structure_note.data_structure_id, :published) do
         %StructureNote{} = previous_published ->
           transit_to(previous_published, "versioned", user_id, opts)
@@ -215,7 +211,7 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
          %StructureNote{version: version, data_structure_id: data_structure_id} = structure_note,
          user_id
        ) do
-    with {:ok, _} <- structure_note |> can_transit_to(:deprecated) do
+    with {:ok, _} <- can_transit_to(structure_note, :deprecated) do
       %{version: latest_version} = get_latest_structure_note(data_structure_id)
 
       if latest_version == version do
@@ -227,7 +223,7 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
   end
 
   defp simple_transition(structure_note, status, user_id) do
-    with {:ok, _} <- structure_note |> can_transit_to(status) do
+    with {:ok, _} <- can_transit_to(structure_note, status) do
       transit_to(structure_note, Atom.to_string(status), user_id)
     end
   end
@@ -289,13 +285,19 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
 
   # Workflow utilities
   defp get_latest_structure_note(data_structure_id, status) do
-    data_structure_id
-    |> StructureNotes.get_latest_structure_note(status)
+    StructureNotes.get_latest_structure_note(data_structure_id, status)
   end
 
-  defp get_latest_structure_note(data_structure_id) do
-    data_structure_id
-    |> StructureNotes.get_latest_structure_note()
+  defp get_latest_structure_note(%DataStructure{id: id, latest_note: nil}) do
+    get_latest_structure_note(id)
+  end
+
+  defp get_latest_structure_note(%DataStructure{latest_note: %StructureNote{} = latest}) do
+    latest
+  end
+
+  defp get_latest_structure_note(data_structure_id) when is_integer(data_structure_id) do
+    StructureNotes.get_latest_structure_note(data_structure_id)
   end
 
   def get_action_editable_action(%DataStructure{id: id}) do
@@ -376,19 +378,4 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
         true
     end
   end
-
-  defp merge_content(
-         %{"df_content" => %{} = new_df_content} = params,
-         %{df_content: %{} = df_content},
-         opts
-       ) do
-    if opts[:merge_content] do
-      merged = Map.merge(df_content, new_df_content)
-      Map.put(params, "df_content", merged)
-    else
-      params
-    end
-  end
-
-  defp merge_content(params, _latest_note, _opts), do: params
 end
