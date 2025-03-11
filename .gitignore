@@ -27,6 +27,7 @@ td_dd-*.tar
 
 /priv/plts/*.plt
 /priv/plts/*.plt.hash
+/priv/upload/
 
 .tool-versions
 .DS_Store
