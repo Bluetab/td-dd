@@ -33,3 +33,4 @@ td_dd-*.tar
 .DS_Store
 .elixir_ls
 TODO.*
+.qodo
