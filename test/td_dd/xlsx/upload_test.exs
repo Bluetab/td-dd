@@ -180,6 +180,45 @@ defmodule TdDd.XLSX.UploadTest do
     }
   ]
 
+  @content_for_type_5 [
+    %{
+      "fields" => [
+        %{
+          "cardinality" => "?",
+          "default" => %{"origin" => "default", "value" => ""},
+          "label" => "Level 1",
+          "name" => "Level 1",
+          "subscribable" => false,
+          "type" => "string",
+          "values" => %{"fixed" => ["A", "B", "C"]},
+          "widget" => "dropdown"
+        },
+        %{
+          "ai_suggestion" => false,
+          "cardinality" => "?",
+          "default" => %{"origin" => "default", "value" => ""},
+          "label" => "Level 2",
+          "name" => "Level 2",
+          "subscribable" => false,
+          "type" => "string",
+          "values" => %{
+            "switch" => %{
+              "on" => "Level 1",
+              "values" => %{
+                "" => [],
+                "A" => ["A1", "A2"],
+                "B" => ["B1", "B2"],
+                "C" => ["C1", "C2"]
+              }
+            }
+          },
+          "widget" => "dropdown"
+        }
+      ],
+      "name" => "Other information"
+    }
+  ]
+
   setup_all do
     start_supervised({Task.Supervisor, name: TdDd.TaskSupervisor})
     :ok
@@ -1092,6 +1131,56 @@ defmodule TdDd.XLSX.UploadTest do
                  "origin" => "file",
                  "value" => []
                }
+             }
+
+      assert [{:reindex, :structures, indexed_structures}] = IndexWorkerMock.calls()
+      assert Enum.count(indexed_structures) == 1
+    end
+
+    test "uploads dependent fields", %{
+      claims: %{user_id: user_id} = claims,
+      domain: %{id: domain_id}
+    } do
+      CacheHelpers.put_session_permissions(claims, %{
+        create_structure_note: [domain_id],
+        publish_structure_note_from_draft: [domain_id],
+        edit_structure_note: [domain_id],
+        view_data_structure: [domain_id]
+      })
+
+      %{id: id, name: type} =
+        CacheHelpers.insert_template(content: @content_for_type_5, type: "type_5", name: "type_5")
+
+      insert(:data_structure_type, name: type, template_id: id)
+
+      data_structure =
+        insert(:data_structure, external_id: "ex_id23", domain_ids: [domain_id])
+
+      valid_structure_note("type_5", data_structure,
+        df_content: %{"Level 1" => %{"origin" => "file", "value" => "A"}}
+      )
+
+      {:ok, %{update_notes: update_notes}} =
+        Upload.structures(
+          %{
+            path: "test/fixtures/xlsx/upload_dependent.xlsx",
+            file_name: "upload_dependent.xlsx",
+            hash: "hash"
+          },
+          user_id: user_id,
+          claims: claims,
+          task_reference: "oban:1"
+        )
+
+      {_id, note} =
+        Enum.find(update_notes, fn
+          {_id, %{data_structure: data_structure}} ->
+            data_structure.external_id == "ex_id23"
+        end)
+
+      assert note.df_content == %{
+               "Level 1" => %{"origin" => "file", "value" => "A"},
+               "Level 2" => %{"origin" => "file", "value" => "A2"}
              }
 
       assert [{:reindex, :structures, indexed_structures}] = IndexWorkerMock.calls()
