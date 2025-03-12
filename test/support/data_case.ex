@@ -19,7 +19,7 @@ defmodule TdDd.DataCase do
 
   using do
     quote do
-      use Oban.Testing, repo: TdDd.Repo, prefix: "private"
+      use Oban.Testing, repo: TdDd.Repo, prefix: Application.get_env(:td_dd, Oban)[:prefix]
 
       alias TdDd.Repo
 
