@@ -49,6 +49,8 @@ defmodule TdDdWeb.Router do
     post("/data_structures/structure_tags/search", StructureTagSearchController, :search)
     post("/data_structures/bulk_upload_domains", DataStructureController, :bulk_upload_domains)
     post("/data_structure_notes/search", StructureNoteController, :search)
+    post("/data_structure_notes/xlsx/download", DataStructures.XLSXController, :download)
+    post("/data_structure_notes/xlsx/upload", DataStructures.XLSXController, :upload)
     post("/data_structure_notes", StructureNoteController, :create_by_external_id)
 
     resources "/data_structures", DataStructureController, except: [:new, :edit, :show] do

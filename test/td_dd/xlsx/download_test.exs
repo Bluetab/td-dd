@@ -5,7 +5,7 @@ defmodule TdDd.XLSX.DownloadTest do
   alias XlsxReader
 
   describe "TdDd.XLSX.Download.write_to_memory/3" do
-    test "writes excel to memory for structures in editable download type" do
+    test "writes excel to memory for structures publised notes in editable download type" do
       domain = CacheHelpers.insert_domain()
 
       %{id: id} =
@@ -40,10 +40,7 @@ defmodule TdDd.XLSX.DownloadTest do
         template: %{"name" => "template_1"},
         note: %{
           "field_name" => %{"value" => ["field_value"], "origin" => "user"},
-          "domain_inside_note_field" => %{
-            "value" => [],
-            "origin" => "user"
-          }
+          "domain_inside_note_field" => %{"value" => [], "origin" => "user"}
         },
         external_id: "ext_id",
         type: "type_1",
@@ -86,7 +83,8 @@ defmodule TdDd.XLSX.DownloadTest do
 
       assert {:ok, {file_name, blob}} =
                Download.write_to_memory([structure_type_1, structure_type_2], structure_url,
-                 download_type: :editable
+                 download_type: :editable,
+                 note_type: :published
                )
 
       assert file_name == ~c"structures.xlsx"
@@ -157,7 +155,7 @@ defmodule TdDd.XLSX.DownloadTest do
              ]
     end
 
-    test "writes excel to memory for structures in non-editable download type" do
+    test "writes excel to memory for structures published notes in non-editable download type" do
       domain = CacheHelpers.insert_domain()
 
       %{id: id} =
@@ -241,8 +239,8 @@ defmodule TdDd.XLSX.DownloadTest do
         system: %{"name" => "system_2"},
         domain: "domain_2",
         description: "description_2",
-        inserted_at: "inserted_at_2",
-        domain_ids: [domain.id]
+        domain_ids: [domain.id],
+        inserted_at: "inserted_at_2"
       }
 
       structure_url = "https://truedat.td.dd/structure/:id"
@@ -320,6 +318,163 @@ defmodule TdDd.XLSX.DownloadTest do
                  "description_2",
                  "ext_id_2",
                  "inserted_at_2"
+               ]
+             ]
+    end
+
+    test "writes excel to memory for structures non_published notes in editable download type" do
+      domain = CacheHelpers.insert_domain()
+
+      %{id: id} =
+        CacheHelpers.insert_template(%{
+          name: "template_1",
+          scope: "dd",
+          content: [
+            %{
+              "name" => "group",
+              "fields" => [
+                %{
+                  "name" => "field_name",
+                  "type" => "list",
+                  "label" => "Label foo"
+                },
+                %{
+                  "name" => "domain_inside_note_field",
+                  "type" => "domain",
+                  "label" => "domain_inside_note_field_label",
+                  "cardinality" => "*"
+                }
+              ]
+            }
+          ]
+        })
+
+      insert(:data_structure_type, name: "type_1", template_id: id)
+
+      structure_type_1 = %{
+        name: "TechName_1",
+        path: ["foo", "bar"],
+        template: %{"name" => "template_1"},
+        non_published_note: %{
+          "note" => %{
+            "field_name" => %{"value" => ["field_value"], "origin" => "user"},
+            "domain_inside_note_field" => %{
+              "value" => [],
+              "origin" => "user"
+            }
+          }
+        },
+        external_id: "ext_id",
+        type: "type_1",
+        data_structure_id: 0,
+        domain_ids: [domain.id]
+      }
+
+      %{id: id} =
+        CacheHelpers.insert_template(%{
+          name: "template_2",
+          scope: "dd",
+          content: [
+            %{
+              "name" => "group",
+              "fields" => [
+                %{
+                  "name" => "bar",
+                  "type" => "list",
+                  "label" => "Label bar"
+                }
+              ]
+            }
+          ]
+        })
+
+      insert(:data_structure_type, name: "type_2", template_id: id)
+
+      structure_type_2 = %{
+        name: "TechName_2",
+        path: ["bar", "baz"],
+        template: %{"name" => "template_2"},
+        non_published_note: %{
+          "note" => %{"bar" => %{"value" => ["field_value"], "origin" => "user"}}
+        },
+        external_id: "ext_id_2",
+        type: "type_2",
+        data_structure_id: 1,
+        domain_ids: [domain.id]
+      }
+
+      structure_url = "https://truedat.td.dd/structure/:id"
+
+      assert {:ok, {file_name, blob}} =
+               Download.write_to_memory([structure_type_1, structure_type_2], structure_url,
+                 download_type: :editable,
+                 note_type: :non_published
+               )
+
+      assert file_name == ~c"structures.xlsx"
+
+      assert {:ok, workbook} = XlsxReader.open(blob, source: :binary)
+      assert {:ok, [headers | content]} = XlsxReader.sheet(workbook, "type_1")
+
+      assert Enum.count(headers) == 10
+
+      assert Enum.take(headers, 8) == [
+               "external_id",
+               "name",
+               "tech_name",
+               "alias_name",
+               "link_to_structure",
+               "domain",
+               "type",
+               "path"
+             ]
+
+      assert Enum.find(headers, &(&1 == "field_name"))
+      assert Enum.find(headers, &(&1 == "domain_inside_note_field"))
+
+      assert content == [
+               [
+                 "ext_id",
+                 "TechName_1",
+                 "TechName_1",
+                 "",
+                 "https://truedat.td.dd/structure/0",
+                 domain.name,
+                 "type_1",
+                 "foo > bar",
+                 "field_value",
+                 ""
+               ]
+             ]
+
+      assert {:ok, [headers | content]} = XlsxReader.sheet(workbook, "type_2")
+
+      assert Enum.count(headers) == 9
+
+      assert Enum.take(headers, 8) == [
+               "external_id",
+               "name",
+               "tech_name",
+               "alias_name",
+               "link_to_structure",
+               "domain",
+               "type",
+               "path"
+             ]
+
+      assert Enum.find(headers, &(&1 == "bar"))
+
+      assert content == [
+               [
+                 "ext_id_2",
+                 "TechName_2",
+                 "TechName_2",
+                 "",
+                 "https://truedat.td.dd/structure/1",
+                 domain.name,
+                 "type_2",
+                 "bar > baz",
+                 "field_value"
                ]
              ]
     end

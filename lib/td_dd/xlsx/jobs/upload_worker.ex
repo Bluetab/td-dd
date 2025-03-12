@@ -59,7 +59,7 @@ defmodule TdDd.XLSX.Jobs.UploadWorker do
       _error -> :noop
     end)
     |> then(fn
-      {:ok, _response} -> :ok
+      {:ok, _response} = response -> response
       error -> error
     end)
   end
