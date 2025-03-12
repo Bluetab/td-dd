@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-7161] Make Oban migration schema configurable
+
 ## [7.2.3] 2025-03-11
 
 ### Fixed
