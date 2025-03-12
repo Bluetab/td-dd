@@ -8,9 +8,9 @@ defmodule TdDdWeb.DataStructures.XLSXController do
   alias TdDd.XLSX.Download
   alias TdDd.XLSX.Upload
 
-  plug(TdDdWeb.SearchPermissionPlug)
+  plug TdDdWeb.SearchPermissionPlug
 
-  action_fallback(TdDdWeb.FallbackController)
+  action_fallback TdDdWeb.FallbackController
 
   @default_lang Application.compile_env(:td_dd, :lang)
 
@@ -24,6 +24,7 @@ defmodule TdDdWeb.DataStructures.XLSXController do
         "size",
         "structure_url_schema",
         "download_type",
+        "note_type",
         "lang",
         "header_labels"
       ])
@@ -48,9 +49,10 @@ defmodule TdDdWeb.DataStructures.XLSXController do
 
   def upload(conn, params) do
     %{user_id: user_id} = claims = conn.assigns[:current_resource]
-    {lang, params} = Map.pop(params, "lang", @default_lang)
+
+    lang = Map.get(params, "lang", @default_lang)
     %{path: path, filename: filename} = Map.get(params, "structures")
-    auto_publish = params |> Map.get("auto_publish", "false") |> String.to_existing_atom()
+    auto_publish = Map.get(params, "auto_publish", "false") == "true"
 
     opts = %{
       "auto_publish" => auto_publish,
@@ -77,9 +79,11 @@ defmodule TdDdWeb.DataStructures.XLSXController do
 
   defp build_opts(params) do
     params
-    |> Map.take(["download_type", "lang", "header_labels"])
+    |> Map.take(["download_type", "note_type", "lang", "header_labels"])
     |> Keyword.new(fn
       {"download_type", "editable"} -> {:download_type, :editable}
+      {"note_type", "published"} -> {:note_type, :published}
+      {"note_type", "non_published"} -> {:note_type, :non_published}
       {"header_labels", header_labels} -> {:header_labels, header_labels}
       {"lang", lang} -> {:lang, lang}
     end)

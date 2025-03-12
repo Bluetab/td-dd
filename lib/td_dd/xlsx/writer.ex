@@ -1,6 +1,6 @@
 defmodule TdDd.XLSX.Writer do
   @moduledoc """
-  Writes necessary content information from data structures to create
+  Writes necessary content information from data structures published and pending (non-published) to create
   a xlsx file.
   """
   alias TdCache.DomainCache
@@ -70,7 +70,7 @@ defmodule TdDd.XLSX.Writer do
 
         Map.put(type_information, :content, flat_fields)
 
-      nil ->
+      _ ->
         Map.put(type_information, :content, [])
     end
   end
@@ -108,7 +108,7 @@ defmodule TdDd.XLSX.Writer do
 
         highlight(@editable_headers) ++ content_headers
 
-      nil ->
+      _ ->
         header_labels = opts[:header_labels]
 
         metadata_headers =
@@ -146,12 +146,20 @@ defmodule TdDd.XLSX.Writer do
     end)
   end
 
-  defp add_content_or_metadata(fields, %{content: [_ | _] = content_fields}, %{note: note}, opts) do
-    Parser.append_parsed_fields(fields, content_fields, note,
+  defp add_content_or_metadata(fields, %{content: [_ | _] = content_fields}, note_info, opts) do
+    note =
+      case opts[:note_type] do
+        :published -> note_info[:note]
+        :non_published -> note_info[:non_published_note]["note"]
+      end
+
+    parser_opts = [
       domain_type: :with_domain_external_id,
       lang: opts[:lang],
       xlsx: true
-    )
+    ]
+
+    Parser.append_parsed_fields(fields, content_fields, note, parser_opts)
   end
 
   defp add_content_or_metadata(
@@ -229,9 +237,20 @@ defmodule TdDd.XLSX.Writer do
 
   defp get_alias_name(structure) do
     case structure do
-      %{note: %{"alias" => alias_value}} when is_binary(alias_value) -> alias_value
-      %{note: %{"alias" => %{"value" => alias_value}}} -> alias_value
-      _ -> ""
+      %{note: %{"alias" => alias_value}} when is_binary(alias_value) ->
+        alias_value
+
+      %{note: %{"alias" => %{"value" => alias_value}}} ->
+        alias_value
+
+      %{non_published_note: %{"note" => %{"alias" => alias_value}}} when is_binary(alias_value) ->
+        alias_value
+
+      %{non_published_note: %{"note" => %{"alias" => %{"value" => alias_value}}}} ->
+        alias_value
+
+      _ ->
+        ""
     end
   end
 

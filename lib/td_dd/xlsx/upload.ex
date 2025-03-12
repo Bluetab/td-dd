@@ -85,14 +85,14 @@ defmodule TdDd.XLSX.Upload do
   end
 
   def structures_async(%{path: path, filename: file_name}, hash, opts) do
-    file_path = copy_file(opts, path)
+    file_path = copy_file(path, opts)
 
     %{path: file_path, file_name: file_name, hash: hash, opts: opts}
     |> UploadWorker.new()
     |> Oban.insert()
   end
 
-  defp copy_file(opts, path) do
+  defp copy_file(path, opts) do
     upload_dir = Map.get(opts, "upload_dir", @file_upload_dir)
     :ok = File.mkdir_p!(upload_dir)
     source_file_name = path |> Path.split() |> List.last()
