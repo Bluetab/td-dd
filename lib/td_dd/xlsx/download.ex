@@ -1,6 +1,7 @@
 defmodule TdDd.XLSX.Download do
   @moduledoc """
-  Helper module to download structures.
+  Helper module to download structures published and pending (non-published) notes.
+
   """
   alias Elixlsx.Sheet
   alias Elixlsx.Workbook
