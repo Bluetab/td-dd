@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-7142] Allow to sort by `non_published_note` in data structure document
+
 ## [7.2.3] 2025-03-11
 
 ### Changed

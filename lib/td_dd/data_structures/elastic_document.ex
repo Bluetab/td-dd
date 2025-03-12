@@ -242,7 +242,7 @@ defmodule TdDd.DataStructures.ElasticDocument do
         non_published_note: %{
           properties: %{
             id: %{type: "long", index: false},
-            status: %{type: "keyword"}
+            status: %{type: "keyword", fields: @raw_sort}
           }
         }
       }
