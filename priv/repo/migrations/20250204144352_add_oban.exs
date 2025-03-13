@@ -5,7 +5,7 @@ defmodule TdDd.Repo.Migrations.AddOban do
     do:
       Oban.Migration.up(
         prefix: Application.get_env(:td_dd, Oban)[:prefix],
-        create_schema: Application.get_env(:td_dd, Oban)[:create_schema]
+        oban_create_schema: Application.get_env(:td_dd, Oban)
       )
 
   def down,
