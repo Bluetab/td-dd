@@ -175,7 +175,10 @@ if config_env() == :prod do
     timeout: System.get_env("SYNC_LOADER_TIMEOUT", "30000") |> String.to_integer()
 end
 
-config :td_dd, Oban, prefix: System.get_env("OBAN_DB_SCHEMA", "private")
+config :td_dd, Oban,
+  prefix: System.get_env("OBAN_DB_SCHEMA", "private")
+
+config :td_dd, oban_create_schema: System.get_env("OBAN_CREATE_SCHEMA", "true") == "true"
 
 config :td_dd, TdDd.Lineage.Import.Loader,
   nodes_chunk_size: System.get_env("NODES_CHUNK_SIZE", "10000") |> String.to_integer(),
