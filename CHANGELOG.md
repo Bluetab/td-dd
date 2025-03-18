@@ -1,5 +1,12 @@
 # Changelog
 
+## [7.3.0] 2025-03-18
+
+### Changed
+
+- [TD-7142] Allow to sort by `non_published_note` in data structure document
+- [TD-6677] Download and upload of pending notes in Excel
+
 ## [7.2.6] 2025-03-13
 
 ### Changed
@@ -19,6 +26,10 @@
 - [TD-7161] Make Oban migration schema configurable
 
 ## [7.2.3] 2025-03-11
+
+### Changed
+
+- [TD-6927] Permissions for QX
 
 ### Fixed
 

@@ -6,7 +6,7 @@ defmodule TdDd.MixProject do
       app: :td_dd,
       version:
         case System.get_env("APP_VERSION") do
-          nil -> "7.2.6-local"
+          nil -> "7.3.0-local"
           v -> v
         end,
       elixir: "~> 1.18",
@@ -77,7 +77,7 @@ defmodule TdDd.MixProject do
       {:flow, "~> 1.2.4"},
       {:codepagex, "~> 0.1.9"},
       {:bimap, "~> 1.3"},
-      {:td_core, git: "https://github.com/Bluetab/td-core.git", tag: "7.1.3"},
+      {:td_core, git: "https://github.com/Bluetab/td-core.git", tag: "7.3.0"},
       {:vaultex, "~> 1.0.1"},
       {:sobelow, "~> 0.13", only: [:dev, :test]},
       {:elixlsx, "~> 0.6"},

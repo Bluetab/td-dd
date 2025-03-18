@@ -339,7 +339,7 @@ defmodule TdDdWeb.Schema.DomainTest do
 
     @tag authentication: [
            role: "user",
-           permissions: [:create_quality_controls]
+           permissions: [:write_quality_controls]
          ]
     test "returns true if user has any permission", %{conn: conn} do
       assert %{"data" => %{"hasAnyDomain" => true}} =
