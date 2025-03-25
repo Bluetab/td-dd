@@ -4,7 +4,9 @@
 
 ### Added
 
-- [TD-7184] New env variable `APPLY_LANG_SETTINGS_STRUCTURES`
+- [TD-7184]:
+  - New env variable `APPLY_LANG_SETTINGS_STRUCTURES`
+  - Avoid call to n + 1 query to `DataStructureQueries.enriched_structure_versions/1` 
 
 ## [7.2.6] 2025-03-13
 
