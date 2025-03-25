@@ -520,7 +520,8 @@ defmodule TdDd.DataStructures do
     data_fields
     |> Repo.preload(opts[:preload] || [])
     |> protect_metadata(Keyword.get(opts, :with_protected_metadata))
-    |> Enum.map(&enrich(&1, [:links, :degree]))
+    |> get_field_links()
+    |> get_field_degree()
   end
 
   def get_mutable_metadata(nil, _), do: []
