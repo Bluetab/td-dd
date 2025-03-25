@@ -1,5 +1,11 @@
 # Changelog
 
+## [7.2.7] 2025-03-25
+
+### Added
+
+- [TD-7184] New env variable `APPLY_LANG_SETTINGS_STRUCTURES`
+
 ## [7.2.6] 2025-03-13
 
 ### Changed
