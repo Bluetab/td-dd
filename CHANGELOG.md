@@ -15,6 +15,12 @@
 - [TD-7142] Allow to sort by `non_published_note` in data structure document
 - [TD-6677] Download and upload of pending notes in Excel
 
+## [7.2.7] 2025-03-26
+
+### Added
+
+- [TD-7184]: This version was also generated with the 7.3.1 hotfix
+
 ## [7.2.6] 2025-03-13
 
 ### Changed
