@@ -70,6 +70,7 @@ defmodule TdDd.Search.StructureEnricher do
       |> enrich_domains
       |> enrich_links(links)
       |> search_content(content_opt, types, type)
+      |> search_content_non_published(content_opt, types, type)
 
     {:reply, reply, %{state | count: count + 1}}
   end
@@ -137,6 +138,97 @@ defmodule TdDd.Search.StructureEnricher do
   defp search_content(content, template, domain_ids) do
     Format.search_values(content, template, domain_ids: domain_ids)
   end
+
+  defp search_content_non_published(
+         %DataStructure{
+           domain_ids: domain_ids,
+           draft_note: %{df_content: %{} = content} = draft_note
+         } =
+           structure,
+         :searchable,
+         %{} = types,
+         type
+       )
+       when map_size(content) > 0 do
+    case Map.get(types, type) do
+      %{} = template ->
+        Map.put(
+          structure,
+          :draft_note,
+          Map.put(draft_note, :df_content, search_content(content, template, domain_ids))
+        )
+
+      _ ->
+        Map.put(
+          structure,
+          :draft_note,
+          Map.put(draft_note, :df_content, nil)
+        )
+    end
+  end
+
+  defp search_content_non_published(
+         %DataStructure{
+           domain_ids: domain_ids,
+           pending_approval_note: %{df_content: %{} = content} = pending_approval_note
+         } =
+           structure,
+         :searchable,
+         %{} = types,
+         type
+       )
+       when map_size(content) > 0 do
+    case Map.get(types, type) do
+      %{} = template ->
+        Map.put(
+          structure,
+          :pending_approval_note,
+          Map.put(
+            pending_approval_note,
+            :df_content,
+            search_content(content, template, domain_ids)
+          )
+        )
+
+      _ ->
+        Map.put(
+          structure,
+          :pending_approval_note,
+          Map.put(pending_approval_note, :df_content, nil)
+        )
+    end
+  end
+
+  defp search_content_non_published(
+         %DataStructure{
+           domain_ids: domain_ids,
+           rejected_note: %{df_content: %{} = content} = rejected_note
+         } =
+           structure,
+         :searchable,
+         %{} = types,
+         type
+       )
+       when map_size(content) > 0 do
+    case Map.get(types, type) do
+      %{} = template ->
+        Map.put(
+          structure,
+          :rejected_note,
+          Map.put(rejected_note, :df_content, search_content(content, template, domain_ids))
+        )
+
+      _ ->
+        Map.put(
+          structure,
+          :rejected_note,
+          Map.put(rejected_note, :df_content, nil)
+        )
+    end
+  end
+
+  defp search_content_non_published(%DataStructure{} = structure, _not_searchable, _, _type),
+    do: structure
 
   defp enrich_links(%{id: id} = structure, links) do
     %{structure | linked_concepts: Enum.member?(links, id)}

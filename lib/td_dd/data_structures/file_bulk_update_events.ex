@@ -10,60 +10,55 @@ defmodule TdDd.DataStructures.FileBulkUpdateEvents do
   alias TdDd.Repo
 
   def create_pending(user_id, hash, file_name, task_reference) do
-    %{
+    create_event(%{
       user_id: user_id,
       status: "PENDING",
       hash: hash,
       filename: file_name,
       task_reference: task_reference
-    }
-    |> create_event()
+    })
   end
 
   def create_retrying(user_id, hash, file_name, task_reference) do
-    %{
+    create_event(%{
       user_id: user_id,
       status: "RETRYING",
       hash: hash,
       filename: file_name,
       task_reference: task_reference
-    }
-    |> create_event()
+    })
   end
 
   def create_failed(user_id, hash, file_name, message, task_reference) do
-    %{
+    create_event(%{
       user_id: user_id,
       status: "FAILED",
       hash: hash,
       filename: file_name,
       message: message,
       task_reference: task_reference
-    }
-    |> create_event()
+    })
   end
 
   def create_started(user_id, hash, file_name, task_reference) do
-    %{
+    create_event(%{
       user_id: user_id,
       status: "STARTED",
       hash: hash,
       filename: file_name,
       task_reference: task_reference
-    }
-    |> create_event()
+    })
   end
 
   def create_completed(response, user_id, hash, file_name, task_reference) do
-    %{
+    create_event(%{
       response: response,
       user_id: user_id,
       hash: hash,
       filename: file_name,
       status: "COMPLETED",
       task_reference: task_reference
-    }
-    |> create_event()
+    })
   end
 
   def create_event(attrs \\ %{}) do
@@ -103,5 +98,5 @@ defmodule TdDd.DataStructures.FileBulkUpdateEvents do
   end
 
   def check_timeout(%FileBulkUpdateEvent{} = event), do: event
-  def check_timeout(nil), do: nil
+  def check_timeout(_), do: nil
 end

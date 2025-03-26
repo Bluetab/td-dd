@@ -1,12 +1,19 @@
 # Changelog
 
-## [7.2.7] 2025-03-25
+## [7.3.1] 2025-03-26
 
 ### Added
 
 - [TD-7184]:
   - New env variable `APPLY_LANG_SETTINGS_STRUCTURES`
-  - Avoid call to n + 1 query to `DataStructureQueries.enriched_structure_versions/1` 
+  - Avoid call to n + 1 query to `DataStructureQueries.enriched_structure_versions/1`
+
+## [7.3.0] 2025-03-18
+
+### Changed
+
+- [TD-7142] Allow to sort by `non_published_note` in data structure document
+- [TD-6677] Download and upload of pending notes in Excel
 
 ## [7.2.6] 2025-03-13
 
@@ -27,6 +34,10 @@
 - [TD-7161] Make Oban migration schema configurable
 
 ## [7.2.3] 2025-03-11
+
+### Changed
+
+- [TD-6927] Permissions for QX
 
 ### Fixed
 

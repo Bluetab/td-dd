@@ -186,10 +186,10 @@ defmodule TdDdWeb.Resolvers.Domains do
     do: Permissions.permitted_domain_ids(jti, :create_foreign_grant_request)
 
   defp permitted_domain_ids(%{jti: jti}, "createQualityControls"),
-    do: Permissions.permitted_domain_ids(jti, :create_quality_controls)
+    do: Permissions.permitted_domain_ids(jti, :write_quality_controls)
 
   defp permitted_domain_ids(%{jti: jti}, "publishQualityControls"),
-    do: Permissions.permitted_domain_ids(jti, :publish_quality_controls)
+    do: Permissions.permitted_domain_ids(jti, :write_quality_controls)
 
   defp permitted_domain_ids(%{jti: jti}, action_or_permission) do
     Permissions.permitted_domain_ids(jti, Macro.underscore(action_or_permission))

@@ -115,7 +115,7 @@ defmodule TdDd.Xlsx.Jobs.UploadWorkerTest do
         }
       }
 
-      assert :ok =
+      assert {:ok, _} =
                perform_job(
                  UploadWorker,
                  %{

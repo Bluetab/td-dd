@@ -54,18 +54,6 @@ defmodule TdDd.DataStructures.ElasticDocument do
       id_path = Enum.map(path, &Map.get(&1, "data_structure_id", 0))
       parent_id = List.last(Enum.map(path, &Integer.to_string(&1["data_structure_id"])), "")
 
-      note =
-        content
-        |> case do
-          note_content when is_map(note_content) ->
-            note_content
-            |> Enum.map(fn {key, %{"value" => value}} -> {key, value} end)
-            |> Map.new()
-
-          _ ->
-            content
-        end
-
       last_change_at =
         case DateTime.compare(data_structure.updated_at, dsv.updated_at) do
           :gt -> data_structure.updated_at
@@ -84,7 +72,7 @@ defmodule TdDd.DataStructures.ElasticDocument do
         :source_id,
         :system_id
       ])
-      |> Map.put(:note, note)
+      |> Map.put(:note, format_legacy_content(content))
       |> Map.put(:domain, first_domain(data_structure))
       |> Map.put(:field_type, field_type(dsv))
       |> Map.put(:path_sort, path_sort(name_path))
@@ -163,21 +151,48 @@ defmodule TdDd.DataStructures.ElasticDocument do
     defp source_alias(%{metadata: %{"alias" => value}}), do: value
     defp source_alias(_), do: nil
 
-    defp maybe_add_non_published_note(map, %{draft_note: %{id: id, status: status}}) do
-      Map.put(map, :non_published_note, %{id: id, status: status})
+    defp maybe_add_non_published_note(map, %{
+           draft_note: %{id: id, status: status, df_content: content}
+         }) do
+      Map.put(map, :non_published_note, %{
+        id: id,
+        status: status,
+        note: format_legacy_content(content)
+      })
     end
 
-    defp maybe_add_non_published_note(map, %{pending_approval_note: %{id: id, status: status}}) do
-      Map.put(map, :non_published_note, %{id: id, status: status})
+    defp maybe_add_non_published_note(map, %{
+           pending_approval_note: %{id: id, status: status, df_content: content}
+         }) do
+      Map.put(map, :non_published_note, %{
+        id: id,
+        status: status,
+        note: format_legacy_content(content)
+      })
     end
 
-    defp maybe_add_non_published_note(map, %{rejected_note: %{id: id, status: status}}) do
-      Map.put(map, :non_published_note, %{id: id, status: status})
+    defp maybe_add_non_published_note(map, %{
+           rejected_note: %{id: id, status: status, df_content: content}
+         }) do
+      Map.put(map, :non_published_note, %{
+        id: id,
+        status: status,
+        note: format_legacy_content(content)
+      })
     end
 
     defp maybe_add_non_published_note(map, _) do
       Map.put(map, :non_published_note, %{})
     end
+
+    defp format_legacy_content(content) when is_map(content) do
+      Enum.into(content, %{}, fn
+        {key, %{"value" => value}} ->
+          {key, value}
+      end)
+    end
+
+    defp format_legacy_content(content), do: content
   end
 
   defimpl ElasticDocumentProtocol, for: DataStructureVersion do
@@ -242,7 +257,8 @@ defmodule TdDd.DataStructures.ElasticDocument do
         non_published_note: %{
           properties: %{
             id: %{type: "long", index: false},
-            status: %{type: "keyword"}
+            status: %{type: "keyword", fields: @raw_sort},
+            note: content_mappings
           }
         }
       }
