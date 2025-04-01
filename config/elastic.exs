@@ -26,8 +26,8 @@ config :td_core, TdCore.Search.Cluster,
           analyzer: %{
             default: %{
               type: "custom",
-              tokenizer: "standard",
-              filter: ["lowercase", "asciifolding"]
+              tokenizer: "whitespace",
+              filter: ["lowercase", "word_delimiter", "asciifolding"]
             }
           },
           normalizer: %{
@@ -52,18 +52,12 @@ config :td_core, TdCore.Search.Cluster,
           analyzer: %{
             default: %{
               type: "custom",
-              tokenizer: "split_on_non_word",
-              filter: ["lowercase", "asciifolding"]
+              tokenizer: "whitespace",
+              filter: ["lowercase", "word_delimiter", "asciifolding"]
             }
           },
           normalizer: %{
             sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
-          },
-          tokenizer: %{
-            split_on_non_word: %{
-              type: "pattern",
-              pattern: "\\W+|_"
-            }
           },
           filter: %{
             es_stem: %{
@@ -84,8 +78,8 @@ config :td_core, TdCore.Search.Cluster,
           analyzer: %{
             default: %{
               type: "custom",
-              tokenizer: "standard",
-              filter: ["lowercase", "asciifolding"]
+              tokenizer: "whitespace",
+              filter: ["lowercase", "word_delimiter", "asciifolding"]
             }
           },
           normalizer: %{
@@ -110,18 +104,12 @@ config :td_core, TdCore.Search.Cluster,
           analyzer: %{
             default: %{
               type: "custom",
-              tokenizer: "split_on_non_word",
-              filter: ["lowercase", "asciifolding"]
+              tokenizer: "whitespace",
+              filter: ["lowercase", "word_delimiter", "asciifolding"]
             }
           },
           normalizer: %{
             sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
-          },
-          tokenizer: %{
-            split_on_non_word: %{
-              type: "pattern",
-              pattern: "\\W+|_"
-            }
           },
           filter: %{
             es_stem: %{
@@ -142,8 +130,8 @@ config :td_core, TdCore.Search.Cluster,
           analyzer: %{
             default: %{
               type: "custom",
-              tokenizer: "standard",
-              filter: ["lowercase", "asciifolding"]
+              tokenizer: "whitespace",
+              filter: ["lowercase", "word_delimiter", "asciifolding"]
             }
           },
           normalizer: %{
@@ -168,8 +156,8 @@ config :td_core, TdCore.Search.Cluster,
           analyzer: %{
             default: %{
               type: "custom",
-              tokenizer: "standard",
-              filter: ["lowercase", "asciifolding"]
+              tokenizer: "whitespace",
+              filter: ["lowercase", "word_delimiter", "asciifolding"]
             }
           },
           normalizer: %{
