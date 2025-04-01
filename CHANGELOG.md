@@ -1,11 +1,28 @@
 # Changelog
 
+## [7.3.1] 2025-03-26
+
+### Added
+
+- [TD-7184]
+  - New env variable `APPLY_LANG_SETTINGS_STRUCTURES`
+  - Avoid call to n + 1 query to `DataStructureQueries.enriched_structure_versions/1`
+
 ## [7.3.0] 2025-03-18
 
 ### Changed
 
 - [TD-7142] Allow to sort by `non_published_note` in data structure document
 - [TD-6677] Download and upload of pending notes in Excel
+
+## [7.2.7] 2025-03-26
+
+### Added
+
+- [TD-7184]
+  - This version was also generated with the 7.3.1 hotfix
+  - New env variable `APPLY_LANG_SETTINGS_STRUCTURES`
+  - Avoid call to n + 1 query to `DataStructureQueries.enriched_structure_versions/1`
 
 ## [7.2.6] 2025-03-13
 
@@ -33,7 +50,7 @@
 
 ### Fixed
 
-- [TD-7145]:
+- [TD-7145]
   - Handle empty fields in xlsx bulk upload for notes in status other than `draft`.
   - Put empty fields in row tail.
   - Merge content before parsing.

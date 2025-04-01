@@ -284,7 +284,9 @@ config :td_core, TdCore.Search.Cluster,
     structures: [
       bulk_page_size: System.get_env("BULK_PAGE_SIZE_STRUCTURES", "500") |> String.to_integer(),
       bulk_wait_interval:
-        System.get_env("BULK_WAIT_INTERVAL_STRUCTURES", "0") |> String.to_integer()
+        System.get_env("BULK_WAIT_INTERVAL_STRUCTURES", "0") |> String.to_integer(),
+      apply_lang_settings:
+        System.get_env("APPLY_LANG_SETTINGS_STRUCTURES", "true") |> String.downcase() == "true"
     ],
     grant_requests: [
       bulk_page_size:

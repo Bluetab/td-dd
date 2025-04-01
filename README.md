@@ -83,6 +83,14 @@ with value `Basic <ES_USERNAME>:<ES_PASSWORD>`
 - ES_USERNAME: Username
 - ES_PASSWORD: Password
 
+####  Disable the language-specific stemming functionality
+
+In the long term, we should aim to filter only by keyword fields in our connectors. However, setting the variable
+`APPLY_LANG_SETTINGS_STRUCTURES` to false will disable the language-specific stemming functionality provided by Elasticsearch,
+which may impact search accuracy
+
+- APPLY_LANG_SETTINGS_STRUCTURES: default true
+
 #### (Optional) ApiKey authentication
 
 This environment variables will add the Authentication header on each request
