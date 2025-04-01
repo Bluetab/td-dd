@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-7192] Use whitespace tokenizer with word delimiter filter to ignore `_` on text search
+
 ## [7.3.1] 2025-03-26
 
 ### Added
