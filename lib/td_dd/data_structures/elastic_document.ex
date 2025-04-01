@@ -267,7 +267,10 @@ defmodule TdDd.DataStructures.ElasticDocument do
         %{metadata_filters: %{path_match: "_filters.*", mapping: %{type: "keyword"}}}
       ]
 
-      settings = :structures |> Cluster.setting() |> apply_lang_settings()
+      settings =
+        :structures
+        |> Cluster.setting()
+        |> maybe_apply_lang_settings()
 
       %{
         mappings: %{properties: properties, dynamic_templates: dynamic_templates},
@@ -379,6 +382,16 @@ defmodule TdDd.DataStructures.ElasticDocument do
         end)
 
       Map.merge(catalog_view_configs_filters, data_structure_types_filters)
+    end
+
+    defp maybe_apply_lang_settings(settings) do
+      # TODO: connectors should be fixed instead to filter
+      # by keyword fields
+      if Cluster.setting(:structures, :apply_lang_settings) do
+        apply_lang_settings(settings)
+      else
+        settings
+      end
     end
   end
 end
