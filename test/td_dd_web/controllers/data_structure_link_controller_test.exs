@@ -104,8 +104,8 @@ defmodule TdDdWeb.DataStructureLinkControllerTest do
       ds2 = insert(:data_structure, external_id: "ds2_external_id")
       label1 = insert(:label, name: "label1")
       label2 = insert(:label, name: "label2")
-      insert(:data_structure_link, source: ds1, target: ds2, labels: [label1, label2])
-      %{ds1: ds1, ds2: ds2, label1: label1, label2: label2}
+      dsl1 = insert(:data_structure_link, source: ds1, target: ds2, labels: [label1, label2])
+      %{ds1: ds1, ds2: ds2, label1: label1, label2: label2, dsl1: dsl1}
     end
 
     @tag authentication: [role: "service"]
@@ -152,6 +152,160 @@ defmodule TdDdWeb.DataStructureLinkControllerTest do
                "source" => %{"id" => ^ds1_id},
                "target" => %{"id" => ^ds2_id}
              } = data
+    end
+
+    @tag authentication: [role: "service"]
+    test "search with no params", %{conn: conn} do
+      %{
+        dsl2: %{
+          id: dsl2_id,
+          source_id: dsl2_source_id,
+          target_id: dsl2_target_id,
+          inserted_at: dsl2_inserted_at,
+          updated_at: dsl2_updated_at
+        },
+        label3: %{id: label3_id, name: label3_name},
+        label4: %{id: label4_id, name: label4_name}
+      } = insert_multiple_links()
+
+      assert %{"data_structure_links" => data_structure_links} =
+               conn
+               |> post("/api/data_structure_links/search")
+               |> json_response(:ok)
+
+      assert Enum.count(data_structure_links) == 3
+      assert [link_data | _] = data_structure_links
+
+      dsl2_iso_inserted_at = DateTime.to_iso8601(dsl2_inserted_at)
+      dsl2_iso_updated_at = DateTime.to_iso8601(dsl2_updated_at)
+
+      assert %{
+               "id" => ^dsl2_id,
+               "source_id" => ^dsl2_source_id,
+               "target_id" => ^dsl2_target_id,
+               "labels" => [
+                 %{"id" => ^label3_id, "name" => ^label3_name},
+                 %{"id" => ^label4_id, "name" => ^label4_name}
+               ],
+               "inserted_at" => ^dsl2_iso_inserted_at,
+               "updated_at" => ^dsl2_iso_updated_at
+             } = link_data
+    end
+
+    @tag authentication: [role: "user"]
+    test "search user with no permission", %{conn: conn} do
+      assert %{"errors" => %{"detail" => "Invalid authorization"}} =
+               conn
+               |> post("/api/data_structure_links/search")
+               |> json_response(:forbidden)
+    end
+
+    @tag authentication: [role: "service"]
+    test "search with since param", %{conn: conn, dsl1: %{id: dsl1_id}} do
+      %{dsl2: %{id: dsl2_id}, dsl3: %{id: dsl3_id}} = insert_multiple_links()
+
+      params_1_day_ago = %{
+        "since" => NaiveDateTime.to_string(get_date_x_days_ago(1))
+      }
+
+      assert %{"data_structure_links" => data_structure_links} =
+               conn
+               |> post("/api/data_structure_links/search", params_1_day_ago)
+               |> json_response(:ok)
+
+      assert [%{"id" => ^dsl1_id}] = data_structure_links
+
+      params_3_days_ago = %{
+        "since" => NaiveDateTime.to_string(get_date_x_days_ago(3))
+      }
+
+      assert %{"data_structure_links" => data_structure_links} =
+               conn
+               |> post("/api/data_structure_links/search", params_3_days_ago)
+               |> json_response(:ok)
+
+      assert [%{"id" => ^dsl3_id}, %{"id" => ^dsl1_id}] = data_structure_links
+
+      params_4_days_ago = %{
+        "since" => NaiveDateTime.to_string(get_date_x_days_ago(4))
+      }
+
+      assert %{"data_structure_links" => data_structure_links} =
+               conn
+               |> post("/api/data_structure_links/search", params_4_days_ago)
+               |> json_response(:ok)
+
+      assert [%{"id" => ^dsl2_id}, %{"id" => ^dsl3_id}, %{"id" => ^dsl1_id}] =
+               data_structure_links
+    end
+
+    @tag authentication: [role: "service"]
+    test "search with size param", %{conn: conn} do
+      %{dsl2: %{id: dsl2_id}, dsl3: %{id: dsl3_id}} = insert_multiple_links()
+
+      params = %{
+        "size" => 2
+      }
+
+      assert %{"data_structure_links" => data_structure_links} =
+               conn
+               |> post("/api/data_structure_links/search", params)
+               |> json_response(:ok)
+
+      assert [%{"id" => ^dsl2_id}, %{"id" => ^dsl3_id}] = data_structure_links
+
+      params_3_days_ago = %{
+        "since" => NaiveDateTime.to_string(get_date_x_days_ago(3)),
+        "size" => 1
+      }
+
+      assert %{"data_structure_links" => data_structure_links} =
+               conn
+               |> post("/api/data_structure_links/search", params_3_days_ago)
+               |> json_response(:ok)
+
+      assert [%{"id" => ^dsl3_id}] = data_structure_links
+    end
+
+    @tag authentication: [role: "service"]
+    test "search with scroll_id", %{conn: conn, dsl1: %{id: dsl1_id}} do
+      %{dsl2: %{id: dsl2_id}, dsl3: %{id: dsl3_id}} = insert_multiple_links()
+
+      params = %{
+        "size" => 2
+      }
+
+      assert %{"data_structure_links" => data_structure_links, "scroll_id" => scroll_id_1} =
+               conn
+               |> post("/api/data_structure_links/search", params)
+               |> json_response(:ok)
+
+      assert [%{"id" => ^dsl2_id}, %{"id" => ^dsl3_id}] =
+               data_structure_links
+
+      params = %{
+        "scroll_id" => scroll_id_1
+      }
+
+      assert %{"data_structure_links" => data_structure_links, "scroll_id" => scroll_id_2} =
+               conn
+               |> post("/api/data_structure_links/search", params)
+               |> json_response(:ok)
+
+      assert [%{"id" => ^dsl1_id}] =
+               data_structure_links
+
+      params = %{
+        "scroll_id" => scroll_id_2
+      }
+
+      assert %{"data_structure_links" => data_structure_links, "scroll_id" => nil} =
+               conn
+               |> post("/api/data_structure_links/search", params)
+               |> json_response(:ok)
+
+      assert [] =
+               data_structure_links
     end
   end
 
@@ -509,5 +663,49 @@ defmodule TdDdWeb.DataStructureLinkControllerTest do
                ]
              }
            }
+  end
+
+  defp get_date_x_days_ago(days) do
+    # now = NaiveDateTime.local_now()
+    # five_days_ago = NaiveDateTime.add(now, -5, :day)
+    # three_days_ago = NaiveDateTime.add(now, -3, :day)
+    # one_day_ago = NaiveDateTime.add(now, -1, :day)
+
+    NaiveDateTime.add(NaiveDateTime.local_now(), days * -1, :day)
+  end
+
+  defp insert_multiple_links do
+    ds3 =
+      insert(:data_structure,
+        external_id: "ds3_external_id"
+      )
+
+    ds4 =
+      insert(:data_structure,
+        external_id: "ds4_external_id"
+      )
+
+    label3 = insert(:label, name: "label3")
+    label4 = insert(:label, name: "label4")
+
+    dsl2 =
+      insert(:data_structure_link,
+        source: ds3,
+        target: ds4,
+        labels: [label3, label4],
+        inserted_at: get_date_x_days_ago(5),
+        updated_at: get_date_x_days_ago(4)
+      )
+
+    dsl3 =
+      insert(:data_structure_link,
+        source: ds4,
+        target: ds3,
+        labels: [label4],
+        inserted_at: get_date_x_days_ago(3),
+        updated_at: get_date_x_days_ago(2)
+      )
+
+    %{ds3: ds3, ds4: ds4, label3: label3, label4: label4, dsl2: dsl2, dsl3: dsl3}
   end
 end

@@ -51,6 +51,15 @@ defmodule TdDdWeb.DataStructureLinkController do
     end
   end
 
+  def search(conn, params) do
+    claims = conn.assigns[:current_resource]
+
+    with {:ok, %{data_structure_links: links} = result} <- DataStructureLinks.search(params),
+         :ok <- Bodyguard.permit(DataStructureLinks, :view, claims, links) do
+      render(conn, "search.json", result: result)
+    end
+  end
+
   def delete(
         conn,
         %{

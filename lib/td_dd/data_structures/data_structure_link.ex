@@ -11,6 +11,9 @@ defmodule TdDd.DataStructures.DataStructureLink do
   alias TdDd.DataStructures.DataStructureLinkLabel
   alias TdDd.DataStructures.Label
 
+  @derive {Flop.Schema,
+           filterable: [:updated_at], sortable: [:id, :updated_at], default_limit: 20}
+
   schema "data_structures_links" do
     belongs_to :source, DataStructure
     belongs_to :target, DataStructure
