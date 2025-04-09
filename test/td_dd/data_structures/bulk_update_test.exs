@@ -248,7 +248,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   describe "update_all/4" do
     test "update all data structures with valid data", %{type: type} do
       IndexWorkerMock.clear()
-      claims = build(:claims)
+      %{user_id: user_id} = claims = build(:claims)
 
       ids =
         1..10
@@ -264,13 +264,41 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert Map.keys(update_notes) ||| ids
 
-      assert ids
-             |> Enum.map(&StructureNotes.get_latest_structure_note/1)
+      latest_structure_notes = Enum.map(ids, &StructureNotes.get_latest_structure_note/1)
+
+      assert latest_structure_notes
              |> Enum.map(& &1.df_content)
              |> Enum.all?(&(&1 == @valid_content))
 
+      assert latest_structure_notes
+             |> Enum.map(& &1.last_changed_by)
+             |> Enum.all?(&(&1 == user_id))
+
       assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
       assert length(ids_reindex) == length(ids)
+    end
+
+    test "update all data structures by other user with valid data", %{type: type} do
+      IndexWorkerMock.clear()
+      %{user_id: user_id} = claims = build(:claims)
+
+      ids =
+        1..10
+        |> Enum.map(fn _ ->
+          valid_structure_note(type,
+            df_content: %{"string" => %{"value" => "foo", "origin" => "user"}},
+            last_changed_by: user_id + 1
+          )
+        end)
+        |> Enum.map(& &1.data_structure_id)
+
+      assert {:ok, %{update_notes: _update_notes}} =
+               BulkUpdate.update_all(ids, @valid_params, claims, false)
+
+      assert ids
+             |> Enum.map(&StructureNotes.get_latest_structure_note/1)
+             |> Enum.map(& &1.last_changed_by)
+             |> Enum.all?(&(&1 == user_id))
     end
 
     test "update and publish all data structures with valid data", %{type: type} do
@@ -360,9 +388,10 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
     test "ignores unchanged data structures", %{type: type} do
       IndexWorkerMock.clear()
-      claims = build(:claims)
+      %{user_id: user_id} = claims = build(:claims)
       fixed_datetime = ~N[2020-01-01 00:00:00]
       timestamps = [inserted_at: fixed_datetime, updated_at: fixed_datetime]
+      changed_by = [last_changed_by: user_id]
 
       changed_ids =
         1..5
@@ -374,7 +403,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                 "string" => %{"value" => "foo", "origin" => "user"},
                 "list" => %{"value" => "bar", "origin" => "user"}
               }
-            ] ++ timestamps
+            ] ++ timestamps ++ changed_by
           )
         end)
         |> Enum.map(& &1.data_structure_id)
@@ -382,7 +411,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       unchanged_ids =
         1..5
         |> Enum.map(fn _ ->
-          valid_structure_note(type, [df_content: @valid_content] ++ timestamps)
+          valid_structure_note(type, [df_content: @valid_content] ++ timestamps ++ changed_by)
         end)
         |> Enum.map(& &1.data_structure_id)
 
@@ -1156,6 +1185,8 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     test "bulk upload notes of data structures with no previous notes", %{type: type} do
       IndexWorkerMock.clear()
 
+      %{user_id: user_id} = claims = build(:claims)
+
       note = %{
         "string" => %{"value" => "bar", "origin" => "file"},
         "list" => %{"value" => "two", "origin" => "file"}
@@ -1168,16 +1199,23 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         |> Enum.map(fn _ -> valid_structure(type) end)
         |> Enum.map(& &1.data_structure_id)
 
-      BulkUpdate.update_all(data_structure_ids, %{"df_content" => note}, build(:claims), false)
+      BulkUpdate.update_all(data_structure_ids, %{"df_content" => note}, claims, false)
+
+      structure_notes = Enum.map(data_structure_ids, &StructureNotes.list_structure_notes/1)
 
       df_contents =
-        data_structure_ids
-        |> Enum.map(&StructureNotes.list_structure_notes/1)
+        structure_notes
         |> Enum.filter(&(Enum.count(&1) == 1))
         |> Enum.map(&Enum.at(&1, -1).df_content)
 
+      last_changed_by =
+        structure_notes
+        |> Enum.filter(&(Enum.count(&1) == 1))
+        |> Enum.map(&Enum.at(&1, -1).last_changed_by)
+
       assert Enum.count(df_contents) == structure_count
       Enum.each(df_contents, fn df_content -> assert df_content == note end)
+      assert Enum.all?(last_changed_by, &(&1 == user_id))
       assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
       assert length(ids_reindex) == 5
     end

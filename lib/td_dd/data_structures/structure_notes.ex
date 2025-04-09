@@ -149,7 +149,7 @@ defmodule TdDd.DataStructures.StructureNotes do
       StructureNote.create_changeset(
         %StructureNote{},
         %{data_structure | latest_note: get_latest_structure_note(id)},
-        attrs
+        Map.put(attrs, "last_changed_by", user_id)
       )
 
     Multi.new()
@@ -181,7 +181,7 @@ defmodule TdDd.DataStructures.StructureNotes do
       StructureNote.bulk_create_changeset(
         latest_note,
         data_structure,
-        attrs
+        Map.put(attrs, "last_changed_by", user_id)
       )
 
     Multi.new()
@@ -204,7 +204,11 @@ defmodule TdDd.DataStructures.StructureNotes do
     %{data_structure: data_structure} =
       structure_note = Repo.preload(structure_note, :data_structure)
 
-    changeset = StructureNote.bulk_update_changeset(structure_note, attrs)
+    changeset =
+      StructureNote.bulk_update_changeset(
+        structure_note,
+        Map.put(attrs, "last_changed_by", user_id)
+      )
 
     if changeset.changes == %{} do
       {:ok, structure_note}
@@ -245,7 +249,8 @@ defmodule TdDd.DataStructures.StructureNotes do
     %{data_structure: data_structure} =
       structure_note = Repo.preload(structure_note, :data_structure)
 
-    changeset = StructureNote.changeset(structure_note, attrs)
+    changeset =
+      StructureNote.changeset(structure_note, Map.put(attrs, "last_changed_by", user_id))
 
     Multi.new()
     |> Multi.run(:latest, fn _, _ ->
@@ -263,7 +268,8 @@ defmodule TdDd.DataStructures.StructureNotes do
     %{data_structure: data_structure} =
       structure_note = Repo.preload(structure_note, :data_structure)
 
-    changeset = StructureNote.changeset(structure_note, attrs)
+    changeset =
+      StructureNote.changeset(structure_note, Map.put(attrs, "last_changed_by", user_id))
 
     Multi.new()
     |> Multi.run(:latest, fn _, _ ->

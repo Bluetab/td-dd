@@ -155,6 +155,7 @@ defmodule TdDd.DataStructures.StructureNotesTest do
       assert structure_note.df_content == %{}
       assert structure_note.status == :draft
       assert structure_note.version == 42
+      assert structure_note.last_changed_by == @user_id
 
       find_call = {:reindex, :grant_requests, [grant_request_id]}
 
@@ -215,6 +216,18 @@ defmodule TdDd.DataStructures.StructureNotesTest do
       assert structure_note.status == :published
       assert [{:reindex, :structures, _ids}] = IndexWorkerMock.calls()
       IndexWorkerMock.clear()
+    end
+
+    test "update_structure_note/3 by other user change last changed by" do
+      structure_note = insert(:structure_note, last_changed_by: 5)
+      IndexWorkerMock.clear()
+
+      params = %{"df_content" => %{}, "status" => "published"}
+
+      assert {:ok, %{structure_note_update: structure_note}} =
+               StructureNotes.update_structure_note(structure_note, params, @user_id)
+
+      assert structure_note.last_changed_by == @user_id
     end
 
     test "update_structure_note/3 with draft state and reindex structure", %{
