@@ -4,15 +4,10 @@
 
 ### Changed
 
+- [TD-7115] Add Data Structure Link incremental search
 - License and libraries
 - [TD-7192] Use whitespace tokenizer with word delimiter filter to ignore `_` on text search
 - [TD-7141] Added and indexed last changed field for structure notes
-
-## [Unreleased]
-
-### Added
-
-- [TD-7115] Add Data Structure Link incremental search
 
 ## [7.3.1] 2025-03-26
 
