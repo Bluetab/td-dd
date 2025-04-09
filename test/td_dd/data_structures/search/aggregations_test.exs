@@ -68,6 +68,9 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
                "my_user" => %{terms: %{field: "note.my_user.raw", size: @default_size}},
                "note_status" => %{
                  terms: %{field: "non_published_note.status", size: @default_size}
+               },
+               "note_last_changed_by" => %{
+                 terms: %{size: 500, field: "note_last_changed_by.user_name"}
                }
              }
     end

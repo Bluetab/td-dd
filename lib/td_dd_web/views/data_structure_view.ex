@@ -149,7 +149,9 @@ defmodule TdDdWeb.DataStructureView do
       :version,
       :non_published_note,
       :degree,
-      :note
+      :note,
+      :note_last_changed_by,
+      :note_last_changed_at
     ])
     |> Map.merge(dsv_attrs)
     |> Map.put_new(:metadata, %{})
