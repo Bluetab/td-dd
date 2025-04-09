@@ -341,5 +341,7 @@ config :td_core, TdCore.Search.Cluster,
     "system_external_id" =>
       System.get_env("AGG_SYSTEM_EXTERNAL_ID_SIZE", "500") |> String.to_integer(),
     "active.raw" => System.get_env("AGG_ACTIVE_RAW_SIZE", "500") |> String.to_integer(),
-    "df_label.raw" => System.get_env("AGG_DF_LABEL_RAW_SIZE", "500") |> String.to_integer()
+    "df_label.raw" => System.get_env("AGG_DF_LABEL_RAW_SIZE", "500") |> String.to_integer(),
+    "note_last_changed_by.user_name" =>
+      System.get_env("AGG_NOTE_LAST_CHANGED_BY_USER_NAME_SIZE", "500") |> String.to_integer()
   }

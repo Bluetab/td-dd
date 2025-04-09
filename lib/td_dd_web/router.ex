@@ -63,6 +63,7 @@ defmodule TdDdWeb.Router do
     end
 
     post("/data_structure_links", DataStructureLinkController, :create)
+    post("/data_structure_links/search", DataStructureLinkController, :search)
     get("/data_structure_links/search_all", DataStructureLinkController, :index_by_external_id)
 
     get(

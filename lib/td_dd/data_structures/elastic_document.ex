@@ -5,6 +5,7 @@ defmodule TdDd.DataStructures.ElasticDocument do
   """
 
   alias Elasticsearch.Document
+  alias TdCache.UserCache
   alias TdCore.Search.Cluster
   alias TdCore.Search.ElasticDocument
   alias TdCore.Search.ElasticDocumentProtocol
@@ -111,6 +112,7 @@ defmodule TdDd.DataStructures.ElasticDocument do
       |> Map.put(:last_change_at, last_change_at)
       |> maybe_put_alias(alias_name)
       |> maybe_add_non_published_note(data_structure)
+      |> add_last_changed_note_fields(data_structure)
       |> add_ngram_fields()
     end
 
@@ -185,6 +187,52 @@ defmodule TdDd.DataStructures.ElasticDocument do
       Map.put(map, :non_published_note, %{})
     end
 
+    defp add_last_changed_note_fields(map, %{draft_note: note}) when not is_nil(note),
+      do: maybe_add_last_changed_note_fields(map, note)
+
+    defp add_last_changed_note_fields(map, %{pending_approval_note: note})
+         when not is_nil(note),
+         do: maybe_add_last_changed_note_fields(map, note)
+
+    defp add_last_changed_note_fields(map, %{rejected_note: note}) when not is_nil(note),
+      do: maybe_add_last_changed_note_fields(map, note)
+
+    defp add_last_changed_note_fields(map, %{published_note: note}) when not is_nil(note),
+      do: maybe_add_last_changed_note_fields(map, note)
+
+    defp add_last_changed_note_fields(map, _ds),
+      do: Map.merge(map, %{note_last_changed_by: nil, note_last_changed_at: nil})
+
+    defp maybe_add_last_changed_note_fields(map, %{
+           last_changed_by: nil,
+           updated_at: last_changed_at
+         }) do
+      Map.merge(map, %{note_last_changed_at: last_changed_at, note_last_changed_by: nil})
+    end
+
+    defp maybe_add_last_changed_note_fields(map, %{
+           last_changed_by: last_changed_by,
+           updated_at: last_changed_at
+         }) do
+      case UserCache.get(last_changed_by) do
+        {:ok, nil} ->
+          Map.merge(map, %{note_last_changed_at: last_changed_at, note_last_changed_by: nil})
+
+        {:ok, user} ->
+          Map.merge(map, %{
+            note_last_changed_by: %{
+              id: user.id,
+              user_name: user.user_name,
+              full_name: user.full_name
+            },
+            note_last_changed_at: last_changed_at
+          })
+      end
+    end
+
+    defp maybe_add_last_changed_note_fields(map, _),
+      do: Map.merge(map, %{note_last_changed_at: nil, note_last_changed_by: nil})
+
     defp format_legacy_content(content) when is_map(content) do
       Enum.into(content, %{}, fn
         {key, %{"value" => value}} ->
@@ -248,6 +296,15 @@ defmodule TdDd.DataStructures.ElasticDocument do
           null_value: 0
         },
         note: content_mappings,
+        note_last_changed_by: %{
+          type: "object",
+          properties: %{
+            id: %{type: "long", index: false},
+            user_name: %{type: "keyword", fields: @raw_sort},
+            full_name: %{type: "text", fields: @raw}
+          }
+        },
+        note_last_changed_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
         class: %{type: "text", fields: %{raw: %{type: "keyword", null_value: ""}}},
         classes: %{enabled: true},
         source_alias: %{type: "keyword", fields: @raw_sort},
@@ -336,6 +393,12 @@ defmodule TdDd.DataStructures.ElasticDocument do
           terms: %{
             field: "non_published_note.status",
             size: Cluster.get_size_field("note_status")
+          }
+        },
+        "note_last_changed_by" => %{
+          terms: %{
+            field: "note_last_changed_by.user_name",
+            size: Cluster.get_size_field("note_last_changed_by.user_name")
           }
         }
       }

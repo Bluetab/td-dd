@@ -20,6 +20,8 @@ defmodule TdDd.DataStructures.DataStructureLinks do
 
   defdelegate authorize(action, user, params), to: __MODULE__.Policy
 
+  @valid_filter_params MapSet.new(["since", "size", "scroll_id"])
+
   def links(%DataStructure{id: id}), do: all_by_id(id)
 
   def all_by(clauses) do
@@ -84,6 +86,24 @@ defmodule TdDd.DataStructures.DataStructureLinks do
     )
     |> Ecto.Query.preload([[source: :system], [target: :system], :labels])
     |> Repo.all()
+  end
+
+  def search(params) do
+    with true <- validate_filter_params(params),
+         search_filters <- links_search_filters(params),
+         {:ok, {structure_links, %{end_cursor: end_cursor}}} <-
+           Flop.validate_and_run(
+             DataStructureLink |> Ecto.Query.preload(:labels),
+             search_filters
+           ) do
+      {:ok, %{data_structure_links: structure_links, scroll_id: end_cursor}}
+    else
+      _ -> {:error, :invalid_params}
+    end
+  end
+
+  def validate_filter_params(params) do
+    is_map(params) and Map.keys(params) |> Enum.all?(&(&1 in @valid_filter_params))
   end
 
   def validate_params(link_params) do
@@ -377,4 +397,31 @@ defmodule TdDd.DataStructures.DataStructureLinks do
   def delete_label(label) do
     Repo.delete(label)
   end
+
+  defp links_search_filters(params) do
+    Enum.reduce(
+      params,
+      %{
+        order_by: ["updated_at", "id"],
+        order_directions: ["asc", "asc"],
+        first: 20,
+        filters: [],
+        after: nil
+      },
+      &apply_query_param/2
+    )
+  end
+
+  defp apply_query_param({"since", since}, %{filters: filters} = acc)
+       when is_binary(since) and since != "",
+       do: %{acc | filters: [%{field: :updated_at, op: :>=, value: since} | filters]}
+
+  defp apply_query_param({"size", size}, acc) when is_integer(size) and size > 0,
+    do: %{acc | first: size}
+
+  defp apply_query_param({"scroll_id", scroll_id}, acc)
+       when is_binary(scroll_id) and scroll_id != "",
+       do: %{acc | after: scroll_id}
+
+  defp apply_query_param(_, acc), do: acc
 end

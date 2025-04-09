@@ -25,6 +25,8 @@ defmodule TdDd.DataStructures.StructureNote do
     field(:version, :integer)
     field(:resource, :map, virtual: true, default: %{})
     field(:domain_ids, {:array, :integer}, virtual: true, default: [])
+    field(:last_changed_by, :integer)
+
     belongs_to(:data_structure, DataStructure)
 
     timestamps(type: :utc_datetime_usec)
@@ -32,7 +34,7 @@ defmodule TdDd.DataStructures.StructureNote do
 
   def bulk_update_changeset(%{df_content: old_content} = structure_note, attrs) do
     structure_note
-    |> cast(attrs, [:df_content, :status])
+    |> cast(attrs, [:df_content, :status, :last_changed_by])
     |> update_change(:df_content, &Content.merge(&1, old_content))
     |> maybe_put_identifier(structure_note)
     |> validate_content(structure_note, attrs)
@@ -41,7 +43,7 @@ defmodule TdDd.DataStructures.StructureNote do
 
   def changeset(%{df_content: _old_content} = structure_note, attrs) do
     structure_note
-    |> cast(attrs, [:status, :df_content])
+    |> cast(attrs, [:status, :df_content, :last_changed_by])
     |> validate_required([:status, :df_content])
     |> maybe_put_identifier(structure_note)
     |> validate_change(:df_content, Validation.validator(structure_note))
@@ -53,7 +55,7 @@ defmodule TdDd.DataStructures.StructureNote do
         attrs
       ) do
     %__MODULE__{}
-    |> cast(attrs, [:status, :version, :df_content])
+    |> cast(attrs, [:status, :version, :df_content, :last_changed_by])
     |> update_change(:df_content, &Content.merge(&1, old_content))
     |> put_assoc(:data_structure, data_structure)
     |> validate_required([:status, :version, :df_content, :data_structure])
@@ -69,7 +71,7 @@ defmodule TdDd.DataStructures.StructureNote do
         attrs
       ) do
     structure_note
-    |> cast(attrs, [:status, :version, :df_content])
+    |> cast(attrs, [:status, :version, :df_content, :last_changed_by])
     |> put_assoc(:data_structure, data_structure)
     |> validate_required([:status, :version, :df_content, :data_structure])
     |> maybe_put_identifier(data_structure)
