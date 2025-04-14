@@ -45,7 +45,8 @@ defmodule TdDd.XLSX.DownloadTest do
         external_id: "ext_id",
         type: "type_1",
         data_structure_id: 0,
-        domain_ids: [domain.id]
+        domain_ids: [domain.id],
+        system: %{"name" => "system_1"}
       }
 
       %{id: id} =
@@ -76,7 +77,8 @@ defmodule TdDd.XLSX.DownloadTest do
         external_id: "ext_id_2",
         type: "type_2",
         data_structure_id: 1,
-        domain_ids: [domain.id]
+        domain_ids: [domain.id],
+        system: %{"name" => "system_2"}
       }
 
       structure_url = "https://truedat.td.dd/structure/:id"
@@ -92,9 +94,9 @@ defmodule TdDd.XLSX.DownloadTest do
       assert {:ok, workbook} = XlsxReader.open(blob, source: :binary)
       assert {:ok, [headers | content]} = XlsxReader.sheet(workbook, "type_1")
 
-      assert Enum.count(headers) == 10
+      assert Enum.count(headers) == 11
 
-      assert Enum.take(headers, 8) == [
+      assert Enum.take(headers, 9) == [
                "external_id",
                "name",
                "tech_name",
@@ -102,6 +104,7 @@ defmodule TdDd.XLSX.DownloadTest do
                "link_to_structure",
                "domain",
                "type",
+               "system",
                "path"
              ]
 
@@ -117,6 +120,7 @@ defmodule TdDd.XLSX.DownloadTest do
                  "https://truedat.td.dd/structure/0",
                  domain.name,
                  "type_1",
+                 "system_1",
                  "foo > bar",
                  "field_value",
                  ""
@@ -125,9 +129,9 @@ defmodule TdDd.XLSX.DownloadTest do
 
       assert {:ok, [headers | content]} = XlsxReader.sheet(workbook, "type_2")
 
-      assert Enum.count(headers) == 9
+      assert Enum.count(headers) == 10
 
-      assert Enum.take(headers, 8) == [
+      assert Enum.take(headers, 9) == [
                "external_id",
                "name",
                "tech_name",
@@ -135,6 +139,7 @@ defmodule TdDd.XLSX.DownloadTest do
                "link_to_structure",
                "domain",
                "type",
+               "system",
                "path"
              ]
 
@@ -149,6 +154,7 @@ defmodule TdDd.XLSX.DownloadTest do
                  "https://truedat.td.dd/structure/1",
                  domain.name,
                  "type_2",
+                 "system_2",
                  "bar > baz",
                  "field_value"
                ]
@@ -367,7 +373,8 @@ defmodule TdDd.XLSX.DownloadTest do
         external_id: "ext_id",
         type: "type_1",
         data_structure_id: 0,
-        domain_ids: [domain.id]
+        domain_ids: [domain.id],
+        system: %{"name" => "system_1"}
       }
 
       %{id: id} =
@@ -400,7 +407,8 @@ defmodule TdDd.XLSX.DownloadTest do
         external_id: "ext_id_2",
         type: "type_2",
         data_structure_id: 1,
-        domain_ids: [domain.id]
+        domain_ids: [domain.id],
+        system: %{"name" => "system_2"}
       }
 
       structure_url = "https://truedat.td.dd/structure/:id"
@@ -416,9 +424,9 @@ defmodule TdDd.XLSX.DownloadTest do
       assert {:ok, workbook} = XlsxReader.open(blob, source: :binary)
       assert {:ok, [headers | content]} = XlsxReader.sheet(workbook, "type_1")
 
-      assert Enum.count(headers) == 10
+      assert Enum.count(headers) == 11
 
-      assert Enum.take(headers, 8) == [
+      assert Enum.take(headers, 9) == [
                "external_id",
                "name",
                "tech_name",
@@ -426,6 +434,7 @@ defmodule TdDd.XLSX.DownloadTest do
                "link_to_structure",
                "domain",
                "type",
+               "system",
                "path"
              ]
 
@@ -441,6 +450,7 @@ defmodule TdDd.XLSX.DownloadTest do
                  "https://truedat.td.dd/structure/0",
                  domain.name,
                  "type_1",
+                 "system_1",
                  "foo > bar",
                  "field_value",
                  ""
@@ -449,9 +459,9 @@ defmodule TdDd.XLSX.DownloadTest do
 
       assert {:ok, [headers | content]} = XlsxReader.sheet(workbook, "type_2")
 
-      assert Enum.count(headers) == 9
+      assert Enum.count(headers) == 10
 
-      assert Enum.take(headers, 8) == [
+      assert Enum.take(headers, 9) == [
                "external_id",
                "name",
                "tech_name",
@@ -459,6 +469,7 @@ defmodule TdDd.XLSX.DownloadTest do
                "link_to_structure",
                "domain",
                "type",
+               "system",
                "path"
              ]
 
@@ -473,6 +484,7 @@ defmodule TdDd.XLSX.DownloadTest do
                  "https://truedat.td.dd/structure/1",
                  domain.name,
                  "type_2",
+                 "system_2",
                  "bar > baz",
                  "field_value"
                ]

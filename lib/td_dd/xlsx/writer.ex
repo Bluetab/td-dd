@@ -30,6 +30,7 @@ defmodule TdDd.XLSX.Writer do
     "link_to_structure",
     "domain",
     "type",
+    "system",
     "path"
   ]
 
