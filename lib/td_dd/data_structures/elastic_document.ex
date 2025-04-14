@@ -317,7 +317,8 @@ defmodule TdDd.DataStructures.ElasticDocument do
             status: %{type: "keyword", fields: @raw_sort},
             note: content_mappings
           }
-        }
+        },
+        embeddings: %{properties: get_embedding_mappings()}
       }
 
       dynamic_templates = [
