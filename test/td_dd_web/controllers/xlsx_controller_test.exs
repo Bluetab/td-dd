@@ -111,6 +111,7 @@ defmodule TdDdWeb.DataStructures.XLSXControllerTest do
                "link_to_structure",
                "domain",
                "type",
+               "system",
                "path",
                "string"
              ]
@@ -124,6 +125,7 @@ defmodule TdDdWeb.DataStructures.XLSXControllerTest do
                  "",
                  domain.name,
                  dsv.type,
+                 dsv.data_structure.system.name,
                  "",
                  "foo"
                ]
@@ -204,6 +206,7 @@ defmodule TdDdWeb.DataStructures.XLSXControllerTest do
                "link_to_structure",
                "domain",
                "type",
+               "system",
                "path",
                "string"
              ]
@@ -217,6 +220,7 @@ defmodule TdDdWeb.DataStructures.XLSXControllerTest do
                  "",
                  domain.name,
                  dsv.type,
+                 dsv.data_structure.system.name,
                  "",
                  "foo"
                ]
@@ -297,6 +301,7 @@ defmodule TdDdWeb.DataStructures.XLSXControllerTest do
                "link_to_structure",
                "domain",
                "type",
+               "system",
                "path",
                "string"
              ]
@@ -310,6 +315,7 @@ defmodule TdDdWeb.DataStructures.XLSXControllerTest do
                  "",
                  domain.name,
                  dsv.type,
+                 dsv.data_structure.system.name,
                  "",
                  "foo"
                ]
@@ -390,6 +396,7 @@ defmodule TdDdWeb.DataStructures.XLSXControllerTest do
                "link_to_structure",
                "domain",
                "type",
+               "system",
                "path",
                "string"
              ]
@@ -403,6 +410,7 @@ defmodule TdDdWeb.DataStructures.XLSXControllerTest do
                  "",
                  domain.name,
                  dsv.type,
+                 dsv.data_structure.system.name,
                  "",
                  "foo"
                ]
