@@ -128,7 +128,8 @@ defmodule TdDq.Rules.ElasticDocument do
         df_name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
         df_label: %{type: "text", fields: %{raw: %{type: "keyword"}}},
         _confidential: %{type: "boolean"},
-        df_content: content_mappings
+        df_content: content_mappings,
+        embeddings: %{properties: get_embedding_mappings()}
       }
 
       settings = :rules |> Cluster.setting() |> apply_lang_settings()
