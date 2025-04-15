@@ -6,6 +6,10 @@
 
 - [TD-7180] Add 'system' field to XLSX export
 
+### Fixed
+
+[TD-7226] Enhance SSL configuration handling in production
+
 ## [7.4.0] 2025-04-09
 
 ### Added
