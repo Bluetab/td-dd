@@ -140,7 +140,11 @@ defmodule TdDd.Search.Store do
     query
     |> Repo.stream()
     |> Stream.chunk_every(chunk_size)
-    |> Stream.flat_map(&enrich_chunk_data_structures(&1, relation_type_id, filters))
+    |> Task.async_stream(&enrich_chunk_data_structures(&1, relation_type_id, filters),
+      max_concurrency: 8,
+      timeout: 20_000
+    )
+    |> Stream.flat_map(fn {:ok, chunk} -> chunk end)
   end
 
   defp do_stream_grants(query) do
