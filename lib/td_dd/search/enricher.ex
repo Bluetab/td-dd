@@ -1,4 +1,7 @@
 defmodule TdDd.Search.EnricherBehaviour do
+  @moduledoc """
+  Behaviour defining operations to enrich data structure versions
+  """
   alias TdDd.DataStructures.DataStructureVersion
 
   @callback async_enrich_versions(
@@ -9,6 +12,9 @@ defmodule TdDd.Search.EnricherBehaviour do
 end
 
 defmodule TdDd.Search.EnricherImpl do
+  @moduledoc """
+  Implementation of behaviour `TdDd.Search.EnricherBehaviour`
+  """
   @behaviour TdDd.Search.EnricherBehaviour
 
   alias TdDd.DataStructures
