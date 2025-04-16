@@ -22,6 +22,8 @@ defmodule TdDd.Search.Store do
 
   require Logger
 
+  @enricher Application.compile_env(:td_dd, :search_enricher, TdDd.Search.EnricherImpl)
+
   @impl true
   def transaction(fun) do
     {:ok, result} = Repo.transaction(fun, timeout: :infinity)
@@ -140,11 +142,7 @@ defmodule TdDd.Search.Store do
     query
     |> Repo.stream()
     |> Stream.chunk_every(chunk_size)
-    |> Task.async_stream(&enrich_chunk_data_structures(&1, relation_type_id, filters),
-      max_concurrency: 8,
-      timeout: 20_000
-    )
-    |> Stream.flat_map(fn {:ok, chunk} -> chunk end)
+    |> @enricher.async_enrich_versions(relation_type_id, filters)
   end
 
   defp do_stream_grants(query) do
@@ -158,26 +156,6 @@ defmodule TdDd.Search.Store do
     |> Repo.stream()
     |> Stream.chunk_every(chunk_size)
     |> Stream.flat_map(&enrich_chunk_grant_structures(&1, relation_type_id, filters, users))
-  end
-
-  defp enrich_chunk_data_structures(ids, relation_type_id, filters) do
-    result = enriched_structure_versions(ids, relation_type_id, filters)
-
-    chunk_size = Enum.count(ids)
-    Tasks.log_progress(chunk_size)
-
-    result
-  end
-
-  defp enriched_structure_versions(ids, relation_type_id, filters) do
-    DataStructures.enriched_structure_versions(
-      ids: ids,
-      relation_type_id: relation_type_id,
-      content: :searchable,
-      filters: filters,
-      # Protected metadata is not indexed
-      with_protected_metadata: false
-    )
   end
 
   defp streamed_enriched_structure_versions(ids, relation_type_id, filters) do

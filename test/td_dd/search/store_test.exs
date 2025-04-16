@@ -2,9 +2,11 @@ defmodule TdDd.Search.StoreTest do
   use TdDd.DataCase
 
   import ExUnit.CaptureLog
+  import Mox
 
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Grants.GrantRequest
+  alias TdDd.Search.EnricherImpl
   alias TdDd.Search.Store
   alias TdDd.Search.StructureEnricher
 
@@ -17,6 +19,15 @@ defmodule TdDd.Search.StoreTest do
 
     @tag sandbox: :shared
     test "streams enriched chunked data structure versions" do
+      expect(TdDd.Search.EnricherImplMock, :async_enrich_versions, 1, fn chunked_ids_stream,
+                                                                         relation_type_id,
+                                                                         filters ->
+        Stream.flat_map(
+          chunked_ids_stream,
+          &EnricherImpl.enrich_versions(&1, relation_type_id, filters)
+        )
+      end)
+
       Enum.each(1..11, fn _ -> insert(:data_structure_version) end)
 
       assert Store.transaction(fn ->

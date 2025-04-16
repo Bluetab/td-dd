@@ -58,7 +58,7 @@ config :logger, :console,
   format:
     (System.get_env("EX_LOGGER_FORMAT") || "$date\T$time\Z [$level] $metadata$message") <>
       "\n",
-  level: :info,
+  level: :debug,
   metadata: [:pid, :module],
   utc_log: true
 
