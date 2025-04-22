@@ -2,13 +2,13 @@ defmodule TdDd.Search.EnricherBehaviour do
   @moduledoc """
   Behaviour defining operations to enrich data structure versions
   """
-  alias TdDd.DataStructures.DataStructureVersion
-
   @callback async_enrich_versions(
               chunked_ids_stream :: any(),
               relation_type_id :: any(),
               filters :: any()
-            ) :: [DataStructureVersion.t()]
+            ) :: Enumerable.t()
+
+  @callback async_enrich_version_embeddings(versions_stream :: Enumerable.t()) :: Enumerable.t()
 end
 
 defmodule TdDd.Search.EnricherImpl do
@@ -29,20 +29,49 @@ defmodule TdDd.Search.EnricherImpl do
     |> Stream.flat_map(fn {:ok, chunk} -> chunk end)
   end
 
+  def async_enrich_version_embeddings(versions_stream) do
+    versions_stream
+    |> Task.async_stream(&enrich_embeddings/1, max_concurrency: 16, timeout: 40_000)
+    |> Stream.flat_map(fn {:ok, chunk} -> chunk end)
+  end
+
   def enrich_versions(ids, relation_type_id, filters) do
-    result =
-      DataStructures.enriched_structure_versions(
-        ids: ids,
-        relation_type_id: relation_type_id,
-        content: :searchable,
-        filters: filters,
-        # Protected metadata is not indexed
-        with_protected_metadata: false
-      )
+    [
+      ids: ids,
+      relation_type_id: relation_type_id,
+      content: :searchable,
+      filters: filters,
+      # Protected metadata is not indexed
+      with_protected_metadata: false
+    ]
+    |> DataStructures.enriched_structure_versions()
+    |> tap(fn chunk ->
+      chunk
+      |> Enum.count()
+      |> Tasks.log_progress()
+    end)
+  end
 
-    chunk_size = Enum.count(ids)
-    Tasks.log_progress(chunk_size)
+  defp enrich_embeddings(data_structure_versions) do
+    {:ok, embeddings} = DataStructures.embeddings(data_structure_versions)
 
-    result
+    embeddings
+    |> Enum.reduce(data_structure_versions, fn {collection_name, vectors}, acc ->
+      embeddings_for_collection(collection_name, vectors, acc)
+    end)
+    |> tap(fn chunk ->
+      chunk
+      |> Enum.count()
+      |> Tasks.log_progress()
+    end)
+  end
+
+  defp embeddings_for_collection(collection_name, vectors, data_structure_versions) do
+    Enum.zip_with([data_structure_versions, vectors], fn [data_structure_version, vector] ->
+      embeddings =
+        Map.put(data_structure_version.embeddings || %{}, "vector_#{collection_name}", vector)
+
+      Map.put(data_structure_version, :embeddings, embeddings)
+    end)
   end
 end

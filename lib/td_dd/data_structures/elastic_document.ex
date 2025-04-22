@@ -37,6 +37,12 @@ defmodule TdDd.DataStructures.ElasticDocument do
     def routing(_), do: false
 
     @impl Elasticsearch.Document
+    def encode(%DataStructureVersion{embeddings: %{} = embeddings})
+        when map_size(embeddings) > 0 do
+      %{doc: %{embeddings: embeddings}}
+    end
+
+    @impl Elasticsearch.Document
     def encode(
           %DataStructureVersion{
             data_structure:

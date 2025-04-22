@@ -100,6 +100,17 @@ defmodule TdDd.DataStructures.DataStructureQueries do
 
   @spec data_structure_version_ids(keyword) :: Ecto.Query.t()
   def data_structure_version_ids(opts \\ []) do
+    opts
+    |> data_structure_versions_base()
+    |> select([dsv], dsv.id)
+  end
+
+  @spec data_structure_versions(keyword) :: Ecto.Query.t()
+  def data_structure_versions(opts \\ []) do
+    data_structure_versions_base(opts)
+  end
+
+  defp data_structure_versions_base(opts) do
     [deleted: false]
     |> Keyword.merge(opts)
     |> Enum.reduce(DataStructureVersion, fn
@@ -108,7 +119,6 @@ defmodule TdDd.DataStructures.DataStructureQueries do
       {:deleted, _}, q -> q
       {:data_structure_ids, ids}, q -> where(q, [dsv], dsv.data_structure_id in ^ids)
     end)
-    |> select([dsv], dsv.id)
   end
 
   @spec profile(map) :: Ecto.Query.t()

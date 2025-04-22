@@ -53,6 +53,18 @@ defmodule TdDd.Search.Store do
     stream(GrantRequest, nil)
   end
 
+  def stream(DataStructureVersion, :embeddings) do
+    dsv_count = Repo.aggregate(DataStructureVersion, :count, :id)
+    Tasks.log_start_stream(dsv_count)
+
+    query = DataStructureQueries.data_structure_versions()
+
+    query
+    |> Repo.stream()
+    |> Stream.chunk_every(32)
+    |> @enricher.async_enrich_version_embeddings()
+  end
+
   def stream(DataStructureVersion, data_structure_ids) do
     dsv_count = Enum.count(data_structure_ids)
     Tasks.log_start_stream(dsv_count)

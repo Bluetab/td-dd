@@ -11,6 +11,7 @@ defmodule TdDd.DataStructures do
   alias TdCache.LinkCache
   alias TdCache.TemplateCache
   alias TdCache.UserCache
+  alias TdCluster.Cluster.TdAi.Embeddings
   alias TdCore.Search.IndexWorker
   alias TdCore.Search.Permissions
   alias TdCx.Sources
@@ -1316,6 +1317,12 @@ defmodule TdDd.DataStructures do
         |> enrich.()
         |> protect_metadata(Keyword.get(opts, :with_protected_metadata)))
     )
+  end
+
+  def embeddings(data_structure_versions) when is_list(data_structure_versions) do
+    data_structure_versions
+    |> Enum.map(&"#{&1.name} #{&1.description}")
+    |> Embeddings.all()
   end
 
   def streamed_enriched_structure_versions(opts \\ []) do
