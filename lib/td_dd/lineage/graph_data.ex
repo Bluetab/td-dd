@@ -15,7 +15,7 @@ defmodule TdDd.Lineage.GraphData do
   defstruct g: %Graph{}, t: %Graph{}, ids: [], excludes: [], source_ids: [], type: nil, hash: nil
 
   @types %{"CONTAINS" => :contains, "DEPENDS" => :depends}
-  @refresh_interval 60_000
+  @refresh_interval 160_000
 
   @doc "Starts the GraphData server"
   def start_link(opts) do

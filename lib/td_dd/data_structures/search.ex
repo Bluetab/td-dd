@@ -62,6 +62,15 @@ defmodule TdDd.DataStructures.Search do
     |> forest_with_filtered_children
   end
 
+  def vector(%Claims{} = claims, permission, %{} = params) do
+    _permission_filters =
+      claims
+      |> search_permissions(permission)
+      |> Query.build_filters()
+
+    Query.bool_query(params)
+  end
+
   defp to_array_path(""), do: []
 
   defp to_array_path(string_path) do

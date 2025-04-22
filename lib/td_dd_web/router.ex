@@ -29,6 +29,7 @@ defmodule TdDdWeb.Router do
     patch("/data_structures/metadata", MetadataController, :upload)
     post("/data_structures/metadata", MetadataController, :upload)
     post("/data_structures/search", DataStructureController, :search)
+    post("/data_structures/suggestions", SuggestionController, :search)
     post("/data_structures/bulk_update", DataStructureController, :bulk_update)
     post("/data_structures/xlsx/download", DataStructures.XLSXController, :download)
     post("/data_structures/xlsx/upload", DataStructures.XLSXController, :upload)
