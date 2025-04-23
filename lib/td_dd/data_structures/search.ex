@@ -63,12 +63,17 @@ defmodule TdDd.DataStructures.Search do
   end
 
   def vector(%Claims{} = claims, permission, %{} = params) do
-    _permission_filters =
+    permission_filters =
       claims
       |> search_permissions(permission)
       |> Query.build_filters()
 
-    Query.bool_query(params)
+    knn =
+      params
+      |> Map.take(["field", "query_vector", "k", "num_candidates"])
+      |> Map.put("filter", permission_filters)
+
+    Search.search(%{knn: knn}, @index)
   end
 
   defp to_array_path(""), do: []

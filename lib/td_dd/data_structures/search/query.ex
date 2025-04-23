@@ -60,7 +60,6 @@ defmodule TdDd.DataStructures.Search.Query do
   def build_query(permissions, params, query_data) do
     permissions
     |> build_filters()
-    |> IO.inspect()
     |> do_build_query(params, query_data)
   end
 

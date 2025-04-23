@@ -3,11 +3,93 @@ defmodule TdDdWeb.SuggestionControllerTest do
 
   import Routes
 
+  alias TdCluster.TestHelpers.TdAiMock.Embeddings
+  alias TdCluster.TestHelpers.TdBgMock
+
+  @template %{
+    name: "type",
+    label: "type",
+    scope: "bg",
+    content: [
+      %{
+        "name" => "New Group 1",
+        "fields" => [
+          %{
+            "name" => "df_description",
+            "type" => "enriched_text",
+            "label" => "a",
+            "widget" => "enriched_text",
+            "cardinality" => "1"
+          }
+        ]
+      }
+    ]
+  }
+
   describe "search" do
+    setup do
+      [template: CacheHelpers.insert_template(@template)]
+    end
+
     @tag authentication: [role: "user", permissions: ["view_data_structure"]]
-    test "foo", %{conn: conn} do
+    test "knn search for concept resource with default attrs", %{conn: conn, domain: domain} do
+      id = 1
+      version = 1
+      resource = %{"type" => "concepts", "id" => id, "version" => version}
+
+      TdBgMock.get_business_concept_version(
+        &Mox.expect/4,
+        id,
+        version,
+        {:ok,
+         %{
+           name: "concept name",
+           content: %{
+             "df_description" => %{
+               "value" => %{
+                 "document" => %{
+                   "nodes" => [
+                     %{
+                       "nodes" => [
+                         %{"leaves" => [%{"text" => "description"}], "object" => "text"}
+                       ],
+                       "object" => "block",
+                       "type" => "paragraph"
+                     }
+                   ]
+                 }
+               }
+             }
+           },
+           business_concept: %{domain: %{id: 1}, type: "type"}
+         }}
+      )
+
+      Embeddings.generate_vector(
+        &Mox.expect/4,
+        "concept name description",
+        nil,
+        {:ok, {"default_collection_name", [54.0, 10.2, -2.0]}}
+      )
+
+      Mox.expect(ElasticsearchMock, :request, fn
+        _, :post, "/structures/_search", %{knn: knn}, _ ->
+          assert knn == %{
+                   "field" => "embeddings.vector_default_collection_name",
+                   "filter" => [
+                     %{term: %{"domain_ids" => domain.id}},
+                     %{term: %{"confidential" => false}}
+                   ],
+                   "k" => 10,
+                   "num_candidates" => 100,
+                   "query_vector" => [54.0, 10.2, -2.0]
+                 }
+
+          SearchHelpers.hits_response([])
+      end)
+
       conn
-      |> post(suggestion_path(conn, :search), %{})
+      |> post(suggestion_path(conn, :search), %{"resource" => resource})
       |> response(:accepted)
     end
   end
