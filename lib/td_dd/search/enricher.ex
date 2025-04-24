@@ -31,7 +31,7 @@ defmodule TdDd.Search.EnricherImpl do
 
   def async_enrich_version_embeddings(versions_stream) do
     versions_stream
-    |> Task.async_stream(&enrich_embeddings/1, max_concurrency: 16, timeout: 40_000)
+    |> Task.async_stream(&enrich_embeddings/1, max_concurrency: 16, timeout: 80_000)
     |> Stream.flat_map(fn {:ok, chunk} -> chunk end)
   end
 
