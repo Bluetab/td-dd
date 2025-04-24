@@ -1436,14 +1436,17 @@ defmodule TdDd.DataStructures do
   end
 
   defp embedding_attributes(%{
-         data_structure: %{search_concent: %{} = search_content},
+         data_structure: %{search_content: %{} = search_content},
          name: name,
          description: description
        }) do
+    search_content =
+      Enum.into(search_content, %{}, fn {key, %{"value" => value}} -> {key, value} end)
+
     "#{name} #{description} #{Jason.encode!(search_content)}"
   end
 
   defp embedding_attributes(%{name: name, description: description}) do
-    "#{name} #{description} "
+    "#{name} #{description}"
   end
 end
