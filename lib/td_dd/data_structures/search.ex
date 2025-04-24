@@ -73,7 +73,9 @@ defmodule TdDd.DataStructures.Search do
       |> Map.take(["field", "query_vector", "k", "num_candidates"])
       |> Map.put("filter", permission_filters)
 
-    Search.search(%{knn: knn}, @index)
+    %{knn: knn}
+    |> Search.search(@index)
+    |> transform_response()
   end
 
   defp to_array_path(""), do: []

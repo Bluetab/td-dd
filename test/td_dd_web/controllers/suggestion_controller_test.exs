@@ -88,9 +88,10 @@ defmodule TdDdWeb.SuggestionControllerTest do
           SearchHelpers.hits_response([])
       end)
 
-      conn
-      |> post(suggestion_path(conn, :search), %{"resource" => resource})
-      |> response(:accepted)
+      assert %{"data" => []} =
+               conn
+               |> post(suggestion_path(conn, :search), %{"resource" => resource})
+               |> json_response(:ok)
     end
   end
 end
