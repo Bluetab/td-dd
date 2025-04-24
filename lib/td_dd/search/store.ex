@@ -57,7 +57,7 @@ defmodule TdDd.Search.Store do
     dsv_count = Repo.aggregate(DataStructureVersion, :count, :id)
     Tasks.log_start_stream(dsv_count)
 
-    query = DataStructureQueries.data_structure_versions()
+    query = DataStructureQueries.data_structure_version_embeddings()
 
     query
     |> Repo.stream()

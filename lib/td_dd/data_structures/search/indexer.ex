@@ -18,6 +18,7 @@ defmodule TdDd.DataStructures.Search.Indexer do
   end
 
   def put_embeddings do
+    StructureEnricher.refresh()
     IndexWorker.put_embeddings(@index)
   end
 end

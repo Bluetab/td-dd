@@ -1319,9 +1319,14 @@ defmodule TdDd.DataStructures do
     )
   end
 
+  def enriched_structure_version(data_structure_version, opts \\ []) do
+    enrich = StructureVersionEnricher.enricher(opts)
+    enrich.(data_structure_version)
+  end
+
   def embeddings(data_structure_versions) when is_list(data_structure_versions) do
     data_structure_versions
-    |> Enum.map(&"#{&1.name} #{&1.description}")
+    |> Enum.map(&embedding_attributes/1)
     |> Embeddings.all()
   end
 
@@ -1428,5 +1433,17 @@ defmodule TdDd.DataStructures do
       on: r.parent_id == dsv.id and r.child_id == ^child_id
     )
     |> where([_dsv, r], r.relation_type_id == ^default_type)
+  end
+
+  defp embedding_attributes(%{
+         data_structure: %{search_concent: %{} = search_content},
+         name: name,
+         description: description
+       }) do
+    "#{name} #{description} #{Jason.encode!(search_content)}"
+  end
+
+  defp embedding_attributes(%{name: name, description: description}) do
+    "#{name} #{description} "
   end
 end
