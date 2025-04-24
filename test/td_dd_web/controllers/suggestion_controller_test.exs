@@ -3,7 +3,6 @@ defmodule TdDdWeb.SuggestionControllerTest do
 
   import Routes
 
-  alias TdCluster.TestHelpers.TdAiMock.Embeddings
   alias TdCluster.TestHelpers.TdBgMock
 
   @template %{
@@ -37,37 +36,9 @@ defmodule TdDdWeb.SuggestionControllerTest do
       version = 1
       resource = %{"type" => "concepts", "id" => id, "version" => version}
 
-      TdBgMock.get_business_concept_version(
+      TdBgMock.generate_vector(
         &Mox.expect/4,
-        id,
-        version,
-        {:ok,
-         %{
-           name: "concept name",
-           content: %{
-             "df_description" => %{
-               "value" => %{
-                 "document" => %{
-                   "nodes" => [
-                     %{
-                       "nodes" => [
-                         %{"leaves" => [%{"text" => "description"}], "object" => "text"}
-                       ],
-                       "object" => "block",
-                       "type" => "paragraph"
-                     }
-                   ]
-                 }
-               }
-             }
-           },
-           business_concept: %{domain: %{id: 1}, type: "type"}
-         }}
-      )
-
-      Embeddings.generate_vector(
-        &Mox.expect/4,
-        "concept name description",
+        %{id: 1, version: 1},
         nil,
         {:ok, {"default_collection_name", [54.0, 10.2, -2.0]}}
       )
