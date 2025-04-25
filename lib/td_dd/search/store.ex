@@ -61,7 +61,7 @@ defmodule TdDd.Search.Store do
 
     query
     |> Repo.stream()
-    |> Stream.chunk_every(32)
+    |> Stream.chunk_every(128)
     |> @enricher.async_enrich_version_embeddings()
   end
 
