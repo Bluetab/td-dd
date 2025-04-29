@@ -22,7 +22,7 @@ defmodule TdDd.DataStructures.Search do
   def get_filter_values(%Claims{} = claims, permission, %{} = params) do
     query_data = %{aggs: aggs} = ElasticDocumentProtocol.query_data(%DataStructureVersion{})
     query = build_query(claims, permission, params, query_data)
-    search = %{query: query, aggs: aggs, size: 0}
+    search = %{query: query, aggs: aggs, size: 0, _source: %{excludes: ["embeddings"]}}
     Search.get_filters(search, @index)
   end
 
@@ -31,7 +31,7 @@ defmodule TdDd.DataStructures.Search do
     aggs = Map.merge(DSElasticDocument.id_path_agg(), aggs)
 
     query = build_query(claims, permission, params, %{query_data | aggs: aggs})
-    search = %{query: query, aggs: aggs, size: 0}
+    search = %{query: query, aggs: aggs, size: 0, _source: %{excludes: ["embeddings"]}}
     {:ok, %{"id_path" => %{buckets: buckets}}} = Search.get_filters(search, @index)
 
     buckets
@@ -73,7 +73,7 @@ defmodule TdDd.DataStructures.Search do
       |> Map.take(["field", "query_vector", "k", "num_candidates"])
       |> Map.put("filter", permission_filters)
 
-    %{knn: knn}
+    %{knn: knn, _source: %{excludes: ["embeddings"]}}
     |> Search.search(@index)
     |> transform_response()
   end
@@ -113,7 +113,7 @@ defmodule TdDd.DataStructures.Search do
 
   def get_aggregations(%Claims{} = claims, aggs) do
     query = build_query(claims, "view_data_structure", %{}, %{aggs: aggs})
-    search = %{query: query, aggs: aggs, size: 0}
+    search = %{query: query, aggs: aggs, size: 0, _source: %{excludes: ["embeddings"]}}
     Search.search(search, @index, format: :raw)
   end
 
@@ -131,7 +131,7 @@ defmodule TdDd.DataStructures.Search do
 
     %{limit: limit, size: size, ttl: ttl} = scroll_opts!()
 
-    %{query: query, sort: sort, size: size}
+    %{query: query, sort: sort, size: size, _source: %{excludes: ["embeddings"]}}
     |> do_search(%{"scroll" => ttl})
     |> do_scroll(ttl, limit, [])
   end
@@ -199,7 +199,16 @@ defmodule TdDd.DataStructures.Search do
     query = build_query(claims, permission, params, query_data)
     sort = Map.get(params, "sort", ["_score", "name.raw"])
 
-    do_search(%{query: query, sort: sort, from: page * size, size: size}, params)
+    do_search(
+      %{
+        query: query,
+        sort: sort,
+        from: page * size,
+        size: size,
+        _source: %{excludes: ["embeddings"]}
+      },
+      params
+    )
   end
 
   defp build_query(%Claims{} = claims, permission, %{} = params, %{} = query_data) do
