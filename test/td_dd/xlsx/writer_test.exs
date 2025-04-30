@@ -268,7 +268,8 @@ defmodule TdDd.XLSX.WriterTest do
         external_id: "ext_id",
         type: "type_1",
         data_structure_id: 0,
-        domain_ids: [domain.id]
+        domain_ids: [domain.id],
+        system: %{"name" => "system_1"}
       }
 
       %{id: id, content: [%{"fields" => content_fields_for_type_2}]} =
@@ -299,7 +300,8 @@ defmodule TdDd.XLSX.WriterTest do
         external_id: "ext_id_2",
         type: "type_2",
         data_structure_id: 1,
-        domain_ids: [domain.id]
+        domain_ids: [domain.id],
+        system: %{"name" => "system_2"}
       }
 
       information_for_type_1 = %{
@@ -324,9 +326,9 @@ defmodule TdDd.XLSX.WriterTest do
         )
 
       assert [headers | content] = rows["type_1"]
-      assert Enum.count(headers) == 11
+      assert Enum.count(headers) == 12
 
-      assert Enum.take(headers, 8) == [
+      assert Enum.take(headers, 9) == [
                ["external_id", {:bg_color, "#ffd428"}],
                "name",
                "tech_name",
@@ -334,6 +336,7 @@ defmodule TdDd.XLSX.WriterTest do
                "link_to_structure",
                "domain",
                "type",
+               "system",
                "path"
              ]
 
@@ -370,6 +373,7 @@ defmodule TdDd.XLSX.WriterTest do
                  "https://truedat.td.dd/structure/0",
                  domain.name,
                  "type_1",
+                 "system_1",
                  "foo > bar",
                  "field_value",
                  "",
@@ -379,9 +383,9 @@ defmodule TdDd.XLSX.WriterTest do
 
       assert [headers | content] = rows["type_2"]
 
-      assert Enum.count(headers) == 9
+      assert Enum.count(headers) == 10
 
-      assert Enum.take(headers, 8) == [
+      assert Enum.take(headers, 9) == [
                ["external_id", {:bg_color, "#ffd428"}],
                "name",
                "tech_name",
@@ -389,6 +393,7 @@ defmodule TdDd.XLSX.WriterTest do
                "link_to_structure",
                "domain",
                "type",
+               "system",
                "path"
              ]
 
@@ -410,6 +415,7 @@ defmodule TdDd.XLSX.WriterTest do
                  "https://truedat.td.dd/structure/1",
                  domain.name,
                  "type_2",
+                 "system_2",
                  "bar > baz",
                  "field_value"
                ]
@@ -468,7 +474,8 @@ defmodule TdDd.XLSX.WriterTest do
         external_id: "ext_id",
         type: "type_1",
         data_structure_id: 0,
-        domain_ids: [domain.id]
+        domain_ids: [domain.id],
+        system: %{"name" => "system_1"}
       }
 
       %{id: id, content: [%{"fields" => content_fields_for_type_2}]} =
@@ -501,7 +508,8 @@ defmodule TdDd.XLSX.WriterTest do
         external_id: "ext_id_2",
         type: "type_2",
         data_structure_id: 1,
-        domain_ids: [domain.id]
+        domain_ids: [domain.id],
+        system: %{"name" => "system_2"}
       }
 
       information_for_type_1 = %{
@@ -526,9 +534,9 @@ defmodule TdDd.XLSX.WriterTest do
         )
 
       assert [headers | content] = rows["type_1"]
-      assert Enum.count(headers) == 11
+      assert Enum.count(headers) == 12
 
-      assert Enum.take(headers, 8) == [
+      assert Enum.take(headers, 9) == [
                ["external_id", {:bg_color, "#ffd428"}],
                "name",
                "tech_name",
@@ -536,6 +544,7 @@ defmodule TdDd.XLSX.WriterTest do
                "link_to_structure",
                "domain",
                "type",
+               "system",
                "path"
              ]
 
@@ -572,6 +581,7 @@ defmodule TdDd.XLSX.WriterTest do
                  "https://truedat.td.dd/structure/0",
                  domain.name,
                  "type_1",
+                 "system_1",
                  "foo > bar",
                  "field_value",
                  "",
@@ -581,9 +591,9 @@ defmodule TdDd.XLSX.WriterTest do
 
       assert [headers | content] = rows["type_2"]
 
-      assert Enum.count(headers) == 9
+      assert Enum.count(headers) == 10
 
-      assert Enum.take(headers, 8) == [
+      assert Enum.take(headers, 9) == [
                ["external_id", {:bg_color, "#ffd428"}],
                "name",
                "tech_name",
@@ -591,6 +601,7 @@ defmodule TdDd.XLSX.WriterTest do
                "link_to_structure",
                "domain",
                "type",
+               "system",
                "path"
              ]
 
@@ -612,6 +623,7 @@ defmodule TdDd.XLSX.WriterTest do
                  "https://truedat.td.dd/structure/1",
                  domain.name,
                  "type_2",
+                 "system_2",
                  "bar > baz",
                  "field_value"
                ]
