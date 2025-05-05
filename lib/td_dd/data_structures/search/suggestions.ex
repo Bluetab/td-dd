@@ -27,11 +27,28 @@ defmodule TdDd.DataStructures.Search.Suggestions do
     |> Map.put_new("k", @k)
   end
 
-  defp generate_vector(
-         %{"resource" => %{"type" => "concepts", "id" => id, "version" => version}} = params
-       ) do
-    %{id: id, version: version}
+  defp generate_vector(%{
+         "resource" => %{"type" => "concepts", "id" => id, "version" => version} = params
+       }) do
+    %{id: id, version: version, embedding_params: %{links: links(params)}}
     |> TdBg.generate_vector(params["collection_name"])
     |> then(fn {:ok, version} -> version end)
+  end
+
+  defp links(params) do
+    params
+    |> Map.get("links", [])
+    |> Enum.map(&link/1)
+  end
+
+  defp link(link) do
+    link
+    |> Map.take(["external_id", "type", "path", "description"])
+    |> Enum.into(%{}, fn
+      {"external_id", external_id} -> {:external_id, external_id}
+      {"type", type} -> {:type, type}
+      {"path", path} -> {:path, path}
+      {"description", description} -> {:description, description}
+    end)
   end
 end
