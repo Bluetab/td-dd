@@ -63,20 +63,36 @@ defmodule TdDd.DataStructures.Search do
   end
 
   def vector(%Claims{} = claims, permission, %{} = params) do
-    permission_filters =
+    bool_filters =
       claims
-      |> search_permissions(permission)
-      |> Query.build_filters()
+      |> permission_filter(permission)
+      |> exlude_structures(params)
 
     knn =
       params
       |> Map.take(["field", "query_vector", "k", "num_candidates"])
-      |> Map.put("filter", permission_filters)
+      |> Map.put("filter", %{bool: bool_filters})
 
-    %{knn: knn, _source: %{excludes: ["embeddings"]}}
+    %{knn: knn, _source: %{excludes: ["embeddings"]}, sort: ["_score"]}
     |> Search.search(@index)
     |> transform_response()
   end
+
+  defp permission_filter(claims, permission) do
+    filter =
+      claims
+      |> search_permissions(permission)
+      |> Query.build_filters()
+
+    %{"filter" => filter}
+  end
+
+  defp exlude_structures(filters, %{"structure_ids" => [_ | _] = structure_ids}) do
+    data_structure_filters = Query.structure_filter(structure_ids)
+    Map.merge(filters, %{"must_not" => [data_structure_filters]})
+  end
+
+  defp exlude_structures(filters, _params), do: filters
 
   defp to_array_path(""), do: []
 

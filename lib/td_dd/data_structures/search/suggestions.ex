@@ -16,6 +16,7 @@ defmodule TdDd.DataStructures.Search.Suggestions do
     params =
       params
       |> default_params()
+      |> add_structure_ids()
       |> Map.put_new("query_vector", vector)
       |> Map.put_new("field", "embeddings.vector_#{collection_name}")
 
@@ -54,4 +55,10 @@ defmodule TdDd.DataStructures.Search.Suggestions do
       {"description", description} -> {:description, description}
     end)
   end
+
+  defp add_structure_ids(%{"resource" => %{"links" => links}} = params) do
+    Map.put(params, "structure_ids", Enum.map(links, & &1["resource_id"]))
+  end
+
+  defp add_structure_ids(params), do: params
 end

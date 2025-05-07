@@ -33,6 +33,10 @@ defmodule TdDd.DataStructures.Search.Query do
 
   def build_filters(%{} = _permissions), do: @match_none
 
+  def structure_filter(structure_ids) do
+    Query.term_or_terms("data_structure_id", structure_ids)
+  end
+
   defp do_build_filters(:none, _), do: @match_none
   defp do_build_filters(:all, :all), do: @match_all
   defp do_build_filters(:all, :none), do: @not_confidential

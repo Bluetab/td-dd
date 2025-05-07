@@ -34,11 +34,40 @@ defmodule TdDdWeb.SuggestionControllerTest do
     test "knn search for concept resource with default attrs", %{conn: conn, domain: domain} do
       id = 1
       version = 1
-      resource = %{"type" => "concepts", "id" => id, "version" => version}
+
+      resource = %{
+        "type" => "concepts",
+        "id" => id,
+        "version" => version,
+        "links" => [
+          %{
+            "resource_id" => "1",
+            "name" => "name",
+            "external_id" => "external_id",
+            "type" => "type",
+            "path" => ["1", "2"],
+            "description" => "description"
+          }
+        ]
+      }
 
       TdBgMock.generate_vector(
         &Mox.expect/4,
-        %{id: 1, version: 1},
+        %{
+          id: 1,
+          version: 1,
+          embedding_params: %{
+            links: [
+              %{
+                name: "name",
+                type: "type",
+                path: ["1", "2"],
+                description: "description",
+                external_id: "external_id"
+              }
+            ]
+          }
+        },
         nil,
         {:ok, {"default_collection_name", [54.0, 10.2, -2.0]}}
       )
@@ -47,10 +76,15 @@ defmodule TdDdWeb.SuggestionControllerTest do
         _, :post, "/structures/_search", %{knn: knn}, _ ->
           assert knn == %{
                    "field" => "embeddings.vector_default_collection_name",
-                   "filter" => [
-                     %{term: %{"domain_ids" => domain.id}},
-                     %{term: %{"confidential" => false}}
-                   ],
+                   "filter" => %{
+                     bool: %{
+                       "filter" => [
+                         %{term: %{"domain_ids" => domain.id}},
+                         %{term: %{"confidential" => false}}
+                       ],
+                       "must_not" => [%{term: %{"data_structure_id" => "1"}}]
+                     }
+                   },
                    "k" => 10,
                    "num_candidates" => 100,
                    "query_vector" => [54.0, 10.2, -2.0]

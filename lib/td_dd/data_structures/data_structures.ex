@@ -1436,17 +1436,14 @@ defmodule TdDd.DataStructures do
   end
 
   defp embedding_attributes(%{
-         data_structure: %{search_content: %{} = search_content},
+         data_structure: %{domains: domains},
+         type: type,
          name: name,
+         external_id: external_id,
          description: description
        }) do
-    search_content =
-      Enum.into(search_content, %{}, fn {key, %{"value" => value}} -> {key, value} end)
+    domain = domains |> List.wrap() |> hd()
 
-    "#{name} #{description} #{Jason.encode!(search_content)}"
-  end
-
-  defp embedding_attributes(%{name: name, description: description}) do
-    "#{name} #{description}"
+    "#{external_id} #{name} #{type} #{Map.get(domain, :external_id, "")} #{description}"
   end
 end
