@@ -8,6 +8,7 @@ defmodule TdDd.DataStructures.Search.Suggestions do
 
   @num_candidates 100
   @k 10
+  @similarity 30
 
   def knn(%Claims{} = claims, permission, params) do
     {collection_name, vector} = generate_vector(params)
@@ -25,6 +26,7 @@ defmodule TdDd.DataStructures.Search.Suggestions do
     params
     |> Map.put_new("num_candidates", @num_candidates)
     |> Map.put_new("k", @k)
+    |> Map.put_new("similarity", @similarity)
   end
 
   defp generate_vector(%{
@@ -43,9 +45,10 @@ defmodule TdDd.DataStructures.Search.Suggestions do
 
   defp link(link) do
     link
-    |> Map.take(["external_id", "type", "path", "description"])
+    |> Map.take(["external_id", "type", "path", "description", "name"])
     |> Enum.into(%{}, fn
       {"external_id", external_id} -> {:external_id, external_id}
+      {"name", name} -> {:name, name}
       {"type", type} -> {:type, type}
       {"path", path} -> {:path, path}
       {"description", description} -> {:description, description}
