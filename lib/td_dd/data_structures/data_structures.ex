@@ -1436,14 +1436,28 @@ defmodule TdDd.DataStructures do
   end
 
   defp embedding_attributes(%{
-         data_structure: %{domains: domains},
+         data_structure: %{domains: domains} = data_structure,
          type: type,
          name: name,
          external_id: external_id,
          description: description
        }) do
-    domain = domains |> List.wrap() |> hd()
+    domain_external_id = domains |> List.wrap() |> hd() |> Map.get(:external_id, "")
+    alias_name = alias_name(data_structure)
 
-    "#{external_id} #{name} #{type} #{Map.get(domain, :external_id, "")} #{description}"
+    "#{external_id} #{name} #{alias_name} #{type} #{domain_external_id} #{description}" <>
+      links(data_structure)
+  end
+
+  defp alias_name(%{search_content: %{"alias" => alias_name}}), do: alias_name
+  defp alias_name(_other), do: ""
+
+  defp links(%{id: id}) do
+    {:ok, links} = LinkCache.list_rand_links("data_structure", id, "business_concept")
+    Enum.map_join(links, " ", &link_embedding/1)
+  end
+
+  defp link_embedding(link) do
+    "#{link.name} #{link.type} #{link.domain.external_id}"
   end
 end
