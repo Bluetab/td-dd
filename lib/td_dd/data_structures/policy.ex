@@ -2,10 +2,15 @@ defmodule TdDd.DataStructures.Policy do
   @moduledoc "Authorization rules for TdDd.DataStructures"
 
   alias Ecto.Changeset
+  alias TdCluster.Cluster.TdAi.Indices
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Permissions
 
   @behaviour Bodyguard.Policy
+
+  def authorize(:suggest_links, %{role: "admin"}, _params) do
+    Indices.exists_enabled?()
+  end
 
   # Admin accounts can do anything with data structures
   def authorize(_action, %{role: "admin"}, _params), do: true
@@ -92,6 +97,11 @@ defmodule TdDd.DataStructures.Policy do
 
   def authorize(:tag, %{} = claims, %DataStructure{domain_ids: domain_ids}) do
     Permissions.authorized?(claims, :link_data_structure_tag, domain_ids)
+  end
+
+  def authorize(:suggest_links, %{} = claims, _) do
+    Permissions.authorized?(claims, :manage_business_concept_links, :any, "domain") &&
+      Indices.exists_enabled?()
   end
 
   def authorize(:update_data_structure, %{} = claims, %Changeset{} = changeset) do

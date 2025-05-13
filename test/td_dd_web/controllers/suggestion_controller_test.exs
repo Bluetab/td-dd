@@ -3,6 +3,7 @@ defmodule TdDdWeb.SuggestionControllerTest do
 
   import Routes
 
+  alias TdCluster.TestHelpers.TdAiMock
   alias TdCluster.TestHelpers.TdBgMock
 
   @template %{
@@ -30,7 +31,10 @@ defmodule TdDdWeb.SuggestionControllerTest do
       [template: CacheHelpers.insert_template(@template)]
     end
 
-    @tag authentication: [role: "user", permissions: ["view_data_structure"]]
+    @tag authentication: [
+           role: "user",
+           permissions: ["view_data_structure", "manage_business_concept_links"]
+         ]
     test "knn search for concept resource with default attrs", %{conn: conn, domain: domain} do
       id = 1
       version = 1
@@ -50,6 +54,8 @@ defmodule TdDdWeb.SuggestionControllerTest do
           }
         ]
       }
+
+      TdAiMock.Indices.exists_enabled?(&Mox.expect/4, true)
 
       TdBgMock.generate_vector(
         &Mox.expect/4,
