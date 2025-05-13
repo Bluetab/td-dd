@@ -8,7 +8,7 @@ defmodule TdDd.DataStructures.Search.Suggestions do
 
   @num_candidates 100
   @k 10
-  @similarity 30
+  @similarity 0.75
 
   def knn(%Claims{} = claims, permission, params) do
     {collection_name, vector} = generate_vector(params)
@@ -20,7 +20,7 @@ defmodule TdDd.DataStructures.Search.Suggestions do
       |> Map.put_new("query_vector", vector)
       |> Map.put_new("field", "embeddings.vector_#{collection_name}")
 
-    Search.vector(claims, permission, params)
+    Search.vector(claims, permission, params, similarity: :cosine)
   end
 
   defp default_params(params) do

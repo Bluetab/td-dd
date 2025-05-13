@@ -62,7 +62,7 @@ defmodule TdDd.DataStructures.Search do
     |> forest_with_filtered_children
   end
 
-  def vector(%Claims{} = claims, permission, %{} = params) do
+  def vector(%Claims{} = claims, permission, %{} = params, opts \\ []) do
     bool_filters =
       claims
       |> permission_filter(permission)
@@ -70,12 +70,12 @@ defmodule TdDd.DataStructures.Search do
 
     knn =
       params
-      |> Map.take(["field", "query_vector", "k", "num_candidates"])
+      |> Map.take(["field", "query_vector", "k", "num_candidates", "similarity"])
       |> Map.put("filter", %{bool: bool_filters})
 
     %{knn: knn, _source: %{excludes: ["embeddings"]}, sort: ["_score"]}
     |> Search.search(@index)
-    |> transform_response()
+    |> transform_response(opts)
   end
 
   defp permission_filter(claims, permission) do
@@ -245,28 +245,29 @@ defmodule TdDd.DataStructures.Search do
     |> transform_response()
   end
 
-  defp transform_response({:ok, response}), do: transform_response(response)
-  defp transform_response({:error, _} = response), do: response
+  defp transform_response(_response, opts \\ [])
+  defp transform_response({:ok, response}, opts), do: transform_response(response, opts)
+  defp transform_response({:error, _} = response, _opts), do: response
 
-  defp transform_response(%{results: results} = response) do
+  defp transform_response(%{results: results} = response, opts) do
     results =
       results
-      |> Enum.map(&Map.get(&1, "_source"))
-      |> Enum.map(fn ds ->
+      |> Enum.map(&Map.take(&1, ["_source", "_score"]))
+      |> Enum.map(fn %{"_source" => ds} = record ->
         last_change_by =
           ds
           |> Map.get("last_change_by", %{})
           |> CollectionUtils.atomize_keys()
 
-        Map.put(ds, "last_change_by", last_change_by)
-      end)
-      |> Enum.map(fn ds ->
         data_fields =
           ds
           |> Map.get("data_fields", [])
           |> Enum.map(&CollectionUtils.atomize_keys/1)
 
-        Map.put(ds, "data_fields", data_fields)
+        ds
+        |> Map.put("last_change_by", last_change_by)
+        |> Map.put("data_fields", data_fields)
+        |> add_similarity(record, opts[:search])
       end)
       |> Enum.map(&CollectionUtils.atomize_keys/1)
 
@@ -277,4 +278,14 @@ defmodule TdDd.DataStructures.Search do
     [to_string(permission), "manage_confidential_structures"]
     |> Permissions.get_search_permissions(claims)
   end
+
+  defp add_similarity(data_structure, record, :cosine) do
+    # We assume cosine similarity by default, but this may vary depending on the index configuration.
+    #  Adjust accordingly based on the actual setup
+    # https://www.elastic.co/docs/solutions/search/vector/knn#knn-similarity-search
+    similarity = 2 * record["_score"] - 1
+    Map.put(data_structure, "similarity", similarity)
+  end
+
+  defp add_similarity(data_structure, _record, _other), do: data_structure
 end
