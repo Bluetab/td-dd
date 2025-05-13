@@ -267,7 +267,7 @@ defmodule TdDd.DataStructures.Search do
         ds
         |> Map.put("last_change_by", last_change_by)
         |> Map.put("data_fields", data_fields)
-        |> add_similarity(record, opts[:search])
+        |> add_similarity(record, opts[:similarity])
       end)
       |> Enum.map(&CollectionUtils.atomize_keys/1)
 
