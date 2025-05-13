@@ -9,7 +9,8 @@ defmodule TdDd.DataStructures.Policy do
   @behaviour Bodyguard.Policy
 
   def authorize(:suggest_links, %{role: "admin"}, _params) do
-    Indices.exists_enabled?()
+    {:ok, enabled?} = Indices.exists_enabled?()
+    enabled?
   end
 
   # Admin accounts can do anything with data structures
@@ -100,8 +101,8 @@ defmodule TdDd.DataStructures.Policy do
   end
 
   def authorize(:suggest_links, %{} = claims, _) do
-    Permissions.authorized?(claims, :manage_business_concept_links, :any, "domain") &&
-      Indices.exists_enabled?()
+    {:ok, enabled?} = Indices.exists_enabled?()
+    Permissions.authorized?(claims, :manage_business_concept_links, :any, "domain") && enabled?
   end
 
   def authorize(:update_data_structure, %{} = claims, %Changeset{} = changeset) do

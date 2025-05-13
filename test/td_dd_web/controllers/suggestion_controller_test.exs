@@ -55,7 +55,7 @@ defmodule TdDdWeb.SuggestionControllerTest do
         ]
       }
 
-      TdAiMock.Indices.exists_enabled?(&Mox.expect/4, true)
+      TdAiMock.Indices.exists_enabled?(&Mox.expect/4, {:ok, true})
 
       TdBgMock.generate_vector(
         &Mox.expect/4,
