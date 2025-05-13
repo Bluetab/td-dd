@@ -93,7 +93,8 @@ defmodule TdDdWeb.SuggestionControllerTest do
                    },
                    "k" => 10,
                    "num_candidates" => 100,
-                   "query_vector" => [54.0, 10.2, -2.0]
+                   "query_vector" => [54.0, 10.2, -2.0],
+                   "similarity" => 0.75
                  }
 
           SearchHelpers.hits_response([])
