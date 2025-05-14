@@ -1449,7 +1449,7 @@ defmodule TdDd.DataStructures do
       links(data_structure)
   end
 
-  defp alias_name(%{search_content: %{"alias" => alias_name}}), do: alias_name
+  defp alias_name(%{search_content: %{"alias" => %{"value" => alias_name}}}), do: alias_name
   defp alias_name(_other), do: ""
 
   defp links(%{id: id}) do
