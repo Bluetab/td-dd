@@ -1439,17 +1439,18 @@ defmodule TdDd.DataStructures do
          data_structure: %{domains: domains} = data_structure,
          type: type,
          name: name,
-         external_id: external_id,
          description: description
        }) do
     domain_external_id = domains |> List.wrap() |> hd() |> Map.get(:external_id, "")
     alias_name = alias_name(data_structure)
 
-    "#{external_id} #{name} #{alias_name} #{type} #{domain_external_id} #{description}" <>
-      links(data_structure)
+    "#{name} #{alias_name} #{type} #{domain_external_id} #{description}" <> links(data_structure)
   end
 
-  defp alias_name(%{search_content: %{"alias" => %{"value" => alias_name}}}), do: alias_name
+  defp alias_name(%{search_content: %{"alias" => %{"value" => alias_name}}})
+       when is_binary(alias_name),
+       do: alias_name
+
   defp alias_name(_other), do: ""
 
   defp links(%{id: id}) do
