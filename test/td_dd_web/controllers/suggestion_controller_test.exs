@@ -61,18 +61,7 @@ defmodule TdDdWeb.SuggestionControllerTest do
         &Mox.expect/4,
         %{
           id: 1,
-          version: 1,
-          embedding_params: %{
-            links: [
-              %{
-                name: "name",
-                type: "type",
-                path: ["1", "2"],
-                description: "description",
-                external_id: "external_id"
-              }
-            ]
-          }
+          version: 1
         },
         nil,
         {:ok, {"default_collection_name", [54.0, 10.2, -2.0]}}
