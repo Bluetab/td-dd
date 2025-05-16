@@ -8,7 +8,9 @@ defmodule TdDd.DataStructures.Policy do
 
   @behaviour Bodyguard.Policy
 
-  def authorize(:suggest_links, %{role: "admin"}, _params) do
+  @embedding_actions ~w(put_embeddings suggest_links)a
+
+  def authorize(action, %{role: "admin"}, _params) when action in @embedding_actions do
     {:ok, enabled?} = Indices.exists_enabled?()
     enabled?
   end
