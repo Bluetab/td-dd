@@ -67,10 +67,6 @@ defmodule TdDd.DataStructures.Search.Query do
     |> do_build_query(params, query_data)
   end
 
-  def bool_query(params) do
-    Query.bool_query(params)
-  end
-
   defp do_build_query(filters, params, query_data) do
     opts = query_data |> with_search_clauses(params) |> Keyword.new()
     Query.build_query(filters, params, opts)
