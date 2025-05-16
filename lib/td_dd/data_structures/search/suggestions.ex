@@ -8,7 +8,7 @@ defmodule TdDd.DataStructures.Search.Suggestions do
 
   @num_candidates 100
   @k 10
-  @similarity 0.75
+  @similarity 0.60
 
   def knn(%Claims{} = claims, permission, params) do
     {collection_name, vector} = generate_vector(params)
