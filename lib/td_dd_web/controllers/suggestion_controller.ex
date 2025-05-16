@@ -13,7 +13,7 @@ defmodule TdDdWeb.SuggestionController do
     claims = conn.assigns[:current_resource]
     permission = conn.assigns[:search_permission]
 
-    with :ok <- Bodyguard.permit(DataStructures, :suggest_links, claims) do
+    with :ok <- Bodyguard.permit(DataStructures, :suggest_structures, claims) do
       %{results: data_structures} = Suggestions.knn(claims, permission, params)
 
       conn

@@ -8,7 +8,7 @@ defmodule TdDd.DataStructures.Policy do
 
   @behaviour Bodyguard.Policy
 
-  @embedding_actions ~w(put_embeddings suggest_links)a
+  @embedding_actions ~w(put_embeddings suggest_structures)a
 
   def authorize(action, %{role: "admin"}, _params) when action in @embedding_actions do
     {:ok, enabled?} = Indices.exists_enabled?()
@@ -102,9 +102,9 @@ defmodule TdDd.DataStructures.Policy do
     Permissions.authorized?(claims, :link_data_structure_tag, domain_ids)
   end
 
-  def authorize(:suggest_links, %{} = claims, _) do
+  def authorize(:suggest_structures, %{} = claims, _) do
     {:ok, enabled?} = Indices.exists_enabled?()
-    Permissions.authorized?(claims, :manage_business_concept_links, :any, "domain") && enabled?
+    Permissions.authorized?(claims, :view_data_structure, :any, "domain") && enabled?
   end
 
   def authorize(:update_data_structure, %{} = claims, %Changeset{} = changeset) do
