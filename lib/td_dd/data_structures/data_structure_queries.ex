@@ -109,7 +109,7 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   def data_structure_version_embeddings(opts \\ []) do
     opts
     |> data_structure_versions_base()
-    |> enriched_structure_information()
+    |> enriched_structure_notes()
   end
 
   defp data_structure_versions_base(opts) do
@@ -237,7 +237,7 @@ defmodule TdDd.DataStructures.DataStructureQueries do
       {:data_structure_ids, ids}, q -> where(q, [dsv], dsv.data_structure_id in ^ids)
       {:relation_type_id, _}, q -> q
     end)
-    |> enriched_structure_information()
+    |> enriched_structure_notes()
     |> join(:left, [dsv], sm in StructureMetadata,
       as: :metadata,
       on:
@@ -273,7 +273,7 @@ defmodule TdDd.DataStructures.DataStructureQueries do
     |> select_merge([tags: t], %{tag_names: t.tag_names})
   end
 
-  def enriched_structure_information(query) do
+  def enriched_structure_notes(query) do
     query
     |> join(:left, [dsv], ds in assoc(dsv, :data_structure), as: :ds)
     |> join(:left, [ds: ds], s in assoc(ds, :system), as: :sys)
