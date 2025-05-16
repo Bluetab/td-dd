@@ -30,9 +30,11 @@ defmodule TdDd.DataStructures.Search.Suggestions do
     |> Map.put_new("similarity", @similarity)
   end
 
-  defp generate_vector(%{
-         "resource" => %{"type" => "concepts", "id" => id, "version" => version} = params
-       }) do
+  defp generate_vector(
+         %{
+           "resource" => %{"type" => "concepts", "id" => id, "version" => version}
+         } = params
+       ) do
     %{id: id, version: version}
     |> TdBg.generate_vector(params["collection_name"])
     |> then(fn {:ok, version} -> version end)
