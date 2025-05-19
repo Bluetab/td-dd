@@ -198,6 +198,36 @@ defmodule TdDd.Search.StoreTest do
 
       assert result.embeddings == %{"vector_default" => [54.0, 10.2, -2.0]}
     end
+
+    @tag sandbox: :shared
+    test "streams chunked data structure versions without embeddings enriched" do
+      expect(
+        TdDd.Search.EnricherImplMock,
+        :async_enrich_version_embeddings,
+        1,
+        fn versions_stream ->
+          Stream.flat_map(
+            versions_stream,
+            &EnricherImpl.enrich_embeddings(&1)
+          )
+        end
+      )
+
+      dsv = insert(:data_structure_version)
+      domain_external_id = ""
+      alias_name = ""
+
+      Embeddings.list(
+        &Mox.expect/4,
+        ["#{dsv.name} #{alias_name} #{dsv.type} #{domain_external_id} #{dsv.description}"],
+        {:ok, %{}}
+      )
+
+      assert [] ==
+               Store.transaction(fn ->
+                 DataStructureVersion |> Store.stream(:embeddings) |> Enum.to_list()
+               end)
+    end
   end
 
   describe "Store.vacuum/0" do
