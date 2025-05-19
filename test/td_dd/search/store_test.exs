@@ -4,6 +4,7 @@ defmodule TdDd.Search.StoreTest do
   import ExUnit.CaptureLog
   import Mox
 
+  alias TdCluster.TestHelpers.TdAiMock.Embeddings
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Grants.GrantRequest
   alias TdDd.Search.EnricherImpl
@@ -157,6 +158,45 @@ defmodule TdDd.Search.StoreTest do
                  |> Store.stream()
                  |> Enum.to_list()
                end)
+    end
+  end
+
+  describe "Store.stream/2 of embeddings" do
+    setup do
+      start_supervised!(StructureEnricher)
+      :ok
+    end
+
+    @tag sandbox: :shared
+    test "streams chunked data structure versions with embeddings enriched" do
+      expect(
+        TdDd.Search.EnricherImplMock,
+        :async_enrich_version_embeddings,
+        1,
+        fn versions_stream ->
+          Stream.flat_map(
+            versions_stream,
+            &EnricherImpl.enrich_embeddings(&1)
+          )
+        end
+      )
+
+      dsv = insert(:data_structure_version)
+      domain_external_id = ""
+      alias_name = ""
+
+      Embeddings.list(
+        &Mox.expect/4,
+        ["#{dsv.name} #{alias_name} #{dsv.type} #{domain_external_id} #{dsv.description}"],
+        {:ok, %{"default" => [[54.0, 10.2, -2.0]]}}
+      )
+
+      assert [result] =
+               Store.transaction(fn ->
+                 DataStructureVersion |> Store.stream(:embeddings) |> Enum.to_list()
+               end)
+
+      assert result.embeddings == %{"vector_default" => [54.0, 10.2, -2.0]}
     end
   end
 
