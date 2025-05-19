@@ -63,6 +63,7 @@ defmodule TdDd.Search.Store do
     |> Repo.stream()
     |> Stream.chunk_every(128)
     |> @enricher.async_enrich_version_embeddings()
+    |> Stream.reject(&is_nil(Map.get(&1, :embeddings)))
   end
 
   def stream(DataStructureVersion, data_structure_ids) do

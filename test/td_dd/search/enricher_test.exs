@@ -90,5 +90,27 @@ defmodule TdDd.Search.EnricherImplTest do
       assert [enriched] = EnricherImpl.enrich_embeddings([dsv])
       assert enriched.embeddings == %{"vector_default" => [54.0, 10.2, -2.0]}
     end
+
+    test "empty response from ai", %{
+      template: %{name: template_name},
+      domain: %{id: domain_id, external_id: domain_external_id}
+    } do
+      content = %{"string" => "initial", "list" => "one", "url" => nil}
+
+      note = insert(:structure_note, df_content: content, status: :published)
+
+      data_structure = insert(:data_structure, published_note: note, domain_ids: [domain_id])
+      dsv = insert(:data_structure_version, type: template_name, data_structure: data_structure)
+      alias_name = ""
+
+      Embeddings.list(
+        &Mox.expect/4,
+        ["#{dsv.name} #{alias_name} #{template_name} #{domain_external_id} #{dsv.description}"],
+        {:ok, %{}}
+      )
+
+      assert [enriched] = EnricherImpl.enrich_embeddings([dsv])
+      assert enriched.embeddings == nil
+    end
   end
 end
