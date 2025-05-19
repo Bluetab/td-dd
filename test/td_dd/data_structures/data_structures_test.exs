@@ -4,6 +4,7 @@ defmodule TdDd.DataStructuresTest do
   import TdDd.TestOperators
 
   alias Elasticsearch.Document
+  alias TdCluster.TestHelpers.TdAiMock.Embeddings
   alias TdCache.Redix
   alias TdCache.Redix.Stream
   alias TdCore.Search.IndexWorkerMock
@@ -1963,6 +1964,42 @@ defmodule TdDd.DataStructuresTest do
                Enum.find(IndexWorkerMock.calls(), fn {action, index, _} ->
                  action == :reindex and index == :grant_requests
                end)
+    end
+  end
+
+  describe "embeddings" do
+    test "generates embeddings for a list of data structure versions" do
+      domain = CacheHelpers.insert_domain()
+      data_structure = insert(:data_structure)
+      alias_name = "alias name"
+      domain_external_id = "exid1"
+      domains = [%{id: 1, external_id: domain_external_id}, %{id: 2, external_id: "exid2"}]
+      search_content = %{"alias" => %{"value" => alias_name}}
+      link_type = "foo"
+      link_domain = domain.external_id
+
+      data_structure =
+        data_structure |> Map.put(:search_content, search_content) |> Map.put(:domains, domains)
+
+      dsv = insert(:data_structure_version, data_structure: data_structure)
+      concept = CacheHelpers.insert_concept(%{domain_id: domain.id, type: link_type})
+
+      CacheHelpers.insert_link(
+        data_structure.id,
+        "data_structure",
+        "business_concept",
+        concept.id
+      )
+
+      Embeddings.list(
+        &Mox.expect/4,
+        [
+          "#{dsv.name} #{alias_name} #{dsv.type} #{domain_external_id} #{dsv.description} #{concept.name} #{link_type} #{link_domain}"
+        ],
+        {:ok, %{"default" => [[54.0, 10.2, -2.0]]}}
+      )
+
+      assert {:ok, %{"default" => [[54.0, 10.2, -2.0]]}} = DataStructures.embeddings([dsv])
     end
   end
 

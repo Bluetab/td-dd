@@ -1444,7 +1444,10 @@ defmodule TdDd.DataStructures do
     domain_external_id = domains |> List.wrap() |> hd() |> Map.get(:external_id, "")
     alias_name = alias_name(data_structure)
 
-    "#{name} #{alias_name} #{type} #{domain_external_id} #{description}" <> links(data_structure)
+    String.trim(
+      "#{name} #{alias_name} #{type} #{domain_external_id} #{description}" <>
+        " " <> links(data_structure)
+    )
   end
 
   defp alias_name(%{search_content: %{"alias" => %{"value" => alias_name}}})
@@ -1459,6 +1462,6 @@ defmodule TdDd.DataStructures do
   end
 
   defp link_embedding(link) do
-    "#{link.name} #{link.type} #{link.domain.external_id}"
+    "#{Map.get(link, :name)} #{Map.get(link, :type, "")} #{get_in(link, [:domain, :external_id]) || ""}"
   end
 end
