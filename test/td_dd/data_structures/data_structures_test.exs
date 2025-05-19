@@ -4,9 +4,9 @@ defmodule TdDd.DataStructuresTest do
   import TdDd.TestOperators
 
   alias Elasticsearch.Document
-  alias TdCluster.TestHelpers.TdAiMock.Embeddings
   alias TdCache.Redix
   alias TdCache.Redix.Stream
+  alias TdCluster.TestHelpers.TdAiMock.Embeddings
   alias TdCore.Search.IndexWorkerMock
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
