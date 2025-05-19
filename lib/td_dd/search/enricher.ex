@@ -52,7 +52,7 @@ defmodule TdDd.Search.EnricherImpl do
     end)
   end
 
-  defp enrich_embeddings(data_structure_versions) do
+  def enrich_embeddings(data_structure_versions) do
     {:ok, embeddings} =
       data_structure_versions
       |> Enum.map(&DataStructures.enriched_structure_version(&1, content: :searchable))
