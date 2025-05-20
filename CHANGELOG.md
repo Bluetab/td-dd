@@ -4,7 +4,9 @@
 
 ### Added
 
-- [TD-6219] Put data structure embeddings in elastic
+- [TD-6219]: 
+  - Put data structure embeddings in elastic
+  - Add suggestion controller
 
 ### Fixed
 
