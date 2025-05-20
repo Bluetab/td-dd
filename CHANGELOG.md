@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-6219] Put data structure embeddings in elastic
+
+### Fixed
+
+[TD-7226] Enhance SSL configuration handling in production
+
 ## [7.5.0] 2025-04-30
 
 ### Added
