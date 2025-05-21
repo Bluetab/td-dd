@@ -100,6 +100,19 @@ defmodule TdDd.DataStructures.DataStructureQueries do
 
   @spec data_structure_version_ids(keyword) :: Ecto.Query.t()
   def data_structure_version_ids(opts \\ []) do
+    opts
+    |> data_structure_versions_base()
+    |> select([dsv], dsv.id)
+  end
+
+  @spec data_structure_version_embeddings(keyword) :: Ecto.Query.t()
+  def data_structure_version_embeddings(opts \\ []) do
+    opts
+    |> data_structure_versions_base()
+    |> enriched_structure_notes()
+  end
+
+  defp data_structure_versions_base(opts) do
     [deleted: false]
     |> Keyword.merge(opts)
     |> Enum.reduce(DataStructureVersion, fn
@@ -108,7 +121,6 @@ defmodule TdDd.DataStructures.DataStructureQueries do
       {:deleted, _}, q -> q
       {:data_structure_ids, ids}, q -> where(q, [dsv], dsv.data_structure_id in ^ids)
     end)
-    |> select([dsv], dsv.id)
   end
 
   @spec profile(map) :: Ecto.Query.t()
@@ -225,22 +237,7 @@ defmodule TdDd.DataStructures.DataStructureQueries do
       {:data_structure_ids, ids}, q -> where(q, [dsv], dsv.data_structure_id in ^ids)
       {:relation_type_id, _}, q -> q
     end)
-    |> join(:left, [dsv], ds in assoc(dsv, :data_structure), as: :ds)
-    |> join(:left, [ds: ds], s in assoc(ds, :system), as: :sys)
-    |> join(:left, [ds: ds], pn in assoc(ds, :published_note), as: :pn)
-    |> join(:left, [ds: ds], dn in assoc(ds, :draft_note), as: :dn)
-    |> join(:left, [ds: ds], pan in assoc(ds, :pending_approval_note), as: :pan)
-    |> join(:left, [ds: ds], rn in assoc(ds, :rejected_note), as: :rn)
-    |> select_merge([ds: ds, sys: sys, pn: pn, dn: dn, pan: pan, rn: rn], %{
-      data_structure: %{
-        ds
-        | system: sys,
-          published_note: pn,
-          draft_note: dn,
-          pending_approval_note: pan,
-          rejected_note: rn
-      }
-    })
+    |> enriched_structure_notes()
     |> join(:left, [dsv], sm in StructureMetadata,
       as: :metadata,
       on:
@@ -274,6 +271,26 @@ defmodule TdDd.DataStructures.DataStructureQueries do
       on: dsv.data_structure_id == t.data_structure_id
     )
     |> select_merge([tags: t], %{tag_names: t.tag_names})
+  end
+
+  def enriched_structure_notes(query) do
+    query
+    |> join(:left, [dsv], ds in assoc(dsv, :data_structure), as: :ds)
+    |> join(:left, [ds: ds], s in assoc(ds, :system), as: :sys)
+    |> join(:left, [ds: ds], pn in assoc(ds, :published_note), as: :pn)
+    |> join(:left, [ds: ds], dn in assoc(ds, :draft_note), as: :dn)
+    |> join(:left, [ds: ds], pan in assoc(ds, :pending_approval_note), as: :pan)
+    |> join(:left, [ds: ds], rn in assoc(ds, :rejected_note), as: :rn)
+    |> select_merge([ds: ds, sys: sys, pn: pn, dn: dn, pan: pan, rn: rn], %{
+      data_structure: %{
+        ds
+        | system: sys,
+          published_note: pn,
+          draft_note: dn,
+          pending_approval_note: pan,
+          rejected_note: rn
+      }
+    })
   end
 
   @spec distinct_by(Ecto.Query.t(), :id | :data_structure_id) :: Ecto.Query.t()

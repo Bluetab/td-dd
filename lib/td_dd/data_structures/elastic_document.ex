@@ -37,6 +37,12 @@ defmodule TdDd.DataStructures.ElasticDocument do
     def routing(_), do: false
 
     @impl Elasticsearch.Document
+    def encode(%DataStructureVersion{embeddings: %{} = embeddings})
+        when map_size(embeddings) > 0 do
+      %{doc: %{embeddings: embeddings}}
+    end
+
+    @impl Elasticsearch.Document
     def encode(
           %DataStructureVersion{
             data_structure:
@@ -253,72 +259,74 @@ defmodule TdDd.DataStructures.ElasticDocument do
     def mappings(_) do
       content_mappings = %{properties: get_dynamic_mappings("dd")}
 
-      properties = %{
-        id: %{type: "long", index: false},
-        data_structure_id: %{type: "long"},
-        name: %{type: "text", fields: @raw_sort},
-        original_name: %{type: "text", fields: @raw_sort},
-        ngram_name: %{type: "search_as_you_type"},
-        ngram_original_name: %{type: "search_as_you_type"},
-        system: %{
-          properties: %{
-            id: %{type: "long", index: false},
-            external_id: %{type: "text", fields: @raw},
-            name: %{type: "text", fields: @raw_sort}
-          }
-        },
-        domain: %{
-          properties: %{
-            id: %{type: "long"},
-            name: %{type: "text", fields: @raw_sort},
-            external_id: %{type: "text", fields: @raw}
-          }
-        },
-        group: %{type: "text", fields: @raw_sort},
-        type: %{type: "text", fields: @raw_sort},
-        field_type: %{type: "text", fields: @raw_sort},
-        confidential: %{type: "boolean", fields: @raw},
-        with_content: %{type: "boolean", fields: @raw},
-        description: %{type: "text", fields: @raw},
-        external_id: %{type: "keyword", index: false},
-        domain_ids: %{type: "long"},
-        deleted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-        metadata: %{enabled: false},
-        linked_concepts: %{type: "boolean"},
-        inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-        updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-        ngram_path: %{type: "search_as_you_type"},
-        last_change_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-        path: %{type: "keyword", fields: @text},
-        path_sort: %{type: "keyword", normalizer: "sortable"},
-        parent_id: %{
-          type: "long",
-          null_value: 0
-        },
-        note: content_mappings,
-        note_last_changed_by: %{
-          type: "object",
-          properties: %{
-            id: %{type: "long", index: false},
-            user_name: %{type: "keyword", fields: @raw_sort},
-            full_name: %{type: "text", fields: @raw}
-          }
-        },
-        note_last_changed_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-        class: %{type: "text", fields: %{raw: %{type: "keyword", null_value: ""}}},
-        classes: %{enabled: true},
-        source_alias: %{type: "keyword", fields: @raw_sort},
-        version: %{type: "long"},
-        tags: %{type: "text", fields: %{raw: %{type: "keyword", null_value: ""}}},
-        with_profiling: %{type: "boolean", fields: @raw},
-        non_published_note: %{
-          properties: %{
-            id: %{type: "long", index: false},
-            status: %{type: "keyword", fields: @raw_sort},
-            note: content_mappings
-          }
+      properties =
+        %{
+          id: %{type: "long", index: false},
+          data_structure_id: %{type: "long"},
+          name: %{type: "text", fields: @raw_sort},
+          original_name: %{type: "text", fields: @raw_sort},
+          ngram_name: %{type: "search_as_you_type"},
+          ngram_original_name: %{type: "search_as_you_type"},
+          system: %{
+            properties: %{
+              id: %{type: "long", index: false},
+              external_id: %{type: "text", fields: @raw},
+              name: %{type: "text", fields: @raw_sort}
+            }
+          },
+          domain: %{
+            properties: %{
+              id: %{type: "long"},
+              name: %{type: "text", fields: @raw_sort},
+              external_id: %{type: "text", fields: @raw}
+            }
+          },
+          group: %{type: "text", fields: @raw_sort},
+          type: %{type: "text", fields: @raw_sort},
+          field_type: %{type: "text", fields: @raw_sort},
+          confidential: %{type: "boolean", fields: @raw},
+          with_content: %{type: "boolean", fields: @raw},
+          description: %{type: "text", fields: @raw},
+          external_id: %{type: "keyword", index: false},
+          domain_ids: %{type: "long"},
+          deleted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
+          metadata: %{enabled: false},
+          linked_concepts: %{type: "boolean"},
+          inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
+          updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
+          ngram_path: %{type: "search_as_you_type"},
+          last_change_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
+          path: %{type: "keyword", fields: @text},
+          path_sort: %{type: "keyword", normalizer: "sortable"},
+          parent_id: %{
+            type: "long",
+            null_value: 0
+          },
+          note: content_mappings,
+          note_last_changed_by: %{
+            type: "object",
+            properties: %{
+              id: %{type: "long", index: false},
+              user_name: %{type: "keyword", fields: @raw_sort},
+              full_name: %{type: "text", fields: @raw}
+            }
+          },
+          note_last_changed_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
+          class: %{type: "text", fields: %{raw: %{type: "keyword", null_value: ""}}},
+          classes: %{enabled: true},
+          source_alias: %{type: "keyword", fields: @raw_sort},
+          version: %{type: "long"},
+          tags: %{type: "text", fields: %{raw: %{type: "keyword", null_value: ""}}},
+          with_profiling: %{type: "boolean", fields: @raw},
+          non_published_note: %{
+            properties: %{
+              id: %{type: "long", index: false},
+              status: %{type: "keyword", fields: @raw_sort},
+              note: content_mappings
+            }
+          },
+          embeddings: %{properties: get_embedding_mappings()}
         }
-      }
 
       dynamic_templates = [
         %{metadata_filters: %{path_match: "_filters.*", mapping: %{type: "keyword"}}}

@@ -29,6 +29,7 @@ config :td_dd, :vault,
   secrets_path: "secret/data/cx/"
 
 config :td_dd, TdDd.DataStructures.HistoryManager, history_depth_days: 5
+config :td_dd, :search_enricher, TdDd.Search.EnricherImplMock
 
 config :vaultex, vault_addr: "http://vault:8200"
 

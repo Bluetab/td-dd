@@ -22,7 +22,7 @@ defmodule TdDd.DataStructures.Search do
   def get_filter_values(%Claims{} = claims, permission, %{} = params) do
     query_data = %{aggs: aggs} = ElasticDocumentProtocol.query_data(%DataStructureVersion{})
     query = build_query(claims, permission, params, query_data)
-    search = %{query: query, aggs: aggs, size: 0}
+    search = %{query: query, aggs: aggs, size: 0, _source: %{excludes: ["embeddings"]}}
     Search.get_filters(search, @index)
   end
 
@@ -31,7 +31,7 @@ defmodule TdDd.DataStructures.Search do
     aggs = Map.merge(DSElasticDocument.id_path_agg(), aggs)
 
     query = build_query(claims, permission, params, %{query_data | aggs: aggs})
-    search = %{query: query, aggs: aggs, size: 0}
+    search = %{query: query, aggs: aggs, size: 0, _source: %{excludes: ["embeddings"]}}
     {:ok, %{"id_path" => %{buckets: buckets}}} = Search.get_filters(search, @index)
 
     buckets
@@ -61,6 +61,38 @@ defmodule TdDd.DataStructures.Search do
     )
     |> forest_with_filtered_children
   end
+
+  def vector(%Claims{} = claims, permission, %{} = params, opts \\ []) do
+    bool_filters =
+      claims
+      |> permission_filter(permission)
+      |> exlude_structures(params)
+
+    knn =
+      params
+      |> Map.take(["field", "query_vector", "k", "num_candidates", "similarity"])
+      |> Map.put("filter", %{bool: bool_filters})
+
+    %{knn: knn, _source: %{excludes: ["embeddings"]}, sort: ["_score"]}
+    |> Search.search(@index)
+    |> transform_response(opts)
+  end
+
+  defp permission_filter(claims, permission) do
+    filter =
+      claims
+      |> search_permissions(permission)
+      |> Query.build_filters()
+
+    %{"filter" => filter}
+  end
+
+  defp exlude_structures(filters, %{"structure_ids" => [_ | _] = structure_ids}) do
+    data_structure_filters = Query.structure_filter(structure_ids)
+    Map.merge(filters, %{"must_not" => [data_structure_filters]})
+  end
+
+  defp exlude_structures(filters, _params), do: filters
 
   defp to_array_path(""), do: []
 
@@ -97,7 +129,7 @@ defmodule TdDd.DataStructures.Search do
 
   def get_aggregations(%Claims{} = claims, aggs) do
     query = build_query(claims, "view_data_structure", %{}, %{aggs: aggs})
-    search = %{query: query, aggs: aggs, size: 0}
+    search = %{query: query, aggs: aggs, size: 0, _source: %{excludes: ["embeddings"]}}
     Search.search(search, @index, format: :raw)
   end
 
@@ -115,7 +147,7 @@ defmodule TdDd.DataStructures.Search do
 
     %{limit: limit, size: size, ttl: ttl} = scroll_opts!()
 
-    %{query: query, sort: sort, size: size}
+    %{query: query, sort: sort, size: size, _source: %{excludes: ["embeddings"]}}
     |> do_search(%{"scroll" => ttl})
     |> do_scroll(ttl, limit, [])
   end
@@ -183,7 +215,16 @@ defmodule TdDd.DataStructures.Search do
     query = build_query(claims, permission, params, query_data)
     sort = Map.get(params, "sort", ["_score", "name.raw"])
 
-    do_search(%{query: query, sort: sort, from: page * size, size: size}, params)
+    do_search(
+      %{
+        query: query,
+        sort: sort,
+        from: page * size,
+        size: size,
+        _source: %{excludes: ["embeddings"]}
+      },
+      params
+    )
   end
 
   defp build_query(%Claims{} = claims, permission, %{} = params, %{} = query_data) do
@@ -204,28 +245,29 @@ defmodule TdDd.DataStructures.Search do
     |> transform_response()
   end
 
-  defp transform_response({:ok, response}), do: transform_response(response)
-  defp transform_response({:error, _} = response), do: response
+  defp transform_response(_response, opts \\ [])
+  defp transform_response({:ok, response}, opts), do: transform_response(response, opts)
+  defp transform_response({:error, _} = response, _opts), do: response
 
-  defp transform_response(%{results: results} = response) do
+  defp transform_response(%{results: results} = response, opts) do
     results =
       results
-      |> Enum.map(&Map.get(&1, "_source"))
-      |> Enum.map(fn ds ->
+      |> Enum.map(&Map.take(&1, ["_source", "_score"]))
+      |> Enum.map(fn %{"_source" => ds} = record ->
         last_change_by =
           ds
           |> Map.get("last_change_by", %{})
           |> CollectionUtils.atomize_keys()
 
-        Map.put(ds, "last_change_by", last_change_by)
-      end)
-      |> Enum.map(fn ds ->
         data_fields =
           ds
           |> Map.get("data_fields", [])
           |> Enum.map(&CollectionUtils.atomize_keys/1)
 
-        Map.put(ds, "data_fields", data_fields)
+        ds
+        |> Map.put("last_change_by", last_change_by)
+        |> Map.put("data_fields", data_fields)
+        |> add_similarity(record, opts[:similarity])
       end)
       |> Enum.map(&CollectionUtils.atomize_keys/1)
 
@@ -236,4 +278,14 @@ defmodule TdDd.DataStructures.Search do
     [to_string(permission), "manage_confidential_structures"]
     |> Permissions.get_search_permissions(claims)
   end
+
+  defp add_similarity(data_structure, record, :cosine) do
+    # We assume cosine similarity by default, but this may vary depending on the index configuration.
+    #  Adjust accordingly based on the actual setup
+    # https://www.elastic.co/docs/solutions/search/vector/knn#knn-similarity-search
+    similarity = 2 * record["_score"] - 1
+    Map.put(data_structure, "similarity", similarity)
+  end
+
+  defp add_similarity(data_structure, _record, _other), do: data_structure
 end
