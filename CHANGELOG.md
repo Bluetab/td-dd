@@ -8,6 +8,13 @@
   - Put data structure embeddings in elastic
   - Add suggestion controller
 
+### Changed
+
+- [TD-7277]:
+  - Order by metadata order by default first
+  - When metadata order can't be cast return null
+  - Order type: ASC null last
+
 ### Fixed
 
 [TD-7226] Enhance SSL configuration handling in production
