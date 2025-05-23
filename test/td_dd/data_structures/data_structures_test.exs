@@ -1819,6 +1819,58 @@ defmodule TdDd.DataStructuresTest do
     end
   end
 
+  describe "get_paginated_field_structures/2" do
+    test "gets paginated data structures ordered by metadata -> order and name" do
+      parent =
+        %{id: father_id} =
+        insert(:data_structure_version, version: 1, class: "table", name: "table")
+
+      inorder_data_fields = [
+        %{version: 1, class: "field", name: "field_5", metadata: %{"order" => 1}},
+        %{version: 1, class: "field", name: "field_6", metadata: %{"order" => "2.0"}},
+        %{version: 1, class: "field", name: "field_2", metadata: %{"order" => 3}},
+        %{version: 1, class: "field", name: "field_7", metadata: %{"order" => "5"}},
+        %{version: 1, class: "field", name: "field_3", metadata: %{"order" => "11.0"}},
+        %{version: 1, class: "field", name: "field_1", metadata: %{"order" => "ab35"}},
+        %{version: 1, class: "field", name: "field_4", metadata: nil},
+        %{version: 1, class: "field", name: "field_8", metadata: %{"order" => nil}}
+      ]
+
+      inorder_data_fields
+      |> Enum.shuffle()
+      |> Enum.each(fn attrs ->
+        %{id: child_id} = insert(:data_structure_version, attrs)
+
+        insert(:data_structure_relation,
+          parent_id: father_id,
+          child_id: child_id,
+          relation_type_id: RelationTypes.default_id!()
+        )
+      end)
+
+      response =
+        DataStructures.data_fields(
+          {:data_fields,
+           [
+             add_fields: parent,
+             search: %{order_by: [:metadata_order, :name], first: Enum.count(inorder_data_fields)}
+           ]},
+          [father_id]
+        )
+
+      # order by metadata -> order when cast to number, nulls and non numeric
+      # values go last, ordered by name as ordered in `inorder_data_fields`
+      assert {data_fields, _meta} = Map.get(response, father_id)
+
+      for {params, index} <- Enum.with_index(inorder_data_fields) do
+        version_params =
+          data_fields |> Enum.at(index) |> Map.take([:version, :class, :name, :metadata])
+
+        assert version_params == params
+      end
+    end
+  end
+
   describe "get_children/2" do
     test "generates a valid query" do
       %{parent: parent} = create_relation()

@@ -462,6 +462,8 @@ defmodule TdDd.DataStructures do
     {:ok, {data_fields, meta}} =
       data_structure_version
       |> get_field_structures_query(opts)
+      |> subquery()
+      |> select([r], r)
       |> Flop.validate_and_run(search_args, for: DataStructureVersion)
 
     {enrich_data_fiels(data_fields, opts), meta}
@@ -479,7 +481,21 @@ defmodule TdDd.DataStructures do
     )
     |> with_data_structure_domain_ids(opts[:domain_ids])
     |> with_deleted(opts, dynamic([child], is_nil(child.deleted_at)))
-    |> select([child], child)
+    |> select_merge([child], %{
+      metadata_order:
+        fragment(
+          """
+            CASE
+              WHEN trim(?->>?) ~ '^\\d+(\\.\\d+){0,1}$' THEN trim(?->>?)::numeric
+              ELSE NULL
+            END
+          """,
+          child.metadata,
+          "order",
+          child.metadata,
+          "order"
+        )
+    })
   end
 
   defp profile_condition(query, %{data_fields_filter: %{has_profile: true}}) do
