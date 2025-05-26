@@ -2529,15 +2529,25 @@ defmodule TdDdWeb.Schema.StructuresTest do
     end
 
     @tag authentication: [role: "service"]
-    test "paginates over results sorted by name", %{conn: conn} do
+    test "paginates over results sorted by name and metadata order", %{conn: conn} do
       %{id: dsv_father_id, data_structure_id: data_structure_id} =
         insert(:data_structure_version, version: 1, class: "table", name: "table")
 
       %{id: dsv_child_1_id} =
-        insert(:data_structure_version, version: 1, class: "field", name: "field_1")
+        insert(:data_structure_version,
+          version: 1,
+          class: "field",
+          name: "field_1",
+          metadata: %{"order" => "1"}
+        )
 
       %{id: dsv_child_2_id} =
-        insert(:data_structure_version, version: 1, class: "field", name: "field_2")
+        insert(:data_structure_version,
+          version: 1,
+          class: "field",
+          name: "field_2",
+          metadata: %{"order" => "2"}
+        )
 
       create_relation(dsv_father_id, dsv_child_1_id)
       create_relation(dsv_father_id, dsv_child_2_id)
