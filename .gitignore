@@ -34,3 +34,4 @@ td_dd-*.tar
 .elixir_ls
 TODO.*
 .qodo
+mise.toml
