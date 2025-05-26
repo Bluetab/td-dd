@@ -6,6 +6,7 @@ defmodule TdDd.DataStructuresTest do
   alias Elasticsearch.Document
   alias TdCache.Redix
   alias TdCache.Redix.Stream
+  alias TdCluster.TestHelpers.TdAiMock.Embeddings
   alias TdCore.Search.IndexWorkerMock
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
@@ -1818,6 +1819,58 @@ defmodule TdDd.DataStructuresTest do
     end
   end
 
+  describe "get_paginated_field_structures/2" do
+    test "gets paginated data structures ordered by metadata -> order and name" do
+      parent =
+        %{id: father_id} =
+        insert(:data_structure_version, version: 1, class: "table", name: "table")
+
+      inorder_data_fields = [
+        %{version: 1, class: "field", name: "field_5", metadata: %{"order" => 1}},
+        %{version: 1, class: "field", name: "field_6", metadata: %{"order" => "2.0"}},
+        %{version: 1, class: "field", name: "field_2", metadata: %{"order" => 3}},
+        %{version: 1, class: "field", name: "field_7", metadata: %{"order" => "5"}},
+        %{version: 1, class: "field", name: "field_3", metadata: %{"order" => "11.0"}},
+        %{version: 1, class: "field", name: "field_1", metadata: %{"order" => "ab35"}},
+        %{version: 1, class: "field", name: "field_4", metadata: nil},
+        %{version: 1, class: "field", name: "field_8", metadata: %{"order" => nil}}
+      ]
+
+      inorder_data_fields
+      |> Enum.shuffle()
+      |> Enum.each(fn attrs ->
+        %{id: child_id} = insert(:data_structure_version, attrs)
+
+        insert(:data_structure_relation,
+          parent_id: father_id,
+          child_id: child_id,
+          relation_type_id: RelationTypes.default_id!()
+        )
+      end)
+
+      response =
+        DataStructures.data_fields(
+          {:data_fields,
+           [
+             add_fields: parent,
+             search: %{order_by: [:metadata_order, :name], first: Enum.count(inorder_data_fields)}
+           ]},
+          [father_id]
+        )
+
+      # order by metadata -> order when cast to number, nulls and non numeric
+      # values go last, ordered by name as ordered in `inorder_data_fields`
+      assert {data_fields, _meta} = Map.get(response, father_id)
+
+      for {params, index} <- Enum.with_index(inorder_data_fields) do
+        version_params =
+          data_fields |> Enum.at(index) |> Map.take([:version, :class, :name, :metadata])
+
+        assert version_params == params
+      end
+    end
+  end
+
   describe "get_children/2" do
     test "generates a valid query" do
       %{parent: parent} = create_relation()
@@ -1963,6 +2016,42 @@ defmodule TdDd.DataStructuresTest do
                Enum.find(IndexWorkerMock.calls(), fn {action, index, _} ->
                  action == :reindex and index == :grant_requests
                end)
+    end
+  end
+
+  describe "embeddings" do
+    test "generates embeddings for a list of data structure versions" do
+      domain = CacheHelpers.insert_domain()
+      data_structure = insert(:data_structure)
+      alias_name = "alias name"
+      domain_external_id = "exid1"
+      domains = [%{id: 1, external_id: domain_external_id}, %{id: 2, external_id: "exid2"}]
+      search_content = %{"alias" => %{"value" => alias_name}}
+      link_type = "foo"
+      link_domain = domain.external_id
+
+      data_structure =
+        data_structure |> Map.put(:search_content, search_content) |> Map.put(:domains, domains)
+
+      dsv = insert(:data_structure_version, data_structure: data_structure)
+      concept = CacheHelpers.insert_concept(%{domain_id: domain.id, type: link_type})
+
+      CacheHelpers.insert_link(
+        data_structure.id,
+        "data_structure",
+        "business_concept",
+        concept.id
+      )
+
+      Embeddings.list(
+        &Mox.expect/4,
+        [
+          "#{dsv.name} #{alias_name} #{dsv.type} #{domain_external_id} #{dsv.description} #{concept.name} #{link_type} #{link_domain}"
+        ],
+        {:ok, %{"default" => [[54.0, 10.2, -2.0]]}}
+      )
+
+      assert {:ok, %{"default" => [[54.0, 10.2, -2.0]]}} = DataStructures.embeddings([dsv])
     end
   end
 

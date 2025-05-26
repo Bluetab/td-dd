@@ -29,6 +29,7 @@ defmodule TdDdWeb.Router do
     patch("/data_structures/metadata", MetadataController, :upload)
     post("/data_structures/metadata", MetadataController, :upload)
     post("/data_structures/search", DataStructureController, :search)
+    post("/data_structures/suggestions", SuggestionController, :search)
     post("/data_structures/bulk_update", DataStructureController, :bulk_update)
     post("/data_structures/xlsx/download", DataStructures.XLSXController, :download)
     post("/data_structures/xlsx/upload", DataStructures.XLSXController, :upload)
@@ -136,6 +137,7 @@ defmodule TdDdWeb.Router do
     post "/buckets/paths", DataStructureFilterController, :get_bucket_paths
 
     get("/data_structures/search/reindex_all", SearchController, :reindex_all)
+    post("/data_structures/search/put_embeddings", SearchController, :embeddings)
 
     get("/data_structure_filters", DataStructureFilterController, :index)
     post("/data_structure_filters/search", DataStructureFilterController, :search)

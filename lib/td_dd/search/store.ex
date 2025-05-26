@@ -22,6 +22,8 @@ defmodule TdDd.Search.Store do
 
   require Logger
 
+  @enricher Application.compile_env(:td_dd, :search_enricher, TdDd.Search.EnricherImpl)
+
   @impl true
   def transaction(fun) do
     {:ok, result} = Repo.transaction(fun, timeout: :infinity)
@@ -49,6 +51,19 @@ defmodule TdDd.Search.Store do
 
   def stream(GrantRequest) do
     stream(GrantRequest, nil)
+  end
+
+  def stream(DataStructureVersion, :embeddings) do
+    dsv_count = Repo.aggregate(DataStructureVersion, :count, :id)
+    Tasks.log_start_stream(dsv_count)
+
+    query = DataStructureQueries.data_structure_version_embeddings()
+
+    query
+    |> Repo.stream()
+    |> Stream.chunk_every(128)
+    |> @enricher.async_enrich_version_embeddings()
+    |> Stream.reject(&is_nil(Map.get(&1, :embeddings)))
   end
 
   def stream(DataStructureVersion, data_structure_ids) do
@@ -140,7 +155,7 @@ defmodule TdDd.Search.Store do
     query
     |> Repo.stream()
     |> Stream.chunk_every(chunk_size)
-    |> Stream.flat_map(&enrich_chunk_data_structures(&1, relation_type_id, filters))
+    |> @enricher.async_enrich_versions(relation_type_id, filters)
   end
 
   defp do_stream_grants(query) do
@@ -154,26 +169,6 @@ defmodule TdDd.Search.Store do
     |> Repo.stream()
     |> Stream.chunk_every(chunk_size)
     |> Stream.flat_map(&enrich_chunk_grant_structures(&1, relation_type_id, filters, users))
-  end
-
-  defp enrich_chunk_data_structures(ids, relation_type_id, filters) do
-    result = enriched_structure_versions(ids, relation_type_id, filters)
-
-    chunk_size = Enum.count(ids)
-    Tasks.log_progress(chunk_size)
-
-    result
-  end
-
-  defp enriched_structure_versions(ids, relation_type_id, filters) do
-    DataStructures.enriched_structure_versions(
-      ids: ids,
-      relation_type_id: relation_type_id,
-      content: :searchable,
-      filters: filters,
-      # Protected metadata is not indexed
-      with_protected_metadata: false
-    )
   end
 
   defp streamed_enriched_structure_versions(ids, relation_type_id, filters) do

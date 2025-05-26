@@ -16,4 +16,9 @@ defmodule TdDd.DataStructures.Search.Indexer do
   def delete(ids) do
     IndexWorker.delete(@index, ids)
   end
+
+  def put_embeddings do
+    StructureEnricher.refresh()
+    IndexWorker.put_embeddings(@index)
+  end
 end

@@ -11,6 +11,7 @@ defmodule TdDd.DataStructures do
   alias TdCache.LinkCache
   alias TdCache.TemplateCache
   alias TdCache.UserCache
+  alias TdCluster.Cluster.TdAi.Embeddings
   alias TdCore.Search.IndexWorker
   alias TdCore.Search.Permissions
   alias TdCx.Sources
@@ -461,6 +462,8 @@ defmodule TdDd.DataStructures do
     {:ok, {data_fields, meta}} =
       data_structure_version
       |> get_field_structures_query(opts)
+      |> subquery()
+      |> select([r], r)
       |> Flop.validate_and_run(search_args, for: DataStructureVersion)
 
     {enrich_data_fiels(data_fields, opts), meta}
@@ -478,7 +481,21 @@ defmodule TdDd.DataStructures do
     )
     |> with_data_structure_domain_ids(opts[:domain_ids])
     |> with_deleted(opts, dynamic([child], is_nil(child.deleted_at)))
-    |> select([child], child)
+    |> select_merge([child], %{
+      metadata_order:
+        fragment(
+          """
+            CASE
+              WHEN trim(?->>?) ~ '^\\d+(\\.\\d+){0,1}$' THEN trim(?->>?)::numeric
+              ELSE NULL
+            END
+          """,
+          child.metadata,
+          "order",
+          child.metadata,
+          "order"
+        )
+    })
   end
 
   defp profile_condition(query, %{data_fields_filter: %{has_profile: true}}) do
@@ -1318,6 +1335,17 @@ defmodule TdDd.DataStructures do
     )
   end
 
+  def enriched_structure_version(data_structure_version, opts \\ []) do
+    enrich = StructureVersionEnricher.enricher(opts)
+    enrich.(data_structure_version)
+  end
+
+  def embeddings(data_structure_versions) when is_list(data_structure_versions) do
+    data_structure_versions
+    |> Enum.map(&embedding_attributes/1)
+    |> Embeddings.all()
+  end
+
   def streamed_enriched_structure_versions(opts \\ []) do
     chunk_size = Keyword.get(opts, :chunk_size, 1000)
 
@@ -1421,5 +1449,35 @@ defmodule TdDd.DataStructures do
       on: r.parent_id == dsv.id and r.child_id == ^child_id
     )
     |> where([_dsv, r], r.relation_type_id == ^default_type)
+  end
+
+  defp embedding_attributes(%{
+         data_structure: %{domains: domains} = data_structure,
+         type: type,
+         name: name,
+         description: description
+       }) do
+    domain_external_id = domains |> List.wrap() |> hd() |> Map.get(:external_id, "")
+    alias_name = alias_name(data_structure)
+
+    String.trim(
+      "#{name} #{alias_name} #{type} #{domain_external_id} #{description}" <>
+        " " <> links(data_structure)
+    )
+  end
+
+  defp alias_name(%{search_content: %{"alias" => %{"value" => alias_name}}})
+       when is_binary(alias_name),
+       do: alias_name
+
+  defp alias_name(_other), do: ""
+
+  defp links(%{id: id}) do
+    {:ok, links} = LinkCache.list_rand_links("data_structure", id, "business_concept")
+    Enum.map_join(links, " ", &link_embedding/1)
+  end
+
+  defp link_embedding(link) do
+    "#{Map.get(link, :name)} #{Map.get(link, :type, "")} #{get_in(link, [:domain, :external_id]) || ""}"
   end
 end

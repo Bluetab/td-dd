@@ -1,5 +1,20 @@
 # Changelog
 
+## [7.5.1] 2025-05-26
+
+### Added
+
+- [TD-6219]: 
+  - Put data structure embeddings in elastic
+  - Add suggestion controller
+
+### Changed
+
+- [TD-7277]:
+  - Order by metadata order by default first
+  - When metadata order can't be cast return null
+  - Order type: ASC null last
+
 ## [7.5.0] 2025-04-30
 
 ### Added
