@@ -1,6 +1,6 @@
 # Changelog
 
-## [7.5.0] 2025-04-30
+## [7.5.1] 2025-05-26
 
 ### Added
 
@@ -14,10 +14,6 @@
   - Order by metadata order by default first
   - When metadata order can't be cast return null
   - Order type: ASC null last
-
-### Fixed
-
-[TD-7226] Enhance SSL configuration handling in production
 
 ## [7.5.0] 2025-04-30
 
