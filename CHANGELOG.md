@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [7.5.2] 2025-05-26
 
 ### Fixed
 
