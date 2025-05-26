@@ -1,5 +1,12 @@
 # Changelog
 
+## [7.5.2] 2025-05-26
+
+### Fixed
+
+- [TD-7277]:
+  - Flop cannot interpret virtual fields unless a cast is explicitly provided in cursor pagination
+
 ## [7.5.1] 2025-05-26
 
 ### Added
