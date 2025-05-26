@@ -150,7 +150,7 @@ defmodule TdDdWeb.Schema.Structures do
       arg(:last, :integer)
       arg(:after, :cursor)
       arg(:before, :cursor)
-      arg(:order_by, list_of(:data_field_order), default_value: [:name])
+      arg(:order_by, list_of(:data_field_order), default_value: [:metadata_order, :name])
       resolve(&Resolvers.Structures.data_fields/3)
     end
 

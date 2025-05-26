@@ -483,17 +483,20 @@ defmodule TdDd.DataStructures do
     |> with_deleted(opts, dynamic([child], is_nil(child.deleted_at)))
     |> select_merge([child], %{
       metadata_order:
-        fragment(
-          """
-            CASE
-              WHEN trim(?->>?) ~ '^\\d+(\\.\\d+){0,1}$' THEN trim(?->>?)::numeric
-              ELSE NULL
-            END
-          """,
-          child.metadata,
-          "order",
-          child.metadata,
-          "order"
+        type(
+          fragment(
+            """
+              CASE
+                WHEN trim(?->>?) ~ '^\\d+(\\.\\d+){0,1}$' THEN trim(?->>?)::numeric
+                ELSE NULL
+              END
+            """,
+            child.metadata,
+            "order",
+            child.metadata,
+            "order"
+          ),
+          :decimal
         )
     })
   end
