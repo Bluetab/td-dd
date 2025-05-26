@@ -67,7 +67,7 @@ defmodule TdDdWeb.Schema.Structures do
       arg(:before, :cursor)
       arg(:first, :integer, default_value: 1_000)
       arg(:last, :integer)
-      arg(:order_by, list_of(:data_field_order), default_value: [:name])
+      arg(:order_by, list_of(:data_field_order), default_value: [:metadata_order, :name])
       arg(:search, :string)
       arg(:filters, :data_fields_filter)
       resolve(&Resolvers.Structures.data_fields/3)
@@ -276,5 +276,6 @@ defmodule TdDdWeb.Schema.Structures do
 
   enum :data_field_order do
     value(:name)
+    value(:metadata_order)
   end
 end

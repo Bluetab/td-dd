@@ -13,7 +13,14 @@ defmodule TdDd.DataStructures.DataStructureVersion do
   alias TdDd.DataStructures.DataStructureType
   import Ecto.Query
 
-  @derive {Flop.Schema, filterable: [:name], sortable: [:name], default_limit: 50}
+  @derive {Flop.Schema,
+           filterable: [:name],
+           sortable: [:name, :metadata_order],
+           default_order: %{
+             order_by: [:metadata_order, :name],
+             order_directions: [:asc_nulls_last, :asc_nulls_last]
+           },
+           default_limit: 50}
 
   @typedoc "A data structure version"
   @type t :: %__MODULE__{}
@@ -43,6 +50,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     field(:tag_names, {:array, :string}, virtual: true)
     field(:implementation_count, :integer, virtual: true)
     field(:embeddings, :map, virtual: true)
+    field(:metadata_order, :float, virtual: true)
 
     belongs_to(:data_structure, DataStructure)
 
