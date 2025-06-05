@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-7278] Update user_id handling in GrantRequestGroupController
+
 ## [7.5.3] 2025-06-04
 
 ### Added
