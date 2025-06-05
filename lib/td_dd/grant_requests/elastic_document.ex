@@ -119,8 +119,17 @@ defmodule TdDd.GrantRequests.ElasticDocument do
     @search_fields ~w(user.full_name)
 
     def mappings(_) do
-      %{mappings: %{properties: dsv_properties}, settings: _settings} =
-        ElasticDocumentProtocol.mappings(%DataStructureVersion{})
+      config =
+        :td_core
+        |> Application.get_env(TdCore.Search.Cluster)
+        |> Keyword.get(:indexes, [])
+        |> Keyword.get(:grant_requests, [])
+        |> Map.new()
+
+      dsv_properties =
+        %DataStructureVersion{}
+        |> ElasticDocumentProtocol.mappings()
+        |> dsv_properties(config)
 
       content_mappings = %{type: "object", properties: get_dynamic_mappings("gr")}
 
@@ -209,6 +218,14 @@ defmodule TdDd.GrantRequests.ElasticDocument do
         fields: fields,
         simple_search_fields: simple_search_fields
       }
+    end
+
+    defp dsv_properties(%{mappings: %{properties: dsv_properties}}, index_config) do
+      index_config
+      |> Map.get(:dsv_disabled_fields, [])
+      |> Enum.reduce(dsv_properties, fn field, properties ->
+        Map.put(properties, field, %{enabled: false})
+      end)
     end
 
     defp native_aggregations do

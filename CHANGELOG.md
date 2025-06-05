@@ -1,5 +1,11 @@
 # Changelog
 
+## [7.5.3] 2025-06-04
+
+### Added
+
+- [TD-6219] Skip embedding indexing for both grants and grant requests
+
 ## [7.5.2] 2025-05-26
 
 ### Fixed
@@ -11,7 +17,7 @@
 
 ### Added
 
-- [TD-6219]: 
+- [TD-6219]:
   - Put data structure embeddings in elastic
   - Add suggestion controller
 
