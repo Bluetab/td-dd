@@ -16,7 +16,7 @@ config :td_core, TdCore.Search.Cluster,
 config :td_core, TdCore.Search.Cluster,
   indexes: [
     grants: [
-      dsv_no_searcheable_fields: ["note"],
+      dsv_no_searcheable_fields: ["note", "embeddings"],
       grant_no_searcheable_fields: ["detail"],
       store: TdDd.Search.Store,
       sources: [TdDd.Grants.GrantStructure],
@@ -147,6 +147,7 @@ config :td_core, TdCore.Search.Cluster,
       }
     ],
     grant_requests: [
+      dsv_disabled_fields: [:embeddings],
       template_scope: :gr,
       store: TdDd.Search.Store,
       sources: [TdDd.Grants.GrantRequest],
