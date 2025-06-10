@@ -158,7 +158,7 @@ defmodule TdDdWeb.Router do
     get("/grants/search/reindex_all", GrantSearchController, :reindex_all_grants)
     post("/grants/search", GrantSearchController, :search_grants)
     post("/grants/search/mine", GrantSearchController, :search_my_grants)
-    post("/grants/csv", GrantController, :csv)
+    post("/grants/xlsx/download", GrantController, :download)
 
     resources("/grants_bulk", GrantsController, only: [:update], singleton: true)
 

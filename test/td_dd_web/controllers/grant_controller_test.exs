@@ -1,7 +1,10 @@
 defmodule TdDdWeb.GrantControllerTest do
   use TdDdWeb.ConnCase
 
+  import Mox
+
   alias TdDd.Grants.Grant
+  alias TdDd.Grants.GrantStructure
 
   @moduletag sandbox: :shared
 
@@ -592,5 +595,85 @@ defmodule TdDdWeb.GrantControllerTest do
       end
 
     [grant: grant]
+  end
+
+  describe "xlsx grants download" do
+    setup :create_grant
+
+    @tag authentication: [role: "admin"]
+    test "downloads XLSX file with grants", %{conn: conn} do
+      data_structure =
+        insert(:data_structure,
+          alias: "structure alias"
+        )
+
+      data_structure_version =
+        insert(
+          :data_structure_version,
+          data_structure: data_structure,
+          metadata: %{alias: "structure alias"},
+          name: "structure name"
+        )
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/grants/_search", _, _opt ->
+        SearchHelpers.scroll_response([
+          %GrantStructure{
+            grant: %Grant{
+              id: 1,
+              user: %{full_name: "John Doe"},
+              start_date: ~D[2023-01-01],
+              end_date: ~D[2023-12-31],
+              detail: %{"key" => "value"}
+            },
+            data_structure_version: data_structure_version
+          }
+        ])
+      end)
+
+      conn =
+        conn
+        |> post(Routes.grant_path(conn, :download), %{
+          "search_by" => "permissions",
+          "header_labels" => %{
+            "user_name" => "User Name",
+            "data_structure_name" => "Data Structure Name",
+            "data_structure_alias" => "Alias",
+            "domain_name" => "Domain",
+            "system_name" => "System",
+            "structure_path" => "Path",
+            "start_date" => "Start Date",
+            "end_date" => "End Date",
+            "grant_details" => "Details"
+          }
+        })
+
+      assert response(conn, 200)
+
+      assert get_resp_header(conn, "content-type") ==
+               [
+                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet; charset=utf-8"
+               ]
+
+      assert get_resp_header(conn, "content-disposition") ==
+               ["attachment; filename=grants.xlsx"]
+
+      assert byte_size(conn.resp_body) > 0
+    end
+
+    @tag authentication: [role: "admin"]
+    test "returns no content when no grants are found", %{conn: conn} do
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/grants/_search", _, _opt ->
+        SearchHelpers.scroll_response([])
+      end)
+
+      assert conn
+             |> post(Routes.grant_path(conn, :download), %{
+               "search_by" => "permissions",
+               "header_labels" => %{}
+             })
+             |> response(:no_content)
+    end
   end
 end
