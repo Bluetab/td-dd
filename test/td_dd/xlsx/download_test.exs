@@ -491,4 +491,83 @@ defmodule TdDd.XLSX.DownloadTest do
              ]
     end
   end
+
+  describe "TdDd.XLSX.write_to_memory_grants/3" do
+    test "writes excel to memory for grants" do
+      CacheHelpers.insert_domain(id: 3, name: "Demo Truedat")
+
+      grant_1 = %{
+        data_structure_version: %{
+          class: "field",
+          classes: nil,
+          confidential: false,
+          data_structure_id: 4_160_488,
+          deleted_at: nil,
+          description: "Embalaje de tipo bulto único por EM (optimiz.área carga)",
+          domain_ids: [3],
+          external_id: "Clientes/KNA1//VSO/R_ONE_SORT",
+          field_type: "CHAR",
+          group: "Clientes",
+          id: 4_160_488,
+          inserted_at: "2019-04-16T16:12:48.000000Z",
+          latest_note: nil,
+          linked_concepts: false,
+          metadata: %{nullable: false, precision: "1,0", type: "CHAR", alias: "metadata_alias"},
+          mutable_metadata: nil,
+          name: "/VSO/R_ONE_SORT",
+          path: ["KNA1", "id"],
+          source_alias: nil,
+          source_id: 132,
+          system: %{external_id: "sap", id: 1, name: "SAP"},
+          system_id: 1,
+          tags: nil,
+          type: "Column",
+          updated_at: "2019-04-16T16:13:55.000000Z",
+          version: 0,
+          with_content: false,
+          with_profiling: false
+        },
+        detail: %{access_level: "Low", granted_by: "Admin"},
+        end_date: "2023-05-16",
+        id: 6,
+        start_date: "2020-05-17",
+        user: %{full_name: "Euclydes Netto"},
+        user_id: 23
+      }
+
+      grants = [grant_1]
+
+      assert {:ok, {file_name, blob}} =
+               Download.write_to_memory_grants(grants)
+
+      assert file_name == ~c"grants.xlsx"
+
+      assert {:ok, workbook} = XlsxReader.open(blob, source: :binary)
+      assert {:ok, [xlsx_headers | xlsx_content]} = XlsxReader.sheet(workbook, "Grants")
+
+      assert xlsx_headers == [
+               "user_name",
+               "data_structure_name",
+               "domain_name",
+               "system_name",
+               "structure_path",
+               "start_date",
+               "end_date",
+               "grant_details"
+             ]
+
+      assert xlsx_content == [
+               [
+                 "Euclydes Netto",
+                 "/VSO/R_ONE_SORT",
+                 "Demo Truedat",
+                 "SAP",
+                 "KNA1 > id",
+                 "2020-05-17",
+                 "2023-05-16",
+                 "{\"access_level\":\"Low\",\"granted_by\":\"Admin\"}"
+               ]
+             ]
+    end
+  end
 end

@@ -906,4 +906,149 @@ defmodule TdDd.XLSX.WriterTest do
              ]
     end
   end
+
+  describe "TdDd.XLSX.Writer.grant_rows/2" do
+    test "test returns the grants data" do
+      CacheHelpers.insert_domain(id: 3, name: "Demo Truedat")
+
+      grant_1 = %{
+        data_structure_version: %{
+          class: "field",
+          classes: nil,
+          confidential: false,
+          data_structure_id: 4_160_488,
+          deleted_at: nil,
+          description: "Embalaje de tipo bulto único por EM (optimiz.área carga)",
+          domain_ids: [3],
+          external_id: "Clientes/KNA1//VSO/R_ONE_SORT",
+          field_type: "CHAR",
+          group: "Clientes",
+          id: 4_160_488,
+          inserted_at: "2019-04-16T16:12:48.000000Z",
+          latest_note: nil,
+          linked_concepts: false,
+          metadata: %{nullable: false, precision: "1,0", type: "CHAR", alias: "metadata_alias"},
+          mutable_metadata: nil,
+          name: "/VSO/R_ONE_SORT",
+          path: ["KNA1", "id"],
+          source_alias: nil,
+          source_id: 132,
+          system: %{external_id: "sap", id: 1, name: "SAP"},
+          system_id: 1,
+          tags: nil,
+          type: "Column",
+          updated_at: "2019-04-16T16:13:55.000000Z",
+          version: 0,
+          with_content: false,
+          with_profiling: false
+        },
+        detail: %{access_level: "Low", granted_by: "Admin"},
+        end_date: "2023-05-16",
+        id: 6,
+        start_date: "2020-05-17",
+        user: %{full_name: "Euclydes Netto"},
+        user_id: 23
+      }
+
+      grants = [grant_1]
+
+      rows = Writer.grant_rows(grants)
+
+      assert [xlsx_headers | xlsx_content] = rows
+
+      assert xlsx_headers == [
+               "user_name",
+               "data_structure_name",
+               "domain_name",
+               "system_name",
+               "structure_path",
+               "start_date",
+               "end_date",
+               "grant_details"
+             ]
+
+      assert xlsx_content ==
+               [
+                 [
+                   "Euclydes Netto",
+                   "/VSO/R_ONE_SORT",
+                   "Demo Truedat",
+                   "SAP",
+                   "KNA1 > id",
+                   "2020-05-17",
+                   "2023-05-16",
+                   "{\"access_level\":\"Low\",\"granted_by\":\"Admin\"}"
+                 ]
+               ]
+    end
+
+    test "takes header labels into account if provided" do
+      grant_1 = %{
+        data_structure_version: %{
+          class: "field",
+          classes: nil,
+          confidential: false,
+          data_structure_id: 4_160_488,
+          deleted_at: nil,
+          description: "Embalaje de tipo bulto único por EM (optimiz.área carga)",
+          domain_ids: [3],
+          external_id: "Clientes/KNA1//VSO/R_ONE_SORT",
+          field_type: "CHAR",
+          group: "Clientes",
+          id: 4_160_488,
+          inserted_at: "2019-04-16T16:12:48.000000Z",
+          latest_note: nil,
+          linked_concepts: false,
+          metadata: %{nullable: false, precision: "1,0", type: "CHAR", alias: "metadata_alias"},
+          mutable_metadata: nil,
+          name: "/VSO/R_ONE_SORT",
+          path: ["KNA1", "id"],
+          source_alias: nil,
+          source_id: 132,
+          system: %{external_id: "sap", id: 1, name: "SAP"},
+          system_id: 1,
+          tags: nil,
+          type: "Column",
+          updated_at: "2019-04-16T16:13:55.000000Z",
+          version: 0,
+          with_content: false,
+          with_profiling: false
+        },
+        detail: %{access_level: "Low", granted_by: "Admin"},
+        end_date: "2023-05-16",
+        id: 6,
+        start_date: "2020-05-17",
+        user: %{full_name: "Euclydes Netto"},
+        user_id: 23
+      }
+
+      grants = [grant_1]
+
+      header_labels = %{
+        "user_name" => "User",
+        "data_structure_name" => "Structure's name",
+        "domain_name" => "Domain",
+        "system_name" => "System",
+        "structure_path" => "Structure path",
+        "start_date" => "Start date",
+        "end_date" => "End date",
+        "grant_details" => "Details"
+      }
+
+      rows = Writer.grant_rows(grants, header_labels)
+
+      assert [xlsx_headers | _xlsx_content] = rows
+
+      assert xlsx_headers == [
+               "User",
+               "Structure's name",
+               "Domain",
+               "System",
+               "Structure path",
+               "Start date",
+               "End date",
+               "Details"
+             ]
+    end
+  end
 end

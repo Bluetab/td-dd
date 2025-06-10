@@ -56,14 +56,6 @@ defmodule TdDd.CSV.Download do
     "relation_type"
   ]
 
-  @grant_headers [
-    "user_name",
-    "data_structure_name",
-    "start_date",
-    "end_date",
-    "metadata"
-  ]
-
   def to_csv(structures, header_labels, structure_url_schema, lang) do
     structures
     |> Enum.group_by(&Map.get(&1, :type))
@@ -218,41 +210,6 @@ defmodule TdDd.CSV.Download do
     |> CSV.encode(separator: ?;)
     |> Enum.to_list()
     |> List.to_string()
-  end
-
-  def to_csv_grants(grants, header_labels \\ nil) do
-    grants_by_data_structures =
-      Enum.group_by(grants, &Kernel.get_in(&1, ["data_structure_version", :name]))
-
-    headers = build_headers(header_labels, @grant_headers)
-
-    grant_list =
-      Enum.reduce(
-        grants_by_data_structures,
-        [],
-        fn {_data_structure, grants}, acc ->
-          [grants_to_list(grants) | acc]
-        end
-      )
-      |> Enum.flat_map(fn x -> x end)
-
-    export_to_csv(headers, grant_list, false)
-    |> List.to_string()
-  end
-
-  defp grants_to_list(grants) do
-    Enum.map(
-      grants,
-      fn grant ->
-        [
-          grant.user.full_name,
-          grant.data_structure_version.name,
-          grant.start_date,
-          grant.end_date,
-          Jason.encode!(grant.data_structure_version.metadata)
-        ]
-      end
-    )
   end
 
   defp export_to_csv(headers, structure_list, add_separation) do

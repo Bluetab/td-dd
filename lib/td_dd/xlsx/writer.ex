@@ -34,6 +34,17 @@ defmodule TdDd.XLSX.Writer do
     "path"
   ]
 
+  @grant_headers [
+    "user_name",
+    "data_structure_name",
+    "domain_name",
+    "system_name",
+    "structure_path",
+    "start_date",
+    "end_date",
+    "grant_details"
+  ]
+
   def data_structure_type_information(structures, opts \\ []) do
     structures
     |> Enum.group_by(& &1.type)
@@ -59,6 +70,13 @@ defmodule TdDd.XLSX.Writer do
 
       {data_structure_type, rows}
     end)
+  end
+
+  def grant_rows(grants, header_labels \\ nil) do
+    headers = build_grant_headers(header_labels, @grant_headers)
+    grant_list = grants_to_list(grants)
+
+    [headers | grant_list]
   end
 
   defp add_information_for_download_type(type_information, template, :editable) do
@@ -275,4 +293,30 @@ defmodule TdDd.XLSX.Writer do
   defp parse_metadata(nil), do: ""
 
   defp parse_metadata(metadata), do: metadata
+
+  defp build_grant_headers(nil, headers) do
+    headers
+  end
+
+  defp build_grant_headers(header_labels, headers) do
+    Enum.map(headers, fn h -> Map.get(header_labels, h, h) end)
+  end
+
+  defp grants_to_list(grants) do
+    Enum.map(
+      grants,
+      fn grant ->
+        [
+          get_in(grant, [:user, :full_name]),
+          get_in(grant, [:data_structure_version, :name]),
+          get_domain(grant.data_structure_version),
+          get_in(grant, [:data_structure_version, :system, :name]),
+          transform_path(grant.data_structure_version),
+          grant.start_date,
+          grant.end_date,
+          Jason.encode!(grant.detail)
+        ]
+      end
+    )
+  end
 end

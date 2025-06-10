@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [TD-7097] Grants download:
+  - Change from csv to xlsx
+  - Remove metadata column and add new columns: domain, system, path, grant details
+
 ### Fixed
 
 - [TD-7278] Update user_id handling in GrantRequestGroupController
