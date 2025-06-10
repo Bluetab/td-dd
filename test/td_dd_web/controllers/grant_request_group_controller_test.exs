@@ -155,8 +155,14 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
       claims: %{user_id: created_by_id},
       create_params: create_params
     } do
+      str_created_by_id = to_string(created_by_id)
       user_id = :rand.uniform(10)
-      params = Map.put(create_params, "user_id", user_id)
+      str_user_id = to_string(user_id)
+
+      params =
+        create_params
+        |> Map.put("user_id", str_user_id)
+        |> Map.put("created_by_id", str_created_by_id)
 
       assert %{"data" => data} =
                conn
