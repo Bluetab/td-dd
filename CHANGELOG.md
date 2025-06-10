@@ -1,5 +1,11 @@
 # Changelog
 
+## [7.6.1] 2025-06-11
+
+### Changed
+
+- [TD-7213] td-core dependency to tag 7.5.3 instead of branch: "release/7.5.3"
+
 ## [7.6.0] 2025-06-10
 
 ### Changed
