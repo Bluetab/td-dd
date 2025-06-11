@@ -1,5 +1,11 @@
 # Changelog
 
+## [7.6.2] 2025-06-11
+
+### Changed
+
+- [TD-7213] Core lib bump version 7.5.3
+
 ## [7.6.1] 2025-06-11
 
 ### Changed
@@ -17,6 +23,12 @@
 ### Fixed
 
 - [TD-7278] Update user_id handling in GrantRequestGroupController
+
+## [7.5.4] 2025-06-11
+
+### Changed
+
+- [TD-7213] Core lib bump version 7.5.3
 
 ## [7.5.3] 2025-06-04
 
