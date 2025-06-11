@@ -6,6 +6,7 @@ defmodule TdDdWeb.GrantRequestGroupController do
   alias TdDd.Grants
   alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Grants.Requests
+  alias TdDd.Util.Ensures
 
   action_fallback TdDdWeb.FallbackController
 
@@ -36,7 +37,7 @@ defmodule TdDdWeb.GrantRequestGroupController do
   end
 
   defp with_created_by_id(params, %{user_id: created_by_id}) do
-    user_id = Map.get(params, "user_id", created_by_id)
+    user_id = Ensures.number(Map.get(params, "user_id", created_by_id))
 
     params
     |> Map.put("user_id", user_id)

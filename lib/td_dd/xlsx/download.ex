@@ -1,7 +1,8 @@
 defmodule TdDd.XLSX.Download do
   @moduledoc """
-  Helper module to download structures published and pending (non-published) notes.
-
+  Helper module to download xlsx files for:
+  - structures published and pending (non-published) notes.
+  - grants
   """
   alias Elixlsx.Sheet
   alias Elixlsx.Workbook
@@ -15,6 +16,16 @@ defmodule TdDd.XLSX.Download do
     |> then(fn [_ | _] = sheets ->
       workbook = %Workbook{sheets: sheets}
       Elixlsx.write_to_memory(workbook, "structures.xlsx")
+    end)
+  end
+
+  def write_to_memory_grants(grants, header_labels \\ nil) do
+    grants
+    |> Writer.grant_rows(header_labels)
+    |> then(fn rows ->
+      sheet = %Sheet{name: "Grants", rows: rows}
+      workbook = %Workbook{sheets: [sheet]}
+      Elixlsx.write_to_memory(workbook, "grants.xlsx")
     end)
   end
 

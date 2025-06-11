@@ -1,12 +1,15 @@
 defmodule TdDdWeb.GrantController do
   use TdDdWeb, :controller
 
-  alias TdDd.CSV.Download
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.Search
   alias TdDd.Grants
   alias TdDd.Grants.Grant
   alias TdDd.Grants.Search
+  alias TdDd.XLSX.Download
+
+  plug TdDdWeb.SearchPermissionPlug
 
   action_fallback(TdDdWeb.FallbackController)
 
@@ -108,7 +111,7 @@ defmodule TdDdWeb.GrantController do
     end
   end
 
-  def csv(conn, %{"search_by" => search_by, "header_labels" => header_labels} = params) do
+  def download(conn, %{"search_by" => search_by, "header_labels" => header_labels} = params) do
     params = Map.drop(params, ["header_labels", "page", "size"])
     claims = conn.assigns[:current_resource]
 
@@ -122,14 +125,19 @@ defmodule TdDdWeb.GrantController do
       end
 
     case grants do
-      [] ->
-        send_resp(conn, :no_content, "")
+      [_ | _] = grants ->
+        with {:ok, {file_name, blob}} <-
+               Download.write_to_memory_grants(grants, header_labels) do
+          conn
+          |> put_resp_content_type(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          )
+          |> put_resp_header("content-disposition", "attachment; filename=#{file_name}")
+          |> send_resp(:ok, blob)
+        end
 
-      _ ->
-        conn
-        |> put_resp_content_type("text/csv", "utf-8")
-        |> put_resp_header("content-disposition", "attachment; filename=\"structures.zip\"")
-        |> send_resp(:ok, Download.to_csv_grants(grants, header_labels))
+      [] = _grants ->
+        send_resp(conn, :no_content, "")
     end
   end
 end
