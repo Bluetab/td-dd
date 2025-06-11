@@ -1,5 +1,11 @@
 # Changelog
 
+## [7.6.2] 2025-06-11
+
+### Changed
+
+- [TD-7213] Core lib bump version 7.5.3
+
 ## [7.6.1] 2025-06-11
 
 ### Changed
