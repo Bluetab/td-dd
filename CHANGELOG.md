@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+-[TD-7300] Add Structure Link origin
+
 ## [7.6.2] 2025-06-11
 
 ### Changed

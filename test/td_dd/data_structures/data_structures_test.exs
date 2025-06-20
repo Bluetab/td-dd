@@ -61,7 +61,13 @@ defmodule TdDd.DataStructuresTest do
       insert(:data_structure_version, data_structure: data_structure, type: template_name)
 
     %{id: concept_id} = concept = CacheHelpers.insert_concept()
-    CacheHelpers.insert_link(data_structure_id, "data_structure", "business_concept", concept_id)
+
+    CacheHelpers.insert_link(
+      data_structure_id,
+      "data_structure",
+      "business_concept",
+      concept_id
+    )
 
     start_supervised!(TdDd.Search.StructureEnricher)
 

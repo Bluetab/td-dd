@@ -926,7 +926,9 @@ defmodule TdDdWeb.Schema.StructuresTest do
           child_ds_id,
           "data_structure",
           "business_concept",
-          child_concept_id
+          child_concept_id,
+          ["my_link_tag"],
+          "test_origin"
         )
 
       ## Grants
@@ -1066,6 +1068,7 @@ defmodule TdDdWeb.Schema.StructuresTest do
                      "shared_to" => [],
                      "shared_to_ids" => [],
                      "tags" => [],
+                     "origin" => nil,
                      "i18n" => "{\"es\":{\"content\":{},\"name\":\"#{concept_name_es}\"}}"
                    }
                  ],
@@ -1095,14 +1098,15 @@ defmodule TdDdWeb.Schema.StructuresTest do
                          "domain_id" => nil,
                          "id" => "#{child_link_id}",
                          "link_count" => 1,
-                         "link_tags" => [],
+                         "link_tags" => ["my_link_tag"],
                          "name" => "#{child_concept_name}",
                          "resource_id" => "#{child_concept_id}",
                          "resource_type" => "concept",
                          "rule_count" => 0,
                          "shared_to" => [],
                          "shared_to_ids" => [],
-                         "tags" => []
+                         "tags" => ["my_link_tag"],
+                         "origin" => "test_origin"
                        }
                      ]
                    },
