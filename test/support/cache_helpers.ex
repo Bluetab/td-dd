@@ -34,25 +34,27 @@ defmodule CacheHelpers do
     structure_type
   end
 
-  def insert_link(source_id, source_type, target_type, target_id, tags \\ [])
+  def insert_link(source_id, source_type, target_type, target_id, tags \\ [], origin \\ nil)
 
-  def insert_link(source_id, source_type, target_type, nil, tags) do
+  def insert_link(source_id, source_type, target_type, nil, tags, origin) do
     target_id = System.unique_integer([:positive])
-    insert_link(source_id, source_type, target_type, target_id, tags)
+    insert_link(source_id, source_type, target_type, target_id, tags, origin)
   end
 
-  def insert_link(source_id, source_type, target_type, target_id, tags) do
+  def insert_link(source_id, source_type, target_type, target_id, tags, origin) do
     id = System.unique_integer([:positive])
 
-    link = %{
-      id: id,
-      source_type: source_type,
-      source_id: source_id,
-      target_type: target_type,
-      target_id: target_id,
-      tags: tags,
-      updated_at: DateTime.utc_now()
-    }
+    link =
+      %{
+        id: id,
+        source_type: source_type,
+        source_id: source_id,
+        target_type: target_type,
+        target_id: target_id,
+        tags: tags,
+        updated_at: DateTime.utc_now(),
+        origin: origin
+      }
 
     LinkCache.put(link, publish: false)
 
