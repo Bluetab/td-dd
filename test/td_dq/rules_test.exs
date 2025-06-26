@@ -158,7 +158,8 @@ defmodule TdDq.RulesTest do
       params = %{"domain_id" => domain_id}
       assert {:ok, multi} = Rules.update_rule(rule, params, claims)
       assert %{rule: %{domain_id: ^domain_id}} = multi
-      assert %{implementations: {5, ids}} = multi
+      assert %{implementations: {5, updated_implementations}} = multi
+      ids = Enum.map(updated_implementations, & &1.id)
       assert_lists_equal(implementations, ids, &(&1.id == &2))
     end
 

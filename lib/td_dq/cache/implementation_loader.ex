@@ -38,6 +38,12 @@ defmodule TdDq.Cache.ImplementationLoader do
   def maybe_update_implementation_cache(_repo, %{implementations_moved: {_, implementations}}),
     do: maybe_update_implementations_cache(implementations)
 
+  def maybe_update_implementation_cache(_repo, %{
+        update_implementations_domain: {_, implementations}
+      }) do
+    maybe_update_implementations_cache(implementations)
+  end
+
   def maybe_update_implementation_cache(_repo, %{implementations: {_, implementations}}),
     do: maybe_update_implementations_cache(implementations)
 
@@ -45,6 +51,22 @@ defmodule TdDq.Cache.ImplementationLoader do
         implementation: %{implementation_ref: implementation_ref}
       }) do
     maybe_update_implementation_cache(implementation_ref)
+  end
+
+  def maybe_update_implementation_cache(implementations) when is_list(implementations) do
+    implementations
+    |> Enum.map(fn %{implementation_ref: implementation_ref} = implementation ->
+      case Implementations.get_implementation_links(implementation) do
+        [] -> nil
+        _ -> implementation_ref
+      end
+    end)
+    |> Enum.filter(& &1)
+    |> case do
+      [] -> nil
+      implementation_refs -> cache_implementations(implementation_refs, force: true)
+    end
+    |> then(&{:ok, &1})
   end
 
   def maybe_update_implementation_cache(implementation_ref) do

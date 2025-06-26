@@ -5,11 +5,14 @@ defmodule TdDd.Cache.ImplementationLoaderTest do
 
   alias TdCache.ImplementationCache
   alias TdDq.Cache.ImplementationLoader
+  alias TdDq.Implementations
+  alias TdDq.Rules
 
   describe "ImplementationLoader.cache_implementations/2" do
     setup do
       TdCache.Redix.del!()
       start_supervised!(TdDd.Search.StructureEnricher)
+      start_supervised(TdDq.Cache.RuleLoader)
       :ok
     end
 
@@ -97,5 +100,140 @@ defmodule TdDd.Cache.ImplementationLoaderTest do
 
       assert [impl_id1, impl_id1, impl_id3, impl_id2, impl_id4, impl_id4] ||| result
     end
+
+    @tag sandbox: :shared
+    test "update cache when the domain changes without rule" do
+      claims = build(:claims)
+      %{id: old_domain_id} = CacheHelpers.insert_domain()
+      %{id: new_domain_id} = CacheHelpers.insert_domain()
+
+      %{id: id, implementation_ref: implementation_ref} =
+        implementation =
+        insert(:implementation,
+          status: "draft",
+          domain_id: old_domain_id
+        )
+
+      assert [ok: [11, 1, 1, 0]] =
+               ImplementationLoader.cache_implementations([implementation_ref])
+
+      %{id: concept_id} = CacheHelpers.insert_concept()
+
+      CacheHelpers.insert_link(
+        implementation_ref,
+        "implementation_ref",
+        "business_concept",
+        concept_id
+      )
+
+      assert {:ok,
+              %{
+                domain_id: ^old_domain_id
+              }} = ImplementationCache.get(id)
+
+      update_attrs =
+        string_params_for(:implementation, domain_id: new_domain_id)
+
+      Implementations.update_implementation(
+        implementation,
+        update_attrs,
+        claims
+      )
+
+      assert {:ok,
+              %{
+                domain_id: ^new_domain_id
+              }} = ImplementationCache.get(id)
+    end
+
+    @tag sandbox: :shared
+    test "update cache when the domain changes with rule" do
+      claims = build(:claims)
+      %{id: old_domain_id} = old_domain = CacheHelpers.insert_domain()
+      %{id: new_domain_id} = CacheHelpers.insert_domain()
+
+      %{id: rule_id} =
+        rule = insert(:rule, domain_id: old_domain_id, domain: old_domain)
+
+      %{id: id, implementation_ref: implementation_ref} =
+        insert(:implementation,
+          status: "draft",
+          rule: rule,
+          rule_id: rule_id,
+          domain_id: old_domain_id,
+          domain: old_domain
+        )
+
+      assert [ok: [11, 1, 1, 0]] =
+               ImplementationLoader.cache_implementations([implementation_ref])
+
+      %{id: concept_id} = CacheHelpers.insert_concept()
+
+      CacheHelpers.insert_link(
+        implementation_ref,
+        "implementation_ref",
+        "business_concept",
+        concept_id
+      )
+
+      assert {:ok,
+              %{
+                domain_id: ^old_domain_id
+              }} = ImplementationCache.get(id)
+
+      params = %{"domain_id" => new_domain_id}
+
+      assert {:ok, %{rule: %{domain_id: ^new_domain_id}}} =
+               Rules.update_rule(rule, params, claims)
+
+      assert {:ok,
+              %{
+                domain_id: ^new_domain_id
+              }} = ImplementationCache.get(id)
+    end
+  end
+
+  @tag sandbox: :shared
+  test "update cache when the domain when move to rule" do
+    claims = build(:claims)
+    %{id: old_domain_id} = old_domain = CacheHelpers.insert_domain()
+    %{id: new_domain_id} = CacheHelpers.insert_domain()
+
+    %{id: rule_id} = insert(:rule, domain_id: new_domain_id, domain: new_domain_id)
+
+    %{id: id, implementation_ref: implementation_ref} =
+      implementation =
+      insert(:implementation,
+        status: "draft",
+        domain_id: old_domain_id,
+        domain: old_domain
+      )
+
+    assert [ok: [11, 1, 1, 0]] =
+             ImplementationLoader.cache_implementations([implementation_ref])
+
+    %{id: concept_id} = CacheHelpers.insert_concept()
+
+    CacheHelpers.insert_link(
+      implementation_ref,
+      "implementation_ref",
+      "business_concept",
+      concept_id
+    )
+
+    assert {:ok, %{domain_id: ^old_domain_id}} = ImplementationCache.get(id)
+
+    params = %{"rule_id" => rule_id}
+
+    Implementations.update_implementation(
+      implementation,
+      params,
+      claims
+    )
+
+    assert {:ok,
+            %{
+              domain_id: ^new_domain_id
+            }} = ImplementationCache.get(id)
   end
 end

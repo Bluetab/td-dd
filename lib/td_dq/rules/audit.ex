@@ -187,26 +187,34 @@ defmodule TdDq.Rules.Audit do
 
   def implementation_updated(
         _repo,
-        %{implementation: %{id: id}},
-        %{changes: %{df_content: _df_content}} = changeset,
+        %{implementation: %{id: id, domain_id: domain_id}} = map,
+        %{changes: %{df_content: _df_content} = changes, data: data},
         user_id
       ) do
+    old_domain_id = Map.get(map, :old_domain_id)
+
+    payload = maybe_domain_updated(%{changes: changes, data: data}, old_domain_id, domain_id)
     # TODO: TD-4455 Why do we need an implementation_changed event instead of
     # using a generic implementation_updated? What about other fields that have
     # changed? Should domain_id be included?
-    publish("implementation_changed", "implementation", id, user_id, changeset)
+    publish("implementation_changed", "implementation", id, user_id, payload)
   end
 
   def implementation_updated(
         _repo,
-        %{implementation: %{id: id} = implementation},
+        %{
+          implementation: %{id: id, domain_id: domain_id} = implementation
+        } = map,
         _changeset,
         user_id
       ) do
+    old_domain_id = Map.get(map, :old_domain_id)
+
     payload =
       implementation
       |> with_domain_ids()
       |> Map.take([:implementation_key, :rule_id, :domain_id, :domain_ids])
+      |> maybe_domain_updated(old_domain_id, domain_id)
 
     # TODO: TD-4455 Why aren't any changes included in the payload
     publish("implementation_updated", "implementation", id, user_id, payload)
@@ -303,6 +311,28 @@ defmodule TdDq.Rules.Audit do
 
   defp with_domain_ids(payload) do
     Map.put(payload, :domain_ids, get_domain_ids(payload))
+  end
+
+  defp maybe_domain_updated(payload, old_domain_id, new_domain_id)
+       when not is_nil(new_domain_id) and
+              not is_nil(old_domain_id) and
+              old_domain_id != new_domain_id do
+    old_domain = get_domain(old_domain_id)
+    new_domain = get_domain(new_domain_id)
+
+    payload
+    |> Map.put(:old_domain, old_domain)
+    |> Map.put(:new_domain, new_domain)
+  end
+
+  defp maybe_domain_updated(payload, nil, _), do: payload
+  defp maybe_domain_updated(payload, _, nil), do: payload
+  defp maybe_domain_updated(payload, _, _), do: payload
+
+  defp get_domain(domain_id) do
+    domain_id
+    |> TaxonomyCache.get_domain()
+    |> Map.take([:id, :name, :external_id])
   end
 
   defp get_domain_ids(%{domain_id: domain_id}) do

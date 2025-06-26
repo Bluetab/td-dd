@@ -4,7 +4,8 @@
 
 ### Added
 
--[TD-7300] Add Structure Link origin
+- [TD-7300] Add Structure Link origin
+- [TD-7236] When change the domain of a implementation, updates the domain of all versions
 
 ## [7.6.2] 2025-06-11
 

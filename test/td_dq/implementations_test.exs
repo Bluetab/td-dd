@@ -1472,6 +1472,50 @@ defmodule TdDq.ImplementationsTest do
       end)
     end
 
+    test "change the domain of the draft implementation changes also in all versions" do
+      claims = build(:claims)
+      %{id: old_domain_id} = CacheHelpers.insert_domain()
+      %{id: new_domain_id} = CacheHelpers.insert_domain()
+
+      %{implementation_ref: implementation_ref} =
+        insert(:implementation,
+          status: "versioned",
+          version: 1,
+          domain_id: old_domain_id
+        )
+
+      for n <- 2..5 do
+        insert(:implementation,
+          status: "versioned",
+          version: n,
+          implementation_ref: implementation_ref,
+          domain_id: old_domain_id
+        )
+      end
+
+      draft_implementation =
+        insert(:implementation,
+          status: "draft",
+          version: 6,
+          implementation_ref: implementation_ref,
+          domain_id: old_domain_id
+        )
+
+      update_attrs =
+        string_params_for(:implementation, domain_id: new_domain_id)
+
+      assert {:ok, %{update_implementations_domain: {6, updated}}} =
+               Implementations.update_implementation(
+                 draft_implementation,
+                 update_attrs,
+                 claims
+               )
+
+      Enum.each(updated, fn updated_implementation ->
+        assert %{domain_id: ^new_domain_id} = updated_implementation
+      end)
+    end
+
     test "childs implementations are moved when moving any implementation to another rule" do
       claims = build(:claims)
       domain_id = System.unique_integer([:positive])
