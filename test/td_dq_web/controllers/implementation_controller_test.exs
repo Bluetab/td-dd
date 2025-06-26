@@ -2579,9 +2579,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
     test "user without permissions cannot update", %{conn: conn} do
       implementation = insert(:implementation)
 
-      params =
-        %{populations: @populations}
-        |> Map.Helpers.stringify_keys()
+      params = %{"populations" => @populations}
 
       assert conn
              |> put(Routes.implementation_path(conn, :update, implementation),
@@ -2664,9 +2662,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
         %{id: rule_id} = insert(:rule, domain_id: domain_id)
         implementation = insert(:raw_implementation, rule_id: rule_id, domain_id: domain_id)
 
-        params =
-          %{validation: @validation, populations: @populations}
-          |> Map.Helpers.stringify_keys()
+        params = %{"validation" => @validation, "populations" => @populations}
 
         assert %{"data" => _data} =
                  conn
@@ -2690,9 +2686,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
         %{id: rule_id} = insert(:rule, domain_id: domain_id)
         implementation = insert(:raw_implementation, rule_id: rule_id, domain_id: domain_id)
 
-        params =
-          %{validation: @validation, populations: @populations}
-          |> Map.Helpers.stringify_keys()
+        params = %{"validation" => @validation, "populations" => @populations}
 
         assert conn
                |> put(Routes.implementation_path(conn, :update, implementation),
@@ -2710,9 +2704,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
     } do
       implementation = insert(:ruleless_implementation, domain_id: domain_id)
 
-      params =
-        %{validation: @validation, populations: @populations}
-        |> Map.Helpers.stringify_keys()
+      params = %{"validation" => @validation, "populations" => @populations}
 
       assert %{"data" => _data} =
                conn
@@ -2934,10 +2926,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       params =
         %{
-          validation: @validation,
-          populations: @populations
+          "validation" => @validation,
+          "populations" => @populations
         }
-        |> Map.Helpers.stringify_keys()
 
       assert conn
              |> put(Routes.implementation_path(conn, :update, implementation),
@@ -3006,12 +2997,18 @@ defmodule TdDqWeb.ImplementationControllerTest do
     test "admin user can move implementation", %{
       conn: conn
     } do
-      implementation = insert(:implementation)
-      %{id: rule_id} = insert(:rule)
+      %{id: rule_domain_id} = rule_domain = CacheHelpers.insert_domain()
+      %{id: implementation_domain_id} = implementation_domain = CacheHelpers.insert_domain()
 
-      params =
-        %{rule_id: rule_id}
-        |> Map.Helpers.stringify_keys()
+      implementation =
+        insert(:implementation,
+          domain_id: implementation_domain_id,
+          domain: implementation_domain
+        )
+
+      %{id: rule_id} = insert(:rule, domain_id: rule_domain_id, domain: rule_domain)
+
+      params = %{"rule_id" => rule_id}
 
       assert conn
              |> put(Routes.implementation_path(conn, :update, implementation),
@@ -3035,9 +3032,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
       implementation = insert(:implementation, segments: [], domain_id: domain_id)
       %{id: rule_id} = insert(:rule, domain_id: domain_id)
 
-      params =
-        %{rule_id: rule_id}
-        |> Map.Helpers.stringify_keys()
+      params = %{"rule_id" => rule_id}
 
       assert conn
              |> put(Routes.implementation_path(conn, :update, implementation),
@@ -3050,12 +3045,17 @@ defmodule TdDqWeb.ImplementationControllerTest do
     test "admin user can move ruleless implementation", %{
       conn: conn
     } do
-      implementation = insert(:ruleless_implementation)
-      %{id: rule_id} = insert(:rule)
+      %{id: rule_domain_id} = CacheHelpers.insert_domain()
+      %{id: implementation_domain_id} = CacheHelpers.insert_domain()
 
-      params =
-        %{rule_id: rule_id}
-        |> Map.Helpers.stringify_keys()
+      implementation =
+        insert(:ruleless_implementation,
+          domain_id: implementation_domain_id
+        )
+
+      %{id: rule_id} = insert(:rule, domain_id: rule_domain_id)
+
+      params = %{"rule_id" => rule_id}
 
       assert conn
              |> put(Routes.implementation_path(conn, :update, implementation),
@@ -3079,9 +3079,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
       implementation = insert(:ruleless_implementation, segments: [], domain_id: domain_id)
       %{id: rule_id} = insert(:rule, domain_id: domain_id)
 
-      params =
-        %{rule_id: rule_id}
-        |> Map.Helpers.stringify_keys()
+      params = %{"rule_id" => rule_id}
 
       assert conn
              |> put(Routes.implementation_path(conn, :update, implementation),
@@ -3181,8 +3179,17 @@ defmodule TdDqWeb.ImplementationControllerTest do
     test "move implementation will update the cache", %{
       conn: conn
     } do
-      %{id: id, implementation_ref: implementation_ref} = implementation = insert(:implementation)
-      %{id: rule_id} = insert(:rule)
+      %{id: rule_domain_id} = rule_domain = CacheHelpers.insert_domain()
+      %{id: implementation_domain_id} = implementation_domain = CacheHelpers.insert_domain()
+
+      %{id: id, implementation_ref: implementation_ref} =
+        implementation =
+        insert(:implementation,
+          domain_id: implementation_domain_id,
+          domain: implementation_domain
+        )
+
+      %{id: rule_id} = insert(:rule, domain_id: rule_domain_id, domain: rule_domain)
       update_attrs = %{rule_id: rule_id}
 
       CacheHelpers.put_implementation(implementation)

@@ -13,6 +13,7 @@ defmodule TdDq.Rules do
   alias TdCache.TemplateCache
   alias TdDd.Repo
   alias TdDfLib.Format
+  alias TdDq.Cache.ImplementationLoader
   alias TdDq.Cache.RuleLoader
   alias TdDq.Implementations.Implementation
   alias TdDq.Implementations.Search.Indexer
@@ -205,14 +206,19 @@ defmodule TdDq.Rules do
     Implementation
     |> where([i], i.rule_id == ^rule_id)
     |> where([i], i.domain_id != ^domain_id)
-    |> select([i], i.id)
+    |> select([i], i)
     |> update([i], set: [domain_id: ^domain_id, updated_at: ^updated_at])
   end
 
   defp on_update(res) do
-    with {:ok, %{implementations: {_, implementation_ids}, rule: %{id: rule_id}}} <- res do
+    with {:ok, %{implementations: {_, implementations}, rule: %{id: rule_id}}} <- res do
       RuleLoader.refresh(rule_id)
-      Indexer.reindex(implementation_ids)
+      ImplementationLoader.maybe_update_implementation_cache(implementations)
+
+      implementations
+      |> Enum.map(& &1.id)
+      |> Indexer.reindex()
+
       res
     end
   end

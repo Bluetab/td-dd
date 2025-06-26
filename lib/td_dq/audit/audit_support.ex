@@ -3,7 +3,6 @@ defmodule TdDq.Audit.AuditSupport do
   Support module for publishing audit events.
   """
 
-  alias Ecto.Changeset
   alias TdCache.Audit
   alias TdDfLib.MapDiff
   alias TdDfLib.Masks
@@ -15,16 +14,27 @@ defmodule TdDq.Audit.AuditSupport do
 
   def publish(event, resource_type, resource_id, user_id, payload \\ %{})
 
-  def publish(event, resource_type, resource_id, user_id, %Changeset{changes: changes, data: data}) do
+  def publish(
+        event,
+        resource_type,
+        resource_id,
+        user_id,
+        %{changes: changes, data: data} = payload
+      ) do
     if map_size(changes) == 0 do
       {:ok, :unchanged}
     else
+      payload =
+        changes
+        |> payload(data)
+        |> maybe_put_domain_updated(payload)
+
       Audit.publish(
         event: event,
         resource_type: resource_type,
         resource_id: resource_id,
         user_id: user_id,
-        payload: payload(changes, data)
+        payload: payload
       )
     end
   end
@@ -53,4 +63,15 @@ defmodule TdDq.Audit.AuditSupport do
   end
 
   defp payload(changes, _data), do: changes
+
+  defp maybe_put_domain_updated(
+         changes,
+         %{new_domain: new_domain, old_domain: old_domain}
+       ) do
+    changes
+    |> Map.put(:old_domain, old_domain)
+    |> Map.put(:new_domain, new_domain)
+  end
+
+  defp maybe_put_domain_updated(changes, _), do: changes
 end
