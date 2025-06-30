@@ -220,7 +220,7 @@ defmodule TdDq.Implementations do
   def update_implementation(implementation, params, claims, is_bulk \\ false)
 
   def update_implementation(
-        %Implementation{rule_id: rule_id} = implementation,
+        %Implementation{rule_id: rule_id, domain_id: old_domain_id} = implementation,
         %{"rule_id" => new_rule_id} = params,
         %Claims{user_id: user_id} = claims,
         is_bulk
@@ -232,7 +232,9 @@ defmodule TdDq.Implementations do
          :ok <- permit_by_changeset_status(claims, changeset) do
       Multi.new()
       |> upsert(changeset)
+      |> maybe_update_domain(changeset, implementation)
       |> Multi.run(:implementation, fn _repo, _changes -> {:ok, implementation} end)
+      |> Multi.run(:old_domain_id, fn _repo, _changes -> {:ok, old_domain_id} end)
       |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
       |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
       |> Repo.transaction()
@@ -251,7 +253,7 @@ defmodule TdDq.Implementations do
   end
 
   def update_implementation(
-        %Implementation{status: status} = implementation,
+        %Implementation{status: status, domain_id: old_domain_id} = implementation,
         params,
         %Claims{user_id: user_id} = claims,
         is_bulk
@@ -263,7 +265,9 @@ defmodule TdDq.Implementations do
       Multi.new()
       |> Workflow.maybe_version_existing(changeset, user_id)
       |> upsert(changeset, status)
+      |> maybe_update_domain(changeset, implementation)
       |> Multi.run(:data_structures, &create_implementation_structures/2)
+      |> Multi.run(:old_domain_id, fn _repo, _changes -> {:ok, old_domain_id} end)
       |> Multi.run(:audit_status, Audit, :implementation_status_updated, [changeset, user_id])
       |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
       |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
@@ -293,13 +297,12 @@ defmodule TdDq.Implementations do
   defp upsert(multi, changeset, :draft), do: Multi.update(multi, :implementation, changeset)
   defp upsert(multi, changeset, :rejected), do: Multi.update(multi, :implementation, changeset)
 
-  defp upsert(multi, %{data: implementation, changes: %{rule_id: rule_id}}) do
+  defp upsert(multi, %{
+         data: %{implementation_ref: implementation_ref},
+         changes: %{rule_id: rule_id}
+       }) do
     %{domain_id: new_domain_id} = Repo.get!(Rule, rule_id)
-
-    query =
-      Implementation
-      |> where([i], i.implementation_ref == ^implementation.implementation_ref)
-      |> select([i], i)
+    query = versions_query(implementation_ref)
 
     multi
     |> Multi.update_all(
@@ -308,6 +311,20 @@ defmodule TdDq.Implementations do
       set: [rule_id: rule_id, domain_id: new_domain_id]
     )
   end
+
+  defp maybe_update_domain(
+         multi,
+         %{
+           changes: %{domain_id: domain_id}
+         },
+         %{implementation_ref: implementation_ref}
+       ) do
+    query = versions_query(implementation_ref)
+
+    Multi.update_all(multi, :update_implementations_domain, query, set: [domain_id: domain_id])
+  end
+
+  defp maybe_update_domain(multi, _, _), do: multi
 
   defp upsert_changeset(
          %Implementation{
@@ -326,6 +343,12 @@ defmodule TdDq.Implementations do
     implementation
     |> Implementation.changeset(params)
     |> maybe_put_domain_id()
+  end
+
+  def versions_query(implementation_ref) do
+    Implementation
+    |> where([i], i.implementation_ref == ^implementation_ref)
+    |> select([i], i)
   end
 
   defp maybe_put_domain_id(%{changes: %{rule_id: rule_id}} = changeset) do
@@ -525,14 +548,22 @@ defmodule TdDq.Implementations do
   end
 
   defp on_upsert({:ok, %{implementations_moved: {_, implementations}}} = result, false) do
-    ids = Enum.map(implementations, fn %{id: id} -> id end)
+    reindex_implementations(implementations)
+    result
+  end
 
-    Indexer.reindex(ids)
-
+  defp on_upsert({:ok, %{update_implementations_domain: {_, implementations}}} = result, false) do
+    reindex_implementations(implementations)
     result
   end
 
   defp on_upsert(result, _), do: result
+
+  defp reindex_implementations(implementations) do
+    implementations
+    |> Enum.map(& &1.id)
+    |> Indexer.reindex()
+  end
 
   def get_sources(%Implementation{implementation_type: "raw", raw_content: %{source_id: nil}}) do
     []
