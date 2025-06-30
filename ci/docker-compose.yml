@@ -3,11 +3,13 @@ version: "3.4"
 
 services:
   elastic:
-    image: elasticsearch:6.8.13
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.18.1
     environment:
       - cluster.name=truedat
       - bootstrap.memory_lock=true
       - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
     ulimits:
       memlock:
         soft: -1
@@ -23,7 +25,7 @@ services:
       start_period: 10s
 
   postgres:
-    image: postgres:12.5-alpine
+    image: postgres:17-alpine
     environment:
       POSTGRES_PASSWORD: postgres
     restart: always
@@ -54,8 +56,8 @@ services:
     command: ci/build.sh
     environment:
       APP_VERSION: "${APP_VERSION}"
-      HOME: /tmp # CURRENT_UID doesn't have a home
-      MIX_ENV: prod
+      HOME: /tmp
+      MIX_ENV: test
       MIX_HOME: /code/.mix
     user: ${CURRENT_UID-0:0}
     working_dir: /code
@@ -66,7 +68,7 @@ services:
     image: bluetab/elixir:1.18.1-otp-27-alpine-20250107094535
     command: ci/test.sh
     environment:
-      HOME: /tmp # CURRENT_UID doesn't have a home
+      HOME: /tmp
       MIX_ENV: test
       MIX_HOME: /code/.mix
     working_dir: /code
@@ -77,6 +79,32 @@ services:
       - postgres
       - redis
       - vault
+
+  sobelow:
+    image: bluetab/elixir:1.18.1-otp-27-alpine-20250107094535
+    command: ci/sobelow.sh
+    environment:
+      APP_VERSION: "${APP_VERSION}"
+      HOME: /tmp
+      MIX_ENV: test
+      MIX_HOME: /code/.mix
+    user: ${CURRENT_UID-0:0}
+    working_dir: /code
+    volumes:
+      - "${CI_PROJECT_DIR}:/code"
+
+  release:
+    image: bluetab/elixir:1.18.1-otp-27-alpine-20250107094535
+    command: ci/release.sh
+    environment:
+      APP_VERSION: "${APP_VERSION}"
+      HOME: /tmp
+      MIX_ENV: prod
+      MIX_HOME: /code/.mix
+    user: ${CURRENT_UID-0:0}
+    working_dir: /code
+    volumes:
+      - "${CI_PROJECT_DIR}:/code"
 
   service:
     image: ${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION}
