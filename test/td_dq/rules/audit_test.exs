@@ -272,6 +272,98 @@ defmodule TdDq.Rules.AuditTest do
              } = Jason.decode!(payload)
     end
 
+    test "publishes implementation_changed with df_content and domain updated", %{
+      implementation: implementation,
+      claims: %{user_id: user_id}
+    } do
+      %{id: implementation_id, domain_id: domain_id} = implementation
+
+      df_content = %{
+        "new_field1" => %{"value" => "foo", "origin" => "user"},
+        "new_field2" => %{"value" => "bar", "origin" => "user"}
+      }
+
+      %{id: new_domain_id} = CacheHelpers.insert_domain()
+
+      params = %{df_content: df_content, domain_id: new_domain_id}
+      changeset = Implementation.changeset(implementation, params)
+      new_implementation = Map.put(implementation, :domain_id, new_domain_id)
+
+      assert {:ok, event_id} =
+               Audit.implementation_updated(
+                 Repo,
+                 %{
+                   implementation: new_implementation,
+                   old_domain_id: domain_id
+                 },
+                 changeset,
+                 user_id
+               )
+
+      assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+      user_id = "#{user_id}"
+      resource_id = "#{implementation_id}"
+
+      assert %{
+               event: "implementation_changed",
+               payload: payload,
+               resource_id: ^resource_id,
+               resource_type: "implementation",
+               service: "td_dd",
+               ts: _ts,
+               user_id: ^user_id
+             } = event
+
+      assert %{
+               "df_content" => %{"added" => ^df_content},
+               "old_domain" => %{"id" => ^domain_id},
+               "new_domain" => %{"id" => ^new_domain_id}
+             } = Jason.decode!(payload)
+    end
+
+    test "publishes implementation_updated with domain updated", %{
+      implementation: implementation,
+      claims: %{user_id: user_id}
+    } do
+      %{id: implementation_id, domain_id: domain_id} = implementation
+
+      %{id: new_domain_id} = CacheHelpers.insert_domain()
+
+      params = %{domain_id: new_domain_id}
+      changeset = Implementation.changeset(implementation, params)
+      new_implementation = Map.put(implementation, :domain_id, new_domain_id)
+
+      assert {:ok, event_id} =
+               Audit.implementation_updated(
+                 Repo,
+                 %{
+                   implementation: new_implementation,
+                   old_domain_id: domain_id
+                 },
+                 changeset,
+                 user_id
+               )
+
+      assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+      user_id = "#{user_id}"
+      resource_id = "#{implementation_id}"
+
+      assert %{
+               event: "implementation_updated",
+               payload: payload,
+               resource_id: ^resource_id,
+               resource_type: "implementation",
+               service: "td_dd",
+               ts: _ts,
+               user_id: ^user_id
+             } = event
+
+      assert %{
+               "old_domain" => %{"id" => ^domain_id},
+               "new_domain" => %{"id" => ^new_domain_id}
+             } = Jason.decode!(payload)
+    end
+
     test "publishes implementation_moved", %{
       rule: rule,
       implementation: implementation,

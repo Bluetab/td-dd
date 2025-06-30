@@ -1,5 +1,13 @@
 # Changelog
 
+## [7.7.0] 2025-06-30
+
+### Added
+
+- [TD-7299] Refactor gitlab-ci pipeline and add Trivy check
+- [TD-7300] Add Structure Link origin
+- [TD-7236] When change the domain of a implementation, updates the domain of all versions
+
 ## [7.6.2] 2025-06-11
 
 ### Changed
