@@ -7,6 +7,7 @@ variables:
 
 stages:
   - build
+  - test
   - publish
   - acceptance
   - deploy
@@ -14,7 +15,7 @@ stages:
 before_script:
   - source ci/env.sh ecr-login
 
-build:
+deps:
   stage: build
   tags:
     - docker-compose
@@ -24,16 +25,53 @@ build:
     - docker-compose down -v
   artifacts:
     paths:
+      - deps/
+      - _build/test/
+
+release:
+  stage: build
+  needs:
+    - deps
+  tags:
+    - docker-compose
+  script:
+    - docker-compose run --rm release
+  after_script:
+    - docker-compose down -v
+  artifacts:
+    paths:
       - _build/prod/*.tar.gz
 
 test:
-  stage: build
+  stage: test
+  needs:
+    - deps
   tags:
     - docker-compose
   script:
     - docker-compose run --rm test
   after_script:
     - docker-compose down -v
+
+sobelow:
+  stage: test
+  needs:
+    - deps
+  tags:
+    - docker-compose
+  script:
+    - docker-compose run --rm sobelow
+  after_script:
+    - docker-compose down -v
+
+trivy:
+  stage: test
+  needs:
+    - deps
+  tags:
+    - docker-compose
+  script:
+    - trivy fs --exit-code 1 --severity HIGH,CRITICAL .
 
 publish:
   stage: publish
