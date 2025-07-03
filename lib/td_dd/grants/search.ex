@@ -132,6 +132,6 @@ defmodule TdDd.Grants.Search do
   end
 
   defp simple_query_string_clause(%{simple_search_fields: fields}) do
-    %{simple_query_string: %{fields: fields}}
+    %{simple_query_string: %{fields: fields, quote_field_suffix: ".exact"}}
   end
 end

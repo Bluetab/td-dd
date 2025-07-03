@@ -340,6 +340,39 @@ defmodule TdDq.Rules.SearchTest do
 
       assert %{results: [_]} = Search.search_rules(%{"must" => %{}, "scroll" => "1m"}, claims)
     end
+
+    @tag authentication: [role: "service"]
+    test "builds simple query string when using wildcard", %{claims: claims} do
+      CacheHelpers.insert_template(
+        name: "Test Template",
+        scope: "dq",
+        content: [
+          build(:template_group,
+            fields: [build(:template_field, name: "template_field", type: "string")]
+          )
+        ]
+      )
+
+      expect(ElasticsearchMock, :request, fn
+        _, :post, "/rules/_search", query, _params ->
+          assert query.query == %{
+                   bool: %{
+                     must: %{
+                       simple_query_string: %{
+                         fields: ["name", "description", "df_content.template_field"],
+                         query: "\"foo\"",
+                         quote_field_suffix: ".exact"
+                       }
+                     }
+                   }
+                 }
+
+          SearchHelpers.hits_response([])
+      end)
+
+      params = %{"query" => "\"foo\""}
+      Search.search_rules(params, claims)
+    end
   end
 
   describe "search_implementations/4" do
@@ -503,6 +536,26 @@ defmodule TdDq.Rules.SearchTest do
       claims: claims,
       implementation: implementation
     } do
+      CacheHelpers.insert_template(
+        name: "DQ Test Template",
+        scope: "dq",
+        content: [
+          build(:template_group,
+            fields: [build(:template_field, name: "dq_template_field", type: "string")]
+          )
+        ]
+      )
+
+      CacheHelpers.insert_template(
+        name: "RI Test Template",
+        scope: "ri",
+        content: [
+          build(:template_group,
+            fields: [build(:template_field, name: "ri_template_field", type: "string")]
+          )
+        ]
+      )
+
       expect(ElasticsearchMock, :request, fn
         _, :post, "/implementations/_search", query, _params ->
           assert query.query == %{
@@ -510,8 +563,13 @@ defmodule TdDq.Rules.SearchTest do
                      must: [
                        %{
                          simple_query_string: %{
-                           fields: ["implementation_key"],
-                           query: "\"foo\""
+                           fields: [
+                             "implementation_key",
+                             "df_content.ri_template_field",
+                             "rule.df_content.dq_template_field"
+                           ],
+                           query: "\"foo\"",
+                           quote_field_suffix: ".exact"
                          }
                        },
                        %{term: %{"status" => "published"}}

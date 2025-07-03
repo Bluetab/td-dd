@@ -254,7 +254,7 @@ defmodule TdDd.DataStructures.ElasticDocument do
 
     @boosted_fields ~w(ngram_name*^3 ngram_original_name*^1.5 ngram_path*)
     @search_fields ~w(system.name description)
-    @simple_search_fields ~w(name* original_name*)
+    @simple_search_fields ~w(name original_name)
 
     def mappings(_) do
       content_mappings = %{properties: get_dynamic_mappings("dd")}
@@ -263,8 +263,8 @@ defmodule TdDd.DataStructures.ElasticDocument do
         %{
           id: %{type: "long", index: false},
           data_structure_id: %{type: "long"},
-          name: %{type: "text", fields: @raw_sort},
-          original_name: %{type: "text", fields: @raw_sort},
+          name: %{type: "text", fields: Map.merge(@raw_sort, @exact)},
+          original_name: %{type: "text", fields: Map.merge(@raw_sort, @exact)},
           ngram_name: %{type: "search_as_you_type"},
           ngram_original_name: %{type: "search_as_you_type"},
           system: %{
@@ -350,11 +350,12 @@ defmodule TdDd.DataStructures.ElasticDocument do
     def query_data(_) do
       native_fields = @boosted_fields ++ @search_fields
       content_schema = Templates.content_schema_for_scope("dd")
+      dynamic_fields = dynamic_search_fields(content_schema, "note")
 
       %{
-        fields: native_fields ++ dynamic_search_fields(content_schema, "note"),
+        fields: native_fields ++ dynamic_fields,
         aggs: merged_aggregations(content_schema),
-        simple_search_fields: @simple_search_fields,
+        simple_search_fields: @simple_search_fields ++ dynamic_fields,
         native_fields: native_fields
       }
     end

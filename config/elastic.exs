@@ -23,11 +23,22 @@ config :td_core, TdCore.Search.Cluster,
       bulk_action: "index",
       settings: %{
         analysis: %{
+          tokenizer: %{
+            custom_split_tokenizer: %{
+              type: "pattern",
+              pattern: "[\\s\\-_.:/]+"
+            }
+          },
           analyzer: %{
             default: %{
               type: "custom",
               tokenizer: "whitespace",
               filter: ["lowercase", "word_delimiter", "asciifolding"]
+            },
+            exact_analyzer: %{
+              type: "custom",
+              tokenizer: "custom_split_tokenizer",
+              filter: ["lowercase", "asciifolding"]
             }
           },
           normalizer: %{
@@ -49,11 +60,22 @@ config :td_core, TdCore.Search.Cluster,
       bulk_action: "index",
       settings: %{
         analysis: %{
+          tokenizer: %{
+            custom_split_tokenizer: %{
+              type: "pattern",
+              pattern: "[\\s\\-_.:/]+"
+            }
+          },
           analyzer: %{
             default: %{
               type: "custom",
               tokenizer: "whitespace",
               filter: ["lowercase", "word_delimiter", "asciifolding"]
+            },
+            exact_analyzer: %{
+              type: "custom",
+              tokenizer: "custom_split_tokenizer",
+              filter: ["lowercase", "asciifolding"]
             }
           },
           normalizer: %{
@@ -75,11 +97,22 @@ config :td_core, TdCore.Search.Cluster,
       bulk_action: "index",
       settings: %{
         analysis: %{
+          tokenizer: %{
+            custom_split_tokenizer: %{
+              type: "pattern",
+              pattern: "[\\s\\-_.:/]+"
+            }
+          },
           analyzer: %{
             default: %{
               type: "custom",
               tokenizer: "whitespace",
               filter: ["lowercase", "word_delimiter", "asciifolding"]
+            },
+            exact_analyzer: %{
+              type: "custom",
+              tokenizer: "custom_split_tokenizer",
+              filter: ["lowercase", "asciifolding"]
             }
           },
           normalizer: %{
@@ -101,11 +134,22 @@ config :td_core, TdCore.Search.Cluster,
       bulk_action: "index",
       settings: %{
         analysis: %{
+          tokenizer: %{
+            custom_split_tokenizer: %{
+              type: "pattern",
+              pattern: "[\\s\\-_.:/]+"
+            }
+          },
           analyzer: %{
             default: %{
               type: "custom",
               tokenizer: "whitespace",
               filter: ["lowercase", "word_delimiter", "asciifolding"]
+            },
+            exact_analyzer: %{
+              type: "custom",
+              tokenizer: "custom_split_tokenizer",
+              filter: ["lowercase", "asciifolding"]
             }
           },
           normalizer: %{
@@ -127,11 +171,22 @@ config :td_core, TdCore.Search.Cluster,
       bulk_action: "index",
       settings: %{
         analysis: %{
+          tokenizer: %{
+            custom_split_tokenizer: %{
+              type: "pattern",
+              pattern: "[\\s\\-_.:/]+"
+            }
+          },
           analyzer: %{
             default: %{
               type: "custom",
               tokenizer: "whitespace",
               filter: ["lowercase", "word_delimiter", "asciifolding"]
+            },
+            exact_analyzer: %{
+              type: "custom",
+              tokenizer: "custom_split_tokenizer",
+              filter: ["lowercase", "asciifolding"]
             }
           },
           normalizer: %{
@@ -154,11 +209,22 @@ config :td_core, TdCore.Search.Cluster,
       bulk_action: "index",
       settings: %{
         analysis: %{
+          tokenizer: %{
+            custom_split_tokenizer: %{
+              type: "pattern",
+              pattern: "[\\s\\-_.:/]+"
+            }
+          },
           analyzer: %{
             default: %{
               type: "custom",
               tokenizer: "whitespace",
               filter: ["lowercase", "word_delimiter", "asciifolding"]
+            },
+            exact_analyzer: %{
+              type: "custom",
+              tokenizer: "custom_split_tokenizer",
+              filter: ["lowercase", "asciifolding"]
             }
           },
           normalizer: %{

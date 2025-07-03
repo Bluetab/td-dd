@@ -95,8 +95,8 @@ defmodule TdDd.Grants.ElasticDocument do
             type: "object",
             properties: %{
               id: %{type: "long", index: false},
-              user_name: %{type: "text", fields: @raw},
-              full_name: %{type: "text", fields: @raw}
+              user_name: %{type: "text", fields: Map.merge(@raw, @exact)},
+              full_name: %{type: "text", fields: Map.merge(@raw, @exact)}
             }
           }
         }

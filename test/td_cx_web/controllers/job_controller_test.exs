@@ -110,8 +110,9 @@ defmodule TdCxWeb.JobControllerTest do
                      bool: %{
                        must: %{
                          simple_query_string: %{
-                           fields: ["external_id"],
-                           query: "\"#{external_id}\""
+                           fields: ["external_id", "source.external_id", "message"],
+                           query: "\"#{external_id}\"",
+                           quote_field_suffix: ".exact"
                          }
                        }
                      }
