@@ -46,13 +46,15 @@ defmodule TdCx.Jobs.ElasticDocument do
     use ElasticDocument
 
     @search_fields ~w(external_id source.external_id message)
-    @simple_search_fields ~w(external_id)
 
     def mappings(_) do
       mapping_type = %{
         id: %{type: "long"},
         source_id: %{type: "long"},
-        external_id: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
+        external_id: %{
+          type: "text",
+          fields: Map.merge(%{raw: %{type: "keyword", normalizer: "sortable"}}, @exact)
+        },
         source: %{
           properties: %{
             external_id: %{type: "text", fields: @raw_sort},
@@ -63,7 +65,7 @@ defmodule TdCx.Jobs.ElasticDocument do
         end_date: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
         status: %{type: "text", fields: @raw_sort},
         type: %{type: "text", fields: @raw_sort},
-        message: %{type: "text"}
+        message: %{type: "text", fields: @exact}
       }
 
       settings = :jobs |> Cluster.setting() |> apply_lang_settings()
@@ -90,7 +92,7 @@ defmodule TdCx.Jobs.ElasticDocument do
     def query_data(_) do
       %{
         fields: @search_fields,
-        simple_search_fields: @simple_search_fields,
+        simple_search_fields: @search_fields,
         aggs: aggregations(%Job{})
       }
     end

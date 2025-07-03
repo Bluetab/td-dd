@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-7231] Add search enhancements for quoted text query
+
 ## [7.7.0] 2025-06-30
 
 ### Added

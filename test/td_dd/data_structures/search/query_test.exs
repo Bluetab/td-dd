@@ -142,7 +142,15 @@ defmodule TdDd.DataStructures.Search.QueryTest do
                fields: [],
                simple_search_fields: []
              }) == %{
-               bool: %{must: %{simple_query_string: %{query: "\"foo\"", fields: []}}}
+               bool: %{
+                 must: %{
+                   simple_query_string: %{
+                     fields: [],
+                     query: "\"foo\"",
+                     quote_field_suffix: ".exact"
+                   }
+                 }
+               }
              }
     end
   end

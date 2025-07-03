@@ -446,7 +446,7 @@ defmodule TdDq.Implementations.ElasticDocument do
         concepts: %{type: "long", null_value: -1},
         updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
         inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-        implementation_key: %{type: "text", fields: @raw_sort},
+        implementation_key: %{type: "text", fields: Map.merge(@raw_sort, @exact)},
         ngram_implementation_key: %{type: "search_as_you_type"},
         implementation_type: %{type: "text", fields: @raw_sort},
         execution_result_info: %{
@@ -526,19 +526,18 @@ defmodule TdDq.Implementations.ElasticDocument do
 
     def query_data(_) do
       ri_content_schema = Templates.content_schema_for_scope("ri")
+      ri_dynamic_fields = dynamic_search_fields(ri_content_schema, "df_content")
       dq_content_schema = Templates.content_schema_for_scope("dq")
+      dq_dynamic_fields = dynamic_search_fields(dq_content_schema, "rule.df_content")
 
       native_fields = @boosted_fields ++ @search_fields
 
-      fields =
-        native_fields ++
-          dynamic_search_fields(ri_content_schema, "df_content") ++
-          dynamic_search_fields(dq_content_schema, "rule.df_content")
+      fields = native_fields ++ ri_dynamic_fields ++ dq_dynamic_fields
 
       %{
         aggs: merged_aggregations(ri_content_schema, dq_content_schema, "bg"),
         fields: fields,
-        simple_search_fields: @simple_search_fields
+        simple_search_fields: @simple_search_fields ++ ri_dynamic_fields ++ dq_dynamic_fields
       }
     end
 
