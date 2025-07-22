@@ -1,5 +1,5 @@
 defmodule TdDd.Search.StoreTest do
-  use TdDd.DataCase
+  use TdDd.DataStructureCase
 
   import ExUnit.CaptureLog
   import Mox
@@ -7,6 +7,7 @@ defmodule TdDd.Search.StoreTest do
   alias TdCluster.TestHelpers.TdAiMock.Embeddings
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Grants.GrantRequest
+  alias TdDd.Grants.GrantStructure
   alias TdDd.Search.EnricherImpl
   alias TdDd.Search.Store
   alias TdDd.Search.StructureEnricher
@@ -227,6 +228,62 @@ defmodule TdDd.Search.StoreTest do
                Store.transaction(fn ->
                  DataStructureVersion |> Store.stream(:embeddings) |> Enum.to_list()
                end)
+    end
+  end
+
+  describe "Store.stream/2 of grants" do
+    setup do
+      start_supervised!(StructureEnricher)
+      :ok
+    end
+
+    @tag sandbox: :shared
+    test "streams chunked grants" do
+      [_dsv1, dsv2, dsv3, dsv4] = create_hierarchy(["A", "B", "C", "D"])
+
+      grant = insert(:grant, data_structure: dsv2.data_structure)
+
+      grant_structures =
+        Store.transaction(fn ->
+          GrantStructure
+          |> Store.stream([grant.id])
+          |> Enum.to_list()
+        end)
+
+      assert [grant_structure_1, grant_structure_2, grant_structure_3] =
+               Enum.sort_by(grant_structures, & &1.data_structure_version.name)
+
+      assert grant_structure_1.grant.id == grant.id
+      assert grant_structure_1.data_structure_version.id == dsv2.id
+      assert grant_structure_2.grant.id == grant.id
+      assert grant_structure_2.data_structure_version.id == dsv3.id
+      assert grant_structure_3.grant.id == grant.id
+      assert grant_structure_3.data_structure_version.id == dsv4.id
+    end
+
+    @tag sandbox: :shared
+    test "streams chunked grant structures for delete" do
+      [_dsv1, dsv2, dsv3, dsv4] = create_hierarchy(["A", "B", "C", "D"])
+
+      grant = insert(:grant, data_structure: dsv2.data_structure)
+      assert {:ok, _} = Repo.delete(grant)
+
+      grant_structures =
+        Store.transaction(fn ->
+          GrantStructure
+          |> Store.stream({:delete, [grant]})
+          |> Enum.to_list()
+        end)
+
+      assert [grant_structure_1, grant_structure_2, grant_structure_3] =
+               Enum.sort_by(grant_structures, & &1.data_structure_version.id)
+
+      assert grant_structure_1.grant.id == grant.id
+      assert grant_structure_1.data_structure_version.id == dsv2.id
+      assert grant_structure_2.grant.id == grant.id
+      assert grant_structure_2.data_structure_version.id == dsv3.id
+      assert grant_structure_3.grant.id == grant.id
+      assert grant_structure_3.data_structure_version.id == dsv4.id
     end
   end
 
