@@ -178,6 +178,26 @@ defmodule TdDd.DataStructures.DataStructureQueriesTest do
     assert dsv_children ||| [dsv_a_id, dsv_b_id, dsv_c_id]
   end
 
+  test "DataStructureVersion children by data_structure_ids" do
+    [
+      %{id: dsv_a_id} = dsv_a,
+      %{id: dsv_b_id},
+      %{id: dsv_c_id}
+    ] =
+      ["A", "B", "C"]
+      |> create_hierarchy()
+
+    %{data_structure: %{id: dsv_a_ds_id}} = dsv_a
+
+    [child] =
+      %{data_structure_ids: [dsv_a_ds_id]}
+      |> DataStructureQueries.children()
+      |> Repo.all()
+
+    assert child.ancestor_ds_id == dsv_a_ds_id
+    assert child.dsv_children ||| [dsv_a_id, dsv_b_id, dsv_c_id]
+  end
+
   describe "DataStructureQueries.enriched_structure_versions/1" do
     test "compare with path snapshot" do
       dsv_names = ["foo", "bar", "baz", "xyzzy", "spqr"]

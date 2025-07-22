@@ -6,6 +6,10 @@
 
 - [TD-7231] Add search enhancements for quoted text query
 
+### Fixed
+
+- [TD-7327] Delete grants in elasticsearch
+
 ## [7.7.0] 2025-06-30
 
 ### Added
