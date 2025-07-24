@@ -2,12 +2,14 @@ defmodule TdDd.Lineage.Units do
   @moduledoc """
   A context for lineage units
   """
+  require Logger
 
   alias Ecto.Multi
   alias TdDd.Lineage.Units.Edge
   alias TdDd.Lineage.Units.Event
   alias TdDd.Lineage.Units.Node
   alias TdDd.Lineage.Units.Unit
+  alias TdDd.Lineage.Units.Workers.DeleteUnit
   alias TdDd.Repo
 
   import Ecto.Query
@@ -17,6 +19,10 @@ defmodule TdDd.Lineage.Units do
   @typep multi_result :: multi_success() | multi_error()
 
   defdelegate authorize(action, user, params), to: TdDd.Lineage.Policy
+
+  def get(id) do
+    Repo.get(Unit, id)
+  end
 
   def get_by(clauses) do
     Unit
@@ -181,6 +187,13 @@ defmodule TdDd.Lineage.Units do
     end
   end
 
+  def delete_async(%Unit{id: id}, params) do
+    params
+    |> Map.put("unit_id", id)
+    |> DeleteUnit.new()
+    |> Oban.insert()
+  end
+
   def delete_unit(%Unit{id: id} = unit, opts \\ []) do
     opts = Keyword.put_new(opts, :logical, true)
 
@@ -197,7 +210,12 @@ defmodule TdDd.Lineage.Units do
         multi
       end
 
-    Repo.transaction(multi)
+    multi
+    |> Repo.transaction()
+    |> tap(fn
+      {:ok, _} -> Logger.info("Unit deleted")
+      {:error, error} -> Logger.error("Unit deletion failed: #{inspect(error)}")
+    end)
   end
 
   defp do_delete_unit(%Unit{} = unit, true = _logical) do

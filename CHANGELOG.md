@@ -5,6 +5,9 @@
 ### Added
 
 - [TD-7231] Add search enhancements for quoted text query
+- [TD-7339]: 
+  - Delete units asynchronously to prevent connection timeouts
+  - Log unexpected responses encountered during unit upload
 
 ### Fixed
 

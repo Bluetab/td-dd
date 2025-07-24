@@ -12,7 +12,8 @@ defmodule TdDdWeb.GraphController do
   def create(conn, %{} = params) do
     with %{user_id: user_id} = _claims <- conn.assigns[:current_resource] do
       {code, response, _id} =
-        do_drawing(user_id, params)
+        user_id
+        |> do_drawing(params)
         |> response(:created)
 
       conn
