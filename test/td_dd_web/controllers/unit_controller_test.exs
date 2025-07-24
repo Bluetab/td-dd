@@ -1,4 +1,5 @@
 defmodule TdDdWeb.UnitControllerTest do
+  use Oban.Testing, repo: TdDd.Repo, prefix: Application.get_env(:td_dd, Oban)[:prefix]
   use TdDdWeb.ConnCase
 
   alias TdDd.TaskSupervisor
@@ -60,12 +61,31 @@ defmodule TdDdWeb.UnitControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "DELETE /api/units/:name deletes a unit", %{conn: conn} do
-      %{name: name} = insert(:unit)
+    test "DELETE /api/units/:name soft deletes a unit", %{conn: conn} do
+      %{name: name, id: id} = insert(:unit)
 
       assert conn
              |> delete(Routes.unit_path(conn, :delete, name))
-             |> response(:no_content)
+             |> response(:accepted)
+
+      assert_enqueued(
+        worker: TdDd.Lineage.Units.Workers.DeleteUnit,
+        args: %{"unit_id" => id}
+      )
+    end
+
+    @tag authentication: [role: "admin"]
+    test "DELETE /api/units/:name deletes a unit", %{conn: conn} do
+      %{name: name, id: id} = insert(:unit)
+
+      assert conn
+             |> delete(Routes.unit_path(conn, :delete, name, logical: false))
+             |> response(:accepted)
+
+      assert_enqueued(
+        worker: TdDd.Lineage.Units.Workers.DeleteUnit,
+        args: %{"unit_id" => id, "logical" => "false"}
+      )
     end
 
     @tag authentication: [role: "service"]
