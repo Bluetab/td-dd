@@ -5,6 +5,7 @@ defmodule TdDd.GrantsTest do
 
   alias TdCache.Redix
   alias TdCache.Redix.Stream
+  alias TdCore.Search.IndexWorkerMock
   alias TdDd.Grants
   alias TdDd.Grants.Grant
 
@@ -15,6 +16,10 @@ defmodule TdDd.GrantsTest do
   end
 
   setup do
+    IndexWorkerMock.clear()
+
+    on_exit(fn -> IndexWorkerMock.clear() end)
+
     %{id: user_id, user_name: user_name} = user = CacheHelpers.insert_user()
     %{id: data_structure_id} = data_structure = insert(:data_structure)
 
@@ -354,6 +359,8 @@ defmodule TdDd.GrantsTest do
                "start_date" => "2020-01-02",
                "user_id" => ^user_id
              } = Jason.decode!(payload)
+
+      assert [{:delete, :grants, {:store, [%Grant{id: ^id}]}}] = IndexWorkerMock.calls()
     end
   end
 end

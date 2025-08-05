@@ -101,11 +101,14 @@ defmodule TdDq.Rules.ElasticDocument do
         version: %{type: "long"},
         name: %{
           type: "text",
-          fields: %{raw: %{type: "keyword", normalizer: "sortable"}}
+          fields: Map.merge(%{raw: %{type: "keyword", normalizer: "sortable"}}, @exact)
         },
         ngram_name: %{type: "search_as_you_type"},
         active: %{type: "boolean", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
-        description: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
+        description: %{
+          type: "text",
+          fields: Map.merge(%{raw: %{type: "keyword", normalizer: "sortable"}}, @exact)
+        },
         deleted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
         updated_by: %{
           properties: %{
@@ -117,7 +120,7 @@ defmodule TdDq.Rules.ElasticDocument do
         current_business_concept_version: %{
           properties: %{
             id: %{type: "long"},
-            name: %{type: "text", fields: @raw_sort},
+            name: %{type: "text", fields: Map.merge(@raw_sort, @exact)},
             content: %{
               properties: get_dynamic_mappings("bg", type: "user")
             }
@@ -143,10 +146,11 @@ defmodule TdDq.Rules.ElasticDocument do
     def query_data(_) do
       native_fields = @boosted_fields ++ @search_fields
       content_schema = Templates.content_schema_for_scope("dq")
+      dynamic_fields = dynamic_search_fields(content_schema)
 
       %{
-        fields: native_fields ++ dynamic_search_fields(content_schema),
-        simple_search_fields: @simple_search_fields,
+        fields: native_fields ++ dynamic_fields,
+        simple_search_fields: @simple_search_fields ++ @search_fields ++ dynamic_fields,
         aggs: merged_aggregations(content_schema, "bg")
       }
     end

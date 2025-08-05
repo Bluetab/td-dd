@@ -43,9 +43,9 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   )
   """
 
-  def children(opts \\ []) do
-    opts_map = Enum.into(opts, %{grant_ids: []})
+  def children(params \\ %{grant_ids: []})
 
+  def children(%{grant_ids: _grant_ids} = params) do
     "data_structures_hierarchy"
     |> join(:inner, [dsh], dsv_child in DataStructureVersion, on: dsh.dsv_id == dsv_child.id)
     |> join(:inner, [dsh, dsv_child], dsv_ancestor in DataStructureVersion,
@@ -60,12 +60,31 @@ defmodule TdDd.DataStructures.DataStructureQueries do
       is_nil(dsv_child.deleted_at) and is_nil(dsv_ancestor.deleted_at) and
         (is_nil(dsv_child.class) or dsv_child.class != "field")
     )
-    |> where_grant_id_in(opts_map)
+    |> where_grant_id_in(params)
     |> select([dsh, dsv_child, dsv_ancestor, grant], %{
       dsv_children: fragment("array_agg(?)", dsh.dsv_id),
       grant: grant
     })
     |> order_by([_, _, _, grant], grant.data_structure_id)
+  end
+
+  def children(%{data_structure_ids: data_structure_ids}) do
+    "data_structures_hierarchy"
+    |> join(:inner, [dsh], dsv_child in DataStructureVersion, on: dsh.dsv_id == dsv_child.id)
+    |> join(:inner, [dsh, dsv_child], dsv_ancestor in DataStructureVersion,
+      on: dsh.ancestor_dsv_id == dsv_ancestor.id
+    )
+    |> where([dsh, dsv_child, dsv_ancestor], dsh.ancestor_ds_id in ^data_structure_ids)
+    |> where(
+      [dsh, dsv_child, dsv_ancestor],
+      is_nil(dsv_child.deleted_at) and is_nil(dsv_ancestor.deleted_at) and
+        (is_nil(dsv_child.class) or dsv_child.class != "field")
+    )
+    |> group_by([dsh, dsv_child, dsv_ancestor], dsh.ancestor_ds_id)
+    |> select([dsh, dsv_child, dsv_ancestor], %{
+      ancestor_ds_id: dsh.ancestor_ds_id,
+      dsv_children: fragment("array_agg(?)", dsh.dsv_id)
+    })
   end
 
   def dsv_grant_children(opts \\ []) do

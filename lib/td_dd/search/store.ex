@@ -44,8 +44,7 @@ defmodule TdDd.Search.Store do
     grants_count = Repo.aggregate(Grant, :count, :id)
     Tasks.log_start_stream(grants_count)
 
-    []
-    |> DataStructureQueries.children()
+    DataStructureQueries.children()
     |> do_stream_grants()
   end
 
@@ -75,11 +74,27 @@ defmodule TdDd.Search.Store do
     |> do_stream()
   end
 
+  def stream(GrantStructure, {:delete, grants}) do
+    grants_count = Enum.count(grants)
+    Tasks.log_start_stream(grants_count)
+    grants_by_structure = Enum.group_by(grants, fn grant -> grant.data_structure_id end)
+
+    %{data_structure_ids: Map.keys(grants_by_structure)}
+    |> DataStructureQueries.children()
+    |> Repo.stream()
+    |> Stream.flat_map(fn
+      %{ancestor_ds_id: data_structure_id, dsv_children: dsv_children} ->
+        grants_by_structure
+        |> Map.get(data_structure_id)
+        |> Enum.flat_map(&structures_for_grant(&1, dsv_children))
+    end)
+  end
+
   def stream(GrantStructure, grant_ids) do
     grants_count = Enum.count(grant_ids)
     Tasks.log_start_stream(grants_count)
 
-    [grant_ids: grant_ids]
+    %{grant_ids: grant_ids}
     |> DataStructureQueries.children()
     |> do_stream_grants()
   end
@@ -276,6 +291,19 @@ defmodule TdDd.Search.Store do
 
   defp chunk_size(key),
     do: Application.get_env(:td_dd, __MODULE__)[key]
+
+  defp structures_for_grant(grant, dsv_children) do
+    Enum.map(dsv_children, fn dsv_id ->
+      build_grant_structure(grant, dsv_id)
+    end)
+  end
+
+  defp build_grant_structure(grant, dsv_id) do
+    %GrantStructure{
+      grant: grant,
+      data_structure_version: %DataStructureVersion{id: dsv_id}
+    }
+  end
 
   def vacuum do
     Repo.vacuum([

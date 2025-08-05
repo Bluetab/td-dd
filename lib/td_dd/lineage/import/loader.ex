@@ -172,6 +172,7 @@ defmodule TdDd.Lineage.Import.Loader do
         Logger.warning("Load failed on #{failed_operation}")
 
       _ ->
+        Logger.warning("Load ended with unknown result: #{inspect(result)}")
         :ignore
     end
 

@@ -229,6 +229,48 @@ defmodule TdDdWeb.DataStructureControllerTest do
     end
 
     @tag authentication: [role: "admin"]
+    test "search with quoted query includes exact simple_query_string clause", %{conn: conn} do
+      CacheHelpers.insert_template(
+        name: @template_name,
+        content: [
+          build(:template_group,
+            fields: [build(:template_field, name: "string_two", type: "string")]
+          )
+        ]
+      )
+
+      %{data_structure_id: id} = dsv = insert(:data_structure_version)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
+        assert %{
+                 bool: %{
+                   must: %{
+                     simple_query_string: %{
+                       fields: [
+                         "name",
+                         "original_name",
+                         "note.string_two",
+                         "note.string"
+                       ],
+                       query: "\"foo\"",
+                       quote_field_suffix: ".exact"
+                     }
+                   },
+                   must_not: %{exists: %{field: "deleted_at"}}
+                 }
+               } = query
+
+        SearchHelpers.hits_response([dsv])
+      end)
+
+      assert %{"data" => [%{"id" => ^id}]} =
+               conn
+               |> post(data_structure_path(conn, :search), %{"query" => "\"foo\""})
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
     test "get_bucket_structures includes filters and without", %{conn: conn} do
       %{data_structure_id: id} = dsv = insert(:data_structure_version)
 

@@ -84,12 +84,13 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
                      simple_query_string: %{
                        fields: [
                          "user.full_name",
-                         "data_structure_version.name*",
-                         "data_structure_version.original_name*",
-                         "grant.data_structure_version.name*",
-                         "grant.data_structure_version.original_name*"
+                         "data_structure_version.name",
+                         "data_structure_version.original_name",
+                         "grant.data_structure_version.name",
+                         "grant.data_structure_version.original_name"
                        ],
-                       query: "\"foo\""
+                       query: "\"foo\"",
+                       quote_field_suffix: ".exact"
                      }
                    }
                  }

@@ -1,5 +1,18 @@
 # Changelog
 
+## [7.8.0] 2025-08-05
+
+### Added
+
+- [TD-7231] Add search enhancements for quoted text query
+- [TD-7339]: 
+  - Delete units asynchronously to prevent connection timeouts
+  - Log unexpected responses encountered during unit upload
+
+### Fixed
+
+- [TD-7327] Delete grants in elasticsearch
+
 ## [7.7.0] 2025-06-30
 
 ### Added
