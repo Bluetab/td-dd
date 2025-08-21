@@ -189,7 +189,29 @@ defmodule TdDd.XLSX.ReaderTest do
     end
 
     test "parses xlsx file", %{hierarchy: hierarchy} do
-      assert parsed_rows = Reader.parse("test/fixtures/xlsx/upload.xlsx")
+      assert {parsed_rows, acc_errors} = Reader.parse("test/fixtures/xlsx/upload.xlsx")
+
+      assert acc_errors == [
+               %{
+                 message: "external_id_not_found",
+                 external_id: "ex_id15_invalid",
+                 row: 6,
+                 sheet: "type_2"
+               },
+               %{
+                 message: "external_id_not_found",
+                 external_id: "ex_id9_invalid",
+                 row: 10,
+                 sheet: "type_1"
+               }
+             ]
+
+      ext_id2_rows =
+        Enum.filter(parsed_rows, fn {_content, %{data_structure: data_structure}} ->
+          data_structure.external_id == "ex_id2"
+        end)
+
+      assert length(ext_id2_rows) == 2
 
       assert {row_note, data_structure_info} =
                Enum.find(parsed_rows, fn {_content, %{data_structure: data_structure}} ->

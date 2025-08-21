@@ -337,7 +337,6 @@ defmodule TdDd.XLSX.UploadTest do
     end
 
     test "uploads structures", %{
-      structures: structures,
       hierarchy: hierarchy,
       claims: %{user_id: user_id} = claims,
       domain: %{id: domain_id}
@@ -349,15 +348,40 @@ defmodule TdDd.XLSX.UploadTest do
         view_data_structure: [domain_id]
       })
 
-      structure_ids = Enum.map(structures, & &1.data_structure_id)
-
-      {:ok, %{update_notes: update_notes}} =
+      {:ok,
+       %{
+         update_notes: update_notes,
+         split_duplicates: {_contents, duplicate_errors},
+         external_id_errors: external_id_errors
+       }} =
         Upload.structures(
           %{path: "test/fixtures/xlsx/upload.xlsx", file_name: "upload.xlsx", hash: "hash"},
           user_id: user_id,
           claims: claims,
           task_reference: "oban:1"
         )
+
+      updated_structure_ids = Map.keys(update_notes)
+
+      assert external_id_errors == [
+               %{
+                 message: "external_id_not_found",
+                 external_id: "ex_id15_invalid",
+                 row: 6,
+                 sheet: "type_2"
+               },
+               %{
+                 message: "external_id_not_found",
+                 external_id: "ex_id9_invalid",
+                 row: 10,
+                 sheet: "type_1"
+               }
+             ]
+
+      assert duplicate_errors == [
+               %{message: "duplicate", external_id: "ex_id3", row: 12, sheet: "type_1"},
+               %{message: "duplicate", external_id: "ex_id2", row: 9, sheet: "type_1"}
+             ]
 
       {_id, note} =
         Enum.find(update_notes, fn {_id, %{data_structure: data_structure}} ->
@@ -611,7 +635,7 @@ defmodule TdDd.XLSX.UploadTest do
       assert data_structure.row == %{index: 11, sheet: "type_2"}
 
       assert [{:reindex, :structures, indexed_structures}] = IndexWorkerMock.calls()
-      assert MapSet.equal?(MapSet.new(indexed_structures), MapSet.new(structure_ids))
+      assert MapSet.equal?(MapSet.new(indexed_structures), MapSet.new(updated_structure_ids))
 
       assert [
                %{

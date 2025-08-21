@@ -18,6 +18,8 @@ defmodule TdDd.XLSX.Upload do
   alias TdDd.XLSX.Jobs.UploadWorker
   alias TdDd.XLSX.Reader
 
+  require Logger
+
   @file_upload_dir Application.compile_env(:td_dd, :file_upload_dir)
 
   def structures(%{path: path, file_name: file_name, hash: hash} = params, opts \\ []) do
@@ -28,7 +30,8 @@ defmodule TdDd.XLSX.Upload do
       |> Keyword.put(:merge_content, true)
       |> Keyword.put(:upload_params, params)
 
-    with {:parsed, rows} when is_list(rows) <- {:parsed, Reader.parse(path, opts)},
+    with {:parsed, {rows, external_id_errors}} when is_list(rows) <-
+           {:parsed, Reader.parse(path, opts)},
          {:structures_without_permissions, []} <-
            {:structures_without_permissions,
             BulkUpdate.reject_rows(
@@ -36,7 +39,7 @@ defmodule TdDd.XLSX.Upload do
               opts[:auto_publish],
               opts[:claims]
             )} do
-      BulkUpdate.file_bulk_update(rows, opts[:user_id], opts)
+      BulkUpdate.file_bulk_update(rows, external_id_errors, opts[:user_id], opts)
     else
       {:structures_without_permissions, [_ | _]} ->
         FileBulkUpdateEvents.create_failed(
@@ -72,11 +75,22 @@ defmodule TdDd.XLSX.Upload do
         error
 
       other_error ->
+        Logger.error("Upload error: #{inspect(other_error)}")
+
+        error_message =
+          case other_error do
+            {:parsed, {:error, %{message: msg}}} ->
+              "Please contact Truedat's team: #{inspect(msg)}"
+
+            _ ->
+              "Please contact Truedat's team: #{inspect(other_error)}"
+          end
+
         FileBulkUpdateEvents.create_failed(
           opts[:user_id],
           hash,
           file_name,
-          "unexpected error",
+          error_message,
           opts[:task_reference]
         )
 
