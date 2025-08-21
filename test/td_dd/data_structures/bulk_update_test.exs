@@ -278,6 +278,31 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert length(ids_reindex) == length(ids)
     end
 
+    test "update all data structures with valid data with duplicate ids", %{type: type} do
+      IndexWorkerMock.clear()
+      claims = build(:claims)
+
+      ids_uniques =
+        1..10
+        |> Enum.map(fn _ ->
+          valid_structure_note(type,
+            df_content: %{"string" => %{"value" => "foo", "origin" => "user"}}
+          )
+        end)
+        |> Enum.map(& &1.data_structure_id)
+
+      duplicate_id = List.first(ids_uniques)
+      ids = [duplicate_id, duplicate_id | ids_uniques]
+
+      assert {:ok, %{update_notes: update_notes}} =
+               BulkUpdate.update_all(ids, @valid_params, claims, false)
+
+      assert Map.keys(update_notes) ||| Enum.uniq(ids)
+
+      assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
+      assert length(ids_reindex) == length(ids_uniques)
+    end
+
     test "update all data structures by other user with valid data", %{type: type} do
       IndexWorkerMock.clear()
       %{user_id: user_id} = claims = build(:claims)
@@ -382,8 +407,8 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert [{:reindex, :structures, ids_reindex_1}, {:reindex, :structures, ids_reindex_2}] =
                IndexWorkerMock.calls()
 
-      assert length(ids_reindex_1) == 10
-      assert length(ids_reindex_2) == 10
+      assert length(ids_reindex_1) == length(ids)
+      assert length(ids_reindex_2) == length(ids)
     end
 
     test "ignores unchanged data structures", %{type: type} do
@@ -704,10 +729,11 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       CacheHelpers.insert_acl(domain_id, "Data Owner", user_ids)
       upload = %{path: "test/fixtures/td2942/upload.csv"}
 
+      assert {contents, [] = errors} =
+               BulkUpdate.from_csv(upload, @default_lang)
+
       assert {:ok, %{update_notes: update_notes}} =
-               upload
-               |> BulkUpdate.from_csv(@default_lang)
-               |> BulkUpdate.file_bulk_update(user_id)
+               BulkUpdate.file_bulk_update(contents, errors, user_id)
 
       ids = Map.keys(update_notes)
       assert length(ids) == 14
@@ -848,10 +874,10 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       upload = %{path: "test/fixtures/td5929/structures_in_native_lang.csv"}
 
+      assert {contents, [] = errors} = BulkUpdate.from_csv(upload, lang)
+
       assert {:ok, %{update_notes: update_notes}} =
-               upload
-               |> BulkUpdate.from_csv(lang)
-               |> BulkUpdate.file_bulk_update(user_id)
+               BulkUpdate.file_bulk_update(contents, errors, user_id)
 
       ids = Map.keys(update_notes)
       assert length(ids) == 2
@@ -890,10 +916,10 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       upload = %{path: "test/fixtures/td5929/structures_in_native_lang_with_invalid_values.csv"}
 
+      assert {contents, [] = errors} = BulkUpdate.from_csv(upload, lang)
+
       assert {:ok, %{update_notes: update_notes}} =
-               upload
-               |> BulkUpdate.from_csv(lang)
-               |> BulkUpdate.file_bulk_update(user_id)
+               BulkUpdate.file_bulk_update(contents, errors, user_id)
 
       [_, notes_errors] = BulkUpdate.split_succeeded_errors(update_notes)
       [note_error] = Enum.map(notes_errors, fn {_k, v} -> v end)
@@ -924,10 +950,10 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       CacheHelpers.insert_acl(domain_id, "Data Owner", [user.id])
       upload = %{path: "test/fixtures/td2942/upload_invalid.csv"}
 
-      {:ok, %{update_notes: update_notes}} =
-        upload
-        |> BulkUpdate.from_csv(@default_lang)
-        |> BulkUpdate.file_bulk_update(user_id)
+      assert {contents, [] = errors} = BulkUpdate.from_csv(upload, @default_lang)
+
+      assert {:ok, %{update_notes: update_notes}} =
+               BulkUpdate.file_bulk_update(contents, errors, user_id)
 
       [_, errored_notes] = BulkUpdate.split_succeeded_errors(update_notes)
 
@@ -954,10 +980,10 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       %{user_id: user_id} = build(:claims)
       upload = %{path: "test/fixtures/hierarchy/upload_invalid_hierarchy.csv"}
 
-      {:ok, %{update_notes: update_notes}} =
-        upload
-        |> BulkUpdate.from_csv(@default_lang)
-        |> BulkUpdate.file_bulk_update(user_id)
+      assert {contents, [] = errors} = BulkUpdate.from_csv(upload, @default_lang)
+
+      assert {:ok, %{update_notes: update_notes}} =
+               BulkUpdate.file_bulk_update(contents, errors, user_id)
 
       [_, errored_notes] = BulkUpdate.split_succeeded_errors(update_notes)
 
@@ -1009,10 +1035,10 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       %{user_id: user_id} = build(:claims)
       upload = %{path: "test/fixtures/upload_invalid_dependant.csv"}
 
-      {:ok, %{update_notes: update_notes}} =
-        upload
-        |> BulkUpdate.from_csv(@default_lang)
-        |> BulkUpdate.file_bulk_update(user_id)
+      assert {contents, [] = errors} = BulkUpdate.from_csv(upload, @default_lang)
+
+      assert {:ok, %{update_notes: update_notes}} =
+               BulkUpdate.file_bulk_update(contents, errors, user_id)
 
       [_, errored_notes] =
         BulkUpdate.split_succeeded_errors(update_notes)
@@ -1071,10 +1097,10 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       %{user_id: user_id} = build(:claims)
       upload = %{path: "test/fixtures/upload_valid_dependant.csv"}
 
-      {:ok, %{update_notes: update_notes}} =
-        upload
-        |> BulkUpdate.from_csv(@default_lang)
-        |> BulkUpdate.file_bulk_update(user_id)
+      assert {contents, [] = _errors} = BulkUpdate.from_csv(upload, @default_lang)
+
+      assert {:ok, %{update_notes: update_notes}} =
+               BulkUpdate.file_bulk_update(contents, [], user_id)
 
       [_created_notes, errored_notes] =
         BulkUpdate.split_succeeded_errors(update_notes)
@@ -1105,10 +1131,10 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       upload = %{path: "test/fixtures/upload_invalid_dependant.csv"}
 
-      {:ok, %{update_notes: update_notes}} =
-        upload
-        |> BulkUpdate.from_csv(@default_lang)
-        |> BulkUpdate.file_bulk_update(user_id)
+      {contents, errors} = BulkUpdate.from_csv(upload, @default_lang)
+
+      assert {:ok, %{update_notes: update_notes}} =
+               BulkUpdate.file_bulk_update(contents, errors, user_id)
 
       [updated_notes, errored_notes] =
         BulkUpdate.split_succeeded_errors(update_notes)
@@ -1164,20 +1190,106 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       %{user_id: user_id} = build(:claims)
       upload = %{path: "test/fixtures/td3606/upload_with_bom.csv"}
 
+      assert {contents, [] = errors} = BulkUpdate.from_csv(upload, @default_lang)
+
       assert {:ok, %{update_notes: _update_notes}} =
-               upload
-               |> BulkUpdate.from_csv(@default_lang)
-               |> BulkUpdate.file_bulk_update(user_id)
+               BulkUpdate.file_bulk_update(contents, errors, user_id)
 
       assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
       assert length(ids_reindex) == 9
     end
 
-    test "return error when external_id does not exists" do
+    test "return error when external_id column does not exists" do
       upload = %{path: "test/fixtures/td3606/upload_without_external_id.csv"}
 
       assert {:error, %{message: :external_id_not_found}} =
                BulkUpdate.from_csv(upload, @default_lang)
+    end
+
+    test "return error when all external_id are invalid" do
+      IndexWorkerMock.clear()
+
+      upload = %{path: "test/fixtures/td7294/upload_all_invalid_ext_id.csv"}
+
+      assert {:error, %{message: :external_id_not_found}} =
+               BulkUpdate.from_csv(upload, @default_lang)
+    end
+
+    test "upload valid notes when some external_id does not exist and there are duplicates", %{
+      sts: sts
+    } do
+      IndexWorkerMock.clear()
+
+      %{user_id: user_id} = build(:claims)
+
+      structure_ids = Enum.map(sts, & &1.data_structure_id)
+
+      %{domain_ids: [domain_id]} = DataStructures.get_data_structure_by_external_id("ex_id1")
+
+      user_ids =
+        Enum.map(["Role", "Role 1", "Role 2"], fn full_name ->
+          CacheHelpers.insert_user(full_name: full_name).id
+        end)
+
+      CacheHelpers.insert_acl(domain_id, "Data Owner", user_ids)
+
+      upload = %{path: "test/fixtures/td7294/upload_with_duplicates_and_invalid_ext_id.csv"}
+
+      assert {contents, [_ | _] = errors} = BulkUpdate.from_csv(upload, @default_lang)
+
+      assert {:ok,
+              %{
+                update_notes: update_notes,
+                split_duplicates: {_unique_contents, duplicate_errors}
+              }} =
+               BulkUpdate.file_bulk_update(contents, errors, user_id)
+
+      assert errors == [
+               %{
+                 message: "external_id_not_found",
+                 external_id: "ex_id_invalid",
+                 row: 3,
+                 sheet: nil
+               },
+               %{
+                 message: "external_id_not_found",
+                 external_id: "ex_id_invalid_2",
+                 row: 8,
+                 sheet: nil
+               }
+             ]
+
+      assert duplicate_errors == [
+               %{message: "duplicate", external_id: "ex_id3", row: 7, sheet: nil},
+               %{message: "duplicate", external_id: "ex_id2", row: 6, sheet: nil}
+             ]
+
+      updated_ids = Map.keys(update_notes)
+
+      assert length(updated_ids) == 3
+
+      assert Enum.all?(updated_ids, fn id -> id in structure_ids end)
+
+      assert %{
+               "text" => %{"value" => "text", "origin" => "file"},
+               "critical" => %{"value" => "Yes", "origin" => "file"},
+               "role" => %{"value" => ["Role", "Role 1"], "origin" => "file"},
+               "key_value" => %{"value" => [""], "origin" => "file"}
+             } = get_df_content_from_ext_id("ex_id1")
+
+      assert %{
+               "text" => %{"value" => "text2", "origin" => "file"},
+               "critical" => %{"value" => "Yes", "origin" => "file"},
+               "role" => %{"value" => ["Role"], "origin" => "file"}
+             } = get_df_content_from_ext_id("ex_id2")
+
+      assert %{
+               "text" => %{"value" => "foo", "origin" => "user"},
+               "critical" => %{"value" => "No", "origin" => "file"},
+               "role" => %{"value" => ["Role 2"], "origin" => "file"}
+             } = get_df_content_from_ext_id("ex_id3")
+
+      assert [{:reindex, :structures, ^updated_ids}] = IndexWorkerMock.calls()
     end
   end
 
@@ -1217,7 +1329,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       Enum.each(df_contents, fn df_content -> assert df_content == note end)
       assert Enum.all?(last_changed_by, &(&1 == user_id))
       assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
-      assert length(ids_reindex) == 5
+      assert length(ids_reindex) == structure_count
     end
 
     test "bulk upload notes of data structures with draft notes", %{type: type} do
@@ -1280,6 +1392,63 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       Enum.each(df_contents, fn df_content -> assert df_content == note end)
       assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
       assert length(ids_reindex) == structure_count
+    end
+
+    test "bulk upload notes when a data structure is duplicated ", %{type: type} do
+      IndexWorkerMock.clear()
+
+      note = %{
+        "string" => %{"value" => "bar", "origin" => "file"},
+        "list" => %{"value" => "two", "origin" => "file"}
+      }
+
+      struct_published_note = valid_structure(type)
+
+      insert(:structure_note,
+        status: :published,
+        data_structure: struct_published_note.data_structure
+      )
+
+      struct_draft_note = valid_structure(type)
+      insert(:structure_note, data_structure: struct_draft_note.data_structure)
+
+      struct_no_note = valid_structure(type)
+
+      data_structure_ids = [
+        struct_published_note.data_structure_id,
+        struct_draft_note.data_structure_id,
+        struct_no_note.data_structure_id,
+        struct_published_note.data_structure_id,
+        struct_draft_note.data_structure_id,
+        struct_no_note.data_structure_id
+      ]
+
+      assert {:ok, _} =
+               BulkUpdate.update_all(
+                 data_structure_ids,
+                 %{"df_content" => note},
+                 build(:claims),
+                 false
+               )
+
+      df_contents = Enum.map(data_structure_ids, &StructureNotes.list_structure_notes/1)
+
+      df_contents_published =
+        df_contents
+        |> Enum.filter(&(Enum.count(&1) == 2))
+        |> Enum.map(&Enum.at(&1, -1).df_content)
+
+      df_contents_non_published =
+        df_contents
+        |> Enum.filter(&(Enum.count(&1) == 1))
+        |> Enum.map(&Enum.at(&1, -1).df_content)
+
+      assert Enum.count(df_contents_published) == 2
+      assert Enum.count(df_contents_non_published) == 4
+      Enum.each(df_contents_published, fn df_content -> assert df_content == note end)
+      Enum.each(df_contents_non_published, fn df_content -> assert df_content == note end)
+      assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
+      assert length(ids_reindex) == length(Enum.uniq(data_structure_ids))
     end
   end
 

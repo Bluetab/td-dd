@@ -72,10 +72,10 @@ defmodule TdDd.DataStructures.BulkUpdater do
       Task.Supervisor.async_nolink(
         TdDd.TaskSupervisor,
         fn ->
-          with [_ | _] = contents <-
+          with {[_ | _] = contents, _errors} <-
                  BulkUpdate.from_csv(structures_content_upload, lang),
                {:ok, %{updates: updates, update_notes: update_notes}} <-
-                 BulkUpdate.file_bulk_update(contents, user_id, auto_publish: auto_publish),
+                 BulkUpdate.file_bulk_update(contents, [], user_id, auto_publish: auto_publish),
                [updated_notes, not_updated_notes] <-
                  BulkUpdate.split_succeeded_errors(update_notes) do
             BulkUpdate.make_summary(updates, updated_notes, not_updated_notes)
