@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [7.9.0] 2025-08-25
 
 ### Fixed
 
