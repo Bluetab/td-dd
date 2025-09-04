@@ -1267,7 +1267,7 @@ defmodule TdDd.DataStructures do
   @spec latest_mutable_metadata_query :: Ecto.Query.t()
   def latest_mutable_metadata_query do
     StructureMetadata
-    |> distinct(:data_structure_id)
+    |> where([sm], is_nil(sm.deleted_at))
     |> order_by(asc: :data_structure_id, desc: :version)
   end
 
