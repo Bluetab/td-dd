@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- [TD-7320] Optimized metadata query performance for multiple metadata versions.
+
 ## [7.9.0] 2025-08-25
 
 ### Fixed
