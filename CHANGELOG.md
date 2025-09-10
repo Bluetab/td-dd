@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## [Unreleased]
+
+### Added
+
+- [TD-7175] Update README.md for oban information
 
 ### Changed
 
