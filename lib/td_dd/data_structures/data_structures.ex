@@ -1010,8 +1010,8 @@ defmodule TdDd.DataStructures do
 
   def get_data_structure_version_details(data_structure_id, version, _opts) do
     DataStructureVersion
+    |> preload(data_structure: :source)
     |> Repo.get_by!(data_structure_id: data_structure_id, version: version)
-    |> Map.get(:id)
   end
 
   def get_latest_version(target, enrich_fields \\ [], opts \\ [])
