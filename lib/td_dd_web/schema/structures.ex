@@ -190,6 +190,10 @@ defmodule TdDdWeb.Schema.Structures do
     field(:user_permissions, :json, resolve: &Resolvers.Structures.user_permissions/3)
   end
 
+  object :metadata do
+    field(:metadata, :json, resolve: &Resolvers.Structures.metadata/3)
+  end
+
   object :relations do
     field(:parents, list_of(:embedded_relation))
     field(:children, list_of(:embedded_relation))
