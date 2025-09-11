@@ -143,7 +143,7 @@ defmodule TdDdWeb.Schema.Structures do
       resolve(&Resolvers.Structures.siblings/3)
     end
 
-    field(:versions, list_of(:data_structure_version))
+    field(:versions, list_of(:data_structure_version), resolve: &Resolvers.Structures.versions/3)
 
     field :data_fields, list_of(:data_structure_version) do
       arg(:first, :integer, default_value: 1_000)
@@ -158,10 +158,14 @@ defmodule TdDdWeb.Schema.Structures do
 
     field(:relations, :relations, resolve: &Resolvers.Structures.relations/3)
 
-    field(:classes, :json)
-    field(:implementation_count, :integer)
-    field(:data_structure_link_count, :integer)
-    field(:degree, :graph_degree)
+    field(:classes, :json, resolve: &Resolvers.Structures.classes/3)
+    field(:implementation_count, :integer, resolve: &Resolvers.Structures.implementation_count/3)
+
+    field(:data_structure_link_count, :integer,
+      resolve: &Resolvers.Structures.data_structure_link_count/3
+    )
+
+    field(:degree, :graph_degree, resolve: &Resolvers.Structures.degrees/3)
 
     field :has_note, :json do
       arg(:select_fields, list_of(:string))
@@ -174,16 +178,16 @@ defmodule TdDdWeb.Schema.Structures do
     end
 
     field(:profile, :profile, resolve: &Resolvers.Structures.profile/3)
-    field(:source, :source)
-    field(:system, :system)
+    field(:source, :source, resolve: &Resolvers.Structures.sources/3)
+    field(:system, :system, resolve: &Resolvers.Structures.systems/3)
     field(:structure_type, :data_structure_type, resolve: dataloader(TdDd.DataStructures))
 
-    field(:grants, list_of(:grant))
-    field(:grant, :grant)
+    field(:grants, list_of(:grant), resolve: &Resolvers.Structures.grants/3)
+    field(:grant, :grant, resolve: &Resolvers.Structures.grant/3)
 
     field(:links, list_of(:json), resolve: &Resolvers.Structures.links/3)
     field(:_actions, :json, resolve: &Resolvers.Structures.actions/3)
-    field(:user_permissions, :json)
+    field(:user_permissions, :json, resolve: &Resolvers.Structures.user_permissions/3)
   end
 
   object :relations do

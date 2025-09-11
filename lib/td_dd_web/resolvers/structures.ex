@@ -2,7 +2,7 @@ defmodule TdDdWeb.Resolvers.Structures do
   @moduledoc """
   Absinthe resolvers for data structures and related entities
   """
-
+  import Bodyguard, only: [permit?: 4]
   import Absinthe.Resolution.Helpers, only: [on_load: 2]
 
   alias TdCache.Permissions
@@ -83,33 +83,24 @@ defmodule TdDdWeb.Resolvers.Structures do
         %{data_structure_id: data_structure_id, version: version},
         resolution
       ) do
-    lang = lang(resolution)
-    query_fields = get_query_fields(resolution) -- [:siblings]
-    opts = enrich_data_fields_opts([lang: lang], query_fields)
-
     with {:claims, claims} when not is_nil(claims) <- {:claims, claims(resolution)},
-         {:enriched_dsv, [_ | _] = enriched_dsv} <-
-           {:enriched_dsv,
-            DataStructureVersions.enriched_data_structure_version(
-              claims,
+         {:dsv, dsv} <-
+           {:dsv,
+            DataStructureVersions.data_structure_version(
               data_structure_id,
               version,
-              query_fields,
-              opts
-            )},
-         dsv <- enriched_dsv[:data_structure_version],
-         actions <- enriched_dsv[:actions],
-         user_permissions <- enriched_dsv[:user_permissions] do
-      {:ok,
-       dsv
-       |> maybe_check_siblings_permission(claims)
-       |> enrich_data_fields(claims)
-       |> Map.put(:actions, actions)
-       |> Map.put(:user_permissions, user_permissions)}
+              []
+            )} do
+      {
+        :ok,
+        dsv
+        |> maybe_check_siblings_permission(claims)
+        |> enrich_data_fields(claims)
+      }
     else
       {:claims, nil} -> {:error, :unauthorized}
-      {:enriched_dsv, :not_found} -> {:error, :not_found}
-      {:enriched_dsv, :forbidden} -> {:error, :forbidden}
+      {:dsv, :not_found} -> {:error, :not_found}
+      {:dsv, :forbidden} -> {:error, :forbidden}
     end
   end
 
@@ -129,18 +120,6 @@ defmodule TdDdWeb.Resolvers.Structures do
   end
 
   defp enrich_data_fields(dsv, _claims), do: dsv
-
-  defp enrich_data_fields_opts(opts, query_fields) do
-    # this is only needed to check some pemission flags
-    # in TdDd.DataStructures.DataStructureVersions.with_permissions/2.
-    # data_fields will be fetched in their corresponding
-    # resolver: resolve(&Resolvers.Structures.data_fields/3)
-    if Enum.member?(query_fields, :data_fields) do
-      Keyword.put(opts, :data_fields, search: %{first: 1})
-    else
-      opts
-    end
-  end
 
   def domain_id(%{domain_ids: domain_ids}, _args, _resolution) do
     domain_id =
@@ -183,35 +162,60 @@ defmodule TdDdWeb.Resolvers.Structures do
     end
   end
 
-  def note(
-        %{data_structure: %{published_note: %{df_content: %{} = content}}} = dsv,
-        %{select_fields: select_fields},
-        _resolution
-      ) do
+  def note(dsv, args, resolution) do
+    DataStructures.get_published_note!(dsv)
+    |> retrieve_note_data(args, resolution)
+  end
+
+  defp retrieve_note_data(
+         %{data_structure: %{published_note: %{df_content: %{} = content}}} = dsv,
+         %{select_fields: select_fields},
+         _resolution
+       ) do
     {:ok, handle_note_select(content, dsv, select_fields)}
   end
 
-  def note(
-        %{published_note: %{df_content: %{} = content}} = dsv,
-        %{select_fields: select_fields},
-        _resolution
-      ) do
+  defp retrieve_note_data(
+         %{published_note: %{df_content: %{} = content}} = dsv,
+         %{select_fields: select_fields},
+         _resolution
+       ) do
     {:ok, handle_note_select(content, dsv, select_fields)}
   end
 
-  def note(
-        %{data_structure: %{published_note: %{df_content: %{} = content}}} = dsv,
-        _args,
-        _resolution
-      ) do
+  defp retrieve_note_data(
+         %{df_content: %{} = content} = dsv,
+         %{select_fields: select_fields},
+         _resolution
+       ) do
+    {:ok, handle_note_select(content, dsv, select_fields)}
+  end
+
+  defp retrieve_note_data(
+         %{data_structure: %{published_note: %{df_content: %{} = content}}} = dsv,
+         _args,
+         _resolution
+       ) do
     {:ok, handle_note_select(content, dsv)}
   end
 
-  def note(%{published_note: %{df_content: %{} = content}} = dsv, _args, _resolution) do
+  defp retrieve_note_data(
+         %{published_note: %{df_content: %{} = content}} = dsv,
+         _args,
+         _resolution
+       ) do
     {:ok, handle_note_select(content, dsv)}
   end
 
-  def note(_dsv, _args, _resolution), do: {:ok, nil}
+  defp retrieve_note_data(
+         %{df_content: %{} = content} = dsv,
+         _args,
+         _resolution
+       ) do
+    {:ok, handle_note_select(content, dsv)}
+  end
+
+  defp retrieve_note_data(_dsv, _args, _resolution), do: {:ok, nil}
 
   defp handle_note_select(content, dsv, select_fields \\ nil)
 
@@ -230,17 +234,50 @@ defmodule TdDdWeb.Resolvers.Structures do
 
   defp handle_note_select(_content, _dsv, _), do: nil
 
-  def ancestry(%{path: [_ | _] = path}, _args, _resolution), do: {:ok, path}
-
-  def ancestry(_, _args, _resolution), do: {:ok, []}
-
-  def actions(%{actions: actions}, _args, _resolution) do
-    {:ok, actions}
+  def ancestry(%{id: id}, _args, _resolution) do
+    {:ok, ds_path(id)}
   end
 
-  def actions(_, _, _), do: {:ok, nil}
+  def actions(dsv, _args, resolution) do
+    DataStructureVersions.get_actions(dsv, claims(resolution))
+  end
 
-  def relations(%{relations: %{children: children, parents: parents}}, _args, _resolution) do
+  def user_permissions(dsv, _args, resolution) do
+    DataStructureVersions.get_permissions(dsv, claims(resolution))
+  end
+
+  def versions(%{data_structure: data_structure} = dsv, _args, resolution) do
+    with_protected_metadata =
+      permit?(DataStructures, :view_protected_metadata, claims(resolution), data_structure)
+
+    {:ok, DataStructures.get_versions!(dsv, with_protected_metadata)}
+  end
+
+  def grant(dsv, _args, resolution) do
+    {:ok, DataStructures.get_grant(dsv, claims(resolution).user_id)}
+  end
+
+  def grants(dsv, _args, _resolution) do
+    {:ok, DataStructures.get_grants(dsv)}
+  end
+
+  def relations(%{data_structure: data_structure} = dsv, _args, resolution) do
+    with_confidential =
+      permit?(DataStructures, :manage_confidential_structures, claims(resolution), data_structure)
+
+    with_protected_metadata =
+      permit?(DataStructures, :view_protected_metadata, claims(resolution), data_structure)
+
+    deleted = not is_nil(Map.get(dsv, :deleted_at))
+
+    %{parents: parents, children: children} =
+      DataStructures.get_relations(dsv,
+        deleted: deleted,
+        with_confidential: with_confidential,
+        with_protected_metadata: with_protected_metadata,
+        default: false
+      )
+
     {:ok,
      %{
        children: Enum.map(children, &embedded_relation/1),
@@ -268,6 +305,14 @@ defmodule TdDdWeb.Resolvers.Structures do
     |> DataStructures.enriched_structure_versions()
     |> hd()
     |> Map.get(:path)
+  end
+
+  def implementation_count(dsv, _args, _resolution) do
+    {:ok, DataStructures.get_implementation_count!(dsv)}
+  end
+
+  def data_structure_link_count(dsv, _args, _resolution) do
+    {:ok, DataStructures.get_data_structure_link_count(dsv)}
   end
 
   def available_tags(%{} = structure, _args, resolution) do
@@ -413,6 +458,18 @@ defmodule TdDdWeb.Resolvers.Structures do
     {:ok, profile}
   end
 
+  def sources(dsv, _args, _resolution) do
+    {:ok, DataStructures.get_source!(dsv)}
+  end
+
+  def systems(dsv, _args, _resolution) do
+    {:ok, DataStructures.get_system!(dsv)}
+  end
+
+  def degrees(dsv, _args, _resolution) do
+    {:ok, DataStructures.get_degree(dsv)}
+  end
+
   def links(dsv, _args, resolution) do
     lang = lang(resolution)
     {:ok, DataStructures.get_structure_links(dsv, lang: lang)}
@@ -429,9 +486,21 @@ defmodule TdDdWeb.Resolvers.Structures do
     end
   end
 
+  def classes(dsv, _args, _resolution) do
+    classes =
+      dsv
+      |> DataStructures.get_classifications!()
+      |> get_classes()
+
+    {:ok, classes}
+  end
+
+  defp get_classes(classifications) do
+    Map.new(classifications, fn %{name: name, class: class} -> {name, class} end)
+  end
+
   defp add_classes(%{classifications: [_ | _] = classifications} = struct) do
-    classes = Map.new(classifications, fn %{name: name, class: class} -> {name, class} end)
-    Map.put(struct, :classes, classes)
+    Map.put(struct, :classes, get_classes(classifications))
   end
 
   defp add_classes(dsv), do: dsv

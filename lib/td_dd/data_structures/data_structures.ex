@@ -395,7 +395,7 @@ defmodule TdDd.DataStructures do
     end
   end
 
-  defp get_published_note!(%DataStructureVersion{} = dsv) do
+  def get_published_note!(%DataStructureVersion{} = dsv) do
     case Repo.preload(dsv, :published_note) do
       %{published_note: published_note} -> published_note
     end
@@ -406,13 +406,13 @@ defmodule TdDd.DataStructures do
   defp get_target_key(:relation_links), do: :relations
   defp get_target_key(key), do: key
 
-  defp get_system!(%DataStructureVersion{} = dsv) do
+  def get_system!(%DataStructureVersion{} = dsv) do
     case Repo.preload(dsv, data_structure: :system) do
       %{data_structure: %{system: system}} -> system
     end
   end
 
-  defp get_classifications!(%DataStructureVersion{} = dsv) do
+  def get_classifications!(%DataStructureVersion{} = dsv) do
     case Repo.preload(dsv, :classifications) do
       %{classifications: classifications} -> classifications
     end
@@ -672,7 +672,7 @@ defmodule TdDd.DataStructures do
     end)
   end
 
-  defp get_relations(%DataStructureVersion{} = version, opts) do
+  def get_relations(%DataStructureVersion{} = version, opts) do
     parents = get_parents(version, opts)
     children = get_children(version, opts)
 
@@ -697,14 +697,14 @@ defmodule TdDd.DataStructures do
     |> Map.put(:parents, parents)
   end
 
-  defp get_versions!(%DataStructureVersion{} = dsv, with_protected_metadata) do
+  def get_versions!(%DataStructureVersion{} = dsv, with_protected_metadata) do
     case Repo.preload(dsv, data_structure: :versions) do
       %{data_structure: %{versions: versions}} ->
         protect_metadata(versions, with_protected_metadata)
     end
   end
 
-  defp get_grants(%DataStructureVersion{data_structure_id: id, path: path}, clauses \\ %{}) do
+  def get_grants(%DataStructureVersion{data_structure_id: id, path: path}, clauses \\ %{}) do
     ids = Enum.reduce(path, [id], fn %{"data_structure_id" => id}, acc -> [id | acc] end)
 
     dsv_preloader = &enriched_structure_versions(data_structure_ids: &1)
@@ -722,7 +722,7 @@ defmodule TdDd.DataStructures do
     |> Enum.sort_by(& &1.id)
   end
 
-  defp get_grant(%DataStructureVersion{} = dsv, user_id) do
+  def get_grant(%DataStructureVersion{} = dsv, user_id) do
     dsv
     |> get_grants(%{user_id: user_id})
     # TODO: This assumes a child's external_id is longer than the parent's external_id
@@ -747,7 +747,7 @@ defmodule TdDd.DataStructures do
     Map.put(version, :version, Repo.preload(v, preloads))
   end
 
-  defp get_source!(%DataStructureVersion{} = dsv) do
+  def get_source!(%DataStructureVersion{} = dsv) do
     case Repo.preload(dsv, data_structure: :source) do
       %{data_structure: %{source: source}} -> source
     end
@@ -808,7 +808,7 @@ defmodule TdDd.DataStructures do
     Map.drop(metadata, [@protected])
   end
 
-  defp get_implementation_count!(%DataStructureVersion{data_structure_id: id}) do
+  def get_implementation_count!(%DataStructureVersion{data_structure_id: id}) do
     TdDq.Implementations.ImplementationStructure
     |> where([i], is_nil(i.deleted_at))
     |> where([i], i.data_structure_id == ^id)
@@ -999,6 +999,21 @@ defmodule TdDd.DataStructures do
      }}
   end
 
+  def get_latest_version_details(data_structure_id, _opts) do
+    DataStructureVersion
+    |> where(data_structure_id: ^data_structure_id)
+    |> distinct(:data_structure_id)
+    |> order_by(desc: :version)
+    |> preload(data_structure: :source)
+    |> Repo.one()
+  end
+
+  def get_data_structure_version_details(data_structure_id, version, _opts) do
+    DataStructureVersion
+    |> Repo.get_by!(data_structure_id: data_structure_id, version: version)
+    |> Map.get(:id)
+  end
+
   def get_latest_version(target, enrich_fields \\ [], opts \\ [])
 
   def get_latest_version(nil, _, _), do: nil
@@ -1032,18 +1047,18 @@ defmodule TdDd.DataStructures do
     Repo.get_by(DataStructure, clauses)
   end
 
-  defp get_degree(%{data_structure: %{external_id: external_id}}) do
+  def get_degree(%{data_structure: %{external_id: external_id}}) do
     get_degree(external_id)
   end
 
-  defp get_degree(external_id) when is_binary(external_id) do
+  def get_degree(external_id) when is_binary(external_id) do
     case GraphData.degree(external_id) do
       {:ok, degree} -> degree
       {:error, _} -> nil
     end
   end
 
-  defp get_degree(_), do: nil
+  def get_degree(_), do: nil
 
   defp get_field_degree(%{data_fields: {data_fields, _meta}}) do
     get_field_degree(data_fields)
