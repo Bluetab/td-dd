@@ -47,8 +47,12 @@ defmodule TdDd.DataStructures.BulkUpdate do
 
   def from_csv(upload, :simple) do
     case parse_file(upload) do
-      {:ok, rows} -> parse_rows(rows)
-      {:error, _} = error -> error
+      {:ok, rows} ->
+        parse_rows(rows)
+
+      {:error, _} = error ->
+        Logger.error("Error parsing file on from_csv: #{inspect(error)}")
+        error
     end
   end
 
@@ -61,9 +65,20 @@ defmodule TdDd.DataStructures.BulkUpdate do
   end
 
   def parse(rows, opts \\ []) do
-    rows
-    |> parse_rows(opts)
-    |> Enum.filter(fn {_row, data_structure, _row_meta} -> data_structure end)
+    {rows_with_ds, rows_without_ds} =
+      rows
+      |> parse_rows(opts)
+      |> Enum.reduce({[], []}, fn
+        {row, nil, row_meta}, {with_ds, without_ds} ->
+          {with_ds, [{row, row_meta} | without_ds]}
+
+        {row, data_structure, row_meta}, {with_ds, without_ds} ->
+          {[{row, data_structure, row_meta} | with_ds], without_ds}
+      end)
+
+    rows_with_ds
+    |> Enum.reverse()
+    ## TODO TD-7294: remove reduce_while and use map to process error template_not_found
     |> Enum.reduce_while([], fn {row, data_structure, row_meta}, acc ->
       case format_content(row, data_structure, row_meta, opts) do
         {:error, error} -> {:halt, {:error, error}}
@@ -71,10 +86,30 @@ defmodule TdDd.DataStructures.BulkUpdate do
       end
     end)
     |> case do
-      [_ | _] = contents -> contents
-      [] -> {:error, %{message: :external_id_not_found}}
-      {:error, _} = error -> error
+      [_ | _] = contents ->
+        external_id_errors = build_external_id_errors(rows_without_ds)
+
+        {contents, external_id_errors}
+
+      [] ->
+        {:error, %{message: :external_id_not_found}}
+
+      {:error, _} = error ->
+        error
     end
+  end
+
+  defp build_external_id_errors(rows_without_ds) do
+    rows_without_ds
+    |> Enum.reverse()
+    |> Enum.map(fn {file_data, %{index: row, sheet: sheet}} ->
+      %{
+        sheet: sheet,
+        row: row,
+        external_id: Map.get(file_data, "external_id"),
+        message: "external_id_not_found"
+      }
+    end)
   end
 
   defp parse_rows(rows, opts \\ []) do
@@ -130,7 +165,8 @@ defmodule TdDd.DataStructures.BulkUpdate do
 
     {:ok, rows}
   rescue
-    _ ->
+    error ->
+      Logger.error("Error parsing file: #{inspect(error)}")
       {:error, %{message: :invalid_file_format}}
   end
 
@@ -156,50 +192,105 @@ defmodule TdDd.DataStructures.BulkUpdate do
     end
   end
 
-  def file_bulk_update(rows, user_id, opts \\ []) do
+  def file_bulk_update(rows, external_id_errors, user_id, opts \\ []) do
     store_events = opts[:store_events] || false
     upload_params = Map.put(opts[:upload_params] || %{}, :user_id, user_id)
 
     Multi.new()
-    |> Multi.run(
-      :update_notes,
-      &file_bulk_update_notes(&1, &2, rows, user_id, opts)
-    )
-    |> Multi.run(:updates, &data_structure_file_bulk_update(&1, &2, rows, user_id))
+    |> Multi.run(:split_duplicates, fn _repo, _multi ->
+      {:ok, file_split_duplicates(rows)}
+    end)
+    |> Multi.run(:external_id_errors, fn _repo, _multi ->
+      {:ok, external_id_errors}
+    end)
+    |> Multi.run(:update_notes, fn _repo, %{split_duplicates: {unique_rows, _duplicates}} ->
+      file_bulk_update_notes(unique_rows, user_id, opts)
+    end)
+    |> Multi.run(:updates, fn _repo, %{split_duplicates: {unique_rows, _duplicates}} ->
+      data_structure_file_bulk_update(unique_rows, user_id)
+    end)
     |> Multi.run(:audit, &audit(&1, &2, user_id))
     |> store_events(store_events, upload_params, opts[:task_reference])
     |> Repo.transaction()
     |> on_complete()
   end
 
-  defp data_structure_file_bulk_update(_repo, _changes_so_far, rows, user_id) do
+  defp file_split_duplicates(rows) do
+    rows
+    |> Enum.group_by(fn {%{"df_content" => _}, %{data_structure: ds}} ->
+      Map.get(ds, :external_id)
+    end)
+    |> Enum.reduce({[], []}, fn
+      {_external_id, [only_one]}, {unique_acc, duplicates_acc} ->
+        {[only_one | unique_acc], duplicates_acc}
+
+      {_external_id, [first | rest]}, {unique_acc, duplicates_acc} ->
+        {[first | unique_acc], rest ++ duplicates_acc}
+    end)
+    |> then(fn
+      {_uniques, []} = result ->
+        result
+
+      {uniques, duplicates} ->
+        duplicate_errors = build_duplicate_errors(duplicates)
+
+        {uniques, duplicate_errors}
+    end)
+  end
+
+  defp build_duplicate_errors(duplicates) do
+    Enum.map(duplicates, fn {_content, %{data_structure: ds, row_meta: meta}} ->
+      %{
+        sheet: get_in(meta, [:sheet]),
+        row: get_in(meta, [:index]),
+        external_id: Map.get(ds, :external_id),
+        message: "duplicate"
+      }
+    end)
+  end
+
+  defp split_duplicates(data_structures) do
+    data_structures
+    |> Enum.group_by(fn ds -> Map.get(ds, :external_id) end)
+    |> Enum.reduce({[], []}, fn
+      {_external_id, [only_one]}, {unique_acc, duplicates_acc} ->
+        {[only_one | unique_acc], duplicates_acc}
+
+      {_external_id, [first | rest]}, {unique_acc, duplicates_acc} ->
+        {[first | unique_acc], rest ++ duplicates_acc}
+    end)
+  end
+
+  defp data_structure_file_bulk_update(rows, user_id) do
     rows
     |> Enum.map(fn {content, %{data_structure: data_structure, row_meta: row_meta}} ->
       {DataStructure.changeset(data_structure, content, user_id), row_meta}
     end)
-    |> Enum.reject(fn {changeset, _row_meta} -> changeset.changes == %{} end)
+    |> Enum.reject(fn {changeset, _row_meta} -> map_size(changeset.changes) == 0 end)
     |> Enum.reduce_while(%{}, &reduce_changesets/2)
     |> case do
-      %{} = res -> {:ok, res}
-      error -> error
+      %{} = res ->
+        {:ok, res}
+
+      error ->
+        Logger.error("Unexpected data_structure_file_bulk_update error: #{inspect(error)}")
+        error
     end
   end
 
-  defp file_bulk_update_notes(
-         _repo,
-         _changes_so_far,
-         rows,
-         user_id,
-         opts
-       ) do
+  defp file_bulk_update_notes(rows, user_id, opts) do
     rows
     |> Enum.map(fn {content, %{data_structure: data_structure, row_meta: row_meta}} ->
       {update_structure_notes(data_structure, content, user_id, opts), row_meta}
     end)
     |> Enum.reduce_while(%{}, &reduce_file_notes_results/2)
     |> case do
-      %{} = res -> {:ok, res}
-      error -> error
+      %{} = res ->
+        {:ok, res}
+
+      error ->
+        Logger.error("Unexpected file_bulk_update_notes error: #{inspect(error)}")
+        error
     end
   end
 
@@ -305,7 +396,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
     |> reject_rows(auto_publish, claims)
   end
 
-  def make_summary(updates, updated_notes, not_updated_notes) do
+  def make_summary(updates, updated_notes, not_updated_notes, other_errors \\ []) do
     errors =
       Enum.flat_map(not_updated_notes, fn {_id, {:error, {error, %{} = ds}}} ->
         error
@@ -317,6 +408,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
           |> Map.put(:external_id, ds.external_id)
         end)
       end)
+      |> Enum.concat(other_errors)
 
     %{ids: Enum.uniq(Map.keys(updates) ++ Map.keys(updated_notes)), errors: errors}
   end
@@ -365,15 +457,17 @@ defmodule TdDd.DataStructures.BulkUpdate do
       DataStructures.list_data_structures(ids: ids, preload: @data_structure_preloads)
 
     Multi.new()
-    |> Multi.run(
-      :update_notes,
-      &bulk_update_notes(&1, &2, data_structures, params, user_id, auto_publish)
-    )
+    |> Multi.run(:split_duplicates, fn _repo, _multi ->
+      {:ok, split_duplicates(data_structures)}
+    end)
+    |> Multi.run(:update_notes, fn _repo, %{split_duplicates: {unique_structures, _duplicates}} ->
+      bulk_update_notes(unique_structures, params, user_id, auto_publish)
+    end)
     |> Repo.transaction()
     |> on_complete()
   end
 
-  defp bulk_update_notes(_repo, _changes_so_far, data_structures, params, user_id, auto_publish) do
+  defp bulk_update_notes(data_structures, params, user_id, auto_publish) do
     data_structures
     |> Enum.map(&update_structure_notes(&1, params, user_id, auto_publish: auto_publish))
     |> Enum.reduce_while(%{}, &reduce_notes_results/2)
@@ -421,7 +515,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
     end
   end
 
-  defp reduce_changesets({%{} = changeset, row_meta}, %{} = acc) do
+  defp reduce_changesets({changeset, row_meta}, acc) do
     case Repo.update(changeset) do
       {:ok, %{id: id}} ->
         {:cont, Map.put(acc, id, changeset)}
@@ -431,7 +525,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
     end
   end
 
-  defp reduce_changesets(%{} = changeset, %{} = acc) do
+  defp reduce_changesets(changeset, acc) do
     case Repo.update(changeset) do
       {:ok, %{id: id}} -> {:cont, Map.put(acc, id, changeset)}
       error -> {:halt, error}
@@ -448,13 +542,24 @@ defmodule TdDd.DataStructures.BulkUpdate do
     |> Multi.run(:split_results, fn _repo, %{update_notes: update_notes} ->
       {:ok, split_succeeded_errors(update_notes)}
     end)
-    |> Multi.run(:summary, fn _repo,
-                              %{
-                                split_results: [updated_notes, not_updated_notes],
-                                updates: updates
-                              } ->
-      {:ok, make_summary(updates, updated_notes, not_updated_notes)}
-    end)
+    |> Multi.run(
+      :summary,
+      fn _repo,
+         %{
+           split_results: [updated_notes, not_updated_notes],
+           updates: updates,
+           split_duplicates: {_, duplicate_errors},
+           external_id_errors: external_id_errors
+         } ->
+        {:ok,
+         make_summary(
+           updates,
+           updated_notes,
+           not_updated_notes,
+           duplicate_errors ++ external_id_errors
+         )}
+      end
+    )
     |> Multi.run(:success_event, fn _repo, %{summary: summary} ->
       FileBulkUpdateEvents.create_completed(
         summary,

@@ -4,7 +4,30 @@
 
 ### Added
 
+- [TD-7175] Update README.md for oban information
+
+### Changed
+
+- [TD-7320] Optimized metadata query performance for multiple metadata versions.
+
+## [7.9.0] 2025-08-25
+
+### Fixed
+
+- [TD-7294] Solve issues in notes upload error management
+
+## [7.8.0] 2025-08-05
+
+### Added
+
 - [TD-7231] Add search enhancements for quoted text query
+- [TD-7339]:
+  - Delete units asynchronously to prevent connection timeouts
+  - Log unexpected responses encountered during unit upload
+
+### Fixed
+
+- [TD-7327] Delete grants in elasticsearch
 
 ## [7.7.0] 2025-06-30
 

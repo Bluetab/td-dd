@@ -2,6 +2,7 @@ defmodule TdDd.Lineage.UnitsTest do
   use TdDd.DataCase
 
   alias TdDd.Lineage.Units
+  alias TdDd.Lineage.Units.Unit
   alias TdDd.Repo
 
   setup do
@@ -260,6 +261,28 @@ defmodule TdDd.Lineage.UnitsTest do
       for %{id: id} <- edges do
         refute Repo.get(Units.Edge, id)
       end
+    end
+  end
+
+  describe "delete_async/2" do
+    test "deletes a unit asynchronously", %{unit: unit} do
+      assert {:ok, %Oban.Job{} = job} = Units.delete_async(unit, %{"logical" => "false"})
+      assert job.state == "available"
+
+      assert_enqueued(
+        worker: TdDd.Lineage.Units.Workers.DeleteUnit,
+        args: %{"unit_id" => unit.id, "logical" => "false"}
+      )
+    end
+  end
+
+  describe "get/1" do
+    test "returns a unit by id", %{unit: %{id: id}} do
+      assert %Unit{id: ^id} = Units.get(id)
+    end
+
+    test "returns nil if the unit is not found" do
+      refute Units.get(123)
     end
   end
 end

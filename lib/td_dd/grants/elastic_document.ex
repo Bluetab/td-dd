@@ -46,9 +46,7 @@ defmodule TdDd.Grants.ElasticDocument do
         updated_at: grant.updated_at,
         pending_removal: grant.pending_removal,
         user_id: grant.user_id,
-        user: %{
-          full_name: user_full_name(grant.user)
-        },
+        user: %{full_name: user_full_name(grant.user)},
         source_user_name: grant.source_user_name,
         data_structure_version: dsv
       }

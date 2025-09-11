@@ -197,8 +197,8 @@ defmodule TdDd.Grants do
 
   defp reindex_grants(error, _), do: error
 
-  defp on_delete({:ok, %{grant: %Grant{id: id}} = multi}) do
-    IndexWorker.delete(@index, [id])
+  defp on_delete({:ok, %{grant: %Grant{} = grant} = multi}) do
+    IndexWorker.delete(@index, {:store, [grant]})
     {:ok, multi}
   end
 

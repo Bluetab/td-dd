@@ -49,8 +49,8 @@ defmodule TdDdWeb.UnitController do
 
     with :ok <- Bodyguard.permit(Units, :delete, claims),
          {:ok, unit} <- Units.get_by(name: name),
-         {:ok, _} <- Units.delete_unit(unit, logical: params["logical"] != "false") do
-      send_resp(conn, :no_content, "")
+         {:ok, _job} <- Units.delete_async(unit, params) do
+      send_resp(conn, :accepted, "")
     end
   end
 

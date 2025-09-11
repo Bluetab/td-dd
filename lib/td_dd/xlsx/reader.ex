@@ -34,12 +34,15 @@ defmodule TdDd.XLSX.Reader do
   end
 
   defp do_parse(rows_by_sheet, opts) do
-    Enum.reduce_while(rows_by_sheet, [], fn {sheet, rows}, acc ->
+    Enum.reduce_while(rows_by_sheet, {[], []}, fn {sheet, rows}, {acc_contents, acc_errors} ->
       opts = Keyword.merge([preload: @data_structure_preloads, sheet: sheet], opts)
 
       case BulkUpdate.parse(rows, opts) do
-        [_ | _] = parsed_rows -> {:cont, acc ++ parsed_rows}
-        {:error, _error} = error -> {:halt, error}
+        {contents, external_id_errors} when is_list(contents) and is_list(external_id_errors) ->
+          {:cont, {acc_contents ++ contents, acc_errors ++ external_id_errors}}
+
+        {:error, _error} = error ->
+          {:halt, error}
       end
     end)
   end

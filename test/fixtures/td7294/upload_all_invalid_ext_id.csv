@@ -1,0 +1,3 @@
+external_id;text;critical;enriched_text;urls_none_or_more;role;key_value;integer;hierarchy_name_1;hierarchy_name_2
+ex_id_invalid;text;Yes;;;Role|Role 1;;;;
+ex_id_invalid_2;text;No;;;Role|Role 2;;;;
