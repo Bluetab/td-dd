@@ -9,6 +9,7 @@
 ### Changed
 
 - [TD-7320] Optimized metadata query performance for multiple metadata versions.
+- [TD-7128] Refactored data structure version handling, permissions, and related GraphQL resolvers.∫
 
 ## [7.9.0] 2025-08-25
 
