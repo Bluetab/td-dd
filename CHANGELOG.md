@@ -9,6 +9,7 @@
 ### Changed
 
 - [TD-7320] Optimized metadata query performance for multiple metadata versions.
+- [TD-7484] Always include profile_events when retrieving or creating scheduled executions
 
 ## [7.9.0] 2025-08-25
 
