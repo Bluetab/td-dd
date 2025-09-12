@@ -24,7 +24,7 @@ defmodule TdDd.Search.EnricherImpl do
     chunked_ids_stream
     |> Task.async_stream(&enrich_versions(&1, relation_type_id, filters),
       max_concurrency: 2,
-      timeout: 40_000
+      timeout: :infinity
     )
     |> Stream.flat_map(fn {:ok, chunk} -> chunk end)
   end
