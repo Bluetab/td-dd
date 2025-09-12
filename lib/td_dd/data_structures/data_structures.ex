@@ -999,7 +999,7 @@ defmodule TdDd.DataStructures do
      }}
   end
 
-  def get_latest_version_details(data_structure_id, _opts) do
+  def get_latest_version_details(data_structure_id) do
     DataStructureVersion
     |> where(data_structure_id: ^data_structure_id)
     |> distinct(:data_structure_id)
@@ -1008,7 +1008,7 @@ defmodule TdDd.DataStructures do
     |> Repo.one()
   end
 
-  def get_data_structure_version_details(data_structure_id, version, _opts) do
+  def get_data_structure_version_details(data_structure_id, version) do
     DataStructureVersion
     |> preload(data_structure: :source)
     |> Repo.get_by!(data_structure_id: data_structure_id, version: version)

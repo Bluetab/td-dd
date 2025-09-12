@@ -84,42 +84,15 @@ defmodule TdDdWeb.Resolvers.Structures do
         resolution
       ) do
     with {:claims, claims} when not is_nil(claims) <- {:claims, claims(resolution)},
-         {:dsv, dsv} <-
-           {:dsv,
-            DataStructureVersions.data_structure_version(
-              data_structure_id,
-              version,
-              []
-            )} do
-      {
-        :ok,
-        dsv
-        |> maybe_check_siblings_permission(claims)
-        |> enrich_data_fields(claims)
-      }
+         {:dsv, %DataStructureVersion{} = dsv} <-
+           {:dsv, DataStructureVersions.data_structure_version(data_structure_id, version)} do
+      {:ok, dsv}
     else
       {:claims, nil} -> {:error, :unauthorized}
-      {:dsv, :not_found} -> {:error, :not_found}
+      {:dsv, nil} -> {:error, :not_found}
       {:dsv, :forbidden} -> {:error, :forbidden}
     end
   end
-
-  defp maybe_check_siblings_permission(%{siblings: [_ | _] = dsv_sibling} = dsv, claims) do
-    filtered_sibling = Enum.filter(dsv_sibling, &check_structure_related_permision(&1, claims))
-    Map.put(dsv, :siblings, filtered_sibling)
-  end
-
-  defp maybe_check_siblings_permission(dsv, _claims), do: dsv
-
-  defp enrich_data_fields(%{data_fields: data_fields} = dsv, claims) when is_list(data_fields) do
-    Map.put(
-      dsv,
-      :data_fields,
-      Enum.filter(data_fields, &check_structure_related_permision(&1, claims))
-    )
-  end
-
-  defp enrich_data_fields(dsv, _claims), do: dsv
 
   def domain_id(%{domain_ids: domain_ids}, _args, _resolution) do
     domain_id =

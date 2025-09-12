@@ -284,20 +284,12 @@ defmodule TdDd.DataStructures.DataStructureVersions do
       not Enum.empty?(templates)
   end
 
-  def data_structure_version(
-        data_structure_id,
-        "latest",
-        opts
-      ) do
-    DataStructures.get_latest_version_details(data_structure_id, opts)
+  def data_structure_version(data_structure_id, "latest") do
+    DataStructures.get_latest_version_details(data_structure_id)
   end
 
-  def data_structure_version(
-        data_structure_id,
-        version,
-        opts
-      ) do
-    DataStructures.get_data_structure_version_details(data_structure_id, version, opts)
+  def data_structure_version(data_structure_id, version) do
+    DataStructures.get_data_structure_version_details(data_structure_id, version)
   end
 
   defp do_enriched_data_structure_version(
