@@ -50,7 +50,7 @@ defmodule TdDdWeb.ProfileExecutionGroupController do
            Executions.create_profile_group(creation_params, domain_ids: domain_ids),
          %ProfileGroup{} = group <-
            Executions.get_profile_group(%{"id" => id},
-             preload: [executions: [:data_structure, :profile]],
+             preload: [executions: [:data_structure, :profile, :profile_events]],
              enrich: [:latest]
            ) do
       conn
