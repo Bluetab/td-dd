@@ -85,9 +85,15 @@ defmodule TdDdWeb.ProfileExecutionGroupControllerTest do
                |> json_response(:ok)
 
       assert %{"id" => ^id, "inserted_at" => _, "_embedded" => embedded} = data
+
       assert %{"executions" => [execution]} = embedded
 
-      assert %{"_embedded" => %{"data_structure" => %{"id" => _, "external_id" => _}}} = execution
+      assert %{
+               "_embedded" => %{
+                 "data_structure" => %{"id" => _, "external_id" => _},
+                 "profile_events" => []
+               }
+             } = execution
     end
 
     @tag authentication: [user_name: "not_an_admin"]
@@ -115,7 +121,16 @@ defmodule TdDdWeb.ProfileExecutionGroupControllerTest do
                |> post(Routes.profile_execution_group_path(conn, :create, params))
                |> json_response(:created)
 
-      assert %{"id" => _, "inserted_at" => _} = data
+      assert %{"id" => _, "inserted_at" => _, "_embedded" => embedded} = data
+
+      assert %{"executions" => [execution | _]} = embedded
+
+      assert %{
+               "_embedded" => %{
+                 "data_structure" => %{"id" => _, "external_id" => _},
+                 "profile_events" => []
+               }
+             } = execution
     end
 
     @tag authentication: [user_name: "not_an_admin"]
