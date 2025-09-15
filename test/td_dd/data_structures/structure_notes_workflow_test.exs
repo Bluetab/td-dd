@@ -1,6 +1,8 @@
 defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
   use TdDd.DataCase
 
+  import Mox
+
   alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.StructureNotes
   alias TdDd.DataStructures.StructureNotesWorkflow
@@ -22,6 +24,10 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
       CacheHelpers.insert_template(name: @template_name, content: content)
 
     CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
+
+    stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] ->
+      {:ok, true}
+    end)
 
     start_supervised!(TdDd.Search.StructureEnricher)
 

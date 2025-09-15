@@ -1,8 +1,11 @@
 defmodule TdDd.DataStructures.TagsTest do
   use TdDd.DataStructureCase
 
+  import Mox
+
   alias TdCache.Redix.Stream
   alias TdCore.Search.IndexWorkerMock
+  alias TdDd.DataStructures.DataStructureVersions.Workers.EmbeddingsUpsertBatch
   alias TdDd.DataStructures.Tags
   alias TdDd.DataStructures.Tags.StructureTag
   alias TdDd.DataStructures.Tags.Tag
@@ -12,6 +15,10 @@ defmodule TdDd.DataStructures.TagsTest do
   @stream TdCache.Audit.stream()
 
   setup do
+    stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] ->
+      {:ok, true}
+    end)
+
     IndexWorkerMock.clear()
 
     :ok
@@ -245,11 +252,12 @@ defmodule TdDd.DataStructures.TagsTest do
     setup do
       start_supervised!(TdDd.Search.StructureEnricher)
 
+      IndexWorkerMock.clear()
+
       [claims: build(:claims)]
     end
 
     test "links tag to a given structure", %{claims: claims} do
-      IndexWorkerMock.clear()
       %{comment: comment} = build(:structure_tag)
 
       structure =
@@ -288,7 +296,9 @@ defmodule TdDd.DataStructures.TagsTest do
                }
              } = Jason.decode!(payload)
 
-      assert [{:reindex, :structures, _}] = IndexWorkerMock.calls()
+      assert [{:reindex, :structures, [^data_structure_id]}] = IndexWorkerMock.calls()
+      assert [job] = all_enqueued(worker: EmbeddingsUpsertBatch)
+      assert assert job.args["data_structure_ids"] == [data_structure_id]
     end
 
     test "updates structure tag when it already exists", %{claims: claims} do
@@ -353,12 +363,12 @@ defmodule TdDd.DataStructures.TagsTest do
     setup do
       start_supervised!(TdDd.Search.StructureEnricher)
 
+      IndexWorkerMock.clear()
+
       [claims: build(:claims)]
     end
 
     test "deletes structure tag", %{claims: claims} do
-      IndexWorkerMock.clear()
-
       structure =
         %{id: data_structure_id, external_id: external_id, updated_at: updated_at_before} =
         insert(:data_structure)
@@ -399,7 +409,9 @@ defmodule TdDd.DataStructures.TagsTest do
                data_structure_id: data_structure_id
              )
 
-      assert [{:reindex, :structures, _}] = IndexWorkerMock.calls()
+      assert [{:reindex, :structures, [^data_structure_id]}] = IndexWorkerMock.calls()
+      assert [job] = all_enqueued(worker: EmbeddingsUpsertBatch)
+      assert assert job.args["data_structure_ids"] == [data_structure_id]
     end
 
     test "not_found if structure tag does not exist", %{claims: claims} do

@@ -15,4 +15,10 @@ defmodule TdDd.Helpers do
         ""
     end
   end
+
+  def binary_to_utc_date_time(time) do
+    {:ok, time} = NaiveDateTime.from_iso8601(time)
+    {:ok, time} = DateTime.from_naive(time, "Etc/UTC")
+    time
+  end
 end

@@ -1,7 +1,13 @@
 defmodule TdDdWeb.GroupControllerTest do
   use TdDdWeb.ConnCase
 
+  import Mox
+
   setup do
+    stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] ->
+      {:ok, true}
+    end)
+
     [system: insert(:system)]
   end
 

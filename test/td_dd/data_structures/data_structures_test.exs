@@ -1,6 +1,7 @@
 defmodule TdDd.DataStructuresTest do
   use TdDd.DataStructureCase
 
+  import Mox
   import TdDd.TestOperators
 
   alias Elasticsearch.Document
@@ -24,7 +25,10 @@ defmodule TdDd.DataStructuresTest do
     [claims: build(:claims)]
   end
 
+  setup :set_mox_from_context
+
   setup do
+    stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] -> {:ok, true} end)
     domain = CacheHelpers.insert_domain()
 
     %{id: template_id, name: template_name} =

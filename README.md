@@ -125,6 +125,55 @@ These environment variables will configure CA Certificates for HTTPS requests
   "true": Automatically creates the schema
   "false": Does not create the schema (must exist beforehand)
 
+#### Oban Cron Jobs Configuration
+
+- `OUTDATED_EMBEDDINGS_CRON`:
+  Purpose: Defines the cron schedule for the OutdatedEmbeddings worker
+  Default value: "0 */3 * * *" (every 3 hours)
+  Usage: Controls when the system processes outdated embeddings for data structure versions
+  Example: "0 2 * * *" for daily execution at 2 AM
+
+- `EMBEDDINGS_DELETION_CRON`:
+  Purpose: Defines the cron schedule for the EmbeddingsDeletion worker
+  Default value: "@hourly"
+  Usage: Controls when the system performs cleanup of deleted embeddings
+  Example: "0 */6 * * *" for execution every 6 hours
+
+#### Oban Queue Configuration
+
+- `OBAN_QUEUE_DEFAULT`:
+  Purpose: Sets the number of concurrent workers for the default queue
+  Default value: "5"
+  Usage: Controls the parallelism for general background jobs
+
+- `OBAN_QUEUE_XLSX_UPLOAD`:
+  Purpose: Sets the number of concurrent workers for Excel file upload processing
+  Default value: "10"
+  Usage: Controls the parallelism for XLSX file upload and processing jobs
+
+- `OBAN_QUEUE_DELETE_UNITS`:
+  Purpose: Sets the number of concurrent workers for unit deletion operations
+  Default value: "10"
+  Usage: Controls the parallelism for data unit deletion jobs
+
+- `OBAN_QUEUE_EMBEDDING_UPSERTS`:
+  Purpose: Sets the number of concurrent workers for embedding upsert operations
+  Default value: "10"
+  Usage: Controls the parallelism for creating and updating embeddings
+
+- `OBAN_QUEUE_EMBEDDING_DELETION`:
+  Purpose: Sets the number of concurrent workers for embedding deletion operations
+  Default value: "5"
+  Usage: Controls the parallelism for embedding cleanup jobs
+
+### Embedding Management
+
+- `LIMIT_OUTDATED_EMBEDDINGS`: 
+  - **Purpose**: Controls the maximum number of data structure versions that can be processed in a single batch when updating outdated embeddings
+  - **Default**: `50000`
+  - **Usage**: Used by the OutdatedEmbeddings worker (runs every 3 hours via cron) to limit the number of data structure versions processed when finding and updating missing or outdated record embeddings
+  - **Performance**: Prevents memory issues and ensures system stability when processing large numbers of outdated embeddings
+
 ## Deployment
 
 Ready to run in production? Please [check our deployment

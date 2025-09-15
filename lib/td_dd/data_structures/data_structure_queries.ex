@@ -5,10 +5,12 @@ defmodule TdDd.DataStructures.DataStructureQueries do
 
   import Ecto.Query
 
+  alias TdCluster.Cluster.TdAi.Indices
   alias TdDd.Classifiers
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.DataStructureVersions.RecordEmbedding
   alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureMetadata
@@ -16,6 +18,7 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   alias TdDd.DataStructures.Tags.StructureTag
   alias TdDd.Grants.Grant
   alias TdDd.Profiles.Profile
+  alias TdDd.Repo
 
   @paths_by_child_id """
   SELECT dsv_id as child_id, ds_id, ancestor_ds_id as data_structure_id, ancestor_dsv_id as parent_id, ancestor_level as level, name, version
@@ -131,7 +134,66 @@ defmodule TdDd.DataStructures.DataStructureQueries do
     |> enriched_structure_notes()
   end
 
-  defp data_structure_versions_base(opts) do
+  @spec data_structure_versions_with_embeddings([integer()]) :: Enumerable.t()
+  def data_structure_versions_with_embeddings(data_structure_ids) do
+    case Indices.list(enabled: true) do
+      {:ok, [_ | _] = indices} ->
+        collections = Enum.map(indices, & &1.collection_name)
+
+        DataStructureVersion
+        |> where([dsv], is_nil(dsv.deleted_at))
+        |> where([dsv], dsv.data_structure_id in ^data_structure_ids)
+        |> join(:inner, [dsv, re], re in RecordEmbedding,
+          on: re.data_structure_version_id == dsv.id and re.collection in ^collections
+        )
+        |> group_by([dsv], dsv.id)
+        |> select([dsv, re], %DataStructureVersion{
+          dsv
+          | record_embeddings: fragment("array_agg(row_to_json(?))", re)
+        })
+        |> Repo.stream()
+        |> Stream.map(fn %DataStructureVersion{record_embeddings: record_embeddings} = dsv ->
+          record_embeddings = Enum.map(record_embeddings, &RecordEmbedding.coerce/1)
+          %DataStructureVersion{dsv | record_embeddings: record_embeddings}
+        end)
+
+      _other ->
+        nil
+    end
+  end
+
+  def data_structures_with_outdated_embeddings(collections, opts \\ []) do
+    base_query =
+      opts
+      |> Enum.reduce(DataStructureVersion, fn
+        {:limit, limit}, q -> limit(q, ^limit)
+        _, q -> q
+      end)
+      |> where([dsv], is_nil(dsv.deleted_at))
+
+    stale_query =
+      base_query
+      |> join(:left, [dsv, re], re in assoc(dsv, :record_embeddings))
+      |> where([dsv, re], is_nil(re.updated_at) or re.updated_at < dsv.updated_at)
+      |> select([dsv], dsv.data_structure_id)
+
+    join_collections_set =
+      from(cs in fragment("SELECT unnest(?::text[]) AS collection", ^collections),
+        select: %{collection: cs.collection}
+      )
+
+    base_query
+    |> join(:cross, [dsv, cs], cs in subquery(join_collections_set))
+    |> join(:left, [dsv, cs, re], re in RecordEmbedding,
+      on: re.data_structure_version_id == dsv.id and cs.collection == re.collection
+    )
+    |> where([dsv, cs, re], is_nil(re.id))
+    |> select([dsv], dsv.data_structure_id)
+    |> union_all(^stale_query)
+    |> distinct(true)
+  end
+
+  def data_structure_versions_base(opts \\ []) do
     [deleted: false]
     |> Keyword.merge(opts)
     |> Enum.reduce(DataStructureVersion, fn

@@ -1,11 +1,22 @@
 defmodule TdDd.DataStructures.ProfilesTest do
   use TdDd.DataStructureCase
 
+  import Mox
   import TdDd.TestOperators
 
   alias TdDd.Executions
   alias TdDd.Profiles
   alias TdDd.Profiles.Profile
+
+  setup :set_mox_from_context
+
+  setup do
+    stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] ->
+      {:ok, true}
+    end)
+
+    :ok
+  end
 
   describe "TdDd.Profiles" do
     @valid_attrs %{value: %{}, data_structure_id: 0}
@@ -13,8 +24,7 @@ defmodule TdDd.DataStructures.ProfilesTest do
     @invalid_attrs %{value: nil, data_structure_id: nil}
 
     setup do
-      profile = insert(:profile)
-      [profile: profile]
+      [profile: insert(:profile)]
     end
 
     test "get_profile!/1 gets the profile", %{profile: %{id: id}} do

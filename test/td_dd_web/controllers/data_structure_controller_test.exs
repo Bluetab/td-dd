@@ -1,4 +1,5 @@
 defmodule TdDdWeb.DataStructureControllerTest do
+  use Oban.Testing, repo: TdDd.Repo, prefix: Application.get_env(:td_dd, Oban)[:prefix]
   use TdDd.ProcessCase
   use TdDdWeb.ConnCase
 
@@ -10,6 +11,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   alias TdCore.Search.IndexWorkerMock
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureVersions.Workers.EmbeddingsUpsertBatch
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureNotes
 
@@ -26,9 +28,12 @@ defmodule TdDdWeb.DataStructureControllerTest do
     :ok
   end
 
+  setup :set_mox_from_context
   setup :verify_on_exit!
 
   setup context do
+    stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] -> {:ok, true} end)
+
     # CacheHelpers.insert_template(name: @template_name)
     %{id: template_id, name: template_name} =
       CacheHelpers.insert_template(
@@ -754,6 +759,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert %{domain_ids: [^new_domain_id]} = DataStructures.get_data_structure!(id)
 
       assert [{:reindex, :structures, [^id]}] = IndexWorkerMock.calls()
+      assert [job] = all_enqueued(worker: EmbeddingsUpsertBatch)
+      assert job.args["data_structure_ids"] == [id]
     end
 
     @tag authentication: [role: "user"]

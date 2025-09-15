@@ -1,11 +1,13 @@
 defmodule TdDd.DataStructures.StructureNotesTest do
   use TdDd.DataStructureCase
 
+  import Mox
   import TdDd.TestOperators
 
   alias Ecto.Changeset
   alias TdCache.Redix.Stream
   alias TdCore.Search.IndexWorkerMock
+  alias TdDd.DataStructures.DataStructureVersions.Workers.EmbeddingsUpsertBatch
   alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.StructureNotes
 
@@ -15,6 +17,10 @@ defmodule TdDd.DataStructures.StructureNotesTest do
 
   setup do
     start_supervised!(TdDd.Search.StructureEnricher)
+
+    stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] ->
+      {:ok, true}
+    end)
 
     alias_field = %{
       "cardinality" => "?",
@@ -188,6 +194,9 @@ defmodule TdDd.DataStructures.StructureNotesTest do
                {:reindex, :structures, ^data_structure_id},
                {:reindex, :grant_requests, [^grant_request_id]}
              ] = IndexWorkerMock.calls()
+
+      assert [job] = all_enqueued(worker: EmbeddingsUpsertBatch)
+      assert assert job.args["data_structure_ids"] == [data_structure_id]
     end
 
     test "create_structure_note/3 with invalid data returns error changeset" do
@@ -276,6 +285,7 @@ defmodule TdDd.DataStructures.StructureNotesTest do
 
       assert structure_note <~> StructureNotes.get_structure_note!(structure_note.id)
       assert [] = IndexWorkerMock.calls()
+      assert [] == all_enqueued(worker: EmbeddingsUpsertBatch)
       IndexWorkerMock.clear()
     end
 
@@ -388,6 +398,8 @@ defmodule TdDd.DataStructures.StructureNotesTest do
              } = Jason.decode!(payload)
 
       assert [{:reindex, :structures, ^data_structure_id}] = IndexWorkerMock.calls()
+      assert [job] = all_enqueued(worker: EmbeddingsUpsertBatch)
+      assert job.args["data_structure_ids"] == [data_structure_id]
       IndexWorkerMock.clear()
     end
 
