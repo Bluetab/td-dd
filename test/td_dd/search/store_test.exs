@@ -4,7 +4,7 @@ defmodule TdDd.Search.StoreTest do
   import ExUnit.CaptureLog
   import Mox
 
-  alias TdCluster.TestHelpers.TdAiMock.Embeddings
+  alias TdCluster.TestHelpers.TdAiMock.Indices
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantStructure
@@ -30,15 +30,23 @@ defmodule TdDd.Search.StoreTest do
         )
       end)
 
-      Enum.each(1..11, fn _ -> insert(:data_structure_version) end)
+      [dsv | _] = Enum.map(1..11, fn _ -> insert(:data_structure_version) end)
 
-      assert Store.transaction(fn ->
-               DataStructureVersion
-               |> Store.stream()
-               |> Enum.count()
-             end) == 11
+      record_embedding = insert(:record_embedding, data_structure_version: dsv)
 
+      assert versions =
+               Store.transaction(fn ->
+                 DataStructureVersion
+                 |> Store.stream()
+                 |> Enum.to_list()
+               end)
+
+      assert Enum.count(versions) == 11
       assert StructureEnricher.count() == 11
+      assert %{record_embeddings: [embedding]} = Enum.find(versions, &(&1.id == dsv.id))
+      assert record_embedding.collection == embedding.collection
+      assert record_embedding.embedding == embedding.embedding
+      assert record_embedding.dims == embedding.dims
     end
 
     @tag sandbox: :shared
@@ -169,65 +177,45 @@ defmodule TdDd.Search.StoreTest do
     end
 
     @tag sandbox: :shared
-    test "streams chunked data structure versions with embeddings enriched" do
-      expect(
-        TdDd.Search.EnricherImplMock,
-        :async_enrich_version_embeddings,
-        1,
-        fn versions_stream ->
-          Stream.flat_map(
-            versions_stream,
-            &EnricherImpl.enrich_embeddings(&1)
-          )
-        end
-      )
-
-      dsv = insert(:data_structure_version)
-      domain_external_id = ""
-      alias_name = ""
-
-      Embeddings.list(
+    test "streams data structure embeddings when data structure ids are provided" do
+      Indices.list_indices(
         &Mox.expect/4,
-        ["#{dsv.name} #{alias_name} #{dsv.type} #{domain_external_id} #{dsv.description}"],
-        {:ok, %{"default" => [[54.0, 10.2, -2.0]]}}
+        [enabled: true],
+        {:ok, [%{collection_name: "default"}, %{collection_name: "other"}]}
       )
 
-      assert [result] =
-               Store.transaction(fn ->
-                 DataStructureVersion |> Store.stream(:embeddings) |> Enum.to_list()
-               end)
+      embedding = insert(:record_embedding)
 
-      assert result.embeddings == %{"vector_default" => [54.0, 10.2, -2.0]}
+      other_embedding =
+        insert(:record_embedding,
+          data_structure_version: embedding.data_structure_version,
+          collection: "other"
+        )
+
+      [dsv] =
+        Store.transaction(fn ->
+          DataStructureVersion
+          |> Store.stream({:embeddings, [embedding.data_structure_version.data_structure_id]})
+          |> Enum.to_list()
+        end)
+
+      for embedding <- [embedding, other_embedding] do
+        result = Enum.find(dsv.record_embeddings, &(&1.id == embedding.id))
+        assert result.collection == embedding.collection
+        assert result.dims == embedding.dims
+        assert result.embedding == embedding.embedding
+      end
+
+      assert dsv.embeddings == %{
+               "vector_#{embedding.collection}" => embedding.embedding,
+               "vector_#{other_embedding.collection}" => other_embedding.embedding
+             }
     end
+  end
 
-    @tag sandbox: :shared
-    test "streams chunked data structure versions without embeddings enriched" do
-      expect(
-        TdDd.Search.EnricherImplMock,
-        :async_enrich_version_embeddings,
-        1,
-        fn versions_stream ->
-          Stream.flat_map(
-            versions_stream,
-            &EnricherImpl.enrich_embeddings(&1)
-          )
-        end
-      )
-
-      dsv = insert(:data_structure_version)
-      domain_external_id = ""
-      alias_name = ""
-
-      Embeddings.list(
-        &Mox.expect/4,
-        ["#{dsv.name} #{alias_name} #{dsv.type} #{domain_external_id} #{dsv.description}"],
-        {:ok, %{}}
-      )
-
-      assert [] ==
-               Store.transaction(fn ->
-                 DataStructureVersion |> Store.stream(:embeddings) |> Enum.to_list()
-               end)
+  describe "Store.run/2 embeddings" do
+    test "runs worker refreshing embeddings" do
+      assert {:ok, %Oban.Job{}} = Store.run(DataStructureVersion, {:embeddings, :all})
     end
   end
 

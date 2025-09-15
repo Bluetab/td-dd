@@ -1,6 +1,8 @@
 defmodule TdDd.Xlsx.Jobs.UploadWorkerTest do
   use TdDd.DataCase
 
+  import Mox
+
   alias TdCore.Search.IndexWorkerMock
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.FileBulkUpdateEvent
@@ -30,9 +32,15 @@ defmodule TdDd.Xlsx.Jobs.UploadWorkerTest do
   end
 
   describe "TdDd.XLSX.Jobs.UploadWorker.perform/1" do
+    setup :set_mox_from_context
+
     setup %{test_pid: test_pid} do
       IndexWorkerMock.clear()
       start_supervised!(StructureEnricher)
+
+      stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] ->
+        {:ok, true}
+      end)
 
       subfolder =
         test_pid

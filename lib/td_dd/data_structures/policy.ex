@@ -11,8 +11,10 @@ defmodule TdDd.DataStructures.Policy do
   @embedding_actions ~w(put_embeddings suggest_structures)a
 
   def authorize(action, %{role: "admin"}, _params) when action in @embedding_actions do
-    {:ok, enabled?} = Indices.exists_enabled?()
-    enabled?
+    case Indices.exists_enabled?() do
+      {:ok, enabled?} -> enabled?
+      _ -> false
+    end
   end
 
   # Admin accounts can do anything with data structures
@@ -103,8 +105,13 @@ defmodule TdDd.DataStructures.Policy do
   end
 
   def authorize(:suggest_structures, %{} = claims, _) do
-    {:ok, enabled?} = Indices.exists_enabled?()
-    Permissions.authorized?(claims, :view_data_structure, :any, "domain") && enabled?
+    case Indices.exists_enabled?() do
+      {:ok, enabled?} ->
+        Permissions.authorized?(claims, :view_data_structure, :any, "domain") && enabled?
+
+      _ ->
+        false
+    end
   end
 
   def authorize(:update_data_structure, %{} = claims, %Changeset{} = changeset) do

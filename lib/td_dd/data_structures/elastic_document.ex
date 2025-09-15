@@ -120,6 +120,7 @@ defmodule TdDd.DataStructures.ElasticDocument do
       |> maybe_add_non_published_note(data_structure)
       |> add_last_changed_note_fields(data_structure)
       |> add_ngram_fields()
+      |> add_embeddings(dsv)
     end
 
     defp maybe_put_alias(map, nil), do: map
@@ -247,6 +248,13 @@ defmodule TdDd.DataStructures.ElasticDocument do
     end
 
     defp format_legacy_content(content), do: content
+
+    defp add_embeddings(content, %{record_embeddings: [_ | _]} = dsv) do
+      embeddings = DataStructureVersion.vector_embeddings(dsv)
+      Map.put(content, :embeddings, embeddings)
+    end
+
+    defp add_embeddings(content, _data_structure_version), do: content
   end
 
   defimpl ElasticDocumentProtocol, for: DataStructureVersion do
@@ -426,7 +434,7 @@ defmodule TdDd.DataStructures.ElasticDocument do
       catalog_view_configs_filters =
         CatalogViewConfigs.list()
         |> Enum.filter(&(&1.field_type == "note"))
-        |> Enum.map(fn
+        |> Map.new(fn
           %{field_type: "note", field_name: field_name} ->
             {"note.#{field_name}",
              %{
@@ -436,7 +444,6 @@ defmodule TdDd.DataStructures.ElasticDocument do
                }
              }}
         end)
-        |> Map.new()
 
       data_structure_types_filters =
         DataStructureTypes.metadata_filters()

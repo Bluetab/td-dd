@@ -1,12 +1,24 @@
 defmodule TdDdWeb.ProfileControllerTest do
   use TdDdWeb.ConnCase
 
+  import Mox
+
   alias TdDd.Loader.Worker
   alias TdDd.Profiles
 
   setup_all do
     start_supervised(Worker)
     start_supervised({Task.Supervisor, name: TdDd.TaskSupervisor})
+    :ok
+  end
+
+  setup :set_mox_from_context
+
+  setup do
+    stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] ->
+      {:ok, true}
+    end)
+
     :ok
   end
 

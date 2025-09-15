@@ -3,6 +3,7 @@ defmodule TdDd.DataStructures.DataStructureQueriesTest do
 
   import TdDd.TestOperators
 
+  alias TdCluster.TestHelpers.TdAiMock.Indices
   alias TdDd.DataStructures.DataStructureQueries
   alias TdDd.Repo
 
@@ -237,6 +238,124 @@ defmodule TdDd.DataStructures.DataStructureQueriesTest do
         end)
 
       assert paths == snapshot(dsv_names)
+    end
+  end
+
+  describe "DataStructureQueries.data_structure_versions_with_embeddings/1" do
+    test "fetch data structure versions with embeddings" do
+      Indices.list_indices(
+        &Mox.expect/4,
+        [enabled: true],
+        {:ok, [%{collection_name: "default"}, %{collection_name: "other"}]}
+      )
+
+      embedding = insert(:record_embedding)
+
+      other_embedding =
+        insert(:record_embedding,
+          data_structure_version: embedding.data_structure_version,
+          collection: "other"
+        )
+
+      second_embedding = insert(:record_embedding)
+
+      deleted_embedding =
+        insert(:record_embedding,
+          data_structure_version: build(:data_structure_version, deleted_at: DateTime.utc_now())
+        )
+
+      version_without_embedding = insert(:data_structure_version)
+
+      data_structure_ids = [
+        embedding.data_structure_version.data_structure_id,
+        second_embedding.data_structure_version.data_structure_id,
+        deleted_embedding.data_structure_version.data_structure_id,
+        version_without_embedding.data_structure_id
+      ]
+
+      {:ok, versions} =
+        Repo.transaction(fn ->
+          data_structure_ids
+          |> DataStructureQueries.data_structure_versions_with_embeddings()
+          |> Enum.to_list()
+        end)
+
+      assert Enum.count(versions) == 2
+
+      assert version = Enum.find(versions, &(&1.id == embedding.data_structure_version.id))
+
+      for embedding <- [embedding, other_embedding] do
+        assert result = Enum.find(version.record_embeddings, &(&1.id == embedding.id))
+        assert result.dims == embedding.dims
+        assert result.embedding == embedding.embedding
+        assert result.collection == embedding.collection
+      end
+
+      assert version = Enum.find(versions, &(&1.id == second_embedding.data_structure_version.id))
+      assert [result] = version.record_embeddings
+      assert result.dims == second_embedding.dims
+      assert result.embedding == second_embedding.embedding
+      assert result.collection == second_embedding.collection
+    end
+  end
+
+  describe "DataStructureQueries.data_structures_with_outdated_embeddings/1" do
+    test "returns data structure ids with stale record embeddings" do
+      dsv_without_embedding = insert(:data_structure_version)
+      deleted_dsv = insert(:data_structure_version, deleted_at: DateTime.utc_now())
+      insert(:record_embedding, data_structure_version: deleted_dsv, collection: "default")
+      insert(:record_embedding, data_structure_version: deleted_dsv, collection: "other")
+      %{data_structure_version: updated_dsv} = insert(:record_embedding, collection: "default")
+      insert(:record_embedding, collection: "other", data_structure_version: updated_dsv)
+
+      %{data_structure_version: outdated_dsv} =
+        insert(:record_embedding,
+          updated_at: DateTime.add(DateTime.utc_now(), -1, :day),
+          collection: "default"
+        )
+
+      insert(:record_embedding,
+        updated_at: DateTime.add(DateTime.utc_now(), -1, :day),
+        collection: "other",
+        data_structure_version: outdated_dsv
+      )
+
+      data_structure_ids =
+        ["default", "other"]
+        |> DataStructureQueries.data_structures_with_outdated_embeddings()
+        |> Repo.all()
+
+      assert MapSet.equal?(
+               MapSet.new(data_structure_ids),
+               MapSet.new([
+                 outdated_dsv.data_structure_id,
+                 dsv_without_embedding.data_structure_id
+               ])
+             )
+
+      # we add a new embedding missing one of the collections
+      %{data_structure_version: missing_other} = insert(:record_embedding)
+
+      data_structure_ids =
+        ["default", "other"]
+        |> DataStructureQueries.data_structures_with_outdated_embeddings()
+        |> Repo.all()
+
+      assert MapSet.equal?(
+               MapSet.new(data_structure_ids),
+               MapSet.new([
+                 outdated_dsv.data_structure_id,
+                 dsv_without_embedding.data_structure_id,
+                 missing_other.data_structure_id
+               ])
+             )
+
+      data_structure_ids =
+        ["default", "other"]
+        |> DataStructureQueries.data_structures_with_outdated_embeddings(limit: 1)
+        |> Repo.all()
+
+      assert Enum.count(data_structure_ids) == 1
     end
   end
 

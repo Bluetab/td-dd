@@ -1,7 +1,6 @@
 defmodule TdDd.Search.EnricherImplTest do
   use TdDd.DataCase
 
-  alias TdCluster.TestHelpers.TdAiMock.Embeddings
   alias TdDd.Search.EnricherImpl
   alias TdDd.Search.StructureEnricher
 
@@ -58,6 +57,7 @@ defmodule TdDd.Search.EnricherImplTest do
 
       data_structure = insert(:data_structure, published_note: note, domain_ids: [domain_id])
       dsv = insert(:data_structure_version, type: template_name, data_structure: data_structure)
+      record_embedding = insert(:record_embedding, data_structure_version: dsv)
 
       assert [version] = EnricherImpl.enrich_versions([dsv.id], relation_type_id, %{})
 
@@ -65,52 +65,10 @@ defmodule TdDd.Search.EnricherImplTest do
                version.data_structure.domains
 
       assert version.data_structure.search_content == valid_content
-    end
-  end
-
-  describe "enrich_embeddings/1" do
-    test "enriches a list of data structure version embeddings", %{
-      template: %{name: template_name},
-      domain: %{id: domain_id, external_id: domain_external_id}
-    } do
-      content = %{"string" => "initial", "list" => "one", "url" => nil}
-
-      note = insert(:structure_note, df_content: content, status: :published)
-
-      data_structure = insert(:data_structure, published_note: note, domain_ids: [domain_id])
-      dsv = insert(:data_structure_version, type: template_name, data_structure: data_structure)
-      alias_name = ""
-
-      Embeddings.list(
-        &Mox.expect/4,
-        ["#{dsv.name} #{alias_name} #{template_name} #{domain_external_id} #{dsv.description}"],
-        {:ok, %{"default" => [[54.0, 10.2, -2.0]]}}
-      )
-
-      assert [enriched] = EnricherImpl.enrich_embeddings([dsv])
-      assert enriched.embeddings == %{"vector_default" => [54.0, 10.2, -2.0]}
-    end
-
-    test "empty response from ai", %{
-      template: %{name: template_name},
-      domain: %{id: domain_id, external_id: domain_external_id}
-    } do
-      content = %{"string" => "initial", "list" => "one", "url" => nil}
-
-      note = insert(:structure_note, df_content: content, status: :published)
-
-      data_structure = insert(:data_structure, published_note: note, domain_ids: [domain_id])
-      dsv = insert(:data_structure_version, type: template_name, data_structure: data_structure)
-      alias_name = ""
-
-      Embeddings.list(
-        &Mox.expect/4,
-        ["#{dsv.name} #{alias_name} #{template_name} #{domain_external_id} #{dsv.description}"],
-        {:ok, %{}}
-      )
-
-      assert [enriched] = EnricherImpl.enrich_embeddings([dsv])
-      assert enriched.embeddings == nil
+      assert [embedding] = version.record_embeddings
+      assert embedding.collection == record_embedding.collection
+      assert embedding.embedding == record_embedding.embedding
+      assert embedding.dims == record_embedding.dims
     end
   end
 end

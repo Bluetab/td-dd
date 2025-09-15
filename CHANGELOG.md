@@ -5,6 +5,11 @@
 ### Added
 
 - [TD-7175] Update README.md for oban information
+- [TD-7364]:
+  - Store embeddings in postres.
+  - Use stored embeddings on reindex.
+  - Incrementaly update outdated embeddings.
+  - Remove stale embeddings.
 
 ### Changed
 

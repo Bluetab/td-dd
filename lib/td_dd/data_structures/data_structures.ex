@@ -1358,6 +1358,8 @@ defmodule TdDd.DataStructures do
     enrich.(data_structure_version)
   end
 
+  def embeddings([]), do: {:ok, []}
+
   def embeddings(data_structure_versions) when is_list(data_structure_versions) do
     data_structure_versions
     |> Enum.map(&embedding_attributes/1)

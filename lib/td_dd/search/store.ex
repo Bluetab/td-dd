@@ -11,6 +11,7 @@ defmodule TdDd.Search.Store do
   alias TdDd.DataStructures.DataStructureQueries
   alias TdDd.DataStructures.DataStructureTypes
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.DataStructureVersions.Workers.OutdatedEmbeddings
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Grants.Grant
   alias TdDd.Grants.GrantRequest
@@ -52,17 +53,20 @@ defmodule TdDd.Search.Store do
     stream(GrantRequest, nil)
   end
 
-  def stream(DataStructureVersion, :embeddings) do
-    dsv_count = Repo.aggregate(DataStructureVersion, :count, :id)
-    Tasks.log_start_stream(dsv_count)
+  def stream(DataStructureVersion, {:embeddings, data_structure_ids})
+      when is_list(data_structure_ids) do
+    data_structure_ids
+    |> DataStructureQueries.data_structure_versions_with_embeddings()
+    |> then(fn
+      %Stream{} = stream ->
+        Stream.map(stream, fn %DataStructureVersion{} = dsv ->
+          embeddings = DataStructureVersion.vector_embeddings(dsv)
+          %DataStructureVersion{dsv | embeddings: embeddings}
+        end)
 
-    query = DataStructureQueries.data_structure_version_embeddings()
-
-    query
-    |> Repo.stream()
-    |> Stream.chunk_every(128)
-    |> @enricher.async_enrich_version_embeddings()
-    |> Stream.reject(&is_nil(Map.get(&1, :embeddings)))
+      nil ->
+        []
+    end)
   end
 
   def stream(DataStructureVersion, data_structure_ids) do
@@ -137,6 +141,12 @@ defmodule TdDd.Search.Store do
     |> Repo.stream_preload(1000, :group)
     |> Stream.chunk_every(chunk_size)
     |> Stream.flat_map(&enrich_chunk_grant_request_structures(&1, users))
+  end
+
+  def run(DataStructureVersion, {:embeddings, :all}) do
+    %{}
+    |> OutdatedEmbeddings.new()
+    |> Oban.insert()
   end
 
   defp where_ids(query, ids) when is_list(ids) do

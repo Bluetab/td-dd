@@ -16,6 +16,7 @@ defmodule TdDd.Factory do
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.DataStructureVersions.RecordEmbedding
   alias TdDd.DataStructures.Label
   alias TdDd.DataStructures.MetadataField
   alias TdDd.DataStructures.MetadataView
@@ -831,6 +832,16 @@ defmodule TdDd.Factory do
     %CatalogViewConfig{
       field_type: "metadata",
       field_name: sequence("field_name")
+    }
+    |> merge_attributes(attrs)
+  end
+
+  def record_embedding_factory(attrs) do
+    %RecordEmbedding{
+      collection: "default",
+      dims: 3,
+      embedding: [1.0, -47.5, 36.0],
+      data_structure_version: build(:data_structure_version)
     }
     |> merge_attributes(attrs)
   end

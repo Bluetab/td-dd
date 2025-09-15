@@ -8,10 +8,23 @@ import Config
 
 config :td_dd, Oban,
   prefix: "private",
-  plugins: [{Oban.Plugins.Pruner, max_age: 2 * 24 * 60 * 60}],
+  plugins: [
+    {Oban.Plugins.Pruner, max_age: 24 * 60 * 60},
+    {Oban.Plugins.Cron,
+     crontab: [
+       {"0 */3 * * *", TdDd.DataStructures.DataStructureVersions.Workers.OutdatedEmbeddings},
+       {"@hourly", TdDd.DataStructures.DataStructureVersions.Workers.EmbeddingsDeletion}
+     ]}
+  ],
   engine: Oban.Engines.Basic,
   notifier: Oban.Notifiers.Postgres,
-  queues: [xlsx_upload_queue: 10, delete_units: 10],
+  queues: [
+    default: 5,
+    xlsx_upload_queue: 10,
+    delete_units: 10,
+    embedding_upserts: 10,
+    embedding_deletion: 5
+  ],
   repo: TdDd.Repo
 
 config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
@@ -216,6 +229,8 @@ config :td_dd, TdDd.Scheduler,
 
 config :bodyguard, default_error: :forbidden
 config :flop, repo: TdDd.Repo
+
+config :td_dd, :limit_outdated_embeddings, 50_000
 
 import_config "metadata.exs"
 import_config "profiling.exs"
