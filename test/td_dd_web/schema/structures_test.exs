@@ -589,6 +589,51 @@ defmodule TdDdWeb.Schema.StructuresTest do
     end
 
     @tag authentication: [role: "service"]
+    test "returns previous version", %{conn: conn} do
+      data_structure = insert(:data_structure)
+
+      data_structure_version =
+        insert(:data_structure_version, data_structure: data_structure, version: 0)
+
+      insert(:data_structure_version, data_structure: data_structure, version: 1)
+
+      variables = %{"dataStructureId" => data_structure.id, "version" => "0"}
+
+      assert %{"data" => %{"dataStructureVersion" => %{"id" => id, "version" => version}}} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @version_query,
+                 "variables" => variables
+               })
+               |> json_response(:ok)
+
+      assert String.to_integer(id) == data_structure_version.id
+      assert version == data_structure_version.version
+    end
+
+    @tag authentication: [role: "service"]
+    test "data structure version not found", %{conn: conn} do
+      variables = %{"dataStructureId" => 1, "version" => "latest"}
+
+      assert %{
+               "data" => %{"dataStructureVersion" => nil},
+               "errors" => [
+                 %{
+                   "locations" => [%{"column" => 3, "line" => 2}],
+                   "message" => "not_found",
+                   "path" => ["dataStructureVersion"]
+                 }
+               ]
+             } ==
+               conn
+               |> post("/api/v2", %{
+                 "query" => @version_query,
+                 "variables" => variables
+               })
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "service"]
     test "data fields enriched with degree", %{conn: conn} do
       %{id: ds_father_id} =
         structure_father =

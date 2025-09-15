@@ -1254,7 +1254,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       data_structure_version =
       insert(:data_structure_version,
         data_structure: build(:data_structure, domain_ids: [domain.id], source_id: source_id),
-        type: "Table"
+        type: "Table",
+        class: "table"
       )
 
     %{id: field_id} =
