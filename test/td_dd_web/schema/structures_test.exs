@@ -2,6 +2,8 @@ defmodule TdDdWeb.Schema.StructuresTest do
   use TdDdWeb.ConnCase
   use TdDd.GraphDataCase
 
+  import Mox
+
   alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Lineage.GraphData
@@ -428,10 +430,16 @@ defmodule TdDdWeb.Schema.StructuresTest do
   @metadata %{"foo" => %{"value" => ["bar"], "origin" => "user"}}
 
   setup do
+    stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] ->
+      {:ok, true}
+    end)
+
     start_supervised!(TdDd.Search.StructureEnricher)
     start_supervised(GraphData)
     :ok
   end
+
+  setup :set_mox_from_context
 
   describe "dataStructureVersions query" do
     @tag authentication: [role: "user"]
@@ -1015,7 +1023,8 @@ defmodule TdDdWeb.Schema.StructuresTest do
                      "href" => "/api/v2",
                      "method" => "POST"
                    },
-                   "manage_structure_acl_entry" => %{}
+                   "manage_structure_acl_entry" => %{},
+                   "suggest_concept_link" => %{}
                  },
                  "class" => "table",
                  "dataStructure" => %{

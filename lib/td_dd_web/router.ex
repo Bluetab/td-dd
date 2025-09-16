@@ -137,7 +137,7 @@ defmodule TdDdWeb.Router do
     post "/buckets/paths", DataStructureFilterController, :get_bucket_paths
 
     get("/data_structures/search/reindex_all", SearchController, :reindex_all)
-    post("/data_structures/search/put_embeddings", SearchController, :embeddings)
+    post("/data_structures/search/embeddings/_put", SearchController, :embeddings)
 
     get("/data_structure_filters", DataStructureFilterController, :index)
     post("/data_structure_filters/search", DataStructureFilterController, :search)

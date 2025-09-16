@@ -5,6 +5,7 @@ defmodule TdDd.DataStructures.DataStructureVersions do
   import Bodyguard, only: [permit?: 4, permit?: 3]
 
   alias TdCache.TemplateCache
+  alias TdCluster.Cluster.TdAi.Indices
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Tags
   alias TdDq.Implementations
@@ -265,6 +266,7 @@ defmodule TdDd.DataStructures.DataStructureVersions do
     |> Map.delete(:create_link_structure_to_concept)
     |> Map.delete(:create_link_concept_to_structure)
     |> Map.put(:create_link, %{})
+    |> add_suggest_concept()
   end
 
   defp transform_create_link(%{create_link_structure_to_concept: true} = actions) do
@@ -276,6 +278,13 @@ defmodule TdDd.DataStructures.DataStructureVersions do
   end
 
   defp transform_create_link(actions), do: actions
+
+  defp add_suggest_concept(actions) do
+    case Indices.exists_enabled?() do
+      {:ok, true} -> Map.put(actions, :suggest_concept_link, %{})
+      _ -> actions
+    end
+  end
 
   defp can_request_grant?(claims, data_structure) do
     {:ok, templates} = TemplateCache.list_by_scope("gr")
