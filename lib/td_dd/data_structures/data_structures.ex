@@ -12,6 +12,7 @@ defmodule TdDd.DataStructures do
   alias TdCache.TemplateCache
   alias TdCache.UserCache
   alias TdCluster.Cluster.TdAi.Embeddings
+  alias TdCluster.Cluster.TdAi.Indices
   alias TdCore.Search.IndexWorker
   alias TdCore.Search.Permissions
   alias TdCx.Sources
@@ -22,6 +23,8 @@ defmodule TdDd.DataStructures do
   alias TdDd.DataStructures.DataStructureQueries
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.DataStructureVersions.RecordEmbedding
+  alias TdDd.DataStructures.RecordEmbeddings
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.Search.Indexer
   alias TdDd.DataStructures.StructureMetadata
@@ -1353,10 +1356,14 @@ defmodule TdDd.DataStructures do
     )
   end
 
-  def enriched_structure_version(data_structure_version, opts \\ []) do
+  def enriched_structure_version(data_structure_version, opts \\ [])
+
+  def enriched_structure_version(%DataStructureVersion{} = data_structure_version, opts) do
     enrich = StructureVersionEnricher.enricher(opts)
     enrich.(data_structure_version)
   end
+
+  def enriched_structure_version(other, _opts), do: other
 
   def embeddings([]), do: {:ok, []}
 
@@ -1364,6 +1371,41 @@ defmodule TdDd.DataStructures do
     data_structure_versions
     |> Enum.map(&embedding_attributes/1)
     |> Embeddings.all()
+  end
+
+  def generate_vector(_version_or_id, collection_name \\ nil)
+
+  def generate_vector(
+        %DataStructureVersion{record_embeddings: [%RecordEmbedding{} = record]},
+        _collection_name
+      ) do
+    {record.collection, record.embedding}
+  end
+
+  def generate_vector(%DataStructureVersion{} = version, collection_name) do
+    version
+    |> embedding_attributes()
+    |> Embeddings.generate_vector(collection_name)
+    |> tap(fn {:ok, _vector} ->
+      RecordEmbeddings.upsert_from_structures_async(version.data_structure_id)
+    end)
+    |> then(fn {:ok, vector} -> vector end)
+  end
+
+  def generate_vector(nil, _collection_name), do: nil
+
+  def generate_vector(id, collection_name) do
+    collection_name = collection_name_or_default(collection_name)
+    preload = [record_embeddings: where(RecordEmbedding, [re], re.collection == ^collection_name)]
+
+    DataStructureVersion
+    |> where([dsv], dsv.data_structure_id == ^id)
+    |> where([dsv], is_nil(dsv.deleted_at))
+    |> DataStructureQueries.enriched_structure_notes()
+    |> preload(^preload)
+    |> Repo.one()
+    |> enriched_structure_version(content: :searchable)
+    |> generate_vector(collection_name)
   end
 
   def streamed_enriched_structure_versions(opts \\ []) do
@@ -1499,5 +1541,13 @@ defmodule TdDd.DataStructures do
 
   defp link_embedding(link) do
     "#{Map.get(link, :name)} #{Map.get(link, :type, "")} #{get_in(link, [:domain, :external_id]) || ""}"
+  end
+
+  defp collection_name_or_default(collection_name) when is_binary(collection_name),
+    do: collection_name
+
+  defp collection_name_or_default(nil) do
+    {:ok, %{collection_name: collection_name}} = Indices.first_enabled()
+    collection_name
   end
 end

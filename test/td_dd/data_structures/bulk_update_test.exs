@@ -416,6 +416,19 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert [{:reindex, :structures, ids_reindex_1}, {:reindex, :structures, ids_reindex_2}] =
                IndexWorkerMock.calls()
 
+      jobs = all_enqueued(worker: EmbeddingsUpsertBatch) |> Enum.sort_by(& &1.id)
+      assert Enum.count(jobs) == 2
+
+      assert MapSet.equal?(
+               MapSet.new(ids_reindex_1),
+               MapSet.new(Enum.at(jobs, 0).args["data_structure_ids"])
+             )
+
+      assert MapSet.equal?(
+               MapSet.new(ids_reindex_2),
+               MapSet.new(Enum.at(jobs, 1).args["data_structure_ids"])
+             )
+
       assert length(ids_reindex_1) == length(ids)
       assert length(ids_reindex_2) == length(ids)
       jobs = all_enqueued(worker: EmbeddingsUpsertBatch) |> Enum.sort_by(& &1.id)

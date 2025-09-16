@@ -645,6 +645,9 @@ defmodule TdDd.XLSX.UploadTest do
       assert data_structure.row == %{index: 11, sheet: "type_2"}
 
       assert [{:reindex, :structures, indexed_structures}] = IndexWorkerMock.calls()
+
+      assert jobs = all_enqueued(worker: EmbeddingsUpsertBatch)
+      assert Enum.count(jobs) == 1
       assert MapSet.equal?(MapSet.new(indexed_structures), MapSet.new(updated_structure_ids))
       assert jobs = all_enqueued(worker: EmbeddingsUpsertBatch)
       assert Enum.count(jobs) == 1

@@ -2,6 +2,8 @@ defmodule TdDd.DataStructures.DataStructureVersionsTest do
   use TdDd.DataCase
   use TdDd.GraphDataCase
 
+  import Mox
+
   alias TdDd.DataStructures.DataStructureVersions
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Lineage.GraphData
@@ -9,10 +11,16 @@ defmodule TdDd.DataStructures.DataStructureVersionsTest do
   @moduletag sandbox: :shared
 
   setup do
+    stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] ->
+      {:ok, true}
+    end)
+
     start_supervised!(TdDd.Search.StructureEnricher)
     start_supervised(GraphData)
     :ok
   end
+
+  setup :set_mox_from_context
 
   describe "enriched_data_structure_version/4" do
     test "enriches data_fields" do

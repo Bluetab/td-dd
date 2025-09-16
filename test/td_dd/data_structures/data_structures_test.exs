@@ -8,10 +8,12 @@ defmodule TdDd.DataStructuresTest do
   alias TdCache.Redix
   alias TdCache.Redix.Stream
   alias TdCluster.TestHelpers.TdAiMock.Embeddings
+  alias TdCluster.TestHelpers.TdAiMock.Indices
   alias TdCore.Search.IndexWorkerMock
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.DataStructureVersions.Workers.EmbeddingsUpsertBatch
   alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureMetadata
@@ -2029,7 +2031,7 @@ defmodule TdDd.DataStructuresTest do
     end
   end
 
-  describe "embeddings" do
+  describe "embeddings/1" do
     test "generates embeddings for a list of data structure versions" do
       domain = CacheHelpers.insert_domain()
       data_structure = insert(:data_structure)
@@ -2062,6 +2064,50 @@ defmodule TdDd.DataStructuresTest do
       )
 
       assert {:ok, %{"default" => [[54.0, 10.2, -2.0]]}} = DataStructures.embeddings([dsv])
+    end
+  end
+
+  describe "generate_vector/1" do
+    test "gets database vector when it exists" do
+      record_embedding = %{data_structure_version: dsv} = insert(:record_embedding)
+      Indices.first_enabled(&Mox.expect/4, {:ok, %{collection_name: record_embedding.collection}})
+
+      assert {record_embedding.collection, record_embedding.embedding} ==
+               DataStructures.generate_vector(dsv.data_structure_id)
+    end
+
+    test "asks for vector when it doesn't exists for the given collection" do
+      record_embedding = %{data_structure_version: dsv} = insert(:record_embedding)
+      alias_name = ""
+      domain_external_id = ""
+      text = "#{dsv.name} #{alias_name} #{dsv.type} #{domain_external_id} #{dsv.description}"
+      vector = [54.0, 10.2, -2.0]
+      collection_name = "other"
+
+      Embeddings.generate_vector(
+        &Mox.expect/4,
+        text,
+        collection_name,
+        {:ok, {collection_name, vector}}
+      )
+
+      Indices.exists_enabled?(&Mox.expect/4, {:ok, true})
+
+      assert {collection_name, vector} ==
+               DataStructures.generate_vector(dsv.data_structure_id, collection_name)
+
+      refute collection_name == record_embedding.collection
+      refute vector == record_embedding.embedding
+
+      assert [job] = all_enqueued(worker: EmbeddingsUpsertBatch)
+      assert job.args["data_structure_ids"] == [dsv.data_structure_id]
+    end
+
+    test "returns nil when there is not a current version for the structure id" do
+      Indices.first_enabled(&Mox.expect/4, {:ok, %{collection_name: "foo"}}, 2)
+      dsv = insert(:data_structure_version, deleted_at: DateTime.utc_now())
+      assert nil == DataStructures.generate_vector(dsv.data_structure_id)
+      assert nil == DataStructures.generate_vector(1)
     end
   end
 

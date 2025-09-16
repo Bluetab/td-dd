@@ -4,6 +4,7 @@
 
 ### Added
 
+- [TD-7345] Generate vector for business glossary consumption
 - [TD-7175] Update README.md for oban information
 - [TD-7364]:
   - Store embeddings in postres.
@@ -11,7 +12,6 @@
   - Incrementaly update outdated embeddings.
   - Remove stale embeddings.
 
-### Changed
 
 - [TD-7320] Optimized metadata query performance for multiple metadata versions.
 - [TD-7128] Refactored data structure version handling, permissions, and related GraphQL resolvers.
