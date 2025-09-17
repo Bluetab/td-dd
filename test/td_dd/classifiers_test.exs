@@ -1,6 +1,8 @@
 defmodule TdDd.ClassifiersTest do
   use TdDd.DataCase
 
+  import Mox
+
   alias TdCore.Search.IndexWorkerMock
   alias TdDd.Classifiers
   alias TdDd.Classifiers.Classifier
@@ -8,6 +10,10 @@ defmodule TdDd.ClassifiersTest do
 
   setup do
     %{id: system_id} = system = insert(:system)
+
+    stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] ->
+      {:ok, true}
+    end)
 
     IndexWorkerMock.clear()
 

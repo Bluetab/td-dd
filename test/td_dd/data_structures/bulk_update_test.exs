@@ -7,6 +7,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   alias TdCore.Search.IndexWorkerMock
   alias TdDd.DataStructures
   alias TdDd.DataStructures.BulkUpdate
+  alias TdDd.DataStructures.DataStructureVersions.Workers.EmbeddingsUpsertBatch
   alias TdDd.DataStructures.StructureNotes
 
   require Logger
@@ -215,6 +216,10 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   setup do
     start_supervised!(TdDd.Search.StructureEnricher)
 
+    stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] ->
+      {:ok, true}
+    end)
+
     %{id: template_id, name: template_name} = template = CacheHelpers.insert_template()
     CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
     hierarchy = create_hierarchy()
@@ -276,6 +281,8 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
       assert length(ids_reindex) == length(ids)
+      assert [job] = all_enqueued(worker: EmbeddingsUpsertBatch)
+      assert MapSet.equal?(MapSet.new(ids_reindex), MapSet.new(job.args["data_structure_ids"]))
     end
 
     test "update all data structures with valid data with duplicate ids", %{type: type} do
@@ -355,6 +362,8 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
              |> Enum.all?(&(&1 == :published))
 
       assert [{:reindex, :structures, ^ids}] = IndexWorkerMock.calls()
+      assert [job] = all_enqueued(worker: EmbeddingsUpsertBatch)
+      assert MapSet.equal?(MapSet.new(ids), MapSet.new(job.args["data_structure_ids"]))
     end
 
     test "update and republish only data structures with different valid data", %{type: type} do
@@ -407,8 +416,33 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert [{:reindex, :structures, ids_reindex_1}, {:reindex, :structures, ids_reindex_2}] =
                IndexWorkerMock.calls()
 
+      jobs = all_enqueued(worker: EmbeddingsUpsertBatch) |> Enum.sort_by(& &1.id)
+      assert Enum.count(jobs) == 2
+
+      assert MapSet.equal?(
+               MapSet.new(ids_reindex_1),
+               MapSet.new(Enum.at(jobs, 0).args["data_structure_ids"])
+             )
+
+      assert MapSet.equal?(
+               MapSet.new(ids_reindex_2),
+               MapSet.new(Enum.at(jobs, 1).args["data_structure_ids"])
+             )
+
       assert length(ids_reindex_1) == length(ids)
       assert length(ids_reindex_2) == length(ids)
+      jobs = all_enqueued(worker: EmbeddingsUpsertBatch) |> Enum.sort_by(& &1.id)
+      assert Enum.count(jobs) == 2
+
+      assert MapSet.equal?(
+               MapSet.new(ids_reindex_1),
+               MapSet.new(Enum.at(jobs, 0).args["data_structure_ids"])
+             )
+
+      assert MapSet.equal?(
+               MapSet.new(ids_reindex_2),
+               MapSet.new(Enum.at(jobs, 1).args["data_structure_ids"])
+             )
     end
 
     test "ignores unchanged data structures", %{type: type} do
@@ -459,6 +493,8 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert changed_notes_ds_ids ||| changed_ids
       assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
       assert length(ids_reindex) == length(ids)
+      assert [job] = all_enqueued(worker: EmbeddingsUpsertBatch)
+      assert MapSet.equal?(MapSet.new(ids), MapSet.new(job.args["data_structure_ids"]))
     end
 
     test "returns an error if a structure has no template", %{type: type} do
@@ -489,6 +525,8 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert {"missing_type", _} = errors[:df_content]
       assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
       assert length(ids_reindex) == 10
+      assert [job] = all_enqueued(worker: EmbeddingsUpsertBatch)
+      assert MapSet.equal?(MapSet.new(ids), MapSet.new(job.args["data_structure_ids"]))
     end
 
     test "only updates specified fields", %{type: type} do
@@ -532,6 +570,8 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
       assert length(ids_reindex) == structure_count
+      assert [job] = all_enqueued(worker: EmbeddingsUpsertBatch)
+      assert MapSet.equal?(MapSet.new(ids), MapSet.new(job.args["data_structure_ids"]))
     end
 
     test "only updates specified fields for published notes", %{type: type} do
@@ -569,6 +609,8 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
       assert length(ids_reindex) == structure_count
+      assert [job] = all_enqueued(worker: EmbeddingsUpsertBatch)
+      assert MapSet.equal?(MapSet.new(ids), MapSet.new(job.args["data_structure_ids"]))
     end
 
     test "when bulk updating will allow to create templates with missing required fields", %{
@@ -620,6 +662,8 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
       assert length(ids_reindex) == structure_count
+      assert [job] = all_enqueued(worker: EmbeddingsUpsertBatch)
+      assert MapSet.equal?(MapSet.new(ids), MapSet.new(job.args["data_structure_ids"]))
     end
 
     test "only validates specified fields", %{type: type} do
@@ -689,6 +733,8 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert [{:reindex, :structures, ids_reindex}] = IndexWorkerMock.calls()
       assert length(ids_reindex) == structure_count
+      assert [job] = all_enqueued(worker: EmbeddingsUpsertBatch)
+      assert MapSet.equal?(MapSet.new(ids), MapSet.new(job.args["data_structure_ids"]))
     end
   end
 
@@ -851,6 +897,8 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
              } = get_df_content_from_ext_id("ex_id19")
 
       assert [{:reindex, :structures, ^ids}] = IndexWorkerMock.calls()
+      assert [job] = all_enqueued(worker: EmbeddingsUpsertBatch)
+      assert MapSet.equal?(MapSet.new(ids), MapSet.new(job.args["data_structure_ids"]))
     end
 
     test "update all data structures content in native language", %{sts: sts} do

@@ -19,7 +19,7 @@ defmodule TdDdWeb.SearchController do
     claims = conn.assigns[:current_resource]
 
     with :ok <- Bodyguard.permit(DataStructures, :put_embeddings, claims) do
-      Indexer.put_embeddings()
+      Indexer.put_embeddings(:all)
       send_resp(conn, :accepted, "")
     end
   end

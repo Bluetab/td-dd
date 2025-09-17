@@ -20,6 +20,10 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   setup :verify_on_exit!
 
   setup do
+    stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] ->
+      {:ok, true}
+    end)
+
     start_supervised!(TdDd.Search.StructureEnricher)
     insert(:system, id: 1)
 
@@ -64,6 +68,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
     [template: template]
   end
+
+  setup :set_mox_from_context
 
   describe "GET /api/data_structures/:id/versions/:version structure hierarchy" do
     setup :create_structure_hierarchy
@@ -530,7 +536,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                    "href" => "/api/v2",
                    "method" => "POST"
                  },
-                 "manage_structure_acl_entry" => %{}
+                 "manage_structure_acl_entry" => %{},
+                 "suggest_concept_link" => %{}
                }
       end
     end
@@ -1254,7 +1261,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       data_structure_version =
       insert(:data_structure_version,
         data_structure: build(:data_structure, domain_ids: [domain.id], source_id: source_id),
-        type: "Table"
+        type: "Table",
+        class: "table"
       )
 
     %{id: field_id} =

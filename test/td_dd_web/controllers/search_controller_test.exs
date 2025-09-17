@@ -2,10 +2,17 @@ defmodule TdDdWeb.SearchControllerTest do
   use TdDdWeb.ConnCase
 
   alias TdCluster.TestHelpers.TdAiMock
+  alias TdCore.Search.IndexWorkerMock
 
   @moduletag sandbox: :shared
 
   describe "embeddings" do
+    setup do
+      IndexWorkerMock.clear()
+      on_exit(fn -> IndexWorkerMock.clear() end)
+      :ok
+    end
+
     @tag authentication: [role: "admin"]
     test "put embeddings action in indexer", %{conn: conn} do
       TdAiMock.Indices.exists_enabled?(&Mox.expect/4, {:ok, true})
@@ -13,6 +20,8 @@ defmodule TdDdWeb.SearchControllerTest do
       assert conn
              |> post(Routes.search_path(conn, :embeddings, %{}))
              |> response(:accepted)
+
+      assert [{:put_embeddings, :structures, :all}] == IndexWorkerMock.calls()
     end
 
     @tag authentication: [role: "admin"]

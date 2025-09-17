@@ -6,12 +6,13 @@ defmodule TdDd.DataStructures.DataStructureVersion do
   use Ecto.Schema
 
   import Ecto.Changeset
+  import Ecto.Query
 
   alias TdDd.DataStructures.Classification
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureType
-  import Ecto.Query
+  alias TdDd.DataStructures.DataStructureVersions.RecordEmbedding
 
   @derive {Flop.Schema,
            filterable: [:name],
@@ -63,6 +64,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     has_many(:classifications, Classification)
     has_many(:child_relations, DataStructureRelation, foreign_key: :parent_id)
     has_many(:parent_relations, DataStructureRelation, foreign_key: :child_id)
+    has_many(:record_embeddings, RecordEmbedding)
     has_one(:current_metadata, through: [:data_structure, :current_metadata])
     has_one(:published_note, through: [:data_structure, :published_note])
     has_one(:draft_note, through: [:data_structure, :draft_note])
@@ -131,6 +133,12 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     ])
     |> validate_required([:data_structure_id, :group, :metadata, :name, :version])
     |> validate_lengths()
+  end
+
+  def vector_embeddings(%__MODULE__{record_embeddings: records}) do
+    Map.new(records, fn %{collection: collection, embedding: embedding} ->
+      {"vector_#{collection}", embedding}
+    end)
   end
 
   defp validate_lengths(changeset) do

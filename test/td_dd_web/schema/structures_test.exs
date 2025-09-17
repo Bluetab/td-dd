@@ -2,6 +2,8 @@ defmodule TdDdWeb.Schema.StructuresTest do
   use TdDdWeb.ConnCase
   use TdDd.GraphDataCase
 
+  import Mox
+
   alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Lineage.GraphData
@@ -428,10 +430,16 @@ defmodule TdDdWeb.Schema.StructuresTest do
   @metadata %{"foo" => %{"value" => ["bar"], "origin" => "user"}}
 
   setup do
+    stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] ->
+      {:ok, true}
+    end)
+
     start_supervised!(TdDd.Search.StructureEnricher)
     start_supervised(GraphData)
     :ok
   end
+
+  setup :set_mox_from_context
 
   describe "dataStructureVersions query" do
     @tag authentication: [role: "user"]
@@ -586,6 +594,51 @@ defmodule TdDdWeb.Schema.StructuresTest do
                  }
                }
              ] = children
+    end
+
+    @tag authentication: [role: "service"]
+    test "returns previous version", %{conn: conn} do
+      data_structure = insert(:data_structure)
+
+      data_structure_version =
+        insert(:data_structure_version, data_structure: data_structure, version: 0)
+
+      insert(:data_structure_version, data_structure: data_structure, version: 1)
+
+      variables = %{"dataStructureId" => data_structure.id, "version" => "0"}
+
+      assert %{"data" => %{"dataStructureVersion" => %{"id" => id, "version" => version}}} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @version_query,
+                 "variables" => variables
+               })
+               |> json_response(:ok)
+
+      assert String.to_integer(id) == data_structure_version.id
+      assert version == data_structure_version.version
+    end
+
+    @tag authentication: [role: "service"]
+    test "data structure version not found", %{conn: conn} do
+      variables = %{"dataStructureId" => 1, "version" => "latest"}
+
+      assert %{
+               "data" => %{"dataStructureVersion" => nil},
+               "errors" => [
+                 %{
+                   "locations" => [%{"column" => 3, "line" => 2}],
+                   "message" => "not_found",
+                   "path" => ["dataStructureVersion"]
+                 }
+               ]
+             } ==
+               conn
+               |> post("/api/v2", %{
+                 "query" => @version_query,
+                 "variables" => variables
+               })
+               |> json_response(:ok)
     end
 
     @tag authentication: [role: "service"]
@@ -970,7 +1023,8 @@ defmodule TdDdWeb.Schema.StructuresTest do
                      "href" => "/api/v2",
                      "method" => "POST"
                    },
-                   "manage_structure_acl_entry" => %{}
+                   "manage_structure_acl_entry" => %{},
+                   "suggest_concept_link" => %{}
                  },
                  "class" => "table",
                  "dataStructure" => %{

@@ -1,5 +1,22 @@
 # Changelog
 
+## [7.10.0] 2025-09-16
+
+### Added
+
+- [TD-7345] Generate vector for business glossary consumption
+- [TD-7175] Update README.md for oban information
+- [TD-7364]:
+
+  - Store embeddings in postres.
+  - Use stored embeddings on reindex.
+  - Incrementaly update outdated embeddings.
+  - Remove stale embeddings.
+
+- [TD-7320] Optimized metadata query performance for multiple metadata versions.
+- [TD-7128] Refactored data structure version handling, permissions, and related GraphQL resolvers.
+- [TD-7484] Always include profile_events when retrieving or creating scheduled executions
+
 ## [7.9.0] 2025-08-25
 
 ### Fixed

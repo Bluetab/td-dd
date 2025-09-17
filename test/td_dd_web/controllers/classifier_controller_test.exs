@@ -1,10 +1,16 @@
 defmodule TdDdWeb.ClassifierControllerTest do
   use TdDdWeb.ConnCase
 
+  import Mox
+
   alias TdCore.Search.IndexWorkerMock
 
   setup do
     system = insert(:system)
+
+    stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] ->
+      {:ok, true}
+    end)
 
     IndexWorkerMock.clear()
 
