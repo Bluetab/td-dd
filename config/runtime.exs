@@ -280,6 +280,10 @@ config :td_core, TdCore.Search.Cluster,
   # If the variable delete_existing_index is set to false,
   # it will not be deleted in the case that there is no index in the hot swap process."
   delete_existing_index: System.get_env("DELETE_EXISTING_INDEX", "true") |> String.to_atom(),
+  forcemerge_options: [
+    wait_for_completion: System.get_env("ES_WAIT_FOR_COMPLETION", "nil") |> String.to_atom(),
+    max_num_segments: System.get_env("ES_MAX_NUM_SEGMENTS", "5") |> String.to_integer()
+  ],
   aliases: %{
     grants: System.get_env("ES_ALIAS_GRANTS", "grants"),
     jobs: System.get_env("ES_ALIAS_JOBS", "jobs"),
