@@ -18,6 +18,7 @@
   - Use stored embeddings on reindex.
   - Incrementaly update outdated embeddings.
   - Remove stale embeddings.
+- [TD-7446] Add support for implementation related rule concept user_groups field types
 
 - [TD-7320] Optimized metadata query performance for multiple metadata versions.
 - [TD-7128] Refactored data structure version handling, permissions, and related GraphQL resolvers.

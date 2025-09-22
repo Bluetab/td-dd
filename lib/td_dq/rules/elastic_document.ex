@@ -122,7 +122,7 @@ defmodule TdDq.Rules.ElasticDocument do
             id: %{type: "long"},
             name: %{type: "text", fields: Map.merge(@raw_sort, @exact)},
             content: %{
-              properties: get_dynamic_mappings("bg", type: "user")
+              properties: get_dynamic_mappings("bg", type: ["user", "user_group"])
             }
           }
         },

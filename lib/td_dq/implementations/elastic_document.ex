@@ -439,7 +439,7 @@ defmodule TdDq.Implementations.ElasticDocument do
             id: %{type: "long", index: false},
             name: %{type: "text", fields: @raw_sort},
             content: %{
-              properties: get_dynamic_mappings("bg", type: "user")
+              properties: get_dynamic_mappings("bg", type: ["user", "user_group"])
             }
           }
         },
