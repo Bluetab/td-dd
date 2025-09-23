@@ -12,8 +12,7 @@ defmodule TdDd.Profiles.Policy do
       Permissions.authorized?(claims, :profile_structures, domain_ids)
   end
 
-  def authorize(_action, %{role: "service"}, _params), do: true
-  def authorize(_action, %{role: "admin"}, _params), do: true
+  def authorize(_action, %{role: role}, _params) when role in ["service", "admin"], do: true
 
   def authorize(:search, %{} = claims, _params) do
     Permissions.authorized?(claims, :view_data_structures_profile)
@@ -31,8 +30,6 @@ defmodule TdDd.Profiles.Policy do
 
   def authorize(_action, _claims, _params), do: false
 
-  defp profilable?(%{class: "field"}), do: true
-  defp profilable?(%{data_fields: [_ | _]}), do: true
-  defp profilable?(%{data_fields: {_version = [_ | _], _meta}}), do: true
+  defp profilable?(%{class: class}) when class in ["field", "table"], do: true
   defp profilable?(_), do: false
 end

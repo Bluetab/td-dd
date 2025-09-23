@@ -1,6 +1,8 @@
 defmodule TdDdWeb.Schema.StructureTagsTest do
   use TdDdWeb.ConnCase
 
+  import Mox
+
   @tag_structure """
   mutation TagStructure($structureTag: StructureTagInput!) {
     tagStructure(structureTag: $structureTag) {
@@ -22,6 +24,14 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
     }
   }
   """
+
+  setup do
+    stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] ->
+      {:ok, true}
+    end)
+
+    :ok
+  end
 
   describe "tagStructure mutation" do
     @tag authentication: [role: "user"]

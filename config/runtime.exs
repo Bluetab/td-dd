@@ -2,6 +2,10 @@ import Config
 
 config :td_dd, :time_zone, System.get_env("TZ", "Etc/UTC")
 
+config :td_dd,
+       :limit_outdated_embeddings,
+       System.get_env("LIMIT_OUTDATED_EMBEDDINGS", "50000") |> String.to_integer()
+
 config :td_cluster, groups: [:dd]
 
 if config_env() == :prod do
@@ -190,6 +194,31 @@ if config_env() == :prod do
 
   config :td_dd, TdDd.Loader.Worker,
     timeout: System.get_env("SYNC_LOADER_TIMEOUT", "30000") |> String.to_integer()
+
+  # Oban configuration with environment variables
+  config :td_dd, Oban,
+    plugins: [
+      {Oban.Plugins.Pruner, max_age: 24 * 60 * 60},
+      {Oban.Plugins.Cron,
+       crontab: [
+         {System.get_env("OUTDATED_EMBEDDINGS_CRON", "0 */3 * * *"),
+          TdDd.DataStructures.DataStructureVersions.Workers.OutdatedEmbeddings},
+         {System.get_env("EMBEDDINGS_DELETION_CRON", "@hourly"),
+          TdDd.DataStructures.DataStructureVersions.Workers.EmbeddingsDeletion}
+       ]}
+    ],
+    engine: Oban.Engines.Basic,
+    notifier: Oban.Notifiers.Postgres,
+    queues: [
+      default: System.get_env("OBAN_QUEUE_DEFAULT", "5") |> String.to_integer(),
+      xlsx_upload_queue: System.get_env("OBAN_QUEUE_XLSX_UPLOAD", "10") |> String.to_integer(),
+      delete_units: System.get_env("OBAN_QUEUE_DELETE_UNITS", "10") |> String.to_integer(),
+      embedding_upserts:
+        System.get_env("OBAN_QUEUE_EMBEDDING_UPSERTS", "10") |> String.to_integer(),
+      embedding_deletion:
+        System.get_env("OBAN_QUEUE_EMBEDDING_DELETION", "5") |> String.to_integer()
+    ],
+    repo: TdDd.Repo
 end
 
 config :td_dd, Oban, prefix: System.get_env("OBAN_DB_SCHEMA", "private")
@@ -251,6 +280,10 @@ config :td_core, TdCore.Search.Cluster,
   # If the variable delete_existing_index is set to false,
   # it will not be deleted in the case that there is no index in the hot swap process."
   delete_existing_index: System.get_env("DELETE_EXISTING_INDEX", "true") |> String.to_atom(),
+  forcemerge_options: [
+    wait_for_completion: System.get_env("ES_WAIT_FOR_COMPLETION", "nil") |> String.to_atom(),
+    max_num_segments: System.get_env("ES_MAX_NUM_SEGMENTS", "5") |> String.to_integer()
+  ],
   aliases: %{
     grants: System.get_env("ES_ALIAS_GRANTS", "grants"),
     jobs: System.get_env("ES_ALIAS_JOBS", "jobs"),

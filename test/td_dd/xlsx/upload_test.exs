@@ -1,7 +1,10 @@
 defmodule TdDd.XLSX.UploadTest do
   use TdDd.DataCase
 
+  import Mox
+
   alias TdCore.Search.IndexWorkerMock
+  alias TdDd.DataStructures.DataStructureVersions.Workers.EmbeddingsUpsertBatch
   alias TdDd.DataStructures.FileBulkUpdateEvent
   alias TdDd.Search.StructureEnricher
   alias TdDd.XLSX.Jobs.UploadWorker
@@ -221,6 +224,13 @@ defmodule TdDd.XLSX.UploadTest do
 
   setup_all do
     start_supervised({Task.Supervisor, name: TdDd.TaskSupervisor})
+    :ok
+  end
+
+  setup :set_mox_from_context
+
+  setup do
+    stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] -> {:ok, true} end)
     :ok
   end
 
@@ -635,7 +645,12 @@ defmodule TdDd.XLSX.UploadTest do
       assert data_structure.row == %{index: 11, sheet: "type_2"}
 
       assert [{:reindex, :structures, indexed_structures}] = IndexWorkerMock.calls()
+
+      assert jobs = all_enqueued(worker: EmbeddingsUpsertBatch)
+      assert Enum.count(jobs) == 1
       assert MapSet.equal?(MapSet.new(indexed_structures), MapSet.new(updated_structure_ids))
+      assert jobs = all_enqueued(worker: EmbeddingsUpsertBatch)
+      assert Enum.count(jobs) == 1
 
       assert [
                %{
@@ -792,6 +807,10 @@ defmodule TdDd.XLSX.UploadTest do
 
       assert [{:reindex, :structures, indexed_structures}] = IndexWorkerMock.calls()
       assert Enum.count(indexed_structures) == 2
+      assert jobs = all_enqueued(worker: EmbeddingsUpsertBatch)
+      assert Enum.count(jobs) == 1
+      assert [job] = jobs
+      assert Enum.count(job.args["data_structure_ids"]) == 2
     end
 
     test "removes empty fields when note is published", %{
@@ -852,6 +871,8 @@ defmodule TdDd.XLSX.UploadTest do
 
       assert [{:reindex, :structures, indexed_structures}] = IndexWorkerMock.calls()
       assert Enum.count(indexed_structures) == 1
+      assert jobs = all_enqueued(worker: EmbeddingsUpsertBatch)
+      assert Enum.count(jobs) == 1
     end
 
     test "removes empty fields when note is published and auto publish = true", %{
@@ -917,6 +938,8 @@ defmodule TdDd.XLSX.UploadTest do
 
       assert [{:reindex, :structures, indexed_structures}] = IndexWorkerMock.calls()
       assert Enum.count(indexed_structures) == 1
+      assert jobs = all_enqueued(worker: EmbeddingsUpsertBatch)
+      assert Enum.count(jobs) == 1
     end
 
     test "removes empty fields when note is deprecated", %{
@@ -977,6 +1000,8 @@ defmodule TdDd.XLSX.UploadTest do
 
       assert [{:reindex, :structures, indexed_structures}] = IndexWorkerMock.calls()
       assert Enum.count(indexed_structures) == 1
+      assert jobs = all_enqueued(worker: EmbeddingsUpsertBatch)
+      assert Enum.count(jobs) == 1
     end
 
     test "removes empty fields when note is deprecated and auto published = true", %{
@@ -1038,6 +1063,8 @@ defmodule TdDd.XLSX.UploadTest do
 
       assert [{:reindex, :structures, indexed_structures}] = IndexWorkerMock.calls()
       assert Enum.count(indexed_structures) == 1
+      assert jobs = all_enqueued(worker: EmbeddingsUpsertBatch)
+      assert Enum.count(jobs) == 1
     end
 
     test "uploads table field and removes tail field when it's empty", %{
@@ -1095,6 +1122,8 @@ defmodule TdDd.XLSX.UploadTest do
 
       assert [{:reindex, :structures, indexed_structures}] = IndexWorkerMock.calls()
       assert Enum.count(indexed_structures) == 1
+      assert jobs = all_enqueued(worker: EmbeddingsUpsertBatch)
+      assert Enum.count(jobs) == 1
     end
 
     test "removes table field", %{
@@ -1159,6 +1188,8 @@ defmodule TdDd.XLSX.UploadTest do
 
       assert [{:reindex, :structures, indexed_structures}] = IndexWorkerMock.calls()
       assert Enum.count(indexed_structures) == 1
+      assert jobs = all_enqueued(worker: EmbeddingsUpsertBatch)
+      assert Enum.count(jobs) == 1
     end
 
     test "uploads dependent fields", %{
@@ -1209,6 +1240,8 @@ defmodule TdDd.XLSX.UploadTest do
 
       assert [{:reindex, :structures, indexed_structures}] = IndexWorkerMock.calls()
       assert Enum.count(indexed_structures) == 1
+      assert jobs = all_enqueued(worker: EmbeddingsUpsertBatch)
+      assert Enum.count(jobs) == 1
     end
 
     setup do

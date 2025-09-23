@@ -67,6 +67,13 @@ defmodule TdDd.DataStructures.DataStructureVersionTest do
 
       assert %{last_change_at: ^dsv_updated} = Document.encode(dsv)
     end
+
+    test "record_embeddings to be included in documen" do
+      %{data_structure_version: version} = insert(:record_embedding)
+      version = Repo.preload(version, :record_embeddings)
+      assert %{embeddings: embeddings} = Document.encode(version)
+      assert embeddings == %{"vector_default" => [1.0, -47.5, 36.0]}
+    end
   end
 
   defp random_string(length) do

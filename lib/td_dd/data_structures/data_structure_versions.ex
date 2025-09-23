@@ -5,6 +5,7 @@ defmodule TdDd.DataStructures.DataStructureVersions do
   import Bodyguard, only: [permit?: 4, permit?: 3]
 
   alias TdCache.TemplateCache
+  alias TdCluster.Cluster.TdAi.Indices
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Tags
   alias TdDq.Implementations
@@ -68,24 +69,6 @@ defmodule TdDd.DataStructures.DataStructureVersions do
 
   def enriched_data_structure_version(claims, data_structure_id, version, query_fields, opts),
     do: do_enriched_data_structure_version(claims, data_structure_id, version, query_fields, opts)
-
-  defp do_enriched_data_structure_version(
-         claims,
-         data_structure_id,
-         version,
-         query_fields,
-         opts
-       ) do
-    enriches = query_fields_to_enrich_opts(query_fields)
-
-    data_structure_id
-    |> DataStructures.get_data_structure!()
-    |> enrich_opts(claims, enriches)
-    |> get_data_structure_version(data_structure_id, version, opts)
-    |> add_data_fields()
-    |> merge_metadata()
-    |> with_permissions(claims)
-  end
 
   def enriched_data_structure_version_by_id(
         claims,
@@ -166,12 +149,46 @@ defmodule TdDd.DataStructures.DataStructureVersions do
     end) ++ [user_id: user_id]
   end
 
-  defp with_permissions(nil, _claims), do: :not_found
+  def with_permissions(nil, _claims), do: :not_found
 
-  defp with_permissions(%{data_structure: data_structure} = dsv, claims) do
+  def with_permissions(%{data_structure: data_structure} = dsv, claims) do
     if permit?(DataStructures, :view_data_structure, claims, data_structure) do
       tags = Tags.tags(dsv)
 
+      dsv = DataStructures.profile_source(dsv)
+
+      user_permissions =
+        %{
+          update: permit?(DataStructures, :update_data_structure, claims, data_structure),
+          confidential:
+            permit?(DataStructures, :manage_confidential_structures, claims, data_structure),
+          update_domain:
+            permit?(DataStructures, :manage_structures_domain, claims, data_structure),
+          view_profiling_permission:
+            permit?(DataStructures, :view_data_structures_profile, claims, data_structure),
+          profile_permission: permit?(TdDd.Profiles, :profile, claims, dsv),
+          request_grant: can_request_grant?(claims, data_structure),
+          update_grant_removal:
+            permit?(DataStructures, :manage_grant_removal, claims, data_structure) and
+              permit?(DataStructures, :manage_foreign_grant_removal, claims, data_structure),
+          create_foreign_grant_request:
+            permit?(DataStructures, :create_foreign_grant_request, claims, data_structure),
+          view_quality: permit?(Implementations, "view_quality", claims)
+        }
+
+      [
+        data_structure_version: dsv,
+        tags: tags,
+        user_permissions: user_permissions,
+        actions: actions(dsv, claims)
+      ]
+    else
+      :forbidden
+    end
+  end
+
+  def get_permissions(%{data_structure: data_structure} = dsv, claims) do
+    if permit?(DataStructures, :view_data_structure, claims, data_structure) do
       dsv = DataStructures.profile_source(dsv)
 
       user_permissions = %{
@@ -191,14 +208,9 @@ defmodule TdDd.DataStructures.DataStructureVersions do
         view_quality: permit?(Implementations, "view_quality", claims)
       }
 
-      [
-        data_structure_version: dsv,
-        tags: tags,
-        user_permissions: user_permissions,
-        actions: actions(claims, dsv)
-      ]
+      {:ok, user_permissions}
     else
-      :forbidden
+      {:error, :forbidden}
     end
   end
 
@@ -212,7 +224,11 @@ defmodule TdDd.DataStructures.DataStructureVersions do
     }
   end
 
-  defp actions(claims, %{data_structure: data_structure} = _dsv) do
+  def get_actions(dsv, claims) do
+    {:ok, actions(dsv, claims)}
+  end
+
+  defp actions(%{data_structure: data_structure} = _dsv, claims) do
     [
       :link_data_structure,
       :link_structure_to_structure,
@@ -250,6 +266,7 @@ defmodule TdDd.DataStructures.DataStructureVersions do
     |> Map.delete(:create_link_structure_to_concept)
     |> Map.delete(:create_link_concept_to_structure)
     |> Map.put(:create_link, %{})
+    |> add_suggest_concept()
   end
 
   defp transform_create_link(%{create_link_structure_to_concept: true} = actions) do
@@ -262,11 +279,44 @@ defmodule TdDd.DataStructures.DataStructureVersions do
 
   defp transform_create_link(actions), do: actions
 
+  defp add_suggest_concept(actions) do
+    case Indices.exists_enabled?() do
+      {:ok, true} -> Map.put(actions, :suggest_concept_link, %{})
+      _ -> actions
+    end
+  end
+
   defp can_request_grant?(claims, data_structure) do
     {:ok, templates} = TemplateCache.list_by_scope("gr")
 
     permit?(DataStructures, :create_grant_request, claims, data_structure) and
       not Enum.empty?(templates)
+  end
+
+  def data_structure_version(data_structure_id, "latest") do
+    DataStructures.get_latest_version_details(data_structure_id)
+  end
+
+  def data_structure_version(data_structure_id, version) do
+    DataStructures.get_data_structure_version_details(data_structure_id, version)
+  end
+
+  defp do_enriched_data_structure_version(
+         claims,
+         data_structure_id,
+         version,
+         query_fields,
+         opts
+       ) do
+    enriches = query_fields_to_enrich_opts(query_fields)
+
+    data_structure_id
+    |> DataStructures.get_data_structure!()
+    |> enrich_opts(claims, enriches)
+    |> get_data_structure_version(data_structure_id, version, opts)
+    |> add_data_fields()
+    |> merge_metadata()
+    |> with_permissions(claims)
   end
 
   defp get_data_structure_version(

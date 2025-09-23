@@ -1,4 +1,5 @@
 defmodule TdDdWeb.MetadataControllerTest do
+  use Oban.Testing, repo: TdDd.Repo, prefix: Application.get_env(:td_dd, Oban)[:prefix]
   use TdDdWeb.ConnCase
 
   import Ecto.Query
@@ -10,6 +11,7 @@ defmodule TdDdWeb.MetadataControllerTest do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.DataStructureVersions.Workers.EmbeddingsUpsertBatch
   alias TdDd.Loader.Worker
   alias TdDd.Repo
 
@@ -27,6 +29,7 @@ defmodule TdDdWeb.MetadataControllerTest do
   setup :verify_on_exit!
 
   setup tags do
+    stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] -> {:ok, true} end)
     start_supervised!(TdDd.Search.StructureEnricher)
     insert(:system, name: "Power BI", external_id: "pbi")
 
@@ -142,6 +145,9 @@ defmodule TdDdWeb.MetadataControllerTest do
                {:reindex, :structures, _},
                {:delete, :structures, [_, _, _]}
              ] = IndexWorkerMock.calls()
+
+      jobs = all_enqueued(worker: EmbeddingsUpsertBatch)
+      assert Enum.count(jobs) == 2
     end
 
     @tag authentication: [role: "service"]

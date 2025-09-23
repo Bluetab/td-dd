@@ -1,10 +1,11 @@
 defmodule TdDdWeb.StructureNoteControllerTest do
   use TdDdWeb.ConnCase
 
+  import Mox
+  import TdDd.TestOperators
+
   alias TdCluster.TestHelpers.TdAiMock
   alias TdDd.DataStructures.StructureNote
-
-  import TdDd.TestOperators
 
   @moduletag sandbox: :shared
   @template_name "structure_note_controller_test_template"
@@ -35,6 +36,10 @@ defmodule TdDdWeb.StructureNoteControllerTest do
   setup do
     %{id: template_id, name: template_name} = CacheHelpers.insert_template(name: @template_name)
     CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
+
+    stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] ->
+      {:ok, true}
+    end)
 
     start_supervised!(TdDd.Search.StructureEnricher)
 

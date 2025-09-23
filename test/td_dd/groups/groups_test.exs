@@ -1,10 +1,16 @@
 defmodule TdDd.GroupsTest do
   use TdDd.DataCase
 
+  import Mox
+
   alias TdDd.DataStructures
   alias TdDd.Groups
 
   setup do
+    stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] ->
+      {:ok, true}
+    end)
+
     [system: insert(:system)]
   end
 

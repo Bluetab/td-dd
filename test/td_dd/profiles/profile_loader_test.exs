@@ -1,10 +1,20 @@
 defmodule TdDd.Profiles.ProfileLoaderTest do
   use TdDd.DataCase
 
+  import Mox
+
   alias TdDd.Profiles
   alias TdDd.Profiles.ProfileLoader
 
   describe "TdDd.Profiles.ProfileLoader" do
+    setup do
+      stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] ->
+        {:ok, true}
+      end)
+
+      :ok
+    end
+
     test "load/1 loads changes in data profiles" do
       sys1 = insert(:system, external_id: "SYS1", name: "SYS1")
 

@@ -6,34 +6,10 @@ defmodule TdDdWeb.SuggestionControllerTest do
   alias TdCluster.TestHelpers.TdAiMock
   alias TdCluster.TestHelpers.TdBgMock
 
-  @template %{
-    name: "type",
-    label: "type",
-    scope: "bg",
-    content: [
-      %{
-        "name" => "New Group 1",
-        "fields" => [
-          %{
-            "name" => "df_description",
-            "type" => "enriched_text",
-            "label" => "a",
-            "widget" => "enriched_text",
-            "cardinality" => "1"
-          }
-        ]
-      }
-    ]
-  }
-
   describe "search" do
-    setup do
-      [template: CacheHelpers.insert_template(@template)]
-    end
-
     @tag authentication: [
            role: "user",
-           permissions: ["view_data_structure", "manage_business_concept_links"]
+           permissions: ["view_data_structure"]
          ]
     test "knn search for concept resource with default attrs", %{conn: conn, domain: domain} do
       id = 1
