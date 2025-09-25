@@ -278,7 +278,9 @@ defmodule TdDd.DataStructures.TagsTest do
            data_structure: %{id: ^data_structure_id},
            tag: %{id: ^tag_id}
          },
-         update_at_change: %{updated_at: updated_at_after}
+         last_change: %{
+           updated_at: updated_at_after
+         }
        }} = Tags.tag_structure(structure, tag, params, claims)
 
       assert {:ok, [%{id: ^event_id, payload: payload}]} =
@@ -324,7 +326,9 @@ defmodule TdDd.DataStructures.TagsTest do
            data_structure: %{id: ^data_structure_id},
            tag: %{id: ^tag_id}
          },
-         update_at_change: %{updated_at: updated_at_after}
+         last_change: %{
+           updated_at: updated_at_after
+         }
        }} = Tags.tag_structure(structure, tag, params, claims)
 
       assert {:ok, [%{id: ^event_id, payload: payload}]} =

@@ -954,7 +954,7 @@ defmodule TdDd.DataStructures do
       ) do
     now = DateTime.utc_now()
 
-    ds_changeset = DataStructure.changeset_updated_at(ds, user_id)
+    ds_changeset = DataStructure.changeset_last_change_by(ds, user_id)
 
     Multi.new()
     |> Multi.run(:descendents, fn _, _ -> get_structure_descendents(data_structure_version) end)
@@ -968,7 +968,7 @@ defmodule TdDd.DataStructures do
       fn changes -> delete_metadata_descendents(changes) end,
       set: [deleted_at: now, updated_at: now]
     )
-    |> Multi.update(:update_at_change, ds_changeset)
+    |> Multi.update(:last_change, ds_changeset)
     |> Multi.run(:audit, Audit, :data_structure_deleted, [user_id])
     |> Repo.transaction()
     |> on_delete()
@@ -1364,6 +1364,16 @@ defmodule TdDd.DataStructures do
   end
 
   def enriched_structure_version(other, _opts), do: other
+
+  def update_last_change_at(["data_structure:" <> ds_id]) do
+    [ids: [ds_id]]
+    |> list_data_structures()
+    |> List.first()
+    |> DataStructure.changeset_last_change_at(DateTime.utc_now())
+    |> Repo.update()
+  end
+
+  def update_last_change_at(ds_id), do: {:ok, ds_id}
 
   def embeddings([]), do: {:ok, []}
 

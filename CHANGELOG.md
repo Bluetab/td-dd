@@ -4,6 +4,7 @@
 
 ### Added
 
+- [TD-7228] Updates data structure field "last_changed" when add/remove a relation from data structure to a business concept
 - [TD-7417] Forcemerge options for elastic index hot swap
 
 ## [7.10.0] 2025-09-16
