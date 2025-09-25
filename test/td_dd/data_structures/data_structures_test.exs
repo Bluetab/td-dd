@@ -216,7 +216,13 @@ defmodule TdDd.DataStructuresTest do
     } do
       insert(:structure_metadata, data_structure_id: id, version: parent_version_id)
 
-      {:ok, %{update_at_change: %{updated_at: updated_at_after}} = result} =
+      {:ok,
+       %{
+         last_change: %{
+           updated_at: updated_at_after
+         }
+       } =
+         result} =
         DataStructures.logical_delete_data_structure(data_structure_version, claims)
 
       assert updated_at_after != updated_at_before
@@ -806,6 +812,20 @@ defmodule TdDd.DataStructuresTest do
       assert %DataStructure{} = result
       assert result.id == id
       assert result.external_id == external_id
+    end
+
+    test "Update 'last_change_at' of a data_structure" do
+      %{id: ds_id} = insert(:data_structure)
+
+      assert [%DataStructure{last_change_at: nil}] =
+               DataStructures.list_data_structures(ids: [ds_id])
+
+      DataStructures.update_last_change_at(["data_structure:" <> to_string(ds_id)])
+
+      assert [%DataStructure{last_change_at: first_last_change_at}] =
+               DataStructures.list_data_structures(ids: [ds_id])
+
+      assert not is_nil(first_last_change_at)
     end
   end
 

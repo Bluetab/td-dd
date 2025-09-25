@@ -62,10 +62,9 @@ defmodule TdDd.DataStructures.ElasticDocument do
       parent_id = List.last(Enum.map(path, &Integer.to_string(&1["data_structure_id"])), "")
 
       last_change_at =
-        case DateTime.compare(data_structure.updated_at, dsv.updated_at) do
-          :gt -> data_structure.updated_at
-          _ -> dsv.updated_at
-        end
+        [data_structure.updated_at, dsv.updated_at, data_structure.last_change_at]
+        |> Enum.reject(&is_nil/1)
+        |> Enum.max_by(& &1, DateTime)
 
       data_structure
       |> Map.take([

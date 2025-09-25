@@ -195,14 +195,14 @@ defmodule TdDd.DataStructures.Tags do
         params
       )
 
-    ds_changeset = DataStructure.changeset_updated_at(data_structure, user_id)
+    ds_changeset = DataStructure.changeset_last_change_by(data_structure, user_id)
 
     Multi.new()
     |> Multi.run(:latest, fn _, _ ->
       {:ok, DataStructures.get_latest_version(data_structure, [:path])}
     end)
     |> Multi.insert(:structure_tag, changeset)
-    |> Multi.update(:update_at_change, ds_changeset)
+    |> Multi.update(:last_change, ds_changeset)
     |> Multi.run(:audit, Audit, :structure_tag_created, [user_id])
     |> Repo.transaction()
     |> maybe_reindex()
@@ -216,7 +216,7 @@ defmodule TdDd.DataStructures.Tags do
     structure_tag = Repo.preload(structure_tag, [:tag, :data_structure])
     %{changes: changes} = changeset = StructureTag.changeset(structure_tag, params)
 
-    ds_changeset = DataStructure.changeset_updated_at(structure, user_id)
+    ds_changeset = DataStructure.changeset_last_change_by(structure, user_id)
 
     reindex = Map.has_key?(changes, :name) or Map.has_key?(changes, :inherit)
 
@@ -225,7 +225,7 @@ defmodule TdDd.DataStructures.Tags do
       {:ok, DataStructures.get_latest_version(structure_tag.data_structure, [:path])}
     end)
     |> Multi.update(:structure_tag, changeset)
-    |> Multi.update(:update_at_change, ds_changeset)
+    |> Multi.update(:last_change, ds_changeset)
     |> Multi.run(:audit, Audit, :structure_tag_updated, [changeset, user_id])
     |> Repo.transaction()
     |> maybe_reindex(reindex)
@@ -235,14 +235,14 @@ defmodule TdDd.DataStructures.Tags do
         %StructureTag{data_structure: structure} = structure_tag,
         %{user_id: user_id} = _claims
       ) do
-    ds_changeset = DataStructure.changeset_updated_at(structure, user_id)
+    ds_changeset = DataStructure.changeset_last_change_by(structure, user_id)
 
     Multi.new()
     |> Multi.run(:latest, fn _, _ ->
       {:ok, DataStructures.get_latest_version(structure, [:path])}
     end)
     |> Multi.delete(:structure_tag, structure_tag)
-    |> Multi.update(:update_at_change, ds_changeset)
+    |> Multi.update(:last_change, ds_changeset)
     |> Multi.run(:audit, Audit, :structure_tag_deleted, [user_id])
     |> Repo.transaction()
     |> maybe_reindex()

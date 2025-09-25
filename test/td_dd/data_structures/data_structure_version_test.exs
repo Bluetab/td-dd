@@ -2,6 +2,8 @@ defmodule TdDd.DataStructures.DataStructureVersionTest do
   use TdDd.DataCase
 
   alias Elasticsearch.Document
+  alias TdDd.DataStructures
+  alias TdDd.DataStructures.{DataStructure, DataStructureVersion}
   alias TdDd.Repo
 
   describe "DataStructureVersion" do
@@ -56,7 +58,7 @@ defmodule TdDd.DataStructures.DataStructureVersionTest do
     end
 
     test "last_change_at takes data structure version date as latest" do
-      ds = insert(:data_structure, updated_at: ~U[2024-01-01 00:00:00.000000Z])
+      %{id: ds_id} = ds = insert(:data_structure, updated_at: ~U[2024-01-01 00:00:00.000000Z])
 
       %{updated_at: dsv_updated} =
         dsv =
@@ -66,6 +68,21 @@ defmodule TdDd.DataStructures.DataStructureVersionTest do
         )
 
       assert %{last_change_at: ^dsv_updated} = Document.encode(dsv)
+
+      DataStructures.update_last_change_at(["data_structure:" <> to_string(ds_id)])
+
+      %DataStructureVersion{
+        data_structure: %DataStructure{
+          id: last_ds_id,
+          last_change_at: last_change_at,
+          updated_at: updated_at
+        }
+      } =
+        new_dsv =
+        DataStructures.get_latest_version_details(ds_id)
+
+      assert %{id: ^last_ds_id, last_change_at: ^updated_at} = Document.encode(new_dsv)
+      assert not is_nil(last_change_at)
     end
 
     test "record_embeddings to be included in documen" do
