@@ -33,6 +33,9 @@ Run all aplication tests with `mix test`
 
 ## Environment variables
 
+- `REDIS_AUDIT_STREAM_MAXLEN` (Optional) Maximum length for Redis audit stream. Default: 100
+- `REDIS_STREAM_MAXLEN` (Optional) Maximum length for Redis stream. Default: 100
+
 ### SSL Connection
 
 - `DB_SSL`: Boolean value to enable SSL configuration. Default is `false`.
