@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-7401] Update `td-core` version
+- [TD-7340] Support for `dynamic_table` template fields
 
 ## [7.10.1] 2025-09-19
 
