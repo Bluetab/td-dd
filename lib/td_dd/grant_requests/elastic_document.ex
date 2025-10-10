@@ -12,6 +12,7 @@ defmodule TdDd.GrantRequests.ElasticDocument do
   alias TdDd.Grants.Grant
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestGroup
+  alias TdDfLib.Content
 
   defimpl Document, for: GrantRequest do
     use ElasticDocument
@@ -45,10 +46,7 @@ defmodule TdDd.GrantRequests.ElasticDocument do
         |> Format.search_values(template)
         |> case do
           metad when is_map(metad) ->
-            Enum.into(metad, %{}, fn
-              {key, %{"value" => value}} -> {key, value}
-              {key, value} -> {key, value}
-            end)
+            Content.to_legacy(metad)
 
           metad ->
             metad
