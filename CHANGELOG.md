@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-7401] Update `td-core` version
+- [TD-7075] Support for Implementation XLSX download and upload
 
 ## [7.10.1] 2025-09-19
 
