@@ -127,7 +127,7 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
       assert %{
                "id" => ^id,
                "user_id" => ^user_id,
-               "_embedded" => %{"requests" => [request1 | [request2]]}
+               "_embedded" => %{"requests" => [request1, request2]}
              } = data
 
       assert %{
