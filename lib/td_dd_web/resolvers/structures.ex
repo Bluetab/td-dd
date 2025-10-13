@@ -219,11 +219,16 @@ defmodule TdDdWeb.Resolvers.Structures do
     DataStructureVersions.get_permissions(dsv, claims(resolution))
   end
 
+  @spec versions(TdDd.DataStructures.DataStructureVersion.t(), any(), any()) :: {:ok, any()}
   def versions(%{data_structure: data_structure} = dsv, _args, resolution) do
     with_protected_metadata =
       permit?(DataStructures, :view_protected_metadata, claims(resolution), data_structure)
 
     {:ok, DataStructures.get_versions!(dsv, with_protected_metadata)}
+  end
+
+  def version_count(dsv, _args, _resolution) do
+    {:ok, DataStructures.get_version_count!(dsv)}
   end
 
   def grant(dsv, _args, resolution) do
@@ -232,6 +237,10 @@ defmodule TdDdWeb.Resolvers.Structures do
 
   def grants(dsv, _args, _resolution) do
     {:ok, DataStructures.get_grants(dsv)}
+  end
+
+  def grants_count(dsv, _args, _resolution) do
+    {:ok, DataStructures.get_grants_count(dsv)}
   end
 
   def relations(%{data_structure: data_structure} = dsv, _args, resolution) do
@@ -355,6 +364,10 @@ defmodule TdDdWeb.Resolvers.Structures do
     end)
   end
 
+  def children_count(child, _args, _resolution) do
+    {:ok, DataStructures.get_children_count(child)}
+  end
+
   def parents(child, args, %{context: %{loader: loader, claims: claims}}) do
     batch_key =
       Map.to_list(args) ++
@@ -371,6 +384,10 @@ defmodule TdDdWeb.Resolvers.Structures do
 
       {:ok, parents}
     end)
+  end
+
+  def parents_count(child, _args, _resolution) do
+    {:ok, DataStructures.get_parents_count(child)}
   end
 
   def siblings(
@@ -492,6 +509,24 @@ defmodule TdDdWeb.Resolvers.Structures do
     end)
     |> Enum.map(fn permission ->
       {permission, true}
+    end)
+  end
+
+  def data_fields_count(
+        %DataStructureVersion{} = parent,
+        args,
+        %{context: %{loader: loader}} = resolution
+      ) do
+    opts = data_field_options(parent, resolution, args)
+
+    loader
+    |> Dataloader.load(:data_fields, {:data_fields, opts}, parent.id)
+    |> on_load(fn loader ->
+      loader
+      |> Dataloader.get(:data_fields, {:data_fields, opts}, parent.id)
+      |> elem(0)
+      |> length()
+      |> then(&{:ok, &1})
     end)
   end
 

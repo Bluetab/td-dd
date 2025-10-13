@@ -132,11 +132,15 @@ defmodule TdDdWeb.Schema.Structures do
       resolve(&Resolvers.Structures.parents/3)
     end
 
+    field(:parents_count, :integer, resolve: &Resolvers.Structures.parents_count/3)
+
     field :children, list_of(:data_structure_version) do
       arg(:deleted, :boolean, default_value: false)
       arg(:limit, :integer, default_value: 1_000)
       resolve(&Resolvers.Structures.children/3)
     end
+
+    field(:children_count, :integer, resolve: &Resolvers.Structures.children_count/3)
 
     field :siblings, list_of(:data_structure_version) do
       arg(:limit, :integer, default_value: 1_000)
@@ -144,6 +148,7 @@ defmodule TdDdWeb.Schema.Structures do
     end
 
     field(:versions, list_of(:data_structure_version), resolve: &Resolvers.Structures.versions/3)
+    field(:version_count, :integer, resolve: &Resolvers.Structures.version_count/3)
 
     field :data_fields, list_of(:data_structure_version) do
       arg(:first, :integer, default_value: 1_000)
@@ -153,6 +158,8 @@ defmodule TdDdWeb.Schema.Structures do
       arg(:order_by, list_of(:data_field_order), default_value: [:metadata_order, :name])
       resolve(&Resolvers.Structures.data_fields/3)
     end
+
+    field(:data_fields_count, :integer, resolve: &Resolvers.Structures.data_fields_count/3)
 
     field(:ancestry, list_of(:json), resolve: &Resolvers.Structures.ancestry/3)
 
@@ -183,6 +190,7 @@ defmodule TdDdWeb.Schema.Structures do
     field(:structure_type, :data_structure_type, resolve: dataloader(TdDd.DataStructures))
 
     field(:grants, list_of(:grant), resolve: &Resolvers.Structures.grants/3)
+    field(:grants_count, :integer, resolve: &Resolvers.Structures.grants_count/3)
     field(:grant, :grant, resolve: &Resolvers.Structures.grant/3)
 
     field(:links, list_of(:json), resolve: &Resolvers.Structures.links/3)

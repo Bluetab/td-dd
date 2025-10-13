@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [TD-7485] Structure partial GraphQl querys
+
 ### Added
 
 - [TD-7401] Update `td-core` version
@@ -20,10 +24,12 @@
 - [TD-7345] Generate vector for business glossary consumption
 - [TD-7175] Update README.md for oban information
 - [TD-7364]:
+
   - Store embeddings in postres.
   - Use stored embeddings on reindex.
   - Incrementaly update outdated embeddings.
   - Remove stale embeddings.
+
 - [TD-7446] Add support for implementation related rule concept user_groups field types
 - [TD-7320] Optimized metadata query performance for multiple metadata versions.
 - [TD-7128] Refactored data structure version handling, permissions, and related GraphQL resolvers.
