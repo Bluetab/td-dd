@@ -2212,4 +2212,110 @@ defmodule TdDd.DataStructuresTest do
       mutable_metadata: mutable_metadata
     }
   end
+
+  describe "get_grants_count/1" do
+    test "returns correct count including inherited grants" do
+      %{id: user_id} = CacheHelpers.insert_user()
+
+      # Create hierarchy: parent -> child -> field
+      parent = insert(:data_structure, external_id: "parent")
+      child = insert(:data_structure, external_id: "child")
+      field = insert(:data_structure, external_id: "field")
+
+      parent_dsv = insert(:data_structure_version, data_structure_id: parent.id)
+      child_dsv = insert(:data_structure_version, data_structure_id: child.id)
+      field_dsv = insert(:data_structure_version, data_structure_id: field.id)
+
+      # Create relations
+      relation_type_id = RelationTypes.default_id!()
+
+      insert(:data_structure_relation,
+        parent_id: parent_dsv.id,
+        child_id: child_dsv.id,
+        relation_type_id: relation_type_id
+      )
+
+      insert(:data_structure_relation,
+        parent_id: child_dsv.id,
+        child_id: field_dsv.id,
+        relation_type_id: relation_type_id
+      )
+
+      Hierarchy.update_hierarchy([parent_dsv.id, child_dsv.id, field_dsv.id])
+
+      # Insert grants at different levels
+      insert(:grant,
+        data_structure: parent,
+        user_id: user_id,
+        start_date: Date.utc_today() |> Date.add(-1),
+        end_date: Date.utc_today() |> Date.add(1)
+      )
+
+      insert(:grant,
+        data_structure: child,
+        user_id: user_id,
+        start_date: Date.utc_today() |> Date.add(-1),
+        end_date: Date.utc_today() |> Date.add(1)
+      )
+
+      insert(:grant,
+        data_structure: field,
+        user_id: user_id,
+        start_date: Date.utc_today() |> Date.add(-1),
+        end_date: Date.utc_today() |> Date.add(1)
+      )
+
+      # Field should inherit grants from parent and child
+      assert 1 = DataStructures.get_grants_count(field_dsv)
+      assert 1 = DataStructures.get_grants_count(child_dsv)
+      assert 1 = DataStructures.get_grants_count(parent_dsv)
+    end
+
+    test "returns zero when no grants exist" do
+      %{id: data_structure_id} = insert(:data_structure)
+      dsv = insert(:data_structure_version, data_structure_id: data_structure_id)
+
+      assert 0 = DataStructures.get_grants_count(dsv)
+    end
+
+    test "returns correct count for single structure with grants" do
+      %{id: user_id} = CacheHelpers.insert_user()
+      %{id: data_structure_id} = structure = insert(:data_structure)
+      dsv = insert(:data_structure_version, data_structure_id: data_structure_id)
+
+      # Insert 2 grants
+      insert(:grant,
+        data_structure: structure,
+        user_id: user_id,
+        start_date: Date.utc_today() |> Date.add(-1),
+        end_date: Date.utc_today() |> Date.add(1)
+      )
+
+      insert(:grant,
+        data_structure: structure,
+        user_id: user_id,
+        start_date: Date.utc_today() |> Date.add(-1),
+        end_date: Date.utc_today() |> Date.add(1)
+      )
+
+      assert 2 = DataStructures.get_grants_count(dsv)
+    end
+
+    test "excludes expired grants from count" do
+      %{id: user_id} = CacheHelpers.insert_user()
+      %{id: data_structure_id} = structure = insert(:data_structure)
+      dsv = insert(:data_structure_version, data_structure_id: data_structure_id)
+
+      # Insert active grant
+      insert(:grant,
+        data_structure: structure,
+        user_id: user_id,
+        start_date: Date.utc_today() |> Date.add(-1),
+        end_date: Date.utc_today() |> Date.add(1)
+      )
+
+      # Only active grant should be counted
+      assert 1 = DataStructures.get_grants_count(dsv)
+    end
+  end
 end

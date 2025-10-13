@@ -173,6 +173,7 @@ defmodule TdDdWeb.Schema.StructuresTest do
         out
       }
       grants { id }
+      grants_count
       grant { id }
 
       data_fields {
@@ -426,6 +427,16 @@ defmodule TdDdWeb.Schema.StructuresTest do
     }
   }
   """
+
+  @grants_count_query """
+  query DataStructureVersion($dataStructureId: ID!, $version: String!) {
+    dataStructureVersion(dataStructureId: $dataStructureId, version: $version) {
+      id
+      grants_count
+    }
+  }
+  """
+
   @variables %{"since" => "2020-01-01T00:00:00Z"}
   @metadata %{"foo" => %{"value" => ["bar"], "origin" => "user"}}
 
@@ -1200,7 +1211,8 @@ defmodule TdDdWeb.Schema.StructuresTest do
                        "structure" => %{"id" => "#{nodef_parent_dsv_id}"}
                      }
                    ]
-                 }
+                 },
+                 "grants_count" => 1
                }
              } == data
     end
@@ -2302,6 +2314,63 @@ defmodule TdDdWeb.Schema.StructuresTest do
                  "alias" => nil
                }
              ] = siblings
+    end
+
+    @tag authentication: [role: "admin"]
+    test "returns grants_count when queried", %{conn: conn} do
+      %{id: user_id} = CacheHelpers.insert_user()
+      %{id: data_structure_id} = structure = insert(:data_structure)
+      insert(:data_structure_version, data_structure_id: data_structure_id)
+
+      # Insert 3 grants
+      insert(:grant,
+        data_structure: structure,
+        user_id: user_id,
+        start_date: Date.utc_today() |> Date.add(-1),
+        end_date: Date.utc_today() |> Date.add(1)
+      )
+
+      insert(:grant,
+        data_structure: structure,
+        user_id: user_id,
+        start_date: Date.utc_today() |> Date.add(-1),
+        end_date: Date.utc_today() |> Date.add(1)
+      )
+
+      insert(:grant,
+        data_structure: structure,
+        user_id: user_id,
+        start_date: Date.utc_today() |> Date.add(-1),
+        end_date: Date.utc_today() |> Date.add(1)
+      )
+
+      assert %{"data" => %{"dataStructureVersion" => %{"grants_count" => 3}}} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @grants_count_query,
+                 "variables" => %{
+                   "dataStructureId" => data_structure_id,
+                   "version" => "latest"
+                 }
+               })
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "returns grants_count zero when no grants exist", %{conn: conn} do
+      %{id: data_structure_id} = insert(:data_structure)
+      insert(:data_structure_version, data_structure_id: data_structure_id)
+
+      assert %{"data" => %{"dataStructureVersion" => %{"grants_count" => 0}}} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @grants_count_query,
+                 "variables" => %{
+                   "dataStructureId" => data_structure_id,
+                   "version" => "latest"
+                 }
+               })
+               |> json_response(:ok)
     end
   end
 
