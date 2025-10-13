@@ -73,6 +73,15 @@ defmodule TdDqWeb.Router do
     get("/rule_implementations/search/reindex_all", ImplementationSearchController, :reindex)
 
     post("/rule_implementations/csv", ImplementationController, :csv)
+    post("/rule_implementations/xlsx/download", Implementation.XLSXController, :download)
+    post("/rule_implementations/xlsx/upload", Implementation.XLSXController, :upload)
+    get("/rule_implementations/xlsx/upload_jobs", Implementation.XLSXController, :upload_jobs)
+
+    get(
+      "/rule_implementations/xlsx/upload_jobs/:job_id",
+      Implementation.XLSXController,
+      :upload_job
+    )
 
     resources("/functions", FunctionsController, only: [:update], singleton: true)
     resources("/functions", FunctionController, only: [:index, :create, :delete])

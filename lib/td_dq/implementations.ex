@@ -129,8 +129,6 @@ defmodule TdDq.Implementations do
     |> TdDd.Repo.all()
   end
 
-  @spec create_implementation(Rule.t(), map, Claims.t(), boolean) ::
-          multi_result | {:error, :forbidden}
   def create_implementation(rule, params, claims, is_bulk \\ false)
 
   def create_implementation(
@@ -164,8 +162,11 @@ defmodule TdDq.Implementations do
     end
   end
 
-  @spec create_ruleless_implementation(map, Claims.t(), boolean) :: multi_result
-  def create_ruleless_implementation(params, claims, is_bulk \\ false)
+  def create_ruleless_implementation(
+        params,
+        claims,
+        is_bulk \\ false
+      )
 
   def create_ruleless_implementation(
         %{} = params,
@@ -209,9 +210,14 @@ defmodule TdDq.Implementations do
 
   def permit_by_changeset_status?(_claims, %Ecto.Changeset{}), do: true
 
-  def maybe_update_implementation(%Implementation{} = implementation, params, %Claims{} = claims) do
+  def maybe_update_implementation(
+        %Implementation{} = implementation,
+        params,
+        %Claims{} = claims,
+        is_bulk \\ false
+      ) do
     if need_update?(implementation, params) do
-      update_implementation(implementation, params, claims)
+      update_implementation(implementation, params, claims, is_bulk)
     else
       {:ok, %{implementation: implementation, error: :implementation_unchanged}}
     end
@@ -260,6 +266,8 @@ defmodule TdDq.Implementations do
       ) do
     changeset = upsert_changeset(implementation, params)
 
+    changes = Map.drop(changeset.changes, [:updated_at])
+
     with :ok <- Bodyguard.permit(__MODULE__, :update, claims, changeset),
          :ok <- permit_by_changeset_status(claims, changeset) do
       Multi.new()
@@ -268,6 +276,7 @@ defmodule TdDq.Implementations do
       |> maybe_update_domain(changeset, implementation)
       |> Multi.run(:data_structures, &create_implementation_structures/2)
       |> Multi.run(:old_domain_id, fn _repo, _changes -> {:ok, old_domain_id} end)
+      |> Multi.run(:changes, fn _repo, _changes -> {:ok, changes} end)
       |> Multi.run(:audit_status, Audit, :implementation_status_updated, [changeset, user_id])
       |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
       |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
@@ -290,7 +299,9 @@ defmodule TdDq.Implementations do
     implementation
     |> Implementation.changeset(params)
     |> Map.get(:changes)
-    |> Map.drop([:updated_at]) != %{}
+    |> Map.drop([:updated_at])
+    |> map_size()
+    |> Kernel.>(0)
   end
 
   defp upsert(multi, changeset, :published), do: Multi.insert(multi, :implementation, changeset)

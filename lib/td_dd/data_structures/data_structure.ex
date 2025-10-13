@@ -28,6 +28,7 @@ defmodule TdDd.DataStructures.DataStructure do
     field(:domain_ids, {:array, :integer}, default: [])
     field(:external_id, :string)
     field(:last_change_by, :integer)
+    field(:last_change_at, :utc_datetime_usec)
     field(:row, :integer, virtual: true)
     field(:latest_metadata, :map, virtual: true)
     field(:domains, :map, virtual: true)
@@ -86,12 +87,17 @@ defmodule TdDd.DataStructures.DataStructure do
     |> put_audit(last_change_by)
   end
 
-  def changeset_updated_at(%__MODULE__{} = data_structure, last_change_by)
+  def changeset_last_change_by(%__MODULE__{} = data_structure, last_change_by)
       when is_integer(last_change_by) do
     data_structure
-    |> cast(%{}, [])
-    |> put_change(:updated_at, DateTime.utc_now())
+    |> changeset_last_change_at(DateTime.utc_now())
     |> put_audit(last_change_by)
+  end
+
+  def changeset_last_change_at(%__MODULE__{} = data_structure, last_change_at) do
+    data_structure
+    |> cast(%{}, [])
+    |> put_change(:last_change_at, last_change_at)
   end
 
   defp put_audit(%{changes: changes} = changeset, _last_change_by)

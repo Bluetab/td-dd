@@ -1,9 +1,21 @@
 # Changelog
 
+## [7.11.0] 2025-10-13
+
+### Changed
+
+- [TD-7485] Structure partial GraphQl querys
+
+### Added
+
+- [TD-7401] Update `td-core` version
+- [TD-7075] Support for Implementation XLSX download and upload
+
 ## [7.10.1] 2025-09-19
 
 ### Added
 
+- [TD-7228] Updates data structure field "last_changed" when add/remove a relation from data structure to a business concept
 - [TD-7417] Forcemerge options for elastic index hot swap
 
 ## [7.10.0] 2025-09-16
@@ -19,6 +31,7 @@
   - Incrementaly update outdated embeddings.
   - Remove stale embeddings.
 
+- [TD-7446] Add support for implementation related rule concept user_groups field types
 - [TD-7320] Optimized metadata query performance for multiple metadata versions.
 - [TD-7128] Refactored data structure version handling, permissions, and related GraphQL resolvers.
 - [TD-7484] Always include profile_events when retrieving or creating scheduled executions

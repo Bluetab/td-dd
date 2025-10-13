@@ -58,11 +58,15 @@ defmodule TdDd.Cache.StructureLoader do
   ## Private functions
 
   defp read_structure_ids(%{event: "add_link", source: source, target: target}) do
-    extract_structure_ids([source, target])
+    [source, target]
+    |> maybe_update_last_change_at()
+    |> extract_structure_ids()
   end
 
   defp read_structure_ids(%{event: "remove_link", source: source, target: target}) do
-    extract_structure_ids([source, target])
+    [source, target]
+    |> maybe_update_last_change_at()
+    |> extract_structure_ids()
   end
 
   defp read_structure_ids(%{event: "add_rule_implementation_link", structure_ids: structure_ids}) do
@@ -93,6 +97,15 @@ defmodule TdDd.Cache.StructureLoader do
     )
     |> Enum.map(&StructureEntry.cache_entry/1)
     |> Enum.map(&StructureCache.put(&1, opts))
+  end
+
+  defp maybe_update_last_change_at(structure_keys) do
+    structure_keys
+    |> Enum.filter(&String.starts_with?(&1, "data_structure:"))
+    |> Enum.uniq()
+    |> Enum.each(&DataStructures.update_last_change_at([&1]))
+
+    structure_keys
   end
 
   defp do_refresh(opts) do
