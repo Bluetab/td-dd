@@ -203,7 +203,12 @@ defmodule TdDq.XLSX.Writer do
         acc ++ [get_string_value(implementation, :df_name)]
 
       "result_type", acc ->
-        acc ++ [get_string_value(implementation, :result_type)]
+        acc ++ [
+            get_translated_value(
+              "ruleImplementations.props.result_type.#{implementation.result_type}",
+              opts
+            )
+          ]
 
       "goal", acc ->
         acc ++ [get_string_value(implementation, :goal)]
@@ -383,18 +388,17 @@ defmodule TdDq.XLSX.Writer do
   end
 
   defp get_translated_header(value, opts) do
-    case(
-      I18nCache.get_definition(opts[:lang], "ruleImplementations.props.#{value}",
+    case  I18nCache.get_definition(opts[:lang], "ruleImplementations.props.#{value}",
         default_value: value
       )
-    ) do
+     do
       text when is_binary(text) -> text
       _ -> value
     end
   end
 
   defp get_translated_value(value, opts) do
-    case(I18nCache.get_definition(opts[:lang], value, default_value: value)) do
+    case I18nCache.get_definition(opts[:lang], value, default_value: value) do
       text when is_binary(text) -> text
       _ -> value
     end
