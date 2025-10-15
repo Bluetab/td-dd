@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unrelased]
+## [7.11.1] 2025-10-15
 
 ### Fixed
 
