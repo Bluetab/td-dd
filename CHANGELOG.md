@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unrelased]
+
+### Fixed
+
+- [TD-7573] Add missing translations functionality for Implementation XLSX download
+
 ## [7.11.0] 2025-10-13
 
 ### Changed
