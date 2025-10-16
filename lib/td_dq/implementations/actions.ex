@@ -6,6 +6,7 @@ defmodule TdDq.Implementations.Actions do
   use TdDqWeb, :controller
 
   alias TdDq.Implementations.Implementation
+  alias TdDq.Rules.Rule
 
   defdelegate authorize(action, user, params), to: TdDq.Implementations.Policy
 
@@ -71,6 +72,28 @@ defmodule TdDq.Implementations.Actions do
 
   def put_actions(conn, claims, %Implementation{} = implementation),
     do: put_actions(conn, claims, %{}, implementation)
+
+  def put_actions(conn, claims, %Rule{} = rule) do
+    [
+      :auto_publish,
+      "create",
+      "createBasic",
+      "createRaw"
+    ]
+    |> Enum.filter(&Bodyguard.permit?(TdDq.Rules, &1, claims, rule))
+    |> Map.new(fn
+      :auto_publish ->
+        {"autoPublish",
+         %{
+           href: Routes.implementation_upload_path(conn, :create),
+           method: "POST"
+         }}
+
+      action ->
+        {action, %{method: "POST"}}
+    end)
+    |> then(&assign(conn, :actions, &1))
+  end
 
   def put_actions(conn, claims, params), do: put_actions(conn, claims, params, Implementation)
 

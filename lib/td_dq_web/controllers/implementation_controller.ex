@@ -226,11 +226,12 @@ defmodule TdDqWeb.ImplementationController do
   def search_rule_implementations(conn, %{"rule_id" => id} = params) do
     claims = conn.assigns[:current_resource]
     rule_id = String.to_integer(id)
+    rule = Rules.get_rule_or_nil(rule_id)
 
     with :ok <- Bodyguard.permit(Implementations, :query, claims),
          implementations <- Search.search_by_rule_id(params, claims, rule_id, 0, 1000) do
       conn
-      |> Actions.put_actions(claims)
+      |> Actions.put_actions(claims, rule)
       |> render("index.json", implementations: implementations)
     end
   end
