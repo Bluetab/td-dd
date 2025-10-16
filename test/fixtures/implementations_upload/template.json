@@ -1,0 +1,132 @@
+[
+  {
+    "name": "Basic",
+    "fields": [
+      {
+        "name": "df_description",
+        "type": "enriched_text",
+        "label": "Descripción",
+        "values": null,
+        "widget": "enriched_text",
+        "cardinality": "?"
+      },
+      {
+        "name": "basic_list",
+        "type": "string",
+        "label": "Basic List",
+        "values": { "fixed": ["1", "2", "3", "4"] },
+        "widget": "dropdown",
+        "cardinality": "1"
+      },
+      {
+        "name": "basic_switch",
+        "type": "string",
+        "label": "Basic Switch",
+        "values": {
+          "switch": {
+            "on": "basic_list",
+            "values": {
+              "1": ["a", "b"],
+              "2": ["c", "d"]
+            }
+          }
+        },
+        "widget": "dropdown",
+        "cardinality": "?"
+      },
+      {
+        "name": "default_dependency",
+        "type": "string",
+        "label": "Dependent field with default values",
+        "values": {
+          "switch": {
+            "on": "basic_list",
+            "values": {
+              "1": ["1.1", "1.2", "1.3", "1.4", "1.5"],
+              "2": ["2.1", "2.2", "2.3"],
+              "3": ["3.1", "3.2", "3.3", "3.4", "3.5"]
+            }
+          }
+        },
+        "widget": "dropdown",
+        "default": {
+          "value": { "1": "1.1", "2": "2.2", "3": "3.4" },
+          "origin": "default"
+        },
+        "cardinality": "?"
+      },
+      {
+        "name": "Identificador",
+        "type": "string",
+        "label": "Identificador",
+        "values": null,
+        "widget": "identifier",
+        "cardinality": "0"
+      },
+      {
+        "name": "multiple_values",
+        "type": "string",
+        "label": "Multiple values",
+        "values": { "fixed": ["v-1", "v-2", "v-3"] },
+        "widget": "checkbox",
+        "cardinality": "*"
+      },
+      {
+        "name": "user1",
+        "type": "user",
+        "label": "User 1",
+        "values": { "role_users": "Data Owner", "processed_users": [] },
+        "widget": "dropdown",
+        "cardinality": "?"
+      },
+      {
+        "name": "group1",
+        "type": "user_group",
+        "label": "Group 1",
+        "values": { "role_users": "Data Owner", "processed_users": [] },
+        "widget": "dropdown",
+        "cardinality": "?"
+      },
+      {
+        "name": "text_area",
+        "type": "string",
+        "label": "Text area",
+        "values": "",
+        "widget": "string",
+        "cardinality": "?"
+      },
+      {
+        "name": "text_input",
+        "type": "string",
+        "label": "Text input",
+        "values": "",
+        "widget": "string",
+        "cardinality": "1"
+      },
+      {
+        "name": "empty test",
+        "type": "string",
+        "label": "empty test",
+        "values": { "fixed": ["a", "s", "d"] },
+        "widget": "dropdown",
+        "cardinality": "?"
+      },
+      {
+        "name": "Hierarchie2",
+        "type": "hierarchy",
+        "label": "Hierarchie",
+        "values": { "hierarchy": { "id": 1, "min_depth": "0" } },
+        "widget": "dropdown",
+        "cardinality": "?"
+      },
+      {
+        "name": "urls",
+        "cardinality": "*",
+        "label": "urls",
+        "type": "url",
+        "values": null,
+        "widget": "pair_list"
+      }
+    ]
+  }
+]
