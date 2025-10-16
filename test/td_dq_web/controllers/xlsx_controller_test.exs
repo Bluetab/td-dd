@@ -297,7 +297,7 @@ defmodule TdDdWeb.XLSXControllerTest do
                  name_2,
                  "",
                  "",
-                "ruleImplementations.props.result_type.percentage",
+                 "ruleImplementations.props.result_type.percentage",
                  to_string(goal_2),
                  to_string(minimum_2),
                  to_string(records_2),

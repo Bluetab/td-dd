@@ -259,7 +259,9 @@ defmodule TdDq.XLSX.Jobs.UploadWorkerTest do
                  %{
                    status: "ERROR",
                    response: %{
-                     "details" => [["df_content", ["invalid content", [["Hierarchie2", ["hierarchy"]]]]]]
+                     "details" => [
+                       ["df_content", ["invalid content", [["Hierarchie2", ["hierarchy"]]]]]
+                     ]
                    }
                  },
                  %{status: "INFO"},
