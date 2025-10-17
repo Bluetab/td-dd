@@ -1051,4 +1051,179 @@ defmodule TdDd.XLSX.WriterTest do
              ]
     end
   end
+
+  describe "TdDd.XLSX.Writer.structure_notes_rows/3" do
+    test "returns headers and rows for structure notes" do
+      %{id: template_id} =
+        CacheHelpers.insert_template(%{
+          name: "Table",
+          scope: "dd",
+          content: [
+            %{
+              "name" => "group",
+              "fields" => [
+                %{
+                  "name" => "string_field",
+                  "type" => "string",
+                  "label" => "String Field"
+                },
+                %{
+                  "name" => "number_field",
+                  "type" => "integer",
+                  "label" => "Number Field"
+                }
+              ]
+            }
+          ]
+        })
+
+      insert(:data_structure_type, name: "Table", template_id: template_id)
+
+      structure = insert(:data_structure, external_id: "ext_123")
+
+      df_content1 = %{
+        "string_field" => %{"value" => "value1", "origin" => "user"},
+        "number_field" => %{"value" => 42, "origin" => "user"}
+      }
+
+      df_content2 = %{
+        "string_field" => %{"value" => "value2", "origin" => "user"},
+        "number_field" => %{"value" => 99, "origin" => "user"}
+      }
+
+      # Crear estructura de datos con notas usando el módulo DataStructures
+      dsv =
+        insert(:data_structure_version,
+          data_structure: structure,
+          type: "Table",
+          name: "Test Structure"
+        )
+
+      # Crear las notas directamente asociadas a la estructura
+      note1 =
+        insert(:structure_note,
+          data_structure: structure,
+          df_content: df_content1,
+          status: :published,
+          version: 1
+        )
+
+      note2 =
+        insert(:structure_note,
+          data_structure: structure,
+          df_content: df_content2,
+          status: :draft,
+          version: 2
+        )
+
+      rows =
+        Writer.structure_notes_rows([note1, note2], %{dsv | data_structure: structure},
+          lang: "en"
+        )
+
+      assert [headers | content] = rows
+
+      assert headers == [
+               "external_id",
+               "name",
+               "status",
+               "version",
+               "updated_at",
+               "string_field",
+               "number_field"
+             ]
+
+      assert length(content) == 2
+
+      assert [
+               [external_id1, name1, status1, version1, _updated_at1, string_val1, num_val1],
+               [external_id2, name2, status2, version2, _updated_at2, string_val2, num_val2]
+             ] =
+               content
+
+      assert external_id1 == "ext_123"
+      assert name1 == "Test Structure"
+      assert status1 == "published"
+      assert version1 == 1
+      assert string_val1 == df_content1["string_field"]["value"]
+      assert num_val1 == to_string(df_content1["number_field"]["value"])
+
+      assert external_id2 == "ext_123"
+      assert name2 == "Test Structure"
+      assert status2 == "draft"
+      assert version2 == 2
+      assert string_val2 == df_content2["string_field"]["value"]
+      assert num_val2 == to_string(df_content2["number_field"]["value"])
+    end
+
+    test "returns empty content fields when template has no fields" do
+      %{id: template_id} =
+        CacheHelpers.insert_template(%{
+          name: "EmptyTemplate",
+          scope: "dd",
+          content: []
+        })
+
+      insert(:data_structure_type, name: "EmptyTemplate", template_id: template_id)
+
+      structure = insert(:data_structure, external_id: "ext_456")
+
+      dsv =
+        insert(:data_structure_version,
+          data_structure: structure,
+          type: "EmptyTemplate",
+          name: "Empty Structure"
+        )
+
+      note =
+        insert(:structure_note,
+          data_structure: structure,
+          df_content: %{},
+          status: :published,
+          version: 1
+        )
+
+      rows = Writer.structure_notes_rows([note], dsv, lang: "en")
+
+      assert [headers | content] = rows
+
+      assert headers == ["external_id", "name", "status", "version", "updated_at"]
+
+      assert [[external_id, name, status, version, _updated_at]] = content
+      assert external_id == "ext_456"
+      assert name == "Empty Structure"
+      assert status == "published"
+      assert version == 1
+    end
+
+    test "handles empty notes list" do
+      %{id: template_id} =
+        CacheHelpers.insert_template(%{
+          name: "Table",
+          scope: "dd",
+          content: [
+            %{
+              "name" => "group",
+              "fields" => [
+                %{
+                  "name" => "field",
+                  "type" => "string",
+                  "label" => "Field"
+                }
+              ]
+            }
+          ]
+        })
+
+      insert(:data_structure_type, name: "Table", template_id: template_id)
+
+      structure = insert(:data_structure)
+      dsv = insert(:data_structure_version, data_structure: structure, type: "Table")
+
+      rows = Writer.structure_notes_rows([], dsv, lang: "en")
+
+      assert [headers] = rows
+      assert headers == ["external_id", "name", "status", "version", "updated_at", "field"]
+    end
+  end
 end

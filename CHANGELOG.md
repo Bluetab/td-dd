@@ -2,6 +2,10 @@
 
 ## [7.11.1] 2025-10-15
 
+### Added
+
+- [TD-7539] Allow to download notes from the structure details
+
 ### Fixed
 
 - [TD-7573] Add missing translations functionality for Implementation XLSX download
