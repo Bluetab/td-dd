@@ -319,4 +319,139 @@ defmodule TdDd.XLSX.Writer do
       end
     )
   end
+
+  def structure_notes_rows(notes, structure, opts \\ []) do
+    lang = Keyword.get(opts, :lang, "en")
+
+    %{template: template} =
+      DataStructureTypes.get_by(name: structure.type)
+
+    {base_headers, content_headers, content_fields} =
+      case template do
+        %{content: content} ->
+          flat_fields =
+            Enum.flat_map(content, fn %{"fields" => fields} ->
+              Enum.uniq_by(fields, & &1["name"])
+            end)
+
+          content_header_names = Enum.map(flat_fields, & &1["name"])
+
+          {["external_id", "name", "status", "version", "updated_at"], content_header_names,
+           flat_fields}
+
+        _ ->
+          {["external_id", "name", "status", "version", "updated_at"], [], []}
+      end
+
+    headers = base_headers ++ content_headers
+
+    rows =
+      Enum.map(notes, fn note ->
+        base_values = [
+          structure.data_structure.external_id,
+          structure.name,
+          to_string(note.status),
+          note.version,
+          to_string(note.updated_at)
+        ]
+
+        content_values =
+          case content_fields do
+            [] ->
+              []
+
+            fields ->
+              parser_opts = [
+                domain_type: :with_domain_external_id,
+                lang: lang,
+                xlsx: true
+              ]
+
+              preprocessed_content = preprocess_df_content(note.df_content, fields)
+              Parser.append_parsed_fields([], fields, preprocessed_content, parser_opts)
+          end
+
+        base_values ++ content_values
+      end)
+
+    [headers | rows]
+  end
+
+  defp preprocess_df_content(df_content, fields) when is_map(df_content) do
+    Enum.reduce(fields, df_content, fn field, acc ->
+      case field do
+        %{"type" => "enriched_text", "name" => name} ->
+          acc
+          |> Map.get(name)
+          |> extract_plain_text_from_enriched(acc, name)
+
+        _ ->
+          acc
+      end
+    end)
+  end
+
+  defp preprocess_df_content(df_content, _fields), do: df_content
+
+  defp extract_plain_text_from_enriched(enriched_text, data, field) when is_map(enriched_text) do
+    text =
+      enriched_text
+      |> extract_text_from_enriched_structure()
+      |> Enum.join(" ")
+      |> String.trim()
+
+    Map.put(data, field, text)
+  end
+
+  defp extract_plain_text_from_enriched(_enriched_text, data, _field), do: data
+
+  # Diferentes estructuras posibles para enriched text
+  defp extract_text_from_enriched_structure(%{"document" => %{"nodes" => nodes}}) do
+    extract_text_from_nodes(nodes)
+  end
+
+  defp extract_text_from_enriched_structure(%{
+         "object" => "value",
+         "document" => %{"nodes" => nodes}
+       }) do
+    extract_text_from_nodes(nodes)
+  end
+
+  defp extract_text_from_enriched_structure(%{"value" => value}) when is_map(value) do
+    extract_text_from_enriched_structure(value)
+  end
+
+  defp extract_text_from_enriched_structure(%{"value" => value}) when is_binary(value) do
+    [value]
+  end
+
+  defp extract_text_from_enriched_structure(value) when is_binary(value) do
+    [value]
+  end
+
+  defp extract_text_from_enriched_structure(_), do: []
+
+   defp extract_text_from_nodes(nodes) when is_list(nodes) do
+    Enum.flat_map(nodes, fn
+      %{"nodes" => child_nodes} ->
+        extract_text_from_nodes(child_nodes)
+
+      %{"text" => text} ->
+        [text]
+
+      %{"leaves" => leaves} when is_list(leaves) ->
+        Enum.flat_map(leaves, fn
+          %{"text" => text} -> [text]
+          _ -> []
+        end)
+
+      %{"leaves" => %{"text" => text}} ->
+        [text]
+
+      _ ->
+        []
+    end)
+  end
+
+  defp extract_text_from_nodes(_), do: []
 end
