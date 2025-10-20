@@ -1124,13 +1124,13 @@ defmodule TdDd.XLSX.WriterTest do
       assert [headers | content] = rows
 
       assert headers == [
-               "external_id",
+               ["external_id", {:bg_color, "#ffd428"}],
                "name",
                "status",
                "version",
                "updated_at",
-               "string_field",
-               "number_field"
+               ["string_field", {:bg_color, "#ffe994"}],
+               ["number_field", {:bg_color, "#ffe994"}]
              ]
 
       assert length(content) == 2
@@ -1187,7 +1187,13 @@ defmodule TdDd.XLSX.WriterTest do
 
       assert [headers | content] = rows
 
-      assert headers == ["external_id", "name", "status", "version", "updated_at"]
+      assert headers == [
+               ["external_id", {:bg_color, "#ffd428"}],
+               "name",
+               "status",
+               "version",
+               "updated_at"
+             ]
 
       assert [[external_id, name, status, version, _updated_at]] = content
       assert external_id == "ext_456"
@@ -1223,7 +1229,15 @@ defmodule TdDd.XLSX.WriterTest do
       rows = Writer.structure_notes_rows([], dsv, lang: "en")
 
       assert [headers] = rows
-      assert headers == ["external_id", "name", "status", "version", "updated_at", "field"]
+
+      assert headers == [
+               ["external_id", {:bg_color, "#ffd428"}],
+               "name",
+               "status",
+               "version",
+               "updated_at",
+               ["field", {:bg_color, "#ffe994"}]
+             ]
     end
   end
 end
