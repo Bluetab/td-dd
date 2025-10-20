@@ -1,23 +1,22 @@
 defmodule TdDdWeb.DataStructures.XLSXController do
   use TdDdWeb, :controller
 
-  alias TdCore.Search.Permissions
   alias TdCore.Utils.FileHash
   alias TdDd.DataStructures
-  alias TdDd.DataStructures.DataStructureRelation
-  alias TdDd.DataStructures.FileBulkUpdateEvent
-  alias TdDd.DataStructures.FileBulkUpdateEvents
-  alias TdDd.DataStructures.Search
-  alias TdDd.DataStructures.StructureNotes
-  alias TdDd.Repo
-  alias TdDd.XLSX.Download
-  alias TdDd.XLSX.Upload
 
-  import Ecto.Query
+  alias TdDd.DataStructures.{
+    DataStructure,
+    DataStructureVersion,
+    FileBulkUpdateEvent,
+    FileBulkUpdateEvents,
+    Search,
+    StructureNotes
+  }
 
-  plug TdDdWeb.SearchPermissionPlug
+  alias TdDd.XLSX.{Download, Upload}
 
-  action_fallback TdDdWeb.FallbackController
+  plug(TdDdWeb.SearchPermissionPlug)
+  action_fallback(TdDdWeb.FallbackController)
 
   @default_lang Application.compile_env(:td_dd, :lang)
 
@@ -43,12 +42,7 @@ defmodule TdDdWeb.DataStructures.XLSXController do
            search_all_structures(claims, permission, params),
          {:ok, {file_name, blob}} <-
            Download.write_to_memory(data_structures, structure_url_schema, opts) do
-      conn
-      |> put_resp_content_type(
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8"
-      )
-      |> put_resp_header("content-disposition", "attachment; filename=#{file_name}")
-      |> send_resp(:ok, blob)
+      send_xlsx_file(conn, file_name, blob)
     else
       %{results: []} -> send_resp(conn, :no_content, "")
     end
@@ -81,41 +75,39 @@ defmodule TdDdWeb.DataStructures.XLSXController do
     lang = Map.get(params, "lang", @default_lang)
     statuses = Map.get(params, "statuses", ["published"]) |> Enum.map(&String.to_existing_atom/1)
     include_children = Map.get(params, "include_children", false)
-
-    permission = conn.assigns[:search_permission]
     claims = conn.assigns[:current_resource]
 
-    resolved_permission = resolve_permission(claims, permission)
+    id = String.to_integer(data_structure_id)
 
-    with {:ok, structure_with_notes} <-
-           get_structure_notes_with_children(
-             data_structure_id,
-             statuses,
-             include_children,
-             claims,
-             resolved_permission
-           ),
-         {:ok, {file_name, blob}} <-
-           Download.write_notes_to_memory(structure_with_notes, lang: lang) do
-      conn
-      |> put_resp_content_type(
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8"
-      )
-      |> put_resp_header("content-disposition", "attachment; filename=#{file_name}")
-      |> send_resp(:ok, blob)
+    with {:data_structure, %DataStructure{} = data_structure} <-
+           {:data_structure, DataStructures.get_data_structure(id)},
+         {:last_version, %DataStructureVersion{} = current_version} <-
+           {:last_version, DataStructures.get_latest_version(data_structure)},
+         {:permit, :ok} <-
+           {:permit,
+            Bodyguard.permit(DataStructures, :view_data_structure, claims, data_structure)} do
+      {:ok, {file_name, blob}} =
+        id
+        |> StructureNotes.get_notes_with_hierarchy(statuses, current_version, include_children)
+        |> Download.write_notes_to_memory(lang: lang)
+
+      send_xlsx_file(conn, file_name, blob)
     else
-      {:error, :not_found} -> send_resp(conn, :not_found, "")
-      {:error, :forbidden} -> send_resp(conn, :forbidden, "")
+      {:data_structure, nil} -> send_resp(conn, :not_found, "")
+      {:last_version, nil} -> send_resp(conn, :not_found, "")
+      {:permit, {:error, :unauthorized}} -> send_resp(conn, :forbidden, "")
+      {:permit, {:error, :forbidden}} -> send_resp(conn, :forbidden, "")
       {:error, _} -> send_resp(conn, :unprocessable_entity, "")
     end
   end
 
-  defp resolve_permission(claims, permission) do
-    permission_name = to_string(permission)
-
-    [permission_name, "manage_confidential_structures"]
-    |> Permissions.get_search_permissions(claims)
-    |> Map.get(permission_name)
+  defp send_xlsx_file(conn, file_name, blob) do
+    conn
+    |> put_resp_content_type(
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8"
+    )
+    |> put_resp_header("content-disposition", "attachment; filename=#{file_name}")
+    |> send_resp(:ok, blob)
   end
 
   defp search_all_structures(claims, permission, params) do
@@ -138,95 +130,4 @@ defmodule TdDdWeb.DataStructures.XLSXController do
     |> Keyword.put_new(:lang, @default_lang)
     |> Keyword.put_new(:header_labels, %{})
   end
-
-  defp get_structure_notes_with_children(
-         data_structure_id,
-         statuses,
-         include_children,
-         claims,
-         permission
-       ) do
-    id = String.to_integer(data_structure_id)
-
-    with %{} = data_structure <- DataStructures.get_data_structure(id),
-         %{} = current_version <- DataStructures.get_latest_version(data_structure),
-         true <- has_permission?(current_version, claims, permission) do
-      main_notes =
-        id
-        |> StructureNotes.list_structure_notes(statuses)
-        |> Repo.preload(:data_structure)
-
-      children_notes =
-        get_children_notes(current_version, include_children, statuses, claims, permission)
-
-      {:ok,
-       %{
-         main: %{structure: current_version, notes: main_notes},
-         children: children_notes
-       }}
-    else
-      nil -> {:error, :not_found}
-      false -> {:error, :forbidden}
-      error -> error
-    end
-  end
-
-  defp get_children_notes(_current_version, false, _statuses, _claims, _permission), do: []
-
-  defp get_children_notes(current_version, true, statuses, claims, permission) do
-    from(r in DataStructureRelation,
-      where: r.parent_id == ^current_version.id,
-      select: r.child_id
-    )
-    |> Repo.all()
-    |> Enum.flat_map(fn child_id ->
-      child_dsv = DataStructures.get_data_structure_version!(child_id)
-
-      get_children_data(child_dsv, claims, permission, statuses)
-    end)
-  end
-
-  defp get_children_data(%{deleted_at: deleted_at}, _claims, _permission, _statuses)
-       when not is_nil(deleted_at),
-       do: []
-
-  defp get_children_data(%{data_structure_id: data_structure_id}, claims, permission, statuses) do
-    full_child_version =
-      data_structure_id
-      |> DataStructures.get_data_structure()
-      |> DataStructures.get_latest_version()
-
-    if has_permission?(full_child_version, claims, permission) do
-      child_notes =
-        data_structure_id
-        |> StructureNotes.list_structure_notes(statuses)
-        |> Repo.preload(:data_structure)
-
-      if Enum.empty?(child_notes) do
-        []
-      else
-        [%{structure: full_child_version, notes: child_notes}]
-      end
-    end
-  end
-
-  defp has_permission?(%{data_structure: %{domain_ids: _domain_ids}}, _claims, :all), do: true
-
-  defp has_permission?(
-         %{data_structure: %{domain_ids: domain_ids}},
-         _claims,
-         permission_domain_ids
-       )
-       when is_list(permission_domain_ids) do
-    Enum.any?(domain_ids, &(&1 in permission_domain_ids))
-  end
-
-  defp has_permission?(%{domain_ids: _domain_ids}, _claims, :all), do: true
-
-  defp has_permission?(%{domain_ids: domain_ids}, _claims, permission_domain_ids)
-       when is_list(permission_domain_ids) do
-    Enum.any?(domain_ids, &(&1 in permission_domain_ids))
-  end
-
-  defp has_permission?(_, _, _), do: false
 end

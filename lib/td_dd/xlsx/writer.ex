@@ -343,7 +343,12 @@ defmodule TdDd.XLSX.Writer do
           {["external_id", "name", "status", "version", "updated_at"], [], []}
       end
 
-    headers = base_headers ++ content_headers
+    highlighted_base_headers = highlight(base_headers)
+
+    highlighted_content_headers =
+      Enum.map(content_headers, &[&1, bg_color: "#ffe994"])
+
+    headers = highlighted_base_headers ++ highlighted_content_headers
 
     rows =
       Enum.map(notes, fn note ->
@@ -431,7 +436,7 @@ defmodule TdDd.XLSX.Writer do
 
   defp extract_text_from_enriched_structure(_), do: []
 
-   defp extract_text_from_nodes(nodes) when is_list(nodes) do
+  defp extract_text_from_nodes(nodes) when is_list(nodes) do
     Enum.flat_map(nodes, fn
       %{"nodes" => child_nodes} ->
         extract_text_from_nodes(child_nodes)
