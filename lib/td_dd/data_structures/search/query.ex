@@ -85,23 +85,76 @@ defmodule TdDd.DataStructures.Search.Query do
     Map.take(query_data, [:aggs])
   end
 
+  defp clause_for_query(query_data, %{
+         "query" => query,
+         "search_fields" => search_fields,
+         "operator" => operator
+       })
+       when is_binary(query) do
+    custom_query_data = %{
+      query_data
+      | fields: search_fields,
+        simple_search_fields: search_fields
+    }
+
+    if String.last(query) in @accepted_wildcards do
+      simple_query_string_clause(custom_query_data.simple_search_fields, %{
+        default_operator: operator
+      })
+    else
+      multi_match_boolean_prefix(custom_query_data.fields, %{operator: operator})
+    end
+  end
+
+  defp clause_for_query(query_data, %{"query" => query, "search_fields" => search_fields})
+       when is_binary(query) do
+    custom_query_data = %{
+      query_data
+      | fields: search_fields,
+        simple_search_fields: search_fields
+    }
+
+    if String.last(query) in @accepted_wildcards do
+      simple_query_string_clause(custom_query_data.simple_search_fields, %{default_operator: "OR"})
+    else
+      multi_match_boolean_prefix(custom_query_data.fields, %{operator: "OR"})
+    end
+  end
+
   defp clause_for_query(query_data, %{"query" => query}) when is_binary(query) do
     if String.last(query) in @accepted_wildcards do
-      simple_query_string_clause(query_data)
+      simple_query_string_clause(query_data.simple_search_fields)
     else
-      multi_match_boolean_prefix(query_data)
+      multi_match_boolean_prefix(query_data.fields, %{fuzziness: "AUTO"})
     end
   end
 
   defp clause_for_query(query_data, _params) do
-    multi_match_boolean_prefix(query_data)
+    multi_match_boolean_prefix(query_data.fields, %{fuzziness: "AUTO"})
   end
 
-  defp multi_match_boolean_prefix(%{fields: fields}) do
-    %{multi_match: %{type: "bool_prefix", fields: fields, lenient: true, fuzziness: "AUTO"}}
+  defp multi_match_boolean_prefix(fields, params) do
+    base = %{
+      type: "bool_prefix",
+      fields: fields,
+      lenient: true
+    }
+
+    Enum.reduce(params, base, fn {key, value}, acc ->
+      Map.put(acc, key, value)
+    end)
+    |> then(&%{multi_match: &1})
   end
 
-  defp simple_query_string_clause(%{simple_search_fields: fields}) do
-    %{simple_query_string: %{fields: fields, quote_field_suffix: ".exact"}}
+  defp simple_query_string_clause(fields, params \\ %{}) do
+    base = %{
+      fields: fields,
+      quote_field_suffix: ".exact"
+    }
+
+    Enum.reduce(params, base, fn {key, value}, acc ->
+      Map.put(acc, key, value)
+    end)
+    |> then(&%{simple_query_string: &1})
   end
 end

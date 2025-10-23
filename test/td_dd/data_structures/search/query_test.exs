@@ -155,6 +155,153 @@ defmodule TdDd.DataStructures.Search.QueryTest do
     end
   end
 
+  describe "custom search fields and operators" do
+    test "includes multi_match with custom fields and OR operator" do
+      assert %{
+               bool: %{
+                 must: %{
+                   multi_match: %{
+                     fields: ["data_structure_id", "parent_id"],
+                     lenient: true,
+                     query: "214265",
+                     type: "bool_prefix",
+                     operator: "OR"
+                   }
+                 }
+               }
+             } =
+               Query.build_query(
+                 @all_permissions,
+                 %{
+                   "query" => "214265",
+                   "search_fields" => ["data_structure_id", "parent_id"],
+                   "operator" => "OR"
+                 },
+                 %{
+                   fields: [],
+                   simple_search_fields: []
+                 }
+               )
+    end
+
+    test "includes multi_match with custom fields and default OR operator" do
+      assert %{
+               bool: %{
+                 must: %{
+                   multi_match: %{
+                     fields: ["data_structure_id", "parent_id"],
+                     lenient: true,
+                     query: "214265",
+                     type: "bool_prefix",
+                     operator: "OR"
+                   }
+                 }
+               }
+             } =
+               Query.build_query(
+                 @all_permissions,
+                 %{
+                   "query" => "214265",
+                   "search_fields" => ["data_structure_id", "parent_id"]
+                 },
+                 %{
+                   fields: [],
+                   simple_search_fields: []
+                 }
+               )
+    end
+
+    test "includes simple_query_string with custom fields and AND operator" do
+      assert %{
+               bool: %{
+                 must: %{
+                   simple_query_string: %{
+                     fields: ["data_structure_id", "parent_id"],
+                     query: "\"214265\"",
+                     quote_field_suffix: ".exact",
+                     default_operator: "AND"
+                   }
+                 }
+               }
+             } =
+               Query.build_query(
+                 @all_permissions,
+                 %{
+                   "query" => "\"214265\"",
+                   "search_fields" => ["data_structure_id", "parent_id"],
+                   "operator" => "AND"
+                 },
+                 %{
+                   fields: [],
+                   simple_search_fields: []
+                 }
+               )
+    end
+
+    test "includes simple_query_string with custom fields and default OR operator" do
+      assert %{
+               bool: %{
+                 must: %{
+                   simple_query_string: %{
+                     fields: ["data_structure_id", "parent_id"],
+                     query: "\"214265\"",
+                     quote_field_suffix: ".exact",
+                     default_operator: "OR"
+                   }
+                 }
+               }
+             } =
+               Query.build_query(
+                 @all_permissions,
+                 %{
+                   "query" => "\"214265\"",
+                   "search_fields" => ["data_structure_id", "parent_id"]
+                 },
+                 %{
+                   fields: [],
+                   simple_search_fields: []
+                 }
+               )
+    end
+
+    test "maintains backward compatibility for normal queries without search_fields" do
+      assert %{
+               bool: %{
+                 must: %{
+                   multi_match: %{
+                     fields: ["default_field1", "default_field2"],
+                     lenient: true,
+                     query: "test",
+                     type: "bool_prefix"
+                   }
+                 }
+               }
+             } =
+               Query.build_query(@all_permissions, %{"query" => "test"}, %{
+                 fields: ["default_field1", "default_field2"],
+                 simple_search_fields: ["default_field1", "default_field2"]
+               })
+    end
+
+    test "maintains backward compatibility for wildcard queries without search_fields" do
+      assert %{
+               bool: %{
+                 must: %{
+                   simple_query_string: %{
+                     fields: ["default_field1", "default_field2"],
+                     query: "\"test\"",
+                     quote_field_suffix: ".exact"
+                   }
+                 }
+               }
+             } =
+               Query.build_query(@all_permissions, %{"query" => "\"test\""}, %{
+                 fields: ["default_field1", "default_field2"],
+                 simple_search_fields: ["default_field1", "default_field2"]
+               })
+    end
+  end
+
   defp build_view_filters(view_scope, confidential_scope) do
     %{"view_data_structure" => view_scope, "manage_confidential_structures" => confidential_scope}
     |> Query.build_filters()

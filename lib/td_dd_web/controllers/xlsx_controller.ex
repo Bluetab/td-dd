@@ -2,19 +2,14 @@ defmodule TdDdWeb.DataStructures.XLSXController do
   use TdDdWeb, :controller
 
   alias TdCore.Utils.FileHash
-  alias TdDd.DataStructures
 
   alias TdDd.DataStructures.{
-    DataStructure,
-    DataStructureVersion,
     FileBulkUpdateEvent,
     FileBulkUpdateEvents,
-    Search,
-    StructureNotes
+    Search
   }
 
   alias TdDd.XLSX.{Download, Upload}
-
   plug(TdDdWeb.SearchPermissionPlug)
   action_fallback(TdDdWeb.FallbackController)
 
@@ -71,36 +66,6 @@ defmodule TdDdWeb.DataStructures.XLSXController do
     end
   end
 
-  def download_notes(conn, %{"data_structure_id" => data_structure_id} = params) do
-    lang = Map.get(params, "lang", @default_lang)
-    statuses = Map.get(params, "statuses", ["published"]) |> Enum.map(&String.to_existing_atom/1)
-    include_children = Map.get(params, "include_children", false)
-    claims = conn.assigns[:current_resource]
-
-    id = String.to_integer(data_structure_id)
-
-    with {:data_structure, %DataStructure{} = data_structure} <-
-           {:data_structure, DataStructures.get_data_structure(id)},
-         {:last_version, %DataStructureVersion{} = current_version} <-
-           {:last_version, DataStructures.get_latest_version(data_structure)},
-         {:permit, :ok} <-
-           {:permit,
-            Bodyguard.permit(DataStructures, :view_data_structure, claims, data_structure)} do
-      {:ok, {file_name, blob}} =
-        id
-        |> StructureNotes.get_notes_with_hierarchy(statuses, current_version, include_children)
-        |> Download.write_notes_to_memory(lang: lang)
-
-      send_xlsx_file(conn, file_name, blob)
-    else
-      {:data_structure, nil} -> send_resp(conn, :not_found, "")
-      {:last_version, nil} -> send_resp(conn, :not_found, "")
-      {:permit, {:error, :unauthorized}} -> send_resp(conn, :forbidden, "")
-      {:permit, {:error, :forbidden}} -> send_resp(conn, :forbidden, "")
-      {:error, _} -> send_resp(conn, :unprocessable_entity, "")
-    end
-  end
-
   defp send_xlsx_file(conn, file_name, blob) do
     conn
     |> put_resp_content_type(
@@ -111,10 +76,27 @@ defmodule TdDdWeb.DataStructures.XLSXController do
   end
 
   defp search_all_structures(claims, permission, params) do
+    include_children = to_string(Map.get(params, "include_children", false))
+    data_structure_id = Map.get(params, "data_structure_id")
+
     params
     |> Map.put("without", "deleted_at")
-    |> Map.drop(["page", "size"])
+    |> maybe_put_structure_filters(data_structure_id, include_children)
+    |> Map.drop(["page", "size", "data_structure_id", "include_children"])
     |> Search.scroll_data_structures(claims, permission)
+  end
+
+  defp maybe_put_structure_filters(params, nil, _include_children), do: params
+
+  defp maybe_put_structure_filters(params, data_structure_id, "false") do
+    Map.put(params, "must", %{"data_structure_id" => data_structure_id})
+  end
+
+  defp maybe_put_structure_filters(params, data_structure_id, "true") do
+    params
+    |> Map.put("query", "#{data_structure_id}")
+    |> Map.put("search_fields", ["data_structure_id", "parent_id"])
+    |> Map.put("operator", "OR")
   end
 
   defp build_opts(params) do
