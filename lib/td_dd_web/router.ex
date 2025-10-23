@@ -58,7 +58,6 @@ defmodule TdDdWeb.Router do
       resources("/versions", DataStructureVersionController, only: [:show])
       resources("/profile_results", ProfileController, only: [:create])
       resources("/notes", StructureNoteController, except: [:new, :edit], name: :note)
-      post("/notes/xlsx/download", DataStructures.XLSXController, :download_notes)
       get("/note_suggestions", StructureNoteController, :note_suggestions)
       resources("/grants", GrantController, only: [:create])
       resources("/structure_links", DataStructureLinkController, only: [:index])

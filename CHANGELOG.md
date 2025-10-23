@@ -1,5 +1,11 @@
 # Changelog
 
+# [Unreleased]
+
+### Changed
+
+- [TD-7539] Change structure notes generation to use ElasticSearch
+
 ## [7.11.1] 2025-10-15
 
 ### Added
