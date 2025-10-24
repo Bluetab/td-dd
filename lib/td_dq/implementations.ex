@@ -758,8 +758,9 @@ defmodule TdDq.Implementations do
 
   def flatten_conditions_set([%{} | _] = conditions_set) do
     conditions_set
-    |> Enum.reduce([], fn %{conditions: conditions}, acc ->
-      acc ++ conditions
+    |> Enum.reduce([], fn
+      %{conditions: conditions}, acc -> acc ++ conditions
+      %{"conditions" => conditions}, acc -> acc ++ conditions
     end)
   end
 

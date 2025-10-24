@@ -6,13 +6,10 @@ defmodule TdDqWeb.ImplementationController do
   alias TdDq.Events.QualityEvents
   alias TdDq.Implementations
   alias TdDq.Implementations.Actions
-  alias TdDq.Implementations.Download
   alias TdDq.Implementations.Implementation
   alias TdDq.Implementations.Search
   alias TdDq.Rules
   alias TdDq.Rules.RuleResults
-
-  @default_lang "es"
 
   @state_permission_map %{
     "published" => :view_published_concept,
@@ -233,34 +230,6 @@ defmodule TdDqWeb.ImplementationController do
       |> Actions.put_actions(claims)
       |> render("index.json", implementations: implementations)
     end
-  end
-
-  def csv(conn, params) do
-    claims = conn.assigns[:current_resource]
-
-    {header_labels, params} = Map.pop(params, "header_labels", %{})
-    {content_labels, params} = Map.pop(params, "content_labels", %{})
-    {lang, params} = Map.pop(params, "lang", @default_lang)
-
-    %{results: implementations} = search_all_implementations(params, claims)
-
-    case implementations do
-      [] ->
-        send_resp(conn, :no_content, "")
-
-      _ ->
-        conn
-        |> put_resp_content_type("text/csv", "utf-8")
-        |> put_resp_header("content-disposition", "attachment; filename=\"implementations.zip\"")
-        |> send_resp(:ok, Download.to_csv(implementations, header_labels, content_labels, lang))
-    end
-  end
-
-  defp search_all_implementations(params, claims) do
-    params
-    |> Map.put("without", "deleted_at")
-    |> Map.drop(["page", "size"])
-    |> Search.scroll_implementations(claims)
   end
 
   defp add_last_rule_result(%Implementation{} = implementation) do
