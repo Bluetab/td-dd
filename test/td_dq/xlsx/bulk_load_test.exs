@@ -1,6 +1,7 @@
 defmodule TdDq.XLSX.BulkLoadTest do
   use TdDd.DataCase
 
+  alias TdDq.Implementations
   alias TdDq.Implementations.UploadEvents
   alias TdDq.XLSX.BulkLoad
 
@@ -40,29 +41,30 @@ defmodule TdDq.XLSX.BulkLoadTest do
         ]
     )
 
-    CacheHelpers.insert_template(
-      name: "impl_template",
-      scope: "ri",
-      content: [
-        %{
-          "name" => "group",
-          "fields" => [
-            %{
-              "name" => "string_field",
-              "type" => "string",
-              "label" => "String Field",
-              "cardinality" => "?"
-            },
-            %{
-              "name" => "numeric_field",
-              "type" => "integer",
-              "label" => "Numeric Field",
-              "cardinality" => "?"
-            }
-          ]
-        }
-      ]
-    )
+    template =
+      CacheHelpers.insert_template(
+        name: "impl_template",
+        scope: "ri",
+        content: [
+          %{
+            "name" => "group",
+            "fields" => [
+              %{
+                "name" => "string_field",
+                "type" => "string",
+                "label" => "String Field",
+                "cardinality" => "?"
+              },
+              %{
+                "name" => "numeric_field",
+                "type" => "integer",
+                "label" => "Numeric Field",
+                "cardinality" => "?"
+              }
+            ]
+          }
+        ]
+      )
 
     %{id: domain_id} = domain = CacheHelpers.insert_domain(name: "impl_domain")
 
@@ -78,7 +80,8 @@ defmodule TdDq.XLSX.BulkLoadTest do
 
     [
       opts: %{claims: build(:claims), lang: "en", to_status: "draft", job_id: job_id},
-      domain: domain
+      domain: domain,
+      template: template
     ]
   end
 
@@ -136,6 +139,170 @@ defmodule TdDq.XLSX.BulkLoadTest do
                  status: "INFO"
                }
              ] = events
+    end
+
+    test "update implementation without changing missing template column", %{
+      opts: opts,
+      domain: domain,
+      template: template
+    } do
+      numeric_field_value = 8
+
+      %{
+        id: impl_id,
+        implementation_key: impl_key,
+        result_type: result_type,
+        goal: goal,
+        minimum: minimum
+      } =
+        insert(:implementation,
+          implementation_key: "impl_key",
+          df_name: template.name,
+          df_content: %{
+            "string_field" => %{"value" => "string_value", "origin" => "file"},
+            "numeric_field" => %{"value" => numeric_field_value, "origin" => "user"}
+          },
+          template: template,
+          domain_id: domain.id
+        )
+
+      sheets = %{
+        template.name =>
+          {[
+             "english_implementation_key",
+             "english_implementation_template",
+             "english_result_type",
+             "english_goal",
+             "english_minimum",
+             "domain_external_id",
+             "english_string_field"
+           ],
+           [
+             [
+               impl_key,
+               template.name,
+               result_type,
+               goal,
+               minimum,
+               domain.external_id,
+               "string_value_change"
+             ]
+           ]}
+      }
+
+      assert {
+               :ok,
+               %{
+                 error_count: 0,
+                 insert_count: 0,
+                 update_count: 1,
+                 unchanged_count: 0,
+                 invalid_sheet_count: 0
+               }
+             } =
+               BulkLoad.bulk_load(sheets, opts)
+
+      assert %{events: events} =
+               UploadEvents.get_job(opts.job_id)
+
+      assert [
+               %{
+                 response: %{
+                   "details" => %{"implementation_key" => ^impl_key},
+                   "row_number" => 2,
+                   "type" => "updated"
+                 },
+                 status: "INFO"
+               }
+             ] = events
+
+      assert %{
+               df_content: %{
+                 "numeric_field" => %{"value" => ^numeric_field_value, "origin" => "user"}
+               }
+             } = Implementations.get_implementation(impl_id)
+    end
+
+    test "update implementation with empty template column", %{
+      opts: opts,
+      domain: domain,
+      template: template
+    } do
+      %{
+        id: impl_id,
+        implementation_key: impl_key,
+        result_type: result_type,
+        goal: goal,
+        minimum: minimum
+      } =
+        insert(:implementation,
+          implementation_key: "impl_key",
+          df_name: template.name,
+          df_content: %{
+            "string_field" => %{"value" => "string_value", "origin" => "file"},
+            "numeric_field" => %{"value" => 8, "origin" => "user"}
+          },
+          template: template,
+          domain_id: domain.id
+        )
+
+      sheets = %{
+        template.name =>
+          {[
+             "english_implementation_key",
+             "english_implementation_template",
+             "english_result_type",
+             "english_goal",
+             "english_minimum",
+             "domain_external_id",
+             "english_string_field",
+             "english_numeric_field"
+           ],
+           [
+             [
+               impl_key,
+               template.name,
+               result_type,
+               goal,
+               minimum,
+               domain.external_id,
+               "string_value_change",
+               ""
+             ]
+           ]}
+      }
+
+      assert {
+               :ok,
+               %{
+                 error_count: 0,
+                 insert_count: 0,
+                 update_count: 1,
+                 unchanged_count: 0,
+                 invalid_sheet_count: 0
+               }
+             } =
+               BulkLoad.bulk_load(sheets, opts)
+
+      assert %{events: events} =
+               UploadEvents.get_job(opts.job_id)
+
+      assert [
+               %{
+                 response: %{
+                   "details" => %{"implementation_key" => ^impl_key},
+                   "row_number" => 2,
+                   "type" => "updated"
+                 },
+                 status: "INFO"
+               }
+             ] = events
+
+      assert %{
+               df_content: %{
+                 "numeric_field" => %{"value" => nil, "origin" => "file"}
+               }
+             } = Implementations.get_implementation(impl_id)
     end
 
     test "no need for update", %{opts: opts, domain: domain} do

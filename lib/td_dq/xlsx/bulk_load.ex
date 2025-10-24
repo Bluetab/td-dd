@@ -331,6 +331,13 @@ defmodule TdDq.XLSX.BulkLoad do
   end
 
   defp write_implementation([implementation], params, ctx) do
+    df_content =
+      implementation
+      |> Map.get(:df_content)
+      |> Map.merge(params["df_content"])
+
+    params = Map.put(params, "df_content", df_content)
+
     case Implementations.maybe_update_implementation(
            implementation,
            params,
@@ -385,7 +392,7 @@ defmodule TdDq.XLSX.BulkLoad do
           }
         })
 
-        :error
+        :unchanged
 
       error ->
         Logger.error("unexpected error: #{inspect(error)}")
