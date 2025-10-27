@@ -4,13 +4,20 @@
 
 ### Changed
 
-- [TD-7539] Change structure notes generation to use ElasticSearch
+- [TD-7539] Allow to download notes from ElasticSearch for structure details
+- [TD-7396] Adjusts implementation actions permissions for users with permissions in different domains
+
+## [7.11.2] 2025-10-27
+
+### Fixed
+
+- [TD-7617] Donwload/Upload Implementation handling updates:
+  - Refactor implementation handling in XLSX download and writer modules
+  - Enhance implementation update logic in XLSX bulk load with df_content merging
+  - Improve implementation download functionality to properly handle table field downloads
+  - Update implementation handling across download, writer, and bulk load modules
 
 ## [7.11.1] 2025-10-15
-
-### Added
-
-- [TD-7539] Allow to download notes from the structure details
 
 ### Fixed
 
@@ -26,10 +33,6 @@
 
 - [TD-7401] Update `td-core` version
 - [TD-7075] Support for Implementation XLSX download and upload
-
-### Changed
-
-- [TD-7512] Adjusts implementation actions permissions for users with permissions in different domains
 
 ## [7.10.1] 2025-09-19
 
