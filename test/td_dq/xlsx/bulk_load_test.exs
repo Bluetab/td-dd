@@ -7,6 +7,34 @@ defmodule TdDq.XLSX.BulkLoadTest do
 
   @moduletag sandbox: :shared
 
+  @content_field [
+    %{
+      "name" => "string_field",
+      "type" => "string",
+      "label" => "String Field",
+      "cardinality" => "?"
+    },
+    %{
+      "name" => "numeric_field",
+      "type" => "integer",
+      "label" => "Numeric Field",
+      "cardinality" => "?"
+    }
+  ]
+
+  @content_field_with_default [
+                                %{
+                                  "name" => "string_field_with_default",
+                                  "type" => "string",
+                                  "label" => "String Field with Default",
+                                  "cardinality" => "?",
+                                  "default" => %{
+                                    "value" => "default_value",
+                                    "origin" => "default"
+                                  }
+                                }
+                              ] ++ @content_field
+
   setup do
     headers = [
       "implementation_key",
@@ -41,31 +69,6 @@ defmodule TdDq.XLSX.BulkLoadTest do
         ]
     )
 
-    template =
-      CacheHelpers.insert_template(
-        name: "impl_template",
-        scope: "ri",
-        content: [
-          %{
-            "name" => "group",
-            "fields" => [
-              %{
-                "name" => "string_field",
-                "type" => "string",
-                "label" => "String Field",
-                "cardinality" => "?"
-              },
-              %{
-                "name" => "numeric_field",
-                "type" => "integer",
-                "label" => "Numeric Field",
-                "cardinality" => "?"
-              }
-            ]
-          }
-        ]
-      )
-
     %{id: domain_id} = domain = CacheHelpers.insert_domain(name: "impl_domain")
 
     insert(:implementation,
@@ -81,7 +84,7 @@ defmodule TdDq.XLSX.BulkLoadTest do
     [
       opts: %{claims: build(:claims), lang: "en", to_status: "draft", job_id: job_id},
       domain: domain,
-      template: template
+      template: create_template(@content_field)
     ]
   end
 
@@ -208,7 +211,7 @@ defmodule TdDq.XLSX.BulkLoadTest do
       assert [
                %{
                  response: %{
-                   "details" => %{"implementation_key" => ^impl_key},
+                   "details" => %{"implementation_key" => ^impl_key, "changes" => changes},
                    "row_number" => 2,
                    "type" => "updated"
                  },
@@ -216,11 +219,240 @@ defmodule TdDq.XLSX.BulkLoadTest do
                }
              ] = events
 
+      assert changes == %{
+               "df_content" => %{
+                 "string_field" => %{"value" => "string_value_change", "origin" => "file"}
+               }
+             }
+
       assert %{
                df_content: %{
                  "numeric_field" => %{"value" => ^numeric_field_value, "origin" => "user"}
                }
              } = Implementations.get_implementation(impl_id)
+    end
+
+    test "not update implementation if excel value is the same", %{
+      opts: opts,
+      domain: domain,
+      template: template
+    } do
+      numeric_field_value = 8
+      string_field_value = "string_value"
+
+      %{
+        id: impl_id,
+        implementation_key: impl_key,
+        result_type: result_type,
+        goal: goal,
+        minimum: minimum
+      } =
+        insert(:implementation,
+          implementation_key: "impl_key",
+          df_name: template.name,
+          df_content: %{
+            "string_field" => %{"value" => string_field_value, "origin" => "user"},
+            "numeric_field" => %{"value" => numeric_field_value, "origin" => "user"}
+          },
+          template: template,
+          domain_id: domain.id
+        )
+
+      sheets = %{
+        template.name =>
+          {[
+             "english_implementation_key",
+             "english_implementation_template",
+             "english_result_type",
+             "english_goal",
+             "english_minimum",
+             "domain_external_id",
+             "english_string_field",
+             "english_numeric_field"
+           ],
+           [
+             [
+               impl_key,
+               template.name,
+               result_type,
+               goal,
+               minimum,
+               domain.external_id,
+               string_field_value,
+               numeric_field_value
+             ]
+           ]}
+      }
+
+      assert {
+               :ok,
+               %{
+                 error_count: 0,
+                 insert_count: 0,
+                 update_count: 0,
+                 unchanged_count: 1,
+                 invalid_sheet_count: 0
+               }
+             } =
+               BulkLoad.bulk_load(sheets, opts)
+
+      assert %{events: events} =
+               UploadEvents.get_job(opts.job_id)
+
+      assert [
+               %{
+                 response: %{
+                   "details" => %{"implementation_key" => ^impl_key},
+                   "row_number" => 2,
+                   "type" => "unchanged"
+                 },
+                 status: "INFO"
+               }
+             ] = events
+
+      assert %{
+               df_content: %{
+                 "numeric_field" => %{"value" => ^numeric_field_value, "origin" => "user"},
+                 "string_field" => %{"value" => ^string_field_value, "origin" => "user"}
+               }
+             } = Implementations.get_implementation(impl_id)
+    end
+
+    test "update implementation when template has default value", %{
+      opts: opts,
+      domain: domain
+    } do
+      template_with_default =
+        create_template(@content_field_with_default, "impl_template_with_default")
+
+      numeric_field_value = 8
+      string_field_value = "string_value"
+
+      %{
+        id: impl_id,
+        implementation_key: impl_key,
+        result_type: result_type,
+        goal: goal,
+        minimum: minimum
+      } =
+        insert(:implementation,
+          implementation_key: "impl_key",
+          df_name: template_with_default.name,
+          df_content: %{
+            "string_field" => %{"value" => string_field_value, "origin" => "user"},
+            "numeric_field" => %{"value" => numeric_field_value, "origin" => "user"},
+            "string_field_with_default" => %{"value" => "foo_value", "origin" => "user"}
+          },
+          template: template_with_default,
+          domain_id: domain.id
+        )
+
+      %{
+        id: impl_id_2,
+        implementation_key: impl_key_2
+      } =
+        insert(:implementation,
+          implementation_key: "impl_key_2",
+          df_name: template_with_default.name,
+          df_content: %{
+            "string_field" => %{"value" => string_field_value, "origin" => "user"},
+            "numeric_field" => %{"value" => numeric_field_value, "origin" => "user"}
+          },
+          template: template_with_default,
+          domain_id: domain.id
+        )
+
+      sheets = %{
+        template_with_default.name =>
+          {[
+             "english_implementation_key",
+             "english_implementation_template",
+             "english_result_type",
+             "english_goal",
+             "english_minimum",
+             "domain_external_id",
+             "english_string_field",
+             "english_numeric_field"
+           ],
+           Enum.map(
+             [impl_key, "new_impl", impl_key_2],
+             &[
+               &1,
+               template_with_default.name,
+               result_type,
+               goal,
+               minimum,
+               domain.external_id,
+               string_field_value,
+               numeric_field_value
+             ]
+           )}
+      }
+
+      assert {
+               :ok,
+               %{
+                 error_count: 0,
+                 insert_count: 1,
+                 update_count: 0,
+                 unchanged_count: 2,
+                 invalid_sheet_count: 0
+               }
+             } =
+               BulkLoad.bulk_load(sheets, opts)
+
+      assert %{events: events} =
+               UploadEvents.get_job(opts.job_id)
+
+      assert [
+               %{
+                 response: %{
+                   "details" => %{"implementation_key" => ^impl_key},
+                   "row_number" => 2,
+                   "type" => "unchanged"
+                 },
+                 status: "INFO"
+               },
+               %{
+                 response: %{
+                   "row_number" => 3,
+                   "type" => "created",
+                   "details" => %{
+                     "id" => new_impl_key
+                   }
+                 },
+                 status: "INFO"
+               },
+               %{
+                 response: %{
+                   "row_number" => 4,
+                   "type" => "unchanged"
+                 },
+                 status: "INFO"
+               }
+             ] = events
+
+      assert %{
+               df_content: %{
+                 "numeric_field" => %{"value" => ^numeric_field_value, "origin" => "user"},
+                 "string_field" => %{"value" => ^string_field_value, "origin" => "user"},
+                 "string_field_with_default" => %{"origin" => "user", "value" => "foo_value"}
+               }
+             } = Implementations.get_implementation(impl_id)
+
+      assert %{
+               df_content: %{
+                 "numeric_field" => %{"value" => ^numeric_field_value, "origin" => "file"},
+                 "string_field" => %{"value" => ^string_field_value, "origin" => "file"},
+                 "string_field_with_default" => %{
+                   "origin" => "default",
+                   "value" => "default_value"
+                 }
+               }
+             } = Implementations.get_implementation(new_impl_key)
+
+      assert %{df_content: df_content} = Implementations.get_implementation(impl_id_2)
+      assert is_nil(Map.get(df_content, "string_field_with_default"))
     end
 
     test "update implementation with empty template column", %{
@@ -809,5 +1041,18 @@ defmodule TdDq.XLSX.BulkLoadTest do
                }
              ] = events
     end
+  end
+
+  defp create_template(content, name \\ "impl_template") do
+    CacheHelpers.insert_template(
+      name: name,
+      scope: "ri",
+      content: [
+        %{
+          "name" => "group",
+          "fields" => content
+        }
+      ]
+    )
   end
 end

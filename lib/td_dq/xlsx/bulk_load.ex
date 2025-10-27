@@ -331,10 +331,30 @@ defmodule TdDq.XLSX.BulkLoad do
   end
 
   defp write_implementation([implementation], params, ctx) do
+    file_data =
+      params
+      |> Map.get("df_content")
+      |> Enum.reject(fn {_, %{"origin" => origin}} -> origin == "default" end)
+      |> Map.new()
+
     df_content =
       implementation
       |> Map.get(:df_content)
-      |> Map.merge(params["df_content"])
+      |> Map.merge(file_data, fn
+        _, %{"value" => value} = old, %{"value" => value} -> old
+        _, _, new -> new
+      end)
+
+    df_content_changes =
+      file_data
+      |> Enum.reject(fn {key, %{"value" => value}} ->
+        implementation
+        |> Map.get(:df_content)
+        |> Map.get(key, %{})
+        |> Map.get("value")
+        |> Kernel.==(value)
+      end)
+      |> Map.new()
 
     params = Map.put(params, "df_content", df_content)
 
@@ -358,6 +378,12 @@ defmodule TdDq.XLSX.BulkLoad do
         :unchanged
 
       {:ok, %{implementation: %{id: id}, changes: changes}} ->
+        changes =
+          case changes do
+            %{df_content: %{}} -> Map.put(changes, :df_content, df_content_changes)
+            changes -> changes
+          end
+
         UploadEvents.create_info(ctx.job_id, %{
           type: "updated",
           sheet: params["_sheet"],
