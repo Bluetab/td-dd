@@ -1,13 +1,14 @@
 defmodule TdDq.XLSX.WriterTest do
   use TdDd.DataCase
 
+  alias TdCore.Utils.CollectionUtils
   alias TdDq.XLSX.Writer
 
   describe "TdDq.XLSX.Writer.rows_by_implementation_template/3" do
     test "test returns the implementations content split by template for download" do
       domain = CacheHelpers.insert_domain()
 
-      %{name: template_name_1, content: [%{"fields" => content_fields_for_type_1}]} =
+      %{name: template_name_1} =
         template_1 =
         CacheHelpers.insert_template(%{
           name: "template_1",
@@ -20,6 +21,18 @@ defmodule TdDq.XLSX.WriterTest do
                   "name" => "field_name",
                   "type" => "string",
                   "label" => "Label field_name"
+                },
+                %{
+                  "name" => "table_field",
+                  "type" => "table",
+                  "widget" => "table",
+                  "label" => "Label table_field",
+                  "values" => %{
+                    "table_columns" => [
+                      %{"mandatory" => false, "name" => "Col A"},
+                      %{"mandatory" => false, "name" => "Col B"}
+                    ]
+                  }
                 }
               ]
             }
@@ -35,7 +48,9 @@ defmodule TdDq.XLSX.WriterTest do
         minimum: minimum_0,
         inserted_at: inserted_0,
         updated_at: updated_0,
-        df_content: %{field_name: template_value_0},
+        df_content: %{
+          field_name: %{"value" => template_value_0}
+        },
         dataset: [
           %TdDq.Implementations.DatasetRow{
             structure: %TdDq.Implementations.Structure{
@@ -64,13 +79,21 @@ defmodule TdDq.XLSX.WriterTest do
         insert(:implementation,
           implementation_key: "imp_0",
           df_name: template_name_1,
-          df_content: %{field_name: "some name"},
+          df_content: %{
+            field_name: %{"value" => "some name"},
+            table_field: %{
+              "value" => [
+                %{"Col A" => "hola", "Col B" => "que tal"},
+                %{"Col A" => "como", "Col B" => "estas"}
+              ]
+            }
+          },
           template: template_1,
           domain_id: domain.id,
           domain: domain
         )
 
-      %{name: template_name_2, content: [%{"fields" => content_fields_for_type_2}]} =
+      %{name: template_name_2} =
         template_2 =
         CacheHelpers.insert_template(%{
           name: "template_2",
@@ -177,16 +200,27 @@ defmodule TdDq.XLSX.WriterTest do
           domain: domain
         )
 
+      stringify_implementation = fn impl, template ->
+        impl
+        |> CollectionUtils.stringify_keys(true)
+        |> Map.put("template", template)
+      end
+
+      implementations_type_2 =
+        Enum.map(
+          [
+            implementation_1_type_2,
+            implementation_2_type_2
+          ],
+          &stringify_implementation.(&1, template_2)
+        )
+
       implementation_information =
         %{
-          template_name_1 => %{
-            implementations: [implementation_0_type_1],
-            content: [content_fields_for_type_1]
-          },
-          template_name_2 => %{
-            implementations: [implementation_1_type_2, implementation_2_type_2],
-            content: [content_fields_for_type_2]
-          }
+          template_name_1 => [
+            stringify_implementation.(implementation_0_type_1, template_1)
+          ],
+          template_name_2 => implementations_type_2
         }
 
       rows =
@@ -194,7 +228,7 @@ defmodule TdDq.XLSX.WriterTest do
 
       assert [headers | content] = rows["template_1"]
 
-      assert Enum.count(headers) == 24
+      assert Enum.count(headers) == 25
 
       assert Enum.take(headers, 11) == [
                ["implementation_key", {:bg_color, "#ffd428"}],
@@ -213,6 +247,12 @@ defmodule TdDq.XLSX.WriterTest do
       assert ["Label field_name", {:bg_color, "#ffe994"}] ==
                Enum.find(headers, fn
                  [header, _] -> header == "Label field_name"
+                 _ -> false
+               end)
+
+      assert ["Label table_field", {:bg_color, "#ffe994"}] ==
+               Enum.find(headers, fn
+                 [header, _] -> header == "Label table_field"
                  _ -> false
                end)
 
@@ -239,6 +279,10 @@ defmodule TdDq.XLSX.WriterTest do
                  "",
                  "",
                  template_value_0,
+                 [
+                   "Col A;Col B\nhola;que tal\ncomo;estas",
+                   {:align_vertical, :top}
+                 ],
                  "dataset_structure_id:/#{dataset_0_id_0}",
                  "dataset_structure_id:/#{dataset_0_id_1}",
                  "validation_structure_id:/#{id_validation_0}",
