@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-7617] Donwload/Upload Implementation handling updates:
+  - Refactor implementation handling in XLSX download and writer modules
+  - Enhance implementation update logic in XLSX bulk load with df_content merging
+  - Improve implementation download functionality to properly handle table field downloads
+  - Update implementation handling across download, writer, and bulk load modules
+
 ## [7.11.1] 2025-10-15
 
 ### Fixed
