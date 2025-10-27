@@ -170,6 +170,7 @@ defmodule TdDd.Grants.Audit do
   defp status_to_event_name(%TdDd.Grants.GrantRequestStatus{status: "rejected"}),
     do: "grant_request_rejection"
 
+  defp status_name_to_event_name("approved"), do: "grant_request_status_process_approved"
   defp status_name_to_event_name("processing"), do: "grant_request_status_process_start"
   defp status_name_to_event_name("processed"), do: "grant_request_status_process_end"
   defp status_name_to_event_name("failed"), do: "grant_request_status_failure"

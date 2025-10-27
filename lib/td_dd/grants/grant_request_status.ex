@@ -32,6 +32,8 @@ defmodule TdDd.Grants.GrantRequestStatus do
     {"approved", "processing"},
     {"processing", "processed"},
     {"processing", "failed"},
+    {"failed", "processing"},
+    {"failed", "approved"},
     {"pending", "cancelled"},
     {"approved", "cancelled"}
   ]
