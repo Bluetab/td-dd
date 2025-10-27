@@ -33,6 +33,7 @@
 
 - [TD-7401] Update `td-core` version
 - [TD-7075] Support for Implementation XLSX download and upload
+- [TD-7487] Allow to reprocess grant requests that failed to be processed
 
 ## [7.10.1] 2025-09-19
 

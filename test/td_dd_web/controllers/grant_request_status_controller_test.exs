@@ -107,5 +107,82 @@ defmodule TdDdWeb.GrantRequestStatusControllerTest do
                |> post(path, params)
                |> json_response(:unprocessable_entity)
     end
+
+    @tag authentication: [role: "user"]
+    test "allows transition from failed to processing status", %{conn: conn, claims: claims} do
+      %{id: domain_id} = CacheHelpers.insert_domain()
+
+      %{grant_request: grant_request, grant_request_id: grant_request_id} =
+        insert(:grant_request_status,
+          status: "failed",
+          reason: "connection timeout",
+          grant_request: build(:grant_request, domain_ids: [domain_id])
+        )
+
+      CacheHelpers.put_session_permissions(claims, domain_id, [:approve_grant_request])
+
+      path = Routes.grant_request_status_path(conn, :create, grant_request)
+      params = %{"status" => "processing", "reason" => "retrying after fixing connection"}
+
+      assert %{"data" => data} =
+               conn
+               |> post(path, params)
+               |> json_response(:created)
+
+      assert %{
+               "id" => ^grant_request_id,
+               "status" => "processing",
+               "status_reason" => "retrying after fixing connection"
+             } = data
+    end
+
+    @tag authentication: [role: "user"]
+    test "allows transition from failed to approved status", %{conn: conn, claims: claims} do
+      %{id: domain_id} = CacheHelpers.insert_domain()
+
+      %{grant_request: grant_request, grant_request_id: grant_request_id} =
+        insert(:grant_request_status,
+          status: "failed",
+          reason: "temporary system error",
+          grant_request: build(:grant_request, domain_ids: [domain_id])
+        )
+
+      CacheHelpers.put_session_permissions(claims, domain_id, [:approve_grant_request])
+
+      path = Routes.grant_request_status_path(conn, :create, grant_request)
+      params = %{"status" => "approved", "reason" => "system error resolved, re-approving"}
+
+      assert %{"data" => data} =
+               conn
+               |> post(path, params)
+               |> json_response(:created)
+
+      assert %{
+               "id" => ^grant_request_id,
+               "status" => "approved",
+               "status_reason" => "system error resolved, re-approving"
+             } = data
+    end
+
+    @tag authentication: [role: "user"]
+    test "rejects invalid status transitions from failed", %{conn: conn, claims: claims} do
+      %{id: domain_id} = CacheHelpers.insert_domain()
+
+      %{grant_request: grant_request} =
+        insert(:grant_request_status,
+          status: "failed",
+          grant_request: build(:grant_request, domain_ids: [domain_id])
+        )
+
+      CacheHelpers.put_session_permissions(claims, domain_id, [:approve_grant_request])
+
+      path = Routes.grant_request_status_path(conn, :create, grant_request)
+      params = %{"status" => "processed"}
+
+      assert %{"errors" => %{"status" => ["invalid status change"]}} =
+               conn
+               |> post(path, params)
+               |> json_response(:unprocessable_entity)
+    end
   end
 end
