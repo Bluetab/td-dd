@@ -4,7 +4,6 @@ defmodule TdDq.Implementations.Search do
   """
 
   alias TdCore.Search
-  alias TdCore.Utils.CollectionUtils
   alias TdDq.Rules.Search, as: RulesSearch
   alias Truedat.Auth.Claims
 
@@ -84,11 +83,7 @@ defmodule TdDq.Implementations.Search do
   defp transform_response({:error, _} = response), do: response
 
   defp transform_response(%{results: results} = response) do
-    results =
-      results
-      |> Enum.map(&Map.get(&1, "_source"))
-      |> Enum.map(&CollectionUtils.atomize_keys(&1, true))
-
+    results = Enum.map(results, &Map.get(&1, "_source"))
     %{response | results: results}
   end
 

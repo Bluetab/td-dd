@@ -707,6 +707,13 @@ defmodule TdDd.DataStructures do
     end
   end
 
+  def get_version_count!(%DataStructureVersion{} = dsv) do
+    case Repo.preload(dsv, data_structure: :versions) do
+      %{data_structure: %{versions: versions}} ->
+        length(versions)
+    end
+  end
+
   def get_grants(%DataStructureVersion{data_structure_id: id, path: path}, clauses \\ %{}) do
     ids = Enum.reduce(path, [id], fn %{"data_structure_id" => id}, acc -> [id | acc] end)
 
@@ -723,6 +730,18 @@ defmodule TdDd.DataStructures do
       end
     end)
     |> Enum.sort_by(& &1.id)
+  end
+
+  def get_grants_count(%DataStructureVersion{data_structure_id: id, path: path}) do
+    ids = Enum.reduce(path, [id], fn %{"data_structure_id" => id}, acc -> [id | acc] end)
+
+    dsv_preloader = &enriched_structure_versions(data_structure_ids: &1)
+
+    %{}
+    |> Map.put(:data_structure_ids, ids)
+    |> Map.put(:preload, [:system, :data_structure, data_structure_version: dsv_preloader])
+    |> Grants.list_active_grants()
+    |> length()
   end
 
   def get_grant(%DataStructureVersion{} = dsv, user_id) do
@@ -816,6 +835,20 @@ defmodule TdDd.DataStructures do
     |> where([i], is_nil(i.deleted_at))
     |> where([i], i.data_structure_id == ^id)
     |> select([i], count(i.implementation_id, :distinct))
+    |> Repo.one!()
+  end
+
+  def get_parents_count(%DataStructureVersion{id: id}) do
+    DataStructureRelation
+    |> where([r], r.child_id == ^id)
+    |> select([r], count(r.parent_id, :distinct))
+    |> Repo.one!()
+  end
+
+  def get_children_count(%DataStructureVersion{id: id}) do
+    DataStructureRelation
+    |> where([r], r.parent_id == ^id)
+    |> select([r], count(r.child_id, :distinct))
     |> Repo.one!()
   end
 

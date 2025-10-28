@@ -9,6 +9,7 @@ defmodule TdDd.DataStructures.StructureNotes do
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.Search.Indexer
   alias TdDd.DataStructures.StructureNote
   alias TdDd.Repo
@@ -114,6 +115,67 @@ defmodule TdDd.DataStructures.StructureNotes do
   defp get_cursor_params(params), do: params
 
   def get_structure_note!(id), do: Repo.get!(StructureNote, id)
+
+  def get_notes_with_hierarchy(
+        id,
+        statuses,
+        current_version,
+        include_children
+      ) do
+    main_notes =
+      id
+      |> list_structure_notes(statuses)
+      |> Repo.preload(:data_structure)
+
+    children_notes =
+      get_children_notes(
+        current_version,
+        include_children,
+        statuses
+      )
+
+    %{
+      main: %{structure: current_version, notes: main_notes},
+      children: children_notes
+    }
+  end
+
+  defp get_children_notes(_current_version, false, _statuses), do: []
+
+  defp get_children_notes(current_version, true, statuses) do
+    from(r in DataStructureRelation,
+      where: r.parent_id == ^current_version.id,
+      select: r.child_id
+    )
+    |> Repo.all()
+    |> Enum.flat_map(fn child_id ->
+      child_dsv = DataStructures.get_data_structure_version!(child_id)
+
+      get_children_data(child_dsv, statuses)
+    end)
+  end
+
+  defp get_children_data(%{deleted_at: deleted_at}, _statuses)
+       when not is_nil(deleted_at),
+       do: []
+
+  defp get_children_data(%{data_structure_id: data_structure_id}, statuses) do
+    full_child_version =
+      data_structure_id
+      |> DataStructures.get_data_structure()
+      |> DataStructures.get_latest_version()
+
+    child_notes =
+      data_structure_id
+      |> list_structure_notes(statuses)
+      |> Repo.preload(:data_structure)
+
+    if Enum.empty?(child_notes) do
+      []
+    else
+      [%{structure: full_child_version, notes: child_notes}]
+    end
+  end
 
   def latest_structure_note_query(query, data_structure_id) do
     query

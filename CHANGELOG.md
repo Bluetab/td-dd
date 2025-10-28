@@ -1,11 +1,39 @@
 # Changelog
 
-## [Unreleased]
+# [Unreleased]
+
+### Changed
+
+- [TD-7539] Allow to download notes from ElasticSearch for structure details
+- [TD-7396] Adjusts implementation actions permissions for users with permissions in different domains
+
+## [7.11.2] 2025-10-27
+
+### Fixed
+
+- [TD-7617] Donwload/Upload Implementation handling updates:
+  - Refactor implementation handling in XLSX download and writer modules
+  - Enhance implementation update logic in XLSX bulk load with df_content merging
+  - Improve implementation download functionality to properly handle table field downloads
+  - Update implementation handling across download, writer, and bulk load modules
+
+## [7.11.1] 2025-10-15
+
+### Fixed
+
+- [TD-7573] Add missing translations functionality for Implementation XLSX download
+
+## [7.11.0] 2025-10-13
+
+### Changed
+
+- [TD-7485] Structure partial GraphQl querys
 
 ### Added
 
 - [TD-7401] Update `td-core` version
-- [TD-7340] Support for `dynamic_table` template fields
+- [TD-7075] Support for Implementation XLSX download and upload
+- [TD-7487] Allow to reprocess grant requests that failed to be processed
 
 ## [7.10.1] 2025-09-19
 
@@ -21,10 +49,12 @@
 - [TD-7345] Generate vector for business glossary consumption
 - [TD-7175] Update README.md for oban information
 - [TD-7364]:
+
   - Store embeddings in postres.
   - Use stored embeddings on reindex.
   - Incrementaly update outdated embeddings.
   - Remove stale embeddings.
+
 - [TD-7446] Add support for implementation related rule concept user_groups field types
 - [TD-7320] Optimized metadata query performance for multiple metadata versions.
 - [TD-7128] Refactored data structure version handling, permissions, and related GraphQL resolvers.

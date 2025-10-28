@@ -3647,286 +3647,125 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       assert [%{"id" => ^id}] = data
     end
-  end
 
-  describe "csv" do
-    setup do
-      details = %{
-        "Query" => "Rk9P",
-        "baz_title" => "baz"
-      }
+    @tag authentication: [
+           user_name: "non_admin"
+         ]
+    test "returns create implementation actions when user has manage_quality_rule_implementations permission",
+         %{conn: conn, claims: claims} do
+      %{id: domain_a_id} = CacheHelpers.insert_domain()
 
-      details2 = %{
-        "foo_title" => %{"x" => "foo"},
-        "baz_title" => "bazz",
-        "jaz_title" => "jaz"
-      }
+      CacheHelpers.put_session_permissions(claims, domain_a_id, [
+        :manage_quality_rule_implementations,
+        :manage_basic_implementations,
+        :manage_raw_quality_rule_implementations,
+        :view_quality_rule,
+        :manage_quality_rule
+      ])
 
-      result =
-        build(:rule_result,
-          records: 3245,
-          result_type: "percentage",
-          errors: 123,
-          result: 0,
-          details: details
-        )
+      %{id: rule_id} = _rule = insert(:rule, domain_id: domain_a_id)
 
-      result2 =
-        build(:rule_result,
-          records: 3245,
-          result_type: "percentage",
-          errors: 123,
-          result: 0,
-          details: details2
-        )
-
-      implementations = [
-        insert(:implementation,
-          results: [result],
-          df_content: %{"some_first_field" => "some_first_value"}
-        ),
-        insert(:implementation,
-          results: [result2],
-          df_content: %{"some_second_field" => "some_value"}
-        ),
-        insert(:implementation, df_content: %{"some_second_field" => "some_second_value"})
-      ]
-
-      [implementations: implementations, result: result]
-    end
-
-    @tag authentication: [role: "admin"]
-    test "download all implementations as csv", %{
-      conn: conn,
-      implementation: previous_implementation,
-      implementations: new_implementations
-    } do
-      concept_id = System.unique_integer([:positive])
-      CacheHelpers.insert_concept(%{id: concept_id})
-
-      concept_id_2 = System.unique_integer([:positive])
-      CacheHelpers.insert_concept(%{id: concept_id_2})
-
-      CacheHelpers.insert_link(
-        previous_implementation.id,
-        "implementation_ref",
-        "business_concept",
-        concept_id
-      )
-
-      CacheHelpers.insert_link(
-        previous_implementation.id,
-        "implementation_ref",
-        "business_concept",
-        concept_id_2
-      )
+      implementation = insert(:implementation, rule_id: rule_id, domain_id: domain_a_id)
 
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/implementations/_search", %{size: 10_000, sort: sort, query: query}, _ ->
-          assert query == %{
-                   bool: %{
-                     must: %{match_all: %{}},
-                     must_not: %{exists: %{field: "deleted_at"}}
-                   }
-                 }
-
-          assert sort == ["_score", "implementation_key.sort"]
-
-          SearchHelpers.scroll_response([
-            previous_implementation
-            | new_implementations
-          ])
-      end)
-      |> expect(:request, fn _, :post, "/_search/scroll", body, [] ->
-        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
-        SearchHelpers.scroll_response([])
+        _, :post, "/implementations/_search", %{from: 0, size: 1000, query: _}, _ ->
+          SearchHelpers.hits_response([implementation])
       end)
 
-      [
-        %{
-          implementation_key: key_0,
-          rule: %{name: name_0},
-          inserted_at: inserted_at_0,
-          updated_at: updated_at_0
-        },
-        %{
-          implementation_key: key_1,
-          rule: %{name: name_1},
-          results: [%{records: records_1, errors: errors_1}],
-          inserted_at: inserted_at_1,
-          updated_at: updated_at_1
-        },
-        %{
-          implementation_key: key_2,
-          rule: %{name: name_2},
-          inserted_at: inserted_at_2,
-          updated_at: updated_at_2
-        },
-        %{
-          implementation_key: key_3,
-          rule: %{name: name_3},
-          inserted_at: inserted_at_3,
-          updated_at: updated_at_3
-        }
-      ] = [previous_implementation | new_implementations]
+      assert %{"_actions" => actions} =
+               conn
+               |> post(
+                 Routes.rule_implementation_path(conn, :search_rule_implementations, rule_id)
+               )
+               |> json_response(:ok)
 
-      assert %{resp_body: body} = post(conn, Routes.implementation_path(conn, :csv, %{}))
-
-      time_zone = Application.get_env(:td_dd, :time_zone)
-
-      inserted_at_0 =
-        DateTime.to_string(inserted_at_0)
-        |> TdDd.Helpers.shift_zone(time_zone)
-        |> String.replace("+", "\\+")
-
-      updated_at_0 =
-        DateTime.to_string(updated_at_0)
-        |> TdDd.Helpers.shift_zone(time_zone)
-        |> String.replace("+", "\\+")
-
-      inserted_at_1 =
-        DateTime.to_string(inserted_at_1)
-        |> TdDd.Helpers.shift_zone(time_zone)
-        |> String.replace("+", "\\+")
-
-      updated_at_1 =
-        DateTime.to_string(updated_at_1)
-        |> TdDd.Helpers.shift_zone(time_zone)
-        |> String.replace("+", "\\+")
-
-      inserted_at_2 =
-        DateTime.to_string(inserted_at_2)
-        |> TdDd.Helpers.shift_zone(time_zone)
-        |> String.replace("+", "\\+")
-
-      updated_at_2 =
-        DateTime.to_string(updated_at_2)
-        |> TdDd.Helpers.shift_zone(time_zone)
-        |> String.replace("+", "\\+")
-
-      inserted_at_3 =
-        DateTime.to_string(inserted_at_3)
-        |> TdDd.Helpers.shift_zone(time_zone)
-        |> String.replace("+", "\\+")
-
-      updated_at_3 =
-        DateTime.to_string(updated_at_3)
-        |> TdDd.Helpers.shift_zone(time_zone)
-        |> String.replace("+", "\\+")
-
-      for regex <- [
-            # credo:disable-for-lines:5 Credo.Check.Readability.MaxLineLength
-            "implementation_key;implementation_type;domain;executable;rule;rule_template;implementation_template;goal;minimum;records;errors;result;execution;last_execution_at;inserted_at;updated_at;business_concepts;structure_domains;dataset_external_id_1;validation_field_1;result_details_Query;result_details_baz_title;result_details_foo_title;result_details_jaz_title\r",
-            ~r/#{key_0};default;;[\w+.]+;#{name_0};;;\d*\.?\d*;\d*\.?\d*;;;;;;#{inserted_at_0};#{updated_at_0};[\w+]+|[\w+]+;;;;;;;\r/,
-            ~r/#{key_1};default;;[\w+.]+;#{name_1};;;\d*\.?\d*;\d*\.?\d*;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;[[:ascii:]]+;#{inserted_at_1};#{updated_at_1};;;;;FOO;baz;;\r/,
-            ~r/#{key_2};default;;[\w+.]+;#{name_2};;;\d*\.?\d*;\d*\.?\d*;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;[[:ascii:]]+;#{inserted_at_2};#{updated_at_2};;;;;;bazz;\"{\"\"x\"\":\"\"foo\"\"}\";jaz\r/,
-            ~r/#{key_3};default;;[\w+.]+;#{name_3};;;\d*\.?\d*;\d*\.?\d*;;;;;;#{inserted_at_3};#{updated_at_3};;;;;;;;\r/
-          ] do
-        assert body =~ regex
-      end
-    end
-
-    @tag authentication: [role: "admin"]
-    test "download implementations with result details only for admin", %{
-      conn: conn,
-      implementations: implementations
-    } do
-      ElasticsearchMock
-      |> expect(:request, fn _, :post, "/implementations/_search", _, _ ->
-        SearchHelpers.scroll_response(implementations)
-      end)
-      |> expect(:request, fn _, :post, "/_search/scroll", body, [] ->
-        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
-        SearchHelpers.scroll_response([])
-      end)
-
-      [
-        %{
-          implementation_key: key_1,
-          rule: %{name: name_1},
-          results: [
-            %{
-              records: records_1,
-              errors: errors_1,
-              details: %{"Query" => query_base64, "baz_title" => detail_field1}
-            }
-          ]
-        },
-        %{
-          implementation_key: key_2,
-          rule: %{name: name_2},
-          results: [%{details: %{"baz_title" => baz_title, "jaz_title" => jaz_title}}]
-        },
-        %{implementation_key: key_3, rule: %{name: name_3}}
-      ] = implementations
-
-      {:ok, query} = Base.decode64(query_base64)
-
-      assert %{resp_body: body} = post(conn, Routes.implementation_path(conn, :csv, %{}))
-
-      for regex <- [
-            # credo:disable-for-lines:5 Credo.Check.Readability.MaxLineLength
-            "implementation_key;implementation_type;domain;executable;rule;rule_template;implementation_template;goal;minimum;records;errors;result;execution;last_execution_at;inserted_at;updated_at;business_concepts;structure_domains;dataset_external_id_1;validation_field_1;result_details_Query;result_details_baz_title;result_details_foo_title;result_details_jaz_title\r",
-            ~r/#{key_1};default;;[\w+.]+;#{name_1};;;\d*\.?\d*;\d*\.?\d*;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;[[:ascii:]]+;[[:ascii:]]+;[[:ascii:]]+;;;;;#{query};#{detail_field1};;\r/,
-            ~r/#{key_2};default;;[\w+.]+;#{name_2};;;\d*\.?\d*;\d*\.?\d*;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;[[:ascii:]]+;[[:ascii:]]+;[[:ascii:]]+;;;;;;#{baz_title};\"{\"\"x\"\":\"\"foo\"\"}\";#{jaz_title}\r/,
-            ~r/#{key_3};default;;[\w+.]+;#{name_3};;;\d*\.?\d*;\d*\.?\d*;;;;;;[[:ascii:]]+;[[:ascii:]]+;;;;;;;;\r/
-          ] do
-        assert body =~ regex
-      end
+      assert %{"create" => %{"method" => "POST"}} = actions
+      assert Map.has_key?(actions, "createBasic")
+      assert Map.has_key?(actions, "createRaw")
     end
 
     @tag authentication: [
-           role: "non-admin",
-           permissions: @rule_implementation_permissions ++ [:manage_segments]
+           user_name: "non_admin"
          ]
-    test "download implementations with result details for non-admin", %{
-      conn: conn,
-      implementations: implementations
-    } do
+    test "returns empty implementation actions when user has permissions in different domains",
+         %{conn: conn, claims: claims} do
+      %{id: domain_a_id} = CacheHelpers.insert_domain()
+      %{id: domain_b_id} = CacheHelpers.insert_domain()
+
+      CacheHelpers.put_session_permissions(claims, domain_a_id, [
+        :view_quality_rule,
+        :manage_quality_rule
+      ])
+
+      CacheHelpers.put_session_permissions(claims, domain_b_id, [
+        :view_quality_rule,
+        :manage_quality_rule_implementations,
+        :manage_basic_implementations,
+        :manage_raw_quality_rule_implementations
+      ])
+
+      %{id: rule_id} = _rule = insert(:rule, domain_id: domain_a_id)
+
+      implementation = insert(:implementation, rule_id: rule_id, domain_id: domain_b_id)
+
       ElasticsearchMock
-      |> expect(:request, fn _, :post, "/implementations/_search", _, opts ->
-        assert opts == [params: %{"scroll" => "1m"}]
-        SearchHelpers.scroll_response(implementations)
-      end)
-      |> expect(:request, fn _, :post, "/_search/scroll", body, [] ->
-        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
-        SearchHelpers.scroll_response([])
+      |> expect(:request, fn
+        _, :post, "/implementations/_search", %{from: 0, size: 1000, query: _}, _ ->
+          SearchHelpers.hits_response([implementation])
       end)
 
-      [
-        %{
-          implementation_key: key_1,
-          rule: %{name: name_1},
-          results: [
-            %{
-              records: records_1,
-              errors: errors_1,
-              details: %{"Query" => query_base64, "baz_title" => detail_field1}
-            }
-          ]
-        },
-        %{
-          implementation_key: key_2,
-          rule: %{name: name_2},
-          results: [%{details: %{"baz_title" => baz_title, "jaz_title" => jaz_title}}]
-        },
-        %{implementation_key: key_3, rule: %{name: name_3}}
-      ] = implementations
+      result =
+        conn
+        |> post(Routes.rule_implementation_path(conn, :search_rule_implementations, rule_id))
+        |> json_response(:ok)
 
-      {:ok, query} = Base.decode64(query_base64)
+      refute Map.has_key?(result, "_actions")
+    end
 
-      assert %{resp_body: body} = post(conn, Routes.implementation_path(conn, :csv, %{}))
+    @tag authentication: [user_name: "non_admin", permissions: [:view_quality_rule]]
+    test "returns empty actions when user has no permissions", %{conn: conn} do
+      %{id: rule_id} = _rule = insert(:rule)
+      implementation = insert(:implementation, rule_id: rule_id)
 
-      for regex <- [
-            # credo:disable-for-lines:5 Credo.Check.Readability.MaxLineLength
-            "implementation_key;implementation_type;domain;executable;rule;rule_template;implementation_template;goal;minimum;records;errors;result;execution;last_execution_at;inserted_at;updated_at;business_concepts;structure_domains;dataset_external_id_1;validation_field_1;result_details_Query;result_details_baz_title;result_details_foo_title;result_details_jaz_title\r",
-            ~r/#{key_1};default;;[\w+.]+;#{name_1};;;\d*\.?\d*;\d*\.?\d*;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;[[:ascii:]]+;[[:ascii:]]+;[[:ascii:]]+;;;;;#{query};#{detail_field1};;\r/,
-            ~r/#{key_2};default;;[\w+.]+;#{name_2};;;\d*\.?\d*;\d*\.?\d*;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;[[:ascii:]]+;[[:ascii:]]+;[[:ascii:]]+;;;;;;#{baz_title};\"{\"\"x\"\":\"\"foo\"\"}\";#{jaz_title}\r/,
-            ~r/#{key_3};default;;[\w+.]+;#{name_3};;;\d*\.?\d*;\d*\.?\d*;;;;;;[[:ascii:]]+;[[:ascii:]]+;;;;;;;;\r/
-          ] do
-        assert body =~ regex
-      end
+      ElasticsearchMock
+      |> expect(:request, fn
+        _, :post, "/implementations/_search", %{from: 0, size: 1000, query: _}, _ ->
+          SearchHelpers.hits_response([implementation])
+      end)
+
+      result =
+        conn
+        |> post(Routes.rule_implementation_path(conn, :search_rule_implementations, rule_id))
+        |> json_response(:ok)
+
+      refute Map.has_key?(result, "_actions")
+    end
+
+    @tag authentication: [role: "admin"]
+    test "returns all actions for admin users", %{conn: conn} do
+      %{id: rule_id} = _rule = insert(:rule)
+      implementation = insert(:implementation, rule_id: rule_id)
+
+      ElasticsearchMock
+      |> expect(:request, fn
+        _, :post, "/implementations/_search", %{from: 0, size: 1000, query: _}, _ ->
+          SearchHelpers.hits_response([implementation])
+      end)
+
+      assert %{"_actions" => actions} =
+               conn
+               |> post(
+                 Routes.rule_implementation_path(conn, :search_rule_implementations, rule_id)
+               )
+               |> json_response(:ok)
+
+      assert %{
+               "create" => %{"method" => "POST"},
+               "createBasic" => %{"method" => "POST"},
+               "createRaw" => %{"method" => "POST"},
+               "autoPublish" => %{"method" => "POST", "href" => _}
+             } = actions
     end
   end
 

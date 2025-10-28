@@ -54,6 +54,15 @@ defmodule TdDq.Rules.Policy do
     end
   end
 
+  def authorize("create", %{} = claims, %Rule{domain_id: domain_id}),
+    do: authorized?(claims, :manage_quality_rule_implementations, domain_id)
+
+  def authorize("createBasic", %{} = claims, %Rule{domain_id: domain_id}),
+    do: authorized?(claims, :manage_basic_implementations, domain_id)
+
+  def authorize("createRaw", %{} = claims, %Rule{domain_id: domain_id}),
+    do: authorized?(claims, :manage_raw_quality_rule_implementations, domain_id)
+
   def authorize(:upsert, %{}, %{} = _params), do: true
 
   def authorize(_action, _claims, _params), do: false

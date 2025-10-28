@@ -21,6 +21,7 @@ config :td_dd, Oban,
   queues: [
     default: 5,
     xlsx_upload_queue: 10,
+    xlsx_implementations_upload_queue: 1,
     delete_units: 10,
     embedding_upserts: 10,
     embedding_deletion: 5

@@ -35,3 +35,4 @@ td_dd-*.tar
 TODO.*
 .qodo
 mise.toml
+.vscode
