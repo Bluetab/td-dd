@@ -222,6 +222,33 @@ defmodule TdDd.XLSX.UploadTest do
     }
   ]
 
+  @content_for_dynamic_table [
+    %{
+      "name" => "group",
+      "fields" => [
+        %{
+          "cardinality" => "?",
+          "label" => "String Field",
+          "name" => "string_field",
+          "type" => "string",
+          "widget" => "string"
+        },
+        %{
+          "name" => "table_field",
+          "type" => "dynamic_table",
+          "label" => "Table Field",
+          "cardinality" => "*",
+          "values" => %{
+            "table_columns" => [
+              %{"name" => "First Column", "cardinality" => "1", "type" => "string"},
+              %{"name" => "Second Column", "cardinality" => "?", "type" => "string"}
+            ]
+          }
+        }
+      ]
+    }
+  ]
+
   setup_all do
     start_supervised({Task.Supervisor, name: TdDd.TaskSupervisor})
     :ok
@@ -1126,6 +1153,75 @@ defmodule TdDd.XLSX.UploadTest do
       assert Enum.count(jobs) == 1
     end
 
+    test "uploads dynamic table field and removes tail field when it's empty", %{
+      claims: %{user_id: user_id} = claims,
+      domain: %{id: domain_id}
+    } do
+      CacheHelpers.put_session_permissions(claims, %{
+        create_structure_note: [domain_id],
+        publish_structure_note_from_draft: [domain_id],
+        edit_structure_note: [domain_id],
+        view_data_structure: [domain_id]
+      })
+
+      %{id: id, name: type} =
+        CacheHelpers.insert_template(
+          content: @content_for_dynamic_table,
+          type: "type_4",
+          name: "type_4"
+        )
+
+      insert(:data_structure_type, name: type, template_id: id)
+
+      data_structure =
+        insert(:data_structure, external_id: "ex_id23", domain_ids: [domain_id])
+
+      valid_structure_note("type_4", data_structure,
+        df_content: %{"string_field" => %{"origin" => "user", "value" => "foo"}}
+      )
+
+      {:ok, %{update_notes: update_notes}} =
+        Upload.structures(
+          %{
+            path: "test/fixtures/xlsx/upload_table.xlsx",
+            file_name: "upload_table.xlsx",
+            hash: "hash"
+          },
+          user_id: user_id,
+          claims: claims,
+          task_reference: "oban:1",
+          auto_publish: true
+        )
+
+      {_id, note} =
+        Enum.find(update_notes, fn
+          {_id, %{data_structure: data_structure}} ->
+            data_structure.external_id == "ex_id23"
+        end)
+
+      assert note.df_content == %{
+               "string_field" => %{"origin" => "file", "value" => ""},
+               "table_field" => %{
+                 "origin" => "file",
+                 "value" => [
+                   %{
+                     "First Column" => %{"value" => "First Field", "origin" => "file"},
+                     "Second Column" => %{"value" => "Second Field", "origin" => "file"}
+                   },
+                   %{
+                     "First Column" => %{"value" => "Third Field", "origin" => "file"},
+                     "Second Column" => %{"value" => "Fourth Field", "origin" => "file"}
+                   }
+                 ]
+               }
+             }
+
+      assert [{:reindex, :structures, indexed_structures}] = IndexWorkerMock.calls()
+      assert Enum.count(indexed_structures) == 1
+      assert jobs = all_enqueued(worker: EmbeddingsUpsertBatch)
+      assert Enum.count(jobs) == 1
+    end
+
     test "removes table field", %{
       claims: %{user_id: user_id} = claims,
       domain: %{id: domain_id}
@@ -1153,6 +1249,82 @@ defmodule TdDd.XLSX.UploadTest do
             "value" => [
               %{"First Column" => "First Field", "Second Column" => "Second Field"},
               %{"First Column" => "Third Field", "Second Column" => "Fourth Field"}
+            ]
+          }
+        },
+        status: "published"
+      )
+
+      {:ok, %{update_notes: update_notes}} =
+        Upload.structures(
+          %{
+            path: "test/fixtures/xlsx/upload_table_empty.xlsx",
+            file_name: "upload_table_empty.xlsx",
+            hash: "hash"
+          },
+          user_id: user_id,
+          claims: claims,
+          task_reference: "oban:1",
+          auto_publish: true
+        )
+
+      {_id, note} =
+        Enum.find(update_notes, fn
+          {_id, %{data_structure: data_structure}} ->
+            data_structure.external_id == "ex_id23"
+        end)
+
+      assert note.df_content == %{
+               "string_field" => %{"origin" => "file", "value" => ""},
+               "table_field" => %{
+                 "origin" => "file",
+                 "value" => []
+               }
+             }
+
+      assert [{:reindex, :structures, indexed_structures}] = IndexWorkerMock.calls()
+      assert Enum.count(indexed_structures) == 1
+      assert jobs = all_enqueued(worker: EmbeddingsUpsertBatch)
+      assert Enum.count(jobs) == 1
+    end
+
+    test "removes dynamic table field", %{
+      claims: %{user_id: user_id} = claims,
+      domain: %{id: domain_id}
+    } do
+      CacheHelpers.put_session_permissions(claims, %{
+        create_structure_note: [domain_id],
+        publish_structure_note_from_draft: [domain_id],
+        edit_structure_note: [domain_id],
+        view_data_structure: [domain_id]
+      })
+
+      %{id: id, name: type} =
+        CacheHelpers.insert_template(
+          content: @content_for_dynamic_table,
+          type: "type_4",
+          name: "type_4"
+        )
+
+      insert(:data_structure_type, name: type, template_id: id)
+
+      data_structure =
+        insert(:data_structure, external_id: "ex_id23", domain_ids: [domain_id])
+
+      valid_structure_note("type_4", data_structure,
+        df_content: %{
+          "string_field" => %{"origin" => "file", "value" => "foo"},
+          "table_field" => %{
+            "origin" => "file",
+            "value" => [
+              %{
+                "First Column" => %{"value" => "First Field", "origin" => "file"},
+                "Second Column" => %{"value" => "Second Field", "origin" => "file"}
+              },
+              %{
+                "First Column" => %{"value" => "Third Field", "origin" => "file"},
+                "Second Column" => %{"value" => "Fourth Field", "origin" => "file"}
+              }
             ]
           }
         },

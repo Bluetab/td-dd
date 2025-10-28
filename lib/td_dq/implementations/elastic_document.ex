@@ -147,9 +147,7 @@ defmodule TdDq.Implementations.ElasticDocument do
         |> Format.search_values(template)
         |> case do
           impl_content when is_map(impl_content) ->
-            impl_content
-            |> Enum.map(fn {key, %{"value" => value}} -> {key, value} end)
-            |> Map.new()
+            Content.to_legacy(impl_content)
 
           impl_content ->
             impl_content
