@@ -1,6 +1,7 @@
 defmodule TdDq.XLSX.DownloadTest do
   use TdDd.DataCase
 
+  alias TdCore.Utils.CollectionUtils
   alias TdDq.XLSX.Download
   alias XlsxReader
 
@@ -21,6 +22,18 @@ defmodule TdDq.XLSX.DownloadTest do
                   "name" => "field_name",
                   "type" => "string",
                   "label" => "Label field_name"
+                },
+                %{
+                  "name" => "table_field",
+                  "type" => "table",
+                  "widget" => "table",
+                  "label" => "Label table_field",
+                  "values" => %{
+                    "table_columns" => [
+                      %{"mandatory" => false, "name" => "Col A"},
+                      %{"mandatory" => false, "name" => "Col B"}
+                    ]
+                  }
                 }
               ]
             }
@@ -36,7 +49,9 @@ defmodule TdDq.XLSX.DownloadTest do
         minimum: minimum_0,
         inserted_at: inserted_0,
         updated_at: updated_0,
-        df_content: %{field_name: template_value_0},
+        df_content: %{
+          field_name: %{"value" => template_value_0}
+        },
         dataset: [
           %TdDq.Implementations.DatasetRow{
             structure: %TdDq.Implementations.Structure{
@@ -65,7 +80,15 @@ defmodule TdDq.XLSX.DownloadTest do
         insert(:implementation,
           implementation_key: "imp_0",
           df_name: template_name_1,
-          df_content: %{field_name: "some name"},
+          df_content: %{
+            field_name: %{"value" => "some name"},
+            table_field: %{
+              "value" => [
+                %{"Col A" => "hola", "Col B" => "que tal"},
+                %{"Col A" => "como", "Col B" => "estas"}
+              ]
+            }
+          },
           template: template_1,
           domain_id: domain.id
         )
@@ -175,12 +198,18 @@ defmodule TdDq.XLSX.DownloadTest do
           domain_id: domain.id
         )
 
+      implementations =
+        Enum.map(
+          [
+            implementation_0_type_1,
+            implementation_1_type_2,
+            implementation_2_type_2
+          ],
+          &CollectionUtils.stringify_keys(&1, true)
+        )
+
       assert {:ok, {file_name, blob}} =
-               Download.write_to_memory([
-                 implementation_0_type_1,
-                 implementation_1_type_2,
-                 implementation_2_type_2
-               ])
+               Download.write_to_memory(implementations)
 
       assert file_name == ~c"implementations.xlsx"
 
@@ -189,7 +218,7 @@ defmodule TdDq.XLSX.DownloadTest do
 
       assert {:ok, [headers | content]} = XlsxReader.sheet(workbook, "template_1")
 
-      assert Enum.count(headers) == 24
+      assert Enum.count(headers) == 25
 
       assert Enum.take(headers, 11) == [
                "implementation_key",
@@ -206,6 +235,7 @@ defmodule TdDq.XLSX.DownloadTest do
              ]
 
       assert Enum.find(headers, &(&1 == "Label field_name"))
+      assert Enum.find(headers, &(&1 == "Label table_field"))
       assert Enum.find(headers, &(&1 == "dataset_external_id_2"))
 
       assert content == [
@@ -231,6 +261,7 @@ defmodule TdDq.XLSX.DownloadTest do
                  "",
                  "",
                  template_value_0,
+                 "Col A;Col B\nhola;que tal\ncomo;estas",
                  "dataset_structure_id:/#{dataset_0_id_0}",
                  "dataset_structure_id:/#{dataset_0_id_1}",
                  "validation_structure_id:/#{id_validation_0}",

@@ -2,15 +2,16 @@ defmodule TdDdWeb.DataStructures.XLSXController do
   use TdDdWeb, :controller
 
   alias TdCore.Utils.FileHash
-  alias TdDd.DataStructures.FileBulkUpdateEvent
-  alias TdDd.DataStructures.FileBulkUpdateEvents
-  alias TdDd.DataStructures.Search
-  alias TdDd.XLSX.Download
-  alias TdDd.XLSX.Upload
 
-  plug TdDdWeb.SearchPermissionPlug
+  alias TdDd.DataStructures.{
+    FileBulkUpdateEvent,
+    FileBulkUpdateEvents,
+    Search
+  }
 
-  action_fallback TdDdWeb.FallbackController
+  alias TdDd.XLSX.{Download, Upload}
+  plug(TdDdWeb.SearchPermissionPlug)
+  action_fallback(TdDdWeb.FallbackController)
 
   @default_lang Application.compile_env(:td_dd, :lang)
 
@@ -36,12 +37,7 @@ defmodule TdDdWeb.DataStructures.XLSXController do
            search_all_structures(claims, permission, params),
          {:ok, {file_name, blob}} <-
            Download.write_to_memory(data_structures, structure_url_schema, opts) do
-      conn
-      |> put_resp_content_type(
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8"
-      )
-      |> put_resp_header("content-disposition", "attachment; filename=#{file_name}")
-      |> send_resp(:ok, blob)
+      send_xlsx_file(conn, file_name, blob)
     else
       %{results: []} -> send_resp(conn, :no_content, "")
     end
@@ -70,11 +66,37 @@ defmodule TdDdWeb.DataStructures.XLSXController do
     end
   end
 
+  defp send_xlsx_file(conn, file_name, blob) do
+    conn
+    |> put_resp_content_type(
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8"
+    )
+    |> put_resp_header("content-disposition", "attachment; filename=#{file_name}")
+    |> send_resp(:ok, blob)
+  end
+
   defp search_all_structures(claims, permission, params) do
+    include_children = to_string(Map.get(params, "include_children", false))
+    data_structure_id = Map.get(params, "data_structure_id")
+
     params
     |> Map.put("without", "deleted_at")
-    |> Map.drop(["page", "size"])
+    |> maybe_put_structure_filters(data_structure_id, include_children)
+    |> Map.drop(["page", "size", "data_structure_id", "include_children"])
     |> Search.scroll_data_structures(claims, permission)
+  end
+
+  defp maybe_put_structure_filters(params, nil, _include_children), do: params
+
+  defp maybe_put_structure_filters(params, data_structure_id, "false") do
+    Map.put(params, "must", %{"data_structure_id" => data_structure_id})
+  end
+
+  defp maybe_put_structure_filters(params, data_structure_id, "true") do
+    params
+    |> Map.put("query", "#{data_structure_id}")
+    |> Map.put("search_fields", ["data_structure_id", "parent_id"])
+    |> Map.put("operator", "OR")
   end
 
   defp build_opts(params) do

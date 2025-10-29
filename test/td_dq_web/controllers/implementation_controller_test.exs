@@ -3647,6 +3647,126 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       assert [%{"id" => ^id}] = data
     end
+
+    @tag authentication: [
+           user_name: "non_admin"
+         ]
+    test "returns create implementation actions when user has manage_quality_rule_implementations permission",
+         %{conn: conn, claims: claims} do
+      %{id: domain_a_id} = CacheHelpers.insert_domain()
+
+      CacheHelpers.put_session_permissions(claims, domain_a_id, [
+        :manage_quality_rule_implementations,
+        :manage_basic_implementations,
+        :manage_raw_quality_rule_implementations,
+        :view_quality_rule,
+        :manage_quality_rule
+      ])
+
+      %{id: rule_id} = _rule = insert(:rule, domain_id: domain_a_id)
+
+      implementation = insert(:implementation, rule_id: rule_id, domain_id: domain_a_id)
+
+      ElasticsearchMock
+      |> expect(:request, fn
+        _, :post, "/implementations/_search", %{from: 0, size: 1000, query: _}, _ ->
+          SearchHelpers.hits_response([implementation])
+      end)
+
+      assert %{"_actions" => actions} =
+               conn
+               |> post(
+                 Routes.rule_implementation_path(conn, :search_rule_implementations, rule_id)
+               )
+               |> json_response(:ok)
+
+      assert %{"create" => %{"method" => "POST"}} = actions
+      assert Map.has_key?(actions, "createBasic")
+      assert Map.has_key?(actions, "createRaw")
+    end
+
+    @tag authentication: [
+           user_name: "non_admin"
+         ]
+    test "returns empty implementation actions when user has permissions in different domains",
+         %{conn: conn, claims: claims} do
+      %{id: domain_a_id} = CacheHelpers.insert_domain()
+      %{id: domain_b_id} = CacheHelpers.insert_domain()
+
+      CacheHelpers.put_session_permissions(claims, domain_a_id, [
+        :view_quality_rule,
+        :manage_quality_rule
+      ])
+
+      CacheHelpers.put_session_permissions(claims, domain_b_id, [
+        :view_quality_rule,
+        :manage_quality_rule_implementations,
+        :manage_basic_implementations,
+        :manage_raw_quality_rule_implementations
+      ])
+
+      %{id: rule_id} = _rule = insert(:rule, domain_id: domain_a_id)
+
+      implementation = insert(:implementation, rule_id: rule_id, domain_id: domain_b_id)
+
+      ElasticsearchMock
+      |> expect(:request, fn
+        _, :post, "/implementations/_search", %{from: 0, size: 1000, query: _}, _ ->
+          SearchHelpers.hits_response([implementation])
+      end)
+
+      result =
+        conn
+        |> post(Routes.rule_implementation_path(conn, :search_rule_implementations, rule_id))
+        |> json_response(:ok)
+
+      refute Map.has_key?(result, "_actions")
+    end
+
+    @tag authentication: [user_name: "non_admin", permissions: [:view_quality_rule]]
+    test "returns empty actions when user has no permissions", %{conn: conn} do
+      %{id: rule_id} = _rule = insert(:rule)
+      implementation = insert(:implementation, rule_id: rule_id)
+
+      ElasticsearchMock
+      |> expect(:request, fn
+        _, :post, "/implementations/_search", %{from: 0, size: 1000, query: _}, _ ->
+          SearchHelpers.hits_response([implementation])
+      end)
+
+      result =
+        conn
+        |> post(Routes.rule_implementation_path(conn, :search_rule_implementations, rule_id))
+        |> json_response(:ok)
+
+      refute Map.has_key?(result, "_actions")
+    end
+
+    @tag authentication: [role: "admin"]
+    test "returns all actions for admin users", %{conn: conn} do
+      %{id: rule_id} = _rule = insert(:rule)
+      implementation = insert(:implementation, rule_id: rule_id)
+
+      ElasticsearchMock
+      |> expect(:request, fn
+        _, :post, "/implementations/_search", %{from: 0, size: 1000, query: _}, _ ->
+          SearchHelpers.hits_response([implementation])
+      end)
+
+      assert %{"_actions" => actions} =
+               conn
+               |> post(
+                 Routes.rule_implementation_path(conn, :search_rule_implementations, rule_id)
+               )
+               |> json_response(:ok)
+
+      assert %{
+               "create" => %{"method" => "POST"},
+               "createBasic" => %{"method" => "POST"},
+               "createRaw" => %{"method" => "POST"},
+               "autoPublish" => %{"method" => "POST", "href" => _}
+             } = actions
+    end
   end
 
   defp equals_condition_row(population_response, population_update) do
