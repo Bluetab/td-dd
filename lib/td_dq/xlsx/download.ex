@@ -17,9 +17,9 @@ defmodule TdDq.XLSX.Download do
     |> Enum.map(fn implementation ->
       %{
         implementation
-        | domain: %{
-            external_id: Map.get(domain_ext_id_map, implementation.domain_id),
-            name: Map.get(domain_name_map, implementation.domain_id)
+        | "domain" => %{
+            "external_id" => Map.get(domain_ext_id_map, implementation["domain_id"]),
+            "name" => Map.get(domain_name_map, implementation["domain_id"])
           }
       }
     end)
@@ -49,8 +49,8 @@ defmodule TdDq.XLSX.Download do
   end
 
   defp enrich_rule_templates({%{} = template, implementations}) do
-    Enum.map(implementations, fn %{rule: rule} = implementation ->
-      %{implementation | rule: Map.put(rule, :template, template)}
+    Enum.map(implementations, fn %{"rule" => rule} = implementation ->
+      %{implementation | "rule" => Map.put(rule, "template", template)}
     end)
   end
 
@@ -62,60 +62,24 @@ defmodule TdDq.XLSX.Download do
   end
 
   defp enrich_implementation_templates({%{} = template, implementations}) do
-    Enum.map(implementations, &Map.put(&1, :template, template))
+    Enum.map(implementations, &Map.put(&1, "template", template))
   end
 
-  defp rule_type(%{rule: %{df_name: rule_type}}), do: rule_type
+  defp rule_type(%{"rule" => %{"df_name" => rule_type}}), do: rule_type
   defp rule_type(_), do: nil
 
-  defp implementation_type(%{df_name: implementation_type}), do: implementation_type
+  defp implementation_type(%{"df_name" => implementation_type}), do: implementation_type
   defp implementation_type(_), do: nil
 
   def implementation_information(implementations, opts \\ []) do
-    # Check if status-based grouping is requested
     case opts[:group_by_status] do
       true ->
         implementations
         |> group_by_status_and_template()
-        |> Enum.into(%{}, fn {group_key, grouped_implementations} ->
-          template = get_template_for_implementations(grouped_implementations)
-
-          information =
-            add_information_for_download_type(
-              %{implementations: grouped_implementations},
-              template,
-              opts[:download_type]
-            )
-
-          {group_key, information}
-        end)
 
       _ ->
         implementations
-        |> Enum.group_by(& &1.df_name)
-        |> Enum.into(%{}, &enrich_implementation_templates(&1, opts))
-    end
-  end
-
-  defp enrich_implementation_templates({df_name, grouped_implementations}, opts) do
-    case TemplateCache.get_by_name!(df_name) do
-      nil ->
-        {df_name,
-         add_information_for_download_type(
-           %{implementations: grouped_implementations},
-           nil,
-           opts[:download_type]
-         )}
-
-      %{name: template_name} = template ->
-        implementation_status_information =
-          add_information_for_download_type(
-            %{implementations: grouped_implementations},
-            template,
-            opts[:download_type]
-          )
-
-        {template_name, implementation_status_information}
+        |> Enum.group_by(& &1["df_name"])
     end
   end
 
@@ -124,7 +88,7 @@ defmodule TdDq.XLSX.Download do
     implementations
     |> Enum.group_by(fn implementation ->
       status = get_implementation_status(implementation)
-      template_name = implementation.df_name || "unknown"
+      template_name = implementation["df_name"] || "unknown"
       "#{template_name}_#{status}"
     end)
   end
@@ -132,35 +96,12 @@ defmodule TdDq.XLSX.Download do
   # Determines the status of an implementation
   defp get_implementation_status(implementation) do
     case implementation do
-      %{status: "published"} -> "published"
-      %{status: "deprecated"} -> "deprecated"
-      %{status: "pending"} -> "draft"
-      %{status: "draft"} -> "draft"
+      %{"status" => "published"} -> "published"
+      %{"status" => "deprecated"} -> "deprecated"
+      %{"status" => "pending"} -> "draft"
+      %{"status" => "draft"} -> "draft"
       # Default to draft for undefined status
       _ -> "draft"
-    end
-  end
-
-  # Gets the template for a group of implementations (assumes same template per group)
-  defp get_template_for_implementations([%{df_name: df_name} | _] = _implementations)
-       when is_binary(df_name) do
-    TemplateCache.get_by_name!(df_name)
-  end
-
-  defp get_template_for_implementations(_implementations), do: nil
-
-  defp add_information_for_download_type(type_information, template, _opts) do
-    case template do
-      %{content: content} ->
-        flat_fields =
-          Enum.flat_map(content, fn %{"fields" => fields} ->
-            Enum.uniq_by(fields, & &1["name"])
-          end)
-
-        Map.put(type_information, :content, flat_fields)
-
-      _ ->
-        Map.put(type_information, :content, [])
     end
   end
 

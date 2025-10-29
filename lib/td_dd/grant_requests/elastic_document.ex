@@ -12,6 +12,7 @@ defmodule TdDd.GrantRequests.ElasticDocument do
   alias TdDd.Grants.Grant
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestGroup
+  alias TdDfLib.Content
 
   defimpl Document, for: GrantRequest do
     use ElasticDocument
@@ -45,10 +46,7 @@ defmodule TdDd.GrantRequests.ElasticDocument do
         |> Format.search_values(template)
         |> case do
           metad when is_map(metad) ->
-            Enum.into(metad, %{}, fn
-              {key, %{"value" => value}} -> {key, value}
-              {key, value} -> {key, value}
-            end)
+            Content.to_legacy(metad)
 
           metad ->
             metad
@@ -57,6 +55,7 @@ defmodule TdDd.GrantRequests.ElasticDocument do
       %{
         id: grant_request.id,
         current_status: grant_request.current_status,
+        status_reason: grant_request.status_reason,
         approved_by: grant_request.approved_by,
         domain_ids: grant_request.domain_ids,
         group_id: group.id,
@@ -136,6 +135,7 @@ defmodule TdDd.GrantRequests.ElasticDocument do
       properties = %{
         id: %{type: "long"},
         current_status: %{type: "keyword"},
+        status_reason: %{type: "text", fields: %{keyword: %{type: "keyword"}}},
         approved_by: %{type: "keyword"},
         domain_ids: %{type: "long"},
         group_id: %{type: "long"},
@@ -236,6 +236,9 @@ defmodule TdDd.GrantRequests.ElasticDocument do
         "user" => %{terms: %{field: "user.user_name", size: Cluster.get_size_field("user")}},
         "current_status" => %{
           terms: %{field: "current_status", size: Cluster.get_size_field("current_status")}
+        },
+        "status_reason" => %{
+          terms: %{field: "status_reason.keyword", size: Cluster.get_size_field("status_reason")}
         },
         "taxonomy" => %{terms: %{field: "domain_ids", size: Cluster.get_size_field("taxonomy")}},
         "type" => %{terms: %{field: "type", size: Cluster.get_size_field("type")}}

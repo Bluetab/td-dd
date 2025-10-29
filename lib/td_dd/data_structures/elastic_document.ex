@@ -12,6 +12,7 @@ defmodule TdDd.DataStructures.ElasticDocument do
   alias TdDd.DataStructures.CatalogViewConfigs
   alias TdDd.DataStructures.DataStructureTypes
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDfLib.Content
 
   @id_path_agg %{
     terms: %{
@@ -240,10 +241,7 @@ defmodule TdDd.DataStructures.ElasticDocument do
       do: Map.merge(map, %{note_last_changed_at: nil, note_last_changed_by: nil})
 
     defp format_legacy_content(content) when is_map(content) do
-      Enum.into(content, %{}, fn
-        {key, %{"value" => value}} ->
-          {key, value}
-      end)
+      Content.to_legacy(content)
     end
 
     defp format_legacy_content(content), do: content

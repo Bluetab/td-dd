@@ -1,5 +1,23 @@
 # Changelog
 
+# [7.12.0] 2025-10-29
+
+### Changed
+
+- [TD-7539] Allow to download notes from ElasticSearch for structure details
+- [TD-7396] Adjusts implementation actions permissions for users with permissions in different domains
+- [TD-7340] Support for `dynamic_table` template fields
+
+## [7.11.2] 2025-10-27
+
+### Fixed
+
+- [TD-7617] Donwload/Upload Implementation handling updates:
+  - Refactor implementation handling in XLSX download and writer modules
+  - Enhance implementation update logic in XLSX bulk load with df_content merging
+  - Improve implementation download functionality to properly handle table field downloads
+  - Update implementation handling across download, writer, and bulk load modules
+
 ## [7.11.1] 2025-10-15
 
 ### Fixed
@@ -16,6 +34,7 @@
 
 - [TD-7401] Update `td-core` version
 - [TD-7075] Support for Implementation XLSX download and upload
+- [TD-7487] Allow to reprocess grant requests that failed to be processed
 
 ### Changed
 
