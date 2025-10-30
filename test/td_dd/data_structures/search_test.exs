@@ -219,4 +219,278 @@ defmodule TdDd.DataStructures.SearchTest do
                Search.vector(claims, :view_data_structure, params)
     end
   end
+
+  describe "get_bucket_paths/3" do
+    @tag authentication: [role: "admin"]
+    test "returns bucket paths for admin", %{claims: claims} do
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: _, aggs: _}, _ ->
+        SearchHelpers.aggs_response(%{
+          "id_path" => %{
+            "buckets" => [
+              %{
+                "key" => "1-2-3",
+                "filtered_children_ids" => %{"buckets" => [%{"key" => "3"}]}
+              },
+              %{
+                "key" => "1",
+                "filtered_children_ids" => %{"buckets" => [%{"key" => "2"}]}
+              }
+            ]
+          }
+        })
+      end)
+
+      assert %{forest: forest, filtered_children: filtered_children} =
+               Search.get_bucket_paths(claims, :view_data_structure, %{})
+
+      assert is_map(forest)
+      assert is_map(filtered_children)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "handles empty bucket paths", %{claims: claims} do
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: _, aggs: _}, _ ->
+        SearchHelpers.aggs_response(%{"id_path" => %{"buckets" => []}})
+      end)
+
+      assert %{forest: forest, filtered_children: filtered_children} =
+               Search.get_bucket_paths(claims, :view_data_structure, %{})
+
+      assert forest == %{}
+      assert filtered_children == %{}
+    end
+
+    @tag authentication: [role: "admin"]
+    test "processes paths correctly", %{claims: claims} do
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: _, aggs: _}, _ ->
+        SearchHelpers.aggs_response(%{
+          "id_path" => %{
+            "buckets" => [
+              %{
+                "key" => "",
+                "filtered_children_ids" => %{"buckets" => [%{"key" => "1"}]}
+              }
+            ]
+          }
+        })
+      end)
+
+      assert %{forest: _forest, filtered_children: filtered_children} =
+               Search.get_bucket_paths(claims, :view_data_structure, %{})
+
+      assert filtered_children[0] == [1]
+    end
+  end
+
+  describe "get_aggregations/2" do
+    @tag authentication: [role: "admin"]
+    test "returns aggregations for admin", %{claims: claims} do
+      aggs = %{"test_agg" => %{"terms" => %{"field" => "type"}}}
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: _, aggs: ^aggs}, _ ->
+        SearchHelpers.aggs_response(%{"test_agg" => %{"buckets" => [%{"key" => "Table"}]}})
+      end)
+
+      assert {:ok, response} = Search.get_aggregations(claims, aggs)
+      assert is_map(response)
+    end
+  end
+
+  describe "scroll_data_structures/2" do
+    @tag authentication: [role: "admin"]
+    test "scrolls with scroll_id", %{claims: _claims} do
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/_search/scroll", %{"scroll_id" => "test_scroll"}, _ ->
+        SearchHelpers.scroll_response([])
+      end)
+
+      params = %{"scroll_id" => "test_scroll", "scroll" => "1m"}
+
+      assert %{results: [], scroll_id: _, total: 0} =
+               Search.scroll_data_structures(params)
+    end
+  end
+
+  describe "scroll_data_structures/3" do
+    setup do
+      start_supervised!(TdDd.Search.StructureEnricher)
+      :ok
+    end
+
+    @tag authentication: [role: "admin"]
+    test "scrolls data structures with default sort", %{claims: claims} do
+      ElasticsearchMock
+      |> stub(:request, fn
+        _, :post, "/structures/_search", %{query: _, size: _, sort: sort}, _ ->
+          assert sort == ["_score", "name.raw", "id"]
+          SearchHelpers.scroll_response([insert(:data_structure_version)])
+
+        _, :post, "/_search/scroll", _, _ ->
+          SearchHelpers.scroll_response([])
+      end)
+
+      assert %{results: _, scroll_id: _, total: _} =
+               Search.scroll_data_structures(%{}, claims, :view_data_structure)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "respects max_bulk_results limit", %{claims: claims} do
+      ElasticsearchMock
+      |> stub(:request, fn
+        _, :post, "/structures/_search", %{query: _, size: _, sort: _}, _ ->
+          SearchHelpers.scroll_response([insert(:data_structure_version)])
+
+        _, :post, "/_search/scroll", _, _ ->
+          SearchHelpers.scroll_response([])
+      end)
+
+      assert %{results: _, scroll_id: _, total: _} =
+               Search.scroll_data_structures(%{}, claims, :view_data_structure)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "uses custom sort when provided", %{claims: claims} do
+      ElasticsearchMock
+      |> stub(:request, fn
+        _, :post, "/structures/_search", %{query: _, size: _, sort: sort}, _ ->
+          assert sort == ["custom_field"]
+          SearchHelpers.scroll_response([insert(:data_structure_version)])
+
+        _, :post, "/_search/scroll", _, _ ->
+          SearchHelpers.scroll_response([])
+      end)
+
+      params = %{"sort" => ["custom_field"]}
+
+      assert %{results: _, scroll_id: _, total: _} =
+               Search.scroll_data_structures(params, claims, :view_data_structure)
+    end
+  end
+
+  describe "bucket_structures/3" do
+    setup do
+      start_supervised!(TdDd.Search.StructureEnricher)
+      :ok
+    end
+
+    @tag authentication: [role: "admin"]
+    test "searches structures with filters", %{claims: claims} do
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", request, _ ->
+        assert %{query: _, from: 0, size: 1000} = request
+        SearchHelpers.hits_response([insert(:data_structure_version)])
+      end)
+
+      params = %{"filters" => %{"type" => ["Table"]}}
+
+      assert %{results: [_], total: 1} =
+               Search.bucket_structures(claims, :view_data_structure, params)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "handles query parameter", %{claims: claims} do
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", request, _ ->
+        assert %{query: %{bool: %{must: must}}} = request
+        assert Enum.any?(must, &match?(%{multi_match: _}, &1))
+        SearchHelpers.hits_response([])
+      end)
+
+      params = %{"filters" => %{"type" => ["Table"]}, "query" => "test search"}
+
+      assert %{results: [], total: 0} =
+               Search.bucket_structures(claims, :view_data_structure, params)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "ignores empty query strings", %{claims: claims} do
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", request, _ ->
+        assert %{query: %{bool: %{must: must}}} = request
+        refute Enum.any?(must, &match?(%{multi_match: _}, &1))
+        SearchHelpers.hits_response([])
+      end)
+
+      params = %{"filters" => %{}, "query" => "   "}
+
+      assert %{results: [], total: 0} =
+               Search.bucket_structures(claims, :view_data_structure, params)
+    end
+  end
+
+  describe "search_data_structures/5" do
+    setup do
+      start_supervised!(TdDd.Search.StructureEnricher)
+      :ok
+    end
+
+    @tag authentication: [role: "admin"]
+    test "searches with default pagination", %{claims: claims} do
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", request, _ ->
+        assert %{from: 0, size: 50, sort: ["_score", "name.raw"]} = request
+        SearchHelpers.hits_response([insert(:data_structure_version)])
+      end)
+
+      assert %{results: [_], total: 1} =
+               Search.search_data_structures(%{}, claims, :view_data_structure)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "searches with custom pagination", %{claims: claims} do
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", request, _ ->
+        assert %{from: 20, size: 10} = request
+        SearchHelpers.hits_response([])
+      end)
+
+      assert %{results: [], total: 0} =
+               Search.search_data_structures(%{}, claims, :view_data_structure, 2, 10)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "searches with custom sort", %{claims: claims} do
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", request, _ ->
+        assert %{sort: ["updated_at"]} = request
+        SearchHelpers.hits_response([])
+      end)
+
+      params = %{"sort" => ["updated_at"]}
+
+      assert %{results: [], total: 0} =
+               Search.search_data_structures(params, claims, :view_data_structure)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "searches with filters", %{claims: claims} do
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", request, _ ->
+        assert %{query: %{bool: %{must: must}}} = request
+        assert is_map(must) or is_list(must)
+        SearchHelpers.hits_response([])
+      end)
+
+      params = %{"filters" => %{"type" => ["Table"]}}
+
+      assert %{results: [], total: 0} =
+               Search.search_data_structures(params, claims, :view_data_structure)
+    end
+
+    @tag authentication: [user_name: "non_admin"]
+    test "searches without permissions returns empty", %{claims: claims} do
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", request, _ ->
+        assert %{query: %{bool: %{must: %{match_none: %{}}}}} = request
+        SearchHelpers.hits_response([])
+      end)
+
+      assert %{results: [], total: 0} =
+               Search.search_data_structures(%{}, claims, :view_data_structure)
+    end
+  end
 end

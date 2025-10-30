@@ -352,4 +352,79 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
       assert length(data) == 2
     end
   end
+
+  describe "GET /api/rule_implementations/search/reindex_all" do
+    @tag authentication: [role: "admin"]
+    test "admin can reindex implementations", %{conn: conn} do
+      assert conn
+             |> get(Routes.implementation_search_path(conn, :reindex))
+             |> response(:accepted)
+    end
+
+    @tag authentication: [role: "service"]
+    test "service account cannot reindex implementations", %{conn: conn} do
+      assert %{"errors" => %{"detail" => "Forbidden"}} =
+               conn
+               |> get(Routes.implementation_search_path(conn, :reindex))
+               |> json_response(:forbidden)
+    end
+
+    @tag authentication: [role: "user"]
+    test "user cannot reindex implementations", %{conn: conn} do
+      assert %{"errors" => %{"detail" => "Forbidden"}} =
+               conn
+               |> get(Routes.implementation_search_path(conn, :reindex))
+               |> json_response(:forbidden)
+    end
+  end
+
+  describe "search with pagination" do
+    @tag authentication: [role: "admin"]
+    test "respects custom page and size", %{conn: conn, implementation: implementation} do
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/implementations/_search", %{from: from, size: size}, _ ->
+        assert from == 40
+        assert size == 20
+        SearchHelpers.hits_response([implementation])
+      end)
+
+      assert %{"data" => [_]} =
+               conn
+               |> post(Routes.implementation_search_path(conn, :create), %{
+                 "page" => 2,
+                 "size" => 20
+               })
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "returns x-total-count header", %{conn: conn, implementation: implementation} do
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/implementations/_search", _, _ ->
+        SearchHelpers.hits_response([implementation])
+      end)
+
+      conn = post(conn, Routes.implementation_search_path(conn, :create), %{})
+
+      assert ["1"] = get_resp_header(conn, "x-total-count")
+    end
+
+    @tag authentication: [role: "admin"]
+    test "uses default pagination when not specified", %{
+      conn: conn,
+      implementation: implementation
+    } do
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/implementations/_search", %{from: from, size: size}, _ ->
+        assert from == 0
+        assert size == 20
+        SearchHelpers.hits_response([implementation])
+      end)
+
+      assert %{"data" => [_]} =
+               conn
+               |> post(Routes.implementation_search_path(conn, :create), %{})
+               |> json_response(:ok)
+    end
+  end
 end
