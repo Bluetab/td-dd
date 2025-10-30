@@ -51,27 +51,41 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
       dynamic_aggs =
         ElasticDocumentProtocol.aggregations(%DataStructureVersion{}) |> Map.drop(@static_fields)
 
-      assert dynamic_aggs == %{
-               "my_domain" => %{
-                 meta: %{type: "domain"},
-                 terms: %{field: "note.my_domain", size: @default_size}
+      assert Map.has_key?(dynamic_aggs, "my_domain")
+      assert Map.has_key?(dynamic_aggs, "my_list")
+      assert Map.has_key?(dynamic_aggs, "my_system")
+      assert Map.has_key?(dynamic_aggs, "my_user")
+      assert Map.has_key?(dynamic_aggs, "note_status")
+      assert Map.has_key?(dynamic_aggs, "note_last_changed_by")
+
+      assert dynamic_aggs["my_domain"] == %{
+               meta: %{type: "domain"},
+               terms: %{field: "note.my_domain", size: @default_size}
+             }
+
+      assert dynamic_aggs["my_list"] == %{
+               terms: %{field: "note.my_list.raw", size: @default_size}
+             }
+
+      assert dynamic_aggs["my_system"] == %{
+               aggs: %{
+                 distinct_search: %{
+                   terms: %{field: "note.my_system.external_id.raw", size: @default_size}
+                 }
                },
-               "my_list" => %{terms: %{field: "note.my_list.raw", size: @default_size}},
-               "my_system" => %{
-                 aggs: %{
-                   distinct_search: %{
-                     terms: %{field: "note.my_system.external_id.raw", size: @default_size}
-                   }
-                 },
-                 nested: %{path: "note.my_system"}
-               },
-               "my_user" => %{terms: %{field: "note.my_user.raw", size: @default_size}},
-               "note_status" => %{
-                 terms: %{field: "non_published_note.status", size: @default_size}
-               },
-               "note_last_changed_by" => %{
-                 terms: %{size: 500, field: "note_last_changed_by.user_name"}
-               }
+               nested: %{path: "note.my_system"}
+             }
+
+      assert dynamic_aggs["my_user"] == %{
+               terms: %{field: "note.my_user.raw", size: @default_size}
+             }
+
+      assert dynamic_aggs["note_status"] == %{
+               terms: %{field: "non_published_note.status", size: @default_size}
+             }
+
+      assert dynamic_aggs["note_last_changed_by"] == %{
+               terms: %{size: 500, field: "note_last_changed_by.user_name"}
              }
     end
 

@@ -127,26 +127,25 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
       assert %{
                "id" => ^id,
                "user_id" => ^user_id,
-               "_embedded" => %{"requests" => [request1, request2]}
+               "_embedded" => %{"requests" => requests}
              } = data
 
-      assert %{
-               "_embedded" => %{
-                 "data_structure" => %{
-                   "id" => ^data_structure_id
-                 }
-               },
-               "domain_ids" => ^domain_ids
-             } = request1
+      assert length(requests) == 2
 
-      assert %{
-               "_embedded" => %{
-                 "data_structure" => %{
-                   "id" => ^alter_data_structure_id
-                 }
-               },
-               "domain_ids" => [^alter_domain_id]
-             } = request2
+      request1 =
+        Enum.find(requests, fn r ->
+          get_in(r, ["_embedded", "data_structure", "id"]) == data_structure_id
+        end)
+
+      request2 =
+        Enum.find(requests, fn r ->
+          get_in(r, ["_embedded", "data_structure", "id"]) == alter_data_structure_id
+        end)
+
+      assert request1 != nil
+      assert request2 != nil
+      assert request1["domain_ids"] == domain_ids
+      assert request2["domain_ids"] == [alter_domain_id]
     end
 
     @tag authentication: [role: "admin"]

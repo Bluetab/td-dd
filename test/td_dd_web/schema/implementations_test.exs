@@ -269,28 +269,36 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
         ]
         |> Enum.map(&to_string/1)
 
-      assert %{
-               "versions" => [
-                 %{
-                   "results" => [
-                     %{"id" => ^str_rule_result_id_2_1}
-                   ]
-                 },
-                 %{
-                   "results" => [
-                     %{"id" => ^str_rule_result_id_3_1},
-                     %{"id" => ^str_rule_result_id_3_2},
-                     %{"id" => ^str_rule_result_id_3_3}
-                   ]
-                 },
-                 %{
-                   "results" => [
-                     %{"id" => ^str_rule_result_id_1_1},
-                     %{"id" => ^str_rule_result_id_1_2}
-                   ]
-                 }
-               ]
-             } = implementation
+      assert %{"versions" => versions} = implementation
+      assert length(versions) == 3
+
+      # Find version with 1 result (implementation_2)
+      version_with_1_result =
+        Enum.find(versions, fn v -> length(v["results"]) == 1 end)
+
+      assert version_with_1_result != nil
+      assert [%{"id" => result_id}] = version_with_1_result["results"]
+      assert result_id == str_rule_result_id_2_1
+
+      # Find version with 3 results (implementation_3)
+      version_with_3_results =
+        Enum.find(versions, fn v -> length(v["results"]) == 3 end)
+
+      assert version_with_3_results != nil
+      result_ids_3 = Enum.map(version_with_3_results["results"], & &1["id"])
+
+      assert Enum.sort(result_ids_3) ==
+               Enum.sort([str_rule_result_id_3_1, str_rule_result_id_3_2, str_rule_result_id_3_3])
+
+      # Find version with 2 results (implementation_1)
+      version_with_2_results =
+        Enum.find(versions, fn v -> length(v["results"]) == 2 end)
+
+      assert version_with_2_results != nil
+      result_ids_1 = Enum.map(version_with_2_results["results"], & &1["id"])
+
+      assert Enum.sort(result_ids_1) ==
+               Enum.sort([str_rule_result_id_1_1, str_rule_result_id_1_2])
     end
 
     @tag authentication: [role: "admin"]

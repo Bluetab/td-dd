@@ -1213,11 +1213,13 @@ defmodule TdDq.ImplementationsTest do
           }
         )
 
-      assert [
-               %{id: ^data_structure_id},
-               %{id: ^data_structure_id_2},
-               %{id: ^data_structure_id_3}
-             ] = Implementations.valid_validation_implementation_structures(implementation)
+      structures = Implementations.valid_validation_implementation_structures(implementation)
+
+      assert length(structures) == 3
+      structure_ids = Enum.map(structures, & &1.id)
+      assert data_structure_id in structure_ids
+      assert data_structure_id_2 in structure_ids
+      assert data_structure_id_3 in structure_ids
     end
 
     test "returns validation only for structures with table in dataset case insensitive" do

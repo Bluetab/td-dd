@@ -22,7 +22,7 @@ defmodule TdCx.Jobs.Search do
     Search.get_filters(search, @index)
   end
 
-  def get_filter_values(_, _), do: %{}
+  def get_filter_values(_, _), do: {:ok, %{}}
 
   def search_jobs(params, claims, page \\ 0, size \\ 50)
 

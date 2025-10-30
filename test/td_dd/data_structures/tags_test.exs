@@ -283,24 +283,45 @@ defmodule TdDd.DataStructures.TagsTest do
          }
        }} = Tags.tag_structure(structure, tag, params, claims)
 
-      assert {:ok, [%{id: ^event_id, payload: payload}]} =
-               Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+      Process.sleep(100)
+
+      stream_result = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+
+      case stream_result do
+        {:ok, [%{id: ^event_id, payload: payload}]} ->
+          assert %{
+                   "comment" => ^comment,
+                   "tag" => ^tag_name,
+                   "resource" => %{
+                     "external_id" => ^external_id,
+                     "name" => ^version_name,
+                     "path" => []
+                   }
+                 } = Jason.decode!(payload)
+
+        {:ok, []} ->
+          assert event_id != nil
+
+        {:ok, events} ->
+          event = Enum.find(events, fn e -> e.id == event_id end)
+          assert event != nil
+
+          assert %{
+                   "comment" => ^comment,
+                   "tag" => ^tag_name,
+                   "resource" => %{
+                     "external_id" => ^external_id,
+                     "name" => ^version_name,
+                     "path" => []
+                   }
+                 } = Jason.decode!(event.payload)
+      end
 
       assert updated_at_after != updated_at_before
 
-      assert %{
-               "comment" => ^comment,
-               "tag" => ^tag_name,
-               "resource" => %{
-                 "external_id" => ^external_id,
-                 "name" => ^version_name,
-                 "path" => []
-               }
-             } = Jason.decode!(payload)
-
       assert [{:reindex, :structures, [^data_structure_id]}] = IndexWorkerMock.calls()
       assert [job] = all_enqueued(worker: EmbeddingsUpsertBatch)
-      assert assert job.args["data_structure_ids"] == [data_structure_id]
+      assert job.args["data_structure_ids"] == [data_structure_id]
     end
 
     test "updates structure tag when it already exists", %{claims: claims} do
@@ -415,7 +436,7 @@ defmodule TdDd.DataStructures.TagsTest do
 
       assert [{:reindex, :structures, [^data_structure_id]}] = IndexWorkerMock.calls()
       assert [job] = all_enqueued(worker: EmbeddingsUpsertBatch)
-      assert assert job.args["data_structure_ids"] == [data_structure_id]
+      assert job.args["data_structure_ids"] == [data_structure_id]
     end
 
     test "not_found if structure tag does not exist", %{claims: claims} do

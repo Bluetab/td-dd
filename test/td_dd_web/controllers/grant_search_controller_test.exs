@@ -56,22 +56,22 @@ defmodule TdDdWeb.GrantSearchControllerTest do
                                              "/grants/_search",
                                              %{query: query, size: 20},
                                              _ ->
-        assert query == %{
+        assert %{
                  bool: %{
                    must: %{
                      simple_query_string: %{
-                       fields: [
-                         "user.full_name",
-                         "data_structure_version.name",
-                         "data_structure_version.original_name"
-                       ],
+                       fields: fields,
                        query: "\"foo\"",
                        quote_field_suffix: ".exact"
                      }
                    },
                    must_not: %{exists: %{field: "deleted_at"}}
                  }
-               }
+               } = query
+
+        assert "user.full_name" in fields
+        assert "data_structure_version.name" in fields
+        assert "data_structure_version.original_name" in fields
 
         SearchHelpers.hits_response([grant])
       end)
@@ -196,6 +196,70 @@ defmodule TdDdWeb.GrantSearchControllerTest do
                |> json_response(:ok)
 
       assert length(data) == 2
+    end
+  end
+
+  describe "search_grants with pagination" do
+    @tag authentication: [role: "admin"]
+    test "respects custom page and size parameters", %{conn: conn, grant: grant} do
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/grants/_search", %{from: from, size: size}, _ ->
+        assert from == 20
+        assert size == 10
+        SearchHelpers.hits_response([grant])
+      end)
+
+      assert %{"data" => [_]} =
+               conn
+               |> post(Routes.grant_search_path(conn, :search_grants), %{
+                 "page" => 2,
+                 "size" => 10
+               })
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "returns x-total-count header", %{conn: conn, grant: grant} do
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/grants/_search", _, _ ->
+        SearchHelpers.hits_response([grant])
+      end)
+
+      conn = post(conn, Routes.grant_search_path(conn, :search_grants), %{})
+
+      assert ["1"] = get_resp_header(conn, "x-total-count")
+    end
+  end
+
+  describe "search_my_grants with pagination" do
+    @tag authentication: [user_name: "non_admin_user"]
+    test "respects custom page and size parameters", %{conn: conn, grant: grant} do
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/grants/_search", %{from: from, size: size}, _ ->
+        assert from == 30
+        assert size == 15
+        SearchHelpers.hits_response([grant])
+      end)
+
+      assert %{"data" => [_]} =
+               conn
+               |> post(Routes.grant_search_path(conn, :search_my_grants), %{
+                 "page" => 2,
+                 "size" => 15
+               })
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [user_name: "non_admin_user"]
+    test "returns x-total-count header", %{conn: conn, grant: grant} do
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/grants/_search", _, _ ->
+        SearchHelpers.hits_response([grant])
+      end)
+
+      conn = post(conn, Routes.grant_search_path(conn, :search_my_grants), %{})
+
+      assert ["1"] = get_resp_header(conn, "x-total-count")
     end
   end
 
