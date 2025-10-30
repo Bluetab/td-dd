@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-7396] Refactor rule implementation search endpoint
+
 # [7.12.0] 2025-10-29
 
 ### Changed
