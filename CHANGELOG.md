@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-7396] Refactor rule implementation search endpoint
+
 # [7.12.0] 2025-10-29
 
 ### Changed
@@ -35,6 +41,10 @@
 - [TD-7401] Update `td-core` version
 - [TD-7075] Support for Implementation XLSX download and upload
 - [TD-7487] Allow to reprocess grant requests that failed to be processed
+
+### Changed
+
+- [TD-7512] Adjusts implementation actions permissions for users with permissions in different domains
 
 ## [7.10.1] 2025-09-19
 
