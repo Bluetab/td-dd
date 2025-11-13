@@ -5,6 +5,7 @@
 ### Changed
 
 - [TD-7396] Refactor rule implementation search endpoint
+- [TD-6985] Fix reactivate structure and mutable metadata is loaded when new metadata is uploaded
 
 # [7.12.0] 2025-10-29
 
