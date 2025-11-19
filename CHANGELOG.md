@@ -1,6 +1,10 @@
 # Changelog
 
-## [Unreleased]
+## [7.13.0] 2025-11-18
+
+### Added
+
+- [TD-7627] Update and refactor test
 
 ### Changed
 
