@@ -216,5 +216,43 @@ defmodule TdDd.Cache.StructureLoaderTest do
 
       assert is_nil(last_change_at)
     end
+
+    @tag sandbox: :shared
+    test "ignores unsupported events" do
+      result =
+        GenServer.call(
+          StructureLoader,
+          {:consume,
+           [
+             %{
+               event: "unsupported_event",
+               some_data: "test"
+             }
+           ]}
+        )
+
+      assert result == []
+    end
+
+    @tag sandbox: :shared
+    test "filters non-data-structure events correctly" do
+      %{id: bc_id1} = CacheHelpers.insert_concept()
+      %{id: bc_id2} = CacheHelpers.insert_concept()
+
+      result =
+        GenServer.call(
+          StructureLoader,
+          {:consume,
+           [
+             %{
+               event: "add_link",
+               source: "business_concept:#{bc_id1}",
+               target: "business_concept:#{bc_id2}"
+             }
+           ]}
+        )
+
+      assert result == []
+    end
   end
 end

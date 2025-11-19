@@ -541,10 +541,12 @@ defmodule TdDd.Grants.RequestsTest do
         |> Enum.filter(fn %{request_type: request_type} -> request_type == :grant_removal end)
         |> Enum.map(fn %{grant: %{id: grant_id}} -> grant_id end)
 
-      assert {:ok, %{update_pending_removal_grants: {_, update_pending_removal_grants}}} =
+      assert {:ok, %{update_pending_removal_grants: {count, update_pending_removal_grants}}} =
                Requests.bulk_create_approvals(claims, grant_requests, bulk_params)
 
-      assert grant_revoke_ids == update_pending_removal_grants
+      assert count == length(grant_revoke_ids)
+      assert length(update_pending_removal_grants) == length(grant_revoke_ids)
+      assert Enum.all?(grant_revoke_ids, fn id -> id in update_pending_removal_grants end)
 
       assert grant_revoke_ids
              |> Enum.map(fn id ->

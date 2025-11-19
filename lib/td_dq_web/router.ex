@@ -44,9 +44,9 @@ defmodule TdDqWeb.Router do
 
     resources("/rules/upload", RuleUploadController, only: [:create])
 
-    resources("/rules", RuleController, except: [:new, :edit]) do
-      post("/rule_implementations", ImplementationController, :search_rule_implementations)
-    end
+    post("/rules/rule_implementations", ImplementationController, :search_rule_implementations)
+
+    resources("/rules", RuleController, except: [:new, :edit])
 
     resources("/rules/search", RuleSearchController, only: [:create], singleton: true)
     get("/rules/search/reindex_all", RuleSearchController, :reindex)
