@@ -32,7 +32,12 @@ defmodule TdDdWeb.DataStructureControllerTest do
   setup :verify_on_exit!
 
   setup context do
-    stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] -> {:ok, true} end)
+    stub(MockClusterHandler, :call, fn :ai,
+                                       TdAi.Indices,
+                                       :exists_enabled?,
+                                       [[index_type: "suggestions"]] ->
+      {:ok, true}
+    end)
 
     # CacheHelpers.insert_template(name: @template_name)
     %{id: template_id, name: template_name} =

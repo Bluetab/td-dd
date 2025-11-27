@@ -31,7 +31,12 @@ defmodule TdDd.GrantRequests.ElasticDocumentTest do
     @tag :mocked
     test "includes status_reason in mappings" do
       MockClusterHandler
-      |> expect(:call, fn :ai, TdAi.Indices, :list_indices, [[enabled: true]] -> [] end)
+      |> expect(:call, fn :ai,
+                          TdAi.Indices,
+                          :list_indices,
+                          [[index_type: "suggestions", enabled: true]] ->
+        []
+      end)
 
       mappings = ElasticDocumentProtocol.mappings(%GrantRequest{})
 

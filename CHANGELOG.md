@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-7302] Update td-core lib
+
 ## [7.13.0] 2025-11-18
 
 ### Added
@@ -13,11 +19,17 @@
 
 # [7.12.0] 2025-10-29
 
+### Added
+
+- [TD-7539] Allow to download notes from the structure details
+
 ### Changed
 
 - [TD-7539] Allow to download notes from ElasticSearch for structure details
 - [TD-7396] Adjusts implementation actions permissions for users with permissions in different domains
+
 - [TD-7340] Support for `dynamic_table` template fields
+
 
 ## [7.11.2] 2025-10-27
 
@@ -45,7 +57,6 @@
 
 - [TD-7401] Update `td-core` version
 - [TD-7075] Support for Implementation XLSX download and upload
-- [TD-7487] Allow to reprocess grant requests that failed to be processed
 
 ### Changed
 

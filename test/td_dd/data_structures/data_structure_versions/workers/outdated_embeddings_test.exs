@@ -1,6 +1,7 @@
 defmodule TdDd.DataStructures.DataStructureVersions.Workers.OutdatedEmbeddingsTest do
   use TdDd.DataCase
 
+  alias TdCluster.TestHelpers.TdAiMock
   alias TdCluster.TestHelpers.TdAiMock.Indices
   alias TdDd.DataStructures.DataStructureVersions.Workers.EmbeddingsUpsertBatch
   alias TdDd.DataStructures.DataStructureVersions.Workers.OutdatedEmbeddings
@@ -11,7 +12,7 @@ defmodule TdDd.DataStructures.DataStructureVersions.Workers.OutdatedEmbeddingsTe
         insert(:record_embedding, updated_at: DateTime.add(DateTime.utc_now(), -1, :day))
 
       Indices.list_indices(&Mox.expect/4, [enabled: true], {:ok, [%{collection_name: "default"}]})
-      Indices.exists_enabled?(&Mox.expect/4, {:ok, true})
+      TdAiMock.Indices.exists_enabled?(&Mox.expect/4, [index_type: "suggestions"], {:ok, true})
 
       assert :ok == perform_job(OutdatedEmbeddings, %{})
 

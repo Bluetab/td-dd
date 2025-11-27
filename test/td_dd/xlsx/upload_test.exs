@@ -257,7 +257,13 @@ defmodule TdDd.XLSX.UploadTest do
   setup :set_mox_from_context
 
   setup do
-    stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] -> {:ok, true} end)
+    stub(MockClusterHandler, :call, fn :ai,
+                                       TdAi.Indices,
+                                       :exists_enabled?,
+                                       [[index_type: "suggestions"]] ->
+      {:ok, true}
+    end)
+
     :ok
   end
 

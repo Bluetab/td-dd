@@ -9,9 +9,10 @@ defmodule TdDd.DataStructures.Policy do
   @behaviour Bodyguard.Policy
 
   @embedding_actions ~w(put_embeddings suggest_structures)a
+  @index_type "suggestions"
 
   def authorize(action, %{role: "admin"}, _params) when action in @embedding_actions do
-    case Indices.exists_enabled?() do
+    case Indices.exists_enabled?(index_type: @index_type) do
       {:ok, enabled?} -> enabled?
       _ -> false
     end
@@ -105,7 +106,7 @@ defmodule TdDd.DataStructures.Policy do
   end
 
   def authorize(:suggest_structures, %{} = claims, _) do
-    case Indices.exists_enabled?() do
+    case Indices.exists_enabled?(index_type: @index_type) do
       {:ok, enabled?} ->
         Permissions.authorized?(claims, :view_data_structure, :any, "domain") && enabled?
 

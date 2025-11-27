@@ -39,6 +39,7 @@ defmodule TdDd.DataStructures do
   alias Truedat.Auth.Claims
 
   @index :structures
+  @index_type "suggestions"
 
   @protected "_protected"
 
@@ -1413,31 +1414,32 @@ defmodule TdDd.DataStructures do
   def embeddings(data_structure_versions) when is_list(data_structure_versions) do
     data_structure_versions
     |> Enum.map(&embedding_attributes/1)
-    |> Embeddings.all()
+    |> Embeddings.all(@index_type)
   end
 
-  def generate_vector(_version_or_id, collection_name \\ nil)
+  def generate_vector(_version_or_id, index_type, collection_name \\ nil)
 
   def generate_vector(
         %DataStructureVersion{record_embeddings: [%RecordEmbedding{} = record]},
+        _index_type,
         _collection_name
       ) do
     {record.collection, record.embedding}
   end
 
-  def generate_vector(%DataStructureVersion{} = version, collection_name) do
+  def generate_vector(%DataStructureVersion{} = version, index_type, collection_name) do
     version
     |> embedding_attributes()
-    |> Embeddings.generate_vector(collection_name)
+    |> Embeddings.generate_vector(index_type, collection_name)
     |> tap(fn {:ok, _vector} ->
       RecordEmbeddings.upsert_from_structures_async(version.data_structure_id)
     end)
     |> then(fn {:ok, vector} -> vector end)
   end
 
-  def generate_vector(nil, _collection_name), do: nil
+  def generate_vector(nil, _index_type, _collection_name), do: nil
 
-  def generate_vector(id, collection_name) do
+  def generate_vector(id, index_type, collection_name) do
     collection_name = collection_name_or_default(collection_name)
     preload = [record_embeddings: where(RecordEmbedding, [re], re.collection == ^collection_name)]
 
@@ -1448,7 +1450,7 @@ defmodule TdDd.DataStructures do
     |> preload(^preload)
     |> Repo.one()
     |> enriched_structure_version(content: :searchable)
-    |> generate_vector(collection_name)
+    |> generate_vector(index_type, collection_name)
   end
 
   def streamed_enriched_structure_versions(opts \\ []) do
@@ -1590,7 +1592,7 @@ defmodule TdDd.DataStructures do
     do: collection_name
 
   defp collection_name_or_default(nil) do
-    {:ok, %{collection_name: collection_name}} = Indices.first_enabled()
+    {:ok, %{collection_name: collection_name}} = Indices.first_enabled(index_type: @index_type)
     collection_name
   end
 end

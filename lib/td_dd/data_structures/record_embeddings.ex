@@ -15,9 +15,10 @@ defmodule TdDd.DataStructures.RecordEmbeddings do
   alias TdDd.Repo
 
   @batch_size 128
+  @index_type "suggestions"
 
   def upsert_from_structures_async(data_structure_ids, opts \\ []) do
-    case Indices.exists_enabled?() do
+    case Indices.exists_enabled?(index_type: @index_type) do
       {:ok, true} ->
         Repo.transaction(fn ->
           data_structure_ids
@@ -34,7 +35,7 @@ defmodule TdDd.DataStructures.RecordEmbeddings do
   end
 
   def upsert_from_structures(data_structure_ids) do
-    case Indices.exists_enabled?() do
+    case Indices.exists_enabled?(index_type: @index_type) do
       {:ok, true} ->
         now = DateTime.utc_now()
         data_structure_versions = enriched_versions_for_embeddings(data_structure_ids)

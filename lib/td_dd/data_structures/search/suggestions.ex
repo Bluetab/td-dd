@@ -9,6 +9,7 @@ defmodule TdDd.DataStructures.Search.Suggestions do
   @num_candidates 100
   @k 10
   @similarity 0.60
+  @index_type "suggestions"
 
   def knn(%Claims{} = claims, permission, params) do
     {collection_name, vector} = generate_vector(params)
@@ -36,7 +37,7 @@ defmodule TdDd.DataStructures.Search.Suggestions do
          } = params
        ) do
     %{id: id, version: version}
-    |> TdBg.generate_vector(params["collection_name"])
+    |> TdBg.generate_vector(@index_type, params["collection_name"])
     |> then(fn {:ok, version} -> version end)
   end
 

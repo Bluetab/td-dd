@@ -5,6 +5,7 @@ defmodule TdDdWeb.SearchControllerTest do
   alias TdCore.Search.IndexWorkerMock
 
   @moduletag sandbox: :shared
+  @index_type "suggestions"
 
   describe "embeddings" do
     setup do
@@ -15,7 +16,7 @@ defmodule TdDdWeb.SearchControllerTest do
 
     @tag authentication: [role: "admin"]
     test "put embeddings action in indexer", %{conn: conn} do
-      TdAiMock.Indices.exists_enabled?(&Mox.expect/4, {:ok, true})
+      TdAiMock.Indices.exists_enabled?(&Mox.expect/4, [index_type: @index_type], {:ok, true})
 
       assert conn
              |> post(Routes.search_path(conn, :embeddings, %{}))
@@ -26,7 +27,7 @@ defmodule TdDdWeb.SearchControllerTest do
 
     @tag authentication: [role: "admin"]
     test "forbidden when there are not indices enbabled", %{conn: conn} do
-      TdAiMock.Indices.exists_enabled?(&Mox.expect/4, {:ok, false})
+      TdAiMock.Indices.exists_enabled?(&Mox.expect/4, [index_type: @index_type], {:ok, false})
 
       assert %{"errors" => %{"detail" => "Invalid authorization"}} ==
                conn
