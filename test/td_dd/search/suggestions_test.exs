@@ -5,6 +5,7 @@ defmodule TdDd.Search.SuggestionsTest do
   alias TdDd.DataStructures.Search.Suggestions
 
   @moduletag sandbox: :shared
+  @index_type "suggestions"
 
   describe "knn/3" do
     setup do
@@ -21,6 +22,7 @@ defmodule TdDd.Search.SuggestionsTest do
       TdBgMock.generate_vector(
         &Mox.expect/4,
         %{id: 1, version: 1},
+        @index_type,
         nil,
         {:ok, {"default", [54.0, 10.2, -2.0]}}
       )
@@ -59,6 +61,7 @@ defmodule TdDd.Search.SuggestionsTest do
       TdBgMock.generate_vector(
         &Mox.expect/4,
         %{id: 1, version: 1},
+        @index_type,
         nil,
         {:ok, {"default", [54.0, 10.2, -2.0]}}
       )
@@ -112,6 +115,7 @@ defmodule TdDd.Search.SuggestionsTest do
       TdBgMock.generate_vector(
         &Mox.expect/4,
         %{id: 1, version: 1},
+        @index_type,
         "foo",
         {:ok, {"foo", [54.0, 10.2, -2.0]}}
       )

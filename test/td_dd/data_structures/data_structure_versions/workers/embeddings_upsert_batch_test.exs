@@ -1,8 +1,8 @@
 defmodule TdDd.DataStructures.DataStructureVersions.Workers.EmbeddingsUpsertBatchTest do
   use TdDd.DataCase
 
+  alias TdCluster.TestHelpers.TdAiMock
   alias TdCluster.TestHelpers.TdAiMock.Embeddings
-  alias TdCluster.TestHelpers.TdAiMock.Indices
   alias TdDd.DataStructures.DataStructureVersions.RecordEmbedding
   alias TdDd.DataStructures.DataStructureVersions.Workers.EmbeddingsUpsertBatch
 
@@ -19,13 +19,14 @@ defmodule TdDd.DataStructures.DataStructureVersions.Workers.EmbeddingsUpsertBatc
       alias_name = ""
       domain_external_id = ""
 
-      Indices.exists_enabled?(&Mox.expect/4, {:ok, true})
+      TdAiMock.Indices.exists_enabled?(&Mox.expect/4, [index_type: "suggestions"], {:ok, true})
 
       Embeddings.list(
         &Mox.expect/4,
         [
           "#{data_structure_version.name} #{alias_name} #{data_structure_version.type} #{domain_external_id} #{data_structure_version.description}"
         ],
+        "suggestions",
         {:ok, %{"default" => [[-2.0, 2.0, 3.0]]}}
       )
 

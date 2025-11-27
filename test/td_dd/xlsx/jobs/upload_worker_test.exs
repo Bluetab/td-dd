@@ -38,7 +38,10 @@ defmodule TdDd.Xlsx.Jobs.UploadWorkerTest do
       IndexWorkerMock.clear()
       start_supervised!(StructureEnricher)
 
-      stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] ->
+      stub(MockClusterHandler, :call, fn :ai,
+                                         TdAi.Indices,
+                                         :exists_enabled?,
+                                         [[index_type: "suggestions"]] ->
         {:ok, true}
       end)
 
