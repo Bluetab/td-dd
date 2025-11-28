@@ -1,6 +1,12 @@
 # Changelog
 
-# [7.12.0] 2025-10-29
+## [Unreleased]
+
+### Fixed
+
+- [TD-7746] Download improved processing for templates
+
+## [7.12.0] 2025-10-29
 
 ### Changed
 
