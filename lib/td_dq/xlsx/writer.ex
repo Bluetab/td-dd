@@ -10,6 +10,8 @@ defmodule TdDq.XLSX.Writer do
   alias TdDfLib.Parser
   alias TdDq.Implementations
 
+  require Logger
+
   @headers [
     "implementation_key",
     "implementation_type",
@@ -51,6 +53,8 @@ defmodule TdDq.XLSX.Writer do
           nil
         )
 
+      Logger.info("rule_fields --------------------------------")
+
       {imp_fields, imp_field_headers} =
         fields_with_headers(
           implementations,
@@ -59,18 +63,28 @@ defmodule TdDq.XLSX.Writer do
           @color_ligth_yellow
         )
 
+      Logger.info("imp_fields --------------------------------")
+
       result_details_fields =
         implementations
         |> result_headers(&result_content/1)
         |> Enum.sort()
 
+      Logger.info("result_details_fields --------------------------------")
+
       result_details_headers =
         Enum.map(result_details_fields, fn header -> "result_details_" <> header end)
+
+      Logger.info("result_details_headers --------------------------------")
 
       number_of_validations =
         count_implementations_items(implementations, "validations")
 
+      Logger.info("number_of_validations --------------------------------")
+
       number_of_datasets = count_implementations_items(implementations, "datasets")
+
+      Logger.info("number_of_datasets --------------------------------")
 
       headers =
         headers_for_type(
@@ -81,6 +95,8 @@ defmodule TdDq.XLSX.Writer do
           number_of_validations,
           opts
         )
+
+      Logger.info("headers --------------------------------")
 
       content =
         Enum.map(implementations, fn implementation ->
@@ -94,6 +110,8 @@ defmodule TdDq.XLSX.Writer do
             opts
           )
         end)
+
+      Logger.info("content --------------------------------")
 
       rows = [headers | content]
 
@@ -164,111 +182,173 @@ defmodule TdDq.XLSX.Writer do
     @headers
     |> Enum.reduce([], fn
       "implementation_key", acc ->
-        acc ++ [get_string_value(implementation, "implementation_key")]
+        r1 = acc ++ [get_string_value(implementation, "implementation_key")]
+        Logger.info("implementation_key --------------------------------")
+        r1
 
       "implementation_type", acc ->
-        acc ++
-          [
-            I18nCache.get_definition(
-              opts[:lang],
-              "implementations.type.#{implementation["implementation_type"]}",
-              default_value: implementation["implementation_type"]
-            )
-          ]
+        r2 =
+          acc ++
+            [
+              I18nCache.get_definition(
+                opts[:lang],
+                "implementations.type.#{implementation["implementation_type"]}",
+                default_value: implementation["implementation_type"]
+              )
+            ]
+
+        Logger.info("implementation_type --------------------------------")
+        r2
 
       "domain_external_id", acc ->
-        acc ++ [get_domain_external_id(implementation)]
+        r3 = acc ++ [get_domain_external_id(implementation)]
+        Logger.info("domain_external_id --------------------------------")
+        r3
 
       "domain", acc ->
-        acc ++ [get_domain(implementation)]
+        r4 = acc ++ [get_domain(implementation)]
+        Logger.info("domain --------------------------------")
+        r4
 
       "executable", acc ->
-        acc ++
-          [
-            get_translated_value(
-              "ruleImplementation.props.executable.#{implementation["executable"]}",
-              opts
-            )
-          ]
+        r5 =
+          acc ++
+            [
+              get_translated_value(
+                "ruleImplementation.props.executable.#{implementation["executable"]}",
+                opts
+              )
+            ]
+
+        Logger.info("executable --------------------------------")
+        r5
 
       "rule", acc ->
-        acc ++ [get_rule(implementation)]
+        r6 = acc ++ [get_rule(implementation)]
+        Logger.info("rule --------------------------------")
+        r6
 
       "rule_template", acc ->
-        acc ++ [get_rule_template(implementation)]
+        r7 = acc ++ [get_rule_template(implementation)]
+        Logger.info("rule_template --------------------------------")
+        r7
 
       "implementation_template", acc ->
-        acc ++ [get_string_value(implementation, "df_name")]
+        r8 = acc ++ [get_string_value(implementation, "df_name")]
+        Logger.info("implementation_template --------------------------------")
+        r8
 
       "result_type", acc ->
-        acc ++
-          [
-            get_translated_value(
-              "ruleImplementations.props.result_type.#{implementation["result_type"]}",
-              opts
-            )
-          ]
+        r9 =
+          acc ++
+            [
+              get_translated_value(
+                "ruleImplementations.props.result_type.#{implementation["result_type"]}",
+                opts
+              )
+            ]
+
+        Logger.info("result_type --------------------------------")
+        r9
 
       "goal", acc ->
-        acc ++ [get_string_value(implementation, "goal")]
+        r10 = acc ++ [get_string_value(implementation, "goal")]
+        Logger.info("goal --------------------------------")
+        r10
 
       "minimum", acc ->
-        acc ++ [get_string_value(implementation, "minimum")]
+        r11 = acc ++ [get_string_value(implementation, "minimum")]
+        Logger.info("minimum --------------------------------")
+        r11
 
       "records", acc ->
-        acc ++ [get_result_info(implementation, "records")]
+        r12 = acc ++ [get_result_info(implementation, "records")]
+        Logger.info("records --------------------------------")
+        r12
 
       "errors", acc ->
-        acc ++ [get_result_info(implementation, "errors")]
+        r13 = acc ++ [get_result_info(implementation, "errors")]
+        Logger.info("errors --------------------------------")
+        r13
 
       "result", acc ->
-        acc ++ [get_result_info(implementation, "result")]
+        r14 = acc ++ [get_result_info(implementation, "result")]
+        Logger.info("result --------------------------------")
+        r14
 
       "execution", acc ->
-        acc ++ [get_result_info(implementation, "result_text", opts)]
+        r15 = acc ++ [get_result_info(implementation, "result_text", opts)]
+        Logger.info("execution --------------------------------")
+        r15
 
       "last_execution_at", acc ->
-        acc ++ [get_result_info(implementation, "date", "datetime")]
+        r16 = acc ++ [get_result_info(implementation, "date", "datetime")]
+        Logger.info("last_execution_at --------------------------------")
+        r16
 
       "inserted_at", acc ->
-        acc ++ [get_string_value(implementation, "inserted_at", "datetime")]
+        r17 = acc ++ [get_string_value(implementation, "inserted_at", "datetime")]
+        Logger.info("inserted_at --------------------------------")
+        r17
 
       "updated_at", acc ->
-        acc ++ [get_string_value(implementation, "updated_at", "datetime")]
+        r18 = acc ++ [get_string_value(implementation, "updated_at", "datetime")]
+        Logger.info("updated_at --------------------------------")
+        r18
 
       "business_concepts", acc ->
-        acc ++ [get_concepts(implementation)]
+        r19 = acc ++ [get_concepts(implementation)]
+        Logger.info("business_concepts --------------------------------")
+        r19
 
       "structure_domains", acc ->
-        acc ++ [get_structure_domains(implementation)]
+        r20 = acc ++ [get_structure_domains(implementation)]
+        Logger.info("structure_domains --------------------------------")
+        r20
 
       "rule_template_fields", acc ->
-        add_content_columns(acc, implementation, rule_fields, "rule", opts)
+        r21 = add_content_columns(acc, implementation, rule_fields, "rule", opts)
+        Logger.info("rule_template_fields --------------------------------")
+        r21
 
       "template_fields", acc ->
-        add_content_columns(acc, implementation, content, "template", opts)
+        r22 = add_content_columns(acc, implementation, content, "template", opts)
+        Logger.info("template_fields --------------------------------")
+        r22
 
       "data_set_external_ids", acc ->
-        acc ++
-          fill_with(
-            get_implementation_fields(implementation, "datasets"),
-            number_of_datasets,
-            ""
-          )
+        r23 =
+          acc ++
+            fill_with(
+              get_implementation_fields(implementation, "datasets"),
+              number_of_datasets,
+              ""
+            )
+
+        Logger.info("data_set_external_ids --------------------------------")
+        r23
 
       "validation_fields", acc ->
-        acc ++
-          fill_with(
-            get_implementation_fields(implementation, "validations"),
-            number_of_validations,
-            ""
-          )
+        r24 =
+          acc ++
+            fill_with(
+              get_implementation_fields(implementation, "validations"),
+              number_of_validations,
+              ""
+            )
+
+        Logger.info("validation_fields --------------------------------")
+        r24
 
       "result_details", acc ->
-        acc ++ get_result_details(implementation, result_details_fields)
+        r25 = acc ++ get_result_details(implementation, result_details_fields)
+        Logger.info("result_details --------------------------------")
+        r25
 
       other, acc ->
-        acc ++ [get_string_value(implementation, other)]
+        r26 = acc ++ [get_string_value(implementation, other)]
+        Logger.info("other --------------------------------")
+        r26
     end)
   end
 
