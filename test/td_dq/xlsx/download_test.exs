@@ -13,7 +13,7 @@ defmodule TdDq.XLSX.DownloadTest do
         template_1 =
         CacheHelpers.insert_template(%{
           name: "template_1",
-          scope: "dq",
+          scope: "ri",
           content: [
             %{
               "name" => "group",
@@ -97,7 +97,7 @@ defmodule TdDq.XLSX.DownloadTest do
         template_2 =
         CacheHelpers.insert_template(%{
           name: "template_2",
-          scope: "dq",
+          scope: "ri",
           content: [
             %{
               "name" => "group",
