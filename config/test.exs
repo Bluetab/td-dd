@@ -38,7 +38,7 @@ config :td_cache, :audit, stream: "audit:events:test"
 config :td_cache, redis_host: "redis", port: 6380
 
 # Print only warnings and errors during test
-config :logger, level: :info
+config :logger, level: :warning
 
 # config :logger, :console, level: :debug
 

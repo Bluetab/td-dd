@@ -51,6 +51,48 @@ services:
     environment:
       - VAULT_DEV_ROOT_TOKEN_ID=vault_secret_token1234
 
+  build:
+    image: bluetab/elixir:1.18.1-otp-27-alpine-20250107094535
+    command: ci/build.sh
+    environment:
+      APP_VERSION: "${APP_VERSION}"
+      HOME: /tmp
+      MIX_ENV: test
+      MIX_HOME: /code/.mix
+    user: ${CURRENT_UID-0:0}
+    working_dir: /code
+    volumes:
+      - "${CI_PROJECT_DIR}:/code"
+
+  test:
+    image: bluetab/elixir:1.18.1-otp-27-alpine-20250107094535
+    command: ci/test.sh
+    environment:
+      HOME: /tmp
+      MIX_ENV: test
+      MIX_HOME: /code/.mix
+    working_dir: /code
+    user: ${CURRENT_UID-0:0}
+    volumes:
+      - "${CI_PROJECT_DIR}:/code"
+    depends_on:
+      - postgres
+      - redis
+      - vault
+
+  sobelow:
+    image: bluetab/elixir:1.18.1-otp-27-alpine-20250107094535
+    command: ci/sobelow.sh
+    environment:
+      APP_VERSION: "${APP_VERSION}"
+      HOME: /tmp
+      MIX_ENV: test
+      MIX_HOME: /code/.mix
+    user: ${CURRENT_UID-0:0}
+    working_dir: /code
+    volumes:
+      - "${CI_PROJECT_DIR}:/code"
+
   release:
     image: bluetab/elixir:1.18.1-otp-27-alpine-20250107094535
     command: ci/release.sh

@@ -10,8 +10,6 @@ defmodule TdDq.XLSX.Writer do
   alias TdDfLib.Parser
   alias TdDq.Implementations
 
-  require Logger
-
   @headers [
     "implementation_key",
     "implementation_type",
@@ -93,27 +91,23 @@ defmodule TdDq.XLSX.Writer do
 
       parsing_contexts = prepare_parsing_context(rule_fields, imp_fields, parser_opts)
 
-      {time, content} =
-        :timer.tc(fn ->
-          Enum.map(implementations, fn implementation ->
-            implementation
-            |> add_header_information2(
-              imp_fields,
-              rule_fields,
-              result_details_fields,
-              number_of_datasets,
-              number_of_validations,
-              opts,
-              parsing_contexts,
-              parser_opts
-            )
-          end)
+      opts =
+        opts
+        |> Keyword.put(:parsing_contexts, parsing_contexts)
+        |> Keyword.put(:parser_opts, parser_opts)
+
+      content =
+        Enum.map(implementations, fn implementation ->
+          implementation
+          |> add_header_information(
+            imp_fields,
+            rule_fields,
+            result_details_fields,
+            number_of_datasets,
+            number_of_validations,
+            opts
+          )
         end)
-
-      IO.inspect(time / 1_000_000, label: "time")
-      IO.inspect(Enum.count(content), label: "size")
-
-      Logger.info("content --------------------------------")
 
       rows = [headers | content]
 
@@ -181,128 +175,9 @@ defmodule TdDq.XLSX.Writer do
          number_of_validations,
          opts
        ) do
-    @headers
-    |> Enum.reduce([], fn
-      "implementation_key", acc ->
-        acc ++ [get_string_value(implementation, "implementation_key")]
+    parsing_contexts = Keyword.get(opts, :parsing_contexts)
+    parser_opts = Keyword.get(opts, :parser_opts)
 
-      "implementation_type", acc ->
-        acc ++
-          [
-            I18nCache.get_definition(
-              opts[:lang],
-              "implementations.type.#{implementation["implementation_type"]}",
-              default_value: implementation["implementation_type"]
-            )
-          ]
-
-      "domain_external_id", acc ->
-        acc ++ [get_domain_external_id(implementation)]
-
-      "domain", acc ->
-        acc ++ [get_domain(implementation)]
-
-      "executable", acc ->
-        acc ++
-          [
-            get_translated_value(
-              "ruleImplementation.props.executable.#{implementation["executable"]}",
-              opts
-            )
-          ]
-
-      "rule", acc ->
-        acc ++ [get_rule(implementation)]
-
-      "rule_template", acc ->
-        acc ++ [get_rule_template(implementation)]
-
-      "implementation_template", acc ->
-        acc ++ [get_string_value(implementation, "df_name")]
-
-      "result_type", acc ->
-        acc ++
-          [
-            get_translated_value(
-              "ruleImplementations.props.result_type.#{implementation["result_type"]}",
-              opts
-            )
-          ]
-
-      "goal", acc ->
-        acc ++ [get_string_value(implementation, "goal")]
-
-      "minimum", acc ->
-        acc ++ [get_string_value(implementation, "minimum")]
-
-      "records", acc ->
-        acc ++ [get_result_info(implementation, "records")]
-
-      "errors", acc ->
-        acc ++ [get_result_info(implementation, "errors")]
-
-      "result", acc ->
-        acc ++ [get_result_info(implementation, "result")]
-
-      "execution", acc ->
-        acc ++ [get_result_info(implementation, "result_text", opts)]
-
-      "last_execution_at", acc ->
-        acc ++ [get_result_info(implementation, "date", "datetime")]
-
-      "inserted_at", acc ->
-        acc ++ [get_string_value(implementation, "inserted_at", "datetime")]
-
-      "updated_at", acc ->
-        acc ++ [get_string_value(implementation, "updated_at", "datetime")]
-
-      "business_concepts", acc ->
-        acc ++ [get_concepts(implementation)]
-
-      "structure_domains", acc ->
-        acc ++ [get_structure_domains(implementation)]
-
-      "rule_template_fields", acc ->
-        add_content_columns(acc, implementation, rule_fields, "rule", opts, nil, nil)
-
-      "template_fields", acc ->
-        add_content_columns(acc, implementation, content, "template", opts, nil, nil)
-
-      "data_set_external_ids", acc ->
-        acc ++
-          fill_with(
-            get_implementation_fields(implementation, "datasets"),
-            number_of_datasets,
-            ""
-          )
-
-      "validation_fields", acc ->
-        acc ++
-          fill_with(
-            get_implementation_fields(implementation, "validations"),
-            number_of_validations,
-            ""
-          )
-
-      "result_details", acc ->
-        acc ++ get_result_details(implementation, result_details_fields)
-
-      other, acc ->
-        acc ++ [get_string_value(implementation, other)]
-    end)
-  end
-
-  defp add_header_information2(
-         implementation,
-         content,
-         rule_fields,
-         result_details_fields,
-         number_of_datasets,
-         number_of_validations,
-         opts,
-         parsing_contexts \\ nil,
-         parser_opts \\ nil
-       ) do
     base_columns = [
       get_string_value(implementation, "implementation_key"),
       implementation["implementation_type"],
@@ -406,9 +281,9 @@ defmodule TdDq.XLSX.Writer do
   defp add_content_columns(fields, _df_content, content, "rule", opts, _context, _parser_opts),
     do: add_empty_content(fields, content, opts)
 
-  defp add_content(fields, df_content, content, opts, context, parser_opts \\ nil)
-
   defp add_content(fields, df_content, content, opts, context, parser_opts)
+
+  defp add_content(fields, df_content, content, _opts, context, parser_opts)
        when is_map(df_content) and is_list(content) do
     Parser.append_parsed_fields(fields, content, df_content, parser_opts, context)
   end
@@ -463,7 +338,6 @@ defmodule TdDq.XLSX.Writer do
     _ -> to_string(datetime)
   end
 
-  ### REVIEW TD-7746: Cuello de botella por que accede a la cache uno a uno
   defp get_concepts(implementation) do
     case(implementation) do
       %{"concepts" => concepts} when is_list(concepts) and concepts != [] ->
