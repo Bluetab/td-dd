@@ -98,13 +98,16 @@ defmodule TdDq.XLSX.Writer do
 
       Logger.info("headers --------------------------------")
 
+      impls = List.duplicate("hola", Enum.count(imp_fields))
+      rules = List.duplicate("hola", Enum.count(rule_fields))
+
       {time, content} =
         :timer.tc(fn ->
           Enum.map(implementations, fn implementation ->
             implementation
             |> add_header_information2(
-              imp_fields,
-              rule_fields,
+              impls,
+              rules,
               result_details_fields,
               number_of_datasets,
               number_of_validations,
@@ -335,11 +338,11 @@ defmodule TdDq.XLSX.Writer do
       "structure_domains"
     ]
 
-    rule_template_columns =
-      add_content_columns([], implementation, rule_fields, "rule", opts)
+    rule_template_columns = rule_fields
+    # add_content_columns([], implementation, rule_fields, "rule", opts)
 
-    template_columns =
-      add_content_columns([], implementation, content, "template", opts)
+    template_columns = content
+    # add_content_columns([], implementation, content, "template", opts)
 
     dataset_columns =
       fill_with(
