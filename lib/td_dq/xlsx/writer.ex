@@ -101,7 +101,8 @@ defmodule TdDq.XLSX.Writer do
       parser_opts = [
         domain_type: :with_domain_external_id,
         lang: opts[:lang],
-        xlsx: true
+        xlsx: true,
+        locales: I18nCache.get_active_locales!()
       ]
 
       parsing_contexts = prepare_parsing_context(rule_fields, imp_fields, parser_opts)
@@ -117,7 +118,8 @@ defmodule TdDq.XLSX.Writer do
               number_of_datasets,
               number_of_validations,
               opts,
-              parsing_contexts
+              parsing_contexts,
+              parser_opts
             )
           end)
         end)
@@ -312,7 +314,8 @@ defmodule TdDq.XLSX.Writer do
          number_of_datasets,
          number_of_validations,
          opts,
-         parsing_contexts \\ nil
+         parsing_contexts \\ nil,
+         parser_opts \\ nil
        ) do
     base_columns = [
       get_string_value(implementation, "implementation_key"),
@@ -349,10 +352,26 @@ defmodule TdDq.XLSX.Writer do
     template_context = if parsing_contexts, do: parsing_contexts[:template], else: nil
 
     rule_template_columns =
-      add_content_columns([], implementation, rule_fields, "rule", opts, rule_context)
+      add_content_columns(
+        [],
+        implementation,
+        rule_fields,
+        "rule",
+        opts,
+        rule_context,
+        parser_opts
+      )
 
     template_columns =
-      add_content_columns([], implementation, content, "template", opts, template_context)
+      add_content_columns(
+        [],
+        implementation,
+        content,
+        "template",
+        opts,
+        template_context,
+        parser_opts
+      )
 
     dataset_columns =
       fill_with(
@@ -380,17 +399,16 @@ defmodule TdDq.XLSX.Writer do
       result_detail_columns
   end
 
-  defp add_content_columns(fields, implementation, content, type, opts, context \\ nil)
-
   defp add_content_columns(
          fields,
          %{"df_content" => df_content},
          content,
          "template",
          opts,
-         context
+         context,
+         parser_opts
        ),
-       do: add_content(fields, df_content, content, opts, context)
+       do: add_content(fields, df_content, content, opts, context, parser_opts)
 
   defp add_content_columns(
          fields,
@@ -398,27 +416,22 @@ defmodule TdDq.XLSX.Writer do
          content,
          "rule",
          opts,
-         context
+         context,
+         parser_opts
        ),
-       do: add_content(fields, df_content, content, opts, context)
+       do: add_content(fields, df_content, content, opts, context, parser_opts)
 
-  defp add_content_columns(fields, _df_content, content, "rule", opts, _context),
+  defp add_content_columns(fields, _df_content, content, "rule", opts, _context, _parser_opts),
     do: add_empty_content(fields, content, opts)
 
-  defp add_content(fields, df_content, content, opts, context \\ nil)
+  defp add_content(fields, df_content, content, opts, context, parser_opts \\ nil)
 
-  defp add_content(fields, df_content, content, opts, context)
+  defp add_content(fields, df_content, content, opts, context, parser_opts)
        when is_map(df_content) and is_list(content) do
-    parser_opts = [
-      domain_type: :with_domain_external_id,
-      lang: opts[:lang],
-      xlsx: true
-    ]
-
     Parser.append_parsed_fields(fields, content, df_content, parser_opts, context)
   end
 
-  defp add_content(fields, _headers, _data, _opts, _context), do: fields
+  defp add_content(fields, _headers, _data, _opts, _context, _parser_opts), do: fields
 
   defp add_empty_content(fields, content, _opts)
        when is_list(content),
