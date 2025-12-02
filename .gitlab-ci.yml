@@ -7,10 +7,26 @@ variables:
 
 stages:
   - build
+  - test
+  - publish
+  - acceptance
   - deploy
 
 before_script:
   - source ci/env.sh ecr-login
+
+deps:
+  stage: build
+  tags:
+    - docker-compose
+  script:
+    - docker-compose run --rm build
+  after_script:
+    - docker-compose down -v
+  artifacts:
+    paths:
+      - deps/
+      - _build/test/
 
 release:
   stage: build
