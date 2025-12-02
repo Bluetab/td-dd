@@ -98,20 +98,26 @@ defmodule TdDq.XLSX.Writer do
 
       Logger.info("headers --------------------------------")
 
-      impls = List.duplicate("hola", Enum.count(imp_fields))
-      rules = List.duplicate("hola", Enum.count(rule_fields))
+      parser_opts = [
+        domain_type: :with_domain_external_id,
+        lang: opts[:lang],
+        xlsx: true
+      ]
+
+      parsing_contexts = prepare_parsing_context(rule_fields, imp_fields, parser_opts)
 
       {time, content} =
         :timer.tc(fn ->
           Enum.map(implementations, fn implementation ->
             implementation
             |> add_header_information2(
-              impls,
-              rules,
+              imp_fields,
+              rule_fields,
               result_details_fields,
               number_of_datasets,
               number_of_validations,
-              opts
+              opts,
+              parsing_contexts
             )
           end)
         end)
@@ -305,7 +311,8 @@ defmodule TdDq.XLSX.Writer do
          result_details_fields,
          number_of_datasets,
          number_of_validations,
-         opts
+         opts,
+         parsing_contexts \\ nil
        ) do
     base_columns = [
       get_string_value(implementation, "implementation_key"),
@@ -338,11 +345,14 @@ defmodule TdDq.XLSX.Writer do
       "structure_domains"
     ]
 
-    rule_template_columns = rule_fields
-    # add_content_columns([], implementation, rule_fields, "rule", opts)
+    rule_context = if parsing_contexts, do: parsing_contexts[:rule], else: nil
+    template_context = if parsing_contexts, do: parsing_contexts[:template], else: nil
 
-    template_columns = content
-    # add_content_columns([], implementation, content, "template", opts)
+    rule_template_columns =
+      add_content_columns([], implementation, rule_fields, "rule", opts, rule_context)
+
+    template_columns =
+      add_content_columns([], implementation, content, "template", opts, template_context)
 
     dataset_columns =
       fill_with(
@@ -370,22 +380,34 @@ defmodule TdDq.XLSX.Writer do
       result_detail_columns
   end
 
-  defp add_content_columns(fields, %{"df_content" => df_content}, content, "template", opts),
-    do: add_content(fields, df_content, content, opts)
+  defp add_content_columns(fields, implementation, content, type, opts, context \\ nil)
+
+  defp add_content_columns(
+         fields,
+         %{"df_content" => df_content},
+         content,
+         "template",
+         opts,
+         context
+       ),
+       do: add_content(fields, df_content, content, opts, context)
 
   defp add_content_columns(
          fields,
          %{"rule" => %{"df_content" => df_content}},
          content,
          "rule",
-         opts
+         opts,
+         context
        ),
-       do: add_content(fields, df_content, content, opts)
+       do: add_content(fields, df_content, content, opts, context)
 
-  defp add_content_columns(fields, _df_content, content, "rule", opts),
+  defp add_content_columns(fields, _df_content, content, "rule", opts, _context),
     do: add_empty_content(fields, content, opts)
 
-  defp add_content(fields, df_content, content, opts)
+  defp add_content(fields, df_content, content, opts, context \\ nil)
+
+  defp add_content(fields, df_content, content, opts, context)
        when is_map(df_content) and is_list(content) do
     parser_opts = [
       domain_type: :with_domain_external_id,
@@ -393,10 +415,10 @@ defmodule TdDq.XLSX.Writer do
       xlsx: true
     ]
 
-    Parser.append_parsed_fields(fields, content, df_content, parser_opts)
+    Parser.append_parsed_fields(fields, content, df_content, parser_opts, context)
   end
 
-  defp add_content(fields, _headers, _data, _opts), do: fields
+  defp add_content(fields, _headers, _data, _opts, _context), do: fields
 
   defp add_empty_content(fields, content, _opts)
        when is_list(content),
@@ -678,4 +700,21 @@ defmodule TdDq.XLSX.Writer do
          |> Enum.uniq()
 
   defp get_implementation_fields(_, _), do: []
+
+  defp prepare_parsing_context(rule_fields, template_fields, opts) do
+    domain_type = Keyword.get(opts, :domain_type, :with_domain_external_id)
+    lang = Keyword.get(opts, :lang)
+
+    rule_ctx =
+      rule_fields
+      |> Parser.context_for_fields(domain_type)
+      |> Map.put("lang", lang)
+
+    template_ctx =
+      template_fields
+      |> Parser.context_for_fields(domain_type)
+      |> Map.put("lang", lang)
+
+    %{rule: rule_ctx, template: template_ctx}
+  end
 end
