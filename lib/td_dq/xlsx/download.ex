@@ -12,6 +12,8 @@ defmodule TdDq.XLSX.Download do
   require Logger
 
   def write_to_memory(implementations, opts \\ []) do
+    Logger.info("INICIO write_to_memory")
+
     {:ok, domain_ext_id_map} = DomainCache.id_to_external_id_map()
     {:ok, domain_name_map} = DomainCache.id_to_name_map()
 
@@ -70,7 +72,7 @@ defmodule TdDq.XLSX.Download do
         Elixlsx.write_to_memory(workbook, "implementations.xlsx")
       end)
 
-    Logger.info("write_to_memory")
+    Logger.info("wrote_to_memory")
     r6
   end
 

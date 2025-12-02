@@ -5,7 +5,7 @@ defmodule TdDq.XLSX.Writer do
   """
 
   alias TdCache.ConceptCache
-  # alias TdCache.I18nCache
+  alias TdCache.I18nCache
   alias TdDfLib.Format
   alias TdDfLib.Parser
   alias TdDq.Implementations
@@ -98,18 +98,23 @@ defmodule TdDq.XLSX.Writer do
 
       Logger.info("headers --------------------------------")
 
-      content =
-        Enum.map(implementations, fn implementation ->
-          implementation
-          |> add_header_information(
-            imp_fields,
-            rule_fields,
-            result_details_fields,
-            number_of_datasets,
-            number_of_validations,
-            opts
-          )
+      {time, content} =
+        :timer.tc(fn ->
+          Enum.map(implementations, fn implementation ->
+            implementation
+            |> add_header_information(
+              imp_fields,
+              rule_fields,
+              result_details_fields,
+              number_of_datasets,
+              number_of_validations,
+              opts
+            )
+          end)
         end)
+
+      IO.inspect(time, label: "time")
+      IO.inspect(Enum.count(content), label: "size")
 
       Logger.info("content --------------------------------")
 
@@ -187,12 +192,11 @@ defmodule TdDq.XLSX.Writer do
       "implementation_type", acc ->
         acc ++
           [
-            implementation["implementation_type"]
-            # I18nCache.get_definition(
-            #   opts[:lang],
-            #   "implementations.type.#{implementation["implementation_type"]}",
-            #   default_value: implementation["implementation_type"]
-            # )
+            I18nCache.get_definition(
+              opts[:lang],
+              "implementations.type.#{implementation["implementation_type"]}",
+              default_value: implementation["implementation_type"]
+            )
           ]
 
       "domain_external_id", acc ->
@@ -289,6 +293,74 @@ defmodule TdDq.XLSX.Writer do
       other, acc ->
         acc ++ [get_string_value(implementation, other)]
     end)
+  end
+
+  defp add_header_information2(
+         implementation,
+         content,
+         rule_fields,
+         result_details_fields,
+         number_of_datasets,
+         number_of_validations,
+         opts
+       ) do
+    base_columns = [
+      get_string_value(implementation, "implementation_key"),
+      implementation["implementation_type"],
+      get_domain_external_id(implementation),
+      get_domain(implementation),
+      get_translated_value(
+        "ruleImplementation.props.executable.#{implementation["executable"]}",
+        opts
+      ),
+      get_rule(implementation),
+      get_rule_template(implementation),
+      get_string_value(implementation, "df_name"),
+      get_translated_value(
+        "ruleImplementations.props.result_type.#{implementation["result_type"]}",
+        opts
+      ),
+      get_string_value(implementation, "goal"),
+      get_string_value(implementation, "minimum"),
+      get_result_info(implementation, "records"),
+      get_result_info(implementation, "errors"),
+      get_result_info(implementation, "result"),
+      get_result_info(implementation, "result_text", opts),
+      get_result_info(implementation, "date", "datetime"),
+      get_string_value(implementation, "inserted_at", "datetime"),
+      get_string_value(implementation, "updated_at", "datetime"),
+      get_concepts(implementation),
+      get_structure_domains(implementation)
+    ]
+
+    rule_template_columns =
+      add_content_columns([], implementation, rule_fields, "rule", opts)
+
+    template_columns =
+      add_content_columns([], implementation, content, "template", opts)
+
+    dataset_columns =
+      fill_with(
+        get_implementation_fields(implementation, "datasets"),
+        number_of_datasets,
+        ""
+      )
+
+    validation_columns =
+      fill_with(
+        get_implementation_fields(implementation, "validations"),
+        number_of_validations,
+        ""
+      )
+
+    result_detail_columns = get_result_details(implementation, result_details_fields)
+
+    base_columns ++
+      rule_template_columns ++
+      template_columns ++
+      dataset_columns ++
+      validation_columns ++
+      result_detail_columns
   end
 
   defp add_content_columns(fields, %{"df_content" => df_content}, content, "template", opts),
@@ -413,23 +485,20 @@ defmodule TdDq.XLSX.Writer do
     end
   end
 
-  ### REVIEW TD-7746: Cuello de botella por que accede a la cache uno a uno
-  defp get_translated_header(value, _opts) do
-    value
-    # case I18nCache.get_definition(opts[:lang], "ruleImplementations.props.#{value}",
-    #        default_value: value
-    #      ) do
-    #   text when is_binary(text) -> text
-    #   _ -> value
-    # end
+  defp get_translated_header(value, opts) do
+    case I18nCache.get_definition(opts[:lang], "ruleImplementations.props.#{value}",
+           default_value: value
+         ) do
+      text when is_binary(text) -> text
+      _ -> value
+    end
   end
 
-  defp get_translated_value(value, _opts) do
-    value
-    # case I18nCache.get_definition(opts[:lang], value, default_value: value) do
-    #   text when is_binary(text) -> text
-    #   _ -> value
-    # end
+  defp get_translated_value(value, opts) do
+    case I18nCache.get_definition(opts[:lang], value, default_value: value) do
+      text when is_binary(text) -> text
+      _ -> value
+    end
   end
 
   defp get_result_info(implementation, key) do

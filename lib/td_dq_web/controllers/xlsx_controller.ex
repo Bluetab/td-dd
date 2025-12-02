@@ -1,6 +1,8 @@
 defmodule TdDqWeb.Implementation.XLSXController do
   use TdDqWeb, :controller
 
+  require Logger
+
   alias TdCore.Utils.FileHash
   alias TdDq.Implementations
   alias TdDq.Implementations.Search
@@ -26,6 +28,8 @@ defmodule TdDqWeb.Implementation.XLSXController do
       ])
 
     claims = conn.assigns[:current_resource]
+
+    Logger.info("INICIO PETICION")
 
     with %{results: [_ | _] = implementations} <-
            search_all_implementations(claims, params),

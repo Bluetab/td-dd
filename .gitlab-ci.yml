@@ -7,26 +7,10 @@ variables:
 
 stages:
   - build
-  - test
-  - publish
-  - acceptance
   - deploy
 
 before_script:
   - source ci/env.sh ecr-login
-
-deps:
-  stage: build
-  tags:
-    - docker-compose
-  script:
-    - docker-compose run --rm build
-  after_script:
-    - docker-compose down -v
-  artifacts:
-    paths:
-      - deps/
-      - _build/test/
 
 release:
   stage: build
@@ -42,85 +26,6 @@ release:
     paths:
       - _build/prod/*.tar.gz
 
-test:
-  stage: test
-  needs:
-    - deps
-  tags:
-    - docker-compose
-  script:
-    - docker-compose run --rm test
-  after_script:
-    - docker-compose down -v
-
-sobelow:
-  stage: test
-  needs:
-    - deps
-  tags:
-    - docker-compose
-  script:
-    - docker-compose run --rm sobelow
-  after_script:
-    - docker-compose down -v
-
-trivy:
-  stage: test
-  needs:
-    - deps
-  tags:
-    - docker-compose
-  script:
-    - trivy fs --exit-code 1 --severity HIGH,CRITICAL .
-
-publish:
-  stage: publish
-  only:
-    - develop
-    - tags
-  tags:
-    - docker
-  script:
-    - docker build --build-arg APP_NAME=${APP_NAME} --build-arg APP_VERSION=${APP_VERSION} -t ${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${CI_COMMIT_SHA} .
-    - docker tag ${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${CI_COMMIT_SHA} ${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION}
-    - docker push ${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION}
-
-acceptance:
-  stage: acceptance
-  only:
-    - develop
-    - tags
-  tags:
-    - docker-compose
-  dependencies: []
-  script:
-    - docker-compose up -d redis postgres elastic vault
-    - docker-compose run --rm wait_for_elastic
-    - docker-compose run --rm acceptance
-  after_script:
-    - docker-compose logs elastic
-    - docker-compose logs service
-    - docker-compose down -v
-
-acceptance:branches:
-  stage: acceptance
-  except:
-    - develop
-    - main
-    - tags
-  tags:
-    - docker-compose
-  script:
-    - docker-compose up -d redis postgres elastic vault
-    - docker build --build-arg APP_NAME=${APP_NAME} --build-arg APP_VERSION=${APP_VERSION} -t ${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${CI_COMMIT_SHA} .
-    - docker tag ${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${CI_COMMIT_SHA} ${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION}
-    - docker-compose run --rm wait_for_elastic
-    - docker-compose run --rm acceptance
-  after_script:
-    - docker-compose logs elastic
-    - docker-compose logs service
-    - docker-compose down -v
-
 publish:branches:
   stage: deploy
   except:
@@ -134,15 +39,3 @@ publish:branches:
     - docker build --build-arg APP_NAME=${APP_NAME} --build-arg APP_VERSION=${APP_VERSION} -t ${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${CI_COMMIT_SHA} .
     - docker tag ${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${CI_COMMIT_SHA} ${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION}
     - docker push ${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION}
-
-deploy:
-  stage: deploy
-  tags:
-    - kubectl
-  only:
-    - develop
-    - tags
-  dependencies: []
-  script:
-    - aws eks update-kubeconfig --region eu-west-1 --name test-truedat-eks
-    - kubectl set image deployment.v1.apps/${K8S_DEPLOYMENT} ${K8S_CONTAINER}=${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION} --record

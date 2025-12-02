@@ -374,5 +374,68 @@ defmodule TdDq.XLSX.WriterTest do
                ]
              ]
     end
+
+    test "handles thousands of implementations for download" do
+      domain = CacheHelpers.insert_domain()
+
+      %{name: template_name} =
+        template =
+        CacheHelpers.insert_template(%{
+          name: "template_stress",
+          scope: "dq",
+          content: [
+            %{
+              "name" => "group",
+              "fields" => [
+                %{
+                  "name" => "field_name",
+                  "type" => "string",
+                  "label" => "Label field_name"
+                }
+              ]
+            }
+          ]
+        })
+
+      implementation =
+        insert(:implementation,
+          implementation_key: "imp_stress",
+          df_name: template_name,
+          df_content: %{field_name: %{"value" => "some value"}},
+          template: template,
+          domain_id: domain.id,
+          domain: domain
+        )
+
+      base_implementation =
+        implementation
+        |> CollectionUtils.stringify_keys(true)
+        |> Map.put("template", template)
+
+      implementations =
+        1..1_000
+        |> Enum.map(fn idx ->
+          base_implementation
+          |> Map.put("implementation_key", "imp_stress_#{idx}")
+        end)
+
+      implementation_information = %{
+        template_name => implementations
+      }
+
+      IO.inspect("Starting to generate rows")
+
+      {time, _rows} =
+        :timer.tc(fn ->
+          Writer.rows_by_implementation_template(implementation_information)
+        end)
+
+      IO.inspect("Rows generated")
+      IO.inspect(time / 1.0e6)
+
+      # assert [headers | content] = rows[template_name]
+      # assert length(content) == 5_000
+      # assert Enum.count(headers) >= 11
+    end
   end
 end
