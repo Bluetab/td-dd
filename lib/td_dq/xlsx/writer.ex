@@ -102,7 +102,7 @@ defmodule TdDq.XLSX.Writer do
         :timer.tc(fn ->
           Enum.map(implementations, fn implementation ->
             implementation
-            |> add_header_information(
+            |> add_header_information2(
               imp_fields,
               rule_fields,
               result_details_fields,
@@ -113,7 +113,7 @@ defmodule TdDq.XLSX.Writer do
           end)
         end)
 
-      IO.inspect(time, label: "time")
+      IO.inspect(time / 1_000_000, label: "time")
       IO.inspect(Enum.count(content), label: "size")
 
       Logger.info("content --------------------------------")
