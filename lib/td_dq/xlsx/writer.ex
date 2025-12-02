@@ -277,10 +277,10 @@ defmodule TdDq.XLSX.Writer do
         acc ++ [get_structure_domains(implementation)]
 
       "rule_template_fields", acc ->
-        add_content_columns(acc, implementation, rule_fields, "rule", opts)
+        add_content_columns(acc, implementation, rule_fields, "rule", opts, nil, nil)
 
       "template_fields", acc ->
-        add_content_columns(acc, implementation, content, "template", opts)
+        add_content_columns(acc, implementation, content, "template", opts, nil, nil)
 
       "data_set_external_ids", acc ->
         acc ++

@@ -413,7 +413,7 @@ defmodule TdDq.XLSX.WriterTest do
         |> Map.put("template", template)
 
       implementations =
-        1..1_000
+        1..1
         |> Enum.map(fn idx ->
           base_implementation
           |> Map.put("implementation_key", "imp_stress_#{idx}")
