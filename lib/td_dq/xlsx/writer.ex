@@ -342,14 +342,16 @@ defmodule TdDq.XLSX.Writer do
 
     dataset_columns =
       fill_with(
-        get_implementation_fields(implementation, "datasets"),
+        # get_implementation_fields(implementation, "datasets"),
+        [],
         number_of_datasets,
         ""
       )
 
     validation_columns =
       fill_with(
-        get_implementation_fields(implementation, "validations"),
+        # get_implementation_fields(implementation, "validations"),
+        [],
         number_of_validations,
         ""
       )
