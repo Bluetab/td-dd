@@ -331,7 +331,8 @@ defmodule TdDq.XLSX.Writer do
       get_string_value(implementation, "updated_at", "datetime"),
       # get_concepts(implementation),
       "concepts",
-      get_structure_domains(implementation)
+      # get_structure_domains(implementation)
+      "structure_domains"
     ]
 
     rule_template_columns =
