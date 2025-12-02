@@ -6,4 +6,5 @@ set -o xtrace
 
 mix local.hex --force
 mix local.rebar --force
+mix deps.get
 mix release

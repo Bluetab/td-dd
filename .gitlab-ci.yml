@@ -6,41 +6,10 @@ variables:
   # See also variables set in ci/env.sh
 
 stages:
-  - build
-  - test
-  - publish
-  - acceptance
   - deploy
 
 before_script:
   - source ci/env.sh ecr-login
-
-deps:
-  stage: build
-  tags:
-    - docker-compose
-  script:
-    - docker-compose run --rm build
-  after_script:
-    - docker-compose down -v
-  artifacts:
-    paths:
-      - deps/
-      - _build/test/
-
-release:
-  stage: build
-  needs:
-    - deps
-  tags:
-    - docker-compose
-  script:
-    - docker-compose run --rm release
-  after_script:
-    - docker-compose down -v
-  artifacts:
-    paths:
-      - _build/prod/*.tar.gz
 
 publish:branches:
   stage: deploy
@@ -48,10 +17,10 @@ publish:branches:
     - develop
     - main
     - tags
-  when: manual
   tags:
     - docker
   script:
+    - docker-compose run --rm release
     - docker build --build-arg APP_NAME=${APP_NAME} --build-arg APP_VERSION=${APP_VERSION} -t ${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${CI_COMMIT_SHA} .
     - docker tag ${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${CI_COMMIT_SHA} ${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION}
     - docker push ${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION}

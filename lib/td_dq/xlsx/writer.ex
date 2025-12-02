@@ -329,7 +329,8 @@ defmodule TdDq.XLSX.Writer do
       get_result_info(implementation, "date", "datetime"),
       get_string_value(implementation, "inserted_at", "datetime"),
       get_string_value(implementation, "updated_at", "datetime"),
-      get_concepts(implementation),
+      # get_concepts(implementation),
+      "concepts",
       get_structure_domains(implementation)
     ]
 
