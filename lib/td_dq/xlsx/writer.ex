@@ -53,8 +53,6 @@ defmodule TdDq.XLSX.Writer do
           nil
         )
 
-      Logger.info("rule_fields --------------------------------")
-
       {imp_fields, imp_field_headers} =
         fields_with_headers(
           implementations,
@@ -63,28 +61,18 @@ defmodule TdDq.XLSX.Writer do
           @color_ligth_yellow
         )
 
-      Logger.info("imp_fields --------------------------------")
-
       result_details_fields =
         implementations
         |> result_headers(&result_content/1)
         |> Enum.sort()
 
-      Logger.info("result_details_fields --------------------------------")
-
       result_details_headers =
         Enum.map(result_details_fields, fn header -> "result_details_" <> header end)
-
-      Logger.info("result_details_headers --------------------------------")
 
       number_of_validations =
         count_implementations_items(implementations, "validations")
 
-      Logger.info("number_of_validations --------------------------------")
-
       number_of_datasets = count_implementations_items(implementations, "datasets")
-
-      Logger.info("number_of_datasets --------------------------------")
 
       headers =
         headers_for_type(
@@ -95,8 +83,6 @@ defmodule TdDq.XLSX.Writer do
           number_of_validations,
           opts
         )
-
-      Logger.info("headers --------------------------------")
 
       parser_opts = [
         domain_type: :with_domain_external_id,
@@ -342,10 +328,8 @@ defmodule TdDq.XLSX.Writer do
       get_result_info(implementation, "date", "datetime"),
       get_string_value(implementation, "inserted_at", "datetime"),
       get_string_value(implementation, "updated_at", "datetime"),
-      # get_concepts(implementation),
-      "concepts",
-      # get_structure_domains(implementation)
-      "structure_domains"
+      get_concepts(implementation),
+      get_structure_domains(implementation)
     ]
 
     rule_context = if parsing_contexts, do: parsing_contexts[:rule], else: nil
@@ -375,16 +359,14 @@ defmodule TdDq.XLSX.Writer do
 
     dataset_columns =
       fill_with(
-        # get_implementation_fields(implementation, "datasets"),
-        [],
+        get_implementation_fields(implementation, "datasets"),
         number_of_datasets,
         ""
       )
 
     validation_columns =
       fill_with(
-        # get_implementation_fields(implementation, "validations"),
-        [],
+        get_implementation_fields(implementation, "validations"),
         number_of_validations,
         ""
       )
@@ -498,9 +480,9 @@ defmodule TdDq.XLSX.Writer do
   defp get_concepts_from_list(concepts),
     do:
       concepts
-      # |> Enum.map(&get_concept_name/1)
-      # |> Enum.reject(&(&1 == ""))
-      # |> Enum.sort()
+      |> Enum.map(&get_concept_name/1)
+      |> Enum.reject(&(&1 == ""))
+      |> Enum.sort()
       |> Enum.join(" | ")
 
   defp get_concept_name(id) do
