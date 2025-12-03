@@ -70,5 +70,100 @@ defmodule TdDd.Search.EnricherImplTest do
       assert embedding.embedding == record_embedding.embedding
       assert embedding.dims == record_embedding.dims
     end
+
+    test "enriches with empty ids returns empty list" do
+      relation_type_id = 1
+
+      result = EnricherImpl.enrich_versions([], relation_type_id, %{})
+
+      assert result == []
+    end
+
+    test "enriches multiple versions", %{
+      template: %{name: template_name},
+      domain: %{id: domain_id}
+    } do
+      data_structure1 = insert(:data_structure, domain_ids: [domain_id])
+      dsv1 = insert(:data_structure_version, type: template_name, data_structure: data_structure1)
+
+      data_structure2 = insert(:data_structure, domain_ids: [domain_id])
+      dsv2 = insert(:data_structure_version, type: template_name, data_structure: data_structure2)
+
+      relation_type_id = 1
+
+      result = EnricherImpl.enrich_versions([dsv1.id, dsv2.id], relation_type_id, %{})
+
+      assert length(result) == 2
+      assert Enum.any?(result, &(&1.id == dsv1.id))
+      assert Enum.any?(result, &(&1.id == dsv2.id))
+    end
+
+    test "enriches with filters", %{template: %{name: template_name}, domain: %{id: domain_id}} do
+      data_structure = insert(:data_structure, domain_ids: [domain_id])
+      dsv = insert(:data_structure_version, type: template_name, data_structure: data_structure)
+
+      relation_type_id = 1
+      filters = %{status: ["current"]}
+
+      result = EnricherImpl.enrich_versions([dsv.id], relation_type_id, filters)
+
+      assert is_list(result)
+    end
+  end
+
+  describe "async_enrich_versions/3" do
+    test "enriches versions asynchronously", %{
+      template: %{name: template_name},
+      domain: %{id: domain_id}
+    } do
+      data_structure = insert(:data_structure, domain_ids: [domain_id])
+      dsv = insert(:data_structure_version, type: template_name, data_structure: data_structure)
+
+      relation_type_id = 1
+      chunked_stream = [[dsv.id]]
+
+      result =
+        chunked_stream
+        |> EnricherImpl.async_enrich_versions(relation_type_id, %{})
+        |> Enum.to_list()
+
+      assert [enriched | _] = result
+      assert enriched.id == dsv.id
+    end
+
+    test "processes multiple chunks", %{
+      template: %{name: template_name},
+      domain: %{id: domain_id}
+    } do
+      data_structure1 = insert(:data_structure, domain_ids: [domain_id])
+      dsv1 = insert(:data_structure_version, type: template_name, data_structure: data_structure1)
+
+      data_structure2 = insert(:data_structure, domain_ids: [domain_id])
+      dsv2 = insert(:data_structure_version, type: template_name, data_structure: data_structure2)
+
+      relation_type_id = 1
+      chunked_stream = [[dsv1.id], [dsv2.id]]
+
+      result =
+        chunked_stream
+        |> EnricherImpl.async_enrich_versions(relation_type_id, %{})
+        |> Enum.to_list()
+
+      assert length(result) == 2
+      assert Enum.any?(result, &(&1.id == dsv1.id))
+      assert Enum.any?(result, &(&1.id == dsv2.id))
+    end
+
+    test "handles empty stream" do
+      relation_type_id = 1
+      chunked_stream = []
+
+      result =
+        chunked_stream
+        |> EnricherImpl.async_enrich_versions(relation_type_id, %{})
+        |> Enum.to_list()
+
+      assert result == []
+    end
   end
 end

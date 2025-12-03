@@ -1,12 +1,23 @@
 # Changelog
 
+## [7.13.0] 2025-11-18
+
+### Added
+
+- [TD-7627] Update and refactor test
+
+### Changed
+
+- [TD-7396] Refactor rule implementation search endpoint
+- [TD-6985] Fix reactivate structure and mutable metadata is loaded when new metadata is uploaded
+
 ## [7.12.1] 2025-12-03
 
 ### Fixed
 
 - [TD-7746] Download improved processing for templates
 
-## [7.12.0] 2025-10-29
+# [7.12.0] 2025-10-29
 
 ### Changed
 
@@ -41,6 +52,10 @@
 - [TD-7401] Update `td-core` version
 - [TD-7075] Support for Implementation XLSX download and upload
 - [TD-7487] Allow to reprocess grant requests that failed to be processed
+
+### Changed
+
+- [TD-7512] Adjusts implementation actions permissions for users with permissions in different domains
 
 ## [7.10.1] 2025-09-19
 

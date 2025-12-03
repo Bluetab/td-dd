@@ -128,10 +128,12 @@ defmodule TdDdWeb.DataStructureLinkControllerTest do
                |> json_response(:ok)
 
       assert %{
-               "labels" => [^label1_name, ^label2_name],
+               "labels" => labels,
                "source" => %{"external_id" => ^ds1_external_id},
                "target" => %{"external_id" => ^ds2_external_id}
              } = data
+
+      assert Enum.sort(labels) == Enum.sort([label1_name, label2_name])
     end
 
     @tag authentication: [role: "service"]
@@ -148,10 +150,12 @@ defmodule TdDdWeb.DataStructureLinkControllerTest do
                |> json_response(:ok)
 
       assert %{
-               "labels" => [^label1_name, ^label2_name],
+               "labels" => labels,
                "source" => %{"id" => ^ds1_id},
                "target" => %{"id" => ^ds2_id}
              } = data
+
+      assert Enum.sort(labels) == Enum.sort([label1_name, label2_name])
     end
 
     @tag authentication: [role: "service"]

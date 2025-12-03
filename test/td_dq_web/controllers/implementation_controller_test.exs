@@ -3588,7 +3588,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
         assert %{"data" => data} =
                  conn
-                 |> post(Routes.rule_implementation_path(conn, :search_rule_implementations, 123))
+                 |> post(Routes.implementation_path(conn, :search_rule_implementations), %{
+                   "must" => %{"rule_id" => 123}
+                 })
                  |> json_response(:ok)
 
         assert [%{"id" => ^id, "implementation_ref" => ^ref}] = data
@@ -3609,9 +3611,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       assert %{"data" => data} =
                conn
-               |> post(
-                 Routes.rule_implementation_path(conn, :search_rule_implementations, rule_id)
-               )
+               |> post(Routes.implementation_path(conn, :search_rule_implementations), %{
+                 "must" => %{"rule_id" => rule_id}
+               })
                |> json_response(:ok)
 
       assert [%{"rule_id" => ^rule_id}] = data
@@ -3638,11 +3640,10 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       assert %{"data" => data} =
                conn
-               |> post(
-                 Routes.rule_implementation_path(conn, :search_rule_implementations, 123,
-                   status: "deleted"
-                 )
-               )
+               |> post(Routes.implementation_path(conn, :search_rule_implementations), %{
+                 "must" => %{"rule_id" => 123},
+                 "status" => "deleted"
+               })
                |> json_response(:ok)
 
       assert [%{"id" => ^id}] = data
@@ -3675,9 +3676,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       assert %{"_actions" => actions} =
                conn
-               |> post(
-                 Routes.rule_implementation_path(conn, :search_rule_implementations, rule_id)
-               )
+               |> post(Routes.implementation_path(conn, :search_rule_implementations), %{
+                 "must" => %{"rule_id" => rule_id}
+               })
                |> json_response(:ok)
 
       assert %{"create" => %{"method" => "POST"}} = actions
@@ -3717,7 +3718,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       result =
         conn
-        |> post(Routes.rule_implementation_path(conn, :search_rule_implementations, rule_id))
+        |> post(Routes.implementation_path(conn, :search_rule_implementations), %{
+          "must" => %{"rule_id" => rule_id}
+        })
         |> json_response(:ok)
 
       refute Map.has_key?(result, "_actions")
@@ -3736,7 +3739,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       result =
         conn
-        |> post(Routes.rule_implementation_path(conn, :search_rule_implementations, rule_id))
+        |> post(Routes.implementation_path(conn, :search_rule_implementations), %{
+          "must" => %{"rule_id" => rule_id}
+        })
         |> json_response(:ok)
 
       refute Map.has_key?(result, "_actions")
@@ -3756,7 +3761,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert %{"_actions" => actions} =
                conn
                |> post(
-                 Routes.rule_implementation_path(conn, :search_rule_implementations, rule_id)
+                 Routes.implementation_path(conn, :search_rule_implementations),
+                 %{"must" => %{"rule_id" => rule_id}}
                )
                |> json_response(:ok)
 

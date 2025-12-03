@@ -7,6 +7,7 @@ defmodule TdDd.Loader.Versions do
 
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.StructureMetadata
   alias TdDd.Repo
 
   @structure_fields [
@@ -94,6 +95,27 @@ defmodule TdDd.Loader.Versions do
         },
         ts
       ) do
+    version_ids =
+      entries
+      |> Enum.reject(&Map.has_key?(ghash, &1.ghash))
+      |> Enum.filter(&Map.has_key?(lhash, &1.lhash))
+      |> Enum.map(fn %{external_id: external_id} ->
+        get_in(version_id_map, [external_id, :id])
+      end)
+      |> Enum.reject(&is_nil/1)
+
+    structure_ids_to_restore =
+      if version_ids != [] do
+        DataStructureVersion
+        |> select([dsv], dsv.data_structure_id)
+        |> where([dsv], dsv.id in ^version_ids)
+        |> where([dsv], not is_nil(dsv.deleted_at))
+        |> Repo.all()
+        |> Enum.uniq()
+      else
+        []
+      end
+
     entries =
       entries
       |> Enum.reject(&Map.has_key?(ghash, &1.ghash))
@@ -115,6 +137,8 @@ defmodule TdDd.Loader.Versions do
         on_conflict: {:replace, [:ghash, :deleted_at, :updated_at]},
         returning: [:data_structure_id, :id]
       )
+
+    restore_metadata_for_structures(structure_ids_to_restore)
 
     {:ok, res}
   end
@@ -191,10 +215,44 @@ defmodule TdDd.Loader.Versions do
   defp do_restore([]), do: {0, []}
 
   defp do_restore(ids) do
-    DataStructureVersion
-    |> select([dsv], dsv.data_structure_id)
-    |> where([dsv], dsv.id in ^ids)
-    |> where([dsv], not is_nil(dsv.deleted_at))
+    structure_ids =
+      DataStructureVersion
+      |> select([dsv], dsv.data_structure_id)
+      |> where([dsv], dsv.id in ^ids)
+      |> where([dsv], not is_nil(dsv.deleted_at))
+      |> Repo.all()
+      |> Enum.uniq()
+
+    {count, _} =
+      DataStructureVersion
+      |> where([dsv], dsv.id in ^ids)
+      |> where([dsv], not is_nil(dsv.deleted_at))
+      |> Repo.update_all(set: [deleted_at: nil])
+
+    restore_metadata_for_structures(structure_ids)
+
+    {count, structure_ids}
+  end
+
+  defp restore_metadata_for_structures([]), do: {0, []}
+
+  defp restore_metadata_for_structures(structure_ids) do
+    latest_deleted_metadata =
+      StructureMetadata
+      |> where([sm], sm.data_structure_id in ^structure_ids)
+      |> where([sm], not is_nil(sm.deleted_at))
+      |> group_by([sm], sm.data_structure_id)
+      |> select([sm], %{
+        data_structure_id: sm.data_structure_id,
+        max_version: max(sm.version)
+      })
+      |> subquery()
+
+    StructureMetadata
+    |> join(:inner, [sm], ldm in ^latest_deleted_metadata,
+      on: sm.data_structure_id == ldm.data_structure_id and sm.version == ldm.max_version
+    )
+    |> where([sm], not is_nil(sm.deleted_at))
     |> Repo.update_all(set: [deleted_at: nil])
   end
 

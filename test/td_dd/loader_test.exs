@@ -1142,4 +1142,153 @@ defmodule TdDd.LoaderTest do
     id = System.unique_integer([:positive])
     "#{prefix}#{id}"
   end
+
+  describe "structure_ids/2" do
+    test "extracts structure ids from delete_versions" do
+      changes = %{delete_versions: {3, [1, 2, 3]}}
+      assert {:ok, [1, 2, 3]} = Loader.structure_ids(nil, changes)
+    end
+
+    test "extracts structure ids from restore_versions" do
+      changes = %{restore_versions: {2, [10, 20]}}
+      assert {:ok, [10, 20]} = Loader.structure_ids(nil, changes)
+    end
+
+    test "extracts structure ids from update_domain_ids" do
+      changes = %{update_domain_ids: {4, [5, 6, 7, 8]}}
+      assert {:ok, [5, 6, 7, 8]} = Loader.structure_ids(nil, changes)
+    end
+
+    test "extracts structure ids from update_source_ids" do
+      changes = %{update_source_ids: {2, [100, 200]}}
+      assert {:ok, [100, 200]} = Loader.structure_ids(nil, changes)
+    end
+
+    test "extracts structure ids from delete_metadata" do
+      changes = %{delete_metadata: {3, [15, 25, 35]}}
+      assert {:ok, [15, 25, 35]} = Loader.structure_ids(nil, changes)
+    end
+
+    test "extracts structure ids from replace_metadata" do
+      changes = %{replace_metadata: [1, 2, 3, 4]}
+      assert {:ok, [1, 2, 3, 4]} = Loader.structure_ids(nil, changes)
+    end
+
+    test "extracts structure ids from merge_metadata" do
+      changes = %{merge_metadata: [50, 60, 70]}
+      assert {:ok, [50, 60, 70]} = Loader.structure_ids(nil, changes)
+    end
+
+    test "extracts structure ids from insert_versions" do
+      dsvs = [
+        %{data_structure_id: 101},
+        %{data_structure_id: 102},
+        %{data_structure_id: 103}
+      ]
+
+      changes = %{insert_versions: {3, dsvs}}
+      assert {:ok, [101, 102, 103]} = Loader.structure_ids(nil, changes)
+    end
+
+    test "extracts structure ids from update_versions" do
+      dsvs = [
+        %{data_structure_id: 201},
+        %{data_structure_id: 202}
+      ]
+
+      changes = %{update_versions: {2, dsvs}}
+      assert {:ok, [201, 202]} = Loader.structure_ids(nil, changes)
+    end
+
+    test "extracts structure ids from replace_versions" do
+      dsvs = [
+        %{data_structure_id: 301},
+        %{data_structure_id: 302},
+        %{data_structure_id: 303},
+        %{data_structure_id: 304}
+      ]
+
+      changes = %{replace_versions: {4, dsvs}}
+      assert {:ok, [301, 302, 303, 304]} = Loader.structure_ids(nil, changes)
+    end
+
+    test "returns empty list for missing_external_ids" do
+      changes = %{missing_external_ids: ["ext1", "ext2"]}
+      assert {:ok, []} = Loader.structure_ids(nil, changes)
+    end
+
+    test "returns empty list for insert_types" do
+      changes = %{insert_types: {2, []}}
+      assert {:ok, []} = Loader.structure_ids(nil, changes)
+    end
+
+    test "filters out ignored keys and returns unique structure ids" do
+      dsvs = [%{data_structure_id: 1}, %{data_structure_id: 2}]
+
+      changes = %{
+        context: %{},
+        graph: %{},
+        insert_relations: [],
+        update_hierarchy: {},
+        maybe_inherit_domains: {},
+        insert_versions: {2, dsvs},
+        update_domain_ids: {1, [2]},
+        replace_metadata: [1, 3]
+      }
+
+      assert {:ok, ids} = Loader.structure_ids(nil, changes)
+      assert Enum.sort(ids) == [1, 2, 3]
+    end
+
+    test "handles multiple sources with duplicate ids" do
+      changes = %{
+        insert_versions: {2, [%{data_structure_id: 1}, %{data_structure_id: 2}]},
+        update_versions: {2, [%{data_structure_id: 2}, %{data_structure_id: 3}]},
+        replace_metadata: [1, 3, 4]
+      }
+
+      assert {:ok, ids} = Loader.structure_ids(nil, changes)
+      assert Enum.sort(ids) == [1, 2, 3, 4]
+    end
+  end
+
+  describe "maybe_inherit_domains/4" do
+    test "returns tuple when no insert_versions present" do
+      changes = %{update_versions: {0, []}}
+      assert {:ok, {0, []}} = Loader.maybe_inherit_domains(nil, changes, DateTime.utc_now(), [])
+    end
+
+    test "returns tuple when inherit_domains not in opts" do
+      changes = %{insert_versions: {1, [%{data_structure_id: 1}]}}
+
+      assert {:ok, {0, []}} =
+               Loader.maybe_inherit_domains(nil, changes, DateTime.utc_now(), other_opt: true)
+    end
+  end
+
+  describe "system_ids/1 edge cases" do
+    test "returns empty list for empty records" do
+      assert Loader.system_ids([]) == []
+    end
+
+    test "returns single system_id" do
+      records = [%{system_id: 42}]
+      assert Loader.system_ids(records) == [42]
+    end
+
+    test "handles nil system_id values" do
+      records = [
+        %{system_id: nil},
+        %{system_id: 1},
+        %{system_id: nil},
+        %{system_id: 2}
+      ]
+
+      result = Loader.system_ids(records)
+      assert length(result) == 3
+      assert nil in result
+      assert 1 in result
+      assert 2 in result
+    end
+  end
 end

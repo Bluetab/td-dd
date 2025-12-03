@@ -5,6 +5,7 @@ defmodule TdDd.Loader.VersionsTest do
 
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.StructureMetadata
   alias TdDd.Loader.Versions
   alias TdDd.Repo
 
@@ -117,6 +118,143 @@ defmodule TdDd.Loader.VersionsTest do
 
       assert %{deleted_at: nil} = Repo.get!(DataStructureVersion, foo_id)
     end
+
+    test "restores StructureMetadata when restoring deleted versions" do
+      deleted_at = ~U[2001-01-01T01:23:45.123456Z]
+
+      %{id: foo_id, data_structure_id: structure_id} =
+        insert(:data_structure_version, ghash: "foog", deleted_at: deleted_at)
+
+      %{id: metadata_id} =
+        insert(:structure_metadata,
+          data_structure_id: structure_id,
+          version: 0,
+          deleted_at: deleted_at
+        )
+
+      context = %{
+        ghash: %{
+          "foog" => %{id: foo_id, deleted_at: deleted_at}
+        }
+      }
+
+      assert {:ok, {1, [^structure_id]}} =
+               Versions.restore_deleted_versions(Repo, %{context: context})
+
+      assert %{deleted_at: nil} = Repo.get!(DataStructureVersion, foo_id)
+      assert %{deleted_at: nil} = Repo.get!(StructureMetadata, metadata_id)
+    end
+
+    test "restores StructureMetadata for multiple structures" do
+      deleted_at = ~U[2001-01-01T01:23:45.123456Z]
+
+      %{id: foo_id, data_structure_id: structure_id1} =
+        insert(:data_structure_version, ghash: "foog", deleted_at: deleted_at)
+
+      %{id: bar_id, data_structure_id: structure_id2} =
+        insert(:data_structure_version, ghash: "barg", deleted_at: deleted_at)
+
+      %{id: metadata_id1} =
+        insert(:structure_metadata,
+          data_structure_id: structure_id1,
+          version: 0,
+          deleted_at: deleted_at
+        )
+
+      %{id: metadata_id2} =
+        insert(:structure_metadata,
+          data_structure_id: structure_id2,
+          version: 0,
+          deleted_at: deleted_at
+        )
+
+      context = %{
+        ghash: %{
+          "foog" => %{id: foo_id, deleted_at: deleted_at},
+          "barg" => %{id: bar_id, deleted_at: deleted_at}
+        }
+      }
+
+      assert {:ok, {2, structure_ids}} =
+               Versions.restore_deleted_versions(Repo, %{context: context})
+
+      assert length(structure_ids) == 2
+      assert structure_id1 in structure_ids
+      assert structure_id2 in structure_ids
+
+      assert %{deleted_at: nil} = Repo.get!(DataStructureVersion, foo_id)
+      assert %{deleted_at: nil} = Repo.get!(DataStructureVersion, bar_id)
+      assert %{deleted_at: nil} = Repo.get!(StructureMetadata, metadata_id1)
+      assert %{deleted_at: nil} = Repo.get!(StructureMetadata, metadata_id2)
+    end
+
+    test "does not restore StructureMetadata that is not deleted" do
+      deleted_at = ~U[2001-01-01T01:23:45.123456Z]
+
+      %{id: foo_id, data_structure_id: structure_id} =
+        insert(:data_structure_version, ghash: "foog", deleted_at: deleted_at)
+
+      %{id: active_metadata_id} =
+        insert(:structure_metadata,
+          data_structure_id: structure_id,
+          version: 0,
+          deleted_at: nil
+        )
+
+      context = %{
+        ghash: %{
+          "foog" => %{id: foo_id, deleted_at: deleted_at}
+        }
+      }
+
+      assert {:ok, {1, [^structure_id]}} =
+               Versions.restore_deleted_versions(Repo, %{context: context})
+
+      assert %{deleted_at: nil} = Repo.get!(DataStructureVersion, foo_id)
+      assert %{deleted_at: nil} = Repo.get!(StructureMetadata, active_metadata_id)
+    end
+
+    test "restores only latest StructureMetadata version when multiple deleted versions exist" do
+      deleted_at = ~U[2001-01-01T01:23:45.123456Z]
+
+      %{id: foo_id, data_structure_id: structure_id} =
+        insert(:data_structure_version, ghash: "foog", deleted_at: deleted_at)
+
+      %{id: metadata_v0_id} =
+        insert(:structure_metadata,
+          data_structure_id: structure_id,
+          version: 0,
+          deleted_at: deleted_at
+        )
+
+      %{id: metadata_v1_id} =
+        insert(:structure_metadata,
+          data_structure_id: structure_id,
+          version: 1,
+          deleted_at: deleted_at
+        )
+
+      %{id: metadata_v2_id} =
+        insert(:structure_metadata,
+          data_structure_id: structure_id,
+          version: 2,
+          deleted_at: deleted_at
+        )
+
+      context = %{
+        ghash: %{
+          "foog" => %{id: foo_id, deleted_at: deleted_at}
+        }
+      }
+
+      assert {:ok, {1, [^structure_id]}} =
+               Versions.restore_deleted_versions(Repo, %{context: context})
+
+      assert %{deleted_at: nil} = Repo.get!(DataStructureVersion, foo_id)
+      assert %{deleted_at: ^deleted_at} = Repo.get!(StructureMetadata, metadata_v0_id)
+      assert %{deleted_at: ^deleted_at} = Repo.get!(StructureMetadata, metadata_v1_id)
+      assert %{deleted_at: nil} = Repo.get!(StructureMetadata, metadata_v2_id)
+    end
   end
 
   describe "update_existing_versions/3" do
@@ -175,6 +313,177 @@ defmodule TdDd.Loader.VersionsTest do
                |> where([dsv], dsv.id in ^Enum.map(versions, & &1.id))
                |> order_by(:lhash)
                |> Repo.all()
+    end
+
+    test "restores StructureMetadata when reactivating deleted versions" do
+      inserted_at = ~U[2000-01-01T01:23:45.123456Z]
+      deleted_at = ~U[2001-01-01T01:23:45.123456Z]
+      ts = DateTime.utc_now()
+
+      %{id: foo_id, data_structure_id: foo_structure_id} =
+        insert(:data_structure_version,
+          lhash: "fool",
+          inserted_at: inserted_at,
+          deleted_at: deleted_at
+        )
+
+      %{id: metadata_id} =
+        insert(:structure_metadata,
+          data_structure_id: foo_structure_id,
+          version: 0,
+          deleted_at: deleted_at
+        )
+
+      context = %{
+        entries: [
+          %{ghash: "foog", lhash: "fool", external_id: "foo"}
+        ],
+        version_id_map: %{
+          "foo" => %{id: foo_id}
+        },
+        ghash: %{},
+        lhash: %{
+          "fool" => %{id: foo_id, deleted_at: deleted_at}
+        }
+      }
+
+      assert {:ok, {1, _versions}} =
+               Versions.update_existing_versions(Repo, %{context: context}, ts)
+
+      assert %{deleted_at: nil} = Repo.get!(DataStructureVersion, foo_id)
+      assert %{deleted_at: nil} = Repo.get!(StructureMetadata, metadata_id)
+    end
+
+    test "works correctly with single DataStructure and single StructureMetadata" do
+      inserted_at = ~U[2000-01-01T01:23:45.123456Z]
+      deleted_at = ~U[2001-01-01T01:23:45.123456Z]
+      ts = DateTime.utc_now()
+
+      %{id: foo_id, data_structure_id: foo_structure_id} =
+        insert(:data_structure_version,
+          lhash: "fool",
+          inserted_at: inserted_at,
+          deleted_at: deleted_at
+        )
+
+      %{id: metadata_id} =
+        insert(:structure_metadata,
+          data_structure_id: foo_structure_id,
+          version: 0,
+          deleted_at: deleted_at
+        )
+
+      context = %{
+        entries: [
+          %{ghash: "foog", lhash: "fool", external_id: "foo"}
+        ],
+        version_id_map: %{
+          "foo" => %{id: foo_id}
+        },
+        ghash: %{},
+        lhash: %{
+          "fool" => %{id: foo_id, deleted_at: deleted_at}
+        }
+      }
+
+      assert {:ok, {1, _versions}} =
+               Versions.update_existing_versions(Repo, %{context: context}, ts)
+
+      assert %{deleted_at: nil} = Repo.get!(DataStructureVersion, foo_id)
+      assert %{deleted_at: nil} = Repo.get!(StructureMetadata, metadata_id)
+    end
+
+    test "works correctly when StructureMetadata does not exist" do
+      inserted_at = ~U[2000-01-01T01:23:45.123456Z]
+      deleted_at = ~U[2001-01-01T01:23:45.123456Z]
+      ts = DateTime.utc_now()
+
+      %{id: foo_id, data_structure_id: foo_structure_id} =
+        insert(:data_structure_version,
+          lhash: "fool",
+          inserted_at: inserted_at,
+          deleted_at: deleted_at
+        )
+
+      context = %{
+        entries: [
+          %{ghash: "foog", lhash: "fool", external_id: "foo"}
+        ],
+        version_id_map: %{
+          "foo" => %{id: foo_id}
+        },
+        ghash: %{},
+        lhash: %{
+          "fool" => %{id: foo_id, deleted_at: deleted_at}
+        }
+      }
+
+      assert {:ok, {1, _versions}} =
+               Versions.update_existing_versions(Repo, %{context: context}, ts)
+
+      assert %{deleted_at: nil} = Repo.get!(DataStructureVersion, foo_id)
+
+      metadata_count =
+        StructureMetadata
+        |> where([sm], sm.data_structure_id == ^foo_structure_id)
+        |> Repo.aggregate(:count, :id)
+
+      assert metadata_count == 0
+    end
+
+    test "restores only latest StructureMetadata version when multiple deleted versions exist" do
+      inserted_at = ~U[2000-01-01T01:23:45.123456Z]
+      deleted_at = ~U[2001-01-01T01:23:45.123456Z]
+      ts = DateTime.utc_now()
+
+      %{id: foo_id, data_structure_id: foo_structure_id} =
+        insert(:data_structure_version,
+          lhash: "fool",
+          inserted_at: inserted_at,
+          deleted_at: deleted_at
+        )
+
+      %{id: metadata_v0_id} =
+        insert(:structure_metadata,
+          data_structure_id: foo_structure_id,
+          version: 0,
+          deleted_at: deleted_at
+        )
+
+      %{id: metadata_v1_id} =
+        insert(:structure_metadata,
+          data_structure_id: foo_structure_id,
+          version: 1,
+          deleted_at: deleted_at
+        )
+
+      %{id: metadata_v2_id} =
+        insert(:structure_metadata,
+          data_structure_id: foo_structure_id,
+          version: 2,
+          deleted_at: deleted_at
+        )
+
+      context = %{
+        entries: [
+          %{ghash: "foog", lhash: "fool", external_id: "foo"}
+        ],
+        version_id_map: %{
+          "foo" => %{id: foo_id}
+        },
+        ghash: %{},
+        lhash: %{
+          "fool" => %{id: foo_id, deleted_at: deleted_at}
+        }
+      }
+
+      assert {:ok, {1, _versions}} =
+               Versions.update_existing_versions(Repo, %{context: context}, ts)
+
+      assert %{deleted_at: nil} = Repo.get!(DataStructureVersion, foo_id)
+      assert %{deleted_at: ^deleted_at} = Repo.get!(StructureMetadata, metadata_v0_id)
+      assert %{deleted_at: ^deleted_at} = Repo.get!(StructureMetadata, metadata_v1_id)
+      assert %{deleted_at: nil} = Repo.get!(StructureMetadata, metadata_v2_id)
     end
   end
 

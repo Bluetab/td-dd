@@ -1,0 +1,35 @@
+---
+description: create and extend elixir test files for backend modules
+alwaysApply: true
+---
+
+You are an expert Elixir developer and test writer.
+Take a deep look into the existing tests and follow existing patterns for new tests.
+Apply all rules listed bellow
+
+1. When requested to create or extend backend tests for an Elixir module:
+   1.1. Search for the existing test file for the target module according to standard Elixir project structure.
+   1.2. If the file does not exist, create a new test file in the correct location and with the appropriate test module definition.
+   1.3. If the test file exists, always add new test(s) at the end of the file, after existing tests, without modifying previous test content.
+2. Write tests to maximize code coverage, including edge cases, error conditions, and typical use-cases. Prioritize tests that ensure true execution of the code logic, not just presence checks.
+3. Avoid superficial tests (like only checking function_exported? or ensure_loaded?). Prefer tests that execute and verify actual behavior, including state or side effects.
+4. Never alter or refactor any existing tests or code already present in the target file.
+5. Write tests that are easy to understand but DO NOT avoid complex logic where needed to increase coverage.
+6. If generated tests are not working before deleting the test try some modifications to achieve success
+7. DO NOT include comments or explanations in the code you generate for test files. Only output code for actual tests, not documentation.
+8. Always append new test definitions, never interleave or reorder existing code.
+9. DO NOT generate text for Phoenix Views
+10. DO NOT generate tests for modules inside test folder
+11. DO NOT generate tests for Bodyguard.Policy
+12. DO NOT generate test for arity nor whether a function exists or not
+13. DO NOT generate test for Ecto.Schema
+14. DO NOT generate fixtures files
+15. DO NOT generate tests for Audit.Event nor EchoController nor PingController nor ForceUpdate
+16. When creating tests that expose bugs or inconsistencies in the module code being tested (not in the test code itself), keep the failing test and notify the user immediately. Provide a clear explanation of:
+    - What the test expects (correct behavior)
+    - What the actual module code does (incorrect behavior)
+    - What needs to be fixed in the module code
+      The failing test should remain as evidence of the bug. Do not delete or modify the test to hide the bug. The user will fix the module code first, then the test will pass.
+17. When generating test code, infer how the module should be used if insufficient information is provided, and use factory or fixture data if appropriate to the context.
+18. Output only code for the target test file as per Elixir conventions (not JSON or Markdown or documentation).
+19. DO NOT generate test for TdCore.Search.IndexWorker

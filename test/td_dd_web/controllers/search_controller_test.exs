@@ -34,4 +34,29 @@ defmodule TdDdWeb.SearchControllerTest do
                |> json_response(:forbidden)
     end
   end
+
+  describe "reindex_all" do
+    setup do
+      IndexWorkerMock.clear()
+      on_exit(fn -> IndexWorkerMock.clear() end)
+      :ok
+    end
+
+    @tag authentication: [role: "admin"]
+    test "reindexes all data structures", %{conn: conn} do
+      assert conn
+             |> get(Routes.search_path(conn, :reindex_all))
+             |> response(:accepted)
+
+      assert [{:reindex, :structures, :all}] == IndexWorkerMock.calls()
+    end
+
+    @tag authentication: [role: "user"]
+    test "user without admin role cannot reindex", %{conn: conn} do
+      assert %{"errors" => %{"detail" => "Invalid authorization"}} ==
+               conn
+               |> get(Routes.search_path(conn, :reindex_all))
+               |> json_response(:forbidden)
+    end
+  end
 end

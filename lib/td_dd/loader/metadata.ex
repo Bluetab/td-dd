@@ -153,20 +153,42 @@ defmodule TdDd.Loader.Metadata do
   end
 
   defp bulk_operations({chunk, chunk_id}, multi, ts) do
+    external_ids = Enum.map(chunk, &elem(&1, 0))
+
     metadata_by_external_id =
-      chunk
-      |> Enum.map(&elem(&1, 0))
+      external_ids
       |> DataStructures.get_latest_metadata_by_external_ids()
       |> Map.new(&{&1.external_id, &1})
 
+    structure_ids =
+      external_ids
+      |> get_structure_ids_by_external_ids()
+      |> Enum.uniq()
+
+    max_versions_by_structure_id =
+      structure_ids
+      |> get_max_metadata_versions()
+      |> Map.new()
+
     chunk
     |> Enum.flat_map(fn {external_id, entry} ->
-      metadata_by_external_id
-      |> Map.get(external_id)
-      |> operations(entry, ts)
+      metadata_result = Map.get(metadata_by_external_id, external_id)
+      structure_id = if metadata_result, do: metadata_result.id, else: nil
+
+      max_version =
+        if structure_id, do: Map.get(max_versions_by_structure_id, structure_id, 0), else: 0
+
+      operations(metadata_result, entry, max_version, ts)
     end)
     |> Enum.group_by(& &1.operation, &Map.delete(&1, :operation))
     |> Enum.reduce(multi, &reduce_multi(&1, &2, chunk_id, ts))
+  end
+
+  defp get_structure_ids_by_external_ids(external_ids) do
+    DataStructure
+    |> where([ds], ds.external_id in ^external_ids)
+    |> select([ds], ds.id)
+    |> Repo.all()
   end
 
   defp reduce_multi({:logical_delete, ops}, multi, chunk_id, ts) do
@@ -186,39 +208,56 @@ defmodule TdDd.Loader.Metadata do
     )
   end
 
+  # Handle case when DataStructure doesn't exist
+  defp operations(nil, _entry, _max_version, _), do: []
+
   # Do nothing if current and new metadata are nil
-  defp operations(%{latest_metadata: nil}, nil, _), do: []
+  defp operations(%{latest_metadata: nil}, nil, _max_version, _), do: []
 
   # Do nothing if current metadata is deleted and new metadata is nil
-  defp operations(%{latest_metadata: %{deleted_at: deleted_at}}, nil, _)
+  defp operations(%{latest_metadata: %{deleted_at: deleted_at}}, nil, _max_version, _)
        when not is_nil(deleted_at),
        do: []
 
   # Do nothing if fields are unchanged and current metadata is not deleted
-  defp operations(%{latest_metadata: %{fields: fields, deleted_at: nil}}, fields, _), do: []
+  defp operations(
+         %{latest_metadata: %{fields: fields, deleted_at: nil}},
+         fields,
+         _max_version,
+         _
+       ),
+       do: []
 
   # delete current metadata if present and new metadata is absent
-  defp operations(%{latest_metadata: %{deleted_at: nil, id: id}}, nil = _fields, _) do
+  defp operations(%{latest_metadata: %{deleted_at: nil, id: id}}, nil = _fields, _max_version, _) do
     [logical_delete_operation(id)]
   end
 
   # Insert new metadata if present and current metadata is absent
-  defp operations(%{id: structure_id, latest_metadata: nil}, %{} = fields, ts) do
+  defp operations(%{id: structure_id, latest_metadata: nil}, %{} = fields, _max_version, ts) do
     [insert_operation(structure_id, fields, 0, ts)]
   end
 
   # Insert new metadata if present and current metadata is deleted
+  # Use max_version to ensure we don't violate unique constraint
   defp operations(
-         %{id: structure_id, latest_metadata: %{deleted_at: deleted_at, version: v}},
+         %{id: structure_id, latest_metadata: %{deleted_at: deleted_at}},
          %{} = fields,
+         max_version,
          ts
        )
        when not is_nil(deleted_at) do
-    [insert_operation(structure_id, fields, v + 1, ts)]
+    next_version = max(max_version, 0) + 1
+    [insert_operation(structure_id, fields, next_version, ts)]
   end
 
   # Insert new metadata and logically delete current metadata if changed
-  defp operations(%{id: structure_id, latest_metadata: %{id: id, version: v}}, %{} = fields, ts) do
+  defp operations(
+         %{id: structure_id, latest_metadata: %{id: id, version: v}},
+         %{} = fields,
+         _max_version,
+         ts
+       ) do
     [
       logical_delete_operation(id),
       insert_operation(structure_id, fields, v + 1, ts)
@@ -257,6 +296,20 @@ defmodule TdDd.Loader.Metadata do
     |> join(:right, [ds], id in "external_ids", on: ds.external_id == id.external_id)
     |> where([ds, _], is_nil(ds.id))
     |> select([_, i], i.external_id)
+    |> Repo.all()
+  end
+
+  defp get_max_metadata_versions(structure_ids)
+       when is_list(structure_ids) and structure_ids == [] do
+    []
+  end
+
+  defp get_max_metadata_versions(structure_ids) do
+    StructureMetadata
+    |> where([sm], sm.data_structure_id in ^structure_ids)
+    |> where([sm], is_nil(sm.deleted_at))
+    |> group_by([sm], sm.data_structure_id)
+    |> select([sm], {sm.data_structure_id, max(sm.version)})
     |> Repo.all()
   end
 end

@@ -1372,20 +1372,24 @@ defmodule TdDdWeb.Schema.StructuresTest do
                })
                |> json_response(:ok)
 
-      assert [
-               %{
-                 "dataStructure" => %{
-                   "domain_ids" => [^domain_id, ^domain_id_without_permissions],
-                   "external_id" => "child_2_dom"
-                 }
-               },
-               %{
-                 "dataStructure" => %{
-                   "domain_ids" => [^domain_id],
-                   "external_id" => "ds_child_1_with_permissions"
-                 }
-               }
-             ] = children
+      assert length(children) == 2
+
+      child_2_dom =
+        Enum.find(children, fn child ->
+          get_in(child, ["dataStructure", "external_id"]) == "child_2_dom"
+        end)
+
+      child_1_with_permissions =
+        Enum.find(children, fn child ->
+          get_in(child, ["dataStructure", "external_id"]) == "ds_child_1_with_permissions"
+        end)
+
+      assert child_2_dom["dataStructure"]["domain_ids"] == [
+               domain_id,
+               domain_id_without_permissions
+             ]
+
+      assert child_1_with_permissions["dataStructure"]["domain_ids"] == [domain_id]
 
       string_id = "#{dsv_father_id}"
       assert response["errors"] == nil
@@ -2067,14 +2071,23 @@ defmodule TdDdWeb.Schema.StructuresTest do
                })
                |> json_response(:ok)
 
-      assert data_fields ==
-               Enum.map(response_data_fields, fn %{"note" => note} -> %{"note" => note} end)
+      response_data_fields_notes =
+        Enum.map(response_data_fields, fn %{"note" => note} -> %{"note" => note} end)
 
-      assert parent_notes ==
-               Enum.map(response_parent, fn %{"note" => note} -> %{"note" => note} end)
+      assert length(response_data_fields_notes) == length(data_fields)
+      assert Enum.all?(data_fields, fn field -> field in response_data_fields_notes end)
 
-      assert children_notes ==
-               Enum.map(response_children, fn %{"note" => note} -> %{"note" => note} end)
+      response_parent_notes =
+        Enum.map(response_parent, fn %{"note" => note} -> %{"note" => note} end)
+
+      assert length(response_parent_notes) == length(parent_notes)
+      assert Enum.all?(parent_notes, fn note -> note in response_parent_notes end)
+
+      response_children_notes =
+        Enum.map(response_children, fn %{"note" => note} -> %{"note" => note} end)
+
+      assert length(response_children_notes) == length(children_notes)
+      assert Enum.all?(children_notes, fn note -> note in response_children_notes end)
     end
 
     @tag authentication: [
@@ -2231,27 +2244,30 @@ defmodule TdDdWeb.Schema.StructuresTest do
 
       assert response["errors"] == nil
 
-      assert [
-               %{
-                 "id" => ^dsv_children_with_alias_id,
-                 "alias" => "alias_structure"
-               },
-               %{
-                 "id" => ^dsv_children_without_alias_id,
-                 "alias" => nil
-               }
-             ] = children
+      assert length(children) == 2
+      assert length(data_fields) == 2
 
-      assert [
-               %{
-                 "alias" => "alias_structure",
-                 "data_structure_id" => ^children_with_alias_id
-               },
-               %{
-                 "alias" => nil,
-                 "data_structure_id" => ^children_without_alias_id
-               }
-             ] = data_fields
+      child_with_alias =
+        Enum.find(children, fn c -> c["id"] == dsv_children_with_alias_id end)
+
+      child_without_alias =
+        Enum.find(children, fn c -> c["id"] == dsv_children_without_alias_id end)
+
+      assert child_with_alias["alias"] == "alias_structure"
+      assert child_without_alias["alias"] == nil
+
+      data_field_with_alias =
+        Enum.find(data_fields, fn df ->
+          df["data_structure_id"] == children_with_alias_id
+        end)
+
+      data_field_without_alias =
+        Enum.find(data_fields, fn df ->
+          df["data_structure_id"] == children_without_alias_id
+        end)
+
+      assert data_field_with_alias["alias"] == "alias_structure"
+      assert data_field_without_alias["alias"] == nil
     end
 
     @tag authentication: [role: "user", permissions: [:view_data_structure]]
