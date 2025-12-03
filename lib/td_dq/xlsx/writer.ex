@@ -63,19 +63,15 @@ defmodule TdDq.XLSX.Writer do
         implementations
         |> result_headers(&result_content/1)
         |> Enum.sort()
-        |> IO.inspect(label: "result_details_fields")
 
       result_details_headers =
         Enum.map(result_details_fields, fn header -> "result_details_" <> header end)
-        |> IO.inspect(label: "result_details_headers")
 
       number_of_validations =
         count_implementations_items(implementations, "validations")
-        |> IO.inspect(label: "number_of_validations")
 
       number_of_datasets =
         count_implementations_items(implementations, "datasets")
-        |> IO.inspect(label: "number_of_datasets")
 
       headers =
         headers_for_type(

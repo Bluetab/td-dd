@@ -345,6 +345,110 @@ defmodule TdDdWeb.XLSXControllerTest do
     end
 
     @tag authentication: [role: "admin"]
+    test "download raw implementations as xlsx", %{
+      conn: conn,
+      domain: domain
+    } do
+      raw_implementation = insert(:raw_implementation, domain_id: domain.id)
+
+      ElasticsearchMock
+      |> expect(:request, fn
+        _, :post, "/implementations/_search", %{size: 10_000, sort: sort, query: query}, _ ->
+          assert query == %{
+                   bool: %{
+                     must: %{match_all: %{}},
+                     must_not: %{exists: %{field: "deleted_at"}}
+                   }
+                 }
+
+          assert sort == ["_score", "implementation_key.sort"]
+
+          SearchHelpers.scroll_response([raw_implementation])
+      end)
+      |> expect(:request, fn _, :post, "/_search/scroll", body, [] ->
+        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
+        SearchHelpers.scroll_response([])
+      end)
+
+      [
+        %{
+          implementation_key: key_0,
+          implementation_type: type_0,
+          rule: %{name: name_0},
+          result_type: _result_type_0,
+          goal: goal_0,
+          minimum: minimum_0,
+          inserted_at: inserted_at_0,
+          updated_at: updated_at_0
+        }
+      ] = [raw_implementation]
+
+      assert %{resp_body: body} = post(conn, Routes.xlsx_path(conn, :download, %{}))
+
+      assert {:ok, workbook} = XlsxReader.open(body, source: :binary)
+
+      assert {:ok, [headers | content]} =
+               XlsxReader.sheet(
+                 workbook,
+                 raw_implementation.df_name
+                 |> then(fn
+                   nil -> "Sheet"
+                   "" -> "Sheet"
+                   name -> name
+                 end)
+               )
+
+      assert headers == [
+               "implementation_key",
+               "implementation_type",
+               "domain_external_id",
+               "domain",
+               "executable",
+               "rule",
+               "rule_template",
+               "implementation_template",
+               "result_type",
+               "goal",
+               "minimum",
+               "records",
+               "errors",
+               "result",
+               "execution",
+               "last_execution_at",
+               "inserted_at",
+               "updated_at",
+               "business_concepts",
+               "structure_domains"
+             ]
+
+      assert content == [
+               [
+                 key_0,
+                 type_0,
+                 domain.external_id,
+                 domain.name,
+                 "ruleImplementation.props.executable.true",
+                 name_0,
+                 "",
+                 "",
+                 "percentage",
+                 to_string(goal_0),
+                 to_string(minimum_0),
+                 "",
+                 "",
+                 "",
+                 "",
+                 "",
+                 TdDd.Helpers.shift_zone(DateTime.to_iso8601(inserted_at_0)),
+                 TdDd.Helpers.shift_zone(DateTime.to_iso8601(updated_at_0)),
+                 "",
+                 "",
+                 ""
+               ]
+             ]
+    end
+
+    @tag authentication: [role: "admin"]
     test "download implementations with result details only for admin", %{
       conn: conn,
       implementations: implementations,
