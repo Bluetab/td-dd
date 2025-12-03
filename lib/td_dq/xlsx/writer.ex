@@ -185,6 +185,7 @@ defmodule TdDq.XLSX.Writer do
       get_domain(implementation),
       get_translated_value(
         "ruleImplementation.props.executable.#{implementation["executable"]}",
+        "ruleImplementation.props.executable.#{implementation["executable"]}",
         opts
       ),
       get_rule(implementation),
@@ -192,6 +193,7 @@ defmodule TdDq.XLSX.Writer do
       get_string_value(implementation, "df_name"),
       get_translated_value(
         "ruleImplementations.props.result_type.#{implementation["result_type"]}",
+        implementation["result_type"],
         opts
       ),
       get_string_value(implementation, "goal"),
@@ -322,7 +324,6 @@ defmodule TdDq.XLSX.Writer do
     end
   end
 
-  ## REVIEW TD-7617: Hay que cambiar el datetime a string????
   defp get_string_value(implementation, key, "datetime") do
     case(Map.get(implementation, key)) do
       nil -> ""
@@ -392,10 +393,10 @@ defmodule TdDq.XLSX.Writer do
     end
   end
 
-  defp get_translated_value(value, opts) do
-    case I18nCache.get_definition(opts[:lang], value, default_value: value) do
+  defp get_translated_value(value, default_value, opts) do
+    case I18nCache.get_definition(opts[:lang], value, default_value: default_value) do
       text when is_binary(text) -> text
-      _ -> value
+      _ -> default_value
     end
   end
 
@@ -421,7 +422,7 @@ defmodule TdDq.XLSX.Writer do
         TdDd.Helpers.shift_zone(result_text)
 
       %{"execution_result_info" => %{^key => result_text}} when is_binary(result_text) ->
-        get_translated_value(result_text, opts)
+        get_translated_value(result_text, result_text, opts)
 
       _ ->
         ""
