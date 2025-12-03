@@ -13,6 +13,16 @@ defmodule TdDq.XLSX.Download do
     {:ok, domain_ext_id_map} = DomainCache.id_to_external_id_map()
     {:ok, domain_name_map} = DomainCache.id_to_name_map()
 
+    {:ok, rule_templates} = TemplateCache.list_by_scope("dq")
+
+    rule_templates_map =
+      Enum.into(rule_templates, %{}, fn template -> {template.name, template} end)
+
+    {:ok, implementation_templates} = TemplateCache.list_by_scope("ri")
+
+    implementation_templates_map =
+      Enum.into(implementation_templates, %{}, fn template -> {template.name, template} end)
+
     implementations
     |> Enum.map(fn implementation ->
       %{
@@ -23,7 +33,7 @@ defmodule TdDq.XLSX.Download do
           }
       }
     end)
-    |> enrich_templates()
+    |> enrich_templates(rule_templates_map, implementation_templates_map)
     |> implementation_information(opts)
     |> Writer.rows_by_implementation_template(opts)
     |> sheets()
@@ -33,35 +43,40 @@ defmodule TdDq.XLSX.Download do
     end)
   end
 
-  defp enrich_templates(implementations) do
+  defp enrich_templates(implementations, rule_templates_map, implementation_templates_map) do
     implementations
     |> Enum.group_by(&rule_type/1)
-    |> Enum.flat_map(&enrich_rule_templates/1)
+    |> Enum.flat_map(&enrich_rule_templates(&1, rule_templates_map))
     |> Enum.group_by(&implementation_type/1)
-    |> Enum.flat_map(&enrich_implementation_templates/1)
+    |> Enum.flat_map(&enrich_implementation_templates(&1, implementation_templates_map))
   end
 
-  defp enrich_rule_templates({nil, implementations}), do: implementations
+  defp enrich_rule_templates({nil, implementations}, _rule_templates_map), do: implementations
 
-  defp enrich_rule_templates({type, implementations}) when is_binary(type) do
-    template = TemplateCache.get_by_name!(type)
-    enrich_rule_templates({template, implementations})
+  defp enrich_rule_templates({type, implementations}, rule_templates_map) when is_binary(type) do
+    template = Map.get(rule_templates_map, type)
+    enrich_rule_templates({template, implementations}, rule_templates_map)
   end
 
-  defp enrich_rule_templates({%{} = template, implementations}) do
+  defp enrich_rule_templates({%{} = template, implementations}, _rule_templates_map) do
     Enum.map(implementations, fn %{"rule" => rule} = implementation ->
       %{implementation | "rule" => Map.put(rule, "template", template)}
     end)
   end
 
-  defp enrich_implementation_templates({nil, implementations}), do: implementations
+  defp enrich_implementation_templates({nil, implementations}, _implementation_templates_map),
+    do: implementations
 
-  defp enrich_implementation_templates({type, implementations}) when is_binary(type) do
-    template = TemplateCache.get_by_name!(type)
-    enrich_implementation_templates({template, implementations})
+  defp enrich_implementation_templates({type, implementations}, implementation_templates_map)
+       when is_binary(type) do
+    template = Map.get(implementation_templates_map, type)
+    enrich_implementation_templates({template, implementations}, implementation_templates_map)
   end
 
-  defp enrich_implementation_templates({%{} = template, implementations}) do
+  defp enrich_implementation_templates(
+         {%{} = template, implementations},
+         _implementation_templates_map
+       ) do
     Enum.map(implementations, &Map.put(&1, "template", template))
   end
 

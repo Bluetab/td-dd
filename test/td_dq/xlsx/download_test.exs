@@ -13,7 +13,7 @@ defmodule TdDq.XLSX.DownloadTest do
         template_1 =
         CacheHelpers.insert_template(%{
           name: "template_1",
-          scope: "dq",
+          scope: "ri",
           content: [
             %{
               "name" => "group",
@@ -97,7 +97,7 @@ defmodule TdDq.XLSX.DownloadTest do
         template_2 =
         CacheHelpers.insert_template(%{
           name: "template_2",
-          scope: "dq",
+          scope: "ri",
           content: [
             %{
               "name" => "group",
@@ -248,7 +248,7 @@ defmodule TdDq.XLSX.DownloadTest do
                  name_0,
                  "",
                  template_name_1,
-                 "ruleImplementations.props.result_type.percentage",
+                 "percentage",
                  to_string(goal_0),
                  to_string(minimum_0),
                  "",
@@ -300,7 +300,7 @@ defmodule TdDq.XLSX.DownloadTest do
                  name_1,
                  "",
                  template_name_2,
-                 "ruleImplementations.props.result_type.percentage",
+                 "percentage",
                  to_string(goal_1),
                  to_string(minimum_1),
                  "",
@@ -327,7 +327,7 @@ defmodule TdDq.XLSX.DownloadTest do
                  name_2,
                  "",
                  template_name_2,
-                 "ruleImplementations.props.result_type.percentage",
+                 "percentage",
                  to_string(goal_2),
                  to_string(minimum_2),
                  "",
