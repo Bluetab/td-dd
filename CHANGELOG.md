@@ -1,10 +1,17 @@
 # Changelog
 
-## [Unreleased]
+[Unreleased]
 
 ### Changed
 
 - [TD-7302] Update td-core lib
+
+
+## [7.13.1] 2025-12-03
+
+### Fixed
+
+- [TD-7746] Download improved processing for templates
 
 ## [7.13.0] 2025-11-18
 
@@ -16,6 +23,12 @@
 
 - [TD-7396] Refactor rule implementation search endpoint
 - [TD-6985] Fix reactivate structure and mutable metadata is loaded when new metadata is uploaded
+
+## [7.12.1] 2025-12-03
+
+### Fixed
+
+- [TD-7746] Download improved processing for templates
 
 # [7.12.0] 2025-10-29
 
