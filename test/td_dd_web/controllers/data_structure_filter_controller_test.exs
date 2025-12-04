@@ -80,6 +80,42 @@ defmodule TdDdWeb.DataStructureFilterControllerTest do
       assert %{"foo" => %{"values" => ["bar", "baz"]}} = data
     end
 
+    @tag authentication: [role: "user"]
+    test "uses link_data_structure permission when link_structures is true", %{
+      conn: conn,
+      claims: claims
+    } do
+      %{id: domain_id_1} = CacheHelpers.insert_domain()
+      %{id: domain_id_2} = CacheHelpers.insert_domain()
+
+      CacheHelpers.put_session_permissions(claims, %{
+        link_data_structure: [domain_id_1],
+        view_data_structure: [domain_id_1, domain_id_2]
+      })
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
+        assert %{bool: %{must: must}} = query
+
+        # Verify that the query filters by the domain associated with link_data_structure (domain_id_1)
+        assert Enum.any?(must, fn
+                 %{term: %{"domain_ids" => ^domain_id_1}} -> true
+                 _ -> false
+               end)
+
+        SearchHelpers.aggs_response(@aggregations)
+      end)
+
+      params = %{"link_structures" => true}
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.data_structure_filter_path(conn, :search), params)
+               |> json_response(:ok)
+
+      assert %{"foo" => %{"values" => ["bar", "baz"]}} = data
+    end
+
     @tag authentication: [user_name: "non_admin_user"]
     test "returns filters for non-admin user", %{conn: conn} do
       ElasticsearchMock

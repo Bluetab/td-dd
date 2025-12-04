@@ -331,11 +331,16 @@ defmodule TdDdWeb.DataStructureController do
 
   defp do_search(conn, search_params, page, size) do
     my_grant_requests = Map.get(search_params, "my_grant_requests")
+    link_structures = Map.get(search_params, "link_structures")
     with_data_fields = Map.get(search_params, "with_data_fields")
     claims = conn.assigns[:current_resource]
 
     permission =
-      if my_grant_requests, do: :create_grant_request, else: conn.assigns[:search_permission]
+      cond do
+        my_grant_requests -> :create_grant_request
+        link_structures -> :link_data_structure
+        true -> conn.assigns[:search_permission]
+      end
 
     page = Map.get(search_params, "page", page)
     size = Map.get(search_params, "size", size)

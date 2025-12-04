@@ -17,10 +17,15 @@ defmodule TdDdWeb.DataStructureFilterController do
 
   def search(conn, params) do
     my_grant_requests = Map.get(params, "my_grant_requests")
+    link_structures = Map.get(params, "link_structures")
     claims = conn.assigns[:current_resource]
 
     permission =
-      if my_grant_requests, do: :create_grant_request, else: conn.assigns[:search_permission]
+      cond do
+        my_grant_requests -> :create_grant_request
+        link_structures -> :link_data_structure
+        true -> conn.assigns[:search_permission]
+      end
 
     params = Map.put(params, "without", "deleted_at")
     {:ok, filters} = Search.get_filter_values(claims, permission, params)

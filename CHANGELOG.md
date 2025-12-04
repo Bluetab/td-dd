@@ -1,6 +1,10 @@
 # Changelog
 
-[Unreleased]
+## [Unreleased]
+
+### Added
+
+- [TD-7653] Add Implementation Structure Link permission management
 
 ### Changed
 
