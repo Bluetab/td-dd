@@ -676,6 +676,46 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert Map.has_key?(data, "last_change_at")
     end
+
+    @tag authentication: [role: "user"]
+    test "search with link_structures flag uses link_data_structure permission", %{
+      conn: conn,
+      claims: claims
+    } do
+      %{id: domain_id_1} = CacheHelpers.insert_domain()
+      %{id: domain_id_2} = CacheHelpers.insert_domain()
+
+      %{data_structure_id: id_1} =
+        dsv_1 = insert(:data_structure_version, domain_ids: [domain_id_1])
+
+      _dsv_2 = insert(:data_structure_version, domain_ids: [domain_id_2])
+
+      CacheHelpers.put_session_permissions(claims, %{
+        link_data_structure: [domain_id_1],
+        view_data_structure: [domain_id_1, domain_id_2]
+      })
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
+        assert %{bool: %{must: must}} = query
+
+        assert Enum.any?(must, fn
+                 %{term: %{"domain_ids" => ^domain_id_1}} -> true
+                 _ -> false
+               end)
+
+        SearchHelpers.hits_response([dsv_1])
+      end)
+
+      params = %{
+        "link_structures" => true
+      }
+
+      assert %{"data" => [%{"id" => ^id_1}]} =
+               conn
+               |> post(data_structure_path(conn, :search), params)
+               |> json_response(:ok)
+    end
   end
 
   describe "search with scroll" do
