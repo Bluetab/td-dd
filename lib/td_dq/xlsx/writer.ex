@@ -70,7 +70,8 @@ defmodule TdDq.XLSX.Writer do
       number_of_validations =
         count_implementations_items(implementations, "validations")
 
-      number_of_datasets = count_implementations_items(implementations, "datasets")
+      number_of_datasets =
+        count_implementations_items(implementations, "datasets")
 
       headers =
         headers_for_type(
@@ -81,6 +82,20 @@ defmodule TdDq.XLSX.Writer do
           number_of_validations,
           opts
         )
+
+      parser_opts = [
+        domain_type: :with_domain_external_id,
+        lang: opts[:lang],
+        xlsx: true,
+        locales: I18nCache.get_active_locales!()
+      ]
+
+      parsing_contexts = prepare_parsing_context(rule_fields, imp_fields, parser_opts)
+
+      opts =
+        opts
+        |> Keyword.put(:parsing_contexts, parsing_contexts)
+        |> Keyword.put(:parser_opts, parser_opts)
 
       content =
         Enum.map(implementations, fn implementation ->
@@ -150,6 +165,7 @@ defmodule TdDq.XLSX.Writer do
       header ->
         [[get_translated_header(header, opts)]]
     end)
+    |> Enum.filter(&(&1 != nil))
   end
 
   defp add_header_information(
@@ -161,144 +177,122 @@ defmodule TdDq.XLSX.Writer do
          number_of_validations,
          opts
        ) do
-    @headers
-    |> Enum.reduce([], fn
-      "implementation_key", acc ->
-        acc ++ [get_string_value(implementation, "implementation_key")]
+    parsing_contexts = Keyword.get(opts, :parsing_contexts)
+    parser_opts = Keyword.get(opts, :parser_opts)
 
-      "implementation_type", acc ->
-        acc ++
-          [
-            I18nCache.get_definition(
-              opts[:lang],
-              "implementations.type.#{implementation["implementation_type"]}",
-              default_value: implementation["implementation_type"]
-            )
-          ]
+    base_columns = [
+      get_string_value(implementation, "implementation_key"),
+      implementation["implementation_type"],
+      get_domain_external_id(implementation),
+      get_domain(implementation),
+      get_translated_value(
+        "ruleImplementation.props.executable.#{implementation["executable"]}",
+        "ruleImplementation.props.executable.#{implementation["executable"]}",
+        opts
+      ),
+      get_rule(implementation),
+      get_rule_template(implementation),
+      get_string_value(implementation, "df_name"),
+      get_translated_value(
+        "ruleImplementations.props.result_type.#{implementation["result_type"]}",
+        implementation["result_type"],
+        opts
+      ),
+      get_string_value(implementation, "goal"),
+      get_string_value(implementation, "minimum"),
+      get_result_info(implementation, "records"),
+      get_result_info(implementation, "errors"),
+      get_result_info(implementation, "result"),
+      get_result_info(implementation, "result_text", opts),
+      get_result_info(implementation, "date", "datetime"),
+      get_string_value(implementation, "inserted_at", "datetime"),
+      get_string_value(implementation, "updated_at", "datetime"),
+      get_concepts(implementation),
+      get_structure_domains(implementation)
+    ]
 
-      "domain_external_id", acc ->
-        acc ++ [get_domain_external_id(implementation)]
+    rule_context = if parsing_contexts, do: parsing_contexts[:rule], else: nil
+    template_context = if parsing_contexts, do: parsing_contexts[:template], else: nil
 
-      "domain", acc ->
-        acc ++ [get_domain(implementation)]
+    rule_template_columns =
+      add_content_columns(
+        [],
+        implementation,
+        rule_fields,
+        "rule",
+        opts,
+        rule_context,
+        parser_opts
+      )
 
-      "executable", acc ->
-        acc ++
-          [
-            get_translated_value(
-              "ruleImplementation.props.executable.#{implementation["executable"]}",
-              opts
-            )
-          ]
+    template_columns =
+      add_content_columns(
+        [],
+        implementation,
+        content,
+        "template",
+        opts,
+        template_context,
+        parser_opts
+      )
 
-      "rule", acc ->
-        acc ++ [get_rule(implementation)]
+    dataset_columns =
+      fill_with(
+        get_implementation_fields(implementation, "datasets"),
+        number_of_datasets,
+        ""
+      )
 
-      "rule_template", acc ->
-        acc ++ [get_rule_template(implementation)]
+    validation_columns =
+      fill_with(
+        get_implementation_fields(implementation, "validations"),
+        number_of_validations,
+        ""
+      )
 
-      "implementation_template", acc ->
-        acc ++ [get_string_value(implementation, "df_name")]
+    result_detail_columns = get_result_details(implementation, result_details_fields)
 
-      "result_type", acc ->
-        acc ++
-          [
-            get_translated_value(
-              "ruleImplementations.props.result_type.#{implementation["result_type"]}",
-              opts
-            )
-          ]
-
-      "goal", acc ->
-        acc ++ [get_string_value(implementation, "goal")]
-
-      "minimum", acc ->
-        acc ++ [get_string_value(implementation, "minimum")]
-
-      "records", acc ->
-        acc ++ [get_result_info(implementation, "records")]
-
-      "errors", acc ->
-        acc ++ [get_result_info(implementation, "errors")]
-
-      "result", acc ->
-        acc ++ [get_result_info(implementation, "result")]
-
-      "execution", acc ->
-        acc ++ [get_result_info(implementation, "result_text", opts)]
-
-      "last_execution_at", acc ->
-        acc ++ [get_result_info(implementation, "date", "datetime")]
-
-      "inserted_at", acc ->
-        acc ++ [get_string_value(implementation, "inserted_at", "datetime")]
-
-      "updated_at", acc ->
-        acc ++ [get_string_value(implementation, "updated_at", "datetime")]
-
-      "business_concepts", acc ->
-        acc ++ [get_concepts(implementation)]
-
-      "structure_domains", acc ->
-        acc ++ [get_structure_domains(implementation)]
-
-      "rule_template_fields", acc ->
-        add_content_columns(acc, implementation, rule_fields, "rule", opts)
-
-      "template_fields", acc ->
-        add_content_columns(acc, implementation, content, "template", opts)
-
-      "data_set_external_ids", acc ->
-        acc ++
-          fill_with(
-            get_implementation_fields(implementation, "datasets"),
-            number_of_datasets,
-            ""
-          )
-
-      "validation_fields", acc ->
-        acc ++
-          fill_with(
-            get_implementation_fields(implementation, "validations"),
-            number_of_validations,
-            ""
-          )
-
-      "result_details", acc ->
-        acc ++ get_result_details(implementation, result_details_fields)
-
-      other, acc ->
-        acc ++ [get_string_value(implementation, other)]
-    end)
+    base_columns ++
+      rule_template_columns ++
+      template_columns ++
+      dataset_columns ++
+      validation_columns ++
+      result_detail_columns
   end
 
-  defp add_content_columns(fields, %{"df_content" => df_content}, content, "template", opts),
-    do: add_content(fields, df_content, content, opts)
+  defp add_content_columns(
+         fields,
+         %{"df_content" => df_content},
+         content,
+         "template",
+         opts,
+         context,
+         parser_opts
+       ),
+       do: add_content(fields, df_content, content, opts, context, parser_opts)
 
   defp add_content_columns(
          fields,
          %{"rule" => %{"df_content" => df_content}},
          content,
          "rule",
-         opts
+         opts,
+         context,
+         parser_opts
        ),
-       do: add_content(fields, df_content, content, opts)
+       do: add_content(fields, df_content, content, opts, context, parser_opts)
 
-  defp add_content_columns(fields, _df_content, content, "rule", opts),
+  defp add_content_columns(fields, _df_content, content, "rule", opts, _context, _parser_opts),
     do: add_empty_content(fields, content, opts)
 
-  defp add_content(fields, df_content, content, opts)
-       when is_map(df_content) and is_list(content) do
-    parser_opts = [
-      domain_type: :with_domain_external_id,
-      lang: opts[:lang],
-      xlsx: true
-    ]
+  defp add_content(fields, df_content, content, opts, context, parser_opts)
 
-    Parser.append_parsed_fields(fields, content, df_content, parser_opts)
+  defp add_content(fields, df_content, content, _opts, context, parser_opts)
+       when is_map(df_content) and is_list(content) do
+    Parser.append_parsed_fields(fields, content, df_content, parser_opts, context)
   end
 
-  defp add_content(fields, _headers, _data, _opts), do: fields
+  defp add_content(fields, _headers, _data, _opts, _context, _parser_opts), do: fields
 
   defp add_empty_content(fields, content, _opts)
        when is_list(content),
@@ -332,7 +326,6 @@ defmodule TdDq.XLSX.Writer do
     end
   end
 
-  ## REVIEW TD-7617: Hay que cambiar el datetime a string????
   defp get_string_value(implementation, key, "datetime") do
     case(Map.get(implementation, key)) do
       nil -> ""
@@ -402,10 +395,10 @@ defmodule TdDq.XLSX.Writer do
     end
   end
 
-  defp get_translated_value(value, opts) do
-    case I18nCache.get_definition(opts[:lang], value, default_value: value) do
+  defp get_translated_value(value, default_value, opts) do
+    case I18nCache.get_definition(opts[:lang], value, default_value: default_value) do
       text when is_binary(text) -> text
-      _ -> value
+      _ -> default_value
     end
   end
 
@@ -431,7 +424,7 @@ defmodule TdDq.XLSX.Writer do
         TdDd.Helpers.shift_zone(result_text)
 
       %{"execution_result_info" => %{^key => result_text}} when is_binary(result_text) ->
-        get_translated_value(result_text, opts)
+        get_translated_value(result_text, result_text, opts)
 
       _ ->
         ""
@@ -515,7 +508,7 @@ defmodule TdDq.XLSX.Writer do
       |> Enum.flat_map(fn tuple -> Map.keys(tuple) end)
       |> Enum.uniq()
 
-  defp dynamic_headers(0, _items_key), do: [[""]]
+  defp dynamic_headers(0, _items_key), do: [nil]
 
   defp dynamic_headers(number_of_items, items_key) do
     prefix =
@@ -579,4 +572,21 @@ defmodule TdDq.XLSX.Writer do
          |> Enum.uniq()
 
   defp get_implementation_fields(_, _), do: []
+
+  defp prepare_parsing_context(rule_fields, template_fields, opts) do
+    domain_type = Keyword.get(opts, :domain_type, :with_domain_external_id)
+    lang = Keyword.get(opts, :lang)
+
+    rule_ctx =
+      rule_fields
+      |> Parser.context_for_fields(domain_type)
+      |> Map.put("lang", lang)
+
+    template_ctx =
+      template_fields
+      |> Parser.context_for_fields(domain_type)
+      |> Map.put("lang", lang)
+
+    %{rule: rule_ctx, template: template_ctx}
+  end
 end
