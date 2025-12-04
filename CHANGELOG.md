@@ -5,6 +5,7 @@
 ### Changed
 
 - [TD-7302] Update td-core lib
+- [TD-7754] When deleting structure groups, delete on elasticsearch instead of reindexing
 
 
 ## [7.13.1] 2025-12-03
@@ -42,7 +43,6 @@
 - [TD-7396] Adjusts implementation actions permissions for users with permissions in different domains
 
 - [TD-7340] Support for `dynamic_table` template fields
-
 
 ## [7.11.2] 2025-10-27
 
