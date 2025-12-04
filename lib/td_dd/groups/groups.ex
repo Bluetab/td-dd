@@ -39,6 +39,6 @@ defmodule TdDd.Groups do
 
     data_structure_ids
     |> Enum.uniq()
-    |> then(&Indexer.reindex(&1))
+    |> Indexer.delete()
   end
 end
