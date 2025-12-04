@@ -7,6 +7,9 @@
 - [TD-7302] Update td-core lib
 - [TD-7754] When deleting structure groups, delete on elasticsearch instead of reindexing
 
+### Fixed
+
+- [TD-7619] Fix date and datetime format and validation
 
 ## [7.13.1] 2025-12-03
 

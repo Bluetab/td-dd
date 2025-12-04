@@ -1,7 +1,11 @@
 defmodule TdDq.XLSX.Jobs.UploadWorkerTest do
   use TdDd.DataCase
 
+  # import Ecto.Query
+
+  alias TdDd.Repo
   alias TdDq.Implementations
+  alias TdDq.Implementations.Implementation
   alias TdDq.Implementations.UploadEvents
   alias TdDq.XLSX.Jobs.UploadWorker
 
@@ -274,6 +278,68 @@ defmodule TdDq.XLSX.Jobs.UploadWorkerTest do
                  }
                ]
              } = UploadEvents.get_job(job_id)
+    end
+
+    test "uploads date and datetime fields", %{
+      claims: claims
+    } do
+      content_for_date_fields = [
+        %{
+          "name" => "date_fields",
+          "fields" => [
+            %{
+              "cardinality" => "?",
+              "label" => "Test Date",
+              "name" => "test_date",
+              "type" => "date",
+              "widget" => "date"
+            },
+            %{
+              "cardinality" => "?",
+              "label" => "Test Datetime",
+              "name" => "test_datetime",
+              "type" => "datetime",
+              "widget" => "datetime"
+            }
+          ]
+        }
+      ]
+
+      CacheHelpers.insert_domain(external_id: "domain")
+
+      CacheHelpers.insert_template(
+        name: "TemplateImpl",
+        label: "TemplateImpl",
+        scope: "ri",
+        content: content_for_date_fields
+      )
+
+      path = "test/fixtures/xlsx/implementations.xlsx"
+      %{id: job_id} = insert(:implementation_upload_job)
+      lang = "es"
+      auto_publish = "true"
+
+      perform_job(UploadWorker, %{
+        "path" => path,
+        "job_id" => job_id,
+        "opts" => %{
+          "lang" => lang,
+          "auto_publish" => auto_publish,
+          "claims" => claims
+        }
+      })
+
+      UploadEvents.get_job(job_id)
+
+      assert %{
+               df_content: %{
+                 "test_date" => %{"origin" => "file", "value" => "2025-12-31"},
+                 "test_datetime" => %{"origin" => "file", "value" => "2025-12-31T22:55:00"}
+               }
+             } =
+               Implementation
+               |> where(implementation_key: "ok_1")
+               |> Repo.one()
     end
   end
 end
