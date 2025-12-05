@@ -17,7 +17,7 @@ defmodule TdDdWeb.GrantRequestFilterControllerTest do
       ElasticsearchMock
       |> expect(:request, fn
         _, :post, "/grant_requests/_search", %{query: query, size: 0, aggs: _}, _ ->
-          assert query == %{bool: %{must: %{match_all: %{}}}}
+          assert query == %{bool: %{filter: %{match_all: %{}}}}
 
           SearchHelpers.aggs_response(@aggregations)
       end)
@@ -37,7 +37,7 @@ defmodule TdDdWeb.GrantRequestFilterControllerTest do
         _, :post, "/grant_requests/_search", %{query: query, size: 0, aggs: _}, _ ->
           assert %{
                    bool: %{
-                     must: %{
+                     filter: %{
                        bool: %{
                          should: [
                            %{term: %{"domain_ids" => _}}
@@ -64,7 +64,7 @@ defmodule TdDdWeb.GrantRequestFilterControllerTest do
       _, :post, "/grant_requests/_search", %{query: query, size: 0}, _ ->
         assert %{
                  bool: %{
-                   must: [
+                   filter: [
                      %{term: %{"foo" => "bar"}},
                      _permission_filter
                    ]
@@ -87,7 +87,7 @@ defmodule TdDdWeb.GrantRequestFilterControllerTest do
     ElasticsearchMock
     |> expect(:request, fn
       _, :post, "/grant_requests/_search", %{query: query, size: 0, aggs: _}, _ ->
-        assert %{bool: %{must: %{match_none: %{}}}} = query
+        assert %{bool: %{filter: %{match_none: %{}}}} = query
         SearchHelpers.aggs_response()
     end)
 
@@ -105,7 +105,7 @@ defmodule TdDdWeb.GrantRequestFilterControllerTest do
       _, :post, "/grant_requests/_search", %{query: query, size: 0}, _ ->
         assert %{
                  bool: %{
-                   must: %{term: %{"current_status" => "pending"}},
+                   filter: %{term: %{"current_status" => "pending"}},
                    must_not: %{term: %{"approved_by" => "rol1"}}
                  }
                } ==

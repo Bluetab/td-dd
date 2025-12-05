@@ -15,7 +15,7 @@ defmodule TdDqWeb.ImplementationFilterControllerTest do
         _, :post, "/implementations/_search", %{query: query, size: 0}, _ ->
           assert query == %{
                    bool: %{
-                     must: %{term: %{"rule.name.raw" => "foo"}},
+                     filter: %{term: %{"rule.name.raw" => "foo"}},
                      must_not: %{exists: %{field: "deleted_at"}}
                    }
                  }
@@ -41,7 +41,7 @@ defmodule TdDqWeb.ImplementationFilterControllerTest do
         _, :post, "/implementations/_search", %{query: query, size: 0}, _ ->
           assert %{
                    bool: %{
-                     must: [
+                     filter: [
                        %{term: %{"_confidential" => false}},
                        %{term: %{"domain_ids" => _}}
                      ]
@@ -75,7 +75,7 @@ defmodule TdDqWeb.ImplementationFilterControllerTest do
         _, :post, "/implementations/_search", %{query: query, size: 0}, _ ->
           assert %{
                    bool: %{
-                     must: [
+                     filter: [
                        %{
                          bool: %{
                            should: [
@@ -105,7 +105,7 @@ defmodule TdDqWeb.ImplementationFilterControllerTest do
         _, :post, "/implementations/_search", %{query: query, size: 0}, _ ->
           assert query == %{
                    bool: %{
-                     must: %{match_none: %{}},
+                     filter: %{match_none: %{}},
                      must_not: %{exists: %{field: "deleted_at"}}
                    }
                  }

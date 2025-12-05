@@ -26,7 +26,7 @@ defmodule TdCxWeb.JobControllerTest do
         _, :post, "/jobs/_search", %{from: 0, query: query, size: 10_000}, _ ->
           assert query == %{
                    bool: %{
-                     must: %{term: %{"source.external_id" => source_external_id}}
+                     filter: %{term: %{"source.external_id" => source_external_id}}
                    }
                  }
 
@@ -65,10 +65,28 @@ defmodule TdCxWeb.JobControllerTest do
                            type: "bool_prefix",
                            fields: ["external_id", "source.external_id", "message"],
                            query: external_id,
-                           fuzziness: "AUTO",
                            lenient: true
                          }
-                       }
+                       },
+                       should: [
+                         %{
+                           multi_match: %{
+                             type: "phrase_prefix",
+                             fields: ["external_id", "source.external_id", "message"],
+                             query: external_id,
+                             boost: 4.0
+                           }
+                         },
+                         %{
+                           simple_query_string: %{
+                             fields: ["external_id", "message"],
+                             query: "\"#{external_id}\"",
+                             quote_field_suffix: ".exact",
+                             boost: 4.0
+                           }
+                         }
+                       ],
+                       filter: %{match_all: %{}}
                      }
                    }
                  }
@@ -114,7 +132,8 @@ defmodule TdCxWeb.JobControllerTest do
                            query: "\"#{external_id}\"",
                            quote_field_suffix: ".exact"
                          }
-                       }
+                       },
+                       filter: %{match_all: %{}}
                      }
                    }
                  }

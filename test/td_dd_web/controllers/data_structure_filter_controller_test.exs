@@ -16,7 +16,7 @@ defmodule TdDdWeb.DataStructureFilterControllerTest do
     test "lists all filters (admin user)", %{conn: conn} do
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
-        assert query == %{bool: %{must: %{match_all: %{}}}}
+        assert query == %{bool: %{filter: %{match_all: %{}}}}
         SearchHelpers.aggs_response(@aggregations)
       end)
 
@@ -32,7 +32,7 @@ defmodule TdDdWeb.DataStructureFilterControllerTest do
     test "lists all filters (non-admin user)", %{conn: conn} do
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
-        assert query == %{bool: %{must: %{match_none: %{}}}}
+        assert query == %{bool: %{filter: %{match_none: %{}}}}
         SearchHelpers.aggs_response(%{})
       end)
 
@@ -95,10 +95,10 @@ defmodule TdDdWeb.DataStructureFilterControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
-        assert %{bool: %{must: must}} = query
+        assert %{bool: %{filter: filters}} = query
 
         # Verify that the query filters by the domain associated with link_data_structure (domain_id_1)
-        assert Enum.any?(must, fn
+        assert Enum.any?(filters, fn
                  %{term: %{"domain_ids" => ^domain_id_1}} -> true
                  _ -> false
                end)

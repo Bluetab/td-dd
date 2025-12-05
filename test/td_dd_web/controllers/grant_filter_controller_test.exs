@@ -19,7 +19,7 @@ defmodule TdDdWeb.GrantFilterControllerTest do
         _, :post, "/grants/_search", %{query: query, size: 0}, _ ->
           assert query == %{
                    bool: %{
-                     must: %{match_all: %{}},
+                     filter: %{match_all: %{}},
                      must_not: %{exists: %{field: "deleted_at"}}
                    }
                  }
@@ -45,7 +45,7 @@ defmodule TdDdWeb.GrantFilterControllerTest do
         _, :post, "/grants/_search", %{query: query, size: 0}, _ ->
           assert %{
                    bool: %{
-                     must: %{
+                     filter: %{
                        bool: %{
                          should: [
                            %{term: %{"data_structure_version.domain_ids" => _}},
@@ -73,7 +73,7 @@ defmodule TdDdWeb.GrantFilterControllerTest do
         _, :post, "/grants/_search", %{query: query, size: 0}, _ ->
           assert %{
                    bool: %{
-                     must: [%{term: %{"foo" => "bar"}}, _permission_filter]
+                     filter: [%{term: %{"foo" => "bar"}}, _permission_filter]
                    }
                  } = query
 
@@ -95,7 +95,7 @@ defmodule TdDdWeb.GrantFilterControllerTest do
         _, :post, "/grants/_search", %{query: query, size: 0}, _ ->
           assert %{
                    bool: %{
-                     must: [
+                     filter: [
                        %{
                          terms: %{
                            "data_structure_version.system.external_id.raw" => ["bar", "foo"]
@@ -130,7 +130,7 @@ defmodule TdDdWeb.GrantFilterControllerTest do
           _, :post, "/grants/_search", %{query: query, size: 0}, _ ->
             assert %{
                      bool: %{
-                       must: %{term: %{"user_id" => ^user_id}},
+                       filter: %{term: %{"user_id" => ^user_id}},
                        must_not: _deleted_at
                      }
                    } = query

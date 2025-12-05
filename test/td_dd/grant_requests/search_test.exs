@@ -20,7 +20,7 @@ defmodule TdDd.GrantRequests.SearchTest do
         ElasticsearchMock
         |> expect(:request, fn
           _, :post, "/grant_requests/_search", %{aggs: _, query: query, size: 0}, _ ->
-            assert %{bool: %{must: %{match_all: %{}}}} = query
+            assert %{bool: %{filter: %{match_all: %{}}}} = query
             SearchHelpers.aggs_response(@aggs)
         end)
 
@@ -36,7 +36,7 @@ defmodule TdDd.GrantRequests.SearchTest do
         _, :post, "/grant_requests/_search", %{aggs: _, query: query, size: 0}, _ ->
           assert %{
                    bool: %{
-                     must: %{
+                     filter: %{
                        bool: %{should: [%{term: %{"domain_ids" => _}}]}
                      }
                    }
@@ -55,7 +55,7 @@ defmodule TdDd.GrantRequests.SearchTest do
         _, :post, "/grant_requests/_search", %{aggs: _, query: query, size: 0}, _ ->
           assert %{
                    bool: %{
-                     must: [
+                     filter: [
                        %{term: %{"foo" => "bar"}},
                        _
                      ]
@@ -105,7 +105,7 @@ defmodule TdDd.GrantRequests.SearchTest do
           # Verify status_reason filter is applied
           assert %{
                    bool: %{
-                     must: %{
+                     filter: %{
                        term: %{"status_reason.keyword" => "connection timeout"}
                      }
                    }

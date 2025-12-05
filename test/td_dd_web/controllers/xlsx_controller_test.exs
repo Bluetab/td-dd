@@ -464,7 +464,7 @@ defmodule TdDdWeb.DataStructures.XLSXControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, opts ->
-        assert query[:bool][:must] == %{term: %{"data_structure_id" => "#{structure.id}"}}
+        assert query[:bool][:filter] == %{term: %{"data_structure_id" => "#{structure.id}"}}
         assert opts == [params: %{"scroll" => "1m"}]
         SearchHelpers.scroll_response([dsv])
       end)
@@ -586,13 +586,18 @@ defmodule TdDdWeb.DataStructures.XLSXControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, opts ->
-        assert query[:bool][:must] == %{
-                 multi_match: %{
-                   type: "bool_prefix",
-                   fields: ["data_structure_id", "parent_id"],
-                   lenient: true,
-                   operator: "OR",
-                   query: "#{parent_structure.id}"
+        assert query == %{
+                 bool: %{
+                   filter: %{
+                     bool: %{
+                       should: [
+                         %{term: %{"data_structure_id" => "#{parent_structure.id}"}},
+                         %{term: %{"parent_id" => "#{parent_structure.id}"}}
+                       ],
+                       minimum_should_match: 1
+                     }
+                   },
+                   must_not: %{exists: %{field: "deleted_at"}}
                  }
                }
 
@@ -722,7 +727,7 @@ defmodule TdDdWeb.DataStructures.XLSXControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, opts ->
-        assert query[:bool][:must] == %{term: %{"data_structure_id" => "#{structure.id}"}}
+        assert query[:bool][:filter] == %{term: %{"data_structure_id" => "#{structure.id}"}}
         assert opts == [params: %{"scroll" => "1m"}]
         SearchHelpers.scroll_response([dsv])
       end)
@@ -829,7 +834,7 @@ defmodule TdDdWeb.DataStructures.XLSXControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, opts ->
-        assert query[:bool][:must] == %{term: %{"data_structure_id" => "#{structure.id}"}}
+        assert query[:bool][:filter] == %{term: %{"data_structure_id" => "#{structure.id}"}}
         assert opts == [params: %{"scroll" => "1m"}]
         SearchHelpers.scroll_response([dsv])
       end)

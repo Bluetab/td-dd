@@ -110,7 +110,7 @@ defmodule TdDdWeb.XLSXControllerTest do
         _, :post, "/implementations/_search", %{size: 10_000, sort: sort, query: query}, _ ->
           assert query == %{
                    bool: %{
-                     must: %{match_all: %{}},
+                     filter: %{match_all: %{}},
                      must_not: %{exists: %{field: "deleted_at"}}
                    }
                  }
@@ -356,7 +356,7 @@ defmodule TdDdWeb.XLSXControllerTest do
         _, :post, "/implementations/_search", %{size: 10_000, sort: sort, query: query}, _ ->
           assert query == %{
                    bool: %{
-                     must: %{match_all: %{}},
+                     filter: %{match_all: %{}},
                      must_not: %{exists: %{field: "deleted_at"}}
                    }
                  }
