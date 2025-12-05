@@ -46,6 +46,7 @@ defmodule TdCx.Jobs.ElasticDocument do
     use ElasticDocument
 
     @search_fields ~w(external_id source.external_id message)
+    @exact_search_fields ~w(external_id message)
 
     def mappings(_) do
       mapping_type = %{
@@ -91,8 +92,7 @@ defmodule TdCx.Jobs.ElasticDocument do
 
     def query_data(_) do
       %{
-        fields: @search_fields,
-        simple_search_fields: @search_fields,
+        query: %{simple: @search_fields, exact: @exact_search_fields},
         aggs: aggregations(%Job{})
       }
     end

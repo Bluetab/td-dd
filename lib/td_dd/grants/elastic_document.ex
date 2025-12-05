@@ -62,7 +62,8 @@ defmodule TdDd.Grants.ElasticDocument do
   defimpl ElasticDocumentProtocol, for: GrantStructure do
     use ElasticDocument
 
-    @search_fields ~w(user.full_name)
+    @search_fields ~w(user.full_name user.user_name)
+    @exact_fields ~w(user.full_name user.user_name)
 
     def mappings(_) do
       %{mappings: %{properties: dsv_properties}, settings: _settings} =
@@ -134,22 +135,19 @@ defmodule TdDd.Grants.ElasticDocument do
     end
 
     def query_data(_) do
-      structure_query_data = ElasticDocumentProtocol.query_data(%DataStructureVersion{})
+      %{query: structure_query_data} = ElasticDocumentProtocol.query_data(%DataStructureVersion{})
 
-      structure_native_fields =
-        structure_query_data
-        |> Map.get(:native_fields, [])
-        |> Enum.map(&"data_structure_version.#{&1}")
-
-      structure_simple_search_fields =
-        structure_query_data
-        |> Map.get(:simple_search_fields, [])
-        |> Enum.map(&"data_structure_version.#{&1}")
+      structure_native_fields = structure_fields(structure_query_data, :native)
+      structure_simple_fields = structure_fields(structure_query_data, :simple)
+      structure_exact_fields = structure_fields(structure_query_data, :exact)
 
       %{
         aggs: aggregations(%GrantStructure{}),
-        fields: @search_fields ++ structure_native_fields,
-        simple_search_fields: @search_fields ++ structure_simple_search_fields
+        query: %{
+          as_you_type: @search_fields ++ structure_native_fields,
+          simple: @search_fields ++ structure_simple_fields,
+          exact: @exact_fields ++ structure_exact_fields
+        }
       }
     end
 
@@ -168,6 +166,12 @@ defmodule TdDd.Grants.ElasticDocument do
       Enum.reduce(mapping_list, properties, fn key, acc ->
         Map.put(acc, key, %{enabled: false})
       end)
+    end
+
+    defp structure_fields(data, key) do
+      data
+      |> Map.get(key, [])
+      |> Enum.map(&"data_structure_version.#{&1}")
     end
   end
 end

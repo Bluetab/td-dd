@@ -93,10 +93,12 @@ defmodule TdDdWeb.DataStructures.XLSXController do
   end
 
   defp maybe_put_structure_filters(params, data_structure_id, "true") do
-    params
-    |> Map.put("query", "#{data_structure_id}")
-    |> Map.put("search_fields", ["data_structure_id", "parent_id"])
-    |> Map.put("operator", "OR")
+    Map.put(params, "filters", %{
+      "should" => %{
+        "data_structure_id" => [data_structure_id],
+        "parent_id" => [data_structure_id]
+      }
+    })
   end
 
   defp build_opts(params) do

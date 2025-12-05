@@ -78,69 +78,140 @@ defmodule TdDd.DataStructures.Search.QueryTest do
     test "includes a must multi_match clause for a single word" do
       assert %{
                bool: %{
+                 filter: %{match_all: %{}},
+                 should: [
+                   %{
+                     multi_match: %{
+                       type: "phrase_prefix",
+                       fields: [],
+                       query: " foo     ",
+                       boost: 4.0,
+                       lenient: true
+                     }
+                   },
+                   %{
+                     simple_query_string: %{
+                       fields: [],
+                       query: " foo     ",
+                       boost: 4.0,
+                       quote_field_suffix: ".exact"
+                     }
+                   }
+                 ],
                  must: %{
                    multi_match: %{
+                     type: "bool_prefix",
                      fields: [],
-                     fuzziness: "AUTO",
-                     lenient: true,
                      query: " foo     ",
-                     type: "bool_prefix"
+                     lenient: true
                    }
                  }
                }
-             } =
+             } ==
                Query.build_query(@all_permissions, %{"query" => " foo     "}, %{
-                 fields: [],
-                 simple_search_fields: []
+                 query: %{
+                   as_you_type: [],
+                   simple: [],
+                   exact: []
+                 }
                })
     end
 
     test "includes a must exists and multi_match clause for a single word" do
       assert %{
                bool: %{
-                 must: [
-                   %{multi_match: %{fields: _, lenient: _, query: "foo", type: _}},
-                   %{exists: %{"field" => "foo.moo"}}
+                 must: %{
+                   multi_match: %{
+                     fields: [],
+                     lenient: true,
+                     query: "foo",
+                     type: "bool_prefix"
+                   }
+                 },
+                 filter: %{exists: %{"field" => "foo.moo"}},
+                 should: [
+                   %{
+                     multi_match: %{
+                       type: "phrase_prefix",
+                       fields: [],
+                       query: "foo",
+                       boost: 4.0,
+                       lenient: true
+                     }
+                   },
+                   %{
+                     simple_query_string: %{
+                       fields: [],
+                       query: "\"foo\"",
+                       boost: 4.0,
+                       quote_field_suffix: ".exact"
+                     }
+                   }
                  ]
                }
-             } =
+             } ==
                Query.build_query(
                  @all_permissions,
                  %{"query" => "foo", "must" => %{"exists" => %{"field" => "foo.moo"}}},
-                 %{fields: [], simple_search_fields: []}
+                 %{query: %{as_you_type: [], simple: [], exact: []}}
                )
     end
 
     test "includes a multi_match clause for each word in the query term" do
       assert %{
                bool: %{
+                 filter: %{match_all: %{}},
+                 should: [
+                   %{
+                     multi_match: %{
+                       type: "phrase_prefix",
+                       fields: [],
+                       query: " foo   bar  ",
+                       boost: 4.0,
+                       lenient: true
+                     }
+                   },
+                   %{
+                     simple_query_string: %{
+                       fields: [],
+                       query: " foo   bar  ",
+                       boost: 4.0,
+                       quote_field_suffix: ".exact"
+                     }
+                   }
+                 ],
                  must: %{
                    multi_match: %{
+                     type: "bool_prefix",
                      fields: [],
-                     fuzziness: "AUTO",
-                     lenient: true,
                      query: " foo   bar  ",
-                     type: "bool_prefix"
+                     lenient: true
                    }
                  }
                }
-             } =
+             } ==
                Query.build_query(@all_permissions, %{"query" => " foo   bar  "}, %{
-                 fields: [],
-                 simple_search_fields: []
+                 query: %{
+                   as_you_type: [],
+                   simple: [],
+                   exact: []
+                 }
                })
     end
 
     test "does not include a must clause for an empty search term" do
       assert Query.build_query(@all_permissions, %{"query" => "  "}, %{}) == %{
-               bool: %{must: %{simple_query_string: %{query: "  "}}}
+               bool: %{must: %{simple_query_string: %{query: "  "}}, filter: %{match_all: %{}}}
              }
     end
 
     test "includes simple query string search when wildcard is provided" do
       assert Query.build_query(@all_permissions, %{"query" => "\"foo\""}, %{
-               fields: [],
-               simple_search_fields: []
+               query: %{
+                 simple: [],
+                 as_you_type: [],
+                 exact: []
+               }
              }) == %{
                bool: %{
                  must: %{
@@ -149,138 +220,42 @@ defmodule TdDd.DataStructures.Search.QueryTest do
                      query: "\"foo\"",
                      quote_field_suffix: ".exact"
                    }
-                 }
+                 },
+                 filter: %{match_all: %{}}
                }
              }
     end
   end
 
-  describe "custom search fields and operators" do
-    test "includes multi_match with custom fields and OR operator" do
+  describe "custom search fields" do
+    test "includes multi_match with custom fields" do
       assert %{
                bool: %{
-                 must: %{
-                   multi_match: %{
-                     fields: ["data_structure_id", "parent_id"],
-                     lenient: true,
-                     query: "214265",
-                     type: "bool_prefix",
-                     operator: "OR"
+                 filter: %{
+                   bool: %{
+                     should: [
+                       %{term: %{"data_structure_id" => "214265"}},
+                       %{term: %{"parent_id" => "214265"}}
+                     ],
+                     minimum_should_match: 1
                    }
                  }
                }
-             } =
+             } ==
                Query.build_query(
                  @all_permissions,
                  %{
-                   "query" => "214265",
-                   "search_fields" => ["data_structure_id", "parent_id"],
-                   "operator" => "OR"
+                   "filters" => %{
+                     "should" => %{"data_structure_id" => ["214265"], "parent_id" => ["214265"]}
+                   }
                  },
                  %{
-                   fields: [],
-                   simple_search_fields: []
-                 }
-               )
-    end
-
-    test "includes multi_match with custom fields and default OR operator" do
-      assert %{
-               bool: %{
-                 must: %{
-                   multi_match: %{
-                     fields: ["data_structure_id", "parent_id"],
-                     lenient: true,
-                     query: "214265",
-                     type: "bool_prefix",
-                     operator: "OR"
+                   query: %{
+                     simple: [],
+                     as_you_type: []
                    }
                  }
-               }
-             } =
-               Query.build_query(
-                 @all_permissions,
-                 %{
-                   "query" => "214265",
-                   "search_fields" => ["data_structure_id", "parent_id"]
-                 },
-                 %{
-                   fields: [],
-                   simple_search_fields: []
-                 }
                )
-    end
-
-    test "includes simple_query_string with custom fields and AND operator" do
-      assert %{
-               bool: %{
-                 must: %{
-                   simple_query_string: %{
-                     fields: ["data_structure_id", "parent_id"],
-                     query: "\"214265\"",
-                     quote_field_suffix: ".exact",
-                     default_operator: "AND"
-                   }
-                 }
-               }
-             } =
-               Query.build_query(
-                 @all_permissions,
-                 %{
-                   "query" => "\"214265\"",
-                   "search_fields" => ["data_structure_id", "parent_id"],
-                   "operator" => "AND"
-                 },
-                 %{
-                   fields: [],
-                   simple_search_fields: []
-                 }
-               )
-    end
-
-    test "includes simple_query_string with custom fields and default OR operator" do
-      assert %{
-               bool: %{
-                 must: %{
-                   simple_query_string: %{
-                     fields: ["data_structure_id", "parent_id"],
-                     query: "\"214265\"",
-                     quote_field_suffix: ".exact",
-                     default_operator: "OR"
-                   }
-                 }
-               }
-             } =
-               Query.build_query(
-                 @all_permissions,
-                 %{
-                   "query" => "\"214265\"",
-                   "search_fields" => ["data_structure_id", "parent_id"]
-                 },
-                 %{
-                   fields: [],
-                   simple_search_fields: []
-                 }
-               )
-    end
-
-    test "maintains backward compatibility for normal queries without search_fields" do
-      assert %{
-               bool: %{
-                 must: %{
-                   multi_match: %{
-                     fields: ["default_field1", "default_field2"],
-                     lenient: true,
-                     query: "test",
-                     type: "bool_prefix"
-                   }
-                 }
-               }
-             } =
-               Query.build_query(@all_permissions, %{"query" => "test"}, %{
-                 fields: ["default_field1", "default_field2"],
-                 simple_search_fields: ["default_field1", "default_field2"]
-               })
     end
 
     test "maintains backward compatibility for wildcard queries without search_fields" do
@@ -292,12 +267,16 @@ defmodule TdDd.DataStructures.Search.QueryTest do
                      query: "\"test\"",
                      quote_field_suffix: ".exact"
                    }
-                 }
+                 },
+                 filter: %{match_all: %{}}
                }
-             } =
+             } ==
                Query.build_query(@all_permissions, %{"query" => "\"test\""}, %{
-                 fields: ["default_field1", "default_field2"],
-                 simple_search_fields: ["default_field1", "default_field2"]
+                 query: %{
+                   as_you_type: ["default_field1", "default_field2"],
+                   simple: ["default_field1", "default_field2"],
+                   exact: ["default_field1", "default_field2"]
+                 }
                })
     end
   end

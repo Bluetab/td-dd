@@ -31,7 +31,7 @@ defmodule TdDq.Rules.SearchTest do
         _, :post, "/rules/_search", %{aggs: _, query: query, size: 0}, _ ->
           assert %{
                    bool: %{
-                     must: [
+                     filter: [
                        %{term: %{"_confidential" => false}},
                        %{term: %{"domain_ids" => _}}
                      ]
@@ -54,7 +54,7 @@ defmodule TdDq.Rules.SearchTest do
         _, :post, "/rules/_search", %{aggs: _, query: query, size: 0}, _ ->
           assert %{
                    bool: %{
-                     must: [
+                     filter: [
                        %{
                          bool: %{
                            should: [
@@ -75,7 +75,7 @@ defmodule TdDq.Rules.SearchTest do
     end
 
     @tag authentication: [role: "user"]
-    test "filters by executable permission iff executable param is present", %{
+    test "filters by executable permission if executable param is present", %{
       claims: claims
     } do
       %{id: domain_id} = CacheHelpers.insert_domain()
@@ -91,7 +91,7 @@ defmodule TdDq.Rules.SearchTest do
         _, :post, "/implementations/_search", %{query: query, size: 0}, _ ->
           assert %{
                    bool: %{
-                     must: [
+                     filter: [
                        %{term: %{"_confidential" => false}},
                        %{terms: %{"domain_ids" => [_, _]}}
                      ]
@@ -104,7 +104,7 @@ defmodule TdDq.Rules.SearchTest do
         _, :post, "/implementations/_search", %{query: query, size: 0}, _ ->
           assert %{
                    bool: %{
-                     must: [
+                     filter: [
                        %{term: %{"domain_ids" => ^executable_domain_id}},
                        %{term: %{"executable" => true}},
                        %{term: %{"_confidential" => false}},
@@ -161,12 +161,12 @@ defmodule TdDq.Rules.SearchTest do
       ElasticsearchMock
       |> expect(:request, fn
         _, :post, "/implementations/_search", %{query: query, size: 0}, _ ->
-          assert query == %{bool: %{must: %{term: %{"status" => "published"}}}}
+          assert query == %{bool: %{filter: %{term: %{"status" => "published"}}}}
           SearchHelpers.aggs_response(@aggs)
       end)
       |> expect(:request, fn
         _, :post, "/implementations/_search", %{query: query, size: 0}, _ ->
-          assert query == %{bool: %{must: %{term: %{"status" => "foo"}}}}
+          assert query == %{bool: %{filter: %{term: %{"status" => "foo"}}}}
           SearchHelpers.aggs_response(@aggs)
       end)
 
@@ -222,7 +222,7 @@ defmodule TdDq.Rules.SearchTest do
         _, :post, "/rules/_search", %{from: 0, size: 50, query: query}, _ ->
           assert %{
                    bool: %{
-                     must: [
+                     filter: [
                        %{term: %{"_confidential" => false}},
                        %{term: %{"domain_ids" => _}}
                      ]
@@ -245,7 +245,7 @@ defmodule TdDq.Rules.SearchTest do
         _, :post, "/rules/_search", %{from: 0, size: 50, query: query}, _ ->
           assert %{
                    bool: %{
-                     must: [
+                     filter: [
                        %{term: %{"_confidential" => false}},
                        %{term: %{"domain_ids" => _}}
                      ]
@@ -268,7 +268,7 @@ defmodule TdDq.Rules.SearchTest do
         _, :post, "/rules/_search", %{query: query}, _ ->
           assert %{
                    bool: %{
-                     must: [
+                     filter: [
                        %{
                          bool: %{
                            should: [
@@ -298,7 +298,7 @@ defmodule TdDq.Rules.SearchTest do
         _, :post, "/rules/_search", %{query: query}, _ ->
           assert %{
                    bool: %{
-                     must: [
+                     filter: [
                        %{
                          bool: %{
                            should: [
@@ -359,11 +359,17 @@ defmodule TdDq.Rules.SearchTest do
                    bool: %{
                      must: %{
                        simple_query_string: %{
-                         fields: ["name", "description", "df_content.template_field"],
+                         fields: [
+                           "name^3",
+                           "current_business_concept_version.name",
+                           "description",
+                           "df_content.template_field"
+                         ],
                          query: "\"foo\"",
                          quote_field_suffix: ".exact"
                        }
-                     }
+                     },
+                     filter: %{match_all: %{}}
                    }
                  }
 
@@ -406,7 +412,7 @@ defmodule TdDq.Rules.SearchTest do
         _, :post, "/implementations/_search", %{from: 0, size: 50, query: query}, _ ->
           assert %{
                    bool: %{
-                     must: [
+                     filter: [
                        %{term: %{"_confidential" => false}},
                        %{term: %{"domain_ids" => _}}
                      ]
@@ -432,7 +438,7 @@ defmodule TdDq.Rules.SearchTest do
         _, :post, "/implementations/_search", %{query: query}, _ ->
           assert %{
                    bool: %{
-                     must: [
+                     filter: [
                        %{
                          bool: %{
                            should: [
@@ -470,7 +476,7 @@ defmodule TdDq.Rules.SearchTest do
         _, :post, "/implementations/_search", %{query: query}, _ ->
           assert %{
                    bool: %{
-                     must: [
+                     filter: [
                        %{term: %{"domain_ids" => ^executable_domain_id}},
                        %{term: %{"executable" => true}},
                        %{term: %{"_confidential" => false}},
@@ -508,17 +514,32 @@ defmodule TdDq.Rules.SearchTest do
                    from: 0,
                    query: %{
                      bool: %{
-                       must: [
+                       must: %{
+                         multi_match: %{
+                           type: "bool_prefix",
+                           fields: ["ngram_implementation_key^3", "implementation_type"],
+                           query: "foo",
+                           lenient: true
+                         }
+                       },
+                       filter: %{term: %{"status" => "published"}},
+                       should: [
                          %{
                            multi_match: %{
-                             type: "bool_prefix",
-                             fields: ["ngram_implementation_key^3", "implementation_type"],
+                             type: "phrase_prefix",
+                             fields: ["implementation_key^3", "implementation_type"],
                              query: "foo",
-                             fuzziness: "AUTO",
-                             lenient: true
+                             boost: 4.0
                            }
                          },
-                         %{term: %{"status" => "published"}}
+                         %{
+                           simple_query_string: %{
+                             fields: ["implementation_key^3", "implementation_type"],
+                             query: "\"foo\"",
+                             quote_field_suffix: ".exact",
+                             boost: 4.0
+                           }
+                         }
                        ]
                      }
                    }
@@ -560,20 +581,19 @@ defmodule TdDq.Rules.SearchTest do
         _, :post, "/implementations/_search", query, _params ->
           assert query.query == %{
                    bool: %{
-                     must: [
-                       %{
-                         simple_query_string: %{
-                           fields: [
-                             "implementation_key",
-                             "df_content.ri_template_field",
-                             "rule.df_content.dq_template_field"
-                           ],
-                           query: "\"foo\"",
-                           quote_field_suffix: ".exact"
-                         }
-                       },
-                       %{term: %{"status" => "published"}}
-                     ]
+                     must: %{
+                       simple_query_string: %{
+                         fields: [
+                           "implementation_key^3",
+                           "implementation_type",
+                           "df_content.ri_template_field",
+                           "rule.df_content.dq_template_field"
+                         ],
+                         query: "\"foo\"",
+                         quote_field_suffix: ".exact"
+                       }
+                     },
+                     filter: %{term: %{"status" => "published"}}
                    }
                  }
 

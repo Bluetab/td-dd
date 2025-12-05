@@ -115,7 +115,8 @@ defmodule TdDd.GrantRequests.ElasticDocument do
   defimpl ElasticDocumentProtocol, for: GrantRequest do
     use ElasticDocument
 
-    @search_fields ~w(user.full_name)
+    @search_fields ~w(user.full_name user.user_name)
+    @exact_fields ~w(user.full_name user.user_name)
 
     def mappings(_) do
       config =
@@ -182,18 +183,25 @@ defmodule TdDd.GrantRequests.ElasticDocument do
     end
 
     def query_data(_) do
-      structure_query_data = ElasticDocumentProtocol.query_data(%DataStructureVersion{})
-      structure_native_fields = Map.get(structure_query_data, :native_fields, [])
-      structure_simple_search_fields = Map.get(structure_query_data, :simple_search_fields, [])
+      %{query: structure_query_data} = ElasticDocumentProtocol.query_data(%DataStructureVersion{})
+      structure_native_fields = Map.get(structure_query_data, :native, [])
+      structure_simple_search_fields = Map.get(structure_query_data, :simple, [])
+      structure_exact_search_fields = Map.get(structure_query_data, :exact, [])
 
       data_structure_version_fields =
         nested_search_fields(structure_native_fields, "data_structure_version")
+
+      data_structure_exact_search_fields =
+        nested_search_fields(structure_exact_search_fields, "data_structure_version")
 
       grant_structure_version_fields =
         nested_search_fields(structure_native_fields, "grant.data_structure_version")
 
       data_structure_simple_search_fields =
         nested_search_fields(structure_simple_search_fields, "data_structure_version")
+
+      grant_structure_exact_search_fields =
+        nested_search_fields(structure_exact_search_fields, "grant.data_structure_version")
 
       grant_structure_simple_search_fields =
         nested_search_fields(structure_simple_search_fields, "grant.data_structure_version")
@@ -213,10 +221,13 @@ defmodule TdDd.GrantRequests.ElasticDocument do
         @search_fields ++
           data_structure_simple_search_fields ++ grant_structure_simple_search_fields
 
+      exact_search_fields =
+        @exact_fields ++
+          data_structure_exact_search_fields ++ grant_structure_exact_search_fields
+
       %{
         aggs: merged_aggregations(gr_content_schema, dd_content_schema),
-        fields: fields,
-        simple_search_fields: simple_search_fields
+        query: %{simple: simple_search_fields, as_you_type: fields, exact: exact_search_fields}
       }
     end
 

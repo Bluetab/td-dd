@@ -46,7 +46,7 @@ defmodule TdCxWeb.JobFilterControllerTest do
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/jobs/_search", request, _ ->
         assert %{aggs: _, query: query, size: 0} = request
-        assert %{bool: %{must: _}} = query
+        assert %{bool: %{filter: _}} = query
         SearchHelpers.aggs_response()
       end)
 

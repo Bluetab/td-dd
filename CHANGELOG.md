@@ -6,6 +6,12 @@
 
 - [TD-7653] Add Implementation Structure Link permission management
 
+### Added
+
+- [TD-7711]:
+  - Phrase prefix search to highlight stricter text matches
+  - New string format for data structure path
+
 ### Changed
 
 - [TD-7302] Update td-core lib
