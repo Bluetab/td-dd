@@ -40,7 +40,7 @@ defmodule TdDdWeb.GrantRequestBulkApprovalControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/grant_requests/_search", %{query: query, size: _}, _ ->
-        assert %{bool: %{must: %{terms: %{"id" => query_grant_requests_ids}}}} = query
+        assert %{bool: %{filter: %{terms: %{"id" => query_grant_requests_ids}}}} = query
         assert grant_requests_ids ||| query_grant_requests_ids
         SearchHelpers.hits_response([grant_request1, grant_request2, grant_request3])
       end)
@@ -96,7 +96,7 @@ defmodule TdDdWeb.GrantRequestBulkApprovalControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/grant_requests/_search", %{query: query, size: _}, _ ->
-        assert %{bool: %{must: %{terms: %{"id" => query_grant_requests_ids}}}} = query
+        assert %{bool: %{filter: %{terms: %{"id" => query_grant_requests_ids}}}} = query
         assert Enum.sort(grant_requests_ids) == Enum.sort(query_grant_requests_ids)
 
         SearchHelpers.hits_response([grant_request1, grant_request2])
@@ -146,7 +146,7 @@ defmodule TdDdWeb.GrantRequestBulkApprovalControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/grant_requests/_search", %{query: query, size: _}, _ ->
-        assert %{bool: %{must: %{term: %{"id" => string_gr_id}}}} == query
+        assert %{bool: %{filter: %{term: %{"id" => string_gr_id}}}} == query
 
         SearchHelpers.hits_response([grant_request])
       end)
@@ -196,7 +196,7 @@ defmodule TdDdWeb.GrantRequestBulkApprovalControllerTest do
       |> expect(:request, fn _, :post, "/grant_requests/_search", %{query: query, size: _}, _ ->
         assert %{
                  bool: %{
-                   must: %{term: %{"current_status" => "pending"}},
+                   filter: %{term: %{"current_status" => "pending"}},
                    must_not: %{term: %{"approved_by" => "Approval Role 2"}}
                  }
                } ==

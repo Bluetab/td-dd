@@ -102,7 +102,7 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
         _, :post, "/implementations/_search", %{from: 0, size: 10_000, query: query}, _ ->
           assert %{
                    bool: %{
-                     must: [
+                     filter: [
                        %{terms: %{"id" => [_, _]}},
                        %{term: %{"domain_ids" => _}},
                        %{term: %{"executable" => true}},
@@ -144,7 +144,7 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
         _, :post, "/implementations/_search", %{from: 0, size: 10_000, query: query}, _ ->
           assert %{
                    bool: %{
-                     must: [
+                     filter: [
                        %{terms: %{"id" => [_, _, _]}},
                        %{term: %{"domain_ids" => ^allowed_domain_id}},
                        %{term: %{"executable" => true}},

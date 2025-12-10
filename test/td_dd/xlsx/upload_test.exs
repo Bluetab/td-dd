@@ -6,6 +6,8 @@ defmodule TdDd.XLSX.UploadTest do
   alias TdCore.Search.IndexWorkerMock
   alias TdDd.DataStructures.DataStructureVersions.Workers.EmbeddingsUpsertBatch
   alias TdDd.DataStructures.FileBulkUpdateEvent
+  alias TdDd.DataStructures.StructureNote
+  alias TdDd.Repo
   alias TdDd.Search.StructureEnricher
   alias TdDd.XLSX.Jobs.UploadWorker
   alias TdDd.XLSX.Upload
@@ -222,6 +224,28 @@ defmodule TdDd.XLSX.UploadTest do
     }
   ]
 
+  @content_for_date_fields [
+    %{
+      "name" => "date_fields",
+      "fields" => [
+        %{
+          "cardinality" => "?",
+          "label" => "Test Date",
+          "name" => "test_date",
+          "type" => "date",
+          "widget" => "date"
+        },
+        %{
+          "cardinality" => "?",
+          "label" => "Test Datetime",
+          "name" => "test_datetime",
+          "type" => "datetime",
+          "widget" => "datetime"
+        }
+      ]
+    }
+  ]
+
   @content_for_dynamic_table [
     %{
       "name" => "group",
@@ -257,7 +281,13 @@ defmodule TdDd.XLSX.UploadTest do
   setup :set_mox_from_context
 
   setup do
-    stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] -> {:ok, true} end)
+    stub(MockClusterHandler, :call, fn :ai,
+                                       TdAi.Indices,
+                                       :exists_enabled?,
+                                       [[index_type: "suggestions"]] ->
+      {:ok, true}
+    end)
+
     :ok
   end
 
@@ -1151,6 +1181,55 @@ defmodule TdDd.XLSX.UploadTest do
       assert Enum.count(indexed_structures) == 1
       assert jobs = all_enqueued(worker: EmbeddingsUpsertBatch)
       assert Enum.count(jobs) == 1
+    end
+
+    test "uploads date and datetime fields", %{
+      claims: %{user_id: user_id} = claims,
+      domain: %{id: domain_id}
+    } do
+      CacheHelpers.put_session_permissions(claims, %{
+        create_structure_note: [domain_id],
+        publish_structure_note_from_draft: [domain_id],
+        edit_structure_note: [domain_id],
+        view_data_structure: [domain_id]
+      })
+
+      %{id: id, name: type} =
+        CacheHelpers.insert_template(
+          content: @content_for_date_fields,
+          type: "date_fields",
+          name: "date_fields"
+        )
+
+      insert(:data_structure_type, name: type, template_id: id)
+
+      %{id: structure_id} =
+        data_structure =
+        insert(:data_structure, external_id: "ok_1", domain_ids: [domain_id])
+
+      valid_structure_note("date_fields", data_structure, df_content: %{})
+
+      Upload.structures(
+        %{
+          path: "test/fixtures/xlsx/upload_date_fields.xlsx",
+          file_name: "upload_date_fields.xlsx",
+          hash: "hash"
+        },
+        user_id: user_id,
+        claims: claims,
+        task_reference: "oban:1",
+        auto_publish: true
+      )
+
+      assert %{
+               df_content: %{
+                 "test_date" => %{"origin" => "file", "value" => "2025-12-31"},
+                 "test_datetime" => %{"origin" => "file", "value" => "2025-12-31T22:55:00"}
+               }
+             } =
+               StructureNote
+               |> where(data_structure_id: ^structure_id)
+               |> Repo.one()
     end
 
     test "uploads dynamic table field and removes tail field when it's empty", %{

@@ -51,7 +51,7 @@ defmodule TdDd.Cache.StructureLoaderTest do
 
       # Stub cluster handler for IA/embeddings
       stub(MockClusterHandler, :call, fn
-        :ai, TdAi.Indices, :exists_enabled?, [] -> {:ok, false}
+        :ai, TdAi.Indices, :exists_enabled?, [index_type: "suggestions"] -> {:ok, false}
         :ai, TdAi.Indices, :list, [enabled: true] -> {:ok, []}
         _group, _mod, _fun, _args -> {:ok, false}
       end)

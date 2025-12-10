@@ -70,26 +70,30 @@ defmodule TdCx.Jobs.Search do
   defp with_search_clauses(query_data, params) do
     query_data
     |> Map.take([:aggs])
-    |> Map.put(:clauses, [clause_for_query(query_data, params)])
+    |> Map.put(:clauses, clause_for_query(query_data, params))
   end
 
   defp clause_for_query(query_data, %{"query" => query}) when is_binary(query) do
     if String.last(query) in @accepted_wildcards do
-      simple_query_string_clause(query_data)
+      strict_clause(query_data)
     else
-      multi_match_boolean_prefix(query_data)
+      search_clause(query_data)
     end
   end
 
-  defp clause_for_query(query_data, _params) do
-    multi_match_boolean_prefix(query_data)
+  defp clause_for_query(query_data, _params), do: search_clause(query_data)
+
+  defp search_clause(%{query: %{simple: simple, exact: exact}}) do
+    %{
+      must: %{multi_match: %{type: "bool_prefix", fields: simple, lenient: true}},
+      should: [
+        %{multi_match: %{type: "phrase_prefix", fields: simple, boost: 4.0}},
+        %{simple_query_string: %{fields: exact, quote_field_suffix: ".exact", boost: 4.0}}
+      ]
+    }
   end
 
-  defp multi_match_boolean_prefix(%{fields: fields}) do
-    %{multi_match: %{type: "bool_prefix", fields: fields, lenient: true, fuzziness: "AUTO"}}
-  end
-
-  defp simple_query_string_clause(%{simple_search_fields: fields}) do
-    %{simple_query_string: %{fields: fields, quote_field_suffix: ".exact"}}
+  defp strict_clause(%{query: %{simple: simple}}) do
+    %{must: %{simple_query_string: %{fields: simple, quote_field_suffix: ".exact"}}}
   end
 end

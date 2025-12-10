@@ -3578,7 +3578,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
           _, :post, "/implementations/_search", %{from: 0, size: 1000, query: query}, _ ->
             assert query == %{
                      bool: %{
-                       must: [%{term: %{"status" => "published"}}, %{term: %{"rule_id" => 123}}],
+                       filter: [%{term: %{"status" => "published"}}, %{term: %{"rule_id" => 123}}],
                        must_not: %{exists: %{field: "deleted_at"}}
                      }
                    }
@@ -3628,7 +3628,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
         _, :post, "/implementations/_search", %{from: 0, size: 1000, query: query}, _ ->
           assert query == %{
                    bool: %{
-                     must: [
+                     filter: [
                        %{exists: %{field: "deleted_at"}},
                        %{term: %{"rule_id" => 123}}
                      ]

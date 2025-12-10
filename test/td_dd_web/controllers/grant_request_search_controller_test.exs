@@ -40,22 +40,61 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
                        type: "bool_prefix",
                        fields: [
                          "user.full_name",
+                         "user.user_name",
                          "data_structure_version.ngram_name*^3",
-                         "data_structure_version.ngram_original_name*^1.5",
+                         "data_structure_version.ngram_original_name*^3",
                          "data_structure_version.ngram_path*",
                          "data_structure_version.system.name",
                          "data_structure_version.description",
                          "grant.data_structure_version.ngram_name*^3",
-                         "grant.data_structure_version.ngram_original_name*^1.5",
+                         "grant.data_structure_version.ngram_original_name*^3",
                          "grant.data_structure_version.ngram_path*",
                          "grant.data_structure_version.system.name",
                          "grant.data_structure_version.description"
                        ],
                        query: "foo",
-                       fuzziness: "AUTO",
                        lenient: true
                      }
-                   }
+                   },
+                   filter: %{match_all: %{}},
+                   should: [
+                     %{
+                       multi_match: %{
+                         type: "phrase_prefix",
+                         fields: [
+                           "user.full_name",
+                           "user.user_name",
+                           "data_structure_version.name^3",
+                           "data_structure_version.original_name^3",
+                           "data_structure_version.path_joined",
+                           "data_structure_version.system.name",
+                           "data_structure_version.description",
+                           "grant.data_structure_version.name^3",
+                           "grant.data_structure_version.original_name^3",
+                           "grant.data_structure_version.path_joined",
+                           "grant.data_structure_version.system.name",
+                           "grant.data_structure_version.description"
+                         ],
+                         query: "foo",
+                         boost: 4.0
+                       }
+                     },
+                     %{
+                       simple_query_string: %{
+                         fields: [
+                           "user.full_name",
+                           "user.user_name",
+                           "data_structure_version.name^3",
+                           "data_structure_version.original_name^3",
+                           "grant.data_structure_version.name^3",
+                           "grant.data_structure_version.original_name^3"
+                         ],
+                         query: "\"foo\"",
+                         quote_field_suffix: ".exact",
+                         boost: 4.0
+                       }
+                     }
+                   ]
                  }
                } == query
 
@@ -84,15 +123,23 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
                      simple_query_string: %{
                        fields: [
                          "user.full_name",
-                         "data_structure_version.name",
-                         "data_structure_version.original_name",
-                         "grant.data_structure_version.name",
-                         "grant.data_structure_version.original_name"
+                         "user.user_name",
+                         "data_structure_version.name^3",
+                         "data_structure_version.original_name^3",
+                         "data_structure_version.path_joined",
+                         "data_structure_version.system.name",
+                         "data_structure_version.description",
+                         "grant.data_structure_version.name^3",
+                         "grant.data_structure_version.original_name^3",
+                         "grant.data_structure_version.path_joined",
+                         "grant.data_structure_version.system.name",
+                         "grant.data_structure_version.description"
                        ],
                        query: "\"foo\"",
                        quote_field_suffix: ".exact"
                      }
-                   }
+                   },
+                   filter: %{match_all: %{}}
                  }
                } == query
 
@@ -156,7 +203,7 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
                              %{
                                query: %{
                                  bool: %{
-                                   must: %{
+                                   filter: %{
                                      range: %{"inserted_at" => %{"gte" => ^now}}
                                    }
                                  }
@@ -184,7 +231,7 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
                              _ ->
         assert %{
                  bool: %{
-                   must: %{term: %{"current_status" => "pending"}},
+                   filter: %{term: %{"current_status" => "pending"}},
                    must_not: %{term: %{"approved_by" => "rol1"}}
                  }
                } ==
@@ -220,7 +267,7 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
                              _ ->
         assert %{
                  bool: %{
-                   must: %{
+                   filter: %{
                      bool: %{
                        should: shoulds
                      }
@@ -250,7 +297,7 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
                              "/grant_requests/_search",
                              %{query: query, size: @query_size},
                              _ ->
-        assert %{bool: %{must: %{match_none: %{}}}} = query
+        assert %{bool: %{filter: %{match_none: %{}}}} = query
 
         SearchHelpers.hits_response([grant_request])
       end)
@@ -280,7 +327,7 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
                              _ ->
         assert %{
                  bool: %{
-                   must: %{
+                   filter: %{
                      bool: %{
                        should: shoulds
                      }

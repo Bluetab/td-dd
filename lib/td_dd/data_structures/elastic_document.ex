@@ -59,6 +59,7 @@ defmodule TdDd.DataStructures.ElasticDocument do
       # Instead, enrichment should be performed as efficiently as possible on
       # chunked data using `TdDd.DataStructures.enriched_structure_versions/1`.
       name_path = Enum.map(path, & &1["name"])
+      path_joined = Enum.join(name_path, " ")
       id_path = Enum.map(path, &Map.get(&1, "data_structure_id", 0))
       parent_id = List.last(Enum.map(path, &Integer.to_string(&1["data_structure_id"])), "")
 
@@ -86,6 +87,7 @@ defmodule TdDd.DataStructures.ElasticDocument do
       |> Map.put(:parent_id, parent_id)
       |> Map.put(:path, name_path)
       |> Map.put(:id_path, id_path)
+      |> Map.put(:path_joined, path_joined)
       |> Map.put(:source_alias, source_alias(dsv))
       |> Map.put(:system, system(data_structure))
       |> Map.put(:with_content, is_map(content) and map_size(content) > 0)
@@ -257,9 +259,9 @@ defmodule TdDd.DataStructures.ElasticDocument do
   defimpl ElasticDocumentProtocol, for: DataStructureVersion do
     use ElasticDocument
 
-    @boosted_fields ~w(ngram_name*^3 ngram_original_name*^1.5 ngram_path*)
-    @search_fields ~w(system.name description)
-    @simple_search_fields ~w(name original_name)
+    @search_as_you_type_fields ~w(ngram_name* ngram_original_name* ngram_path* system.name description)
+    @simple_search_fields ~w(name original_name path_joined system.name description)
+    @exact_search_fields ~w(name original_name)
 
     def mappings(_) do
       content_mappings = %{properties: get_dynamic_mappings("dd")}
@@ -303,6 +305,7 @@ defmodule TdDd.DataStructures.ElasticDocument do
           last_change_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
           path: %{type: "keyword", fields: @text},
           path_sort: %{type: "keyword", normalizer: "sortable"},
+          path_joined: %{type: "text"},
           parent_id: %{
             type: "long",
             null_value: 0
@@ -353,15 +356,20 @@ defmodule TdDd.DataStructures.ElasticDocument do
     end
 
     def query_data(_) do
-      native_fields = @boosted_fields ++ @search_fields
       content_schema = Templates.content_schema_for_scope("dd")
       dynamic_fields = dynamic_search_fields(content_schema, "note")
+      native = @search_as_you_type_fields
+      as_you_type = native ++ dynamic_fields
+      simple = @simple_search_fields ++ dynamic_fields
 
       %{
-        fields: native_fields ++ dynamic_fields,
-        aggs: merged_aggregations(content_schema),
-        simple_search_fields: @simple_search_fields ++ dynamic_fields,
-        native_fields: native_fields
+        query: %{
+          as_you_type: boost(as_you_type),
+          simple: boost(simple),
+          native: boost(native),
+          exact: boost(@exact_search_fields)
+        },
+        aggs: merged_aggregations(content_schema)
       }
     end
 
@@ -468,6 +476,16 @@ defmodule TdDd.DataStructures.ElasticDocument do
       else
         settings
       end
+    end
+
+    defp boost(fields) do
+      Enum.map(fields, fn
+        "ngram_name*" -> "ngram_name*" <> "^3"
+        "ngram_original_name*" -> "ngram_original_name*" <> "^3"
+        "name" -> "name" <> "^3"
+        "original_name" -> "original_name" <> "^3"
+        field -> field
+      end)
     end
   end
 end

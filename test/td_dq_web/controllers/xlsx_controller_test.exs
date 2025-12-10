@@ -110,7 +110,7 @@ defmodule TdDdWeb.XLSXControllerTest do
         _, :post, "/implementations/_search", %{size: 10_000, sort: sort, query: query}, _ ->
           assert query == %{
                    bool: %{
-                     must: %{match_all: %{}},
+                     filter: %{match_all: %{}},
                      must_not: %{exists: %{field: "deleted_at"}}
                    }
                  }
@@ -356,7 +356,7 @@ defmodule TdDdWeb.XLSXControllerTest do
         _, :post, "/implementations/_search", %{size: 10_000, sort: sort, query: query}, _ ->
           assert query == %{
                    bool: %{
-                     must: %{match_all: %{}},
+                     filter: %{match_all: %{}},
                      must_not: %{exists: %{field: "deleted_at"}}
                    }
                  }
@@ -844,6 +844,101 @@ defmodule TdDdWeb.XLSXControllerTest do
                  ""
                ]
              ]
+    end
+
+    @tag authentication: [role: "admin"]
+    test "downloads xlsx with date and datetime fields", %{
+      conn: conn
+    } do
+      content_for_date_fields = [
+        %{
+          "name" => "date_fields",
+          "fields" => [
+            %{
+              "name" => "test_date",
+              "type" => "date",
+              "label" => "Test Date"
+            },
+            %{
+              "name" => "test_datetime",
+              "type" => "datetime",
+              "label" => "Test Datetime"
+            }
+          ]
+        }
+      ]
+
+      %{id: domain_id} = CacheHelpers.insert_domain()
+
+      implementation =
+        insert(:implementation,
+          domain_id: domain_id,
+          implementation_key: "ok_1",
+          df_name: "TemplateImpl",
+          df_content: %{
+            "test_date" => %{"value" => "2025-12-31", "origin" => "user"},
+            "test_datetime" => %{"value" => "2025-12-31T22:55:00", "origin" => "user"}
+          }
+        )
+
+      CacheHelpers.insert_template(%{
+        name: "TemplateImpl",
+        scope: "ri",
+        content: content_for_date_fields
+      })
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/implementations/_search", _, _ ->
+        SearchHelpers.scroll_response([implementation])
+      end)
+      |> expect(:request, fn _, :post, "/_search/scroll", body, [] ->
+        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
+        SearchHelpers.scroll_response([])
+      end)
+
+      assert %{resp_body: body} = post(conn, Routes.xlsx_path(conn, :download, %{}))
+
+      assert {:ok, workbook} =
+               XlsxReader.open(body, source: :binary)
+
+      assert {:ok, [_ | content]} =
+               XlsxReader.sheet(
+                 workbook,
+                 implementation.df_name
+                 |> then(fn
+                   nil -> "Sheet"
+                   "" -> "Sheet"
+                   name -> name
+                 end)
+               )
+
+      assert [
+               [
+                 _implementation_key,
+                 _implementation_type,
+                 _domain_external_id,
+                 _domain,
+                 _executable,
+                 _rule,
+                 _rule_template,
+                 _implementation_template,
+                 _result_type,
+                 _goal,
+                 _minimum,
+                 _records,
+                 _errors,
+                 _result,
+                 _execution,
+                 _last_execution_at,
+                 _inserted_at,
+                 _updated_at,
+                 _business_concepts,
+                 _structure_domains,
+                 46_022.0,
+                 46_022.95486111111
+                 | _
+               ]
+             ] = content
     end
   end
 

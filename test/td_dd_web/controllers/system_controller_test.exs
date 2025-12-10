@@ -369,7 +369,7 @@ defmodule TdDdWeb.SystemControllerTest do
         _, :post, "/structures/_search", %{from: 0, size: 1000, query: query}, _ ->
           assert query == %{
                    bool: %{
-                     must: [
+                     filter: [
                        %{term: %{"system_id" => system_id}},
                        %{term: %{"confidential" => false}},
                        %{term: %{"domain_ids" => domain_id}}

@@ -29,7 +29,13 @@ defmodule TdDdWeb.MetadataControllerTest do
   setup :verify_on_exit!
 
   setup tags do
-    stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] -> {:ok, true} end)
+    stub(MockClusterHandler, :call, fn :ai,
+                                       TdAi.Indices,
+                                       :exists_enabled?,
+                                       [[index_type: "suggestions"]] ->
+      {:ok, true}
+    end)
+
     start_supervised!(TdDd.Search.StructureEnricher)
     insert(:system, name: "Power BI", external_id: "pbi")
 

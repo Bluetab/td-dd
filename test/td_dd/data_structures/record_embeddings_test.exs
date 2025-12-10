@@ -12,10 +12,14 @@ defmodule TdDd.DataStructures.RecordEmbeddingsTest do
   alias TdDd.DataStructures.RecordEmbeddings
 
   @moduletag sandbox: :shared
+  @index_type "suggestions"
 
   describe "upsert_from_structures_async/1" do
     test "inserts batches of structure ids with embeddings to upsert" do
-      stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] ->
+      stub(MockClusterHandler, :call, fn :ai,
+                                         TdAi.Indices,
+                                         :exists_enabled?,
+                                         [[index_type: @index_type]] ->
         {:ok, true}
       end)
 
@@ -43,7 +47,10 @@ defmodule TdDd.DataStructures.RecordEmbeddingsTest do
     end
 
     test "schedules the job for future execution if a time is specified" do
-      stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] ->
+      stub(MockClusterHandler, :call, fn :ai,
+                                         TdAi.Indices,
+                                         :exists_enabled?,
+                                         [[index_type: @index_type]] ->
         {:ok, true}
       end)
 
@@ -64,7 +71,10 @@ defmodule TdDd.DataStructures.RecordEmbeddingsTest do
     end
 
     test "returns noop when there are not indices enabled" do
-      stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] ->
+      stub(MockClusterHandler, :call, fn :ai,
+                                         TdAi.Indices,
+                                         :exists_enabled?,
+                                         [[index_type: @index_type]] ->
         {:ok, false}
       end)
 
@@ -88,13 +98,14 @@ defmodule TdDd.DataStructures.RecordEmbeddingsTest do
       alias_name = ""
       domain_external_id = ""
 
-      Indices.exists_enabled?(&Mox.expect/4, {:ok, true})
+      Indices.exists_enabled?(&Mox.expect/4, [index_type: @index_type], {:ok, true})
 
       Embeddings.list(
         &Mox.expect/4,
         Enum.map(versions, fn %{name: name, type: type, description: description} ->
           "#{name} #{alias_name} #{type} #{domain_external_id} #{description}"
         end),
+        @index_type,
         {:ok, %{"default" => vectors, "other" => vectors}}
       )
 
@@ -128,13 +139,14 @@ defmodule TdDd.DataStructures.RecordEmbeddingsTest do
       alias_name = ""
       domain_external_id = ""
 
-      Indices.exists_enabled?(&Mox.expect/4, {:ok, true})
+      Indices.exists_enabled?(&Mox.expect/4, [index_type: @index_type], {:ok, true})
 
       Embeddings.list(
         &Mox.expect/4,
         [
           "#{data_structure_version.name} #{alias_name} #{data_structure_version.type} #{domain_external_id} #{data_structure_version.description}"
         ],
+        @index_type,
         {:ok, %{"default" => [[-2.0, 2.0, 3.0]]}}
       )
 
@@ -153,12 +165,12 @@ defmodule TdDd.DataStructures.RecordEmbeddingsTest do
     end
 
     test "returns 0 upserted records if structures are not found" do
-      Indices.exists_enabled?(&Mox.expect/4, {:ok, true})
+      Indices.exists_enabled?(&Mox.expect/4, [index_type: @index_type], {:ok, true})
       assert {0, nil} = RecordEmbeddings.upsert_from_structures([1])
     end
 
     test "returns noop when there aren't any indices enabled" do
-      Indices.exists_enabled?(&Mox.expect/4, {:ok, false})
+      Indices.exists_enabled?(&Mox.expect/4, [index_type: @index_type], {:ok, false})
 
       assert :noop == RecordEmbeddings.upsert_from_structures([1])
     end
@@ -172,7 +184,7 @@ defmodule TdDd.DataStructures.RecordEmbeddingsTest do
         {:ok, [%{collection_name: "default"}, %{collection_name: "other"}]}
       )
 
-      Indices.exists_enabled?(&Mox.expect/4, {:ok, true})
+      Indices.exists_enabled?(&Mox.expect/4, [index_type: @index_type], {:ok, true})
 
       dsv_without_embedding = insert(:data_structure_version)
       deleted_dsv = insert(:data_structure_version, deleted_at: DateTime.utc_now())

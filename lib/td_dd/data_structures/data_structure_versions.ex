@@ -10,6 +10,8 @@ defmodule TdDd.DataStructures.DataStructureVersions do
   alias TdDd.DataStructures.Tags
   alias TdDq.Implementations
 
+  @index_type "suggestions"
+
   @controller_enrich_attrs [
     :data_fields,
     :data_field_degree,
@@ -280,7 +282,7 @@ defmodule TdDd.DataStructures.DataStructureVersions do
   defp transform_create_link(actions), do: actions
 
   defp add_suggest_concept(actions) do
-    case Indices.exists_enabled?() do
+    case Indices.exists_enabled?(index_type: @index_type) do
       {:ok, true} -> Map.put(actions, :suggest_concept_link, %{})
       _ -> actions
     end

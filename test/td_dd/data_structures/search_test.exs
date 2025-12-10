@@ -23,7 +23,7 @@ defmodule TdDd.DataStructures.SearchTest do
           ElasticsearchMock
           |> expect(:request, fn
             _, :post, "/structures/_search", %{size: 0, query: query, aggs: _}, _ ->
-              assert %{bool: %{must: %{match_all: %{}}}} = query
+              assert %{bool: %{filter: %{match_all: %{}}}} = query
               SearchHelpers.aggs_response(@aggregations)
           end)
 
@@ -39,7 +39,7 @@ defmodule TdDd.DataStructures.SearchTest do
         ElasticsearchMock
         |> expect(:request, fn
           _, :post, "/structures/_search", %{size: 0, query: query, aggs: _}, _ ->
-            assert %{bool: %{must: %{match_none: %{}}}} = query
+            assert %{bool: %{filter: %{match_none: %{}}}} = query
             SearchHelpers.aggs_response()
         end)
 
@@ -58,7 +58,7 @@ defmodule TdDd.DataStructures.SearchTest do
           _, :post, "/structures/_search", %{size: 0, query: query, aggs: _}, _ ->
             assert %{
                      bool: %{
-                       must: [
+                       filter: [
                          %{term: %{"confidential" => false}},
                          %{term: %{"domain_ids" => _}}
                        ]
@@ -395,8 +395,11 @@ defmodule TdDd.DataStructures.SearchTest do
     test "handles query parameter", %{claims: claims} do
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/structures/_search", request, _ ->
-        assert %{query: %{bool: %{must: must}}} = request
-        assert Enum.any?(must, &match?(%{multi_match: _}, &1))
+        assert %{query: %{bool: %{must: %{multi_match: _}}}} = request
+
+        assert %{query: %{bool: %{should: [%{multi_match: _}, %{simple_query_string: _}]}}} =
+                 request
+
         SearchHelpers.hits_response([])
       end)
 
@@ -410,8 +413,19 @@ defmodule TdDd.DataStructures.SearchTest do
     test "ignores empty query strings", %{claims: claims} do
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/structures/_search", request, _ ->
-        assert %{query: %{bool: %{must: must}}} = request
-        refute Enum.any?(must, &match?(%{multi_match: _}, &1))
+        assert request == %{
+                 size: 1000,
+                 sort: ["_score", "name.raw"],
+                 from: 0,
+                 query: %{
+                   bool: %{
+                     filter: %{match_all: %{}},
+                     must_not: %{exists: %{field: "deleted_at"}}
+                   }
+                 },
+                 _source: %{excludes: ["embeddings"]}
+               }
+
         SearchHelpers.hits_response([])
       end)
 
@@ -470,8 +484,8 @@ defmodule TdDd.DataStructures.SearchTest do
     test "searches with filters", %{claims: claims} do
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/structures/_search", request, _ ->
-        assert %{query: %{bool: %{must: must}}} = request
-        assert is_map(must) or is_list(must)
+        assert %{query: %{bool: %{filter: filter}}} = request
+        assert is_map(filter) or is_list(filter)
         SearchHelpers.hits_response([])
       end)
 
@@ -485,7 +499,7 @@ defmodule TdDd.DataStructures.SearchTest do
     test "searches without permissions returns empty", %{claims: claims} do
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/structures/_search", request, _ ->
-        assert %{query: %{bool: %{must: %{match_none: %{}}}}} = request
+        assert %{query: %{bool: %{filter: %{match_none: %{}}}}} = request
         SearchHelpers.hits_response([])
       end)
 

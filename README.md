@@ -95,7 +95,7 @@ In the long term, we should aim to filter only by keyword fields in our connecto
 `APPLY_LANG_SETTINGS_STRUCTURES` to false will disable the language-specific stemming functionality provided by Elasticsearch,
 which may impact search accuracy
 
-- APPLY_LANG_SETTINGS_STRUCTURES: default true
+- APPLY_LANG_SETTINGS_STRUCTURES: default false
 
 #### (Optional) ApiKey authentication
 

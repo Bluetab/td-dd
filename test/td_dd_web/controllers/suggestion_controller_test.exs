@@ -6,6 +6,8 @@ defmodule TdDdWeb.SuggestionControllerTest do
   alias TdCluster.TestHelpers.TdAiMock
   alias TdCluster.TestHelpers.TdBgMock
 
+  @index_type "suggestions"
+
   describe "search" do
     @tag authentication: [
            role: "user",
@@ -31,7 +33,7 @@ defmodule TdDdWeb.SuggestionControllerTest do
         ]
       }
 
-      TdAiMock.Indices.exists_enabled?(&Mox.expect/4, {:ok, true})
+      TdAiMock.Indices.exists_enabled?(&Mox.expect/4, [index_type: @index_type], {:ok, true})
 
       TdBgMock.generate_vector(
         &Mox.expect/4,
@@ -39,6 +41,7 @@ defmodule TdDdWeb.SuggestionControllerTest do
           id: 1,
           version: 1
         },
+        @index_type,
         nil,
         {:ok, {"default_collection_name", [54.0, 10.2, -2.0]}}
       )

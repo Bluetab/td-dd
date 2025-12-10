@@ -25,7 +25,10 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
 
     CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
 
-    stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] ->
+    stub(MockClusterHandler, :call, fn :ai,
+                                       TdAi.Indices,
+                                       :exists_enabled?,
+                                       [[index_type: "suggestions"]] ->
       {:ok, true}
     end)
 

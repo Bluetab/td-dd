@@ -1,5 +1,38 @@
 # Changelog
 
+## [7.14.0] 2025-12-10
+
+### Added
+
+- [TD-7653] Add Implementation Structure Link permission management
+
+### Added
+
+- [TD-7711]:
+  - Phrase prefix search to highlight stricter text matches
+  - New string format for data structure path
+
+### Changed
+
+- [TD-7302] Update td-core lib
+- [TD-7754] When deleting structure groups, delete on elasticsearch instead of reindexing
+
+### Fixed
+
+- [TD-7619] Fix date and datetime format and validation
+
+## [7.13.1] 2025-12-03
+
+### Fixed
+
+- [TD-7746] Download improved processing for templates
+
+## [7.13.0] 2025-11-18
+
+### Added
+
+- [TD-7627] Update and refactor test
+
 ## [7.13.1] 2025-12-03
 
 ### Fixed
@@ -25,10 +58,15 @@
 
 # [7.12.0] 2025-10-29
 
+### Added
+
+- [TD-7539] Allow to download notes from the structure details
+
 ### Changed
 
 - [TD-7539] Allow to download notes from ElasticSearch for structure details
 - [TD-7396] Adjusts implementation actions permissions for users with permissions in different domains
+
 - [TD-7340] Support for `dynamic_table` template fields
 
 ## [7.11.2] 2025-10-27
@@ -57,7 +95,6 @@
 
 - [TD-7401] Update `td-core` version
 - [TD-7075] Support for Implementation XLSX download and upload
-- [TD-7487] Allow to reprocess grant requests that failed to be processed
 
 ### Changed
 

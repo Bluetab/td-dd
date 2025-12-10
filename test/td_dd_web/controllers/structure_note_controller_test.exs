@@ -37,7 +37,10 @@ defmodule TdDdWeb.StructureNoteControllerTest do
     %{id: template_id, name: template_name} = CacheHelpers.insert_template(name: @template_name)
     CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
 
-    stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] ->
+    stub(MockClusterHandler, :call, fn :ai,
+                                       TdAi.Indices,
+                                       :exists_enabled?,
+                                       [[index_type: "suggestions"]] ->
       {:ok, true}
     end)
 

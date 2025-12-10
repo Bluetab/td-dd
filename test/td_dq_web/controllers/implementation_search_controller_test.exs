@@ -42,7 +42,7 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
     } do
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/implementations/_search", %{query: query}, _ ->
-        assert %{bool: %{must: %{match_all: %{}}}} == query
+        assert %{bool: %{filter: %{match_all: %{}}}} == query
 
         SearchHelpers.hits_response([implementation])
       end)
@@ -135,7 +135,7 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
       |> expect(:request, fn _, :post, "/implementations/_search", %{query: query}, _ ->
         assert %{
                  bool: %{
-                   must: [
+                   filter: [
                      %{term: %{"_confidential" => false}},
                      %{term: %{"domain_ids" => _}}
                    ],
@@ -177,7 +177,7 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
       |> expect(:request, fn _, :post, "/implementations/_search", %{query: query}, _ ->
         assert %{
                  bool: %{
-                   must: [
+                   filter: [
                      %{term: %{"_confidential" => false}},
                      %{term: %{"domain_ids" => _}}
                    ],

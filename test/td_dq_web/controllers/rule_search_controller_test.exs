@@ -19,7 +19,7 @@ defmodule TdDqWeb.RuleSearchControllerTest do
       ElasticsearchMock
       |> expect(:request, fn
         _, :post, "/rules/_search", %{query: query, size: 20}, _ ->
-          assert query == %{bool: %{must: %{match_all: %{}}}}
+          assert query == %{bool: %{filter: %{match_all: %{}}}}
           SearchHelpers.hits_response([rule])
       end)
 
@@ -52,7 +52,7 @@ defmodule TdDqWeb.RuleSearchControllerTest do
       ElasticsearchMock
       |> expect(:request, fn
         _, :post, "/rules/_search", %{query: query, size: 20}, _ ->
-          assert query == %{bool: %{must: %{match_all: %{}}}}
+          assert query == %{bool: %{filter: %{match_all: %{}}}}
           SearchHelpers.hits_response([rule])
       end)
 
@@ -76,7 +76,7 @@ defmodule TdDqWeb.RuleSearchControllerTest do
       ElasticsearchMock
       |> expect(:request, fn
         _, :post, "/rules/_search", %{query: query, size: 20}, _ ->
-          assert query == %{bool: %{must: %{match_all: %{}}}}
+          assert query == %{bool: %{filter: %{match_all: %{}}}}
           SearchHelpers.hits_response([rule])
       end)
 
@@ -91,7 +91,7 @@ defmodule TdDqWeb.RuleSearchControllerTest do
       ElasticsearchMock
       |> expect(:request, fn
         _, :post, "/rules/_search", %{query: query, size: 20}, _ ->
-          assert query == %{bool: %{must: %{match_none: %{}}}}
+          assert query == %{bool: %{filter: %{match_none: %{}}}}
           SearchHelpers.hits_response([])
       end)
 
@@ -106,7 +106,7 @@ defmodule TdDqWeb.RuleSearchControllerTest do
       ElasticsearchMock
       |> expect(:request, fn
         _, :post, "/rules/_search", %{query: query, size: 20}, _ ->
-          assert query == %{bool: %{must: %{match_none: %{}}}}
+          assert query == %{bool: %{filter: %{match_none: %{}}}}
           SearchHelpers.hits_response([])
       end)
 
@@ -121,7 +121,7 @@ defmodule TdDqWeb.RuleSearchControllerTest do
       ElasticsearchMock
       |> expect(:request, fn
         _, :post, "/rules/_search", %{query: query, size: 20}, _ ->
-          assert %{bool: %{must: [_not_confidential, %{term: %{"domain_ids" => _}}]}} = query
+          assert %{bool: %{filter: [_not_confidential, %{term: %{"domain_ids" => _}}]}} = query
 
           SearchHelpers.hits_response([rule])
       end)
@@ -139,7 +139,7 @@ defmodule TdDqWeb.RuleSearchControllerTest do
         _, :post, "/rules/_search", %{query: query, size: 20}, _ ->
           assert %{
                    bool: %{
-                     must: [_not_confidential, %{term: %{"domain_ids" => _}}]
+                     filter: [_not_confidential, %{term: %{"domain_ids" => _}}]
                    }
                  } = query
 

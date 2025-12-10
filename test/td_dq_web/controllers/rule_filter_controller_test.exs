@@ -13,7 +13,7 @@ defmodule TdDqWeb.RuleFilterControllerTest do
       ElasticsearchMock
       |> expect(:request, fn
         _, :post, "/rules/_search", %{query: query, size: 0}, _ ->
-          assert query == %{bool: %{must: %{term: %{"domain_id" => "1"}}}}
+          assert query == %{bool: %{filter: %{term: %{"domain_id" => "1"}}}}
           SearchHelpers.aggs_response(@aggs)
       end)
 
@@ -34,7 +34,7 @@ defmodule TdDqWeb.RuleFilterControllerTest do
         _, :post, "/rules/_search", %{query: query, size: 0}, _ ->
           assert %{
                    bool: %{
-                     must: [
+                     filter: [
                        %{term: %{"_confidential" => false}},
                        %{term: %{"domain_ids" => _}}
                      ]
@@ -68,7 +68,7 @@ defmodule TdDqWeb.RuleFilterControllerTest do
         _, :post, "/rules/_search", %{query: query, size: 0}, _ ->
           assert %{
                    bool: %{
-                     must: [
+                     filter: [
                        %{
                          bool: %{
                            should: [
@@ -96,7 +96,7 @@ defmodule TdDqWeb.RuleFilterControllerTest do
       ElasticsearchMock
       |> expect(:request, fn
         _, :post, "/rules/_search", %{query: query, size: 0}, _ ->
-          assert query == %{bool: %{must: %{match_none: %{}}}}
+          assert query == %{bool: %{filter: %{match_none: %{}}}}
           SearchHelpers.aggs_response()
       end)
 

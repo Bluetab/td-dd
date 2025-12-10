@@ -340,7 +340,7 @@ config :td_core, TdCore.Search.Cluster,
       bulk_wait_interval:
         System.get_env("BULK_WAIT_INTERVAL_STRUCTURES", "0") |> String.to_integer(),
       apply_lang_settings:
-        System.get_env("APPLY_LANG_SETTINGS_STRUCTURES", "true") |> String.downcase() == "true"
+        System.get_env("APPLY_LANG_SETTINGS_STRUCTURES", "false") |> String.downcase() == "true"
     ],
     grant_requests: [
       bulk_page_size:

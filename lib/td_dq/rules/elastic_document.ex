@@ -78,9 +78,9 @@ defmodule TdDq.Rules.ElasticDocument do
   defimpl ElasticDocumentProtocol, for: Rule do
     use ElasticDocument
 
-    @boosted_fields ~w(ngram_name^3)
-    @search_fields ~w(description)
-    @simple_search_fields ~w(name)
+    @as_you_type_fields ~w(ngram_name^3 current_business_concept_version.name description)
+    @exact_fields ~w(name^3 current_business_concept_version.name description)
+    @simple_search_fields ~w(name^3 current_business_concept_version.name description)
 
     def mappings(_) do
       content_mappings = %{properties: get_dynamic_mappings("dq")}
@@ -142,13 +142,13 @@ defmodule TdDq.Rules.ElasticDocument do
     end
 
     def query_data(_) do
-      native_fields = @boosted_fields ++ @search_fields
       content_schema = Templates.content_schema_for_scope("dq")
       dynamic_fields = dynamic_search_fields(content_schema)
+      simple = @simple_search_fields ++ dynamic_fields
+      as_you_type = @as_you_type_fields ++ dynamic_fields
 
       %{
-        fields: native_fields ++ dynamic_fields,
-        simple_search_fields: @simple_search_fields ++ @search_fields ++ dynamic_fields,
+        query: %{simple: simple, as_you_type: as_you_type, exact: @exact_fields},
         aggs: merged_aggregations(content_schema, "bg")
       }
     end

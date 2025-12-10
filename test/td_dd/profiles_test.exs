@@ -11,7 +11,10 @@ defmodule TdDd.DataStructures.ProfilesTest do
   setup :set_mox_from_context
 
   setup do
-    stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] ->
+    stub(MockClusterHandler, :call, fn :ai,
+                                       TdAi.Indices,
+                                       :exists_enabled?,
+                                       [[index_type: "suggestions"]] ->
       {:ok, true}
     end)
 

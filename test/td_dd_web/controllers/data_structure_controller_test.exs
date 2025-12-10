@@ -32,7 +32,12 @@ defmodule TdDdWeb.DataStructureControllerTest do
   setup :verify_on_exit!
 
   setup context do
-    stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] -> {:ok, true} end)
+    stub(MockClusterHandler, :call, fn :ai,
+                                       TdAi.Indices,
+                                       :exists_enabled?,
+                                       [[index_type: "suggestions"]] ->
+      {:ok, true}
+    end)
 
     # CacheHelpers.insert_template(name: @template_name)
     %{id: template_id, name: template_name} =
@@ -160,7 +165,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
         assert query == %{
                  bool: %{
-                   must: %{match_all: %{}},
+                   filter: %{match_all: %{}},
                    must_not: %{exists: %{field: "deleted_at"}}
                  }
                }
@@ -182,7 +187,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
         assert query == %{
                  bool: %{
-                   must: %{match_all: %{}},
+                   filter: %{match_all: %{}},
                    must_not: %{exists: %{field: "deleted_at"}}
                  }
                }
@@ -208,13 +213,12 @@ defmodule TdDdWeb.DataStructureControllerTest do
                      multi_match: %{
                        fields: [
                          "ngram_name*^3",
-                         "ngram_original_name*^1.5",
+                         "ngram_original_name*^3",
                          "ngram_path*",
                          "system.name",
                          "description",
                          "note.string"
                        ],
-                       fuzziness: "AUTO",
                        lenient: true,
                        query: "foo",
                        type: "bool_prefix"
@@ -253,8 +257,11 @@ defmodule TdDdWeb.DataStructureControllerTest do
                    must: %{
                      simple_query_string: %{
                        fields: [
-                         "name",
-                         "original_name",
+                         "name^3",
+                         "original_name^3",
+                         "path_joined",
+                         "system.name",
+                         "description",
                          "note.string_two",
                          "note.string"
                        ],
@@ -283,7 +290,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
         assert %{
                  bool: %{
-                   must: [
+                   filter: [
                      %{term: %{"parent_id" => ""}},
                      %{term: %{"metadata.region" => "eu-west-1"}}
                    ],
@@ -314,7 +321,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
         assert %{
                  bool: %{
-                   must: %{term: %{"parent_id" => ""}},
+                   filter: %{term: %{"parent_id" => ""}},
                    must_not: [
                      %{exists: %{field: "deleted_at"}},
                      %{exists: %{field: "metadata.region"}}
@@ -340,7 +347,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "search with query includes multi_match clause with must params", %{conn: conn} do
+    test "search with query includes multi_match clauses with must params", %{conn: conn} do
       %{data_structure_id: id} = dsv = insert(:data_structure_version)
 
       ElasticsearchMock
@@ -351,21 +358,47 @@ defmodule TdDdWeb.DataStructureControllerTest do
                      multi_match: %{
                        fields: [
                          "ngram_name*^3",
-                         "ngram_original_name*^1.5",
+                         "ngram_original_name*^3",
                          "ngram_path*",
                          "system.name",
                          "description",
                          "note.string"
                        ],
-                       fuzziness: "AUTO",
                        lenient: true,
                        query: "foo",
                        type: "bool_prefix"
                      }
                    },
-                   must_not: %{exists: %{field: "deleted_at"}}
+                   should: [
+                     %{
+                       multi_match: %{
+                         type: "phrase_prefix",
+                         fields: [
+                           "name^3",
+                           "original_name^3",
+                           "path_joined",
+                           "system.name",
+                           "description",
+                           "note.string"
+                         ],
+                         query: "foo",
+                         boost: 4.0,
+                         lenient: true
+                       }
+                     },
+                     %{
+                       simple_query_string: %{
+                         fields: ["name^3", "original_name^3"],
+                         query: "\"foo\"",
+                         quote_field_suffix: ".exact",
+                         boost: 4.0
+                       }
+                     }
+                   ],
+                   must_not: %{exists: %{field: "deleted_at"}},
+                   filter: %{match_all: %{}}
                  }
-               } = query
+               } == query
 
         SearchHelpers.hits_response([dsv])
       end)
@@ -670,6 +703,46 @@ defmodule TdDdWeb.DataStructureControllerTest do
                |> json_response(:ok)
 
       assert Map.has_key?(data, "last_change_at")
+    end
+
+    @tag authentication: [role: "user"]
+    test "search with link_structures flag uses link_data_structure permission", %{
+      conn: conn,
+      claims: claims
+    } do
+      %{id: domain_id_1} = CacheHelpers.insert_domain()
+      %{id: domain_id_2} = CacheHelpers.insert_domain()
+
+      %{data_structure_id: id_1} =
+        dsv_1 = insert(:data_structure_version, domain_ids: [domain_id_1])
+
+      _dsv_2 = insert(:data_structure_version, domain_ids: [domain_id_2])
+
+      CacheHelpers.put_session_permissions(claims, %{
+        link_data_structure: [domain_id_1],
+        view_data_structure: [domain_id_1, domain_id_2]
+      })
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
+        assert %{bool: %{filter: filters}} = query
+
+        assert Enum.any?(filters, fn
+                 %{term: %{"domain_ids" => ^domain_id_1}} -> true
+                 _ -> false
+               end)
+
+        SearchHelpers.hits_response([dsv_1])
+      end)
+
+      params = %{
+        "link_structures" => true
+      }
+
+      assert %{"data" => [%{"id" => ^id_1}]} =
+               conn
+               |> post(data_structure_path(conn, :search), params)
+               |> json_response(:ok)
     end
   end
 
@@ -1094,7 +1167,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
           assert query == %{
                    bool: %{
-                     must: %{term: %{"type.raw" => "Field"}},
+                     filter: %{term: %{"type.raw" => "Field"}},
                      must_not: %{exists: %{field: "deleted_at"}}
                    }
                  }
@@ -1133,7 +1206,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
         assert query == %{
                  bool: %{
-                   must: %{terms: %{"id" => [id1, id2]}},
+                   filter: %{terms: %{"id" => [id1, id2]}},
                    must_not: %{exists: %{field: "deleted_at"}}
                  }
                }
@@ -1178,7 +1251,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
         assert query == %{
                  bool: %{
-                   must: %{term: %{"note_id" => 123}},
+                   filter: %{term: %{"note_id" => 123}},
                    must_not: %{exists: %{field: "deleted_at"}}
                  }
                }

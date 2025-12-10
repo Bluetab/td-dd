@@ -12,7 +12,7 @@ defmodule Truedat.Search.QueryTest do
 
   describe "build_query/1" do
     test "returns a boolean query with a match_all filter by default" do
-      assert Query.build_query(@match_all, %{}, aggs: @aggs) == %{bool: %{must: @match_all}}
+      assert Query.build_query(@match_all, %{}, aggs: @aggs) == %{bool: %{filter: @match_all}}
     end
 
     test "returns a boolean query with user-defined filters" do
@@ -20,7 +20,7 @@ defmodule Truedat.Search.QueryTest do
 
       assert Query.build_query(@match_all, params, aggs: @aggs) == %{
                bool: %{
-                 must: %{term: %{"type.raw" => "foo"}}
+                 filter: %{term: %{"type.raw" => "foo"}}
                }
              }
 
@@ -28,7 +28,7 @@ defmodule Truedat.Search.QueryTest do
 
       assert Query.build_query(@match_all, params, aggs: @aggs) == %{
                bool: %{
-                 must: [
+                 filter: [
                    %{term: %{"type.raw" => "foo"}},
                    %{terms: %{"status.raw" => ["bar", "baz"]}}
                  ]
@@ -41,7 +41,8 @@ defmodule Truedat.Search.QueryTest do
 
       assert Query.build_query(@match_all, params, aggs: @aggs) == %{
                bool: %{
-                 must: %{simple_query_string: %{query: "foo*"}}
+                 must: %{simple_query_string: %{query: "\"foo\""}},
+                 filter: %{match_all: %{}}
                }
              }
     end
@@ -54,7 +55,8 @@ defmodule Truedat.Search.QueryTest do
 
       assert Query.build_query(@match_all, params, aggs: @aggs) == %{
                bool: %{
-                 must: [%{simple_query_string: %{query: "foo*"}}, %{term: %{"type.raw" => "foo"}}]
+                 must: %{simple_query_string: %{query: "\"foo\""}},
+                 filter: %{term: %{"type.raw" => "foo"}}
                }
              }
     end
@@ -67,7 +69,7 @@ defmodule Truedat.Search.QueryTest do
 
       assert Query.build_query(@match_none, params) == %{
                bool: %{
-                 must: [%{exists: %{field: "bar"}}, %{exists: %{field: "foo"}}, @match_none],
+                 filter: [%{exists: %{field: "bar"}}, %{exists: %{field: "foo"}}, @match_none],
                  must_not: %{exists: %{field: "baz"}}
                }
              }
@@ -96,7 +98,6 @@ defmodule Truedat.Search.QueryTest do
 
       assert Query.build_query(filters, params) == %{
                bool: %{
-                 must: %{},
                  must_not: %{term: %{"foo" => "bar"}}
                }
              }

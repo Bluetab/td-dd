@@ -20,19 +20,51 @@ defmodule TdDdWeb.GrantSearchControllerTest do
                                              _ ->
         assert query == %{
                  bool: %{
+                   filter: %{match_all: %{}},
+                   should: [
+                     %{
+                       multi_match: %{
+                         type: "phrase_prefix",
+                         fields: [
+                           "user.full_name",
+                           "user.user_name",
+                           "data_structure_version.name^3",
+                           "data_structure_version.original_name^3",
+                           "data_structure_version.path_joined",
+                           "data_structure_version.system.name",
+                           "data_structure_version.description"
+                         ],
+                         query: "foo",
+                         boost: 4.0
+                       }
+                     },
+                     %{
+                       simple_query_string: %{
+                         fields: [
+                           "user.full_name",
+                           "user.user_name",
+                           "data_structure_version.name^3",
+                           "data_structure_version.original_name^3"
+                         ],
+                         query: "\"foo\"",
+                         quote_field_suffix: ".exact",
+                         boost: 4.0
+                       }
+                     }
+                   ],
                    must: %{
                      multi_match: %{
                        type: "bool_prefix",
                        fields: [
                          "user.full_name",
+                         "user.user_name",
                          "data_structure_version.ngram_name*^3",
-                         "data_structure_version.ngram_original_name*^1.5",
+                         "data_structure_version.ngram_original_name*^3",
                          "data_structure_version.ngram_path*",
                          "data_structure_version.system.name",
                          "data_structure_version.description"
                        ],
                        query: "foo",
-                       fuzziness: "AUTO",
                        lenient: true
                      }
                    },
@@ -70,8 +102,8 @@ defmodule TdDdWeb.GrantSearchControllerTest do
                } = query
 
         assert "user.full_name" in fields
-        assert "data_structure_version.name" in fields
-        assert "data_structure_version.original_name" in fields
+        assert "data_structure_version.name^3" in fields
+        assert "data_structure_version.original_name^3" in fields
 
         SearchHelpers.hits_response([grant])
       end)
@@ -91,7 +123,7 @@ defmodule TdDdWeb.GrantSearchControllerTest do
       |> expect(:request, fn _, :post, "/grants/_search", %{query: query, size: 20}, _ ->
         assert %{
                  bool: %{
-                   must: %{
+                   filter: %{
                      bool: %{
                        should: [
                          %{term: %{"data_structure_version.domain_ids" => _}},
@@ -118,7 +150,7 @@ defmodule TdDdWeb.GrantSearchControllerTest do
       |> expect(:request, fn _, :post, "/grants/_search", %{query: query, size: 20}, _ ->
         assert %{
                  bool: %{
-                   must: %{term: %{"user_id" => _}},
+                   filter: %{term: %{"user_id" => _}},
                    must_not: _deleted_at
                  }
                } = query
@@ -144,7 +176,7 @@ defmodule TdDdWeb.GrantSearchControllerTest do
       |> expect(:request, fn _, :post, "/grants/_search", %{query: query, size: 20}, _ ->
         assert query == %{
                  bool: %{
-                   must: %{term: %{"user_id" => user_id}},
+                   filter: %{term: %{"user_id" => user_id}},
                    must_not: %{exists: %{field: "deleted_at"}}
                  }
                }
@@ -167,7 +199,7 @@ defmodule TdDdWeb.GrantSearchControllerTest do
       ElasticsearchMock
       |> expect(:request, fn
         _, :post, "/grants/_search", %{query: query, size: 5}, [params: %{"scroll" => "1m"}] ->
-          assert query == %{bool: %{must: %{match_all: %{}}}}
+          assert query == %{bool: %{filter: %{match_all: %{}}}}
           SearchHelpers.scroll_response(Enum.take(grants, 5))
       end)
       |> expect(:request, fn

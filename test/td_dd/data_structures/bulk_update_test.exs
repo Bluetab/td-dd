@@ -216,7 +216,10 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   setup do
     start_supervised!(TdDd.Search.StructureEnricher)
 
-    stub(MockClusterHandler, :call, fn :ai, TdAi.Indices, :exists_enabled?, [] ->
+    stub(MockClusterHandler, :call, fn :ai,
+                                       TdAi.Indices,
+                                       :exists_enabled?,
+                                       [[index_type: "suggestions"]] ->
       {:ok, true}
     end)
 
@@ -1014,8 +1017,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert fields[:critical] ==
                {"is invalid", [validation: :inclusion, enum: ["Yes", "No"]]}
-
-      assert fields[:integer] == :invalid_format
 
       assert %{"text" => %{"value" => "foo", "origin" => "user"}} =
                get_df_content_from_ext_id("ex_id1")

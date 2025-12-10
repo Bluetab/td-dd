@@ -464,7 +464,7 @@ defmodule TdDdWeb.DataStructures.XLSXControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, opts ->
-        assert query[:bool][:must] == %{term: %{"data_structure_id" => "#{structure.id}"}}
+        assert query[:bool][:filter] == %{term: %{"data_structure_id" => "#{structure.id}"}}
         assert opts == [params: %{"scroll" => "1m"}]
         SearchHelpers.scroll_response([dsv])
       end)
@@ -586,13 +586,18 @@ defmodule TdDdWeb.DataStructures.XLSXControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, opts ->
-        assert query[:bool][:must] == %{
-                 multi_match: %{
-                   type: "bool_prefix",
-                   fields: ["data_structure_id", "parent_id"],
-                   lenient: true,
-                   operator: "OR",
-                   query: "#{parent_structure.id}"
+        assert query == %{
+                 bool: %{
+                   filter: %{
+                     bool: %{
+                       should: [
+                         %{term: %{"data_structure_id" => "#{parent_structure.id}"}},
+                         %{term: %{"parent_id" => "#{parent_structure.id}"}}
+                       ],
+                       minimum_should_match: 1
+                     }
+                   },
+                   must_not: %{exists: %{field: "deleted_at"}}
                  }
                }
 
@@ -722,7 +727,7 @@ defmodule TdDdWeb.DataStructures.XLSXControllerTest do
 
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, opts ->
-        assert query[:bool][:must] == %{term: %{"data_structure_id" => "#{structure.id}"}}
+        assert query[:bool][:filter] == %{term: %{"data_structure_id" => "#{structure.id}"}}
         assert opts == [params: %{"scroll" => "1m"}]
         SearchHelpers.scroll_response([dsv])
       end)
@@ -769,6 +774,115 @@ defmodule TdDdWeb.DataStructures.XLSXControllerTest do
                  dsv.data_structure.system.name,
                  "",
                  "foo"
+               ]
+             ]
+    end
+
+    @tag authentication: [role: "admin"]
+    test "downloads xlsx with date and datetime fields", %{
+      conn: conn
+    } do
+      df_content = %{
+        "test_date" => %{"value" => "2025-12-31", "origin" => "user"},
+        "test_datetime" => %{"value" => "2025-12-31 22:55:00", "origin" => "user"}
+      }
+
+      domain = CacheHelpers.insert_domain()
+
+      structure =
+        insert(:data_structure,
+          domain_ids: [domain.id],
+          published_note:
+            build(:structure_note,
+              df_content: df_content,
+              status: :published,
+              data_structure: nil
+            )
+        )
+
+      dsv =
+        insert(:data_structure_version,
+          data_structure: structure
+        )
+
+      %{id: id} =
+        CacheHelpers.insert_template(%{
+          name: dsv.type,
+          scope: "dd",
+          content: [
+            %{
+              "name" => "date_fields",
+              "fields" => [
+                %{
+                  "name" => "test_date",
+                  "type" => "date",
+                  "label" => "Test Date"
+                },
+                %{
+                  "name" => "test_datetime",
+                  "type" => "datetime",
+                  "label" => "Test Datetime"
+                }
+              ]
+            }
+          ]
+        })
+
+      insert(:data_structure_type, name: dsv.type, template_id: id)
+
+      assert :ok = StructureEnricher.refresh()
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, opts ->
+        assert query[:bool][:filter] == %{term: %{"data_structure_id" => "#{structure.id}"}}
+        assert opts == [params: %{"scroll" => "1m"}]
+        SearchHelpers.scroll_response([dsv])
+      end)
+      |> expect(:request, fn _, :post, "/_search/scroll", body, [] ->
+        assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
+        SearchHelpers.scroll_response([])
+      end)
+
+      assert %{resp_body: body} =
+               post(
+                 conn,
+                 Routes.xlsx_path(conn, :download, %{
+                   data_structure_id: structure.id,
+                   download_type: "editable",
+                   note_type: "published"
+                 })
+               )
+
+      assert {:ok, workbook} = XlsxReader.open(body, source: :binary)
+      assert {:ok, [headers | content]} = XlsxReader.sheet(workbook, dsv.type)
+
+      assert headers == [
+               "external_id",
+               "name",
+               "tech_name",
+               "alias_name",
+               "link_to_structure",
+               "domain",
+               "type",
+               "system",
+               "path",
+               "test_date",
+               "test_datetime"
+             ]
+
+      assert content == [
+               [
+                 structure.external_id,
+                 dsv.name,
+                 dsv.name,
+                 "",
+                 "",
+                 domain.name,
+                 dsv.type,
+                 dsv.data_structure.system.name,
+                 "",
+                 46_022.0,
+                 46_022.954861111111
                ]
              ]
     end

@@ -22,7 +22,8 @@ defmodule Truedat.Search.FiltersTest do
       assert filters
              |> Enum.sort()
              |> Filters.build_filters(aggs, %{must: %{wtf: %{}}}) == %{
-               must: [
+               must: %{wtf: %{}},
+               filter: [
                  %{term: %{"foo_field" => "foo"}},
                  %{term: %{"baz" => "baz"}},
                  %{
@@ -30,8 +31,7 @@ defmodule Truedat.Search.FiltersTest do
                      path: "content.bar",
                      query: %{terms: %{"content.bar.xyzzy" => ["bar1", "bar2"]}}
                    }
-                 },
-                 %{wtf: %{}}
+                 }
                ]
              }
     end
@@ -67,7 +67,7 @@ defmodule Truedat.Search.FiltersTest do
     test "handles updated_at, start_date and end_date as ranges" do
       for field <- ["updated_at", "start_date", "end_date"] do
         assert Filters.build_filters(%{field => %{"gte" => "now-1d/d"}}, %{}, %{}) ==
-                 %{must: %{range: %{field => %{"gte" => "now-1d/d"}}}}
+                 %{filter: %{range: %{field => %{"gte" => "now-1d/d"}}}}
       end
     end
   end
