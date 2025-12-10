@@ -33,6 +33,18 @@
 
 - [TD-7627] Update and refactor test
 
+## [7.13.1] 2025-12-03
+
+### Fixed
+
+- [TD-7746] Download improved processing for templates
+
+## [7.13.0] 2025-11-18
+
+### Added
+
+- [TD-7627] Update and refactor test
+
 ### Changed
 
 - [TD-7396] Refactor rule implementation search endpoint
