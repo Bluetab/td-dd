@@ -18,13 +18,23 @@ defmodule TdDd.DataStructures.DataStructureTypes do
   @doc """
   Returns the list of `DataStructureType` structs.
   """
+
   def list_data_structure_types(opts \\ []) do
+    {:ok, templates} = TemplateCache.list_by_scope("dd")
+
+    templates_map =
+      Enum.into(templates, %{}, fn template -> {template.id, template} end)
+
+    list_data_structure_types(templates_map, opts)
+  end
+
+  def list_data_structure_types(templates_map, opts) do
     preloads = Keyword.get(opts, :preload, [])
 
     DataStructureType
     |> preload(^preloads)
     |> Repo.all()
-    |> Enum.map(&enrich_template/1)
+    |> Enum.map(&enrich_template(&1, templates_map))
   end
 
   @doc """
@@ -46,11 +56,21 @@ defmodule TdDd.DataStructures.DataStructureTypes do
 
   Returns nil if no result was found. Raises if more than one entry.
   """
-  def get_by(clauses) do
+
+  def get_by(clauses \\ []) do
+    {:ok, templates} = TemplateCache.list_by_scope("dd")
+
+    templates_map =
+      Enum.into(templates, %{}, fn template -> {template.id, template} end)
+
+    get_by(templates_map, clauses)
+  end
+
+  def get_by(templates_map, clauses) do
     DataStructureType
     |> preload(:metadata_fields)
     |> Repo.get_by(clauses)
-    |> enrich_template()
+    |> enrich_template(templates_map)
   end
 
   def update_data_structure_type(%DataStructureType{} = data_structure_type, params) do
@@ -113,9 +133,6 @@ defmodule TdDd.DataStructures.DataStructureTypes do
     end)
   end
 
-  @spec enrich_template(DataStructureType.t() | nil) :: DataStructureType.t() | nil
-  defp enrich_template(structure_type_or_nil)
-
   defp enrich_template(%DataStructureType{template_id: template_id} = structure_type)
        when is_integer(template_id) do
     case TemplateCache.get(template_id) do
@@ -124,7 +141,16 @@ defmodule TdDd.DataStructures.DataStructureTypes do
     end
   end
 
-  defp enrich_template(structure_type_or_nil), do: structure_type_or_nil
+  defp enrich_template(
+         %DataStructureType{template_id: template_id} = structure_type,
+         templates_map
+       )
+       when is_integer(template_id) do
+    template = Map.get(templates_map, template_id)
+    %{structure_type | template: template}
+  end
+
+  defp enrich_template(structure_type_or_nil, _templates_map), do: structure_type_or_nil
 
   def refresh_metadata_fields do
     ts = DateTime.utc_now()

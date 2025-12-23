@@ -5,6 +5,7 @@ defmodule TdDq.XLSX.Writer do
   """
 
   alias TdCache.ConceptCache
+  alias TdCache.DomainCache
   alias TdCache.I18nCache
   alias TdDfLib.Format
   alias TdDfLib.Parser
@@ -42,6 +43,9 @@ defmodule TdDq.XLSX.Writer do
   @color_ligth_yellow "#ffe994"
 
   def rows_by_implementation_template(implementation_information, opts \\ []) do
+    {:ok, default_locale} = I18nCache.get_default_locale()
+    locales = I18nCache.get_active_locales!()
+
     Enum.into(implementation_information, %{}, fn {template_name, implementations} ->
       {rule_fields, rule_field_headers} =
         fields_with_headers(
@@ -87,7 +91,8 @@ defmodule TdDq.XLSX.Writer do
         domain_type: :with_domain_external_id,
         lang: opts[:lang],
         xlsx: true,
-        locales: I18nCache.get_active_locales!()
+        locales: locales,
+        default_locale: default_locale
       ]
 
       parsing_contexts = prepare_parsing_context(rule_fields, imp_fields, parser_opts)
@@ -178,6 +183,7 @@ defmodule TdDq.XLSX.Writer do
          opts
        ) do
     parsing_contexts = Keyword.get(opts, :parsing_contexts)
+
     parser_opts = Keyword.get(opts, :parser_opts)
 
     base_columns = [
@@ -574,18 +580,24 @@ defmodule TdDq.XLSX.Writer do
   defp get_implementation_fields(_, _), do: []
 
   defp prepare_parsing_context(rule_fields, template_fields, opts) do
+    {:ok, default_locale} = I18nCache.get_default_locale()
     domain_type = Keyword.get(opts, :domain_type, :with_domain_external_id)
     lang = Keyword.get(opts, :lang)
 
+    domains_name = DomainCache.id_to_name_map()
+    domains_external_id = DomainCache.id_to_external_id_map()
+
     rule_ctx =
       rule_fields
-      |> Parser.context_for_fields(domain_type)
+      |> Parser.context_for_fields(domain_type, domains_name, domains_external_id)
       |> Map.put("lang", lang)
+      |> Map.put("default_locale", default_locale)
 
     template_ctx =
       template_fields
-      |> Parser.context_for_fields(domain_type)
+      |> Parser.context_for_fields(domain_type, domains_name, domains_external_id)
       |> Map.put("lang", lang)
+      |> Map.put("default_locale", default_locale)
 
     %{rule: rule_ctx, template: template_ctx}
   end
