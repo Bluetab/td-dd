@@ -4,6 +4,8 @@ defmodule TdDd.CSV.Download do
   """
 
   alias TdCache.DomainCache
+  alias TdCache.I18nCache
+  alias TdCache.TemplateCache
   alias TdDd.DataStructures.DataStructureTypes
   alias TdDfLib.Format
   alias TdDfLib.Parser
@@ -57,12 +59,18 @@ defmodule TdDd.CSV.Download do
   ]
 
   def to_csv(structures, header_labels, structure_url_schema, lang) do
+    {:ok, templates} = TemplateCache.list_by_scope("dd")
+    {:ok, default_locale} = I18nCache.get_default_locale()
+
+    templates_map =
+      Enum.into(templates, %{}, fn template -> {template.id, template} end)
+
     structures
     |> Enum.group_by(&Map.get(&1, :type))
     |> Enum.reduce([], fn {type, structures}, acc ->
       content =
-        [name: type]
-        |> DataStructureTypes.get_by()
+        templates_map
+        |> DataStructureTypes.get_by(name: type)
         |> then(fn
           %{template: %{content: content = [_ | _]}} ->
             Format.flatten_content_fields(content, lang)
@@ -83,14 +91,22 @@ defmodule TdDd.CSV.Download do
       content_fields =
         Enum.map(content, &Map.take(&1, ["name", "values", "type", "cardinality", "label"]))
 
+      parsing_context =
+        content_fields
+        |> Parser.context_for_fields(:with_domain_name)
+        |> Map.put("lang", lang)
+
+      parser_opts = [
+        lang: lang,
+        domain_type: :with_domain_name,
+        default_locale: default_locale
+      ]
+
       structures_list =
         Enum.map(structures, fn %{note: content} = structure ->
           structure
           |> get_standar_fields(structure_url_schema)
-          |> Parser.append_parsed_fields(content_fields, content,
-            lang: lang,
-            domain_type: :with_domain_name
-          )
+          |> Parser.append_parsed_fields(content_fields, content, parser_opts, parsing_context)
         end)
 
       csv_list = export_to_csv(headers, structures_list, !Enum.empty?(acc))
@@ -101,11 +117,17 @@ defmodule TdDd.CSV.Download do
   end
 
   def to_editable_csv(structures, structure_url_schema, lang) do
+    default_locale = I18nCache.get_default_locale()
+    {:ok, templates} = TemplateCache.list_by_scope("dd")
+
+    templates_map =
+      Enum.into(templates, %{}, fn template -> {template.id, template} end)
+
     type_fields =
       structures
       |> Enum.map(& &1.type)
       |> Enum.uniq()
-      |> Enum.map(&DataStructureTypes.get_by(name: &1))
+      |> Enum.map(&DataStructureTypes.get_by(templates_map, name: &1))
       |> Enum.flat_map(&type_editable_fields/1)
       |> Enum.uniq_by(&Map.get(&1, "name"))
 
@@ -113,15 +135,23 @@ defmodule TdDd.CSV.Download do
 
     headers = get_editable_headers(type_headers, structure_url_schema)
 
+    parsing_context =
+      type_fields
+      |> Parser.context_for_fields(:with_domain_external_id)
+      |> Map.put("lang", lang)
+
+    parser_opts = [
+      domain_type: :with_domain_external_id,
+      lang: lang,
+      default_locale: default_locale
+    ]
+
     core =
       Enum.map(structures, fn %{note: content} = structure ->
         @editable_headers
         |> Enum.map(&editable_structure_value(structure, &1))
         |> add_editable_extra_fields(structure, structure_url_schema)
-        |> Parser.append_parsed_fields(type_fields, content,
-          domain_type: :with_domain_external_id,
-          lang: lang
-        )
+        |> Parser.append_parsed_fields(type_fields, content, parser_opts, parsing_context)
       end)
 
     [headers | core]

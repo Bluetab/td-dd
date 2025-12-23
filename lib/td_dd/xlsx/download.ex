@@ -30,6 +30,24 @@ defmodule TdDd.XLSX.Download do
   end
 
   defp sheets(rows_by_type) do
-    Enum.map(rows_by_type, fn {type, rows} -> %Sheet{name: type, rows: rows} end)
+    Enum.map(rows_by_type, fn {type, rows} ->
+      name = sanitize_sheet_name(type)
+      %Sheet{name: name, rows: rows}
+    end)
   end
+
+  defp sanitize_sheet_name(name) when is_binary(name) do
+    name
+    # Reemplazar caracteres no permitidos
+    |> String.replace(~r/[[\]:*?\/\\]/, "_")
+    # Limitar a 31 caracteres
+    |> String.slice(0, 31)
+    |> then(fn
+      # Si queda vacío, usar un nombre por defecto
+      "" -> "Sheet"
+      name -> name
+    end)
+  end
+
+  defp sanitize_sheet_name(_), do: "Sheet"
 end

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [TD-7760] Optimization for xlsx donwload for Concepts and Structures notes
+
 ### Fixed
 
 - [TD-7792] Created data_structures systems index for groups query performance
