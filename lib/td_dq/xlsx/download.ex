@@ -9,7 +9,10 @@ defmodule TdDq.XLSX.Download do
   alias TdCache.TemplateCache
   alias TdDq.XLSX.Writer
 
+  require Logger
+
   def write_to_memory(implementations, opts \\ []) do
+    Logger.info("Start writing to memory")
     {:ok, domain_ext_id_map} = DomainCache.id_to_external_id_map()
     {:ok, domain_name_map} = DomainCache.id_to_name_map()
 
@@ -23,24 +26,28 @@ defmodule TdDq.XLSX.Download do
     implementation_templates_map =
       Enum.into(implementation_templates, %{}, fn template -> {template.name, template} end)
 
-    implementations
-    |> Enum.map(fn implementation ->
-      %{
-        implementation
-        | "domain" => %{
-            "external_id" => Map.get(domain_ext_id_map, implementation["domain_id"]),
-            "name" => Map.get(domain_name_map, implementation["domain_id"])
-          }
-      }
-    end)
-    |> enrich_templates(rule_templates_map, implementation_templates_map)
-    |> implementation_information(opts)
-    |> Writer.rows_by_implementation_template(opts)
-    |> sheets()
-    |> then(fn [_ | _] = sheets ->
-      workbook = %Workbook{sheets: sheets}
-      Elixlsx.write_to_memory(workbook, "implementations.xlsx")
-    end)
+    result =
+      implementations
+      |> Enum.map(fn implementation ->
+        %{
+          implementation
+          | "domain" => %{
+              "external_id" => Map.get(domain_ext_id_map, implementation["domain_id"]),
+              "name" => Map.get(domain_name_map, implementation["domain_id"])
+            }
+        }
+      end)
+      |> enrich_templates(rule_templates_map, implementation_templates_map)
+      |> implementation_information(opts)
+      |> Writer.rows_by_implementation_template(opts)
+      |> sheets()
+      |> then(fn [_ | _] = sheets ->
+        workbook = %Workbook{sheets: sheets}
+        Elixlsx.write_to_memory(workbook, "implementations.xlsx")
+      end)
+
+    Logger.info("End writing to memory")
+    result
   end
 
   defp enrich_templates(implementations, rule_templates_map, implementation_templates_map) do
