@@ -8,15 +8,23 @@ defmodule TdDd.XLSX.Download do
   alias Elixlsx.Workbook
   alias TdDd.XLSX.Writer
 
+  require Logger
+
   def write_to_memory(structures, structure_url_schema, opts \\ []) do
-    structures
-    |> Writer.data_structure_type_information(opts)
-    |> Writer.rows_by_structure_type(structure_url_schema, opts)
-    |> sheets()
-    |> then(fn [_ | _] = sheets ->
-      workbook = %Workbook{sheets: sheets}
-      Elixlsx.write_to_memory(workbook, "structures.xlsx")
-    end)
+    Logger.info("Start writing to memory")
+
+    result =
+      structures
+      |> Writer.data_structure_type_information(opts)
+      |> Writer.rows_by_structure_type(structure_url_schema, opts)
+      |> sheets()
+      |> then(fn [_ | _] = sheets ->
+        workbook = %Workbook{sheets: sheets}
+        Elixlsx.write_to_memory(workbook, "structures.xlsx")
+      end)
+
+    Logger.info("End writing to memory")
+    result
   end
 
   def write_to_memory_grants(grants, header_labels \\ nil) do
