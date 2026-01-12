@@ -808,6 +808,30 @@ defmodule TdDd.DataStructuresTest do
              <~> data_structure
     end
 
+    test "get_data_structure_by_external_id/1 returns the data_structure with the latest version",
+         %{
+           data_structure: data_structure,
+           template: %{name: template_name}
+         } do
+      insert(:data_structure_version,
+        version: 1,
+        data_structure: data_structure,
+        type: template_name
+      )
+
+      insert(:data_structure_version,
+        version: 2,
+        data_structure: data_structure,
+        type: template_name
+      )
+
+      assert %{latest_version: %{version: 2}} =
+               DataStructures.get_data_structure_by_external_id(
+                 data_structure.external_id,
+                 :latest_version
+               )
+    end
+
     test "get_data_structure!/1 returns error when structure does not exist" do
       assert_raise Ecto.NoResultsError, fn -> DataStructures.get_data_structure!(1) end
     end
