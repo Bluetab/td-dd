@@ -190,8 +190,19 @@ defmodule TdDd.DataStructures do
 
   @doc "Gets a single data_structure by external_id"
   def get_data_structure_by_external_id(external_id, preload \\ []) do
-    Repo.get_by(DataStructure, external_id: external_id)
-    |> Repo.preload(preload)
+    DataStructure
+    |> Repo.get_by(external_id: external_id)
+    |> do_preload(preload)
+  end
+
+  def do_preload(repo, :latest_version) do
+    Repo.preload(repo,
+      latest_version: from(v in DataStructureVersion, order_by: [desc: v.version], limit: 1)
+    )
+  end
+
+  def do_preload(repo, preload) do
+    Repo.preload(repo, preload)
   end
 
   def get_data_structures(ids, preload \\ :system) do

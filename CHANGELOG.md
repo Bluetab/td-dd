@@ -9,6 +9,7 @@
 ### Fixed
 
 - [TD-7792] Created data_structures systems index for groups query performance
+- [TD-7836] When loading concept-structure relationships, an error is returned as if the structure was deleted when it is not
 
 ## [7.14.0] 2025-12-10
 
