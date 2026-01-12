@@ -13,6 +13,8 @@ defmodule TdDdWeb.DataStructures.XLSXController do
   plug(TdDdWeb.SearchPermissionPlug)
   action_fallback(TdDdWeb.FallbackController)
 
+  require Logger
+
   @default_lang Application.compile_env(:td_dd, :lang)
 
   def download(conn, params) do
@@ -76,14 +78,21 @@ defmodule TdDdWeb.DataStructures.XLSXController do
   end
 
   defp search_all_structures(claims, permission, params) do
-    include_children = to_string(Map.get(params, "include_children", false))
-    data_structure_id = Map.get(params, "data_structure_id")
+    Logger.info("Start searching all structures")
 
-    params
-    |> Map.put("without", "deleted_at")
-    |> maybe_put_structure_filters(data_structure_id, include_children)
-    |> Map.drop(["page", "size", "data_structure_id", "include_children"])
-    |> Search.scroll_data_structures(claims, permission)
+    Timer.time(
+      fn ->
+        include_children = to_string(Map.get(params, "include_children", false))
+        data_structure_id = Map.get(params, "data_structure_id")
+
+        params
+        |> Map.put("without", "deleted_at")
+        |> maybe_put_structure_filters(data_structure_id, include_children)
+        |> Map.drop(["page", "size", "data_structure_id", "include_children"])
+        |> Search.scroll_data_structures(claims, permission)
+      end,
+      fn ms, _ -> Logger.info("Searching all structures in #{ms} ms") end
+    )
   end
 
   defp maybe_put_structure_filters(params, nil, _include_children), do: params

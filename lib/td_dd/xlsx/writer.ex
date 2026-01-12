@@ -4,6 +4,8 @@ defmodule TdDd.XLSX.Writer do
   a xlsx file.
   """
   alias TdCache.DomainCache
+  alias TdCache.I18nCache
+  alias TdCache.TemplateCache
   alias TdDd.DataStructures.DataStructureTypes
   alias TdDfLib.Parser
 
@@ -46,10 +48,16 @@ defmodule TdDd.XLSX.Writer do
   ]
 
   def data_structure_type_information(structures, opts \\ []) do
+    {:ok, templates} = TemplateCache.list_by_scope("dd")
+
+    templates_map =
+      Enum.into(templates, %{}, fn template -> {template.id, template} end)
+
     structures
     |> Enum.group_by(& &1.type)
     |> Enum.into(%{}, fn {type, grouped_structures} ->
-      %{name: data_structure_type, template: template} = DataStructureTypes.get_by(name: type)
+      %{name: data_structure_type, template: template} =
+        DataStructureTypes.get_by(templates_map, name: type)
 
       structure_type_information =
         add_information_for_download_type(
@@ -63,9 +71,37 @@ defmodule TdDd.XLSX.Writer do
   end
 
   def rows_by_structure_type(type_information, structure_url_schema, opts \\ []) do
+    domains_name = DomainCache.id_to_name_map()
+    domains_external_id = DomainCache.id_to_external_id_map()
+    locales = I18nCache.get_active_locales!()
+    {:ok, default_locale} = I18nCache.get_default_locale()
+
     Enum.into(type_information, %{}, fn {data_structure_type, information} ->
       headers = headers_for_type(information, opts)
-      content = content_for_type(information, structure_url_schema, opts)
+
+      parsing_context =
+        case Map.get(information, :content) do
+          [_ | _] = content_fields ->
+            content_fields
+            |> Parser.context_for_fields(
+              :with_domain_external_id,
+              domains_name,
+              domains_external_id
+            )
+            |> Map.put("lang", opts[:lang])
+
+          _ ->
+            nil
+        end
+
+      opts_with_context =
+        opts
+        |> Keyword.put(:parsing_context, parsing_context)
+        |> Keyword.put(:locales, locales)
+        |> Keyword.put(:default_locale, default_locale)
+
+      content = content_for_type(information, structure_url_schema, opts_with_context)
+
       rows = [headers | content]
 
       {data_structure_type, rows}
@@ -175,10 +211,14 @@ defmodule TdDd.XLSX.Writer do
     parser_opts = [
       domain_type: :with_domain_external_id,
       lang: opts[:lang],
-      xlsx: true
+      xlsx: true,
+      locales: opts[:locales],
+      default_locale: opts[:default_locale]
     ]
 
-    Parser.append_parsed_fields(fields, content_fields, note, parser_opts)
+    parsing_context = Keyword.get(opts, :parsing_context)
+
+    Parser.append_parsed_fields(fields, content_fields, note, parser_opts, parsing_context)
   end
 
   defp add_content_or_metadata(
