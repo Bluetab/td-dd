@@ -7,6 +7,7 @@ defmodule TdDqWeb.Implementation.XLSXController do
   alias TdDq.Implementations.UploadEvents
   alias TdDq.XLSX.Download
   alias TdDq.XLSX.Jobs.UploadWorker
+  require Logger
 
   action_fallback(TdDqWeb.FallbackController)
 
@@ -93,10 +94,17 @@ defmodule TdDqWeb.Implementation.XLSXController do
   end
 
   defp search_all_implementations(claims, params) do
-    params
-    |> Map.put("without", "deleted_at")
-    |> Map.drop(["page", "size"])
-    |> Search.scroll_implementations(claims)
+    Logger.info("Start searching all implementations")
+
+    Timer.time(
+      fn ->
+        params
+        |> Map.put("without", "deleted_at")
+        |> Map.drop(["page", "size"])
+        |> Search.scroll_implementations(claims)
+      end,
+      fn ms, _ -> Logger.info("Searching all implementations in #{ms} ms") end
+    )
   end
 
   defp build_opts(params) do

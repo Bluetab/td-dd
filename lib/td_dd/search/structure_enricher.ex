@@ -7,6 +7,7 @@ defmodule TdDd.Search.StructureEnricher do
 
   alias TdCache.LinkCache
   alias TdCache.TaxonomyCache
+  alias TdCache.TemplateCache
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureTypes
   alias TdDfLib.Format
@@ -84,7 +85,13 @@ defmodule TdDd.Search.StructureEnricher do
   end
 
   defp type_map do
-    DataStructureTypes.list_data_structure_types()
+    {:ok, templates} = TemplateCache.list_by_scope("dd")
+
+    templates_map =
+      Enum.into(templates, %{}, fn template -> {template.id, template} end)
+
+    templates_map
+    |> DataStructureTypes.list_data_structure_types([])
     |> Map.new(fn %{name: type, template: template} -> {type, template} end)
   end
 
