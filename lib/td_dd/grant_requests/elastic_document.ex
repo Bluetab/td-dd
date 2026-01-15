@@ -115,8 +115,8 @@ defmodule TdDd.GrantRequests.ElasticDocument do
   defimpl ElasticDocumentProtocol, for: GrantRequest do
     use ElasticDocument
 
-    @search_fields ~w(user.full_name user.user_name)
-    @exact_fields ~w(user.full_name user.user_name)
+    @search_fields ~w(user.full_name)
+    @exact_fields ~w(user.full_name)
 
     def mappings(_) do
       config =
@@ -145,7 +145,7 @@ defmodule TdDd.GrantRequests.ElasticDocument do
           type: "object",
           properties: %{
             id: %{type: "long", index: false},
-            user_name: %{type: "keyword", fields: @exact},
+            user_name: %{type: "keyword"},
             full_name: %{type: "text", fields: Map.merge(@raw, @exact)}
           }
         },
