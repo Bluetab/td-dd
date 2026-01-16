@@ -12,6 +12,8 @@ defmodule TdDd.Search.StoreTest do
   alias TdDd.Search.Store
   alias TdDd.Search.StructureEnricher
 
+  @index_type "suggestions"
+
   describe "Store.stream/1" do
     setup do
       Application.put_env(Store, :chunk_size, 10)
@@ -180,7 +182,7 @@ defmodule TdDd.Search.StoreTest do
     test "streams data structure embeddings when data structure ids are provided" do
       Indices.list_indices(
         &Mox.expect/4,
-        [enabled: true],
+        [enabled: true, index_type: @index_type],
         {:ok, [%{collection_name: "default"}, %{collection_name: "other"}]}
       )
 

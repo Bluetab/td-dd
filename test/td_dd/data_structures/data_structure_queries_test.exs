@@ -7,6 +7,8 @@ defmodule TdDd.DataStructures.DataStructureQueriesTest do
   alias TdDd.DataStructures.DataStructureQueries
   alias TdDd.Repo
 
+  @index_type "suggestions"
+
   describe "DataStructureQueries.data_structures_query/1" do
     test "filters by deleted" do
       %{data_structure_id: id} = insert(:data_structure_version)
@@ -245,7 +247,7 @@ defmodule TdDd.DataStructures.DataStructureQueriesTest do
     test "fetch data structure versions with embeddings" do
       Indices.list_indices(
         &Mox.expect/4,
-        [enabled: true],
+        [enabled: true, index_type: @index_type],
         {:ok, [%{collection_name: "default"}, %{collection_name: "other"}]}
       )
 

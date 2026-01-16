@@ -14,17 +14,24 @@ defmodule TdDd.DataStructures.RecordEmbeddings do
   alias TdDd.DataStructures.Search.Indexer
   alias TdDd.Repo
 
-  @batch_size 128
+  require Logger
+
+  @batch_size Application.compile_env(:td_dd, :data_structure_record_embeddings_batch_size, 50)
+  @default_delay_ms Application.compile_env(:td_dd, :record_embeddings_default_delay_ms, 500)
   @index_type "suggestions"
 
   def upsert_from_structures_async(data_structure_ids, opts \\ []) do
     case Indices.exists_enabled?(index_type: @index_type) do
       {:ok, true} ->
+        delay_ms =
+          Keyword.get(opts, :delay_ms, @default_delay_ms)
+
         Repo.transaction(fn ->
           data_structure_ids
           |> List.wrap()
           |> Stream.chunk_every(@batch_size)
-          |> Stream.map(&EmbeddingsUpsertBatch.new(%{"data_structure_ids" => &1}, opts))
+          |> Stream.with_index()
+          |> Stream.map(&build_embeddings_job(&1, delay_ms, opts))
           |> Oban.insert_all()
           |> Enum.to_list()
         end)
@@ -34,13 +41,30 @@ defmodule TdDd.DataStructures.RecordEmbeddings do
     end
   end
 
+  defp build_embeddings_job({ids, index}, delay_ms, opts) do
+    job_opts =
+      if delay_ms > 0 do
+        schedule_in_seconds = div(index * delay_ms, 1000)
+        Keyword.put(opts, :schedule_in, schedule_in_seconds)
+      else
+        opts
+      end
+
+    EmbeddingsUpsertBatch.new(%{"data_structure_ids" => ids}, job_opts)
+  end
+
   def upsert_from_structures(data_structure_ids) do
+    ## TODO TD-7555: Inconsistent behavior: Verify if the provider is correctly configured.
     case Indices.exists_enabled?(index_type: @index_type) do
       {:ok, true} ->
         now = DateTime.utc_now()
-        data_structure_versions = enriched_versions_for_embeddings(data_structure_ids)
-        {:ok, embedding_by_collection} = DataStructures.embeddings(data_structure_versions)
-        records = record_embeddings(embedding_by_collection, data_structure_versions)
+
+        records =
+          data_structure_ids
+          |> enriched_versions_for_embeddings()
+          |> Enum.chunk_every(@batch_size)
+          |> Enum.with_index()
+          |> Enum.flat_map(&process_versions_batch/1)
 
         RecordEmbedding
         |> Repo.insert_all(records,
@@ -50,13 +74,14 @@ defmodule TdDd.DataStructures.RecordEmbeddings do
         )
         |> tap(fn _ -> Indexer.put_embeddings(data_structure_ids) end)
 
-      _ ->
-        :noop
+      error ->
+        Logger.error("Error generating embeddings for data structures: #{inspect(error)}")
+        error
     end
   end
 
   def upsert_outdated_async(opts \\ []) do
-    case Indices.list(enabled: true) do
+    case Indices.list(enabled: true, index_type: @index_type) do
       {:ok, [_ | _] = indices} ->
         indices
         |> Enum.map(& &1.collection_name)
@@ -70,7 +95,8 @@ defmodule TdDd.DataStructures.RecordEmbeddings do
   end
 
   def delete_stale_record_embeddings do
-    case Indices.list(enabled: true) do
+    ## TODO TD-7555: Inconsistent behavior: Verify if the provider is correctly configured.
+    case Indices.list(enabled: true, index_type: @index_type) do
       {:ok, [_ | _] = indices} ->
         collections = Enum.map(indices, & &1.collection_name)
 
@@ -97,6 +123,18 @@ defmodule TdDd.DataStructures.RecordEmbeddings do
 
       _ ->
         :noop
+    end
+  end
+
+  defp process_versions_batch({versions, batch_index}) do
+    case DataStructures.embeddings(versions) do
+      {:ok, embedding_by_collection} ->
+        record_embeddings(embedding_by_collection, versions)
+
+      {:error, error} ->
+        Logger.error("Error generating embeddings for batch #{batch_index}: #{inspect(error)}")
+
+        []
     end
   end
 

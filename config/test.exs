@@ -49,3 +49,6 @@ config :td_cache, :event_stream, streams: []
 
 # File upload base dir for testing
 config :td_dd, :file_upload_dir, Path.join(["test", "upload"])
+
+config :td_dd, :record_embeddings_batch_size, 128
+config :td_dd, :record_embeddings_default_delay_ms, 0
