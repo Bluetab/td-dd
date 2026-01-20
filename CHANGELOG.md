@@ -1,5 +1,11 @@
 # Changelog
 
+## [8.0.1] 2026-01-20
+
+### Fixed
+
+- [TD-7850] Filter fields can't be used for full text search
+
 ## [8.0.0] 2026-01-12
 
 ### Changed
