@@ -19,6 +19,28 @@
 
 ## [7.14.0] 2025-12-10
 
+### Fixed
+
+- [TD-7775]
+ - Update indices list to include index_type suggestions
+ - Adjusted the Oban queue configuration for embedding upserts to improve performance.
+ - Enhanced the `upsert_from_structures_async` function to utilize the new delay configuration
+ - Add configuration for record embeddings batch size and delay
+
+## [8.0.0] 2026-01-12
+
+### Changed
+
+- [TD-7760] Optimization for xlsx donwload for Concepts and Structures notes
+
+### Fixed
+
+- [TD-7792] Created data_structures systems index for groups query performance
+- [TD-7836] When loading concept-structure relationships, 
+  an error is returned as if the structure was deleted when it is not
+
+## [7.14.0] 2025-12-10
+
 ### Added
 
 - [TD-7653] Add Implementation Structure Link permission management

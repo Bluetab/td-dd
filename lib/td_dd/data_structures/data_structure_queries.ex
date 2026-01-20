@@ -20,6 +20,8 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   alias TdDd.Profiles.Profile
   alias TdDd.Repo
 
+  @index_type "suggestions"
+
   @paths_by_child_id """
   SELECT dsv_id as child_id, ds_id, ancestor_ds_id as data_structure_id, ancestor_dsv_id as parent_id, ancestor_level as level, name, version
   FROM data_structures_hierarchy dsh
@@ -136,7 +138,7 @@ defmodule TdDd.DataStructures.DataStructureQueries do
 
   @spec data_structure_versions_with_embeddings([integer()]) :: Enumerable.t()
   def data_structure_versions_with_embeddings(data_structure_ids) do
-    case Indices.list(enabled: true) do
+    case Indices.list(enabled: true, index_type: @index_type) do
       {:ok, [_ | _] = indices} ->
         collections = Enum.map(indices, & &1.collection_name)
 

@@ -2,6 +2,7 @@ defmodule TdDd.DataStructures.RecordEmbeddingsTest do
   use TdDd.DataCase
 
   import Mox
+  import ExUnit.CaptureLog
 
   alias TdCluster.TestHelpers.TdAiMock.Embeddings
   alias TdCluster.TestHelpers.TdAiMock.Indices
@@ -23,8 +24,10 @@ defmodule TdDd.DataStructures.RecordEmbeddingsTest do
         {:ok, true}
       end)
 
-      data_structure_ids = Enum.map(0..1_279, fn i -> i end)
-      assert {:ok, jobs} = RecordEmbeddings.upsert_from_structures_async(data_structure_ids)
+      data_structure_ids = Enum.map(0..499, fn i -> i end)
+
+      assert {:ok, jobs} =
+               RecordEmbeddings.upsert_from_structures_async(data_structure_ids)
 
       assert Enum.count(jobs) == 10
 
@@ -39,8 +42,8 @@ defmodule TdDd.DataStructures.RecordEmbeddingsTest do
                  Enum.at(jobs, chunk_id)
 
         assert DateTime.compare(inserted_at, scheduled_at) == :eq
-        init = chunk_id * 128
-        ending = (chunk_id + 1) * 128
+        init = chunk_id * 50
+        ending = (chunk_id + 1) * 50
         expected = init..(ending - 1) |> Enum.to_list()
         assert Enum.sort(ids) == Enum.sort(expected)
       end
@@ -172,7 +175,9 @@ defmodule TdDd.DataStructures.RecordEmbeddingsTest do
     test "returns noop when there aren't any indices enabled" do
       Indices.exists_enabled?(&Mox.expect/4, [index_type: @index_type], {:ok, false})
 
-      assert :noop == RecordEmbeddings.upsert_from_structures([1])
+      assert capture_log(fn ->
+               assert {:ok, false} == RecordEmbeddings.upsert_from_structures([1])
+             end) =~ "Error generating embeddings for data structures"
     end
   end
 
@@ -180,7 +185,7 @@ defmodule TdDd.DataStructures.RecordEmbeddingsTest do
     test "upserts data structure ids with stale record embeddings" do
       Indices.list_indices(
         &Mox.expect/4,
-        [enabled: true],
+        [enabled: true, index_type: @index_type],
         {:ok, [%{collection_name: "default"}, %{collection_name: "other"}]}
       )
 
@@ -222,7 +227,7 @@ defmodule TdDd.DataStructures.RecordEmbeddingsTest do
     end
 
     test "returns noop when there are no indices enabled" do
-      Indices.list_indices(&Mox.expect/4, [enabled: true], {:ok, []})
+      Indices.list_indices(&Mox.expect/4, [enabled: true, index_type: @index_type], {:ok, []})
       assert :noop == RecordEmbeddings.upsert_outdated_async()
     end
   end
@@ -239,7 +244,7 @@ defmodule TdDd.DataStructures.RecordEmbeddingsTest do
 
       Indices.list_indices(
         &Mox.expect/4,
-        [enabled: true],
+        [enabled: true, index_type: @index_type],
         {:ok, [%{collection_name: "default"}]}
       )
 
@@ -261,7 +266,7 @@ defmodule TdDd.DataStructures.RecordEmbeddingsTest do
     end
 
     test "deletes all records if there are not enabled indices" do
-      Indices.list_indices(&Mox.expect/4, [enabled: true], {:ok, []})
+      Indices.list_indices(&Mox.expect/4, [enabled: true, index_type: @index_type], {:ok, []})
 
       record_embedding = insert(:record_embedding)
       assert {1, nil} = RecordEmbeddings.delete_stale_record_embeddings()

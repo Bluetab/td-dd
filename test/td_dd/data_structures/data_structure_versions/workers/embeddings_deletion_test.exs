@@ -6,6 +6,7 @@ defmodule TdDd.DataStructures.DataStructureVersions.Workers.EmbeddingsDeletionTe
   alias TdDd.DataStructures.DataStructureVersions.Workers.EmbeddingsDeletion
 
   @moduletag sandbox: :shared
+  @index_type "suggestions"
 
   describe "EmbeddingsDeletion.perform/1" do
     test "deletes stale record deletions" do
@@ -19,7 +20,7 @@ defmodule TdDd.DataStructures.DataStructureVersions.Workers.EmbeddingsDeletionTe
 
       Indices.list_indices(
         &Mox.expect/4,
-        [enabled: true],
+        [enabled: true, index_type: @index_type],
         {:ok, [%{collection_name: "default"}]}
       )
 
@@ -31,7 +32,7 @@ defmodule TdDd.DataStructures.DataStructureVersions.Workers.EmbeddingsDeletionTe
 
     test "deletes all record embeddings when there are no indices enabled" do
       insert(:record_embedding)
-      Indices.list_indices(&Mox.expect/4, [enabled: true], {:ok, []})
+      Indices.list_indices(&Mox.expect/4, [enabled: true, index_type: @index_type], {:ok, []})
       assert :ok == perform_job(EmbeddingsDeletion, %{})
       assert [] == Repo.all(RecordEmbedding)
     end
