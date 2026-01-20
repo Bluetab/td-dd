@@ -40,7 +40,6 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
                        type: "bool_prefix",
                        fields: [
                          "user.full_name",
-                         "user.user_name",
                          "data_structure_version.ngram_name*^3",
                          "data_structure_version.ngram_original_name*^3",
                          "data_structure_version.ngram_path*",
@@ -63,7 +62,6 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
                          type: "phrase_prefix",
                          fields: [
                            "user.full_name",
-                           "user.user_name",
                            "data_structure_version.name^3",
                            "data_structure_version.original_name^3",
                            "data_structure_version.path_joined",
@@ -83,7 +81,6 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
                        simple_query_string: %{
                          fields: [
                            "user.full_name",
-                           "user.user_name",
                            "data_structure_version.name^3",
                            "data_structure_version.original_name^3",
                            "grant.data_structure_version.name^3",
@@ -123,7 +120,6 @@ defmodule TdDdWeb.GrantRequestSearchControllerTest do
                      simple_query_string: %{
                        fields: [
                          "user.full_name",
-                         "user.user_name",
                          "data_structure_version.name^3",
                          "data_structure_version.original_name^3",
                          "data_structure_version.path_joined",

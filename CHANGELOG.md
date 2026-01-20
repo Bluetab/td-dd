@@ -1,6 +1,23 @@
 # Changelog
 
-## [Unreleased]
+## [8.0.1] 2026-01-20
+
+### Fixed
+
+- [TD-7850] Filter fields can't be used for full text search
+
+## [8.0.0] 2026-01-12
+
+### Changed
+
+- [TD-7760] Optimization for xlsx donwload for Concepts and Structures notes
+
+### Fixed
+
+- [TD-7792] Created data_structures systems index for groups query performance
+- [TD-7836] When loading concept-structure relationships, an error is returned as if the structure was deleted when it is not
+
+## [7.14.0] 2025-12-10
 
 ### Fixed
 
