@@ -152,6 +152,9 @@ defmodule TdDq.XLSX.Writer do
       "result_type" ->
         [[get_translated_header("result_type", opts), bg_color: @color_yellow]]
 
+      "rule" ->
+        [[get_translated_header("rule", opts), bg_color: @color_ligth_yellow]]
+
       "template_fields" ->
         content_headers
 

@@ -1,31 +1,20 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-7573]: 
+  - Handle deprecated implementations in XLSX bulk upload: search for non-deprecated alternative or show error if none exists
+  - Validate duplicated implementation keys
+  - Enrich result event data
+
+
 ## [8.0.1] 2026-01-20
 
 ### Fixed
 
 - [TD-7850] Filter fields can't be used for full text search
-
-## [8.0.0] 2026-01-12
-
-### Changed
-
-- [TD-7760] Optimization for xlsx donwload for Concepts and Structures notes
-
-### Fixed
-
-- [TD-7792] Created data_structures systems index for groups query performance
-- [TD-7836] When loading concept-structure relationships, an error is returned as if the structure was deleted when it is not
-
-## [7.14.0] 2025-12-10
-
-### Fixed
-
-- [TD-7775]
- - Update indices list to include index_type suggestions
- - Adjusted the Oban queue configuration for embedding upserts to improve performance.
- - Enhanced the `upsert_from_structures_async` function to utilize the new delay configuration
- - Add configuration for record embeddings batch size and delay
 
 ## [8.0.0] 2026-01-12
 
@@ -44,9 +33,6 @@
 ### Added
 
 - [TD-7653] Add Implementation Structure Link permission management
-
-### Added
-
 - [TD-7711]:
   - Phrase prefix search to highlight stricter text matches
   - New string format for data structure path
@@ -59,6 +45,11 @@
 ### Fixed
 
 - [TD-7619] Fix date and datetime format and validation
+- [TD-7775]
+ - Update indices list to include index_type suggestions
+ - Adjusted the Oban queue configuration for embedding upserts to improve performance.
+ - Enhanced the `upsert_from_structures_async` function to utilize the new delay configuration
+ - Add configuration for record embeddings batch size and delay
 
 ## [7.13.1] 2025-12-03
 
