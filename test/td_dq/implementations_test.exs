@@ -310,65 +310,6 @@ defmodule TdDq.ImplementationsTest do
     end
   end
 
-  describe "last_by_keys/2" do
-    test "returns last implementation by key without options" do
-      key = "test_key"
-      insert(:implementation, implementation_key: key, version: 1, status: :draft)
-      impl2 = insert(:implementation, implementation_key: key, version: 2, status: :published)
-
-      result = Implementations.last_by_keys([key])
-      assert length(result) == 1
-      assert hd(result).id == impl2.id
-    end
-
-    test "excludes deprecated implementations when exclude_status option is provided" do
-      key = "test_key"
-
-      deprecated =
-        insert(:implementation, implementation_key: key, version: 2, status: :deprecated)
-
-      published = insert(:implementation, implementation_key: key, version: 1, status: :published)
-
-      result = Implementations.last_by_keys([key], exclude_status: [:deprecated])
-      assert length(result) == 1
-      assert hd(result).id == published.id
-      assert hd(result).id != deprecated.id
-    end
-
-    test "returns empty list when only deprecated implementations exist" do
-      key = "test_key"
-      insert(:implementation, implementation_key: key, version: 1, status: :deprecated)
-      insert(:implementation, implementation_key: key, version: 2, status: :deprecated)
-
-      result = Implementations.last_by_keys([key], exclude_status: [:deprecated])
-      assert result == []
-    end
-
-    test "maintains backward compatibility without options" do
-      key = "test_key"
-      impl = insert(:implementation, implementation_key: key, version: 1, status: :published)
-
-      result = Implementations.last_by_keys([key])
-      assert length(result) == 1
-      assert hd(result).id == impl.id
-    end
-
-    test "orders by workflow status order when excluding deprecated" do
-      key = "test_key"
-      draft = insert(:implementation, implementation_key: key, version: 1, status: :draft)
-      published = insert(:implementation, implementation_key: key, version: 1, status: :published)
-
-      deprecated =
-        insert(:implementation, implementation_key: key, version: 2, status: :deprecated)
-
-      result = Implementations.last_by_keys([key], exclude_status: [:deprecated])
-      assert length(result) == 1
-      assert hd(result).id == published.id
-      assert hd(result).id != deprecated.id
-      assert hd(result).id != draft.id
-    end
-  end
-
   describe "create_implementation/4" do
     test "with valid data creates a implementation", %{rule: rule} do
       params =

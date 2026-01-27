@@ -147,51 +147,32 @@ defmodule TdDq.XLSX.BulkLoad do
       I18nCache.get_definition(ctx.lang, "ruleImplementations.props.implementation_template") ||
         "implementation_template"
 
-    if "implementation_key" in headers do
-      UploadEvents.create_error(ctx.job_id, %{
-        type: "duplicate_field_names",
-        sheet: sheet_name,
-        row_number: index + 2,
-        details: %{duplicate_fields: ["implementation_key"]}
-      })
+    headers
+    |> Enum.zip(row)
+    |> Enum.reduce(%{"df_content" => %{}}, fn {header, value}, acc ->
+      cond do
+        header == df_name_header ->
+          Map.put(acc, "df_name", value)
 
-      %{"_error" => true}
-    else
-      raw_row_data = Enum.zip(headers, row) |> Map.new()
+        Enum.member?(discarded_headers, header) ->
+          acc
 
-      headers
-      |> Enum.zip(row)
-      |> Enum.reduce(
-        %{"df_content" => %{}},
-        &process_header(&1, &2, ctx, df_name_header, discarded_headers, known_headers)
-      )
-      |> Map.merge(%{
-        "_sheet" => sheet_name,
-        "_row_number" => index + 2,
-        "_raw_row_data" => raw_row_data
-      })
-    end
-  end
+        Enum.member?(known_headers, header) ->
+          known_header = Map.get(ctx.headers, header)
+          Map.put(acc, known_header, value)
 
-  defp process_header({header, value}, acc, ctx, df_name_header, discarded_headers, known_headers) do
-    cond do
-      header == df_name_header ->
-        Map.put(acc, "df_name", value)
-
-      Enum.member?(discarded_headers, header) ->
-        acc
-
-      Enum.member?(known_headers, header) ->
-        known_header = Map.get(ctx.headers, header)
-        Map.put(acc, known_header, value)
-
-      true ->
-        Map.update!(
-          acc,
-          "df_content",
-          &Map.put(&1, header, %{"value" => value, "origin" => "file"})
-        )
-    end
+        true ->
+          Map.update!(
+            acc,
+            "df_content",
+            &Map.put(&1, header, %{"value" => value, "origin" => "file"})
+          )
+      end
+    end)
+    |> Map.merge(%{
+      "_sheet" => sheet_name,
+      "_row_number" => index + 2
+    })
   end
 
   defp fetch_templates(impl_params) do
@@ -220,7 +201,6 @@ defmodule TdDq.XLSX.BulkLoad do
 
   defp upsert_implementations(impl_params, ctx) do
     impl_params
-    |> Enum.reject(&Map.get(&1, "_error"))
     |> Enum.map(&upsert_implementation(&1, ctx))
     |> Enum.reduce(
       {[], [], 0, 0},
@@ -269,15 +249,12 @@ defmodule TdDq.XLSX.BulkLoad do
           lang: ctx.lang
         })
 
-      raw_row_data = implementation["_raw_row_data"]
-
       %{"implementation_key" => implementation_key} =
         params =
         implementation
         |> Map.put("status", ctx.to_status)
         |> Map.put("domain_id", domain_id)
         |> Map.put("df_content", formatted_content)
-        |> Map.put("_raw_row_data", raw_row_data)
         |> translate_result_type(ctx)
 
       [implementation_key]
@@ -354,62 +331,30 @@ defmodule TdDq.XLSX.BulkLoad do
   end
 
   defp write_implementation([implementation], params, ctx) do
-    case maybe_find_non_deprecated(implementation, params, ctx) do
-      {:ok, non_deprecated_impl} ->
-        process_implementation_update(non_deprecated_impl, params, ctx)
-
-      {:error, :deprecated_only} ->
-        :error
-    end
-  end
-
-  defp maybe_find_non_deprecated(%{status: :deprecated} = _impl, params, ctx) do
-    implementation_key = params["implementation_key"]
-
-    case Implementations.last_by_keys([implementation_key],
-           exclude_status: [:deprecated, :versioned]
-         ) do
-      [] ->
-        UploadEvents.create_error(ctx.job_id, %{
-          type: "deprecated_implementation",
-          sheet: params["_sheet"],
-          row_number: params["_row_number"],
-          details: %{
-            implementation_key: implementation_key,
-            message: "Deprecated implementation"
-          }
-        })
-
-        {:error, :deprecated_only}
-
-      [non_deprecated_impl] ->
-        {:ok, non_deprecated_impl}
-    end
-  end
-
-  defp maybe_find_non_deprecated(implementation, _params, _ctx), do: {:ok, implementation}
-
-  defp process_implementation_update(implementation, params, ctx) do
     file_data =
       params
-      |> Map.get("df_content", %{})
-      |> Map.reject(fn {_, %{"origin" => origin}} -> origin == "default" end)
-
-    existing_df_content = Map.get(implementation, :df_content) || %{}
+      |> Map.get("df_content")
+      |> Enum.reject(fn {_, %{"origin" => origin}} -> origin == "default" end)
+      |> Map.new()
 
     df_content =
-      Map.merge(existing_df_content, file_data, fn
+      implementation
+      |> Map.get(:df_content)
+      |> Map.merge(file_data, fn
         _, %{"value" => value} = old, %{"value" => value} -> old
         _, _, new -> new
       end)
 
     df_content_changes =
-      Map.reject(file_data, fn {key, %{"value" => value}} ->
-        existing_df_content
+      file_data
+      |> Enum.reject(fn {key, %{"value" => value}} ->
+        implementation
+        |> Map.get(:df_content)
         |> Map.get(key, %{})
         |> Map.get("value")
         |> Kernel.==(value)
       end)
+      |> Map.new()
 
     params = Map.put(params, "df_content", df_content)
 
@@ -433,14 +378,11 @@ defmodule TdDq.XLSX.BulkLoad do
         :unchanged
 
       {:ok, %{implementation: %{id: id}, changes: changes}} ->
-        changes_for_storage =
+        changes =
           case changes do
             %{df_content: %{}} -> Map.put(changes, :df_content, df_content_changes)
             changes -> changes
           end
-
-        transformed_changes =
-          transform_changes_for_event_storage(changes_for_storage, ctx, params)
 
         UploadEvents.create_info(ctx.job_id, %{
           type: "updated",
@@ -449,7 +391,7 @@ defmodule TdDq.XLSX.BulkLoad do
           details: %{
             id: implementation.id,
             implementation_key: params["implementation_key"],
-            changes: transformed_changes
+            changes: changes
           }
         })
 
@@ -483,42 +425,6 @@ defmodule TdDq.XLSX.BulkLoad do
         :error
     end
   end
-
-  defp transform_domain_id_to_name(%{domain_id: domain_id} = changes, _ctx) do
-    {:ok, domain_name_map} = DomainCache.id_to_name_map()
-    domain_name = Map.get(domain_name_map, domain_id)
-
-    changes
-    |> Map.delete(:domain_id)
-    |> Map.put(:domain, domain_name)
-  end
-
-  defp transform_domain_id_to_name(changes, _ctx), do: changes
-
-  defp transform_changes_for_event_storage(changes, ctx, params) do
-    changes
-    |> transform_domain_id_to_name(ctx)
-    |> enrich_content_values(ctx, params)
-  end
-
-  defp enrich_content_values(
-         %{df_content: df_content_changes} = changes,
-         ctx,
-         params
-       ) do
-    template_name = Map.get(params, "df_name")
-    template_data = Map.get(ctx.templates, template_name)
-
-    transformed_df_content =
-      Format.enrich_content_values(df_content_changes, template_data.template, [
-        :hierarchy,
-        :domain
-      ])
-
-    Map.put(changes, :df_content, transformed_df_content)
-  end
-
-  defp enrich_content_values(changes, _ctx, _params), do: changes
 
   defp translate_result_type(params, ctx) do
     result_type = Map.get(params, "result_type")
