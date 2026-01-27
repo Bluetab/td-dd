@@ -115,31 +115,16 @@ defmodule TdDq.Implementations do
     |> Kernel.!=(false)
   end
 
-  def last_by_keys(implementation_keys, opts \\ [])
-
-  def last_by_keys([%{"implementation_key" => _} | _] = implementations_params, opts) do
+  def last_by_keys([%{"implementation_key" => _} | _] = implementations_params) do
     implementations_params
     |> Enum.map(&Map.get(&1, "implementation_key"))
-    |> last_by_keys(opts)
+    |> last_by_keys()
   end
 
-  def last_by_keys(implementation_keys, opts) when is_list(implementation_keys) do
-    exclude_status = Keyword.get(opts, :exclude_status, [])
-
-    query = where(Implementation, [i], i.implementation_key in ^implementation_keys)
-
-    query =
-      if length(exclude_status) > 0 do
-        where(query, [i], i.status not in ^exclude_status)
-      else
-        query
-      end
-
-    status_order = Workflow.get_workflow_status_order()
-
-    query
+  def last_by_keys(implementation_keys) when is_list(implementation_keys) do
+    Implementation
+    |> where([i], i.implementation_key in ^implementation_keys)
     |> distinct([i], i.implementation_key)
-    |> order_by(fragment("position(status::text in ?)", ^status_order))
     |> order_by([i], desc: i.version)
     |> TdDd.Repo.all()
   end

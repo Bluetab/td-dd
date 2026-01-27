@@ -119,7 +119,6 @@ defmodule CacheHelpers do
     %{id: hierarchy_id} = hierarchy = build(:hierarchy, params)
 
     {:ok, _} = HierarchyCache.put(hierarchy, publish: false)
-
     on_exit(fn -> HierarchyCache.delete(hierarchy_id) end)
     hierarchy
   end

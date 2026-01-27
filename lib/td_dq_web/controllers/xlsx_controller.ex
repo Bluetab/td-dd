@@ -99,7 +99,7 @@ defmodule TdDqWeb.Implementation.XLSXController do
     Timer.time(
       fn ->
         params
-        |> add_deleted_at_filter()
+        |> Map.put("without", "deleted_at")
         |> Map.drop(["page", "size"])
         |> Search.scroll_implementations(claims)
       end,
@@ -128,17 +128,5 @@ defmodule TdDqWeb.Implementation.XLSXController do
     file_path = Path.join([upload_dir, source_file_name])
     :ok = File.cp!(path, file_path)
     file_path
-  end
-
-  defp add_deleted_at_filter(%{"must" => %{"status" => [_ | _] = statuses}} = params) do
-    if "deprecated" in statuses do
-      params
-    else
-      Map.put(params, "without", "deleted_at")
-    end
-  end
-
-  defp add_deleted_at_filter(params) do
-    Map.put(params, "without", "deleted_at")
   end
 end
