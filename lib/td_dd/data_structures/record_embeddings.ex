@@ -146,13 +146,17 @@ defmodule TdDd.DataStructures.RecordEmbeddings do
   end
 
   defp record_embeddings(embedding_by_collection, data_structure_versions) do
+    embedding_type = RecordEmbedding.__schema__(:type, :embedding)
+
     Enum.flat_map(embedding_by_collection, fn {collection_name, embeddings} ->
       data_structure_versions
       |> Enum.zip(embeddings)
       |> Enum.map(fn {data_structure_version, embedding} ->
+        {:ok, cast_embedding} = Ecto.Type.cast(embedding_type, embedding)
+
         %{
           data_structure_version_id: data_structure_version.id,
-          embedding: embedding,
+          embedding: cast_embedding,
           dims: length(embedding),
           collection: collection_name,
           inserted_at: {:placeholder, :now},
