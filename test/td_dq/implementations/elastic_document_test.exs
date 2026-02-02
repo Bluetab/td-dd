@@ -11,6 +11,7 @@ defmodule TdDq.Implementations.Search.ElasticDocumentTest do
     label: "df_test",
     name: "df_test",
     scope: "dq",
+    subscope: "dq_subscope",
     content: [
       %{
         "name" => "Content Template",
@@ -72,6 +73,11 @@ defmodule TdDq.Implementations.Search.ElasticDocumentTest do
            implementation: %{id: impl_id} = implementation,
            concept: concept
          } do
+      template_data =
+        @df_template
+        |> CacheHelpers.insert_template()
+        |> Map.take([:name, :label, :scope, :subscope])
+
       %{df_content: rule_legacy_content} = Content.legacy_content_support(rule, :df_content)
 
       %{df_content: impl_legacy_content} =
@@ -83,7 +89,8 @@ defmodule TdDq.Implementations.Search.ElasticDocumentTest do
                id: ^impl_id,
                df_content: impl_content,
                current_business_concept_version: %{content: concept_content},
-               rule: %{df_content: rule_content}
+               rule: %{df_content: rule_content},
+               template: ^template_data
              } = Document.encode(implementation)
 
       assert concept_legacy_content == concept_content

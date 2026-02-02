@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-### Fixed
+### Added
 
 - [TD-7775] Cast embeddings during bulk insert to prevent format errors during raw data insertion
 
