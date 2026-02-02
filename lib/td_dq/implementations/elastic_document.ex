@@ -139,7 +139,14 @@ defmodule TdDq.Implementations.ElasticDocument do
       %Implementation{inserted_at: ref_inserted_at} =
         Map.get(implementation, :implementation_ref_struct)
 
-      template = TemplateCache.get_by_name!(implementation.df_name) || %{content: []}
+      template =
+        TemplateCache.get_by_name!(implementation.df_name) ||
+          %{content: [], name: nil, label: nil, scope: nil, subscope: nil}
+
+      template_name = Map.get(template, :name)
+      template_label = Map.get(template, :label)
+      template_scope = Map.get(template, :scope)
+      template_subscope = Map.get(template, :subscope)
 
       df_content =
         implementation
@@ -193,6 +200,12 @@ defmodule TdDq.Implementations.ElasticDocument do
       |> Map.put(:structure_names, structure_names)
       |> Map.put(:linked_structures_ids, linked_structures_ids)
       |> Map.put(:structure_links, structure_links)
+      |> Map.put(:template, %{
+        name: template_name,
+        label: template_label,
+        scope: template_scope,
+        subscope: template_subscope
+      })
       |> Map.put(:df_content, df_content)
       |> Map.put(:ngram_implementation_key, implementation.implementation_key)
     end
@@ -506,6 +519,15 @@ defmodule TdDq.Implementations.ElasticDocument do
         df_name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
         df_content: content_mappings,
         executable: %{type: "boolean"},
+        template: %{
+          type: "object",
+          properties: %{
+            name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
+            label: %{type: "text", fields: @raw},
+            scope: %{type: "text", fields: %{keyword: %{type: "keyword"}}},
+            subscope: %{type: "keyword", null_value: ""}
+          }
+        },
         goal: %{type: "long"},
         minimum: %{type: "long"},
         result_type: %{type: "text", fields: %{raw: %{type: "keyword"}}},
@@ -556,6 +578,12 @@ defmodule TdDq.Implementations.ElasticDocument do
         "result_type.raw" => %{
           terms: %{field: "result_type.raw", size: Cluster.get_size_field("result_type.raw")}
         },
+        "template" => %{
+          terms: %{field: "template.label.raw", size: Cluster.get_size_field("template")}
+        },
+        "template_subscope" => %{
+          terms: %{field: "template.subscope", size: Cluster.get_size_field("template_subscope")}
+        },
         "taxonomy" => %{terms: %{field: "domain_ids", size: Cluster.get_size_field("taxonomy")}},
         "structure_taxonomy" => %{
           terms: %{
@@ -570,6 +598,13 @@ defmodule TdDq.Implementations.ElasticDocument do
             size: Cluster.get_size_field("linked_structures_ids")
           },
           meta: %{type: "search", index: "structures"}
+        },
+        # Additional template-related aggregations
+        "template_name" => %{
+          terms: %{field: "template.name.raw", size: Cluster.get_size_field("template_name")}
+        },
+        "template_scope" => %{
+          terms: %{field: "template.scope.keyword", size: Cluster.get_size_field("template_scope")}
         }
       }
     end
