@@ -1,11 +1,16 @@
 defmodule TdDq.XLSX.BulkLoadTest do
+  alias Truedat.Audit.UploadJobs
   use TdDd.DataCase
 
+  import Mox
+
+  alias TdCore.Search.IndexWorkerMock
   alias TdDq.Implementations
-  alias TdDq.Implementations.UploadEvents
-  alias TdDq.XLSX.BulkLoad
+  alias Truedat.XLSX.BulkLoad
 
   @moduletag sandbox: :shared
+
+  setup :verify_on_exit!
 
   @content_field [
     %{
@@ -79,19 +84,30 @@ defmodule TdDq.XLSX.BulkLoadTest do
       domain: domain
     )
 
-    %{id: job_id} = insert(:implementation_upload_job)
+    %{id: job_id} = insert(:upload_job)
 
     [
-      opts: %{claims: build(:claims), lang: "en", to_status: "draft", job_id: job_id},
+      opts: %{
+        claims: build(:claims),
+        lang: "en",
+        to_status: "draft",
+        job_id: job_id,
+        impl_for: struct(TdDq.Implementations.Implementation)
+      },
       domain: domain,
       template: create_template(@content_field)
     ]
   end
 
   describe "bulk_load/2" do
+    setup do
+      IndexWorkerMock.clear()
+      :ok
+    end
+
     test "insert new implementation", %{opts: opts, domain: domain} do
       sheets = %{
-        "Sheet1" =>
+        "impl_template" =>
           {[
              "english_implementation_key",
              "english_implementation_template",
@@ -129,14 +145,14 @@ defmodule TdDq.XLSX.BulkLoadTest do
                BulkLoad.bulk_load(sheets, opts)
 
       assert %{events: events} =
-               UploadEvents.get_job(opts.job_id)
+               UploadJobs.get_job(opts.job_id)
 
       assert [
                %{
                  response: %{
                    "details" => %{"implementation_key" => "impl_key"},
                    "row_number" => 2,
-                   "sheet" => "Sheet1",
+                   "sheet" => "impl_template",
                    "type" => "created"
                  },
                  status: "INFO"
@@ -206,7 +222,7 @@ defmodule TdDq.XLSX.BulkLoadTest do
                BulkLoad.bulk_load(sheets, opts)
 
       assert %{events: events} =
-               UploadEvents.get_job(opts.job_id)
+               UploadJobs.get_job(opts.job_id)
 
       assert [
                %{
@@ -297,7 +313,7 @@ defmodule TdDq.XLSX.BulkLoadTest do
                BulkLoad.bulk_load(sheets, opts)
 
       assert %{events: events} =
-               UploadEvents.get_job(opts.job_id)
+               UploadJobs.get_job(opts.job_id)
 
       assert [
                %{
@@ -402,7 +418,7 @@ defmodule TdDq.XLSX.BulkLoadTest do
                BulkLoad.bulk_load(sheets, opts)
 
       assert %{events: events} =
-               UploadEvents.get_job(opts.job_id)
+               UploadJobs.get_job(opts.job_id)
 
       assert [
                %{
@@ -517,7 +533,7 @@ defmodule TdDq.XLSX.BulkLoadTest do
                BulkLoad.bulk_load(sheets, opts)
 
       assert %{events: events} =
-               UploadEvents.get_job(opts.job_id)
+               UploadJobs.get_job(opts.job_id)
 
       assert [
                %{
@@ -539,7 +555,7 @@ defmodule TdDq.XLSX.BulkLoadTest do
 
     test "no need for update", %{opts: opts, domain: domain} do
       sheets = %{
-        "Sheet1" =>
+        "impl_template" =>
           {[
              "english_implementation_key",
              "english_implementation_template",
@@ -571,14 +587,14 @@ defmodule TdDq.XLSX.BulkLoadTest do
                BulkLoad.bulk_load(sheets, opts)
 
       assert %{events: events} =
-               UploadEvents.get_job(opts.job_id)
+               UploadJobs.get_job(opts.job_id)
 
       assert [
                %{
                  response: %{
                    "details" => %{"implementation_key" => "existing_impl"},
                    "row_number" => 2,
-                   "sheet" => "Sheet1",
+                   "sheet" => "impl_template",
                    "type" => "unchanged"
                  },
                  status: "INFO"
@@ -588,7 +604,7 @@ defmodule TdDq.XLSX.BulkLoadTest do
 
     test "update existing implementation", %{opts: opts, domain: domain} do
       sheets = %{
-        "Sheet1" =>
+        "impl_template" =>
           {[
              "english_implementation_key",
              "english_implementation_template",
@@ -639,14 +655,14 @@ defmodule TdDq.XLSX.BulkLoadTest do
                    "implementation_key" => "existing_impl"
                  },
                  "row_number" => 2,
-                 "sheet" => "Sheet1"
+                 "sheet" => "impl_template"
                }
-             } = UploadEvents.get_job(opts.job_id)
+             } = UploadJobs.get_job(opts.job_id)
     end
 
     test "invalid update existing implementation", %{opts: opts, domain: domain} do
       sheets = %{
-        "Sheet1" =>
+        "impl_template" =>
           {[
              "english_implementation_key",
              "english_implementation_template",
@@ -690,12 +706,12 @@ defmodule TdDq.XLSX.BulkLoadTest do
                  "type" => "implementation_creation_error"
                }
              } =
-               UploadEvents.get_job(opts.job_id)
+               UploadJobs.get_job(opts.job_id)
     end
 
     test "error missing required header", %{opts: opts} do
       sheets = %{
-        "Sheet1" =>
+        "impl_template" =>
           {[
              "english_result_type",
              "english_goal",
@@ -723,16 +739,16 @@ defmodule TdDq.XLSX.BulkLoadTest do
                      "english_implementation_template"
                    ]
                  },
-                 "sheet" => "Sheet1",
+                 "sheet" => "impl_template",
                  "type" => "missing_required_headers"
                }
              } =
-               UploadEvents.get_job(opts.job_id)
+               UploadJobs.get_job(opts.job_id)
     end
 
     test "error template not found", %{opts: opts, domain: domain} do
       sheets = %{
-        "Sheet1" =>
+        "invalid_template" =>
           {[
              "english_implementation_key",
              "english_implementation_template",
@@ -755,14 +771,14 @@ defmodule TdDq.XLSX.BulkLoadTest do
                BulkLoad.bulk_load(sheets, opts)
 
       assert %{events: events} =
-               UploadEvents.get_job(opts.job_id)
+               UploadJobs.get_job(opts.job_id)
 
       assert [
                %{
                  response: %{
                    "details" => %{"template_name" => "invalid_template"},
                    "row_number" => 2,
-                   "sheet" => "Sheet1",
+                   "sheet" => "invalid_template",
                    "type" => "invalid_template_name"
                  },
                  status: "ERROR"
@@ -772,7 +788,7 @@ defmodule TdDq.XLSX.BulkLoadTest do
 
     test "error domain not found", %{opts: opts} do
       sheets = %{
-        "Sheet1" =>
+        "impl_template" =>
           {[
              "english_implementation_key",
              "english_implementation_template",
@@ -795,14 +811,14 @@ defmodule TdDq.XLSX.BulkLoadTest do
                BulkLoad.bulk_load(sheets, opts)
 
       assert %{events: events} =
-               UploadEvents.get_job(opts.job_id)
+               UploadJobs.get_job(opts.job_id)
 
       assert [
                %{
                  response: %{
                    "details" => %{"domain_external_id" => "foo_domain_ext_id"},
                    "row_number" => 2,
-                   "sheet" => "Sheet1",
+                   "sheet" => "impl_template",
                    "type" => "invalid_domain_external_id"
                  },
                  status: "ERROR"
@@ -812,7 +828,7 @@ defmodule TdDq.XLSX.BulkLoadTest do
 
     test "error rule does not exist", %{opts: opts, domain: domain} do
       sheets = %{
-        "Sheet1" =>
+        "impl_template" =>
           {[
              "english_implementation_key",
              "english_implementation_template",
@@ -848,17 +864,17 @@ defmodule TdDq.XLSX.BulkLoadTest do
                latest_status: "ERROR",
                latest_event_response: %{
                  "row_number" => 2,
-                 "sheet" => "Sheet1",
+                 "sheet" => "impl_template",
                  "type" => "invalid_associated_rule",
                  "details" => %{"rule_name" => "rule"}
                }
              } =
-               UploadEvents.get_job(opts.job_id)
+               UploadJobs.get_job(opts.job_id)
     end
 
     test "error invalid result goal", %{opts: opts, domain: domain} do
       sheets = %{
-        "Sheet1" =>
+        "impl_template" =>
           {[
              "english_implementation_key",
              "english_implementation_template",
@@ -900,7 +916,7 @@ defmodule TdDq.XLSX.BulkLoadTest do
                  "type" => "implementation_creation_error"
                }
              } =
-               UploadEvents.get_job(opts.job_id)
+               UploadJobs.get_job(opts.job_id)
     end
 
     test "handles different errors individually for sheet and row", %{opts: opts, domain: domain} do
@@ -911,7 +927,7 @@ defmodule TdDq.XLSX.BulkLoadTest do
              "english_goal",
              "english_minimum"
            ], [["translated_percentage", 75, 50]]},
-        "valid_sheet" =>
+        "impl_template" =>
           {[
              "english_implementation_key",
              "english_implementation_template",
@@ -977,7 +993,7 @@ defmodule TdDq.XLSX.BulkLoadTest do
                BulkLoad.bulk_load(sheets, opts)
 
       assert %{events: events} =
-               UploadEvents.get_job(opts.job_id)
+               UploadJobs.get_job(opts.job_id)
 
       assert [
                %{
@@ -998,7 +1014,7 @@ defmodule TdDq.XLSX.BulkLoadTest do
                  response: %{
                    "details" => %{"domain_external_id" => "invalid_domain"},
                    "row_number" => 2,
-                   "sheet" => "valid_sheet",
+                   "sheet" => "impl_template",
                    "type" => "invalid_domain_external_id"
                  },
                  status: "ERROR"
@@ -1007,7 +1023,7 @@ defmodule TdDq.XLSX.BulkLoadTest do
                  response: %{
                    "details" => %{"template_name" => "invalid_template"},
                    "row_number" => 3,
-                   "sheet" => "valid_sheet",
+                   "sheet" => "impl_template",
                    "type" => "invalid_template_name"
                  },
                  status: "ERROR"
@@ -1016,7 +1032,7 @@ defmodule TdDq.XLSX.BulkLoadTest do
                  response: %{
                    "details" => %{"rule_name" => "rule"},
                    "row_number" => 4,
-                   "sheet" => "valid_sheet",
+                   "sheet" => "impl_template",
                    "type" => "invalid_associated_rule"
                  },
                  status: "ERROR"
@@ -1025,7 +1041,7 @@ defmodule TdDq.XLSX.BulkLoadTest do
                  response: %{
                    "details" => [["goal", ["must.be.greater.than.or.equal.to.minimum", []]]],
                    "row_number" => 5,
-                   "sheet" => "valid_sheet",
+                   "sheet" => "impl_template",
                    "type" => "implementation_creation_error"
                  },
                  status: "ERROR"
@@ -1034,12 +1050,215 @@ defmodule TdDq.XLSX.BulkLoadTest do
                  response: %{
                    "details" => %{"implementation_key" => "valid_impl_key"},
                    "row_number" => 6,
-                   "sheet" => "valid_sheet",
+                   "sheet" => "impl_template",
                    "type" => "created"
                  },
                  status: "INFO"
                }
              ] = events
+    end
+
+    test "calls reindex with created implementation ids", %{opts: opts, domain: domain} do
+      sheets = %{
+        "impl_template" =>
+          {[
+             "english_implementation_key",
+             "english_implementation_template",
+             "english_result_type",
+             "english_goal",
+             "english_minimum",
+             "domain_external_id",
+             "english_executable",
+             "english_records",
+             "english_string_field"
+           ],
+           [
+             [
+               "impl_key_1",
+               "impl_template",
+               "translated_percentage",
+               75,
+               50,
+               domain.external_id,
+               "executable",
+               "records",
+               "string_value"
+             ],
+             [
+               "impl_key_2",
+               "impl_template",
+               "translated_percentage",
+               80,
+               60,
+               domain.external_id,
+               "executable",
+               "records",
+               "string_value"
+             ]
+           ]}
+      }
+
+      assert {:ok, %{insert_count: 2}} = BulkLoad.bulk_load(sheets, opts)
+
+      assert [{:reindex, :implementations, ids}] = IndexWorkerMock.calls()
+      assert length(ids) == 2
+      assert Enum.all?(ids, &is_integer/1)
+    end
+
+    test "calls reindex with updated implementation ids", %{opts: opts, domain: domain} do
+      existing_impl =
+        insert(:implementation,
+          implementation_key: "existing_impl_for_update",
+          df_name: "impl_template",
+          domain_id: domain.id,
+          domain: domain
+        )
+
+      sheets = %{
+        "impl_template" =>
+          {[
+             "english_implementation_key",
+             "english_implementation_template",
+             "english_result_type",
+             "english_goal",
+             "english_minimum",
+             "domain_external_id",
+             "english_executable",
+             "english_records",
+             "english_string_field"
+           ],
+           [
+             [
+               "existing_impl_for_update",
+               "impl_template",
+               "translated_percentage",
+               90,
+               70,
+               domain.external_id,
+               "executable",
+               "records",
+               "updated_value"
+             ]
+           ]}
+      }
+
+      assert {:ok, %{update_count: 1}} = BulkLoad.bulk_load(sheets, opts)
+
+      assert [{:reindex, :implementations, ids}] = IndexWorkerMock.calls()
+      assert length(ids) == 1
+      assert hd(ids) in [existing_impl.id]
+    end
+
+    test "calls reindex with both created and updated implementation ids", %{
+      opts: opts,
+      domain: domain
+    } do
+      existing_impl =
+        insert(:implementation,
+          implementation_key: "existing_impl_for_merge",
+          df_name: "impl_template",
+          domain_id: domain.id,
+          domain: domain,
+          df_content: %{}
+        )
+
+      sheets = %{
+        "impl_template" =>
+          {[
+             "english_implementation_key",
+             "english_implementation_template",
+             "english_result_type",
+             "english_goal",
+             "english_minimum",
+             "domain_external_id",
+             "english_executable",
+             "english_records",
+             "english_string_field"
+           ],
+           [
+             [
+               "existing_impl_for_merge",
+               "impl_template",
+               "translated_percentage",
+               90,
+               70,
+               domain.external_id,
+               "executable",
+               "records",
+               "updated_value"
+             ],
+             [
+               "new_impl_for_merge",
+               "impl_template",
+               "translated_percentage",
+               75,
+               50,
+               domain.external_id,
+               "executable",
+               "records",
+               "string_value"
+             ]
+           ]}
+      }
+
+      assert {:ok, %{insert_count: 1, update_count: 1}} =
+               BulkLoad.bulk_load(sheets, opts)
+
+      assert [{:reindex, :implementations, ids}] = IndexWorkerMock.calls()
+      assert length(ids) == 2
+      assert existing_impl.id in ids
+      assert Enum.all?(ids, &is_integer/1)
+    end
+
+    test "does not call reindex when no implementations are created or updated", %{
+      opts: opts,
+      domain: domain
+    } do
+      %{
+        implementation_key: impl_key,
+        result_type: result_type,
+        goal: goal,
+        minimum: minimum
+      } =
+        insert(:implementation,
+          implementation_key: "existing_impl_unchanged",
+          df_name: "impl_template",
+          domain_id: domain.id,
+          domain: domain,
+          df_content: %{"string_field" => %{"value" => "string_value", "origin" => "file"}}
+        )
+
+      sheets = %{
+        "impl_template" =>
+          {[
+             "english_implementation_key",
+             "english_implementation_template",
+             "english_result_type",
+             "english_goal",
+             "english_minimum",
+             "domain_external_id",
+             "english_executable",
+             "english_records",
+             "english_string_field"
+           ],
+           [
+             [
+               impl_key,
+               "impl_template",
+               result_type,
+               goal,
+               minimum,
+               domain.external_id,
+               "executable",
+               "records",
+               "string_value"
+             ]
+           ]}
+      }
+
+      assert {:ok, %{unchanged_count: 1}} = BulkLoad.bulk_load(sheets, opts)
+
+      assert [] = IndexWorkerMock.calls()
     end
   end
 

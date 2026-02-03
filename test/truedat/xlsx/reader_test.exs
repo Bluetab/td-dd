@@ -196,4 +196,22 @@ defmodule Truedat.XLSX.ReaderTest do
              } = result
     end
   end
+
+  describe "move_file!/2" do
+    test "creates and moves file to directory" do
+      source = xlsx_path("upload_tiny")
+      temp_file = xlsx_path("move_file_test")
+      File.cp!(source, temp_file)
+
+      target_dir = "nonexistent_folder"
+      target = Path.join(target_dir, "move_file_test.xlsx")
+
+      assert Reader.move_file!(temp_file, target_dir) == target
+      assert File.exists?(target)
+      # After move, temp_file should not exist
+      refute File.exists?(temp_file)
+      # Clean up
+      File.rm_rf(target_dir)
+    end
+  end
 end

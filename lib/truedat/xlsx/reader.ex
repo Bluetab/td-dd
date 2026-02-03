@@ -53,4 +53,12 @@ defmodule Truedat.XLSX.Reader do
   defp create_row(row, headers_len) do
     row ++ List.duplicate(nil, max(0, headers_len - length(row)))
   end
+
+  def move_file!(path, upload_dir) do
+    :ok = File.mkdir_p!(upload_dir)
+    source_file_name = path |> Path.split() |> List.last()
+    file_path = Path.join([upload_dir, source_file_name])
+    :ok = File.rename!(path, file_path)
+    file_path
+  end
 end

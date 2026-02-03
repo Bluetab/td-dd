@@ -2,20 +2,19 @@ defmodule TdDdWeb.DataStructures.XLSXController do
   use TdDdWeb, :controller
 
   alias TdCore.Utils.FileHash
-
-  alias TdDd.DataStructures.{
-    FileBulkUpdateEvent,
-    FileBulkUpdateEvents,
-    Search
-  }
-
-  alias TdDd.XLSX.{Download, Upload}
+  alias TdDd.DataStructures.Search
+  alias TdDd.DataStructures.StructureNotes
+  alias TdDd.XLSX.Download
+  alias Truedat.Audit.UploadJobs
+  alias Truedat.XLSX.Reader
+  alias Truedat.XLSX.UploadWorker
   plug(TdDdWeb.SearchPermissionPlug)
   action_fallback(TdDdWeb.FallbackController)
 
   require Logger
 
   @default_lang Application.compile_env(:td_dd, :lang)
+  @file_upload_dir Application.compile_env(:td_dd, :file_upload_dir)
 
   def download(conn, params) do
     structure_url_schema = Map.get(params, "structure_url_schema", nil)
@@ -46,25 +45,42 @@ defmodule TdDdWeb.DataStructures.XLSXController do
   end
 
   def upload(conn, params) do
-    %{user_id: user_id} = claims = conn.assigns[:current_resource]
-
     lang = Map.get(params, "lang", @default_lang)
-    %{path: path, filename: filename} = Map.get(params, "structures")
-    auto_publish = Map.get(params, "auto_publish", "false") == "true"
+
+    %{"structures" => %{path: file_path, filename: filename}} =
+      params
+
+    claims = conn.assigns[:current_resource]
+    path = Reader.move_file!(file_path, @file_upload_dir)
+    hash = FileHash.hash(path, :md5)
 
     opts = %{
-      "auto_publish" => auto_publish,
+      "auto_publish" => Map.get(params, "auto_publish"),
       "lang" => lang,
-      "user_id" => user_id,
       "claims" => claims
     }
 
-    with hash when is_binary(hash) <- FileHash.hash(path, :md5),
-         {:ok, %Oban.Job{id: id}} <-
-           Upload.structures_async(%{path: path, filename: filename}, hash, opts),
-         {:ok, %FileBulkUpdateEvent{status: "PENDING"}} <-
-           FileBulkUpdateEvents.create_pending(user_id, hash, filename, "oban:#{id}") do
-      send_resp(conn, :accepted, "")
+    scope = "notes"
+
+    {:ok, %{id: job_id}} =
+      UploadJobs.create_job(%{
+        user_id: claims.user_id,
+        hash: hash,
+        filename: filename,
+        scope: scope
+      })
+
+    with :ok <- Bodyguard.permit(StructureNotes, :xlsx_upload, claims, nil),
+         {:ok, _} <- UploadJobs.create_pending(job_id) do
+      %{path: path, job_id: job_id, scope: scope, opts: opts}
+      |> UploadWorker.new()
+      |> Oban.insert()
+
+      json(conn, %{job_id: job_id})
+    else
+      {:error, reason} ->
+        UploadJobs.create_failed(job_id, reason)
+        {:error, reason}
     end
   end
 

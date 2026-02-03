@@ -27,6 +27,10 @@ defmodule TdDd.DataStructures.StructureNotes.Policy do
       Permissions.authorized?(claims, permission(action), domain_ids)
   end
 
+  def authorize(:xlsx_upload, claims, _params) do
+    Permissions.authorized?(claims, [:create_structure_note, :edit_structure_note])
+  end
+
   def authorize(_action, _, _params), do: false
 
   defp permission(:ai_suggestions), do: :ai_structure_note

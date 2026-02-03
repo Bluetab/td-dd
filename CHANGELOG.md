@@ -4,6 +4,12 @@
 
 ### Added
 
+- [TD-7787] Add Upload Jobs
+  - Moved from Implementations to Truedat
+  - Added common flow for Structure Notes
+
+### Fixed
+
 - [TD-7885] Fix reactivate metadata from connector workflow
 - [TD-7775] Cast embeddings during bulk insert to prevent format errors during raw data insertion
 

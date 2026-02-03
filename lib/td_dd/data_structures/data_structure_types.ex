@@ -141,6 +141,8 @@ defmodule TdDd.DataStructures.DataStructureTypes do
     end
   end
 
+  defp enrich_template(structure_type), do: structure_type
+
   defp enrich_template(
          %DataStructureType{template_id: template_id} = structure_type,
          templates_map
