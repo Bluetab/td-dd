@@ -8,10 +8,17 @@ defmodule TdDdWeb.XLSXControllerTest do
 
   @moduletag sandbox: :shared
   @file_upload_dir Application.compile_env(:td_dd, :file_upload_dir)
+  @temp_dir "test/tmp"
   @rule_implementation_permissions [:manage_quality_rule_implementations, :view_quality_rule]
 
   setup_all do
-    on_exit(fn -> File.rm_rf(@file_upload_dir) end)
+    File.mkdir_p!(@temp_dir)
+
+    on_exit(fn ->
+      File.rm_rf(@file_upload_dir)
+      File.rm_rf(@temp_dir)
+    end)
+
     :ok
   end
 
@@ -946,7 +953,8 @@ defmodule TdDdWeb.XLSXControllerTest do
     @tag authentication: [role: "admin"]
     test "admin will queue upload job", %{conn: conn, claims: claims} do
       filename = "upload_tiny.xlsx"
-      path = "test/fixtures/xlsx/#{filename}"
+      path = "#{@temp_dir}/#{filename}"
+      File.cp!("test/fixtures/xlsx/#{filename}", path)
       job_path = "test/upload/#{filename}"
 
       lang = "en"
@@ -971,7 +979,7 @@ defmodule TdDdWeb.XLSXControllerTest do
                %Oban.Job{
                  state: "available",
                  queue: "xlsx_implementations_upload_queue",
-                 worker: "TdDq.XLSX.Jobs.UploadWorker",
+                 worker: "Truedat.XLSX.UploadWorker",
                  args: %{
                    "opts" => %{
                      "auto_publish" => ^auto_publish,
@@ -992,7 +1000,8 @@ defmodule TdDdWeb.XLSXControllerTest do
     @tag authentication: [role: "user"]
     test "user without permission cannot upload", %{conn: conn} do
       filename = "upload_tiny.xlsx"
-      path = "test/fixtures/xlsx/#{filename}"
+      path = "#{@temp_dir}/#{filename}"
+      File.cp!("test/fixtures/xlsx/#{filename}", path)
 
       assert conn
              |> post(Routes.xlsx_path(conn, :upload),
@@ -1009,7 +1018,8 @@ defmodule TdDdWeb.XLSXControllerTest do
       @tag authentication: [role: "admin", permissions: [permission]]
       test "user with #{permission} permission can initiate upload", %{conn: conn, claims: claims} do
         filename = "upload_tiny.xlsx"
-        path = "test/fixtures/xlsx/#{filename}"
+        path = "#{@temp_dir}/#{filename}"
+        File.cp!("test/fixtures/xlsx/#{filename}", path)
         job_path = "test/upload/#{filename}"
 
         lang = "en"
@@ -1034,7 +1044,7 @@ defmodule TdDdWeb.XLSXControllerTest do
                  %Oban.Job{
                    state: "available",
                    queue: "xlsx_implementations_upload_queue",
-                   worker: "TdDq.XLSX.Jobs.UploadWorker",
+                   worker: "Truedat.XLSX.UploadWorker",
                    args: %{
                      "opts" => %{
                        "auto_publish" => ^auto_publish,
@@ -1057,8 +1067,8 @@ defmodule TdDdWeb.XLSXControllerTest do
   describe "xlsx upload jobs" do
     @tag authentication: [role: "admin"]
     test "can list only their own upload jobs", %{conn: conn, claims: claims} do
-      job = insert(:implementation_upload_job, user_id: claims.user_id)
-      _other_job = insert(:implementation_upload_job, user_id: claims.user_id + 1)
+      job = insert(:upload_job, user_id: claims.user_id)
+      _other_job = insert(:upload_job, user_id: claims.user_id + 1)
 
       assert %{"data" => [%{"id" => id}]} =
                conn
@@ -1070,11 +1080,11 @@ defmodule TdDdWeb.XLSXControllerTest do
 
     @tag authentication: [role: "admin"]
     test "return latest status for upload job", %{conn: conn, claims: claims} do
-      job = insert(:implementation_upload_job, user_id: claims.user_id)
-      insert(:implementation_upload_event, job_id: job.id, status: "PENDING")
+      job = insert(:upload_job, user_id: claims.user_id)
+      insert(:upload_event, job_id: job.id, status: "PENDING")
 
       %{inserted_at: latest_event_at_ts} =
-        insert(:implementation_upload_event,
+        insert(:upload_event,
           job_id: job.id,
           status: "COMPLETED",
           response: %{"message" => "Completed"}
@@ -1100,8 +1110,8 @@ defmodule TdDdWeb.XLSXControllerTest do
   describe "xlsx upload job" do
     @tag authentication: [role: "admin"]
     test "can get upload job", %{conn: conn, claims: claims} do
-      %{id: job_id} = insert(:implementation_upload_job, user_id: claims.user_id)
-      %{id: event_id} = insert(:implementation_upload_event, job_id: job_id)
+      %{id: job_id} = insert(:upload_job, user_id: claims.user_id)
+      %{id: event_id} = insert(:upload_event, job_id: job_id)
 
       assert %{"data" => response} =
                conn

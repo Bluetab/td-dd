@@ -2,10 +2,6 @@ import Config
 
 config :td_dd, :time_zone, System.get_env("TZ", "Etc/UTC")
 
-config :td_dd,
-       :limit_outdated_embeddings,
-       System.get_env("LIMIT_OUTDATED_EMBEDDINGS", "50000") |> String.to_integer()
-
 config :td_cluster, groups: [:dd]
 
 config :td_cache, :audit, maxlen: System.get_env("REDIS_AUDIT_STREAM_MAXLEN", "100")
@@ -218,7 +214,7 @@ if config_env() == :prod do
       xlsx_upload_queue: System.get_env("OBAN_QUEUE_XLSX_UPLOAD", "10") |> String.to_integer(),
       delete_units: System.get_env("OBAN_QUEUE_DELETE_UNITS", "10") |> String.to_integer(),
       embedding_upserts:
-        System.get_env("OBAN_QUEUE_EMBEDDING_UPSERTS", "10") |> String.to_integer(),
+        System.get_env("OBAN_QUEUE_EMBEDDING_UPSERTS", "1") |> String.to_integer(),
       embedding_deletion:
         System.get_env("OBAN_QUEUE_EMBEDDING_DELETION", "5") |> String.to_integer()
     ],
@@ -228,6 +224,18 @@ end
 config :td_dd, Oban, prefix: System.get_env("OBAN_DB_SCHEMA", "private")
 
 config :td_dd, oban_create_schema: System.get_env("OBAN_CREATE_SCHEMA", "true") == "true"
+
+config :td_dd,
+       :limit_outdated_embeddings,
+       System.get_env("LIMIT_OUTDATED_EMBEDDINGS", "50000") |> String.to_integer()
+
+config :td_dd,
+       :data_structure_record_embeddings_batch_size,
+       System.get_env("DATA_STRUCTURE_RECORD_EMBEDDINGS_BATCH_SIZE", "50") |> String.to_integer()
+
+config :td_dd,
+       :record_embeddings_default_delay_ms,
+       System.get_env("RECORD_EMBEDDINGS_DEFAULT_DELAY_MS", "500") |> String.to_integer()
 
 config :td_dd, TdDd.Lineage.Import.Loader,
   nodes_chunk_size: System.get_env("NODES_CHUNK_SIZE", "10000") |> String.to_integer(),

@@ -307,7 +307,6 @@ defmodule TdDd.Loader.Metadata do
   defp get_max_metadata_versions(structure_ids) do
     StructureMetadata
     |> where([sm], sm.data_structure_id in ^structure_ids)
-    |> where([sm], is_nil(sm.deleted_at))
     |> group_by([sm], sm.data_structure_id)
     |> select([sm], {sm.data_structure_id, max(sm.version)})
     |> Repo.all()

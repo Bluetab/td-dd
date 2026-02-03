@@ -354,7 +354,7 @@ defmodule TdDd.Loader.VersionsTest do
       assert %{deleted_at: nil} = Repo.get!(StructureMetadata, metadata_id)
     end
 
-    test "works correctly with single DataStructure and single StructureMetadata" do
+    test "restores StructureMetadata when reactivating deleted versions with single structure and metadata" do
       inserted_at = ~U[2000-01-01T01:23:45.123456Z]
       deleted_at = ~U[2001-01-01T01:23:45.123456Z]
       ts = DateTime.utc_now()
@@ -488,7 +488,7 @@ defmodule TdDd.Loader.VersionsTest do
   end
 
   describe "replace_changed_versions/3" do
-    test "replaces existing versions whose hash has unchanged" do
+    test "replaces existing versions when hash changes" do
       ts1 = ~U[2000-01-01T01:23:45.123456Z]
       ts = DateTime.utc_now()
 
@@ -546,6 +546,425 @@ defmodule TdDd.Loader.VersionsTest do
                |> where([dsv], dsv.id in ^Enum.map(versions, & &1.id))
                |> order_by([:data_structure_id, :version])
                |> Repo.all()
+    end
+
+    test "restores StructureMetadata when replacing changed versions of deleted structures" do
+      ts1 = ~U[2000-01-01T01:23:45.123456Z]
+      deleted_at = ~U[2001-01-01T01:23:45.123456Z]
+      ts = DateTime.utc_now()
+
+      %{id: foo_id, data_structure_id: foo_structure_id} =
+        insert(:data_structure_version,
+          inserted_at: ts1,
+          updated_at: ts1,
+          deleted_at: deleted_at
+        )
+
+      %{id: metadata_id} =
+        insert(:structure_metadata,
+          data_structure_id: foo_structure_id,
+          version: 0,
+          deleted_at: deleted_at
+        )
+
+      context = %{
+        entries: [
+          %{ghash: "foog", lhash: "fool", hash: "fooh", external_id: "foo"}
+        ],
+        version_id_map: %{
+          "foo" => %{id: foo_id, version: 0}
+        },
+        structure_id_map: %{
+          "foo" => foo_structure_id
+        },
+        ghash: %{},
+        lhash: %{}
+      }
+
+      assert {:ok, {2, _versions}} =
+               Versions.replace_changed_versions(Repo, %{context: context}, ts)
+
+      assert %{deleted_at: ^ts} = Repo.get!(DataStructureVersion, foo_id)
+
+      all_versions =
+        DataStructureVersion
+        |> where([dsv], dsv.data_structure_id == ^foo_structure_id)
+        |> order_by([dsv], dsv.version)
+        |> Repo.all()
+
+      assert length(all_versions) == 2
+      [old_version, new_version] = all_versions
+      assert old_version.id == foo_id
+      assert old_version.deleted_at == ts
+      assert old_version.version == 0
+      assert new_version.version == 1
+      assert new_version.deleted_at == nil
+
+      assert %{deleted_at: nil} = Repo.get!(StructureMetadata, metadata_id)
+    end
+
+    test "restores StructureMetadata when replacing changed versions of deleted structures with active metadata" do
+      ts1 = ~U[2000-01-01T01:23:45.123456Z]
+      deleted_at = ~U[2001-01-01T01:23:45.123456Z]
+      ts = DateTime.utc_now()
+
+      %{id: foo_id, data_structure_id: foo_structure_id} =
+        insert(:data_structure_version,
+          inserted_at: ts1,
+          updated_at: ts1,
+          deleted_at: deleted_at
+        )
+
+      %{id: metadata_id} =
+        insert(:structure_metadata,
+          data_structure_id: foo_structure_id,
+          version: 0,
+          deleted_at: nil
+        )
+
+      context = %{
+        entries: [
+          %{ghash: "foog", lhash: "fool", hash: "fooh", external_id: "foo"}
+        ],
+        version_id_map: %{
+          "foo" => %{id: foo_id, version: 0}
+        },
+        structure_id_map: %{
+          "foo" => foo_structure_id
+        },
+        ghash: %{},
+        lhash: %{}
+      }
+
+      assert {:ok, {2, _versions}} =
+               Versions.replace_changed_versions(Repo, %{context: context}, ts)
+
+      assert %{deleted_at: ^ts} = Repo.get!(DataStructureVersion, foo_id)
+
+      all_versions =
+        DataStructureVersion
+        |> where([dsv], dsv.data_structure_id == ^foo_structure_id)
+        |> order_by([dsv], dsv.version)
+        |> Repo.all()
+
+      assert length(all_versions) == 2
+      [old_version, new_version] = all_versions
+      assert old_version.id == foo_id
+      assert old_version.deleted_at == ts
+      assert old_version.version == 0
+      assert new_version.version == 1
+      assert new_version.deleted_at == nil
+
+      assert %{deleted_at: nil} = Repo.get!(StructureMetadata, metadata_id)
+    end
+
+    test "restores only latest StructureMetadata version when replacing changed versions of deleted structures with multiple deleted metadata versions" do
+      ts1 = ~U[2000-01-01T01:23:45.123456Z]
+      deleted_at = ~U[2001-01-01T01:23:45.123456Z]
+      ts = DateTime.utc_now()
+
+      %{id: foo_id, data_structure_id: foo_structure_id} =
+        insert(:data_structure_version,
+          inserted_at: ts1,
+          updated_at: ts1,
+          deleted_at: deleted_at
+        )
+
+      %{id: metadata_v0_id} =
+        insert(:structure_metadata,
+          data_structure_id: foo_structure_id,
+          version: 0,
+          deleted_at: deleted_at
+        )
+
+      %{id: metadata_v1_id} =
+        insert(:structure_metadata,
+          data_structure_id: foo_structure_id,
+          version: 1,
+          deleted_at: deleted_at
+        )
+
+      %{id: metadata_v2_id} =
+        insert(:structure_metadata,
+          data_structure_id: foo_structure_id,
+          version: 2,
+          deleted_at: deleted_at
+        )
+
+      context = %{
+        entries: [
+          %{ghash: "foog", lhash: "fool", hash: "fooh", external_id: "foo"}
+        ],
+        version_id_map: %{
+          "foo" => %{id: foo_id, version: 0}
+        },
+        structure_id_map: %{
+          "foo" => foo_structure_id
+        },
+        ghash: %{},
+        lhash: %{}
+      }
+
+      assert {:ok, {2, _versions}} =
+               Versions.replace_changed_versions(Repo, %{context: context}, ts)
+
+      assert %{deleted_at: ^ts} = Repo.get!(DataStructureVersion, foo_id)
+
+      all_versions =
+        DataStructureVersion
+        |> where([dsv], dsv.data_structure_id == ^foo_structure_id)
+        |> order_by([dsv], dsv.version)
+        |> Repo.all()
+
+      assert length(all_versions) == 2
+      [old_version, new_version] = all_versions
+      assert old_version.id == foo_id
+      assert old_version.deleted_at == ts
+      assert old_version.version == 0
+      assert new_version.version == 1
+      assert new_version.deleted_at == nil
+
+      assert %{deleted_at: ^deleted_at} = Repo.get!(StructureMetadata, metadata_v0_id)
+      assert %{deleted_at: ^deleted_at} = Repo.get!(StructureMetadata, metadata_v1_id)
+      assert %{deleted_at: nil} = Repo.get!(StructureMetadata, metadata_v2_id)
+    end
+
+    test "creates new version when replacing changed versions of deleted structures with multiple deleted structure versions" do
+      ts1 = ~U[2000-01-01T01:23:45.123456Z]
+      deleted_at = ~U[2001-01-01T01:23:45.123456Z]
+      ts = DateTime.utc_now()
+
+      %{id: foo_v0_id, data_structure_id: foo_structure_id} =
+        insert(:data_structure_version,
+          inserted_at: ts1,
+          updated_at: ts1,
+          version: 0,
+          deleted_at: deleted_at
+        )
+
+      %{id: foo_v1_id} =
+        insert(:data_structure_version,
+          inserted_at: ts1,
+          updated_at: ts1,
+          version: 1,
+          data_structure_id: foo_structure_id,
+          deleted_at: deleted_at
+        )
+
+      %{id: metadata_id} =
+        insert(:structure_metadata,
+          data_structure_id: foo_structure_id,
+          version: 1,
+          deleted_at: deleted_at
+        )
+
+      context = %{
+        entries: [
+          %{ghash: "foog", lhash: "fool", hash: "fooh", external_id: "foo"}
+        ],
+        version_id_map: %{
+          "foo" => %{id: foo_v1_id, version: 1}
+        },
+        structure_id_map: %{
+          "foo" => foo_structure_id
+        },
+        ghash: %{},
+        lhash: %{}
+      }
+
+      assert {:ok, {2, _versions}} =
+               Versions.replace_changed_versions(Repo, %{context: context}, ts)
+
+      assert %{deleted_at: ^ts} = Repo.get!(DataStructureVersion, foo_v1_id)
+
+      all_versions =
+        DataStructureVersion
+        |> where([dsv], dsv.data_structure_id == ^foo_structure_id)
+        |> order_by([dsv], dsv.version)
+        |> Repo.all()
+
+      assert length(all_versions) == 3
+      [v0, v1, v2] = all_versions
+      assert v0.id == foo_v0_id
+      assert v0.deleted_at == deleted_at
+      assert v0.version == 0
+      assert v1.id == foo_v1_id
+      assert v1.deleted_at == ts
+      assert v1.version == 1
+      assert v2.version == 2
+      assert v2.deleted_at == nil
+
+      assert %{deleted_at: nil} = Repo.get!(StructureMetadata, metadata_id)
+    end
+
+    test "restores StructureMetadata when replacing changed versions with deleted versions having higher version numbers" do
+      ts1 = ~U[2000-01-01T01:23:45.123456Z]
+      deleted_at = ~U[2001-01-01T01:23:45.123456Z]
+      ts = DateTime.utc_now()
+
+      %{id: foo_id, data_structure_id: foo_structure_id} =
+        insert(:data_structure_version,
+          inserted_at: ts1,
+          updated_at: ts1,
+          version: 0,
+          deleted_at: deleted_at
+        )
+
+      insert(:structure_metadata,
+        data_structure_id: foo_structure_id,
+        version: 0,
+        deleted_at: deleted_at
+      )
+
+      insert(:structure_metadata,
+        data_structure_id: foo_structure_id,
+        version: 1,
+        deleted_at: deleted_at
+      )
+
+      %{id: metadata_v5_id} =
+        insert(:structure_metadata,
+          data_structure_id: foo_structure_id,
+          version: 5,
+          deleted_at: deleted_at
+        )
+
+      context = %{
+        entries: [
+          %{ghash: "foog", lhash: "fool", hash: "fooh", external_id: "foo"}
+        ],
+        version_id_map: %{
+          "foo" => %{id: foo_id, version: 0}
+        },
+        structure_id_map: %{
+          "foo" => foo_structure_id
+        },
+        ghash: %{},
+        lhash: %{}
+      }
+
+      assert {:ok, {2, _versions}} =
+               Versions.replace_changed_versions(Repo, %{context: context}, ts)
+
+      assert %{deleted_at: nil} = Repo.get!(StructureMetadata, metadata_v5_id)
+
+      all_metadata =
+        StructureMetadata
+        |> where([sm], sm.data_structure_id == ^foo_structure_id)
+        |> order_by([sm], sm.version)
+        |> Repo.all()
+
+      assert length(all_metadata) == 3
+      [m0, m1, m5] = all_metadata
+      assert m0.version == 0
+      assert m0.deleted_at == deleted_at
+      assert m1.version == 1
+      assert m1.deleted_at == deleted_at
+      assert m5.version == 5
+      assert m5.deleted_at == nil
+    end
+
+    test "restores latest deleted metadata when there are both deleted and active metadata versions" do
+      ts1 = ~U[2000-01-01T01:23:45.123456Z]
+      deleted_at = ~U[2001-01-01T01:23:45.123456Z]
+      ts = DateTime.utc_now()
+
+      %{id: foo_id, data_structure_id: foo_structure_id} =
+        insert(:data_structure_version,
+          inserted_at: ts1,
+          updated_at: ts1,
+          version: 0,
+          deleted_at: deleted_at
+        )
+
+      insert(:structure_metadata,
+        data_structure_id: foo_structure_id,
+        version: 0,
+        deleted_at: deleted_at
+      )
+
+      insert(:structure_metadata,
+        data_structure_id: foo_structure_id,
+        version: 1,
+        deleted_at: deleted_at
+      )
+
+      %{id: metadata_v3_id} =
+        insert(:structure_metadata,
+          data_structure_id: foo_structure_id,
+          version: 3,
+          deleted_at: nil
+        )
+
+      context = %{
+        entries: [
+          %{ghash: "foog", lhash: "fool", hash: "fooh", external_id: "foo"}
+        ],
+        version_id_map: %{
+          "foo" => %{id: foo_id, version: 0}
+        },
+        structure_id_map: %{
+          "foo" => foo_structure_id
+        },
+        ghash: %{},
+        lhash: %{}
+      }
+
+      assert {:ok, {2, _versions}} =
+               Versions.replace_changed_versions(Repo, %{context: context}, ts)
+
+      assert %{deleted_at: nil} = Repo.get!(StructureMetadata, metadata_v3_id)
+
+      active_metadata =
+        StructureMetadata
+        |> where([sm], sm.data_structure_id == ^foo_structure_id)
+        |> where([sm], is_nil(sm.deleted_at))
+        |> order_by([sm], sm.version)
+        |> Repo.all()
+
+      assert length(active_metadata) == 1
+      [m3] = active_metadata
+      assert m3.version == 3
+      assert m3.deleted_at == nil
+    end
+
+    test "handles replace_changed_versions when version_id_map returns nil for some entries" do
+      ts1 = ~U[2000-01-01T01:23:45.123456Z]
+      ts = DateTime.utc_now()
+
+      %{id: foo_id, data_structure_id: foo_structure_id} =
+        insert(:data_structure_version, inserted_at: ts1, updated_at: ts1)
+
+      context = %{
+        entries: [
+          %{ghash: "foog", lhash: "fool", hash: "fooh", external_id: "foo"},
+          %{ghash: "barg", lhash: "barl", hash: "barh", external_id: "bar"}
+        ],
+        version_id_map: %{
+          "foo" => %{id: foo_id, version: 0}
+        },
+        structure_id_map: %{
+          "foo" => foo_structure_id
+        },
+        ghash: %{},
+        lhash: %{}
+      }
+
+      assert {:ok, {2, _versions}} =
+               Versions.replace_changed_versions(Repo, %{context: context}, ts)
+
+      foo_versions =
+        DataStructureVersion
+        |> where([dsv], dsv.data_structure_id == ^foo_structure_id)
+        |> order_by([dsv], dsv.version)
+        |> Repo.all()
+
+      assert length(foo_versions) == 2
+      [v0, v1] = foo_versions
+      assert v0.id == foo_id
+      assert v0.deleted_at == ts
+      assert v1.version == 1
+      assert v1.deleted_at == nil
     end
   end
 end

@@ -1,16 +1,19 @@
-defmodule TdDq.Implementations.UploadJob do
-  @moduledoc "File Bulk Update Job entity"
+defmodule Truedat.Audit.UploadJobs.UploadJob do
+  @moduledoc "File Upload Job entity"
 
   use Ecto.Schema
 
   import Ecto.Changeset
 
-  alias TdDq.Implementations.UploadEvent
+  alias Truedat.Audit.UploadEvents.UploadEvent
 
-  schema "implementation_upload_jobs" do
+  @scopes ["implementations", "notes"]
+
+  schema "upload_jobs" do
     field(:user_id, :integer)
     field(:hash, :string)
     field(:filename, :string)
+    field(:scope, :string)
 
     field(:latest_status, :string, virtual: true)
     field(:latest_event_at, :utc_datetime_usec, virtual: true)
@@ -26,8 +29,10 @@ defmodule TdDq.Implementations.UploadJob do
     |> cast(params, [
       :user_id,
       :hash,
-      :filename
+      :filename,
+      :scope
     ])
     |> validate_required([:user_id, :hash, :filename])
+    |> validate_inclusion(:scope, @scopes)
   end
 end

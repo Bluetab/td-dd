@@ -23,7 +23,7 @@ config :td_dd, Oban,
     xlsx_upload_queue: 10,
     xlsx_implementations_upload_queue: 1,
     delete_units: 10,
-    embedding_upserts: 10,
+    embedding_upserts: 1,
     embedding_deletion: 5
   ],
   repo: TdDd.Repo
@@ -232,6 +232,8 @@ config :bodyguard, default_error: :forbidden
 config :flop, repo: TdDd.Repo
 
 config :td_dd, :limit_outdated_embeddings, 50_000
+config :td_dd, :data_structure_record_embeddings_batch_size, 50
+config :td_dd, :record_embeddings_default_delay_ms, 500
 
 import_config "metadata.exs"
 import_config "profiling.exs"
