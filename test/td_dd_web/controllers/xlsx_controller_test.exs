@@ -5,19 +5,26 @@ defmodule TdDdWeb.DataStructures.XLSXControllerTest do
   import Mox
 
   alias TdCore.Utils.FileHash
-  alias TdDd.DataStructures.FileBulkUpdateEvent
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Repo
   alias TdDd.Search.StructureEnricher
-  alias TdDd.XLSX.Jobs.UploadWorker
+  alias Truedat.Audit.UploadEvents.UploadEvent
+  alias Truedat.Audit.UploadJobs.UploadJob
   alias XlsxReader
 
   @moduletag sandbox: :shared
   @file_upload_dir Application.compile_env(:td_dd, :file_upload_dir)
+  @temp_dir "test/tmp"
 
   setup_all do
+    File.mkdir_p!(@temp_dir)
     start_supervised({Task.Supervisor, name: TdDd.TaskSupervisor})
-    on_exit(fn -> File.rm_rf(@file_upload_dir) end)
+
+    on_exit(fn ->
+      File.rm_rf(@file_upload_dir)
+      File.rm_rf(@temp_dir)
+    end)
+
     :ok
   end
 
@@ -890,105 +897,175 @@ defmodule TdDdWeb.DataStructures.XLSXControllerTest do
 
   describe "upload" do
     @tag authentication: [role: "admin"]
-    test "creates async job for upload processing for published notes", %{
-      conn: conn,
-      claims: claims
-    } do
-      file = "test/fixtures/xlsx/upload.xlsx"
+    test "admin will queue upload job", %{conn: conn, claims: claims} do
+      filename = "upload.xlsx"
+      path = "#{@temp_dir}/#{filename}"
+      job_path = "test/upload/#{filename}"
 
-      opts = %{
-        "auto_publish" => false,
-        "lang" => "en",
-        "user_id" => claims.user_id,
-        "claims" => %{
-          "user_id" => claims.user_id,
-          "user_name" => claims.user_name,
-          "jti" => claims.jti
-        }
-      }
+      File.cp!("test/fixtures/xlsx/#{filename}", path)
 
-      hash = FileHash.hash("test/fixtures/xlsx/upload.xlsx", :md5)
+      lang = "en"
+      auto_publish = "true"
+
+      %{
+        user_id: user_id,
+        user_name: user_name,
+        role: role,
+        jti: jti
+      } = claims
 
       assert conn
              |> post(Routes.xlsx_path(conn, :upload),
-               structures: upload(file),
-               note_type: :published
+               structures: upload(path),
+               lang: lang,
+               auto_publish: auto_publish
              )
-             |> response(:accepted)
+             |> response(:ok)
 
-      assert_enqueued worker: UploadWorker,
-                      args: %{hash: hash, opts: opts},
-                      queue: :xlsx_upload_queue
-
-      assert [%Oban.Job{id: job_id}] = all_enqueued()
-
-      assert [event] = Repo.all(FileBulkUpdateEvent)
-
-      assert Map.take(event, [:user_id, :status, :hash, :filename, :task_reference]) == %{
-               user_id: claims.user_id,
-               status: "PENDING",
-               hash: hash,
-               filename: "upload.xlsx",
-               task_reference: "oban:#{job_id}"
-             }
-
-      assert_enqueued(
-        worker: UploadWorker,
-        args: %{hash: hash, opts: opts},
-        queue: :xlsx_upload_queue
-      )
+      assert [
+               %Oban.Job{
+                 state: "available",
+                 queue: "xlsx_implementations_upload_queue",
+                 worker: "Truedat.XLSX.UploadWorker",
+                 args: %{
+                   "opts" => %{
+                     "auto_publish" => ^auto_publish,
+                     "claims" => %{
+                       "jti" => ^jti,
+                       "role" => ^role,
+                       "user_id" => ^user_id,
+                       "user_name" => ^user_name
+                     },
+                     "lang" => ^lang
+                   },
+                   "path" => ^job_path
+                 }
+               }
+             ] = all_enqueued()
     end
 
-    @tag authentication: [role: "admin"]
-    test "creates async job for upload processing for non-published notes", %{
-      conn: conn,
-      claims: claims
-    } do
-      file = "test/fixtures/xlsx/upload.xlsx"
+    @tag authentication: [role: "user", permissions: ["create_structure_note"]]
+    test "user with permission will queue upload job", %{conn: conn, claims: claims} do
+      filename = "upload.xlsx"
+      path = "#{@temp_dir}/#{filename}"
+      job_path = "test/upload/#{filename}"
+      File.cp!("test/fixtures/xlsx/#{filename}", path)
+      lang = "en"
+      auto_publish = "true"
 
-      opts = %{
-        "auto_publish" => false,
-        "lang" => "en",
-        "user_id" => claims.user_id,
-        "claims" => %{
-          "user_id" => claims.user_id,
-          "user_name" => claims.user_name,
-          "jti" => claims.jti
-        }
-      }
-
-      hash = FileHash.hash("test/fixtures/xlsx/upload.xlsx", :md5)
+      %{
+        user_id: user_id,
+        user_name: user_name,
+        role: role,
+        jti: jti
+      } = claims
 
       assert conn
              |> post(Routes.xlsx_path(conn, :upload),
-               structures: upload(file),
-               note_type: :non_published
+               structures: upload(path),
+               lang: lang,
+               auto_publish: auto_publish
              )
-             |> response(:accepted)
+             |> response(:ok)
 
-      assert_enqueued(
-        worker: UploadWorker,
-        args: %{hash: hash, opts: opts},
-        queue: :xlsx_upload_queue
-      )
+      assert [
+               %Oban.Job{
+                 state: "available",
+                 queue: "xlsx_implementations_upload_queue",
+                 worker: "Truedat.XLSX.UploadWorker",
+                 args: %{
+                   "opts" => %{
+                     "auto_publish" => ^auto_publish,
+                     "claims" => %{
+                       "jti" => ^jti,
+                       "role" => ^role,
+                       "user_id" => ^user_id,
+                       "user_name" => ^user_name
+                     },
+                     "lang" => ^lang
+                   },
+                   "path" => ^job_path
+                 }
+               }
+             ] = all_enqueued()
+    end
 
-      assert [%Oban.Job{id: job_id}] = all_enqueued()
+    @tag authentication: [role: "user"]
+    test "user without permission will have forbidden", %{conn: conn} do
+      filename = "upload.xlsx"
+      path = "#{@temp_dir}/#{filename}"
+      File.cp!("test/fixtures/xlsx/#{filename}", path)
 
-      assert [event] = Repo.all(FileBulkUpdateEvent)
+      lang = "en"
+      auto_publish = "true"
 
-      assert Map.take(event, [:user_id, :status, :hash, :filename, :task_reference]) == %{
-               user_id: claims.user_id,
-               status: "PENDING",
-               hash: hash,
-               filename: "upload.xlsx",
-               task_reference: "oban:#{job_id}"
-             }
+      assert conn
+             |> post(Routes.xlsx_path(conn, :upload),
+               structures: upload(path),
+               lang: lang,
+               auto_publish: auto_publish
+             )
+             |> response(:forbidden)
 
-      assert_enqueued(
-        worker: UploadWorker,
-        args: %{hash: hash, opts: opts},
-        queue: :xlsx_upload_queue
-      )
+      assert [] = all_enqueued()
+
+      %Truedat.Audit.UploadEvents.UploadEvent{
+        response: %{"message" => "forbidden"},
+        status: "FAILED"
+      } = Repo.one(UploadEvent)
+    end
+
+    for note_type <- [:published, :non_published] do
+      @tag authentication: [role: "admin"]
+      test "creates async job for upload processing for #{note_type} notes", %{
+        conn: conn,
+        claims: %{user_id: user_id, user_name: user_name, jti: jti}
+      } do
+        note_type = unquote(note_type)
+        file_name = "upload.xlsx"
+        file = "#{@temp_dir}/#{file_name}"
+        File.cp!("test/fixtures/xlsx/#{file_name}", file)
+        hash = FileHash.hash(file, :md5)
+
+        assert conn
+               |> post(Routes.xlsx_path(conn, :upload),
+                 structures: upload(file),
+                 auto_publish: false,
+                 note_type: note_type
+               )
+               |> response(:ok)
+
+        assert_enqueued worker: "Truedat.XLSX.UploadWorker",
+                        args: %{
+                          opts: %{
+                            "auto_publish" => false,
+                            "lang" => "en",
+                            "claims" => %{
+                              "user_id" => user_id,
+                              "user_name" => user_name,
+                              "jti" => jti
+                            }
+                          }
+                        },
+                        queue: "xlsx_implementations_upload_queue"
+
+        assert [%Oban.Job{args: %{"job_id" => job_id}}] = all_enqueued()
+
+        assert %{
+                 user_id: ^user_id,
+                 hash: ^hash,
+                 filename: ^file_name,
+                 scope: "notes",
+                 latest_status: nil,
+                 latest_event_at: nil,
+                 latest_event_response: nil
+               } = Repo.one(UploadJob, id: job_id)
+
+        assert %{
+                 job_id: ^job_id,
+                 status: "PENDING"
+               } = Repo.one(UploadEvent, job_id: job_id)
+      end
     end
   end
 end

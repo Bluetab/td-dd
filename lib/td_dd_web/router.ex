@@ -23,6 +23,13 @@ defmodule TdDdWeb.Router do
     forward "/v2", Absinthe.Plug, schema: TdDdWeb.Schema
   end
 
+  scope "/api/upload_jobs", alias: TruedatWeb do
+    pipe_through [:api, :api_auth]
+
+    get("/", UploadJobController, :index)
+    get("/:id", UploadJobController, :show)
+  end
+
   scope "/api", TdDdWeb do
     pipe_through [:api, :api_auth]
 

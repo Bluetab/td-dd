@@ -4,9 +4,11 @@ defmodule TdDqWeb.Implementation.XLSXController do
   alias TdCore.Utils.FileHash
   alias TdDq.Implementations
   alias TdDq.Implementations.Search
-  alias TdDq.Implementations.UploadEvents
   alias TdDq.XLSX.Download
-  alias TdDq.XLSX.Jobs.UploadWorker
+  alias Truedat.Audit.UploadJobs
+  alias Truedat.XLSX.Reader
+  alias Truedat.XLSX.UploadWorker
+
   require Logger
 
   action_fallback(TdDqWeb.FallbackController)
@@ -47,8 +49,7 @@ defmodule TdDqWeb.Implementation.XLSXController do
     lang = Map.get(params, "lang", @default_lang)
     %{"implementations" => %{path: file_path, filename: filename}} = params
     claims = conn.assigns[:current_resource]
-    path = copy_file(file_path)
-
+    path = Reader.move_file!(file_path, @file_upload_dir)
     hash = FileHash.hash(path, :md5)
 
     opts = %{
@@ -57,19 +58,26 @@ defmodule TdDqWeb.Implementation.XLSXController do
       "claims" => claims
     }
 
+    scope = "implementations"
+
     {:ok, %{id: job_id}} =
-      UploadEvents.create_job(%{user_id: claims.user_id, hash: hash, filename: filename})
+      UploadJobs.create_job(%{
+        user_id: claims.user_id,
+        hash: hash,
+        filename: filename,
+        scope: scope
+      })
 
     with :ok <- Bodyguard.permit(Implementations, :mutation, claims, :submit_implementation),
-         {:ok, _} <- UploadEvents.create_pending(job_id) do
-      %{path: path, job_id: job_id, opts: opts}
+         {:ok, _} <- UploadJobs.create_pending(job_id) do
+      %{path: path, job_id: job_id, scope: scope, opts: opts}
       |> UploadWorker.new()
       |> Oban.insert()
 
       json(conn, %{job_id: job_id})
     else
       {:error, reason} ->
-        UploadEvents.create_failed(job_id, reason)
+        UploadJobs.create_failed(job_id, reason)
         {:error, reason}
     end
   end
@@ -77,14 +85,14 @@ defmodule TdDqWeb.Implementation.XLSXController do
   def upload_jobs(conn, _params) do
     claims = conn.assigns[:current_resource]
 
-    jobs = UploadEvents.list_jobs(user_id: claims.user_id)
+    jobs = UploadJobs.list_jobs(user_id: claims.user_id)
     render(conn, "upload_jobs.json", jobs: jobs)
   end
 
   def upload_job(conn, %{"job_id" => job_id}) do
     %{user_id: user_id} = conn.assigns[:current_resource]
 
-    case UploadEvents.get_job(job_id) do
+    case UploadJobs.get_job(job_id) do
       %{user_id: ^user_id} = job ->
         render(conn, "upload_job.json", job: job)
 
@@ -119,14 +127,5 @@ defmodule TdDqWeb.Implementation.XLSXController do
     end)
     |> Keyword.put_new(:header_labels, %{})
     |> Keyword.put(:lang, lang)
-  end
-
-  defp copy_file(path) do
-    upload_dir = @file_upload_dir
-    :ok = File.mkdir_p!(upload_dir)
-    source_file_name = path |> Path.split() |> List.last()
-    file_path = Path.join([upload_dir, source_file_name])
-    :ok = File.cp!(path, file_path)
-    file_path
   end
 end

@@ -604,7 +604,10 @@ defmodule TdDq.Implementations.ElasticDocument do
           terms: %{field: "template.name.raw", size: Cluster.get_size_field("template_name")}
         },
         "template_scope" => %{
-          terms: %{field: "template.scope.keyword", size: Cluster.get_size_field("template_scope")}
+          terms: %{
+            field: "template.scope.keyword",
+            size: Cluster.get_size_field("template_scope")
+          }
         }
       }
     end

@@ -1,16 +1,16 @@
-defmodule TdDq.Implementations.UploadEvent do
-  @moduledoc "File Bulk Update Event entity"
+defmodule Truedat.Audit.UploadEvents.UploadEvent do
+  @moduledoc "File Upload Event entity"
 
   use Ecto.Schema
 
   import Ecto.Changeset
 
   alias TdDfLib.Validation
-  alias TdDq.Implementations.UploadJob
+  alias Truedat.Audit.UploadJobs.UploadJob
 
   @valid_statuses ["PENDING", "FAILED", "STARTED", "COMPLETED", "ERROR", "INFO"]
 
-  schema "implementation_upload_events" do
+  schema "upload_events" do
     belongs_to(:job, UploadJob)
     field(:response, :map)
     field(:status, :string)
