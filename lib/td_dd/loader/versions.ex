@@ -160,7 +160,28 @@ defmodule TdDd.Loader.Versions do
          },
          ts
        ) do
-    entries =
+    versions_to_delete =
+      entries
+      |> Enum.reject(fn item ->
+        Map.has_key?(ghash, item.ghash) or Map.has_key?(lhash, item.lhash)
+      end)
+      |> Enum.flat_map(fn %{external_id: external_id} ->
+        case Map.get(version_id_map, external_id) do
+          nil -> []
+          %{id: id, version: _version} -> [{id, external_id}]
+        end
+      end)
+
+    structure_ids_to_check =
+      versions_to_delete
+      |> Enum.map(fn {_version_id, external_id} ->
+        Map.get(structure_id_map, external_id)
+      end)
+      |> Enum.uniq()
+
+    restore_metadata_for_structures(structure_ids_to_check)
+
+    processed_entries =
       entries
       |> Enum.reject(&Map.has_key?(ghash, &1.ghash))
       # credo:disable-for-next-line
@@ -186,7 +207,7 @@ defmodule TdDd.Loader.Versions do
       end)
 
     res =
-      Repo.chunk_insert_all(DataStructureVersion, entries,
+      Repo.chunk_insert_all(DataStructureVersion, processed_entries,
         chunk_size: 1000,
         conflict_target: [:id],
         on_conflict: {:replace, [:deleted_at]},
@@ -240,7 +261,6 @@ defmodule TdDd.Loader.Versions do
     latest_deleted_metadata =
       StructureMetadata
       |> where([sm], sm.data_structure_id in ^structure_ids)
-      |> where([sm], not is_nil(sm.deleted_at))
       |> group_by([sm], sm.data_structure_id)
       |> select([sm], %{
         data_structure_id: sm.data_structure_id,

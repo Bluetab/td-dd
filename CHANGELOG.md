@@ -4,6 +4,7 @@
 
 ### Added
 
+- [TD-7885] Fix reactivate metadata from connector workflow
 - [TD-7775] Cast embeddings during bulk insert to prevent format errors during raw data insertion
 
 ## [8.0.1] 2026-01-20

@@ -158,6 +158,48 @@ defmodule TdDd.Loader.MetadataTest do
     end
   end
 
+  describe "replace_metadata/2" do
+    test "handles empty structure_ids list when calculating max_version" do
+      %{id: structure_id, external_id: external_id} = insert(:data_structure)
+
+      records = [
+        %{external_id: external_id, mutable_metadata: %{"new" => "metadata"}}
+      ]
+
+      assert {:ok, [^structure_id]} = Metadata.replace_metadata(records, DateTime.utc_now())
+    end
+
+    test "uses v+1 when replacing active metadata" do
+      ts = DateTime.utc_now()
+
+      %{id: structure_id, external_id: external_id} = insert(:data_structure)
+
+      insert(:structure_metadata,
+        data_structure_id: structure_id,
+        version: 0,
+        deleted_at: nil,
+        fields: %{"old" => "metadata"}
+      )
+
+      records = [
+        %{external_id: external_id, mutable_metadata: %{"new" => "metadata"}}
+      ]
+
+      assert {:ok, [^structure_id]} = Metadata.replace_metadata(records, ts)
+
+      active_metadata =
+        StructureMetadata
+        |> where([sm], sm.data_structure_id == ^structure_id)
+        |> where([sm], is_nil(sm.deleted_at))
+        |> order_by([sm], sm.version)
+        |> Repo.all()
+
+      assert length(active_metadata) == 1
+      assert hd(active_metadata).version == 1
+      assert hd(active_metadata).fields == %{"new" => "metadata"}
+    end
+  end
+
   defp parse_structures(path, system_id) do
     path
     |> File.stream!()
