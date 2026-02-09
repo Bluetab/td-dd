@@ -46,7 +46,7 @@ defmodule TdDd.XLSX.BulkLoad do
     end
 
     def on_complete(_structure_note, ids) do
-      IndexWorker.reindex(:structure_notes, Enum.uniq(ids))
+      IndexWorker.reindex(:structures, Enum.uniq(ids))
     end
 
     def sheets_to_templates(_impl_for, sheets) do
@@ -254,9 +254,9 @@ defmodule TdDd.XLSX.BulkLoad do
         }
 
         if was_draft do
-          {:updated, {id, details}}
+          {:updated, {data_structure.id, details}}
         else
-          {:created, {id, details}}
+          {:created, {data_structure.id, details}}
         end
 
       {:error, %Ecto.Changeset{} = changeset} ->
