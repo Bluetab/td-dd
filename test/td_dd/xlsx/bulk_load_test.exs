@@ -130,7 +130,7 @@ defmodule TdDd.XLSX.BulkLoadTest do
                |> where(data_structure_id: ^data_structure.id)
                |> Repo.all()
 
-      assert note.id != existing_note.id
+      assert note.id == existing_note.id
       assert note.status == :draft
       assert note.version == 1
       assert note.data_structure_id == data_structure.id
@@ -251,7 +251,7 @@ defmodule TdDd.XLSX.BulkLoadTest do
         }
       }
 
-      assert {:updated, {id, details}} = BulkLoad.upsert_structure_note(params, ctx)
+      assert {:created, {id, details}} = BulkLoad.upsert_structure_note(params, ctx)
 
       assert id == data_structure.id
 
@@ -263,19 +263,20 @@ defmodule TdDd.XLSX.BulkLoadTest do
       assert note.id == details.id
       assert note.id != rejected_note.id
       assert note.status == :draft
-      assert note.version == 1
+      assert note.version == 2
     end
 
-    test "returns error when pending_approval note exists", %{template: template} do
+    test "deletes pending_approval note and creates new draft", %{template: template} do
       claims = build(:claims, role: "admin")
       data_structure = insert(:data_structure)
       insert(:data_structure_version, data_structure: data_structure, type: template.name)
 
-      insert(:structure_note,
-        data_structure: data_structure,
-        status: :pending_approval,
-        version: 1
-      )
+      pending_note =
+        insert(:structure_note,
+          data_structure: data_structure,
+          status: :pending_approval,
+          version: 1
+        )
 
       params = %{
         "external_id" => data_structure.external_id,
@@ -293,16 +294,18 @@ defmodule TdDd.XLSX.BulkLoadTest do
         }
       }
 
-      assert {:error, {"pending_approval_conflict", _details}} =
-               BulkLoad.upsert_structure_note(params, ctx)
+      assert {:created, {id, details}} = BulkLoad.upsert_structure_note(params, ctx)
+      assert id == data_structure.id
 
-      assert [pending_note] =
+      assert [note] =
                StructureNote
                |> where(data_structure_id: ^data_structure.id)
                |> Repo.all()
 
-      assert pending_note.status == :pending_approval
-      assert pending_note.version == 1
+      assert note.id == details.id
+      assert note.id != pending_note.id
+      assert note.status == :draft
+      assert note.version == 2
     end
 
     test "returns error when data structure does not exist" do
@@ -502,7 +505,7 @@ defmodule TdDd.XLSX.BulkLoadTest do
         }
       }
 
-      assert {:updated, {id, details}} = BulkLoad.upsert_structure_note(params, ctx)
+      assert {:created, {id, details}} = BulkLoad.upsert_structure_note(params, ctx)
 
       assert id == data_structure.id
 
@@ -514,7 +517,7 @@ defmodule TdDd.XLSX.BulkLoadTest do
       assert note.id == details.id
       assert note.id != rejected_note.id
       assert note.status == :draft
-      assert note.version == 1
+      assert note.version == 2
       assert note.df_content == %{"field" => %{"value" => "new_value", "origin" => "file"}}
     end
 
@@ -675,7 +678,7 @@ defmodule TdDd.XLSX.BulkLoadTest do
                |> Repo.all()
 
       assert note.id == details.id
-      assert note.id != existing_note.id
+      assert note.id == existing_note.id
 
       assert note.df_content == %{
                "another_field" => %{"value" => "keep_this", "origin" => "user"}
@@ -874,7 +877,7 @@ defmodule TdDd.XLSX.BulkLoadTest do
                |> Repo.all()
 
       assert note.id == details.id
-      assert note.id != existing_note.id
+      assert note.id == existing_note.id
 
       assert note.df_content == %{
                "field" => %{"value" => "new_value", "origin" => "file"},
@@ -1136,9 +1139,10 @@ defmodule TdDd.XLSX.BulkLoadTest do
       assert details.external_id == data_structure.external_id
     end
 
-    test "pending_approval_conflict error includes data_structure_id in details", %{
-      template: template
-    } do
+    test "pending_approval note is replaced and response includes data_structure_id in details",
+         %{
+           template: template
+         } do
       claims = build(:claims, role: "admin")
 
       data_structure =
@@ -1169,9 +1173,7 @@ defmodule TdDd.XLSX.BulkLoadTest do
         }
       }
 
-      assert {:error, {"pending_approval_conflict", details}} =
-               BulkLoad.upsert_structure_note(params, ctx)
-
+      assert {:created, {_id, details}} = BulkLoad.upsert_structure_note(params, ctx)
       assert details.data_structure_id == data_structure.id
       assert details.external_id == data_structure.external_id
     end
@@ -1402,6 +1404,60 @@ defmodule TdDd.XLSX.BulkLoadTest do
       assert map_size(changes.df_content) == 1
       assert changes.df_content["another_field"] == %{"value" => "new_value", "origin" => "file"}
       refute Map.has_key?(changes.df_content, "field")
+    end
+
+    test "publishing new version transitions previous published note to versioned status", %{
+      template: template
+    } do
+      claims = build(:claims, role: "admin")
+      data_structure = insert(:data_structure)
+      insert(:data_structure_version, data_structure: data_structure, type: template.name)
+
+      insert(:structure_note,
+        data_structure: data_structure,
+        status: :published,
+        version: 1,
+        df_content: %{"field" => %{"value" => "old_published", "origin" => "user"}}
+      )
+
+      params = %{
+        "external_id" => data_structure.external_id,
+        "df_content" => %{"field" => %{"value" => "new_published", "origin" => "file"}},
+        "_sheet" => template.name
+      }
+
+      ctx = %{
+        claims: claims,
+        lang: "en",
+        to_status: "published",
+        opts: [],
+        templates: %{
+          template.name => %{content_schema: Format.flatten_content_fields(template.content)}
+        }
+      }
+
+      assert {:created, {id, _details}} = BulkLoad.upsert_structure_note(params, ctx)
+      assert id == data_structure.id
+
+      notes =
+        StructureNote
+        |> where(data_structure_id: ^data_structure.id)
+        |> Repo.all()
+        |> Enum.sort_by(& &1.version)
+
+      assert length(notes) == 2
+
+      [old_note, new_note] = notes
+
+      assert old_note.version == 1
+      assert old_note.status == :versioned
+
+      assert new_note.version == 2
+      assert new_note.status == :published
+
+      assert new_note.df_content == %{
+               "field" => %{"value" => "new_published", "origin" => "file"}
+             }
     end
 
     test "created response includes changes with published status when user has publish permission",
