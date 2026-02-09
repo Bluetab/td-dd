@@ -77,6 +77,7 @@ defmodule TdDd.XLSX.BulkLoadTest do
       }
 
       assert {:created, {id, details}} = BulkLoad.upsert_structure_note(params, ctx)
+      assert id == data_structure.id
       assert details.external_id == data_structure.external_id
 
       assert [note] =
@@ -84,7 +85,7 @@ defmodule TdDd.XLSX.BulkLoadTest do
                |> where(data_structure_id: ^data_structure.id)
                |> Repo.all()
 
-      assert note.id == id
+      assert note.id == details.id
       assert note.status == :draft
       assert note.version == 1
       assert note.data_structure_id == data_structure.id
@@ -121,6 +122,7 @@ defmodule TdDd.XLSX.BulkLoadTest do
       }
 
       assert {:updated, {id, details}} = BulkLoad.upsert_structure_note(params, ctx)
+      assert id == data_structure.id
       assert details.external_id == data_structure.external_id
 
       assert [note] =
@@ -128,7 +130,6 @@ defmodule TdDd.XLSX.BulkLoadTest do
                |> where(data_structure_id: ^data_structure.id)
                |> Repo.all()
 
-      assert note.id == id
       assert note.id != existing_note.id
       assert note.status == :draft
       assert note.version == 1
@@ -163,7 +164,9 @@ defmodule TdDd.XLSX.BulkLoadTest do
         }
       }
 
-      assert {:created, {id, _details}} = BulkLoad.upsert_structure_note(params, ctx)
+      assert {:created, {id, details}} = BulkLoad.upsert_structure_note(params, ctx)
+
+      assert id == data_structure.id
 
       assert [published_note, draft_note] =
                StructureNote
@@ -173,7 +176,7 @@ defmodule TdDd.XLSX.BulkLoadTest do
 
       assert published_note.status == :published
       assert published_note.version == 1
-      assert draft_note.id == id
+      assert draft_note.id == details.id
       assert draft_note.status == :draft
       assert draft_note.version == 2
     end
@@ -206,6 +209,7 @@ defmodule TdDd.XLSX.BulkLoadTest do
       }
 
       assert {:created, {id, _details}} = BulkLoad.upsert_structure_note(params, ctx)
+      assert id == data_structure.id
 
       assert [deprecated_note, draft_note] =
                StructureNote
@@ -215,7 +219,6 @@ defmodule TdDd.XLSX.BulkLoadTest do
 
       assert deprecated_note.status == :deprecated
       assert deprecated_note.version == 1
-      assert draft_note.id == id
       assert draft_note.status == :draft
       assert draft_note.version == 2
     end
@@ -248,14 +251,16 @@ defmodule TdDd.XLSX.BulkLoadTest do
         }
       }
 
-      assert {:updated, {id, _details}} = BulkLoad.upsert_structure_note(params, ctx)
+      assert {:updated, {id, details}} = BulkLoad.upsert_structure_note(params, ctx)
+
+      assert id == data_structure.id
 
       assert [note] =
                StructureNote
                |> where(data_structure_id: ^data_structure.id)
                |> Repo.all()
 
-      assert note.id == id
+      assert note.id == details.id
       assert note.id != rejected_note.id
       assert note.status == :draft
       assert note.version == 1
@@ -413,14 +418,15 @@ defmodule TdDd.XLSX.BulkLoadTest do
         }
       }
 
-      assert {:created, {id, _details}} = BulkLoad.upsert_structure_note(params, ctx)
+      assert {:created, {id, details}} = BulkLoad.upsert_structure_note(params, ctx)
+      assert id == data_structure.id
 
       assert [note] =
                StructureNote
                |> where(data_structure_id: ^data_structure.id)
                |> Repo.all()
 
-      assert note.id == id
+      assert note.id == details.id
       assert note.status == :draft
     end
 
@@ -455,13 +461,13 @@ defmodule TdDd.XLSX.BulkLoadTest do
       }
 
       assert {:created, {id, _details}} = BulkLoad.upsert_structure_note(params, ctx)
+      assert data_structure.id == id
 
       assert [note] =
                StructureNote
                |> where(data_structure_id: ^data_structure.id)
                |> Repo.all()
 
-      assert note.id == id
       assert note.status == :published
     end
 
@@ -496,14 +502,16 @@ defmodule TdDd.XLSX.BulkLoadTest do
         }
       }
 
-      assert {:updated, {id, _details}} = BulkLoad.upsert_structure_note(params, ctx)
+      assert {:updated, {id, details}} = BulkLoad.upsert_structure_note(params, ctx)
+
+      assert id == data_structure.id
 
       assert [note] =
                StructureNote
                |> where(data_structure_id: ^data_structure.id)
                |> Repo.all()
 
-      assert note.id == id
+      assert note.id == details.id
       assert note.id != rejected_note.id
       assert note.status == :draft
       assert note.version == 1
@@ -658,6 +666,7 @@ defmodule TdDd.XLSX.BulkLoadTest do
       }
 
       assert {:updated, {id, details}} = BulkLoad.upsert_structure_note(params, ctx)
+      assert id == data_structure.id
       assert details.external_id == data_structure.external_id
 
       assert [note] =
@@ -665,7 +674,7 @@ defmodule TdDd.XLSX.BulkLoadTest do
                |> where(data_structure_id: ^data_structure.id)
                |> Repo.all()
 
-      assert note.id == id
+      assert note.id == details.id
       assert note.id != existing_note.id
 
       assert note.df_content == %{
@@ -811,14 +820,15 @@ defmodule TdDd.XLSX.BulkLoadTest do
         }
       }
 
-      assert {:created, {id, _details}} = BulkLoad.upsert_structure_note(params, ctx)
+      assert {:created, {id, details}} = BulkLoad.upsert_structure_note(params, ctx)
+      assert id == data_structure.id
 
       assert [note] =
                StructureNote
                |> where(data_structure_id: ^data_structure.id)
                |> Repo.all()
 
-      assert note.id == id
+      assert note.id == details.id
       assert note.df_content == %{"field" => %{"value" => "test", "origin" => "file"}}
       refute Map.has_key?(note.df_content, "non_existent_field")
     end
@@ -855,14 +865,15 @@ defmodule TdDd.XLSX.BulkLoadTest do
         }
       }
 
-      assert {:updated, {id, _details}} = BulkLoad.upsert_structure_note(params, ctx)
+      assert {:updated, {id, details}} = BulkLoad.upsert_structure_note(params, ctx)
+      assert id == data_structure.id
 
       assert [note] =
                StructureNote
                |> where(data_structure_id: ^data_structure.id)
                |> Repo.all()
 
-      assert note.id == id
+      assert note.id == details.id
       assert note.id != existing_note.id
 
       assert note.df_content == %{
@@ -903,7 +914,9 @@ defmodule TdDd.XLSX.BulkLoadTest do
         }
       }
 
-      assert {:created, {id, _details}} = BulkLoad.upsert_structure_note(params, ctx)
+      assert {:created, {id, details}} = BulkLoad.upsert_structure_note(params, ctx)
+
+      assert id == data_structure.id
 
       assert [published_note, draft_note] =
                StructureNote
@@ -912,7 +925,7 @@ defmodule TdDd.XLSX.BulkLoadTest do
                |> Enum.sort_by(& &1.version)
 
       assert published_note.id == existing_note.id
-      assert draft_note.id == id
+      assert draft_note.id == details.id
 
       assert draft_note.df_content == %{
                "field" => %{"value" => "new_value", "origin" => "file"},
@@ -943,13 +956,13 @@ defmodule TdDd.XLSX.BulkLoadTest do
 
       assert {:created, {id, details}} = BulkLoad.upsert_structure_note(params, ctx)
       assert details.external_id == data_structure.external_id
+      assert data_structure.id == id
 
       assert [note] =
                StructureNote
                |> where(data_structure_id: ^data_structure.id)
                |> Repo.all()
 
-      assert note.id == id
       assert note.status == :draft
       assert note.version == 1
       assert note.df_content == %{"field" => %{"value" => "test", "origin" => "file"}}
@@ -1784,9 +1797,10 @@ defmodule TdDd.XLSX.BulkLoadTest do
 
       assert {:ok, %{insert_count: 2}} = XLSXBulkLoad.bulk_load(sheets, opts)
 
-      assert [{:reindex, :structure_notes, ids}] = IndexWorkerMock.calls()
+      assert [{:reindex, :structures, ids}] = IndexWorkerMock.calls()
+
+      assert Enum.sort(ids) == Enum.sort([data_structure_1.id, data_structure_2.id])
       assert length(ids) == 2
-      assert Enum.all?(ids, &is_integer/1)
     end
 
     test "calls reindex with updated structure note ids", %{template: template} do
@@ -1835,7 +1849,7 @@ defmodule TdDd.XLSX.BulkLoadTest do
 
       assert {:ok, %{update_count: 1}} = XLSXBulkLoad.bulk_load(sheets, opts)
 
-      assert [{:reindex, :structure_notes, [id]}] = IndexWorkerMock.calls()
+      assert [{:reindex, :structures, [id]}] = IndexWorkerMock.calls()
       assert id != existing_note.id
       assert is_integer(id)
     end
@@ -1911,7 +1925,7 @@ defmodule TdDd.XLSX.BulkLoadTest do
       assert {:ok, %{insert_count: 1, update_count: 1}} =
                XLSXBulkLoad.bulk_load(sheets, opts)
 
-      assert [{:reindex, :structure_notes, ids}] = IndexWorkerMock.calls()
+      assert [{:reindex, :structures, ids}] = IndexWorkerMock.calls()
       assert length(ids) == 2
       assert existing_note.id not in ids
       assert Enum.all?(ids, &is_integer/1)
