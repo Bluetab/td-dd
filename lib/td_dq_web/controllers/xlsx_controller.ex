@@ -1,13 +1,13 @@
 defmodule TdDqWeb.Implementation.XLSXController do
   use TdDqWeb, :controller
 
+  alias TdCluster.Cluster.TdAudit.UploadJobs
   alias TdCore.Utils.FileHash
+  alias TdCore.XLSX.Reader
   alias TdDq.Implementations
   alias TdDq.Implementations.Search
   alias TdDq.XLSX.Download
-  alias Truedat.Audit.UploadJobs
-  alias Truedat.XLSX.Reader
-  alias Truedat.XLSX.UploadWorker
+  alias TdDq.XLSX.UploadWorker
 
   require Logger
 
@@ -79,25 +79,6 @@ defmodule TdDqWeb.Implementation.XLSXController do
       {:error, reason} ->
         UploadJobs.create_failed(job_id, reason)
         {:error, reason}
-    end
-  end
-
-  def upload_jobs(conn, _params) do
-    claims = conn.assigns[:current_resource]
-
-    jobs = UploadJobs.list_jobs(user_id: claims.user_id)
-    render(conn, "upload_jobs.json", jobs: jobs)
-  end
-
-  def upload_job(conn, %{"job_id" => job_id}) do
-    %{user_id: user_id} = conn.assigns[:current_resource]
-
-    case UploadJobs.get_job(job_id) do
-      %{user_id: ^user_id} = job ->
-        render(conn, "upload_job.json", job: job)
-
-      _ ->
-        send_resp(conn, :not_found, "")
     end
   end
 

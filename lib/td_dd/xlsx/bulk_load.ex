@@ -1,4 +1,4 @@
-defmodule TdDd.XLSX.StructureNotes.BulkLoad do
+defmodule TdDd.XLSX.BulkLoad do
   @moduledoc """
   XLSX Bulk Load Data Structures Notes
 
@@ -6,16 +6,18 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoad do
   """
 
   alias TdCore.Search.IndexWorker
+  alias TdCore.XLSX.BulkLoadProtocol
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructureTypes
   alias TdDd.DataStructures.StructureNotes
   alias TdDd.DataStructures.StructureNotesWorkflow
   alias TdDd.DataStructures.Validation
+  alias TdDd.Utils.ChangesetUtils
   alias TdDfLib.Content
-  alias Truedat.XLSX.BulkLoadProtocol
+  alias TdDfLib.Parser
 
   defimpl BulkLoadProtocol, for: TdDd.DataStructures.StructureNote do
-    alias TdDd.XLSX.StructureNotes.BulkLoad
+    alias TdDd.XLSX.BulkLoad
 
     @required_headers [
       "external_id"
@@ -71,7 +73,9 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoad do
             prepare_and_merge_content(
               structure_note,
               template,
-              existing_note
+              existing_note,
+              data_structure.domain_ids,
+              ctx.lang
             )},
          {:validation, :ok} <-
            {:validation, validate_content_fields(merged_content, data_structure, structure_note)},
@@ -99,13 +103,13 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoad do
 
       changes = compute_update_changes(merged_content, existing_note, status)
 
-      create_structure_note_and_respond(
-        StructureNotes.bulk_create_structure_note(
-          data_structure,
-          structure_note_with_params,
-          cleaned_existing_note,
-          ctx.claims.user_id
-        ),
+      data_structure
+      |> StructureNotes.bulk_create_structure_note(
+        structure_note_with_params,
+        cleaned_existing_note,
+        ctx.claims.user_id
+      )
+      |> format_response(
         data_structure,
         external_id,
         was_draft,
@@ -233,7 +237,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoad do
 
   defp field_equal?(a, b), do: normalize_value(a) == normalize_value(b)
 
-  defp create_structure_note_and_respond(
+  defp format_response(
          result,
          data_structure,
          external_id,
@@ -242,13 +246,12 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoad do
        ) do
     case result do
       {:ok, %{id: id}} ->
-        details =
-          %{
-            id: id,
-            external_id: external_id,
-            data_structure_id: data_structure.id
-          }
-          |> Map.put(:changes, changes)
+        details = %{
+          id: id,
+          external_id: external_id,
+          data_structure_id: data_structure.id,
+          changes: changes
+        }
 
         if was_draft do
           {:updated, {id, details}}
@@ -276,17 +279,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoad do
   end
 
   defp extract_changeset_errors(changeset) do
-    changeset
-    |> Ecto.Changeset.traverse_errors(fn {msg, opts} ->
-      Enum.reduce(opts, msg, fn {key, value}, acc ->
-        String.replace(acc, "%{#{key}}", to_string(value))
-      end)
-    end)
-    |> Enum.flat_map(fn {field, messages} ->
-      Enum.map(messages, fn message ->
-        %{field: to_string(field), message: message}
-      end)
-    end)
+    ChangesetUtils.error_message_list_on(changeset)
   end
 
   defp determine_version_and_cleanup(data_structure, _status, user_id) do
@@ -342,12 +335,20 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoad do
   defp next_version(nil), do: 1
   defp next_version(%{version: version}), do: version + 1
 
-  defp prepare_and_merge_content(structure_note, template, existing_note) do
+  defp prepare_and_merge_content(structure_note, template, existing_note, domain_ids, lang) do
     new_content = Map.get(structure_note, "df_content", %{}) || %{}
 
     field_names = Enum.map(template.content_schema, &Map.get(&1, "name"))
 
     {filtered_content, empty_fields} = filter_and_normalize_content(new_content, field_names)
+
+    filtered_content =
+      Parser.format_content(%{
+        content: filtered_content,
+        content_schema: template.content_schema,
+        domain_ids: domain_ids,
+        lang: lang
+      })
 
     existing_content = get_existing_content_for_merge(existing_note)
 
@@ -380,14 +381,14 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoad do
     {content, empty_fields}
   end
 
-  defp normalize_field_value(%{"value" => val, "origin" => _}) when val == "" or val == nil,
+  defp normalize_field_value(%{"value" => val, "origin" => _}) when val == "" or is_nil(val),
     do: nil
 
   defp normalize_field_value(%{"value" => _, "origin" => _} = value), do: value
 
   defp normalize_field_value(value) when is_map(value), do: Map.put(value, "origin", "file")
 
-  defp normalize_field_value(value) when value == "" or value == nil, do: nil
+  defp normalize_field_value(value) when value == "" or is_nil(value), do: nil
 
   defp normalize_field_value(value), do: %{"value" => value, "origin" => "file"}
 

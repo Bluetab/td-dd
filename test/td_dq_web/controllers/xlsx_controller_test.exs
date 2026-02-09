@@ -4,6 +4,7 @@ defmodule TdDdWeb.XLSXControllerTest do
 
   import Mox
 
+  alias TdCluster.TestHelpers.TdAuditMock.UploadJobs
   alias XlsxReader
 
   @moduletag sandbox: :shared
@@ -967,6 +968,21 @@ defmodule TdDdWeb.XLSXControllerTest do
         jti: jti
       } = claims
 
+      job_id = System.unique_integer([:positive])
+
+      UploadJobs.create_job(
+        &Mox.expect/4,
+        %{
+          scope: "implementations",
+          filename: "upload_tiny.xlsx",
+          hash: "3509A64299BDF483C67FA0A744596270",
+          user_id: user_id
+        },
+        {:ok, %{id: job_id}}
+      )
+
+      UploadJobs.create_pending(&Mox.expect/4, job_id)
+
       assert conn
              |> post(Routes.xlsx_path(conn, :upload),
                implementations: upload(path),
@@ -979,7 +995,7 @@ defmodule TdDdWeb.XLSXControllerTest do
                %Oban.Job{
                  state: "available",
                  queue: "xlsx_implementations_upload_queue",
-                 worker: "Truedat.XLSX.UploadWorker",
+                 worker: "TdDq.XLSX.UploadWorker",
                  args: %{
                    "opts" => %{
                      "auto_publish" => ^auto_publish,
@@ -998,10 +1014,25 @@ defmodule TdDdWeb.XLSXControllerTest do
     end
 
     @tag authentication: [role: "user"]
-    test "user without permission cannot upload", %{conn: conn} do
+    test "user without permission cannot upload", %{conn: conn, claims: %{user_id: user_id}} do
       filename = "upload_tiny.xlsx"
       path = "#{@temp_dir}/#{filename}"
       File.cp!("test/fixtures/xlsx/#{filename}", path)
+
+      job_id = System.unique_integer([:positive])
+
+      UploadJobs.create_job(
+        &Mox.expect/4,
+        %{
+          scope: "implementations",
+          filename: "upload_tiny.xlsx",
+          hash: "3509A64299BDF483C67FA0A744596270",
+          user_id: user_id
+        },
+        {:ok, %{id: job_id}}
+      )
+
+      UploadJobs.create_failed(&Mox.expect/4, job_id, :forbidden)
 
       assert conn
              |> post(Routes.xlsx_path(conn, :upload),
@@ -1032,6 +1063,21 @@ defmodule TdDdWeb.XLSXControllerTest do
           jti: jti
         } = claims
 
+        job_id = System.unique_integer([:positive])
+
+        UploadJobs.create_job(
+          &Mox.expect/4,
+          %{
+            scope: "implementations",
+            filename: "upload_tiny.xlsx",
+            hash: "3509A64299BDF483C67FA0A744596270",
+            user_id: user_id
+          },
+          {:ok, %{id: job_id}}
+        )
+
+        UploadJobs.create_pending(&Mox.expect/4, job_id)
+
         assert conn
                |> post(Routes.xlsx_path(conn, :upload),
                  implementations: upload(path),
@@ -1044,7 +1090,7 @@ defmodule TdDdWeb.XLSXControllerTest do
                  %Oban.Job{
                    state: "available",
                    queue: "xlsx_implementations_upload_queue",
-                   worker: "Truedat.XLSX.UploadWorker",
+                   worker: "TdDq.XLSX.UploadWorker",
                    args: %{
                      "opts" => %{
                        "auto_publish" => ^auto_publish,
@@ -1061,64 +1107,6 @@ defmodule TdDdWeb.XLSXControllerTest do
                  }
                ] = all_enqueued()
       end
-    end
-  end
-
-  describe "xlsx upload jobs" do
-    @tag authentication: [role: "admin"]
-    test "can list only their own upload jobs", %{conn: conn, claims: claims} do
-      job = insert(:upload_job, user_id: claims.user_id)
-      _other_job = insert(:upload_job, user_id: claims.user_id + 1)
-
-      assert %{"data" => [%{"id" => id}]} =
-               conn
-               |> get(Routes.xlsx_path(conn, :upload_jobs))
-               |> json_response(:ok)
-
-      assert id == job.id
-    end
-
-    @tag authentication: [role: "admin"]
-    test "return latest status for upload job", %{conn: conn, claims: claims} do
-      job = insert(:upload_job, user_id: claims.user_id)
-      insert(:upload_event, job_id: job.id, status: "PENDING")
-
-      %{inserted_at: latest_event_at_ts} =
-        insert(:upload_event,
-          job_id: job.id,
-          status: "COMPLETED",
-          response: %{"message" => "Completed"}
-        )
-
-      latest_event_at = DateTime.to_iso8601(latest_event_at_ts)
-
-      assert %{
-               "data" => [
-                 %{
-                   "latest_status" => "COMPLETED",
-                   "latest_event_at" => ^latest_event_at,
-                   "latest_event_response" => %{"message" => "Completed"}
-                 }
-               ]
-             } =
-               conn
-               |> get(Routes.xlsx_path(conn, :upload_jobs))
-               |> json_response(:ok)
-    end
-  end
-
-  describe "xlsx upload job" do
-    @tag authentication: [role: "admin"]
-    test "can get upload job", %{conn: conn, claims: claims} do
-      %{id: job_id} = insert(:upload_job, user_id: claims.user_id)
-      %{id: event_id} = insert(:upload_event, job_id: job_id)
-
-      assert %{"data" => response} =
-               conn
-               |> get(Routes.xlsx_path(conn, :upload_job, job_id))
-               |> json_response(:ok)
-
-      assert %{"id" => ^job_id, "events" => [%{"id" => ^event_id}]} = response
     end
   end
 end

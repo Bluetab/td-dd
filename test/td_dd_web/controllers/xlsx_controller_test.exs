@@ -4,12 +4,10 @@ defmodule TdDdWeb.DataStructures.XLSXControllerTest do
 
   import Mox
 
+  alias TdCluster.TestHelpers.TdAuditMock.UploadJobs
   alias TdCore.Utils.FileHash
   alias TdDd.DataStructures.RelationTypes
-  alias TdDd.Repo
   alias TdDd.Search.StructureEnricher
-  alias Truedat.Audit.UploadEvents.UploadEvent
-  alias Truedat.Audit.UploadJobs.UploadJob
   alias XlsxReader
 
   @moduletag sandbox: :shared
@@ -914,6 +912,21 @@ defmodule TdDdWeb.DataStructures.XLSXControllerTest do
         jti: jti
       } = claims
 
+      job_id = System.unique_integer([:positive])
+
+      UploadJobs.create_job(
+        &Mox.expect/4,
+        %{
+          scope: "notes",
+          filename: "upload.xlsx",
+          hash: "71C3BA79B17FF62C860AB87EC5996A99",
+          user_id: user_id
+        },
+        {:ok, %{id: job_id}}
+      )
+
+      UploadJobs.create_pending(&Mox.expect/4, job_id)
+
       assert conn
              |> post(Routes.xlsx_path(conn, :upload),
                structures: upload(path),
@@ -925,8 +938,8 @@ defmodule TdDdWeb.DataStructures.XLSXControllerTest do
       assert [
                %Oban.Job{
                  state: "available",
-                 queue: "xlsx_implementations_upload_queue",
-                 worker: "Truedat.XLSX.UploadWorker",
+                 queue: "xlsx_notes_upload_queue",
+                 worker: "TdDd.XLSX.UploadWorker",
                  args: %{
                    "opts" => %{
                      "auto_publish" => ^auto_publish,
@@ -960,6 +973,21 @@ defmodule TdDdWeb.DataStructures.XLSXControllerTest do
         jti: jti
       } = claims
 
+      job_id = System.unique_integer([:positive])
+
+      UploadJobs.create_job(
+        &Mox.expect/4,
+        %{
+          scope: "notes",
+          filename: "upload.xlsx",
+          hash: "71C3BA79B17FF62C860AB87EC5996A99",
+          user_id: user_id
+        },
+        {:ok, %{id: job_id}}
+      )
+
+      UploadJobs.create_pending(&Mox.expect/4, job_id)
+
       assert conn
              |> post(Routes.xlsx_path(conn, :upload),
                structures: upload(path),
@@ -971,8 +999,8 @@ defmodule TdDdWeb.DataStructures.XLSXControllerTest do
       assert [
                %Oban.Job{
                  state: "available",
-                 queue: "xlsx_implementations_upload_queue",
-                 worker: "Truedat.XLSX.UploadWorker",
+                 queue: "xlsx_notes_upload_queue",
+                 worker: "TdDd.XLSX.UploadWorker",
                  args: %{
                    "opts" => %{
                      "auto_publish" => ^auto_publish,
@@ -991,13 +1019,28 @@ defmodule TdDdWeb.DataStructures.XLSXControllerTest do
     end
 
     @tag authentication: [role: "user"]
-    test "user without permission will have forbidden", %{conn: conn} do
+    test "user without permission will have forbidden", %{conn: conn, claims: %{user_id: user_id}} do
       filename = "upload.xlsx"
       path = "#{@temp_dir}/#{filename}"
       File.cp!("test/fixtures/xlsx/#{filename}", path)
 
       lang = "en"
       auto_publish = "true"
+
+      job_id = System.unique_integer([:positive])
+
+      UploadJobs.create_job(
+        &Mox.expect/4,
+        %{
+          scope: "notes",
+          filename: "upload.xlsx",
+          hash: "71C3BA79B17FF62C860AB87EC5996A99",
+          user_id: user_id
+        },
+        {:ok, %{id: job_id}}
+      )
+
+      UploadJobs.create_failed(&Mox.expect/4, job_id, :forbidden)
 
       assert conn
              |> post(Routes.xlsx_path(conn, :upload),
@@ -1008,11 +1051,6 @@ defmodule TdDdWeb.DataStructures.XLSXControllerTest do
              |> response(:forbidden)
 
       assert [] = all_enqueued()
-
-      %Truedat.Audit.UploadEvents.UploadEvent{
-        response: %{"message" => "forbidden"},
-        status: "FAILED"
-      } = Repo.one(UploadEvent)
     end
 
     for note_type <- [:published, :non_published] do
@@ -1027,6 +1065,21 @@ defmodule TdDdWeb.DataStructures.XLSXControllerTest do
         File.cp!("test/fixtures/xlsx/#{file_name}", file)
         hash = FileHash.hash(file, :md5)
 
+        job_id = System.unique_integer([:positive])
+
+        UploadJobs.create_job(
+          &Mox.expect/4,
+          %{
+            scope: "notes",
+            filename: file_name,
+            hash: hash,
+            user_id: user_id
+          },
+          {:ok, %{id: job_id}}
+        )
+
+        UploadJobs.create_pending(&Mox.expect/4, job_id)
+
         assert conn
                |> post(Routes.xlsx_path(conn, :upload),
                  structures: upload(file),
@@ -1035,7 +1088,7 @@ defmodule TdDdWeb.DataStructures.XLSXControllerTest do
                )
                |> response(:ok)
 
-        assert_enqueued worker: "Truedat.XLSX.UploadWorker",
+        assert_enqueued worker: "TdDd.XLSX.UploadWorker",
                         args: %{
                           opts: %{
                             "auto_publish" => false,
@@ -1047,24 +1100,9 @@ defmodule TdDdWeb.DataStructures.XLSXControllerTest do
                             }
                           }
                         },
-                        queue: "xlsx_implementations_upload_queue"
+                        queue: "xlsx_notes_upload_queue"
 
-        assert [%Oban.Job{args: %{"job_id" => job_id}}] = all_enqueued()
-
-        assert %{
-                 user_id: ^user_id,
-                 hash: ^hash,
-                 filename: ^file_name,
-                 scope: "notes",
-                 latest_status: nil,
-                 latest_event_at: nil,
-                 latest_event_response: nil
-               } = Repo.one(UploadJob, id: job_id)
-
-        assert %{
-                 job_id: ^job_id,
-                 status: "PENDING"
-               } = Repo.one(UploadEvent, job_id: job_id)
+        assert [%Oban.Job{args: %{"job_id" => ^job_id}}] = all_enqueued()
       end
     end
   end

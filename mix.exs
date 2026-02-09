@@ -77,14 +77,12 @@ defmodule TdDd.MixProject do
       {:flow, "~> 1.2.4"},
       {:codepagex, "~> 0.1.9"},
       {:bimap, "~> 1.3"},
-      {:td_core, git: "https://github.com/Bluetab/td-core.git", tag: "8.0.1"},
+      {:td_core, git: "https://github.com/Bluetab/td-core.git", tag: "8.1.0"},
       {:vaultex, "~> 1.0.1"},
       {:sobelow, "~> 0.13", only: [:dev, :test]},
-      {:elixlsx, "~> 0.6"},
-      {:xlsx_reader, "~> 0.8.7"},
       {:igniter, "~> 0.5"},
-      {:oban, "~> 2.19"},
-      {:flop, "~> 0.26.1"}
+      {:flop, "~> 0.26.1"},
+      {:oban, "~> 2.19"}
     ]
   end
 
