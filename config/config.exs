@@ -22,6 +22,7 @@ config :td_dd, Oban,
     default: 5,
     xlsx_upload_queue: 10,
     xlsx_implementations_upload_queue: 1,
+    xlsx_notes_upload_queue: 1,
     delete_units: 10,
     embedding_upserts: 1,
     embedding_deletion: 5
@@ -234,6 +235,11 @@ config :flop, repo: TdDd.Repo
 config :td_dd, :limit_outdated_embeddings, 50_000
 config :td_dd, :data_structure_record_embeddings_batch_size, 50
 config :td_dd, :record_embeddings_default_delay_ms, 500
+
+config :td_core, :bulk_load_implementations, %{
+  "implementations" => TdDq.Implementations.Implementation,
+  "notes" => TdDd.DataStructures.StructureNote
+}
 
 import_config "metadata.exs"
 import_config "profiling.exs"

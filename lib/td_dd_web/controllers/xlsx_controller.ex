@@ -1,13 +1,13 @@
 defmodule TdDdWeb.DataStructures.XLSXController do
   use TdDdWeb, :controller
 
+  alias TdCluster.Cluster.TdAudit.UploadJobs
   alias TdCore.Utils.FileHash
+  alias TdCore.XLSX.Reader
   alias TdDd.DataStructures.Search
   alias TdDd.DataStructures.StructureNotes
   alias TdDd.XLSX.Download
-  alias Truedat.Audit.UploadJobs
-  alias Truedat.XLSX.Reader
-  alias Truedat.XLSX.UploadWorker
+  alias TdDd.XLSX.UploadWorker
   plug(TdDdWeb.SearchPermissionPlug)
   action_fallback(TdDdWeb.FallbackController)
 

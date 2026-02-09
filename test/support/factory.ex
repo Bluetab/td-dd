@@ -804,25 +804,6 @@ defmodule TdDd.Factory do
     }
   end
 
-  def upload_job_factory(attrs) do
-    %Truedat.Audit.UploadJobs.UploadJob{
-      user_id: sequence(:user_id, &"#{&1}"),
-      hash: sequence("hash"),
-      filename: sequence("filename"),
-      scope: "implementations"
-    }
-    |> merge_attributes(attrs)
-  end
-
-  def upload_event_factory(attrs) do
-    attrs = default_assoc(attrs, :job_id, :job, :upload_job)
-
-    %Truedat.Audit.UploadEvents.UploadEvent{
-      status: sequence(:status, ["PENDING", "RETRYING", "FAILED", "STARTED", "COMPLETED"])
-    }
-    |> merge_attributes(attrs)
-  end
-
   def data_structure_link_factory(attrs) do
     attrs =
       default_assoc(attrs, :source_id, :source)

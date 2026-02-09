@@ -31,7 +31,6 @@ defmodule TdDq.Implementations do
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleResults
   alias TdDq.Search.Helpers
-  alias Truedat.Auth.Claims
 
   @typep multi_result ::
            {:ok, map} | {:error, Multi.name(), any(), %{required(Multi.name()) => any()}}
@@ -134,7 +133,7 @@ defmodule TdDq.Implementations do
   def create_implementation(
         %Rule{id: rule_id, domain_id: domain_id} = rule,
         %{} = params,
-        %Claims{user_id: user_id} = claims,
+        %{user_id: user_id} = claims,
         is_bulk
       ) do
     changeset =
@@ -170,7 +169,7 @@ defmodule TdDq.Implementations do
 
   def create_ruleless_implementation(
         %{} = params,
-        %Claims{user_id: user_id} = claims,
+        %{user_id: user_id} = claims,
         is_bulk
       ) do
     changeset =
@@ -213,7 +212,7 @@ defmodule TdDq.Implementations do
   def maybe_update_implementation(
         %Implementation{} = implementation,
         params,
-        %Claims{} = claims,
+        %{} = claims,
         is_bulk \\ false
       ) do
     if need_update?(implementation, params) do
@@ -228,7 +227,7 @@ defmodule TdDq.Implementations do
   def update_implementation(
         %Implementation{rule_id: rule_id, domain_id: old_domain_id} = implementation,
         %{"rule_id" => new_rule_id} = params,
-        %Claims{user_id: user_id} = claims,
+        %{user_id: user_id} = claims,
         is_bulk
       )
       when rule_id != new_rule_id do
@@ -261,7 +260,7 @@ defmodule TdDq.Implementations do
   def update_implementation(
         %Implementation{status: status, domain_id: old_domain_id} = implementation,
         params,
-        %Claims{user_id: user_id} = claims,
+        %{user_id: user_id} = claims,
         is_bulk
       ) do
     changeset = upsert_changeset(implementation, params)
@@ -471,7 +470,7 @@ defmodule TdDq.Implementations do
 
   def delete_implementation(
         %Implementation{status: :published} = implementation,
-        %Claims{user_id: user_id}
+        %{user_id: user_id}
       ) do
     changeset =
       implementation
@@ -488,7 +487,7 @@ defmodule TdDq.Implementations do
 
   def delete_implementation(
         %Implementation{} = implementation,
-        %Claims{user_id: user_id}
+        %{user_id: user_id}
       ) do
     implementation
     |> prepare_query_phisical_delete()

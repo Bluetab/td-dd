@@ -1,14 +1,14 @@
-defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
+defmodule TdDd.XLSX.BulkLoadTest do
   use TdDd.DataCase
 
   import Mox
 
+  alias TdCluster.TestHelpers.TdAuditMock.UploadJobs
   alias TdCore.Search.IndexWorkerMock
+  alias TdCore.XLSX.BulkLoad, as: XLSXBulkLoad
   alias TdDd.DataStructures.StructureNote
-  alias TdDd.XLSX.StructureNotes.BulkLoad
+  alias TdDd.XLSX.BulkLoad
   alias TdDfLib.Format
-  alias Truedat.Audit.UploadJobs
-  alias Truedat.XLSX.BulkLoad, as: XLSXBulkLoad
 
   @moduletag sandbox: :shared
 
@@ -68,6 +68,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "draft",
         opts: [],
         templates: %{
@@ -111,6 +112,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "draft",
         opts: [],
         templates: %{
@@ -153,6 +155,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "draft",
         opts: [],
         templates: %{
@@ -194,6 +197,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "draft",
         opts: [],
         templates: %{
@@ -236,6 +240,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "draft",
         opts: [],
         templates: %{
@@ -275,6 +280,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "draft",
         opts: [],
         templates: %{
@@ -305,6 +311,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "draft",
         opts: [],
         templates: %{}
@@ -331,6 +338,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "draft",
         opts: [],
         templates: %{
@@ -360,6 +368,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "published",
         opts: [],
         templates: %{
@@ -396,6 +405,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "published",
         opts: [],
         templates: %{
@@ -436,6 +446,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "published",
         opts: [],
         templates: %{
@@ -477,6 +488,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "draft",
         opts: [],
         templates: %{
@@ -513,6 +525,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "draft",
         opts: [],
         templates: %{
@@ -549,6 +562,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "draft",
         opts: [],
         templates: %{
@@ -591,6 +605,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "draft",
         opts: [],
         templates: %{
@@ -634,6 +649,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "draft",
         opts: [],
         templates: %{
@@ -680,6 +696,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "draft",
         opts: [],
         templates: %{
@@ -720,6 +737,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "published",
         opts: [],
         templates: %{
@@ -756,6 +774,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "draft",
         opts: [],
         templates: %{}
@@ -784,6 +803,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "draft",
         opts: [],
         templates: %{
@@ -827,6 +847,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "draft",
         opts: [],
         templates: %{
@@ -874,6 +895,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "draft",
         opts: [],
         templates: %{
@@ -911,6 +933,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "draft",
         opts: [],
         templates: %{
@@ -978,6 +1001,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "draft",
         opts: [],
         templates: %{
@@ -1010,6 +1034,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "draft",
         opts: [],
         templates: %{
@@ -1047,6 +1072,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "draft",
         opts: [],
         templates: %{
@@ -1084,6 +1110,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "draft",
         opts: [],
         templates: %{
@@ -1121,6 +1148,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "draft",
         opts: [],
         templates: %{
@@ -1153,6 +1181,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "draft",
         opts: [],
         templates: %{
@@ -1215,6 +1244,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "draft",
         opts: [],
         templates: %{
@@ -1265,6 +1295,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "draft",
         opts: [],
         templates: %{
@@ -1302,6 +1333,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "draft",
         opts: [],
         templates: %{
@@ -1343,6 +1375,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "draft",
         opts: [],
         templates: %{
@@ -1372,6 +1405,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
 
       ctx = %{
         claims: claims,
+        lang: "en",
         to_status: "published",
         opts: [],
         templates: %{
@@ -1382,6 +1416,219 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
       assert {:created, {_id, details}} = BulkLoad.upsert_structure_note(params, ctx)
       assert details.changes.status == "published"
       assert details.changes.df_content["field"] == %{"value" => "test", "origin" => "file"}
+    end
+  end
+
+  describe "upsert_structure_note/2 structure_note_creation_error from changeset" do
+    test "returns error when df_content field has invalid enum value", %{
+      template: template
+    } do
+      claims = build(:claims, role: "admin")
+      data_structure = insert(:data_structure)
+      insert(:data_structure_version, data_structure: data_structure, type: template.name)
+
+      template_with_enum =
+        CacheHelpers.insert_template(
+          scope: "dd",
+          content: [
+            %{
+              "name" => "group",
+              "fields" => [
+                %{
+                  "cardinality" => "1",
+                  "label" => "List Field",
+                  "name" => "list_field",
+                  "type" => "string",
+                  "widget" => "dropdown",
+                  "values" => %{"fixed" => ["option1", "option2", "option3"]}
+                }
+              ]
+            }
+          ]
+        )
+
+      %{id: enum_template_id} = template_with_enum
+
+      CacheHelpers.insert_structure_type(
+        name: template_with_enum.name,
+        template_id: enum_template_id
+      )
+
+      data_structure_with_enum = insert(:data_structure)
+
+      insert(:data_structure_version,
+        data_structure: data_structure_with_enum,
+        type: template_with_enum.name
+      )
+
+      params = %{
+        "external_id" => data_structure_with_enum.external_id,
+        "df_content" => %{
+          "list_field" => %{"value" => "invalid_option", "origin" => "file"}
+        },
+        "_sheet" => template_with_enum.name
+      }
+
+      ctx = %{
+        claims: claims,
+        lang: "en",
+        to_status: "draft",
+        opts: [],
+        templates: %{
+          template_with_enum.name => %{
+            content_schema: Format.flatten_content_fields(template_with_enum.content)
+          }
+        }
+      }
+
+      {:error, {"field_validation_error", details}} = BulkLoad.upsert_structure_note(params, ctx)
+
+      assert details.external_id == data_structure_with_enum.external_id
+      assert details.data_structure_id == data_structure_with_enum.id
+      assert details.errors == [%{message: "is invalid", field: :list_field}]
+    end
+
+    test "returns error when df_content field has invalid type", %{template: template} do
+      claims = build(:claims, role: "admin")
+      data_structure = insert(:data_structure)
+      insert(:data_structure_version, data_structure: data_structure, type: template.name)
+
+      template_with_integer =
+        CacheHelpers.insert_template(
+          scope: "dd",
+          content: [
+            %{
+              "name" => "group",
+              "fields" => [
+                %{
+                  "cardinality" => "1",
+                  "label" => "Integer Field",
+                  "name" => "integer_field",
+                  "type" => "integer"
+                }
+              ]
+            }
+          ]
+        )
+
+      %{id: int_template_id} = template_with_integer
+
+      CacheHelpers.insert_structure_type(
+        name: template_with_integer.name,
+        template_id: int_template_id
+      )
+
+      data_structure_with_int = insert(:data_structure)
+
+      insert(:data_structure_version,
+        data_structure: data_structure_with_int,
+        type: template_with_integer.name
+      )
+
+      params = %{
+        "external_id" => data_structure_with_int.external_id,
+        "df_content" => %{
+          "integer_field" => %{"value" => "not_a_number", "origin" => "file"}
+        },
+        "_sheet" => template_with_integer.name
+      }
+
+      ctx = %{
+        claims: claims,
+        lang: "en",
+        to_status: "draft",
+        opts: [],
+        templates: %{
+          template_with_integer.name => %{
+            content_schema: Format.flatten_content_fields(template_with_integer.content)
+          }
+        }
+      }
+
+      {:error, {"field_validation_error", details}} = BulkLoad.upsert_structure_note(params, ctx)
+      assert details.external_id == data_structure_with_int.external_id
+      assert details.data_structure_id == data_structure_with_int.id
+      assert is_list(details.errors)
+      assert details.errors == [%{message: "Integer Field is invalid", field: :integer_field}]
+    end
+
+    test "returns error when df_content has multiple validation errors", %{template: template} do
+      claims = build(:claims, role: "admin")
+      data_structure = insert(:data_structure)
+      insert(:data_structure_version, data_structure: data_structure, type: template.name)
+
+      template_with_multiple =
+        CacheHelpers.insert_template(
+          scope: "dd",
+          content: [
+            %{
+              "name" => "group",
+              "fields" => [
+                %{
+                  "cardinality" => "1",
+                  "label" => "List Field",
+                  "name" => "list_field",
+                  "type" => "string",
+                  "widget" => "dropdown",
+                  "values" => %{"fixed" => ["option1", "option2"]}
+                },
+                %{
+                  "cardinality" => "1",
+                  "label" => "Integer Field",
+                  "name" => "integer_field",
+                  "type" => "integer"
+                }
+              ]
+            }
+          ]
+        )
+
+      %{id: multi_template_id} = template_with_multiple
+
+      CacheHelpers.insert_structure_type(
+        name: template_with_multiple.name,
+        template_id: multi_template_id
+      )
+
+      data_structure_with_multi = insert(:data_structure)
+
+      insert(:data_structure_version,
+        data_structure: data_structure_with_multi,
+        type: template_with_multiple.name
+      )
+
+      params = %{
+        "external_id" => data_structure_with_multi.external_id,
+        "df_content" => %{
+          "list_field" => %{"value" => "invalid_option", "origin" => "file"},
+          "integer_field" => %{"value" => "not_a_number", "origin" => "file"}
+        },
+        "_sheet" => template_with_multiple.name
+      }
+
+      ctx = %{
+        claims: claims,
+        lang: "en",
+        to_status: "draft",
+        opts: [],
+        templates: %{
+          template_with_multiple.name => %{
+            content_schema: Format.flatten_content_fields(template_with_multiple.content)
+          }
+        }
+      }
+
+      {:error, {"field_validation_error", details}} = BulkLoad.upsert_structure_note(params, ctx)
+
+      assert details.external_id == data_structure_with_multi.external_id
+      assert details.data_structure_id == data_structure_with_multi.id
+      assert is_list(details.errors)
+
+      assert Enum.find(details.errors, fn error -> error.field == :list_field end).message ==
+               "is invalid"
+
+      assert Enum.find(details.errors, fn error -> error.field == :integer_field end).message ==
+               "Integer Field is invalid"
     end
   end
 
@@ -1419,7 +1666,35 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
         [:create_structure_note, :edit_structure_note, :view_data_structure]
       )
 
-      %{id: job_id} = insert(:upload_job)
+      job_id = System.unique_integer([:positive])
+
+      # Expectation for authorized info event (created or updated)
+      UploadJobs.create_info(
+        &Mox.expect/4,
+        job_id,
+        %{
+          type: "created",
+          details: %{
+            external_id: data_structure_authorized.external_id
+          }
+        },
+        {:ok, nil}
+      )
+
+      # Expectation for unauthorized error event
+      UploadJobs.create_error(
+        &Mox.expect/4,
+        job_id,
+        %{
+          type: "unauthorized",
+          details: %{
+            external_id: data_structure_unauthorized.external_id,
+            data_structure_id: data_structure_unauthorized.id
+          },
+          row_number: 3,
+          sheet: template.name
+        }
+      )
 
       sheets = %{
         template.name =>
@@ -1444,29 +1719,6 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
       assert {:ok, result} = XLSXBulkLoad.bulk_load(sheets, opts)
       assert result.insert_count + result.update_count == 1
       assert result.error_count == 1
-
-      job = UploadJobs.get_job(job_id)
-      assert %{events: events} = job
-
-      error_events = Enum.filter(events, fn e -> e.status == "ERROR" end)
-      assert length(error_events) == 1
-      [error_event] = error_events
-      assert error_event.response["type"] == "unauthorized"
-
-      assert error_event.response["details"]["external_id"] ==
-               data_structure_unauthorized.external_id
-
-      assert error_event.response["row_number"] == 3
-
-      info_events = Enum.filter(events, fn e -> e.status == "INFO" end)
-
-      created_or_updated =
-        Enum.find(info_events, fn e -> e.response["type"] in ["created", "updated"] end)
-
-      assert created_or_updated != nil
-
-      assert created_or_updated.response["details"]["external_id"] ==
-               data_structure_authorized.external_id
     end
 
     test "calls reindex with created structure note ids", %{template: template} do
@@ -1474,10 +1726,41 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
       data_structure_1 = insert(:data_structure)
       data_structure_2 = insert(:data_structure)
 
-      insert(:data_structure_version, data_structure: data_structure_1, type: template.name)
-      insert(:data_structure_version, data_structure: data_structure_2, type: template.name)
+      dsv1 =
+        insert(:data_structure_version, data_structure: data_structure_1, type: template.name)
 
-      %{id: job_id} = insert(:upload_job)
+      dsv2 =
+        insert(:data_structure_version, data_structure: data_structure_2, type: template.name)
+
+      job_id = System.unique_integer([:positive])
+
+      UploadJobs.create_info(&Mox.expect/4, job_id, %{
+        type: "created",
+        details: %{
+          external_id: data_structure_1.external_id,
+          changes: %{
+            status: "draft",
+            df_content: %{"field" => %{"origin" => "file", "value" => "value1"}}
+          },
+          data_structure_id: dsv1.data_structure_id
+        },
+        row_number: 2,
+        sheet: template.name
+      })
+
+      UploadJobs.create_info(&Mox.expect/4, job_id, %{
+        type: "created",
+        details: %{
+          external_id: data_structure_2.external_id,
+          changes: %{
+            status: "draft",
+            df_content: %{"field" => %{"origin" => "file", "value" => "value2"}}
+          },
+          data_structure_id: dsv2.data_structure_id
+        },
+        row_number: 3,
+        sheet: template.name
+      })
 
       sheets = %{
         template.name =>
@@ -1519,7 +1802,21 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
           df_content: %{"field" => %{"value" => "old_value", "origin" => "user"}}
         )
 
-      %{id: job_id} = insert(:upload_job)
+      job_id = System.unique_integer([:positive])
+
+      UploadJobs.create_info(&Mox.expect/4, job_id, %{
+        type: "updated",
+        details: %{
+          external_id: data_structure.external_id,
+          changes: %{
+            status: "draft",
+            df_content: %{"field" => %{"origin" => "file", "value" => "new_value"}}
+          },
+          data_structure_id: data_structure.id
+        },
+        row_number: 2,
+        sheet: template.name
+      })
 
       sheets = %{
         template.name => {["external_id", "field"], [[data_structure.external_id, "new_value"]]}
@@ -1561,7 +1858,35 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
           df_content: %{"field" => %{"value" => "old_value", "origin" => "user"}}
         )
 
-      %{id: job_id} = insert(:upload_job)
+      job_id = System.unique_integer([:positive])
+
+      UploadJobs.create_info(&Mox.expect/4, job_id, %{
+        type: "updated",
+        details: %{
+          external_id: data_structure_1.external_id,
+          changes: %{
+            status: "draft",
+            df_content: %{"field" => %{"origin" => "file", "value" => "updated_value"}}
+          },
+          data_structure_id: data_structure_1.id
+        },
+        row_number: 2,
+        sheet: template.name
+      })
+
+      UploadJobs.create_info(&Mox.expect/4, job_id, %{
+        type: "created",
+        details: %{
+          external_id: data_structure_2.external_id,
+          changes: %{
+            status: "draft",
+            df_content: %{"field" => %{"origin" => "file", "value" => "new_value"}}
+          },
+          data_structure_id: data_structure_2.id
+        },
+        row_number: 3,
+        sheet: template.name
+      })
 
       sheets = %{
         template.name =>
@@ -1606,7 +1931,17 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoadTest do
         df_content: %{"field" => %{"value" => "test", "origin" => "user"}}
       )
 
-      %{id: job_id} = insert(:upload_job)
+      job_id = System.unique_integer([:positive])
+
+      UploadJobs.create_info(&Mox.expect/4, job_id, %{
+        type: "unchanged",
+        details: %{
+          external_id: data_structure.external_id,
+          data_structure_id: data_structure.id
+        },
+        row_number: 2,
+        sheet: template.name
+      })
 
       sheets = %{
         template.name => {["external_id", "field"], [[data_structure.external_id, "test"]]}

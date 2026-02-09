@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-7286] Moved generic components of XLSX upload
+
 ## [8.1.0] 2026-02-03
 
 ### Added
