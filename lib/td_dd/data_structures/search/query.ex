@@ -7,58 +7,92 @@ defmodule TdDd.DataStructures.Search.Query do
 
   @match_all %{match_all: %{}}
   @match_none %{match_none: %{}}
-  @not_confidential %{term: %{"confidential" => false}}
   @accepted_wildcards ["\"", ")"]
 
-  def build_filters(%{
-        "view_data_structure" => view_scope,
-        "manage_confidential_structures" => confidential_scope
-      }) do
-    do_build_filters(view_scope, confidential_scope)
+  def build_filters(_permissions, _opts \\ [])
+
+  def build_filters(
+        %{
+          "view_data_structure" => view_scope,
+          "manage_confidential_structures" => confidential_scope
+        },
+        opts
+      ) do
+    do_build_filters(view_scope, confidential_scope, opts)
   end
 
-  def build_filters(%{
-        "link_data_structure" => view_scope,
-        "manage_confidential_structures" => confidential_scope
-      }) do
-    do_build_filters(view_scope, confidential_scope)
+  def build_filters(
+        %{
+          "link_data_structure" => view_scope,
+          "manage_confidential_structures" => confidential_scope
+        },
+        opts
+      ) do
+    do_build_filters(view_scope, confidential_scope, opts)
   end
 
-  def build_filters(%{
-        "create_grant_request" => view_scope,
-        "manage_confidential_structures" => confidential_scope
-      }) do
-    do_build_filters(view_scope, confidential_scope)
+  def build_filters(
+        %{
+          "create_grant_request" => view_scope,
+          "manage_confidential_structures" => confidential_scope
+        },
+        opts
+      ) do
+    do_build_filters(view_scope, confidential_scope, opts)
   end
 
-  def build_filters(%{} = _permissions), do: @match_none
+  def build_filters(%{} = _permissions, _opts), do: @match_none
 
   def structure_filter(structure_ids) do
     Query.term_or_terms("data_structure_id", structure_ids)
   end
 
-  defp do_build_filters(:none, _), do: @match_none
-  defp do_build_filters(:all, :all), do: @match_all
-  defp do_build_filters(:all, :none), do: @not_confidential
+  defp do_build_filters(:none, _, _), do: @match_none
+  defp do_build_filters(:all, :all, _), do: @match_all
 
-  defp do_build_filters(:all, domain_ids) do
-    %{bool: %{should: [domain_filter(domain_ids), @not_confidential]}}
+  defp do_build_filters(:all, :none, opts) do
+    not_confidential_filter(opts)
   end
 
-  defp do_build_filters(domain_ids, :all), do: domain_filter(domain_ids)
-
-  defp do_build_filters(domain_ids, :none) do
-    [domain_filter(domain_ids), @not_confidential]
+  defp do_build_filters(:all, domain_ids, opts) do
+    %{
+      bool: %{
+        should: [
+          domain_filter(domain_ids, opts),
+          not_confidential_filter(opts)
+        ]
+      }
+    }
   end
 
-  defp do_build_filters(domain_ids, confidential_domain_ids) do
-    f1 = %{bool: %{filter: [domain_filter(domain_ids), @not_confidential]}}
-    f2 = %{bool: %{filter: domain_filter(confidential_domain_ids)}}
+  defp do_build_filters(domain_ids, :all, opts), do: domain_filter(domain_ids, opts)
+
+  defp do_build_filters(domain_ids, :none, opts) do
+    [domain_filter(domain_ids, opts), not_confidential_filter(opts)]
+  end
+
+  defp do_build_filters(domain_ids, confidential_domain_ids, opts) do
+    f1 = %{
+      bool: %{
+        filter: [
+          domain_filter(domain_ids, opts),
+          not_confidential_filter(opts)
+        ]
+      }
+    }
+
+    f2 = %{bool: %{filter: domain_filter(confidential_domain_ids, opts)}}
     %{bool: %{should: [f1, f2]}}
   end
 
-  defp domain_filter(domain_ids) do
-    Query.term_or_terms("domain_ids", domain_ids)
+  defp domain_filter(domain_ids, opts) do
+    field_prefix = Keyword.get(opts, :field_prefix, "")
+    Query.term_or_terms("#{field_prefix}domain_ids", domain_ids)
+  end
+
+  defp not_confidential_filter(opts) do
+    field_prefix = Keyword.get(opts, :field_prefix, "")
+    %{term: %{"#{field_prefix}confidential" => false}}
   end
 
   def build_query(permissions, params, query_data) do

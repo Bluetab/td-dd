@@ -124,6 +124,7 @@ defmodule TdDdWeb.DataStructureView do
       :confidential,
       :deleted_at,
       :description,
+      :domain,
       :domain_ids,
       :domains,
       :external_id,

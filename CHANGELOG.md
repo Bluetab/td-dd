@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-7861] Fetch store data to enable linking to a data structure
+
 ## [8.1.1] 2026-02-10
 
 ### Changed
