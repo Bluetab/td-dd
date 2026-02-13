@@ -284,4 +284,76 @@ defmodule TdDd.Search.StoreTest do
              end) =~ "VACUUM cannot run inside a transaction block"
     end
   end
+
+  describe "Store.fetch/2" do
+    setup do
+      start_supervised!(StructureEnricher)
+      :ok
+    end
+
+    @tag sandbox: :shared
+    test "fetches all data structure versions" do
+      expect(TdDd.Search.EnricherImplMock, :async_enrich_versions, 1, fn chunked_ids_stream,
+                                                                         relation_type_id,
+                                                                         filters ->
+        Stream.flat_map(
+          chunked_ids_stream,
+          &EnricherImpl.enrich_versions(&1, relation_type_id, filters)
+        )
+      end)
+
+      dsv = insert(:data_structure_version)
+
+      assert [dsv_document] = Store.fetch(DataStructureVersion, :all)
+      assert dsv.data_structure_id == dsv_document.id
+    end
+
+    @tag sandbox: :shared
+    test "fetches all data structure versions with deleted" do
+      data_structure = insert(:data_structure)
+
+      insert(:data_structure_version,
+        deleted_at: DateTime.utc_now(),
+        data_structure: data_structure,
+        version: 1
+      )
+
+      dsv =
+        insert(:data_structure_version,
+          deleted_at: DateTime.utc_now(),
+          data_structure: data_structure,
+          version: 2
+        )
+
+      expect(TdDd.Search.EnricherImplMock, :async_enrich_versions, 1, fn chunked_ids_stream,
+                                                                         relation_type_id,
+                                                                         filters ->
+        Stream.flat_map(
+          chunked_ids_stream,
+          &EnricherImpl.enrich_versions(&1, relation_type_id, filters)
+        )
+      end)
+
+      assert [dsv_document] = Store.fetch(DataStructureVersion, :all)
+      assert dsv.data_structure_id == dsv_document.id
+    end
+
+    @tag sandbox: :shared
+    test "fetches data structure versions for given ids" do
+      expect(TdDd.Search.EnricherImplMock, :async_enrich_versions, 1, fn chunked_ids_stream,
+                                                                         relation_type_id,
+                                                                         filters ->
+        Stream.flat_map(
+          chunked_ids_stream,
+          &EnricherImpl.enrich_versions(&1, relation_type_id, filters)
+        )
+      end)
+
+      dsv = insert(:data_structure_version)
+      insert(:data_structure_version)
+
+      assert [dsv_document] = Store.fetch(DataStructureVersion, [dsv.data_structure_id])
+      assert dsv.data_structure_id == dsv_document.id
+    end
+  end
 end

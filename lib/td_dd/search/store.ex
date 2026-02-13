@@ -7,6 +7,7 @@ defmodule TdDd.Search.Store do
 
   import Ecto.Query
 
+  alias Elasticsearch.Document
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructureQueries
   alias TdDd.DataStructures.DataStructureTypes
@@ -147,6 +148,26 @@ defmodule TdDd.Search.Store do
     %{}
     |> OutdatedEmbeddings.new()
     |> Oban.insert()
+  end
+
+  def fetch(DataStructureVersion, :all) do
+    transaction(fn ->
+      [deleted: :ignore]
+      |> DataStructureQueries.data_structure_version_ids()
+      |> do_stream()
+      |> Stream.map(&Document.encode/1)
+      |> Enum.to_list()
+    end)
+  end
+
+  def fetch(DataStructureVersion, ids) do
+    transaction(fn ->
+      [data_structure_ids: ids, deleted: :ignore]
+      |> DataStructureQueries.data_structure_version_ids()
+      |> do_stream()
+      |> Stream.map(&Document.encode/1)
+      |> Enum.to_list()
+    end)
   end
 
   defp where_ids(query, ids) when is_list(ids) do
