@@ -4,6 +4,7 @@
 
 ### Added
 
+- [TD-7696] Expose query building capabilities to external services
 - [TD-7861] Fetch store data to enable linking to a data structure
 
 ## [8.1.1] 2026-02-10
@@ -12,9 +13,10 @@
 
 - [TD-7286] Moved generic components of XLSX upload
 
+
 ## [8.1.0] 2026-02-03
 
-### Added
+### Fixed
 
 - [TD-7787] Add Upload Jobs
   - Moved from Implementations to Truedat
