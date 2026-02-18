@@ -55,6 +55,53 @@ defmodule TdDdWeb.DataStructureController do
     |> render("index.json", search_assigns(response))
   end
 
+  def metrics(conn, params) do
+    if Bodyguard.permit?(
+         DataStructures,
+         :view_data_structures_metrics,
+         conn.assigns[:current_resource]
+       ) do
+      clauses = metrics_clauses(params)
+      page = to_integer(params, "page", 0)
+      size = to_integer(params, "size", 50)
+
+      list_metrics = DataStructures.list_data_structure_metrics(clauses, page, size)
+      total = DataStructures.count_metrics_data_structures(clauses)
+
+      conn
+      |> put_resp_header("x-total-count", "#{total}")
+      |> render("metrics_index.json", data_structures: list_metrics)
+    else
+      render_error(conn, :forbidden)
+    end
+  end
+
+  defp metrics_clauses(params) do
+    params
+    |> Map.take(["since"])
+    |> Enum.reduce(%{}, fn
+      {"since", since}, acc when is_binary(since) ->
+        case DateTime.from_iso8601(since) do
+          {:ok, dt, _} -> Map.put(acc, :since, dt)
+          _ -> acc
+        end
+
+      {"since", since}, acc when is_struct(since, DateTime) ->
+        Map.put(acc, :since, since)
+
+      _, acc ->
+        acc
+    end)
+  end
+
+  defp to_integer(params, key, default) do
+    case Map.get(params, key, default) do
+      value when is_binary(value) -> String.to_integer(value)
+      value when is_integer(value) -> value
+      _ -> default
+    end
+  end
+
   def update(conn, %{"id" => id, "data_structure" => structure_params} = params) do
     inherit = Map.get(params, "inherit", false)
     claims = conn.assigns[:current_resource]

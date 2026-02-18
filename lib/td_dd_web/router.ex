@@ -31,6 +31,7 @@ defmodule TdDdWeb.Router do
     post("/data_structures/search", DataStructureController, :search)
     post("/data_structures/suggestions", SuggestionController, :search)
     post("/data_structures/bulk_update", DataStructureController, :bulk_update)
+    post("/data_structures/metrics", DataStructureController, :metrics)
     post("/data_structures/xlsx/download", DataStructures.XLSXController, :download)
     post("/data_structures/xlsx/upload", DataStructures.XLSXController, :upload)
 

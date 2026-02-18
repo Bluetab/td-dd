@@ -30,7 +30,8 @@ defmodule TdDd.DataStructures.Policy do
              :update_data_structure,
              :upload,
              :view_data_structure,
-             :view_data_structures_profile
+             :view_data_structures_profile,
+             :view_data_structures_metrics
            ],
       do: true
 
