@@ -61,6 +61,147 @@ defmodule TdDd.DataStructures do
     |> Repo.all()
   end
 
+  def list_data_structure_metrics(clauses \\ %{}, page, size) do
+    default_relation_type_id = RelationTypes.default_id!()
+
+    latest_version_per_ds =
+      from(dsv in DataStructureVersion,
+        group_by: dsv.data_structure_id,
+        select: %{data_structure_id: dsv.data_structure_id, max_version: max(dsv.version)}
+      )
+
+    query =
+      from(ds in DataStructure,
+        join: dsv in DataStructureVersion,
+        on: ds.id == dsv.data_structure_id,
+        join: latest in subquery(latest_version_per_ds),
+        on: ds.id == latest.data_structure_id and dsv.version == latest.max_version,
+        left_join: r in DataStructureRelation,
+        on: dsv.id == r.child_id and r.relation_type_id == ^default_relation_type_id,
+        left_join: parent_version in DataStructureVersion,
+        on: r.parent_id == parent_version.id,
+        left_join: sm in StructureMetadata,
+        on:
+          sm.data_structure_id == ds.id and
+            fragment(
+              "(?, COALESCE(?, CURRENT_TIMESTAMP)) OVERLAPS (?, COALESCE(?, CURRENT_TIMESTAMP))",
+              dsv.inserted_at,
+              dsv.deleted_at,
+              sm.inserted_at,
+              sm.deleted_at
+            ),
+        order_by: [asc: ds.id, desc: sm.version],
+        distinct: [asc: ds.id],
+        limit: ^size,
+        offset: ^(page * size),
+        select: %{
+          id: ds.id,
+          parent_id: parent_version.data_structure_id,
+          system_id: ds.system_id,
+          class: dsv.class,
+          deleted_at: dsv.deleted_at,
+          domain_ids: ds.domain_ids,
+          external_id: ds.external_id,
+          inserted_at: ds.inserted_at,
+          updated_at: ds.updated_at,
+          last_change_at:
+            fragment("GREATEST(?, ?, ?)", ds.updated_at, dsv.updated_at, ds.last_change_at),
+          metadata: dsv.metadata,
+          mutable_metadata: sm.fields,
+          name: dsv.name,
+          alias_name: ds.alias,
+          description: dsv.description,
+          type: dsv.type,
+          version: dsv.version,
+          source_id: ds.source_id,
+          confidential: ds.confidential
+        }
+      )
+
+    query =
+      Enum.reduce(clauses, query, fn
+        {:since, since}, q ->
+          where(
+            q,
+            [ds, dsv, latest, r],
+            fragment("GREATEST(?, ?, ?)", ds.updated_at, dsv.updated_at, ds.last_change_at) >=
+              ^since
+          )
+
+        _, q ->
+          q
+      end)
+
+    linked_concept_ids = LinkCache.linked_source_ids("data_structure", "business_concept")
+
+    query
+    |> Repo.all()
+    |> Enum.map(fn row ->
+      merged_metadata =
+        (row.metadata || %{})
+        |> Map.merge(row.mutable_metadata || %{})
+        |> Map.drop([""])
+
+      row
+      |> Map.put(:metadata, merged_metadata)
+      |> Map.put(:linked_concepts, Enum.member?(linked_concept_ids, row.id))
+      |> Map.put(:field_type, field_type_from_metadata(row))
+      |> maybe_put_alias_name()
+    end)
+  end
+
+  defp field_type_from_metadata(%{metadata: %{"type" => type}})
+       when is_binary(type) and byte_size(type) > 32_766 do
+    binary_part(type, 0, 32_766)
+  end
+
+  defp field_type_from_metadata(%{metadata: %{"type" => type}}) when is_binary(type), do: type
+  defp field_type_from_metadata(_), do: nil
+
+  defp maybe_put_alias_name(%{alias_name: alias_name} = row) when is_binary(alias_name) do
+    row
+    |> Map.put(:name, alias_name)
+    |> Map.delete(:alias_name)
+  end
+
+  defp maybe_put_alias_name(row), do: Map.delete(row, :alias_name)
+
+  def count_metrics_data_structures(clauses \\ %{}) do
+    default_relation_type_id = RelationTypes.default_id!()
+
+    latest_version_per_ds =
+      from(dsv in DataStructureVersion,
+        group_by: dsv.data_structure_id,
+        select: %{data_structure_id: dsv.data_structure_id, max_version: max(dsv.version)}
+      )
+
+    query =
+      from(ds in DataStructure,
+        join: dsv in DataStructureVersion,
+        on: ds.id == dsv.data_structure_id,
+        join: latest in subquery(latest_version_per_ds),
+        on: ds.id == latest.data_structure_id and dsv.version == latest.max_version,
+        left_join: r in DataStructureRelation,
+        on: dsv.id == r.child_id and r.relation_type_id == ^default_relation_type_id,
+        select: count(ds.id, :distinct)
+      )
+
+    clauses
+    |> Enum.reduce(query, fn
+      {:since, since}, q ->
+        where(
+          q,
+          [ds, dsv, latest, r],
+          fragment("GREATEST(?, ?, ?)", ds.updated_at, dsv.updated_at, ds.last_change_at) >=
+            ^since
+        )
+
+      _, q ->
+        q
+    end)
+    |> Repo.one()
+  end
+
   def list_data_structure_versions(clauses \\ %{}) do
     criteria_apply_order = [:min_id, :since, :order_by, :limit]
 
