@@ -1,12 +1,14 @@
 defmodule TdDq.XLSX.BulkLoadTest do
-  alias Truedat.Audit.UploadJobs
   use TdDd.DataCase
 
   import Mox
 
+  alias TdCluster.TestHelpers.TdAuditMock.UploadJobs
   alias TdCore.Search.IndexWorkerMock
+  alias TdCore.XLSX.BulkLoad
+  alias TdCore.XLSX.BulkLoadProtocol
+  alias TdDfLib.Format
   alias TdDq.Implementations
-  alias Truedat.XLSX.BulkLoad
 
   @moduletag sandbox: :shared
 
@@ -84,7 +86,7 @@ defmodule TdDq.XLSX.BulkLoadTest do
       domain: domain
     )
 
-    %{id: job_id} = insert(:upload_job)
+    job_id = System.unique_integer([:positive])
 
     [
       opts: %{
@@ -134,6 +136,15 @@ defmodule TdDq.XLSX.BulkLoadTest do
            ]}
       }
 
+      UploadJobs.create_info(&Mox.expect/4, opts.job_id, %{
+        type: "created",
+        details: %{
+          implementation_key: "impl_key"
+        },
+        sheet: "impl_template",
+        row_number: 2
+      })
+
       assert {:ok,
               %{
                 error_count: 0,
@@ -143,21 +154,6 @@ defmodule TdDq.XLSX.BulkLoadTest do
                 invalid_sheet_count: 0
               }} =
                BulkLoad.bulk_load(sheets, opts)
-
-      assert %{events: events} =
-               UploadJobs.get_job(opts.job_id)
-
-      assert [
-               %{
-                 response: %{
-                   "details" => %{"implementation_key" => "impl_key"},
-                   "row_number" => 2,
-                   "sheet" => "impl_template",
-                   "type" => "created"
-                 },
-                 status: "INFO"
-               }
-             ] = events
     end
 
     test "update implementation without changing missing template column", %{
@@ -209,6 +205,20 @@ defmodule TdDq.XLSX.BulkLoadTest do
            ]}
       }
 
+      UploadJobs.create_info(&Mox.expect/4, opts.job_id, %{
+        type: "updated",
+        details: %{
+          implementation_key: impl_key,
+          changes: %{
+            df_content: %{
+              "string_field" => %{"value" => "string_value_change", "origin" => "file"}
+            }
+          }
+        },
+        sheet: template.name,
+        row_number: 2
+      })
+
       assert {
                :ok,
                %{
@@ -220,26 +230,6 @@ defmodule TdDq.XLSX.BulkLoadTest do
                }
              } =
                BulkLoad.bulk_load(sheets, opts)
-
-      assert %{events: events} =
-               UploadJobs.get_job(opts.job_id)
-
-      assert [
-               %{
-                 response: %{
-                   "details" => %{"implementation_key" => ^impl_key, "changes" => changes},
-                   "row_number" => 2,
-                   "type" => "updated"
-                 },
-                 status: "INFO"
-               }
-             ] = events
-
-      assert changes == %{
-               "df_content" => %{
-                 "string_field" => %{"value" => "string_value_change", "origin" => "file"}
-               }
-             }
 
       assert %{
                df_content: %{
@@ -300,6 +290,15 @@ defmodule TdDq.XLSX.BulkLoadTest do
            ]}
       }
 
+      UploadJobs.create_info(&Mox.expect/4, opts.job_id, %{
+        type: "unchanged",
+        details: %{
+          implementation_key: impl_key
+        },
+        sheet: template.name,
+        row_number: 2
+      })
+
       assert {
                :ok,
                %{
@@ -311,20 +310,6 @@ defmodule TdDq.XLSX.BulkLoadTest do
                }
              } =
                BulkLoad.bulk_load(sheets, opts)
-
-      assert %{events: events} =
-               UploadJobs.get_job(opts.job_id)
-
-      assert [
-               %{
-                 response: %{
-                   "details" => %{"implementation_key" => ^impl_key},
-                   "row_number" => 2,
-                   "type" => "unchanged"
-                 },
-                 status: "INFO"
-               }
-             ] = events
 
       assert %{
                df_content: %{
@@ -405,6 +390,28 @@ defmodule TdDq.XLSX.BulkLoadTest do
            )}
       }
 
+      UploadJobs.create_info(&Mox.expect/4, opts.job_id, %{
+        type: "unchanged",
+        details: %{
+          implementation_key: impl_key
+        },
+        sheet: template_with_default.name,
+        row_number: 2
+      })
+
+      UploadJobs.create_info(&Mox.expect/4, opts.job_id, %{
+        type: "created",
+        sheet: template_with_default.name,
+        row_number: 3
+      })
+
+      UploadJobs.create_info(&Mox.expect/4, opts.job_id, %{
+        type: "unchanged",
+        details: %{},
+        sheet: template_with_default.name,
+        row_number: 4
+      })
+
       assert {
                :ok,
                %{
@@ -417,37 +424,6 @@ defmodule TdDq.XLSX.BulkLoadTest do
              } =
                BulkLoad.bulk_load(sheets, opts)
 
-      assert %{events: events} =
-               UploadJobs.get_job(opts.job_id)
-
-      assert [
-               %{
-                 response: %{
-                   "details" => %{"implementation_key" => ^impl_key},
-                   "row_number" => 2,
-                   "type" => "unchanged"
-                 },
-                 status: "INFO"
-               },
-               %{
-                 response: %{
-                   "row_number" => 3,
-                   "type" => "created",
-                   "details" => %{
-                     "id" => new_impl_key
-                   }
-                 },
-                 status: "INFO"
-               },
-               %{
-                 response: %{
-                   "row_number" => 4,
-                   "type" => "unchanged"
-                 },
-                 status: "INFO"
-               }
-             ] = events
-
       assert %{
                df_content: %{
                  "numeric_field" => %{"value" => ^numeric_field_value, "origin" => "user"},
@@ -455,17 +431,6 @@ defmodule TdDq.XLSX.BulkLoadTest do
                  "string_field_with_default" => %{"origin" => "user", "value" => "foo_value"}
                }
              } = Implementations.get_implementation(impl_id)
-
-      assert %{
-               df_content: %{
-                 "numeric_field" => %{"value" => ^numeric_field_value, "origin" => "file"},
-                 "string_field" => %{"value" => ^string_field_value, "origin" => "file"},
-                 "string_field_with_default" => %{
-                   "origin" => "default",
-                   "value" => "default_value"
-                 }
-               }
-             } = Implementations.get_implementation(new_impl_key)
 
       assert %{df_content: df_content} = Implementations.get_implementation(impl_id_2)
       assert is_nil(Map.get(df_content, "string_field_with_default"))
@@ -520,6 +485,14 @@ defmodule TdDq.XLSX.BulkLoadTest do
            ]}
       }
 
+      UploadJobs.create_info(&Mox.expect/4, opts.job_id, %{
+        type: "updated",
+        details: %{
+          implementation_key: impl_key
+        },
+        row_number: 2
+      })
+
       assert {
                :ok,
                %{
@@ -531,20 +504,6 @@ defmodule TdDq.XLSX.BulkLoadTest do
                }
              } =
                BulkLoad.bulk_load(sheets, opts)
-
-      assert %{events: events} =
-               UploadJobs.get_job(opts.job_id)
-
-      assert [
-               %{
-                 response: %{
-                   "details" => %{"implementation_key" => ^impl_key},
-                   "row_number" => 2,
-                   "type" => "updated"
-                 },
-                 status: "INFO"
-               }
-             ] = events
 
       assert %{
                df_content: %{
@@ -576,6 +535,15 @@ defmodule TdDq.XLSX.BulkLoadTest do
            ]}
       }
 
+      UploadJobs.create_info(&Mox.expect/4, opts.job_id, %{
+        type: "unchanged",
+        details: %{
+          implementation_key: "existing_impl"
+        },
+        row_number: 2,
+        sheet: "impl_template"
+      })
+
       assert {:ok,
               %{
                 error_count: 0,
@@ -585,21 +553,6 @@ defmodule TdDq.XLSX.BulkLoadTest do
                 invalid_sheet_count: 0
               }} =
                BulkLoad.bulk_load(sheets, opts)
-
-      assert %{events: events} =
-               UploadJobs.get_job(opts.job_id)
-
-      assert [
-               %{
-                 response: %{
-                   "details" => %{"implementation_key" => "existing_impl"},
-                   "row_number" => 2,
-                   "sheet" => "impl_template",
-                   "type" => "unchanged"
-                 },
-                 status: "INFO"
-               }
-             ] = events
     end
 
     test "update existing implementation", %{opts: opts, domain: domain} do
@@ -631,6 +584,22 @@ defmodule TdDq.XLSX.BulkLoadTest do
            ]}
       }
 
+      UploadJobs.create_info(&Mox.expect/4, opts.job_id, %{
+        type: "updated",
+        details: %{
+          implementation_key: "existing_impl",
+          changes: %{
+            df_content: %{
+              "string_field" => %{"origin" => "file", "value" => "string_value"}
+            },
+            goal: 75.0,
+            minimum: 50.0
+          }
+        },
+        row_number: 2,
+        sheet: "impl_template"
+      })
+
       assert {:ok,
               %{
                 error_count: 0,
@@ -639,25 +608,6 @@ defmodule TdDq.XLSX.BulkLoadTest do
                 unchanged_count: 0
               }} =
                BulkLoad.bulk_load(sheets, opts)
-
-      assert %{
-               latest_status: "INFO",
-               latest_event_response: %{
-                 "type" => "updated",
-                 "details" => %{
-                   "changes" => %{
-                     "df_content" => %{
-                       "string_field" => %{"origin" => "file", "value" => "string_value"}
-                     },
-                     "goal" => 75.0,
-                     "minimum" => 50.0
-                   },
-                   "implementation_key" => "existing_impl"
-                 },
-                 "row_number" => 2,
-                 "sheet" => "impl_template"
-               }
-             } = UploadJobs.get_job(opts.job_id)
     end
 
     test "invalid update existing implementation", %{opts: opts, domain: domain} do
@@ -689,6 +639,13 @@ defmodule TdDq.XLSX.BulkLoadTest do
            ]}
       }
 
+      UploadJobs.create_error(&Mox.expect/4, opts.job_id, %{
+        type: "implementation_creation_error",
+        details: [%{message: "must.be.greater.than.or.equal.to.minimum", field: :goal}],
+        row_number: 2,
+        sheet: "impl_template"
+      })
+
       assert {:ok,
               %{
                 error_count: 1,
@@ -696,17 +653,7 @@ defmodule TdDq.XLSX.BulkLoadTest do
                 update_count: 0,
                 unchanged_count: 0,
                 invalid_sheet_count: 0
-              }} =
-               BulkLoad.bulk_load(sheets, opts)
-
-      assert %{
-               latest_status: "ERROR",
-               latest_event_response: %{
-                 "details" => [["goal", ["must.be.greater.than.or.equal.to.minimum", []]]],
-                 "type" => "implementation_creation_error"
-               }
-             } =
-               UploadJobs.get_job(opts.job_id)
+              }} = BulkLoad.bulk_load(sheets, opts)
     end
 
     test "error missing required header", %{opts: opts} do
@@ -719,6 +666,18 @@ defmodule TdDq.XLSX.BulkLoadTest do
            ], [["translated_percentage", 75, 50]]}
       }
 
+      UploadJobs.create_error(&Mox.expect/4, opts.job_id, %{
+        type: "missing_required_headers",
+        details: %{
+          missing_headers: [
+            "domain_external_id",
+            "english_implementation_key",
+            "english_implementation_template"
+          ]
+        },
+        sheet: "impl_template"
+      })
+
       assert {:ok,
               %{
                 error_count: 0,
@@ -726,24 +685,7 @@ defmodule TdDq.XLSX.BulkLoadTest do
                 update_count: 0,
                 unchanged_count: 0,
                 invalid_sheet_count: 1
-              }} =
-               BulkLoad.bulk_load(sheets, opts)
-
-      assert %{
-               latest_status: "ERROR",
-               latest_event_response: %{
-                 "details" => %{
-                   "missing_headers" => [
-                     "domain_external_id",
-                     "english_implementation_key",
-                     "english_implementation_template"
-                   ]
-                 },
-                 "sheet" => "impl_template",
-                 "type" => "missing_required_headers"
-               }
-             } =
-               UploadJobs.get_job(opts.job_id)
+              }} = BulkLoad.bulk_load(sheets, opts)
     end
 
     test "error template not found", %{opts: opts, domain: domain} do
@@ -760,6 +702,13 @@ defmodule TdDq.XLSX.BulkLoadTest do
            [["impl_key", "invalid_template", "translated_percentage", 75, 50, domain.external_id]]}
       }
 
+      UploadJobs.create_error(&Mox.expect/4, opts.job_id, %{
+        type: "invalid_template_name",
+        details: %{template_name: "invalid_template"},
+        row_number: 2,
+        sheet: "invalid_template"
+      })
+
       assert {:ok,
               %{
                 error_count: 1,
@@ -767,23 +716,7 @@ defmodule TdDq.XLSX.BulkLoadTest do
                 update_count: 0,
                 unchanged_count: 0,
                 invalid_sheet_count: 0
-              }} =
-               BulkLoad.bulk_load(sheets, opts)
-
-      assert %{events: events} =
-               UploadJobs.get_job(opts.job_id)
-
-      assert [
-               %{
-                 response: %{
-                   "details" => %{"template_name" => "invalid_template"},
-                   "row_number" => 2,
-                   "sheet" => "invalid_template",
-                   "type" => "invalid_template_name"
-                 },
-                 status: "ERROR"
-               }
-             ] = events
+              }} = BulkLoad.bulk_load(sheets, opts)
     end
 
     test "error domain not found", %{opts: opts} do
@@ -800,6 +733,13 @@ defmodule TdDq.XLSX.BulkLoadTest do
            [["impl_key", "impl_template", "translated_percentage", 75, 50, "foo_domain_ext_id"]]}
       }
 
+      UploadJobs.create_error(&Mox.expect/4, opts.job_id, %{
+        type: "invalid_domain_external_id",
+        details: %{domain_external_id: "foo_domain_ext_id"},
+        row_number: 2,
+        sheet: "impl_template"
+      })
+
       assert {:ok,
               %{
                 error_count: 1,
@@ -807,23 +747,7 @@ defmodule TdDq.XLSX.BulkLoadTest do
                 update_count: 0,
                 unchanged_count: 0,
                 invalid_sheet_count: 0
-              }} =
-               BulkLoad.bulk_load(sheets, opts)
-
-      assert %{events: events} =
-               UploadJobs.get_job(opts.job_id)
-
-      assert [
-               %{
-                 response: %{
-                   "details" => %{"domain_external_id" => "foo_domain_ext_id"},
-                   "row_number" => 2,
-                   "sheet" => "impl_template",
-                   "type" => "invalid_domain_external_id"
-                 },
-                 status: "ERROR"
-               }
-             ] = events
+              }} = BulkLoad.bulk_load(sheets, opts)
     end
 
     test "error rule does not exist", %{opts: opts, domain: domain} do
@@ -857,19 +781,15 @@ defmodule TdDq.XLSX.BulkLoadTest do
            ]}
       }
 
+      UploadJobs.create_error(&Mox.expect/4, opts.job_id, %{
+        type: "invalid_associated_rule",
+        details: %{rule_name: "rule"},
+        row_number: 2,
+        sheet: "impl_template"
+      })
+
       assert {:ok, %{error_count: 1, unchanged_count: 0, insert_count: 0, update_count: 0}} =
                BulkLoad.bulk_load(sheets, opts)
-
-      assert %{
-               latest_status: "ERROR",
-               latest_event_response: %{
-                 "row_number" => 2,
-                 "sheet" => "impl_template",
-                 "type" => "invalid_associated_rule",
-                 "details" => %{"rule_name" => "rule"}
-               }
-             } =
-               UploadJobs.get_job(opts.job_id)
     end
 
     test "error invalid result goal", %{opts: opts, domain: domain} do
@@ -901,22 +821,19 @@ defmodule TdDq.XLSX.BulkLoadTest do
            ]}
       }
 
+      UploadJobs.create_error(&Mox.expect/4, opts.job_id, %{
+        type: "implementation_creation_error",
+        details: [%{message: "must.be.greater.than.or.equal.to.minimum", field: :goal}],
+        row_number: 2,
+        sheet: "impl_template"
+      })
+
       assert {:ok,
               %{
                 error_count: 1,
                 insert_count: 0,
                 update_count: 0
-              }} =
-               BulkLoad.bulk_load(sheets, opts)
-
-      assert %{
-               latest_status: "ERROR",
-               latest_event_response: %{
-                 "details" => [["goal", ["must.be.greater.than.or.equal.to.minimum", []]]],
-                 "type" => "implementation_creation_error"
-               }
-             } =
-               UploadJobs.get_job(opts.job_id)
+              }} = BulkLoad.bulk_load(sheets, opts)
     end
 
     test "handles different errors individually for sheet and row", %{opts: opts, domain: domain} do
@@ -982,6 +899,53 @@ defmodule TdDq.XLSX.BulkLoadTest do
            ]}
       }
 
+      UploadJobs.create_error(&Mox.expect/4, opts.job_id, %{
+        type: "missing_required_headers",
+        details: %{
+          missing_headers: [
+            "domain_external_id",
+            "english_implementation_key",
+            "english_implementation_template"
+          ]
+        },
+        sheet: "invalid_sheet"
+      })
+
+      UploadJobs.create_error(&Mox.expect/4, opts.job_id, %{
+        type: "invalid_domain_external_id",
+        details: %{domain_external_id: "invalid_domain"},
+        row_number: 2,
+        sheet: "impl_template"
+      })
+
+      UploadJobs.create_error(&Mox.expect/4, opts.job_id, %{
+        type: "invalid_template_name",
+        details: %{template_name: "invalid_template"},
+        row_number: 3,
+        sheet: "impl_template"
+      })
+
+      UploadJobs.create_error(&Mox.expect/4, opts.job_id, %{
+        type: "invalid_associated_rule",
+        details: %{rule_name: "rule"},
+        row_number: 4,
+        sheet: "impl_template"
+      })
+
+      UploadJobs.create_error(&Mox.expect/4, opts.job_id, %{
+        type: "implementation_creation_error",
+        details: [%{message: "must.be.greater.than.or.equal.to.minimum", field: :goal}],
+        row_number: 5,
+        sheet: "impl_template"
+      })
+
+      UploadJobs.create_info(&Mox.expect/4, opts.job_id, %{
+        type: "created",
+        details: %{implementation_key: "valid_impl_key"},
+        row_number: 6,
+        sheet: "impl_template"
+      })
+
       assert {:ok,
               %{
                 invalid_sheet_count: 1,
@@ -989,73 +953,7 @@ defmodule TdDq.XLSX.BulkLoadTest do
                 insert_count: 1,
                 update_count: 0,
                 unchanged_count: 0
-              }} =
-               BulkLoad.bulk_load(sheets, opts)
-
-      assert %{events: events} =
-               UploadJobs.get_job(opts.job_id)
-
-      assert [
-               %{
-                 response: %{
-                   "details" => %{
-                     "missing_headers" => [
-                       "domain_external_id",
-                       "english_implementation_key",
-                       "english_implementation_template"
-                     ]
-                   },
-                   "sheet" => "invalid_sheet",
-                   "type" => "missing_required_headers"
-                 },
-                 status: "ERROR"
-               },
-               %{
-                 response: %{
-                   "details" => %{"domain_external_id" => "invalid_domain"},
-                   "row_number" => 2,
-                   "sheet" => "impl_template",
-                   "type" => "invalid_domain_external_id"
-                 },
-                 status: "ERROR"
-               },
-               %{
-                 response: %{
-                   "details" => %{"template_name" => "invalid_template"},
-                   "row_number" => 3,
-                   "sheet" => "impl_template",
-                   "type" => "invalid_template_name"
-                 },
-                 status: "ERROR"
-               },
-               %{
-                 response: %{
-                   "details" => %{"rule_name" => "rule"},
-                   "row_number" => 4,
-                   "sheet" => "impl_template",
-                   "type" => "invalid_associated_rule"
-                 },
-                 status: "ERROR"
-               },
-               %{
-                 response: %{
-                   "details" => [["goal", ["must.be.greater.than.or.equal.to.minimum", []]]],
-                   "row_number" => 5,
-                   "sheet" => "impl_template",
-                   "type" => "implementation_creation_error"
-                 },
-                 status: "ERROR"
-               },
-               %{
-                 response: %{
-                   "details" => %{"implementation_key" => "valid_impl_key"},
-                   "row_number" => 6,
-                   "sheet" => "impl_template",
-                   "type" => "created"
-                 },
-                 status: "INFO"
-               }
-             ] = events
+              }} = BulkLoad.bulk_load(sheets, opts)
     end
 
     test "calls reindex with created implementation ids", %{opts: opts, domain: domain} do
@@ -1097,6 +995,20 @@ defmodule TdDq.XLSX.BulkLoadTest do
              ]
            ]}
       }
+
+      UploadJobs.create_info(&Mox.expect/4, opts.job_id, %{
+        type: "created",
+        details: %{implementation_key: "impl_key_1"},
+        row_number: 2,
+        sheet: "impl_template"
+      })
+
+      UploadJobs.create_info(&Mox.expect/4, opts.job_id, %{
+        type: "created",
+        details: %{implementation_key: "impl_key_2"},
+        row_number: 3,
+        sheet: "impl_template"
+      })
 
       assert {:ok, %{insert_count: 2}} = BulkLoad.bulk_load(sheets, opts)
 
@@ -1141,6 +1053,22 @@ defmodule TdDq.XLSX.BulkLoadTest do
              ]
            ]}
       }
+
+      UploadJobs.create_info(&Mox.expect/4, opts.job_id, %{
+        type: "updated",
+        details: %{
+          implementation_key: "existing_impl_for_update",
+          changes: %{
+            df_content: %{
+              "string_field" => %{"origin" => "file", "value" => "updated_value"}
+            },
+            goal: 90.0,
+            minimum: 70.0
+          }
+        },
+        row_number: 2,
+        sheet: "impl_template"
+      })
 
       assert {:ok, %{update_count: 1}} = BulkLoad.bulk_load(sheets, opts)
 
@@ -1201,6 +1129,29 @@ defmodule TdDq.XLSX.BulkLoadTest do
            ]}
       }
 
+      UploadJobs.create_info(&Mox.expect/4, opts.job_id, %{
+        type: "updated",
+        details: %{
+          implementation_key: "existing_impl_for_merge",
+          changes: %{
+            df_content: %{
+              "string_field" => %{"origin" => "file", "value" => "updated_value"}
+            },
+            goal: 90.0,
+            minimum: 70.0
+          }
+        },
+        row_number: 2,
+        sheet: "impl_template"
+      })
+
+      UploadJobs.create_info(&Mox.expect/4, opts.job_id, %{
+        type: "created",
+        details: %{implementation_key: "new_impl_for_merge"},
+        row_number: 3,
+        sheet: "impl_template"
+      })
+
       assert {:ok, %{insert_count: 1, update_count: 1}} =
                BulkLoad.bulk_load(sheets, opts)
 
@@ -1256,9 +1207,328 @@ defmodule TdDq.XLSX.BulkLoadTest do
            ]}
       }
 
+      UploadJobs.create_info(&Mox.expect/4, opts.job_id, %{
+        type: "unchanged",
+        details: %{implementation_key: impl_key},
+        row_number: 2,
+        sheet: "impl_template"
+      })
+
       assert {:ok, %{unchanged_count: 1}} = BulkLoad.bulk_load(sheets, opts)
 
       assert [] = IndexWorkerMock.calls()
+    end
+  end
+
+  describe "BulkLoadProtocol.bulk_load_item/3" do
+    test "returns error when df_content field validation fails", %{
+      opts: opts,
+      domain: domain
+    } do
+      template_with_enum =
+        create_template(
+          [
+            %{
+              "name" => "list_field",
+              "type" => "string",
+              "label" => "List Field",
+              "cardinality" => "1",
+              "values" => %{"fixed" => ["option1", "option2", "option3"]},
+              "widget" => "dropdown"
+            }
+          ],
+          "impl_template_enum"
+        )
+
+      CacheHelpers.put_i18n_messages("en", [
+        %{message_id: "fields.List Field", definition: "english_list_field"}
+      ])
+
+      content_schema = Format.flatten_content_fields(template_with_enum.content, "en")
+
+      implementation = %{
+        "implementation_key" => "invalid_impl",
+        "implementation_template" => template_with_enum.name,
+        "domain_external_id" => domain.external_id,
+        "result_type" => "percentage",
+        "goal" => 75,
+        "minimum" => 50,
+        "df_content" => %{
+          "list_field" => %{"value" => "invalid_option", "origin" => "file"}
+        }
+      }
+
+      ctx = %{
+        domain_ext_id_map: %{domain.external_id => domain.id},
+        templates: %{
+          template_with_enum.name => %{
+            translations: %{},
+            content_schema: content_schema
+          }
+        },
+        lang: "en",
+        to_status: "draft",
+        claims: opts.claims
+      }
+
+      assert {:error, {"implementation_creation_error", [error]}} =
+               BulkLoadProtocol.bulk_load_item(
+                 struct(Implementations.Implementation),
+                 implementation,
+                 ctx
+               )
+
+      assert error.message == "list_field: is invalid - inclusion"
+      assert error.field == :df_content
+    end
+
+    test "returns error when goal is less than minimum for percentage", %{
+      opts: opts,
+      domain: domain
+    } do
+      implementation = %{
+        "implementation_key" => "invalid_goal_impl",
+        "implementation_template" => "impl_template",
+        "domain_external_id" => domain.external_id,
+        "result_type" => "percentage",
+        "goal" => 50,
+        "minimum" => 75,
+        "df_content" => %{}
+      }
+
+      ctx = %{
+        domain_ext_id_map: %{domain.external_id => domain.id},
+        templates: %{
+          "impl_template" => %{
+            translations: %{},
+            content_schema: []
+          }
+        },
+        lang: "en",
+        to_status: "draft",
+        claims: opts.claims
+      }
+
+      assert {:error, {"implementation_creation_error", [error]}} =
+               BulkLoadProtocol.bulk_load_item(
+                 struct(Implementations.Implementation),
+                 implementation,
+                 ctx
+               )
+
+      assert error.message == "must.be.greater.than.or.equal.to.minimum"
+      assert error.field == :goal
+    end
+
+    test "returns error when goal exceeds maximum for percentage", %{
+      opts: opts,
+      domain: domain
+    } do
+      implementation = %{
+        "implementation_key" => "invalid_goal_max_impl",
+        "implementation_template" => "impl_template",
+        "domain_external_id" => domain.external_id,
+        "result_type" => "percentage",
+        "goal" => 150,
+        "minimum" => 50,
+        "df_content" => %{}
+      }
+
+      ctx = %{
+        domain_ext_id_map: %{domain.external_id => domain.id},
+        templates: %{
+          "impl_template" => %{
+            translations: %{},
+            content_schema: []
+          }
+        },
+        lang: "en",
+        to_status: "draft",
+        claims: opts.claims
+      }
+
+      assert {:error, {"implementation_creation_error", [error]}} =
+               BulkLoadProtocol.bulk_load_item(
+                 struct(Implementations.Implementation),
+                 implementation,
+                 ctx
+               )
+
+      assert error.message == "must be less than or equal to 100"
+      assert error.field == :goal
+    end
+
+    test "returns error when minimum is negative for percentage", %{
+      opts: opts,
+      domain: domain
+    } do
+      implementation = %{
+        "implementation_key" => "invalid_min_impl",
+        "implementation_template" => "impl_template",
+        "domain_external_id" => domain.external_id,
+        "result_type" => "percentage",
+        "goal" => 75,
+        "minimum" => -10,
+        "df_content" => %{}
+      }
+
+      ctx = %{
+        domain_ext_id_map: %{domain.external_id => domain.id},
+        templates: %{
+          "impl_template" => %{
+            translations: %{},
+            content_schema: []
+          }
+        },
+        lang: "en",
+        to_status: "draft",
+        claims: opts.claims
+      }
+
+      assert {:error, {"implementation_creation_error", [error]}} =
+               BulkLoadProtocol.bulk_load_item(
+                 struct(Implementations.Implementation),
+                 implementation,
+                 ctx
+               )
+
+      assert error.message == "must be greater than or equal to 0"
+      assert error.field == :minimum
+    end
+
+    test "returns error when result_type is invalid", %{
+      opts: opts,
+      domain: domain
+    } do
+      implementation = %{
+        "implementation_key" => "invalid_result_type_impl",
+        "implementation_template" => "impl_template",
+        "domain_external_id" => domain.external_id,
+        "result_type" => "invalid_type",
+        "goal" => 75,
+        "minimum" => 50,
+        "df_content" => %{}
+      }
+
+      ctx = %{
+        domain_ext_id_map: %{domain.external_id => domain.id},
+        templates: %{
+          "impl_template" => %{
+            translations: %{},
+            content_schema: []
+          }
+        },
+        lang: "en",
+        to_status: "draft",
+        claims: opts.claims
+      }
+
+      assert {:error, {"implementation_creation_error", [error]}} =
+               BulkLoadProtocol.bulk_load_item(
+                 struct(Implementations.Implementation),
+                 implementation,
+                 ctx
+               )
+
+      assert error.message == "is invalid"
+      assert error.field == :result_type
+    end
+
+    test "returns error when minimum is greater than goal for errors_number", %{
+      opts: opts,
+      domain: domain
+    } do
+      implementation = %{
+        "implementation_key" => "invalid_errors_number_impl",
+        "implementation_template" => "impl_template",
+        "domain_external_id" => domain.external_id,
+        "result_type" => "errors_number",
+        "goal" => 20,
+        "minimum" => 10,
+        "df_content" => %{}
+      }
+
+      ctx = %{
+        domain_ext_id_map: %{domain.external_id => domain.id},
+        templates: %{
+          "impl_template" => %{
+            translations: %{},
+            content_schema: []
+          }
+        },
+        lang: "en",
+        to_status: "draft",
+        claims: opts.claims
+      }
+
+      assert {:error, {"implementation_creation_error", [error]}} =
+               BulkLoadProtocol.bulk_load_item(
+                 struct(Implementations.Implementation),
+                 implementation,
+                 ctx
+               )
+
+      assert error.message == "must.be.greater.than.or.equal.to.goal"
+      assert error.field == :minimum
+    end
+
+    test "returns error when df_content field has invalid type", %{
+      opts: opts,
+      domain: domain
+    } do
+      template_with_integer =
+        create_template(
+          [
+            %{
+              "name" => "integer_field",
+              "type" => "integer",
+              "label" => "Integer Field",
+              "cardinality" => "1"
+            }
+          ],
+          "impl_template_integer"
+        )
+
+      CacheHelpers.put_i18n_messages("en", [
+        %{message_id: "fields.Integer Field", definition: "english_integer_field"}
+      ])
+
+      content_schema = Format.flatten_content_fields(template_with_integer.content, "en")
+
+      implementation = %{
+        "implementation_key" => "invalid_type_impl",
+        "implementation_template" => template_with_integer.name,
+        "domain_external_id" => domain.external_id,
+        "result_type" => "percentage",
+        "goal" => 75,
+        "minimum" => 50,
+        "df_content" => %{
+          "integer_field" => %{"value" => "not_a_number", "origin" => "file"}
+        }
+      }
+
+      ctx = %{
+        domain_ext_id_map: %{domain.external_id => domain.id},
+        templates: %{
+          template_with_integer.name => %{
+            translations: %{},
+            content_schema: content_schema
+          }
+        },
+        lang: "en",
+        to_status: "draft",
+        claims: opts.claims
+      }
+
+      assert {:error, {"implementation_creation_error", [error]}} =
+               BulkLoadProtocol.bulk_load_item(
+                 struct(Implementations.Implementation),
+                 implementation,
+                 ctx
+               )
+
+      assert error.message == "Integer Field is invalid"
+      assert error.field == :df_content
     end
   end
 

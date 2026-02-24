@@ -23,13 +23,6 @@ defmodule TdDdWeb.Router do
     forward "/v2", Absinthe.Plug, schema: TdDdWeb.Schema
   end
 
-  scope "/api/upload_jobs", alias: TruedatWeb do
-    pipe_through [:api, :api_auth]
-
-    get("/", UploadJobController, :index)
-    get("/:id", UploadJobController, :show)
-  end
-
   scope "/api", TdDdWeb do
     pipe_through [:api, :api_auth]
 
@@ -38,6 +31,7 @@ defmodule TdDdWeb.Router do
     post("/data_structures/search", DataStructureController, :search)
     post("/data_structures/suggestions", SuggestionController, :search)
     post("/data_structures/bulk_update", DataStructureController, :bulk_update)
+    post("/data_structures/metrics", DataStructureController, :metrics)
     post("/data_structures/xlsx/download", DataStructures.XLSXController, :download)
     post("/data_structures/xlsx/upload", DataStructures.XLSXController, :upload)
 

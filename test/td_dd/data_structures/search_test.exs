@@ -507,4 +507,12 @@ defmodule TdDd.DataStructures.SearchTest do
                Search.search_data_structures(%{}, claims, :view_data_structure)
     end
   end
+
+  describe "Search.store/0" do
+    test "returns the store and schema for the business concept versions index" do
+      assert %{store: store, schema: schema} = Search.store()
+      assert store == TdDd.Search.Store
+      assert schema == TdDd.DataStructures.DataStructureVersion
+    end
+  end
 end

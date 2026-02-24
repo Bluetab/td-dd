@@ -3,7 +3,9 @@ defmodule TdDd.DataStructures.Search do
   The Data Structures Search context
   """
 
+  alias Elasticsearch.Cluster.Config
   alias TdCore.Search
+  alias TdCore.Search.Cluster
   alias TdCore.Search.ElasticDocument
   alias TdCore.Search.ElasticDocumentProtocol
   alias TdCore.Search.Permissions
@@ -225,6 +227,18 @@ defmodule TdDd.DataStructures.Search do
       },
       params
     )
+  end
+
+  def store do
+    cluster_config = Config.get(Cluster)
+    store = get_in(cluster_config, [:indexes, :structures, :store])
+
+    schema =
+      cluster_config
+      |> get_in([:indexes, :structures, :sources])
+      |> List.first()
+
+    %{store: store, schema: schema}
   end
 
   defp build_query(%Claims{} = claims, permission, %{} = params, %{} = query_data) do

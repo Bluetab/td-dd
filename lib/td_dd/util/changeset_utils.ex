@@ -13,16 +13,26 @@ defmodule TdDd.Utils.ChangesetUtils do
       Replaced to: "should be at most 10 character(s)"
   """
   def error_message_list_on(changeset) do
-    Ecto.Changeset.traverse_errors(changeset, fn {message, opts} ->
-      Enum.reduce(opts, message, fn {key, value}, acc ->
-        String.replace(acc, "%{#{key}}", to_string(value))
+    changeset
+    |> Ecto.Changeset.traverse_errors(fn {message, opts} ->
+      Enum.reduce(opts, message, fn
+        {_key, {_type, details}}, acc when is_list(details) ->
+          add_details(acc, details)
+
+        {key, value}, acc ->
+          String.replace(acc, "%{#{key}}", inspect(value))
       end)
     end)
-    |> Enum.map(fn {key, value} ->
-      %{
-        message: "#{value}",
-        field: key
-      }
+    |> Enum.map(fn {key, value} -> %{message: "#{value}", field: key} end)
+  end
+
+  defp add_details(message, details) when is_binary(message) and is_list(details) do
+    Enum.reduce(details, message, fn
+      {:validation, value}, acc ->
+        acc <> " - #{value}"
+
+      _other, acc ->
+        acc
     end)
   end
 end

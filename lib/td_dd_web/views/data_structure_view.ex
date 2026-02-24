@@ -31,6 +31,35 @@ defmodule TdDdWeb.DataStructureView do
     %{data: render_many(data_structures, __MODULE__, "data_structure.json")}
   end
 
+  def render("metrics_index.json", %{data_structures: data_structures}) do
+    %{data: render_many(data_structures, __MODULE__, "metrics_data_structure.json")}
+  end
+
+  def render("metrics_data_structure.json", %{data_structure: data_structure}) do
+    data_structure
+    |> Map.take([
+      :id,
+      :parent_id,
+      :system_id,
+      :class,
+      :deleted_at,
+      :domain_ids,
+      :external_id,
+      :inserted_at,
+      :updated_at,
+      :last_change_at,
+      :linked_concepts,
+      :metadata,
+      :name,
+      :description,
+      :type,
+      :field_type,
+      :version,
+      :source_id,
+      :confidential
+    ])
+  end
+
   def render("show.json", %{data_structure: data_structure, user_permissions: user_permissions}) do
     "show.json"
     |> render(%{data_structure: data_structure})
@@ -124,6 +153,7 @@ defmodule TdDdWeb.DataStructureView do
       :confidential,
       :deleted_at,
       :description,
+      :domain,
       :domain_ids,
       :domains,
       :external_id,

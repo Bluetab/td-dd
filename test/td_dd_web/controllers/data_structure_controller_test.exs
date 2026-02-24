@@ -2161,6 +2161,413 @@ defmodule TdDdWeb.DataStructureControllerTest do
     end
   end
 
+  describe "metrics" do
+    @tag authentication: [role: "user"]
+    test "returns forbidden for user role", %{conn: conn} do
+      response_conn = post(conn, data_structure_path(conn, :metrics), %{})
+
+      assert json_response(response_conn, :forbidden)
+    end
+
+    @tag authentication: [role: "service"]
+    test "returns metrics data structures with pagination", %{conn: conn} do
+      ds1 = insert(:data_structure)
+      ds2 = insert(:data_structure)
+      ds3 = insert(:data_structure, last_change_at: ~U[2020-01-03 00:00:00Z])
+      ds4 = insert(:data_structure, last_change_at: ~U[2020-01-04 00:00:00Z])
+
+      insert(:data_structure_version, data_structure_id: ds1.id)
+      insert(:data_structure_version, data_structure_id: ds2.id)
+      insert(:data_structure_version, data_structure_id: ds3.id)
+      insert(:data_structure_version, data_structure_id: ds4.id)
+
+      response_conn =
+        conn
+        |> post(data_structure_path(conn, :metrics), %{"page" => "0", "size" => "3"})
+
+      assert [total_count] = get_resp_header(response_conn, "x-total-count")
+
+      conn = json_response(response_conn, :ok)
+      assert %{"data" => data} = conn
+      assert length(data) == 3
+      assert total_count == "4"
+      assert Enum.map(data, & &1["id"]) |> Enum.sort() == Enum.sort([ds1.id, ds2.id, ds3.id])
+    end
+
+    @tag authentication: [role: "service"]
+    test "returns empty list when no metrics structures exist", %{conn: conn} do
+      response_conn =
+        conn
+        |> post(data_structure_path(conn, :metrics), %{})
+
+      assert [total_count] = get_resp_header(response_conn, "x-total-count")
+      assert total_count == "0"
+
+      conn = json_response(response_conn, :ok)
+      assert %{"data" => data} = conn
+      assert data == []
+    end
+
+    @tag authentication: [role: "admin"]
+    test "respects pagination parameters", %{conn: conn} do
+      ds1 = insert(:data_structure)
+      ds2 = insert(:data_structure)
+      ds3 = insert(:data_structure)
+
+      insert(:data_structure_version,
+        data_structure_id: ds1.id,
+        deleted_at: ~U[2020-01-01 00:00:00Z]
+      )
+
+      insert(:data_structure_version,
+        data_structure_id: ds2.id,
+        deleted_at: ~U[2020-01-02 00:00:00Z]
+      )
+
+      insert(:data_structure_version,
+        data_structure_id: ds3.id,
+        deleted_at: ~U[2020-01-03 00:00:00Z]
+      )
+
+      response_conn0 =
+        conn
+        |> post(data_structure_path(conn, :metrics), %{"page" => 0, "size" => 2})
+
+      assert [total_count] = get_resp_header(response_conn0, "x-total-count")
+
+      conn0 = json_response(response_conn0, :ok)
+      assert %{"data" => page0} = conn0
+
+      response_conn1 =
+        conn
+        |> post(data_structure_path(conn, :metrics), %{"page" => 1, "size" => 2})
+
+      assert [^total_count] = get_resp_header(response_conn1, "x-total-count")
+
+      conn1 = json_response(response_conn1, :ok)
+      assert %{"data" => page1} = conn1
+
+      assert length(page0) == 2
+      assert length(page1) == 1
+      assert total_count == "3"
+    end
+
+    @tag authentication: [role: "admin"]
+    test "filters by since parameter", %{conn: conn} do
+      since = ~U[2020-01-03 00:00:00Z]
+
+      %{id: ds1} =
+        insert(:data_structure,
+          last_change_at: ~U[2020-01-01 00:00:00Z],
+          updated_at: ~U[2020-01-01 00:00:00Z]
+        )
+
+      %{id: ds2} =
+        insert(:data_structure,
+          last_change_at: ~U[2020-01-02 00:00:00Z],
+          updated_at: ~U[2020-01-02 00:00:00Z]
+        )
+
+      %{id: ds3} =
+        insert(:data_structure,
+          last_change_at: ~U[2020-01-03 00:00:00Z],
+          updated_at: ~U[2020-01-03 00:00:00Z]
+        )
+
+      %{id: ds4} =
+        insert(:data_structure,
+          last_change_at: ~U[2020-01-04 00:00:00Z],
+          updated_at: ~U[2020-01-04 00:00:00Z]
+        )
+
+      insert(:data_structure_version,
+        data_structure_id: ds1,
+        name: "dsv1",
+        updated_at: ~U[2020-01-01 00:00:00Z]
+      )
+
+      insert(:data_structure_version,
+        data_structure_id: ds2,
+        name: "dsv2",
+        updated_at: ~U[2020-01-02 00:00:00Z]
+      )
+
+      insert(:data_structure_version,
+        data_structure_id: ds3,
+        name: "dsv3",
+        updated_at: ~U[2020-01-03 00:00:00Z]
+      )
+
+      insert(:data_structure_version,
+        data_structure_id: ds4,
+        name: "dsv4",
+        updated_at: ~U[2020-01-04 00:00:00Z]
+      )
+
+      response_conn =
+        post(conn, data_structure_path(conn, :metrics), %{"since" => DateTime.to_iso8601(since)})
+
+      assert [total_count] = get_resp_header(response_conn, "x-total-count")
+      assert total_count == "2"
+      conn = json_response(response_conn, :ok)
+
+      assert %{"data" => data} = conn
+      assert length(data) == 2
+      assert Enum.map(data, & &1["id"]) |> Enum.sort() == Enum.sort([ds3, ds4])
+    end
+
+    @tag authentication: [role: "admin"]
+    test "filters by since when last_change_at is after since", %{conn: conn} do
+      since = ~U[2020-01-02 00:00:00Z]
+
+      %{id: ds1} =
+        insert(:data_structure,
+          last_change_at: ~U[2020-01-01 00:00:00Z],
+          updated_at: ~U[2020-01-01 00:00:00Z]
+        )
+
+      %{id: ds2} =
+        insert(:data_structure,
+          last_change_at: ~U[2020-01-02 00:00:00Z],
+          updated_at: ~U[2020-01-02 00:00:00Z]
+        )
+
+      insert(:data_structure_version,
+        data_structure_id: ds1,
+        name: "dsv1",
+        updated_at: ~U[2020-01-01 00:00:00Z]
+      )
+
+      insert(:data_structure_version,
+        data_structure_id: ds2,
+        name: "dsv2",
+        updated_at: ~U[2020-01-02 00:00:00Z]
+      )
+
+      response_conn =
+        conn
+        |> post(data_structure_path(conn, :metrics), %{
+          "since" => DateTime.to_iso8601(since)
+        })
+
+      assert [total_count] = get_resp_header(response_conn, "x-total-count")
+      assert total_count == "1"
+
+      conn = json_response(response_conn, :ok)
+      assert %{"data" => data} = conn
+      assert length(data) == 1
+      assert [%{"id" => id}] = data
+      assert id == ds2
+    end
+
+    @tag authentication: [role: "admin"]
+    test "filters by since only considers latest version", %{conn: conn} do
+      since = ~U[2020-01-02 00:00:00Z]
+
+      ds1 =
+        insert(:data_structure,
+          last_change_at: ~U[2020-01-01 00:00:00Z],
+          updated_at: ~U[2020-01-01 00:00:00Z]
+        )
+
+      ds2 =
+        insert(:data_structure,
+          last_change_at: ~U[2020-01-02 00:00:00Z],
+          updated_at: ~U[2020-01-02 00:00:00Z]
+        )
+
+      insert(:data_structure_version,
+        data_structure_id: ds1.id,
+        updated_at: ~U[2020-01-01 00:00:00Z],
+        version: 1
+      )
+
+      insert(:data_structure_version,
+        data_structure_id: ds2.id,
+        deleted_at: ~U[2020-01-01 00:00:00Z],
+        updated_at: ~U[2020-01-01 00:00:00Z],
+        version: 1
+      )
+
+      insert(:data_structure_version,
+        data_structure_id: ds2.id,
+        updated_at: ~U[2020-01-02 00:00:00Z],
+        version: 2
+      )
+
+      response_conn =
+        conn
+        |> post(data_structure_path(conn, :metrics), %{
+          "since" => DateTime.to_iso8601(since)
+        })
+
+      assert [total_count] = get_resp_header(response_conn, "x-total-count")
+      assert total_count == "1"
+
+      conn = json_response(response_conn, :ok)
+      assert %{"data" => data} = conn
+      assert length(data) == 1
+      assert [%{"id" => id, "version" => 2}] = data
+      assert id == ds2.id
+    end
+
+    @tag authentication: [role: "admin"]
+    test "returns empty list when since filter excludes all structures", %{conn: conn} do
+      since = ~U[2020-01-05 00:00:00Z]
+
+      ds1 =
+        insert(:data_structure,
+          last_change_at: ~U[2020-01-01 00:00:00Z],
+          updated_at: ~U[2020-01-01 00:00:00Z]
+        )
+
+      ds2 =
+        insert(:data_structure,
+          last_change_at: ~U[2020-01-02 00:00:00Z],
+          updated_at: ~U[2020-01-02 00:00:00Z]
+        )
+
+      insert(:data_structure_version,
+        data_structure_id: ds1.id,
+        deleted_at: ~U[2020-01-01 00:00:00Z],
+        updated_at: ~U[2020-01-01 00:00:00Z]
+      )
+
+      insert(:data_structure_version,
+        data_structure_id: ds2.id,
+        deleted_at: ~U[2020-01-02 00:00:00Z],
+        updated_at: ~U[2020-01-02 00:00:00Z]
+      )
+
+      response_conn =
+        conn
+        |> post(data_structure_path(conn, :metrics), %{
+          "since" => DateTime.to_iso8601(since)
+        })
+
+      assert [total_count] = get_resp_header(response_conn, "x-total-count")
+      assert total_count == "0"
+
+      conn = json_response(response_conn, :ok)
+      assert %{"data" => data} = conn
+      assert data == []
+    end
+
+    @tag authentication: [role: "admin"]
+    test "uses default page and size when not provided", %{conn: conn} do
+      Enum.each(1..55, fn _ ->
+        ds = insert(:data_structure)
+        insert(:data_structure_version, data_structure_id: ds.id, deleted_at: DateTime.utc_now())
+      end)
+
+      response_conn =
+        conn
+        |> post(data_structure_path(conn, :metrics), %{})
+
+      assert [total_count] = get_resp_header(response_conn, "x-total-count")
+      assert total_count == "55"
+
+      conn = json_response(response_conn, :ok)
+      assert %{"data" => data} = conn
+      assert length(data) == 50
+    end
+
+    @tag authentication: [role: "admin"]
+    test "handles pagination with since filter", %{conn: conn} do
+      since = ~U[2020-01-02 00:00:00Z]
+
+      Enum.each(1..3, fn i ->
+        ds =
+          insert(:data_structure, last_change_at: ~U[2020-01-03 00:00:00Z])
+
+        insert(:data_structure_version,
+          data_structure_id: ds.id,
+          version: i - 1,
+          deleted_at: ~U[2020-01-01 00:00:00Z]
+        )
+
+        insert(:data_structure_version,
+          data_structure_id: ds.id,
+          version: i,
+          deleted_at: ~U[2020-01-03 00:00:00Z]
+        )
+      end)
+
+      response_conn0 =
+        conn
+        |> post(data_structure_path(conn, :metrics), %{
+          "since" => DateTime.to_iso8601(since),
+          "page" => 0,
+          "size" => 2
+        })
+
+      assert [total_count] = get_resp_header(response_conn0, "x-total-count")
+
+      conn0 = json_response(response_conn0, :ok)
+      assert %{"data" => page0} = conn0
+
+      response_conn1 =
+        conn
+        |> post(data_structure_path(conn, :metrics), %{
+          "since" => DateTime.to_iso8601(since),
+          "page" => 1,
+          "size" => 2
+        })
+
+      assert [^total_count] = get_resp_header(response_conn1, "x-total-count")
+
+      conn1 = json_response(response_conn1, :ok)
+      assert %{"data" => page1} = conn1
+
+      assert length(page0) == 2
+      assert length(page1) == 1
+      assert total_count == "3"
+    end
+
+    @tag authentication: [role: "admin"]
+    test "ensure all fields are returned", %{conn: conn} do
+      required_fields = [
+        "id",
+        "parent_id",
+        "system_id",
+        "class",
+        "deleted_at",
+        "domain_ids",
+        "external_id",
+        "inserted_at",
+        "updated_at",
+        "last_change_at",
+        "linked_concepts",
+        "metadata",
+        "name",
+        "description",
+        "type",
+        "field_type",
+        "version",
+        "source_id",
+        "confidential"
+      ]
+
+      ds = insert(:data_structure)
+      insert(:data_structure_version, data_structure_id: ds.id, name: "dsv1")
+
+      response_conn =
+        conn
+        |> post(data_structure_path(conn, :metrics), %{})
+
+      conn = json_response(response_conn, :ok)
+      assert %{"data" => data} = conn
+      assert length(data) >= 1
+
+      for item <- data do
+        item_keys = item |> Map.keys() |> Enum.sort()
+
+        assert item_keys == Enum.sort(required_fields),
+               "expected exactly keys #{inspect(Enum.sort(required_fields))}, got #{inspect(item_keys)}"
+      end
+    end
+  end
+
   defp create_data_structure(%{domain: %{id: domain_id}} = tags) do
     data_structure =
       insert(:data_structure,

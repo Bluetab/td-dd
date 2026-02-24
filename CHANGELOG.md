@@ -1,8 +1,23 @@
 # Changelog
 
-## [8.1.0] 2026-02-03
+## [8.2.0] 2026-02-24
 
 ### Added
+
+- [TD-7696] Expose query building capabilities to external services
+- [TD-7861] Fetch store data to enable linking to a data structure
+- [TD-7712] Expose endpoint for data structure metrics
+
+## [8.1.1] 2026-02-10
+
+### Changed
+
+- [TD-7286] Moved generic components of XLSX upload
+
+
+## [8.1.0] 2026-02-03
+
+### Fixed
 
 - [TD-7787] Add Upload Jobs
   - Moved from Implementations to Truedat
@@ -35,10 +50,14 @@
 ### Fixed
 
 - [TD-7775]
- - Update indices list to include index_type suggestions
- - Adjusted the Oban queue configuration for embedding upserts to improve performance.
- - Enhanced the `upsert_from_structures_async` function to utilize the new delay configuration
- - Add configuration for record embeddings batch size and delay
+- Update indices list to include index_type suggestions
+- Adjusted the Oban queue configuration for embedding upserts to improve performance.
+- Enhanced the `upsert_from_structures_async` function to utilize the new delay configuration
+- Add configuration for record embeddings batch size and delay
+
+### Added
+
+- [TD-7712] A new endpoint has been implemented to provide the necessary data for the Metrics connector /data_structures/metrics
 
 ## [8.0.0] 2026-01-12
 
@@ -49,7 +68,7 @@
 ### Fixed
 
 - [TD-7792] Created data_structures systems index for groups query performance
-- [TD-7836] When loading concept-structure relationships, 
+- [TD-7836] When loading concept-structure relationships,
   an error is returned as if the structure was deleted when it is not
 
 ## [7.14.0] 2025-12-10
@@ -166,7 +185,6 @@
 - [TD-7345] Generate vector for business glossary consumption
 - [TD-7175] Update README.md for oban information
 - [TD-7364]:
-
   - Store embeddings in postres.
   - Use stored embeddings on reindex.
   - Incrementaly update outdated embeddings.

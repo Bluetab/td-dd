@@ -72,6 +72,50 @@ defmodule TdDd.DataStructures.Search.QueryTest do
                  }
                }
     end
+
+    test "returns bool query for domain_ids or confidential domain_ids with field prefix" do
+      opts = [field_prefix: "foo."]
+
+      assert Query.build_filters(
+               %{"view_data_structure" => [1], "manage_confidential_structures" => [2]},
+               opts
+             ) ==
+               %{
+                 bool: %{
+                   should: [
+                     %{
+                       bool: %{
+                         filter: [
+                           %{term: %{"foo.domain_ids" => 1}},
+                           %{term: %{"foo.confidential" => false}}
+                         ]
+                       }
+                     },
+                     %{bool: %{filter: %{term: %{"foo.domain_ids" => 2}}}}
+                   ]
+                 }
+               }
+
+      assert Query.build_filters(
+               %{"link_data_structure" => [1, 2], "manage_confidential_structures" => [2, 3]},
+               opts
+             ) ==
+               %{
+                 bool: %{
+                   should: [
+                     %{
+                       bool: %{
+                         filter: [
+                           %{terms: %{"foo.domain_ids" => [1, 2]}},
+                           %{term: %{"foo.confidential" => false}}
+                         ]
+                       }
+                     },
+                     %{bool: %{filter: %{terms: %{"foo.domain_ids" => [2, 3]}}}}
+                   ]
+                 }
+               }
+    end
   end
 
   describe "build_query/3" do

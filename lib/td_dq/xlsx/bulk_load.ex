@@ -9,10 +9,11 @@ defmodule TdDq.XLSX.BulkLoad do
   alias TdCache.I18nCache
   alias TdCache.TemplateCache
   alias TdCore.Search.IndexWorker
+  alias TdCore.XLSX.BulkLoadProtocol
+  alias TdDd.Utils.ChangesetUtils
   alias TdDfLib.Parser
   alias TdDq.Implementations
   alias TdDq.Rules
-  alias Truedat.XLSX.BulkLoadProtocol
 
   require Logger
 
@@ -103,7 +104,9 @@ defmodule TdDq.XLSX.BulkLoad do
       } = template_data
 
       df_content =
-        Enum.reduce(implementation["df_content"], %{}, fn {key, value}, acc ->
+        implementation
+        |> Map.get("df_content", %{})
+        |> Enum.reduce(%{}, fn {key, value}, acc ->
           case tft[key] do
             nil -> Map.put(acc, key, value)
             t_key -> Map.put(acc, t_key, value)
@@ -154,6 +157,10 @@ defmodule TdDq.XLSX.BulkLoad do
           %{
             rule_name: rule_name
           }}}
+
+      {:error, _, %Ecto.Changeset{valid?: false} = changeset, _} ->
+        errors = ChangesetUtils.error_message_list_on(changeset)
+        {:error, {"implementation_creation_error", errors}}
 
       {:error, :implementation, %{errors: errors}, _} ->
         {:error, {"implementation_creation_error", errors}}
@@ -228,6 +235,17 @@ defmodule TdDq.XLSX.BulkLoad do
         implementation_key: params["implementation_key"],
         changes: changes
       }}}
+  end
+
+  defp handle_update_result(
+         {:error, _, %Ecto.Changeset{valid?: false} = changeset, _},
+         _,
+         _,
+         _
+       ) do
+    errors = ChangesetUtils.error_message_list_on(changeset)
+
+    {:error, {"implementation_creation_error", errors}}
   end
 
   defp handle_update_result({:error, _, %{errors: errors}, _}, _, _, _) do

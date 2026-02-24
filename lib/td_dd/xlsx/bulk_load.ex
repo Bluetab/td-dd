@@ -1,4 +1,4 @@
-defmodule TdDd.XLSX.StructureNotes.BulkLoad do
+defmodule TdDd.XLSX.BulkLoad do
   @moduledoc """
   XLSX Bulk Load Data Structures Notes
 
@@ -6,16 +6,19 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoad do
   """
 
   alias TdCore.Search.IndexWorker
+  alias TdCore.XLSX.BulkLoadProtocol
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructureTypes
+  alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.StructureNotes
   alias TdDd.DataStructures.StructureNotesWorkflow
   alias TdDd.DataStructures.Validation
+  alias TdDd.Utils.ChangesetUtils
   alias TdDfLib.Content
-  alias Truedat.XLSX.BulkLoadProtocol
+  alias TdDfLib.Parser
 
   defimpl BulkLoadProtocol, for: TdDd.DataStructures.StructureNote do
-    alias TdDd.XLSX.StructureNotes.BulkLoad
+    alias TdDd.XLSX.BulkLoad
 
     @required_headers [
       "external_id"
@@ -44,7 +47,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoad do
     end
 
     def on_complete(_structure_note, ids) do
-      IndexWorker.reindex(:structure_notes, Enum.uniq(ids))
+      IndexWorker.reindex(:structures, Enum.uniq(ids))
     end
 
     def sheets_to_templates(_impl_for, sheets) do
@@ -62,55 +65,44 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoad do
            {:data_structure, check_data_structure(external_id)},
          {:template, %{} = template} <-
            {:template, Map.get(ctx.templates, Map.get(structure_note, "_sheet"))},
-         {:permission, true} <- {:permission, check_permission(ctx.claims, data_structure)},
-         {:status, status} <- {:status, determine_status(ctx.claims, data_structure, ctx)},
-         {:version, {version, was_draft, existing_note}} when is_integer(version) <-
-           {:version, determine_version_and_cleanup(data_structure, status, ctx.claims.user_id)},
-         {:content, {merged_content, empty_fields}} <-
+         auto_publish = auto_publish?(ctx.claims, data_structure, ctx),
+         {:permission, true} <-
+           {:permission, check_permission(ctx.claims, data_structure, auto_publish)},
+         existing_note = StructureNotes.get_latest_structure_note(data_structure.id),
+         {:content, {merged_content, _empty_fields}} <-
            {:content,
             prepare_and_merge_content(
               structure_note,
               template,
-              existing_note
+              existing_note,
+              data_structure.domain_ids,
+              ctx.lang
             )},
          {:validation, :ok} <-
            {:validation, validate_content_fields(merged_content, data_structure, structure_note)},
          {:unchanged, false} <-
-           {:unchanged, content_unchanged?(merged_content, existing_note, status)} do
-      if was_draft && existing_note do
-        StructureNotes.delete_structure_note(existing_note, ctx.claims.user_id,
-          is_bulk_update: true
-        )
+           {:unchanged, content_unchanged?(merged_content, existing_note, auto_publish)} do
+      was_draft = match?(%{status: :draft}, existing_note)
+      params = %{"df_content" => merged_content}
+      opts = [auto_publish: auto_publish, is_bulk_update: true, is_strict_update: true]
+
+      case StructureNotesWorkflow.create_or_update(
+             data_structure,
+             params,
+             ctx.claims.user_id,
+             opts
+           ) do
+        {:ok, %StructureNote{} = result_note} ->
+          status_str = Atom.to_string(result_note.status)
+          changes = compute_update_changes(merged_content, existing_note, status_str)
+          format_response({:ok, result_note}, data_structure, external_id, was_draft, changes)
+
+        {:ok, _unchanged} ->
+          {:unchanged, %{external_id: external_id, data_structure_id: data_structure.id}}
+
+        error ->
+          format_response(error, data_structure, external_id, false, %{})
       end
-
-      cleaned_existing_note =
-        if existing_note && empty_fields != [] do
-          cleaned_df_content = Map.drop(existing_note.df_content || %{}, empty_fields)
-          %{existing_note | df_content: cleaned_df_content}
-        else
-          existing_note
-        end
-
-      structure_note_with_params =
-        structure_note
-        |> Map.put("status", status)
-        |> Map.put("version", version)
-        |> Map.put("df_content", merged_content)
-
-      changes = compute_update_changes(merged_content, existing_note, status)
-
-      create_structure_note_and_respond(
-        StructureNotes.bulk_create_structure_note(
-          data_structure,
-          structure_note_with_params,
-          cleaned_existing_note,
-          ctx.claims.user_id
-        ),
-        data_structure,
-        external_id,
-        was_draft,
-        changes
-      )
     else
       {:data_structure, nil} ->
         {:error, {"data_structure_not_found", %{external_id: external_id}}}
@@ -123,20 +115,6 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoad do
       {:permission, false} ->
         {:error,
          {"unauthorized", details_with_structure_id(external_id, %{external_id: external_id})}}
-
-      {:status, :unauthorized} ->
-        {:error,
-         {"unauthorized", details_with_structure_id(external_id, %{external_id: external_id})}}
-
-      {:version, {:error, {:unreject_failed, reason}}} ->
-        {:error,
-         {"unreject_failed",
-          details_with_structure_id(external_id, %{external_id: external_id, reason: reason})}}
-
-      {:version, {:error, {:pending_approval_conflict, message}}} ->
-        {:error,
-         {"pending_approval_conflict",
-          details_with_structure_id(external_id, %{external_id: external_id, message: message})}}
 
       {:unchanged, true} ->
         details =
@@ -176,34 +154,15 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoad do
     end
   end
 
-  defp check_permission(claims, data_structure) do
-    can_create_or_edit_draft?(claims, data_structure) or
+  defp auto_publish?(claims, data_structure, ctx) do
+    Map.get(ctx, :to_status) == "published" and
       Bodyguard.permit?(StructureNotes, :publish_draft, claims, data_structure)
   end
 
-  defp determine_status(claims, data_structure, ctx) do
-    to_status = Map.get(ctx, :to_status, "draft")
+  defp check_permission(_claims, _data_structure, true = _auto_publish), do: true
 
-    case to_status do
-      "published" -> determine_published_status(claims, data_structure)
-      _ -> determine_draft_status(claims, data_structure)
-    end
-  end
-
-  defp determine_published_status(claims, data_structure) do
-    if Bodyguard.permit?(StructureNotes, :publish_draft, claims, data_structure) do
-      "published"
-    else
-      determine_draft_status(claims, data_structure)
-    end
-  end
-
-  defp determine_draft_status(claims, data_structure) do
-    if can_create_or_edit_draft?(claims, data_structure) do
-      "draft"
-    else
-      :unauthorized
-    end
+  defp check_permission(claims, data_structure, false = _auto_publish) do
+    can_create_or_edit_draft?(claims, data_structure)
   end
 
   defp can_create_or_edit_draft?(claims, data_structure) do
@@ -233,7 +192,7 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoad do
 
   defp field_equal?(a, b), do: normalize_value(a) == normalize_value(b)
 
-  defp create_structure_note_and_respond(
+  defp format_response(
          result,
          data_structure,
          external_id,
@@ -242,18 +201,17 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoad do
        ) do
     case result do
       {:ok, %{id: id}} ->
-        details =
-          %{
-            id: id,
-            external_id: external_id,
-            data_structure_id: data_structure.id
-          }
-          |> Map.put(:changes, changes)
+        details = %{
+          id: id,
+          external_id: external_id,
+          data_structure_id: data_structure.id,
+          changes: changes
+        }
 
         if was_draft do
-          {:updated, {id, details}}
+          {:updated, {data_structure.id, details}}
         else
-          {:created, {id, details}}
+          {:created, {data_structure.id, details}}
         end
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -276,78 +234,23 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoad do
   end
 
   defp extract_changeset_errors(changeset) do
-    changeset
-    |> Ecto.Changeset.traverse_errors(fn {msg, opts} ->
-      Enum.reduce(opts, msg, fn {key, value}, acc ->
-        String.replace(acc, "%{#{key}}", to_string(value))
-      end)
-    end)
-    |> Enum.flat_map(fn {field, messages} ->
-      Enum.map(messages, fn message ->
-        %{field: to_string(field), message: message}
-      end)
-    end)
+    ChangesetUtils.error_message_list_on(changeset)
   end
 
-  defp determine_version_and_cleanup(data_structure, _status, user_id) do
-    latest_note = StructureNotes.get_latest_structure_note(data_structure.id)
-
-    case latest_note do
-      nil ->
-        {1, false, nil}
-
-      %{status: :draft} = draft_note ->
-        # Don't delete yet - we need to compare content first
-        # The draft will be deleted later if content changed
-        {draft_note.version, true, draft_note}
-
-      # TODO: Pending approval handling
-      # When a structure note is in pending_approval status and new content is uploaded,
-      # we need to decide the appropriate action:
-      # - Option 1: Delete the pending_approval note and create a new draft
-      # - Option 2: Keep the pending_approval note and handle the conflict
-      # - Option 3: Cancel/reject the pending_approval and create new draft
-      # This needs to be discussed and implemented based on business requirements.
-      %{status: :pending_approval} = _pending_note ->
-        {:error,
-         {:pending_approval_conflict, "Cannot upload new content when note is pending approval"}}
-
-      %{status: :rejected} = rejected_note ->
-        handle_rejected_note(rejected_note, user_id)
-
-      %{status: :published} = published_note ->
-        {next_version(published_note), false, published_note}
-
-      %{status: :deprecated} = deprecated_note ->
-        {next_version(deprecated_note), false, deprecated_note}
-
-      _ ->
-        {next_version(latest_note), false, latest_note}
-    end
-  end
-
-  defp handle_rejected_note(rejected_note, user_id) do
-    case StructureNotesWorkflow.update(rejected_note, %{"status" => "draft"}, false, user_id) do
-      {:ok, unrejected_note} ->
-        {unrejected_note.version, true, unrejected_note}
-
-      {:error, reason} ->
-        {:error, {:unreject_failed, reason}}
-
-      error ->
-        {:error, {:unreject_failed, error}}
-    end
-  end
-
-  defp next_version(nil), do: 1
-  defp next_version(%{version: version}), do: version + 1
-
-  defp prepare_and_merge_content(structure_note, template, existing_note) do
+  defp prepare_and_merge_content(structure_note, template, existing_note, domain_ids, lang) do
     new_content = Map.get(structure_note, "df_content", %{}) || %{}
 
     field_names = Enum.map(template.content_schema, &Map.get(&1, "name"))
 
     {filtered_content, empty_fields} = filter_and_normalize_content(new_content, field_names)
+
+    filtered_content =
+      Parser.format_content(%{
+        content: filtered_content,
+        content_schema: template.content_schema,
+        domain_ids: domain_ids,
+        lang: lang
+      })
 
     existing_content = get_existing_content_for_merge(existing_note)
 
@@ -380,14 +283,14 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoad do
     {content, empty_fields}
   end
 
-  defp normalize_field_value(%{"value" => val, "origin" => _}) when val == "" or val == nil,
+  defp normalize_field_value(%{"value" => val, "origin" => _}) when val == "" or is_nil(val),
     do: nil
 
   defp normalize_field_value(%{"value" => _, "origin" => _} = value), do: value
 
   defp normalize_field_value(value) when is_map(value), do: Map.put(value, "origin", "file")
 
-  defp normalize_field_value(value) when value == "" or value == nil, do: nil
+  defp normalize_field_value(value) when value == "" or is_nil(value), do: nil
 
   defp normalize_field_value(value), do: %{"value" => value, "origin" => "file"}
 
@@ -416,15 +319,15 @@ defmodule TdDd.XLSX.StructureNotes.BulkLoad do
 
   defp get_existing_content_for_merge(_), do: nil
 
-  defp content_unchanged?(new_content, existing_note, status) do
+  defp content_unchanged?(new_content, existing_note, auto_publish) do
     case existing_note do
       nil ->
         new_content == %{}
 
-      %{status: :draft, df_content: existing_content} when status == "draft" ->
+      %{status: :draft, df_content: existing_content} when auto_publish == false ->
         maps_equal?(new_content, existing_content)
 
-      %{status: :published, df_content: existing_content} when status == "published" ->
+      %{status: :published, df_content: existing_content} when auto_publish == true ->
         maps_equal?(new_content, existing_content)
 
       _ ->
